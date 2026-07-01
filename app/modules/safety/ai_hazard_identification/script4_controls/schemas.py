@@ -37,9 +37,7 @@ class ControlsOutput(BaseModel):
     management_controls: str = Field(
         ..., description="现有管理控制措施（规程、培训、巡检、许可、交接班等）"
     )
-    ppe: str = Field(
-        ..., description="现有个人防护装备及使用要求"
-    )
+    ppe: str = Field(..., description="现有个人防护装备及使用要求")
     emergency_measures: str = Field(
         ..., description="现有应急措施（处置流程、器材配置、报警撤离、急救）"
     )

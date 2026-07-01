@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 
 class ReviewError(Exception):
     """AI 初审失败异常。"""
+
     pass
 
 
@@ -126,14 +127,12 @@ class AIRectificationReviewer:
             logger.info("阶段1.5：知识库未提供，使用空上下文（集成层应在调用前注入）")
 
         # ── 阶段二：AI 分析 ──
-        use_vision = (
-            has_rectification_photos
-            and self.config.enable_vision
-        )
+        use_vision = has_rectification_photos and self.config.enable_vision
 
         logger.info(
             "阶段二：AI 分析 — use_vision=%s has_defect_photos=%s",
-            use_vision, has_defect_photos,
+            use_vision,
+            has_defect_photos,
         )
 
         if use_vision:
@@ -344,17 +343,11 @@ class AIRectificationReviewer:
             return RectificationReviewOutput(
                 photo_match_analysis=raw.get("photo_match_analysis", ""),
                 photo_match_level=PhotoMatchLevel(
-                    self._sanitize_enum_value(
-                        raw.get("photo_match_level", "no_photos")
-                    )
+                    self._sanitize_enum_value(raw.get("photo_match_level", "no_photos"))
                 ),
-                measure_quality_assessment=raw.get(
-                    "measure_quality_assessment", ""
-                ),
+                measure_quality_assessment=raw.get("measure_quality_assessment", ""),
                 measure_quality_level=MeasureQualityLevel(
-                    self._sanitize_enum_value(
-                        raw.get("measure_quality_level", "basic")
-                    )
+                    self._sanitize_enum_value(raw.get("measure_quality_level", "basic"))
                 ),
                 standard_compliance=raw.get("standard_compliance", ""),
                 standard_compliance_level=ComplianceLevel(
@@ -363,20 +356,14 @@ class AIRectificationReviewer:
                     )
                 ),
                 review_conclusion=ReviewConclusion(
-                    self._sanitize_enum_value(
-                        raw.get("review_conclusion", "不通过")
-                    )
+                    self._sanitize_enum_value(raw.get("review_conclusion", "不通过"))
                 ),
                 review_comments=raw.get("review_comments", ""),
                 confidence=(
-                    raw.get("confidence")
-                    if self.config.enable_reasoning
-                    else None
+                    raw.get("confidence") if self.config.enable_reasoning else None
                 ),
                 reasoning=(
-                    raw.get("reasoning")
-                    if self.config.enable_reasoning
-                    else None
+                    raw.get("reasoning") if self.config.enable_reasoning else None
                 ),
             )
         except (ValueError, KeyError, TypeError) as e:

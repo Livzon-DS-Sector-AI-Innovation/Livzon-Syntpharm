@@ -18,4 +18,17 @@ from app.modules.safety.service.special_operation_report import (
     SpecialOperationReportService,
 )
 
-__all__ = ['SafetyService', 'HazardService', 'RegulationService', 'SopGeneratorService', 'create_ai_service', 'SpecialOperationService', 'KnowledgeService', 'SpecialOperationReportService', 'DailyRiskReportService', 'EhsChangeService', 'OhHazardMonitorService', 'OhHealthExamService']
+__all__ = [
+    "SafetyService",
+    "HazardService",
+    "RegulationService",
+    "SopGeneratorService",
+    "create_ai_service",
+    "SpecialOperationService",
+    "KnowledgeService",
+    "SpecialOperationReportService",
+    "DailyRiskReportService",
+    "EhsChangeService",
+    "OhHazardMonitorService",
+    "OhHealthExamService",
+]

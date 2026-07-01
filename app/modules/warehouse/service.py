@@ -744,8 +744,7 @@ class WarehouseService:
             raise AppException(
                 status_code=500,
                 message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移："
-                    "alembic upgrade head"
+                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
                 ),
                 detail=str(exc.__class__.__name__),
             ) from exc
@@ -757,8 +756,7 @@ class WarehouseService:
             raise AppException(
                 status_code=500,
                 message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移："
-                    "alembic upgrade head"
+                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
                 ),
                 detail=str(exc.__class__.__name__),
             ) from exc
@@ -773,8 +771,7 @@ class WarehouseService:
             raise AppException(
                 status_code=500,
                 message=(
-                    "仓储飞书表目录不可用，请先执行数据库迁移："
-                    "alembic upgrade head"
+                    "仓储飞书表目录不可用，请先执行数据库迁移：alembic upgrade head"
                 ),
                 detail=str(exc.__class__.__name__),
             ) from exc
@@ -920,9 +917,7 @@ class WarehouseService:
             field_name=field_name,
             type=WarehouseService._safe_int(item.get("type")),
             property=(
-                item.get("property")
-                if isinstance(item.get("property"), dict)
-                else None
+                item.get("property") if isinstance(item.get("property"), dict) else None
             ),
         )
 

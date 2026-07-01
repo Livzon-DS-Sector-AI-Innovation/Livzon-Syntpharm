@@ -23,7 +23,7 @@ from pathlib import Path
 
 def extract_schemas_from_migration(file_path: str) -> set[str]:
     """Extract all schema names referenced in a migration file.
-    
+
     Only considers source_schema and schema parameters (tables being modified).
     Ignores referent_schema (foreign key targets) since cross-module FKs are allowed.
     """
@@ -33,7 +33,7 @@ def extract_schemas_from_migration(file_path: str) -> set[str]:
     patterns = [
         r'source_schema=["\'](\w+)["\']',  # source_schema="safety" (FK source)
         r'(?<!referent_)schema=["\'](\w+)["\']',  # schema='safety' but NOT referent_schema
-        r'CREATE SCHEMA IF NOT EXISTS (\w+)',  # CREATE SCHEMA IF NOT EXISTS safety
+        r"CREATE SCHEMA IF NOT EXISTS (\w+)",  # CREATE SCHEMA IF NOT EXISTS safety
     ]
 
     schemas = set()
@@ -42,7 +42,7 @@ def extract_schemas_from_migration(file_path: str) -> set[str]:
         schemas.update(matches)
 
     # Filter out system schemas
-    system_schemas = {'public', 'pg_catalog', 'information_schema'}
+    system_schemas = {"public", "pg_catalog", "information_schema"}
     schemas = {s for s in schemas if s not in system_schemas}
 
     return schemas
@@ -51,7 +51,7 @@ def extract_schemas_from_migration(file_path: str) -> set[str]:
 def is_baseline_migration(file_path: str) -> bool:
     """Check if this is a baseline/initial migration."""
     filename = Path(file_path).name.lower()
-    return 'baseline' in filename or 'initial' in filename
+    return "baseline" in filename or "initial" in filename
 
 
 def main():
@@ -80,8 +80,12 @@ def main():
         print(f"✓ {migration_file}: Single schema '{schema}' (OK)")
         sys.exit(0)
     else:
-        print(f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}")
-        print("\nError: A migration should only touch tables within one module's schema.")
+        print(
+            f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}"
+        )
+        print(
+            "\nError: A migration should only touch tables within one module's schema."
+        )
         print("If this migration includes changes from other modules, please:")
         print("  1. Discard this migration: rm " + migration_file)
         print("  2. Re-generate with --include-object filtering, or")

@@ -8,15 +8,18 @@ __all__ = ["router"]
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_regulatory_scheduler():
     """Start regulatory tracker's APScheduler."""
     from app.modules.regulatory_tracker.tasks.sync_tasks import start_scheduler
+
     await start_scheduler()
 
 
 async def _stop_regulatory_scheduler():
     """Stop regulatory tracker's APScheduler."""
     from app.modules.regulatory_tracker.tasks.sync_tasks import stop_scheduler
+
     stop_scheduler()
 
 

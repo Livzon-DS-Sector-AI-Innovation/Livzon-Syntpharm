@@ -182,12 +182,14 @@ def parse_chapter7_stages(content: str) -> list[dict]:
         # 解析操作步骤子节
         operation_items = _parse_numbered_subsection(section_text, "操作步骤")
 
-        stages.append({
-            "stage_name": stage_name,
-            "safety_items": safety_items,
-            "operation_items": operation_items,
-            "markdown": section_text,
-        })
+        stages.append(
+            {
+                "stage_name": stage_name,
+                "safety_items": safety_items,
+                "operation_items": operation_items,
+                "markdown": section_text,
+            }
+        )
 
     logger.info("解析 Chapter 7: %d 个工艺阶段", len(stages))
     return stages

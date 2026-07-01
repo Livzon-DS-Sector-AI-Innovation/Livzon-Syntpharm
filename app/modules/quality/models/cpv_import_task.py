@@ -25,8 +25,10 @@ class CpvImportTask(BaseModel):
         String(20), nullable=False, comment="导入模式: create/update/overwrite"
     )
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pending",
-        comment="状态: pending/processing/completed/failed"
+        String(20),
+        nullable=False,
+        default="pending",
+        comment="状态: pending/processing/completed/failed",
     )
     total_rows: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, comment="总行数"

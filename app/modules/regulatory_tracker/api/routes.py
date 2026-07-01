@@ -59,6 +59,7 @@ def _extract_impact_data(doc) -> dict:
 
 # ============ Dashboard ============
 
+
 @router.get("/regulatory-tracker/dashboard", summary="Dashboard 工作台数据")
 async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     """
@@ -90,22 +91,32 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
 
         # 从 ai_key_points 提取法规类型
         key_points = doc.ai_key_points or {}
-        regulation_type = key_points.get("regulation_type", "") if isinstance(key_points, dict) else ""
+        regulation_type = (
+            key_points.get("regulation_type", "")
+            if isinstance(key_points, dict)
+            else ""
+        )
 
-        priority_documents.append({
-            "id": str(doc.id),
-            "title": doc.title,
-            "sourceName": source.name if source else None,
-            "regulationType": regulation_type,
-            "publishDate": doc.publish_date.isoformat() if doc.publish_date else None,
-            "aiSummary": doc.ai_summary,
-            "aiRelevanceScore": doc.ai_relevance_score,
-            "aiKeyPoints": doc.ai_key_points,
-            "documentCategory": doc.document_category,
-            "documentCategoryName": get_category_display_name(doc.document_category or "general"),
-            "originalUrl": doc.original_url,
-            "impactLevel": impact_data["impact_level"],
-        })
+        priority_documents.append(
+            {
+                "id": str(doc.id),
+                "title": doc.title,
+                "sourceName": source.name if source else None,
+                "regulationType": regulation_type,
+                "publishDate": doc.publish_date.isoformat()
+                if doc.publish_date
+                else None,
+                "aiSummary": doc.ai_summary,
+                "aiRelevanceScore": doc.ai_relevance_score,
+                "aiKeyPoints": doc.ai_key_points,
+                "documentCategory": doc.document_category,
+                "documentCategoryName": get_category_display_name(
+                    doc.document_category or "general"
+                ),
+                "originalUrl": doc.original_url,
+                "impactLevel": impact_data["impact_level"],
+            }
+        )
 
     return {
         "code": 200,
@@ -130,6 +141,7 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
 
 # ============ 法规文档统计摘要 ============
 
+
 @router.get("/regulatory-tracker/summary", summary="法规追踪统计摘要")
 async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     stats = await repo.get_summary_stats(db)
@@ -142,6 +154,7 @@ async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_
 
 # ============ 法规文档列表 ============
 
+
 @router.get("/regulatory-documents", summary="法规文档列表")
 async def list_documents(
     current_user: CurrentUser,
@@ -151,8 +164,12 @@ async def list_documents(
     statusText: str | None = Query(None, description="状态筛选"),
     classification: str | None = Query(None, description="分类筛选"),
     isNew: bool | None = Query(None, description="是否新增"),
-    impactLevel: str | None = Query(None, description="影响等级筛选: high/medium/low/none/unanalyzed"),
-    documentCategory: str | None = Query(None, description="系统分类筛选: attention/general/archive/failed"),
+    impactLevel: str | None = Query(
+        None, description="影响等级筛选: high/medium/low/none/unanalyzed"
+    ),
+    documentCategory: str | None = Query(
+        None, description="系统分类筛选: attention/general/archive/failed"
+    ),
     notificationRequired: bool | None = Query(None, description="是否需要通知"),
     sourceId: uuid.UUID | None = Query(None, description="数据源 ID"),
     channelId: uuid.UUID | None = Query(None, description="栏目 ID"),
@@ -191,32 +208,44 @@ async def list_documents(
     items = []
     for doc in documents:
         impact_data = _extract_impact_data(doc)
-        items.append({
-            "id": str(doc.id),
-            "sourceId": str(doc.source_id),
-            "channelId": str(doc.channel_id),
-            "documentId": doc.document_id,
-            "title": doc.title,
-            "publishDate": doc.publish_date.isoformat() if doc.publish_date else None,
-            "statusText": doc.status_text,
-            "classification": doc.classification,
-            "originalUrl": doc.original_url,
-            "isNew": doc.is_new,
-            "isRead": doc.is_read,
-            "firstFoundAt": doc.first_found_at.isoformat() if doc.first_found_at else None,
-            "lastCheckedAt": doc.last_checked_at.isoformat() if doc.last_checked_at else None,
-            "createdAt": doc.created_at.isoformat() if doc.created_at else None,
-            "aiSummary": doc.ai_summary,
-            "aiKeyPoints": doc.ai_key_points,
-            "aiRelevanceScore": doc.ai_relevance_score,
-            "aiAnalyzedAt": doc.ai_analyzed_at.isoformat() if doc.ai_analyzed_at else None,
-            "aiAnalysisStatus": doc.ai_analysis_status,
-            "impact_level": impact_data["impact_level"],
-            "impact_score": impact_data["impact_score"],
-            "notification_required": impact_data["notification_required"],
-            "documentCategory": doc.document_category,
-            "documentCategoryName": get_category_display_name(doc.document_category or "general"),
-        })
+        items.append(
+            {
+                "id": str(doc.id),
+                "sourceId": str(doc.source_id),
+                "channelId": str(doc.channel_id),
+                "documentId": doc.document_id,
+                "title": doc.title,
+                "publishDate": doc.publish_date.isoformat()
+                if doc.publish_date
+                else None,
+                "statusText": doc.status_text,
+                "classification": doc.classification,
+                "originalUrl": doc.original_url,
+                "isNew": doc.is_new,
+                "isRead": doc.is_read,
+                "firstFoundAt": doc.first_found_at.isoformat()
+                if doc.first_found_at
+                else None,
+                "lastCheckedAt": doc.last_checked_at.isoformat()
+                if doc.last_checked_at
+                else None,
+                "createdAt": doc.created_at.isoformat() if doc.created_at else None,
+                "aiSummary": doc.ai_summary,
+                "aiKeyPoints": doc.ai_key_points,
+                "aiRelevanceScore": doc.ai_relevance_score,
+                "aiAnalyzedAt": doc.ai_analyzed_at.isoformat()
+                if doc.ai_analyzed_at
+                else None,
+                "aiAnalysisStatus": doc.ai_analysis_status,
+                "impact_level": impact_data["impact_level"],
+                "impact_score": impact_data["impact_score"],
+                "notification_required": impact_data["notification_required"],
+                "documentCategory": doc.document_category,
+                "documentCategoryName": get_category_display_name(
+                    doc.document_category or "general"
+                ),
+            }
+        )
 
     return {
         "code": 200,
@@ -233,8 +262,11 @@ async def list_documents(
 
 # ============ 法规文档详情 ============
 
+
 @router.get("/regulatory-documents/{doc_id}/detail", summary="法规文档详情")
-async def get_document_detail(current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_document_detail(
+    current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+):
     """获取法规文档详情，包含来源和栏目名称。"""
     doc_detail = await repo.get_document_detail(db, doc_id)
     if not doc_detail:
@@ -267,6 +299,7 @@ async def get_document_detail(current_user: CurrentUser, doc_id: uuid.UUID, db: 
 
 # ============ 法规文档导出 ============
 
+
 @router.get("/regulatory-documents/export", summary="导出法规文档为 Excel")
 async def export_documents(
     current_user: CurrentUser,
@@ -297,7 +330,9 @@ async def export_documents(
         return StreamingResponse(
             excel_file,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": "attachment; filename=regulatory_documents.xlsx"},
+            headers={
+                "Content-Disposition": "attachment; filename=regulatory_documents.xlsx"
+            },
         )
     else:
         return error_response("不支持的导出格式", status_code=400)
@@ -305,8 +340,11 @@ async def export_documents(
 
 # ============ 标记文档为已读 ============
 
+
 @router.patch("/regulatory-documents/{doc_id}/read", summary="标记文档为已读")
-async def mark_document_read(current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def mark_document_read(
+    current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+):
     """标记单个文档为已读"""
     doc = await repo.get_document_by_id(db, doc_id)
     if not doc:
@@ -318,7 +356,11 @@ async def mark_document_read(current_user: CurrentUser, doc_id: uuid.UUID, db: A
 
 
 @router.post("/regulatory-documents/batch-read", summary="批量标记文档已读")
-async def batch_mark_read(current_user: CurrentUser, request: BatchReadRequest, db: AsyncSession = Depends(get_db)):
+async def batch_mark_read(
+    current_user: CurrentUser,
+    request: BatchReadRequest,
+    db: AsyncSession = Depends(get_db),
+):
     """批量标记文档为已读"""
     count = await repo.batch_mark_read(db, request.documentIds)
     await db.commit()
@@ -326,6 +368,7 @@ async def batch_mark_read(current_user: CurrentUser, request: BatchReadRequest, 
 
 
 # ============ 同步任务触发 ============
+
 
 @router.post("/sync-jobs/trigger", summary="手动触发同步任务")
 async def trigger_sync_job(
@@ -347,12 +390,15 @@ async def trigger_sync_job(
         return error_response("数据源或栏目已禁用", status_code=400)
 
     # 创建同步任务记录
-    job = await repo.create_sync_job(db, {
-        "source_id": source.id,
-        "channel_id": channel.id,
-        "job_type": "manual_sync",
-        "status": "pending",
-    })
+    job = await repo.create_sync_job(
+        db,
+        {
+            "source_id": source.id,
+            "channel_id": channel.id,
+            "job_type": "manual_sync",
+            "status": "pending",
+        },
+    )
     await db.commit()
 
     # 后台执行同步（不阻塞响应）
@@ -361,6 +407,7 @@ async def trigger_sync_job(
 
     async def _run_sync(current_user: CurrentUser):
         from app.core.database import async_session_factory
+
         async with async_session_factory() as session:
             await run_sync_job(
                 db=session,
@@ -387,6 +434,7 @@ async def trigger_sync_job(
 
 # ============ 同步任务列表 ============
 
+
 @router.get("/sync-jobs", summary="同步任务列表")
 async def list_sync_jobs(
     current_user: CurrentUser,
@@ -399,21 +447,23 @@ async def list_sync_jobs(
 
     items = []
     for job in jobs:
-        items.append({
-            "id": str(job.id),
-            "sourceId": str(job.source_id),
-            "channelId": str(job.channel_id),
-            "jobType": job.job_type,
-            "startedAt": job.started_at.isoformat() if job.started_at else None,
-            "finishedAt": job.finished_at.isoformat() if job.finished_at else None,
-            "status": job.status,
-            "totalPages": job.total_pages,
-            "checkedCount": job.checked_count,
-            "newCount": job.new_count,
-            "updatedCount": job.updated_count,
-            "errorMessage": job.error_message,
-            "createdAt": job.created_at.isoformat() if job.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(job.id),
+                "sourceId": str(job.source_id),
+                "channelId": str(job.channel_id),
+                "jobType": job.job_type,
+                "startedAt": job.started_at.isoformat() if job.started_at else None,
+                "finishedAt": job.finished_at.isoformat() if job.finished_at else None,
+                "status": job.status,
+                "totalPages": job.total_pages,
+                "checkedCount": job.checked_count,
+                "newCount": job.new_count,
+                "updatedCount": job.updated_count,
+                "errorMessage": job.error_message,
+                "createdAt": job.created_at.isoformat() if job.created_at else None,
+            }
+        )
 
     return {
         "code": 200,

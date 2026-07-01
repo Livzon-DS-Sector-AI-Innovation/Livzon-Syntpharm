@@ -25,7 +25,7 @@ async def exists_by_deviation_code(
 ) -> bool:
     query = select(Deviation.id).where(
         Deviation.deviation_code == deviation_code,
-        Deviation.is_deleted == False,
+        not Deviation.is_deleted,
     )
     if exclude_id:
         query = query.where(Deviation.id != exclude_id)
@@ -40,11 +40,13 @@ async def create_deviation(db: AsyncSession, data: dict[str, Any]) -> Deviation:
     return deviation
 
 
-async def get_deviation_by_id(db: AsyncSession, deviation_id: uuid.UUID) -> Deviation | None:
+async def get_deviation_by_id(
+    db: AsyncSession, deviation_id: uuid.UUID
+) -> Deviation | None:
     result = await db.execute(
         select(Deviation).where(
             Deviation.id == deviation_id,
-            Deviation.is_deleted == False,
+            not Deviation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -60,9 +62,9 @@ async def get_deviations(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Deviation], int]:
-    query = select(Deviation).where(Deviation.is_deleted == False)
-    count_query = select(func.count()).select_from(Deviation).where(
-        Deviation.is_deleted == False
+    query = select(Deviation).where(not Deviation.is_deleted)
+    count_query = (
+        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
     )
 
     filters = []
@@ -89,9 +91,11 @@ async def get_deviations(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(Deviation.updated_at.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(Deviation.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -116,7 +120,7 @@ async def exists_by_capa_code(
 ) -> bool:
     query = select(CAPA.id).where(
         CAPA.capa_code == capa_code,
-        CAPA.is_deleted == False,
+        not CAPA.is_deleted,
     )
     if exclude_id:
         query = query.where(CAPA.id != exclude_id)
@@ -133,7 +137,7 @@ async def create_capa(db: AsyncSession, data: dict[str, Any]) -> CAPA:
 
 async def get_capa_by_id(db: AsyncSession, capa_id: uuid.UUID) -> CAPA | None:
     result = await db.execute(
-        select(CAPA).where(CAPA.id == capa_id, CAPA.is_deleted == False)
+        select(CAPA).where(CAPA.id == capa_id, not CAPA.is_deleted)
     )
     return result.scalar_one_or_none()
 
@@ -148,8 +152,8 @@ async def get_capas(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[CAPA], int]:
-    query = select(CAPA).where(CAPA.is_deleted == False)
-    count_query = select(func.count()).select_from(CAPA).where(CAPA.is_deleted == False)
+    query = select(CAPA).where(not CAPA.is_deleted)
+    count_query = select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
 
     filters = []
     if status:
@@ -162,9 +166,7 @@ async def get_capas(
         filters.append(CAPA.deviation_id == deviation_id)
     if keyword:
         pattern = f"%{_escape_like(keyword)}%"
-        filters.append(
-            or_(CAPA.capa_code.ilike(pattern), CAPA.title.ilike(pattern))
-        )
+        filters.append(or_(CAPA.capa_code.ilike(pattern), CAPA.title.ilike(pattern)))
 
     for filter_condition in filters:
         query = query.where(filter_condition)
@@ -172,9 +174,11 @@ async def get_capas(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(CAPA.updated_at.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(CAPA.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -198,7 +202,7 @@ async def get_department_contact_by_id(
     result = await db.execute(
         select(DepartmentContact).where(
             DepartmentContact.id == contact_id,
-            DepartmentContact.is_deleted == False,
+            not DepartmentContact.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -210,7 +214,7 @@ async def get_department_contact_by_department(
     result = await db.execute(
         select(DepartmentContact).where(
             DepartmentContact.department == department,
-            DepartmentContact.is_deleted == False,
+            not DepartmentContact.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -219,18 +223,20 @@ async def get_department_contact_by_department(
 async def get_department_contacts(
     db: AsyncSession, page: int = 1, page_size: int = 20
 ) -> tuple[list[DepartmentContact], int]:
-    query = select(DepartmentContact).where(DepartmentContact.is_deleted == False)
+    query = select(DepartmentContact).where(not DepartmentContact.is_deleted)
     count_query = (
         select(func.count())
         .select_from(DepartmentContact)
-        .where(DepartmentContact.is_deleted == False)
+        .where(not DepartmentContact.is_deleted)
     )
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(DepartmentContact.department).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(DepartmentContact.department)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -267,7 +273,7 @@ async def get_weekly_confirmation_by_id(
     result = await db.execute(
         select(DepartmentWeeklyConfirmation).where(
             DepartmentWeeklyConfirmation.id == confirmation_id,
-            DepartmentWeeklyConfirmation.is_deleted == False,
+            not DepartmentWeeklyConfirmation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -280,7 +286,7 @@ async def get_weekly_confirmation_by_department_week(
         select(DepartmentWeeklyConfirmation).where(
             DepartmentWeeklyConfirmation.department == department,
             DepartmentWeeklyConfirmation.week_key == week_key,
-            DepartmentWeeklyConfirmation.is_deleted == False,
+            not DepartmentWeeklyConfirmation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -294,12 +300,12 @@ async def get_weekly_confirmations(
     page_size: int = 20,
 ) -> tuple[list[DepartmentWeeklyConfirmation], int]:
     query = select(DepartmentWeeklyConfirmation).where(
-        DepartmentWeeklyConfirmation.is_deleted == False
+        not DepartmentWeeklyConfirmation.is_deleted
     )
     count_query = (
         select(func.count())
         .select_from(DepartmentWeeklyConfirmation)
-        .where(DepartmentWeeklyConfirmation.is_deleted == False)
+        .where(not DepartmentWeeklyConfirmation.is_deleted)
     )
 
     if department:
@@ -315,9 +321,11 @@ async def get_weekly_confirmations(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(DepartmentWeeklyConfirmation.confirmed_at.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(DepartmentWeeklyConfirmation.confirmed_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -356,7 +364,7 @@ async def get_attachment_review_by_id(
     result = await db.execute(
         select(AttachmentReview).where(
             AttachmentReview.id == review_id,
-            AttachmentReview.is_deleted == False,
+            not AttachmentReview.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -370,11 +378,11 @@ async def get_attachment_reviews(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[AttachmentReview], int]:
-    query = select(AttachmentReview).where(AttachmentReview.is_deleted == False)
+    query = select(AttachmentReview).where(not AttachmentReview.is_deleted)
     count_query = (
         select(func.count())
         .select_from(AttachmentReview)
-        .where(AttachmentReview.is_deleted == False)
+        .where(not AttachmentReview.is_deleted)
     )
 
     if deviation_id:
@@ -391,9 +399,11 @@ async def get_attachment_reviews(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(AttachmentReview.review_time.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(AttachmentReview.review_time.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -416,8 +426,6 @@ async def update_attachment_review(
     return review
 
 
-async def delete_attachment_review(
-    db: AsyncSession, review: AttachmentReview
-) -> None:
+async def delete_attachment_review(db: AsyncSession, review: AttachmentReview) -> None:
     review.is_deleted = True
     await db.flush()

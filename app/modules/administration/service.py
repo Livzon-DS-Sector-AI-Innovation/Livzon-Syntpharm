@@ -82,7 +82,9 @@ class VehicleService:
         page: int = 1,
         page_size: int = 20,
     ):
-        return await self.repo.list(keyword=keyword, status=status, page=page, page_size=page_size)
+        return await self.repo.list(
+            keyword=keyword, status=status, page=page, page_size=page_size
+        )
 
     async def get_vehicle(self, vehicle_id: UUID) -> Vehicle:
         vehicle = await self.repo.get_by_id(vehicle_id)
@@ -121,14 +123,20 @@ class VehicleService:
                 break
 
         if header_row_idx is None:
-            return {"created": 0, "failed": 0, "errors": ["未找到有效的表头行（需包含“车牌号”列）"]}
+            return {
+                "created": 0,
+                "failed": 0,
+                "errors": ["未找到有效的表头行（需包含“车牌号”列）"],
+            }
 
         # Re-read with the correct header row
         df = pd.read_excel(BytesIO(file_bytes), header=header_row_idx)
 
         # Normalise column names: strip * prefix, whitespace
         df.columns = [
-            str(col).replace("*", "").strip() if isinstance(col, str) else str(col).strip()
+            str(col).replace("*", "").strip()
+            if isinstance(col, str)
+            else str(col).strip()
             for col in df.columns
         ]
 
@@ -165,9 +173,16 @@ class VehicleService:
                     existing.brand = str(row.get("品牌", "")).strip() or existing.brand
                     existing.model = str(row.get("型号", "")).strip() or existing.model
                     existing.color = str(row.get("颜色", "")).strip() or existing.color
-                    existing.status = str(row.get("状态", "可用")).strip() or existing.status
-                    existing.owner_department = str(row.get("所属部门", "")).strip() or existing.owner_department
-                    existing.remarks = str(row.get("备注", "")).strip() or existing.remarks
+                    existing.status = (
+                        str(row.get("状态", "可用")).strip() or existing.status
+                    )
+                    existing.owner_department = (
+                        str(row.get("所属部门", "")).strip()
+                        or existing.owner_department
+                    )
+                    existing.remarks = (
+                        str(row.get("备注", "")).strip() or existing.remarks
+                    )
                     mileage_val = row.get("行驶里程")
                     if pd.notna(mileage_val):
                         existing.mileage = int(mileage_val)
@@ -181,7 +196,9 @@ class VehicleService:
                 brand=str(row.get("品牌", "")).strip() or None,
                 model=str(row.get("型号", "")).strip() or None,
                 color=str(row.get("颜色", "")).strip() or None,
-                mileage=int(row.get("行驶里程", 0)) if pd.notna(row.get("行驶里程")) else None,
+                mileage=int(row.get("行驶里程", 0))
+                if pd.notna(row.get("行驶里程"))
+                else None,
                 status=str(row.get("状态", "可用")).strip() or "可用",
                 owner_department=str(row.get("所属部门", "")).strip() or None,
                 remarks=str(row.get("备注", "")).strip() or None,
@@ -192,7 +209,9 @@ class VehicleService:
             stmt = pg_insert(Vehicle).values(rows_to_insert)
             stmt = stmt.on_conflict_do_nothing(index_elements=["plate_number"])
             result = await self.repo.session.execute(stmt)
-            created = result.rowcount if result.rowcount is not None else len(rows_to_insert)
+            created = (
+                result.rowcount if result.rowcount is not None else len(rows_to_insert)
+            )
 
         return {
             "created": created,
@@ -214,7 +233,9 @@ class VehicleRequestService:
         page: int = 1,
         page_size: int = 20,
     ):
-        return await self.repo.list(keyword=keyword, status=status, page=page, page_size=page_size)
+        return await self.repo.list(
+            keyword=keyword, status=status, page=page, page_size=page_size
+        )
 
     async def get_request(self, request_id: UUID) -> VehicleRequest:
         request = await self.repo.get_by_id(request_id)
@@ -225,7 +246,9 @@ class VehicleRequestService:
     async def create_request(self, data: VehicleRequestCreate) -> VehicleRequest:
         return await self.repo.create(data)
 
-    async def update_request(self, request_id: UUID, data: VehicleRequestUpdate) -> VehicleRequest:
+    async def update_request(
+        self, request_id: UUID, data: VehicleRequestUpdate
+    ) -> VehicleRequest:
         request = await self.get_request(request_id)
         return await self.repo.update(request, data)
 
@@ -243,7 +266,10 @@ class VehicleRequestService:
             _settings.FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN
             or _settings.FEISHU_BITABLE_APP_TOKEN
         )
-        if not vehicle_app_token or not _settings.FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID:
+        if (
+            not vehicle_app_token
+            or not _settings.FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID
+        ):
             raise RuntimeError(
                 "飞书多维表格未配置，请在 .env 中设置 "
                 "FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN 和 "
@@ -278,7 +304,7 @@ class VehicleRequestService:
                         purpose=fields.get("用车事由", ""),
                         destination=fields.get("目的地", ""),
                         start_time=datetime.now(),  # 根据实际字段解析
-                        end_time=datetime.now(),    # 根据实际字段解析
+                        end_time=datetime.now(),  # 根据实际字段解析
                         passengers=int(fields.get("乘车人数", 1)),
                         remarks=fields.get("备注", ""),
                     )
@@ -312,7 +338,13 @@ class ITServiceTicketService:
         page: int = 1,
         page_size: int = 20,
     ):
-        return await self.repo.list(keyword=keyword, status=status, ticket_type=ticket_type, page=page, page_size=page_size)
+        return await self.repo.list(
+            keyword=keyword,
+            status=status,
+            ticket_type=ticket_type,
+            page=page,
+            page_size=page_size,
+        )
 
     async def get_ticket(self, ticket_id: UUID) -> ITServiceTicket:
         ticket = await self.repo.get_by_id(ticket_id)
@@ -323,7 +355,9 @@ class ITServiceTicketService:
     async def create_ticket(self, data: ITServiceTicketCreate) -> ITServiceTicket:
         return await self.repo.create(data)
 
-    async def update_ticket(self, ticket_id: UUID, data: ITServiceTicketUpdate) -> ITServiceTicket:
+    async def update_ticket(
+        self, ticket_id: UUID, data: ITServiceTicketUpdate
+    ) -> ITServiceTicket:
         ticket = await self.get_ticket(ticket_id)
         return await self.repo.update(ticket, data)
 
@@ -345,7 +379,9 @@ class GiftInventoryService:
         page: int = 1,
         page_size: int = 20,
     ):
-        return await self.repo.list(keyword=keyword, status=status, page=page, page_size=page_size)
+        return await self.repo.list(
+            keyword=keyword, status=status, page=page, page_size=page_size
+        )
 
     async def get_inventory(self, inventory_id: UUID) -> dict:
         inventory = await self.repo.get_by_id(inventory_id)
@@ -356,7 +392,9 @@ class GiftInventoryService:
     async def create_inventory(self, data: GiftInventoryCreate) -> dict:
         return await self.repo.create(data)
 
-    async def update_inventory(self, inventory_id: UUID, data: GiftInventoryUpdate) -> dict:
+    async def update_inventory(
+        self, inventory_id: UUID, data: GiftInventoryUpdate
+    ) -> dict:
         return await self.repo.update(inventory_id, data)
 
     async def delete_inventory(self, inventory_id: UUID) -> None:
@@ -376,7 +414,13 @@ class GiftRequisitionService:
         page: int = 1,
         page_size: int = 20,
     ):
-        return await self.repo.list(department=department, item_name=item_name, recipient=recipient, page=page, page_size=page_size)
+        return await self.repo.list(
+            department=department,
+            item_name=item_name,
+            recipient=recipient,
+            page=page,
+            page_size=page_size,
+        )
 
     async def get_requisition(self, req_id: UUID) -> dict:
         req = await self.repo.get_by_id(req_id)
@@ -387,7 +431,9 @@ class GiftRequisitionService:
     async def create_requisition(self, data: GiftRequisitionCreate) -> dict:
         return await self.repo.create(data)
 
-    async def update_requisition(self, req_id: UUID, data: GiftRequisitionUpdate) -> dict:
+    async def update_requisition(
+        self, req_id: UUID, data: GiftRequisitionUpdate
+    ) -> dict:
         return await self.repo.update(req_id, data)
 
     async def delete_requisition(self, req_id: UUID) -> None:

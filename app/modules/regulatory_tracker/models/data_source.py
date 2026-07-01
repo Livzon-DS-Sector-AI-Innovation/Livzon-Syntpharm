@@ -15,9 +15,7 @@ class DataSource(BaseModel):
     code: Mapped[str] = mapped_column(
         String(50), nullable=False, unique=True, comment="数据源编码，如 CDE, NMPA"
     )
-    name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="数据源名称"
-    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="数据源名称")
     base_url: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="基础URL"
     )
@@ -26,6 +24,8 @@ class DataSource(BaseModel):
     )
 
     # Relationships
-    channels = relationship("DataChannel", back_populates="source", cascade="all, delete-orphan")
+    channels = relationship(
+        "DataChannel", back_populates="source", cascade="all, delete-orphan"
+    )
     documents = relationship("RegulatoryDocument", back_populates="source")
     sync_jobs = relationship("SyncJob", back_populates="source")

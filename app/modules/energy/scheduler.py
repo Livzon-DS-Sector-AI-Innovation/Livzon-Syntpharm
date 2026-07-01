@@ -43,9 +43,8 @@ def _get_target_hours_since(last_collected_at: datetime | None) -> list[datetime
     if last_collected_at is None:
         return [latest_hour]
 
-    start = (
-        last_collected_at.replace(minute=0, second=0, microsecond=0)
-        + timedelta(hours=1)
+    start = last_collected_at.replace(minute=0, second=0, microsecond=0) + timedelta(
+        hours=1
     )
     if start > latest_hour:
         return []
@@ -96,9 +95,7 @@ async def _do_collect(
             logger.debug("平台 %s 适配器尚未实现，跳过自动采集", platform_code)
             return
         except Exception:
-            logger.exception(
-                "平台 %s 采集 %s 异常", platform_code, target_hour
-            )
+            logger.exception("平台 %s 采集 %s 异常", platform_code, target_hour)
             continue
 
         for cr in collect_results:
@@ -143,7 +140,9 @@ async def energy_collection_loop() -> None:
     每 TICK_INTERVAL 秒检查一次，对到达 collection_interval 的设备触发采集。
     支持补采：若设备上次采集时间距今超过 collection_interval，补采缺失的整点数据。
     """
-    if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
+    if not await get_module_setting_bool(
+        "energy", "ENERGY_AUTO_COLLECT_ENABLED", False
+    ):
         logger.info(
             "能耗自动采集已通过配置关闭（ENERGY_AUTO_COLLECT_ENABLED=false），跳过启动"
         )
@@ -153,7 +152,9 @@ async def energy_collection_loop() -> None:
 
     while not stop_energy_collection_flag.is_set():
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
+        if not await get_module_setting_bool(
+            "energy", "ENERGY_AUTO_COLLECT_ENABLED", False
+        ):
             logger.debug("能耗自动采集已关闭，跳过本轮 tick")
             try:
                 await asyncio.wait_for(
@@ -206,9 +207,7 @@ async def energy_collection_loop() -> None:
                         len(target_hours),
                     )
 
-                    await _do_collect(
-                        db, platform_code, devices_due, target_hours
-                    )
+                    await _do_collect(db, platform_code, devices_due, target_hours)
 
                 await db.commit()
 

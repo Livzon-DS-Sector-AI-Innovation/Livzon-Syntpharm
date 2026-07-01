@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 # 分类常量（英文代码）
-CATEGORY_ATTENTION = "attention"      # 重点关注
-CATEGORY_GENERAL = "general"          # 一般法规
-CATEGORY_ARCHIVE = "archive"          # 法规档案
-CATEGORY_FAILED = "failed"            # 分析失败
+CATEGORY_ATTENTION = "attention"  # 重点关注
+CATEGORY_GENERAL = "general"  # 一般法规
+CATEGORY_ARCHIVE = "archive"  # 法规档案
+CATEGORY_FAILED = "failed"  # 分析失败
 
 
 def compute_document_category(
@@ -25,19 +25,19 @@ def compute_document_category(
 ) -> str:
     """
     根据 AI 分析结果计算法规分类
-    
+
     分类规则：
     1. AI 分析失败 → failed
     2. 高影响 或 focus_required=True → attention
     3. 无影响 或 archive_recommended=True → archive
     4. 其他（中/低影响）→ general
-    
+
     Args:
         ai_analysis_status: AI 分析状态 (pending/completed/failed/None)
         impact_level: 影响等级 (high/medium/low/none)
         focus_required: 是否需要重点关注
         archive_recommended: 是否建议归档
-    
+
     Returns:
         分类代码: attention/general/archive/failed
     """
@@ -64,10 +64,10 @@ def compute_document_category(
 def get_category_display_name(category: str) -> str:
     """
     获取分类的中文显示名称
-    
+
     Args:
         category: 分类代码
-    
+
     Returns:
         中文名称
     """

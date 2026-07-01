@@ -378,9 +378,7 @@ async def test_work_order_no_responsible_person(
     await submit_equipment_check(db_session, task.id, eq_no_dept.id, records)
 
     # 工单应创建，但责任人为 None
-    pending = await get_pending_work_orders_by_inspection_task(
-        db_session, task.id
-    )
+    pending = await get_pending_work_orders_by_inspection_task(db_session, task.id)
     assert len(pending) == 1
     wo = pending[0]
     assert wo.responsible_person_id is None

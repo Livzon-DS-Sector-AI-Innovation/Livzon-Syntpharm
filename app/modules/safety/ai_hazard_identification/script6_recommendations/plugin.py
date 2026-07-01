@@ -55,7 +55,9 @@ class RecommendationGenerator(BasePlugin[RecommendationInput, RecommendationOutp
         return SYSTEM_ROLE
 
     def _build_prompt(
-        self, input_data: RecommendationInput, context_text: str,
+        self,
+        input_data: RecommendationInput,
+        context_text: str,
     ) -> str:
         return build_prompt(context_text, self.knowledge_context)
 
@@ -71,12 +73,12 @@ class RecommendationGenerator(BasePlugin[RecommendationInput, RecommendationOutp
                 recommendation_priority=raw.get("recommendation_priority", "中"),
             )
         except (PydanticValidationError, KeyError, TypeError) as e:
-            raise PluginError(
-                f"[RecommendationGenerator] AI 输出解析失败: {e}"
-            ) from e
+            raise PluginError(f"[RecommendationGenerator] AI 输出解析失败: {e}") from e
 
     def _validate(
-        self, input_data: RecommendationInput, output: RecommendationOutput,
+        self,
+        input_data: RecommendationInput,
+        output: RecommendationOutput,
     ) -> list[str]:
         return self.rule_engine.validate(input_data, output)
 

@@ -138,9 +138,7 @@ async def get_work_order_statistics(
     if exclude_status:
         base_where = base_where & (WorkOrder.status != exclude_status)
 
-    total_result = await db.execute(
-        select(func.count()).where(base_where)
-    )
+    total_result = await db.execute(select(func.count()).where(base_where))
     total = total_result.scalar() or 0
 
     status_result = await db.execute(

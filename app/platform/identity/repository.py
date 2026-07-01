@@ -8,7 +8,9 @@ from app.platform.identity.models import Department, User
 
 class UserRepository:
     async def get_by_id(
-        self, session: AsyncSession, user_id: UUID,
+        self,
+        session: AsyncSession,
+        user_id: UUID,
     ) -> User | None:
         result = await session.execute(
             select(User).where(
@@ -19,7 +21,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_feishu_open_id(
-        self, session: AsyncSession, open_id: str,
+        self,
+        session: AsyncSession,
+        open_id: str,
     ) -> User | None:
         result = await session.execute(
             select(User).where(
@@ -30,7 +34,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_feishu_user_id(
-        self, session: AsyncSession, user_id: str,
+        self,
+        session: AsyncSession,
+        user_id: str,
     ) -> User | None:
         result = await session.execute(
             select(User).where(
@@ -126,7 +132,9 @@ class UserRepository:
 
 class DepartmentRepository:
     async def get_by_feishu_id(
-        self, session: AsyncSession, feishu_dept_id: str,
+        self,
+        session: AsyncSession,
+        feishu_dept_id: str,
     ) -> Department | None:
         result = await session.execute(
             select(Department).where(
@@ -136,8 +144,10 @@ class DepartmentRepository:
         return result.scalar_one_or_none()
 
     async def list_all(
-        self, session: AsyncSession,
-        *, include_deleted: bool = False,
+        self,
+        session: AsyncSession,
+        *,
+        include_deleted: bool = False,
     ) -> list[Department]:
         stmt = select(Department).where(
             Department.is_deleted == False,  # noqa: E712
@@ -149,7 +159,9 @@ class DepartmentRepository:
         return list(result.scalars().all())
 
     async def get_children(
-        self, session: AsyncSession, parent_id: str,
+        self,
+        session: AsyncSession,
+        parent_id: str,
     ) -> list[Department]:
         stmt = (
             select(Department)
@@ -218,7 +230,11 @@ class LoginLogRepository:
         total_result = await session.execute(count_base)
         total = len(total_result.scalars().all())
 
-        stmt = base.order_by(LoginLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        stmt = (
+            base.order_by(LoginLog.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
         result = await session.execute(stmt)
         logs = list(result.scalars().all())
         return logs, total

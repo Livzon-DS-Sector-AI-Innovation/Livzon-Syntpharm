@@ -76,7 +76,8 @@ class EquipmentPersonnelRole(BaseModel):
     __tablename__ = "equipment_personnel_role"
     __table_args__ = (
         UniqueConstraint(
-            "personnel_id", "role_id",
+            "personnel_id",
+            "role_id",
             name="uq_equipment_personnel_role",
         ),
         {"schema": "equipment"},
@@ -96,7 +97,9 @@ class EquipmentPersonnelCategory(BaseModel):
     __tablename__ = "equipment_personnel_category"
     __table_args__ = (
         UniqueConstraint(
-            "personnel_id", "role_id", "category_id",
+            "personnel_id",
+            "role_id",
+            "category_id",
             name="uq_equipment_personnel_category",
         ),
         {"schema": "equipment"},

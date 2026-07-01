@@ -55,7 +55,10 @@ class AIService:
         msgs = [dict(m) for m in messages]  # shallow copy
         if response_format == "json_object":
             last = msgs[-1]
-            if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
+            if (
+                isinstance(last.get("content"), str)
+                and "json" not in last["content"].lower()
+            ):
                 last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
         body: dict = {
             "model": self.model,
@@ -126,10 +129,12 @@ class AIService:
             {"type": "text", "text": text_prompt},
         ]
         for url in image_urls:
-            content_parts.append({
-                "type": "image_url",
-                "image_url": {"url": url},
-            })
+            content_parts.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": url},
+                }
+            )
 
         body: dict = {
             "model": self.model,

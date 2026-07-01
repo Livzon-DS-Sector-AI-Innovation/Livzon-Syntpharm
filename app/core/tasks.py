@@ -21,14 +21,14 @@ def spawn_task(
     name: str | None = None,
 ) -> asyncio.Task:
     """Spawn a background task with proper error handling.
-    
+
     Args:
         coro: The async coroutine to run
         name: Optional name for logging (defaults to a random UUID)
-    
+
     Returns:
         The created asyncio.Task
-    
+
     The task will log any exceptions instead of silently failing.
     """
     task_name = name or f"task-{uuid4().hex[:8]}"

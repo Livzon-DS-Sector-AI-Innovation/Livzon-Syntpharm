@@ -24,7 +24,11 @@ from app.modules.safety.service import (
 special_operation_reports_router = APIRouter()
 
 
-@special_operation_reports_router.get("/special-operation-reports", response_model=ApiResponse, summary="获取特殊作业报备列表")
+@special_operation_reports_router.get(
+    "/special-operation-reports",
+    response_model=ApiResponse,
+    summary="获取特殊作业报备列表",
+)
 async def get_special_operation_reports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -44,8 +48,17 @@ async def get_special_operation_reports(
     service = SpecialOperationReportService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_reports(
-        skip, page_size, status, operation_type, operation_level,
-        risk_level, department, date_from, date_to, keyword, is_critical,
+        skip,
+        page_size,
+        status,
+        operation_type,
+        operation_level,
+        risk_level,
+        department,
+        date_from,
+        date_to,
+        keyword,
+        is_critical,
     )
     return ApiResponse(
         data=[SpecialOperationReportResponse.model_validate(i) for i in items],
@@ -53,7 +66,9 @@ async def get_special_operation_reports(
     )
 
 
-@special_operation_reports_router.post("/special-operation-reports", response_model=ApiResponse, summary="创建特殊作业报备")
+@special_operation_reports_router.post(
+    "/special-operation-reports", response_model=ApiResponse, summary="创建特殊作业报备"
+)
 async def create_special_operation_report(
     data: SpecialOperationReportCreate,
     db: AsyncSession = Depends(get_db),
@@ -66,7 +81,11 @@ async def create_special_operation_report(
     return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
 
 
-@special_operation_reports_router.get("/special-operation-reports/{report_id}", response_model=ApiResponse, summary="获取特殊作业报备详情")
+@special_operation_reports_router.get(
+    "/special-operation-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="获取特殊作业报备详情",
+)
 async def get_special_operation_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -80,7 +99,11 @@ async def get_special_operation_report(
     return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
 
 
-@special_operation_reports_router.put("/special-operation-reports/{report_id}", response_model=ApiResponse, summary="更新特殊作业报备")
+@special_operation_reports_router.put(
+    "/special-operation-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="更新特殊作业报备",
+)
 async def update_special_operation_report(
     report_id: uuid.UUID,
     data: SpecialOperationReportUpdate,
@@ -96,7 +119,11 @@ async def update_special_operation_report(
     return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
 
 
-@special_operation_reports_router.delete("/special-operation-reports/{report_id}", response_model=ApiResponse, summary="删除特殊作业报备")
+@special_operation_reports_router.delete(
+    "/special-operation-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="删除特殊作业报备",
+)
 async def delete_special_operation_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -111,7 +138,11 @@ async def delete_special_operation_report(
     return ApiResponse(message="删除成功")
 
 
-@special_operation_reports_router.post("/special-operation-reports/{report_id}/submit", response_model=ApiResponse, summary="提交特殊作业报备")
+@special_operation_reports_router.post(
+    "/special-operation-reports/{report_id}/submit",
+    response_model=ApiResponse,
+    summary="提交特殊作业报备",
+)
 async def submit_special_operation_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -126,7 +157,11 @@ async def submit_special_operation_report(
     return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
 
 
-@special_operation_reports_router.post("/special-operation-reports/{report_id}/approve", response_model=ApiResponse, summary="审批特殊作业报备")
+@special_operation_reports_router.post(
+    "/special-operation-reports/{report_id}/approve",
+    response_model=ApiResponse,
+    summary="审批特殊作业报备",
+)
 async def approve_special_operation_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -141,7 +176,11 @@ async def approve_special_operation_report(
     return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
 
 
-@special_operation_reports_router.post("/special-operation-reports/{report_id}/reject", response_model=ApiResponse, summary="驳回特殊作业报备")
+@special_operation_reports_router.post(
+    "/special-operation-reports/{report_id}/reject",
+    response_model=ApiResponse,
+    summary="驳回特殊作业报备",
+)
 async def reject_special_operation_report(
     report_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
@@ -235,9 +274,7 @@ async def get_special_operation_ledger_stats(
     """按作业类型统计台账数量和关键作业数量"""
     service = SpecialOperationReportService(db)
     stats = await service.get_ledger_stats()
-    return ApiResponse(
-        data=[SpecialOperationLedgerStats(**s) for s in stats]
-    )
+    return ApiResponse(data=[SpecialOperationLedgerStats(**s) for s in stats])
 
 
 @special_operation_reports_router.post(
@@ -279,7 +316,8 @@ async def export_special_operation_ledger(
         filters = {k: v for k, v in parsed.items() if k != "explanation"}
     else:
         filters = {
-            k: v for k, v in {
+            k: v
+            for k, v in {
                 "operation_type": data.operation_type,
                 "operation_level": data.operation_level,
                 "risk_level": data.risk_level,
@@ -288,7 +326,8 @@ async def export_special_operation_ledger(
                 "date_to": data.date_to,
                 "keyword": data.keyword,
                 "is_critical": data.is_critical,
-            }.items() if v is not None
+            }.items()
+            if v is not None
         }
 
     excel_bytes = await service.export_ledger_excel(**filters)
@@ -299,5 +338,3 @@ async def export_special_operation_ledger(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
     )
-
-

@@ -1,6 +1,5 @@
 """Deviation Pydantic schemas."""
 
-
 import uuid
 from datetime import datetime
 
@@ -175,7 +174,5 @@ class BatchUpdateStatusResponse(BaseModel):
     failed_count: int
     failures: list[dict]
 
-
     class Config:
         from_attributes = True
-

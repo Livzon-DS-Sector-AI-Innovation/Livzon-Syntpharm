@@ -101,7 +101,8 @@ async def diagnose_missed_records(db: AsyncSession) -> dict[str, Any]:
         cutoff_ms = int(max_updated.timestamp() * 1000)
         logger.info(
             "Bitable 漏单诊断: 时间下界=%s (ms=%d)",
-            max_updated.isoformat(), cutoff_ms,
+            max_updated.isoformat(),
+            cutoff_ms,
         )
     else:
         # DB 为空（全新部署），使用过去 7 天作为窗口
@@ -188,12 +189,15 @@ async def diagnose_missed_records(db: AsyncSession) -> dict[str, Any]:
             "╚══════════════════════════════════════════════════════════════╝",
             missed,
             (cutoff_time.isoformat() if cutoff_time else "N/A"),
-            bitable_matched, local_total, existing,
+            bitable_matched,
+            local_total,
+            existing,
         )
     else:
         logger.info(
             "Bitable 漏单诊断: 全部正常 (窗口内 %d 条, 本地 %d 条, 无漏单)",
-            bitable_matched, local_total,
+            bitable_matched,
+            local_total,
         )
 
     return {
@@ -311,7 +315,10 @@ async def recover_unprocessed_records() -> dict[str, Any]:
 
         logger.info(
             "[%d/%d] 处理 record_id=%s 描述=%s...",
-            i + 1, len(unprocessed), record_id, desc,
+            i + 1,
+            len(unprocessed),
+            record_id,
+            desc,
         )
 
         try:
@@ -339,15 +346,18 @@ async def recover_unprocessed_records() -> dict[str, Any]:
                 if not ok:
                     logger.error(
                         "补回写 Bitable 失败(update_record=False): record_id=%s hazard_no=%s",
-                        record_id, existing_hazard.hazard_no,
+                        record_id,
+                        existing_hazard.hazard_no,
                     )
                     # 不中断流程，继续处理下一条
                 already_exist += 1
-                details.append({
-                    "record_id": record_id,
-                    "status": "already_exist",
-                    "hazard_no": existing_hazard.hazard_no,
-                })
+                details.append(
+                    {
+                        "record_id": record_id,
+                        "status": "already_exist",
+                        "hazard_no": existing_hazard.hazard_no,
+                    }
+                )
                 continue
 
             # 3c. 完整处理流程（与 WebSocket 事件处理一致）
@@ -360,13 +370,17 @@ async def recover_unprocessed_records() -> dict[str, Any]:
             failed += 1
             logger.exception(
                 "  ❌ 恢复失败 [%d/%d] record_id=%s",
-                i + 1, len(unprocessed), record_id,
+                i + 1,
+                len(unprocessed),
+                record_id,
             )
-            details.append({
-                "record_id": record_id,
-                "status": "failed",
-                "error": str(exc),
-            })
+            details.append(
+                {
+                    "record_id": record_id,
+                    "status": "failed",
+                    "error": str(exc),
+                }
+            )
 
     # Step 4: 汇总
     summary = {
@@ -384,7 +398,11 @@ async def recover_unprocessed_records() -> dict[str, Any]:
         "║  Bitable 总数: %-5d  未处理: %-5d                               ║\n"
         "║  已恢复: %-5d  已存在: %-5d  失败: %-5d                       ║\n"
         "╚══════════════════════════════════════════════════════════════╝",
-        total, len(unprocessed), recovered, already_exist, failed,
+        total,
+        len(unprocessed),
+        recovered,
+        already_exist,
+        failed,
     )
 
     # 输出失败详情
@@ -393,9 +411,7 @@ async def recover_unprocessed_records() -> dict[str, Any]:
         logger.warning(
             "以下 %d 条记录恢复失败，请手动检查 Bitable 并重新处理:\n%s",
             failed,
-            "\n".join(
-                f"  - {d['record_id']}" for d in failed_records
-            ),
+            "\n".join(f"  - {d['record_id']}" for d in failed_records),
         )
 
     return summary

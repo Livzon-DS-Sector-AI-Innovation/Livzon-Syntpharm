@@ -104,5 +104,3 @@ async def get_enums(
             "oh_abnormality_statuses": ABNORMALITY_STATUS_OPTIONS,
         }
     )
-
-

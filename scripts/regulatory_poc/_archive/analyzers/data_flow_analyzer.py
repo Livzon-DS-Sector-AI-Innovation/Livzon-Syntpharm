@@ -91,20 +91,36 @@ class DataFlowAnalyzer:
                             if isinstance(jd, dict):
                                 entry["json_top_keys"] = list(jd.keys())[:20]
                                 # Look for pagination fields
-                                for key in ("total", "totalCount", "total_count", "count",
-                                           "records", "data", "rows", "list", "result",
-                                           "pageData", "page", "pageSize", "pageNum"):
+                                for key in (
+                                    "total",
+                                    "totalCount",
+                                    "total_count",
+                                    "count",
+                                    "records",
+                                    "data",
+                                    "rows",
+                                    "list",
+                                    "result",
+                                    "pageData",
+                                    "page",
+                                    "pageSize",
+                                    "pageNum",
+                                ):
                                     if key in jd:
                                         val = jd[key]
                                         if isinstance(val, list):
                                             entry[f"field_{key}_type"] = "list"
                                             entry[f"field_{key}_len"] = len(val)
                                             if val and isinstance(val[0], dict):
-                                                entry[f"field_{key}_item_keys"] = list(val[0].keys())[:15]
+                                                entry[f"field_{key}_item_keys"] = list(
+                                                    val[0].keys()
+                                                )[:15]
                                         elif isinstance(val, (int, float)):
                                             entry[f"field_{key}_value"] = val
                                         elif isinstance(val, dict):
-                                            entry[f"field_{key}_keys"] = list(val.keys())[:10]
+                                            entry[f"field_{key}_keys"] = list(
+                                                val.keys()
+                                            )[:10]
                             elif isinstance(jd, list):
                                 entry["is_json"] = True
                                 entry["json_type"] = f"list[{len(jd)}]"
@@ -118,10 +134,10 @@ class DataFlowAnalyzer:
 
     def analyze_page(self, target):
         """Analyze a single page's data flow"""
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"[{target['source']}] {target['section']}")
         print(f"URL: {target['url']}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         self.requests_log = []
         self.api_calls = []
@@ -161,7 +177,9 @@ class DataFlowAnalyzer:
         try:
             # Step 1: Load page
             print("\n[1] 加载页面...")
-            response = page.goto(target["url"], timeout=30000, wait_until="domcontentloaded")
+            response = page.goto(
+                target["url"], timeout=30000, wait_until="domcontentloaded"
+            )
             result["page_loaded"] = True
             result["page_title"] = page.title()
             result["initial_response_status"] = response.status if response else None
@@ -179,16 +197,36 @@ class DataFlowAnalyzer:
             # Step 3: Capture cookies
             cookies = context.cookies()
             result["cookies_count"] = len(cookies)
-            result["cookies"] = [{"name": c["name"], "domain": c["domain"]} for c in cookies]
+            result["cookies"] = [
+                {"name": c["name"], "domain": c["domain"]} for c in cookies
+            ]
             print(f"[3] Cookies: {len(cookies)} 个")
             for c in cookies[:10]:
                 print(f"   - {c['name']} @ {c['domain']}")
 
             # Check for anti-bot cookies (瑞数 related)
-            rs_cookies = [c for c in cookies if any(x in c["name"].lower() for x in ["rs", "__rs", "fasd", "fasc", "temp", "dyna", "cma_", "cmac"])]
+            rs_cookies = [
+                c
+                for c in cookies
+                if any(
+                    x in c["name"].lower()
+                    for x in [
+                        "rs",
+                        "__rs",
+                        "fasd",
+                        "fasc",
+                        "temp",
+                        "dyna",
+                        "cma_",
+                        "cmac",
+                    ]
+                )
+            ]
             if rs_cookies:
                 result["anti_bot_detected"] = True
-                result["anti_bot_details"].append(f"瑞数相关Cookie: {[c['name'] for c in rs_cookies]}")
+                result["anti_bot_details"].append(
+                    f"瑞数相关Cookie: {[c['name'] for c in rs_cookies]}"
+                )
                 print(f"   ⚠️ 检测到反爬Cookie: {[c['name'] for c in rs_cookies]}")
 
             # Step 4: Analyze XHR/Fetch requests
@@ -246,7 +284,16 @@ class DataFlowAnalyzer:
                         print(f"       🔢 {key}: {field_val}")
 
                 # Check for pagination indicators
-                pagination_keys = {"total", "totalCount", "total_count", "count", "page", "pageSize", "pageNum", "pageData"}
+                pagination_keys = {
+                    "total",
+                    "totalCount",
+                    "total_count",
+                    "count",
+                    "page",
+                    "pageSize",
+                    "pageNum",
+                    "pageData",
+                }
                 found_pagination = pagination_keys & set(api.get("json_top_keys", []))
                 if found_pagination:
                     result["pagination_detected"] = True
@@ -287,13 +334,19 @@ class DataFlowAnalyzer:
                 headers = api.get("headers", {})
                 for h in ("x-token", "authorization", "x-csrf-token", "x-xsrf-token"):
                     if h in headers:
-                        token_indicators.append(f"Header '{h}' found in {api['url'][:80]}")
+                        token_indicators.append(
+                            f"Header '{h}' found in {api['url'][:80]}"
+                        )
 
                 # Check URL for token params
-                qs = parse_qs(parsed.query if parsed.netloc else urlparse(api["url"]).query)
+                qs = parse_qs(
+                    parsed.query if parsed.netloc else urlparse(api["url"]).query
+                )
                 for tk in ("token", "_token", "sign", "_sign", "ts", "_t"):
                     if tk in qs:
-                        token_indicators.append(f"URL param '{tk}' in {api['url'][:80]}")
+                        token_indicators.append(
+                            f"URL param '{tk}' in {api['url'][:80]}"
+                        )
 
             # Check for meta tags with tokens
             try:
@@ -336,11 +389,15 @@ class DataFlowAnalyzer:
 
             # If no JSON APIs found, data might be server-rendered
             if len(json_apis) == 0 and result["xhr_fetch_count"] == 0:
-                browser_required_reasons.append("无 XHR/Fetch 请求，数据可能服务端渲染在 HTML 中")
+                browser_required_reasons.append(
+                    "无 XHR/Fetch 请求，数据可能服务端渲染在 HTML 中"
+                )
 
             # If anti-bot detected
             if result["anti_bot_detected"]:
-                browser_required_reasons.append(f"检测到反爬机制: {'; '.join(result['anti_bot_details'])}")
+                browser_required_reasons.append(
+                    f"检测到反爬机制: {'; '.join(result['anti_bot_details'])}"
+                )
 
             # If tokens are dynamic
             if result["token_dependency"]:
@@ -394,7 +451,9 @@ class DataFlowAnalyzer:
                     # Capture the new API calls
                     for api in self.api_calls[before_api_count:]:
                         if api.get("is_json"):
-                            result["key_findings"].append(f"翻页触发API: {api['url'][:100]}")
+                            result["key_findings"].append(
+                                f"翻页触发API: {api['url'][:100]}"
+                            )
                             if not result.get("pagination_details"):
                                 result["pagination_details"] = {
                                     "api_url": api["url"],
@@ -408,7 +467,9 @@ class DataFlowAnalyzer:
             # Step 9: Key findings summary
             print("\n[9] 关键发现:")
             if result["json_apis"]:
-                result["key_findings"].append(f"发现 {len(result['json_apis'])} 个 JSON API")
+                result["key_findings"].append(
+                    f"发现 {len(result['json_apis'])} 个 JSON API"
+                )
                 print(f"   ✅ 发现 {len(result['json_apis'])} 个 JSON API")
                 for api in result["json_apis"]:
                     print(f"      → {api['method']} {api['url'][:100]}")
@@ -434,6 +495,7 @@ class DataFlowAnalyzer:
         except Exception as e:
             print(f"❌ 错误: {e}")
             import traceback
+
             traceback.print_exc()
             result["error"] = str(e)
         finally:
@@ -480,9 +542,9 @@ def main():
         json.dump(all_results, f, ensure_ascii=False, indent=2)
 
     # Print summary
-    print(f"\n\n{'='*70}")
+    print(f"\n\n{'=' * 70}")
     print("汇总报告")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for r in all_results:
         print(f"\n[{r['source']}] {r['section']}")
@@ -490,7 +552,9 @@ def main():
         print(f"  XHR/Fetch: {r['xhr_fetch_count']}")
         print(f"  JSON API: {len(r['json_apis'])}")
         print(f"  分页: {'✅' if r['pagination_detected'] else '❌'}")
-        print(f"  Cookie依赖: {'✅' if r.get('cookies_count', 0) > 0 else '❌'} ({r.get('cookies_count', 0)} 个)")
+        print(
+            f"  Cookie依赖: {'✅' if r.get('cookies_count', 0) > 0 else '❌'} ({r.get('cookies_count', 0)} 个)"
+        )
         print(f"  Token依赖: {'⚠️' if r['token_dependency'] else '✅ 无'}")
         print(f"  浏览器必需: {'⚠️' if r['browser_required'] else '✅ 可能不需要'}")
         print(f"  反爬检测: {'⚠️' if r['anti_bot_detected'] else '✅ 未检测到'}")

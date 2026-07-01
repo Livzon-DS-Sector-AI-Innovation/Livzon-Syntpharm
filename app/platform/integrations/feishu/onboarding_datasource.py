@@ -37,7 +37,11 @@ def _extract_text(value: Any) -> str:
     if isinstance(value, dict):
         if "text" in value:
             return value.get("text", "")
-        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
+        if (
+            "value" in value
+            and isinstance(value["value"], list)
+            and len(value["value"]) > 0
+        ):
             inner = value["value"][0]
             if isinstance(inner, dict) and "text" in inner:
                 return inner.get("text", "")
@@ -138,7 +142,9 @@ class OnboardingBitableDataSource:
         items = await self._search(filter_str=filter_str, page_size=page_size)
         return [OnboardingRecord.from_api(item) for item in items]
 
-    async def find_by_employee_number(self, employee_number: str) -> "OnboardingRecord | None":
+    async def find_by_employee_number(
+        self, employee_number: str
+    ) -> "OnboardingRecord | None":
         items = await self._search(
             filter_str=f'CurrentValue.[工号] = "{employee_number}"'
         )
@@ -171,11 +177,19 @@ class OnboardingBitableDataSource:
             if value is None:
                 continue
             if key in {
-                "入职时间", "进厂时间", "入丽珠时间", "参加工作时间", "毕业时间",
-                "第一次合同起点时间", "第一次合同终止时间",
-                "第二次合同起点时间", "第二次合同终止时间",
-                "第三次合同起点时间", "第三次合同终止时间",
-                "第四次合同起点时间", "第四次合同终止时间",
+                "入职时间",
+                "进厂时间",
+                "入丽珠时间",
+                "参加工作时间",
+                "毕业时间",
+                "第一次合同起点时间",
+                "第一次合同终止时间",
+                "第二次合同起点时间",
+                "第二次合同终止时间",
+                "第三次合同起点时间",
+                "第三次合同终止时间",
+                "第四次合同起点时间",
+                "第四次合同终止时间",
             }:
                 prepared[key] = _to_ms_timestamp(value)
             else:
@@ -236,7 +250,9 @@ class OnboardingRecord:
 
         # Education (prefer (1) fields, fallback to base fields)
         school_1 = _extract_text(fields.get("毕业学校 (1)"))
-        self.school: str = school_1 if school_1 else _extract_text(fields.get("毕业学校"))
+        self.school: str = (
+            school_1 if school_1 else _extract_text(fields.get("毕业学校"))
+        )
         edu_1 = fields.get("学历 (1)")
         self.education: str = edu_1 if edu_1 else (fields.get("学历") or "")
         major_1 = _extract_text(fields.get("专业 (1)"))
@@ -256,7 +272,9 @@ class OnboardingRecord:
         self.phone: str = _extract_text(fields.get("手机"))
         self.email: str = _extract_email(fields.get("邮箱地址"))
         self.emergency_contact_phone: str = _extract_text(fields.get("紧急联系人电话"))
-        self.emergency_contact_relation: str = _extract_text(fields.get("紧急联系人|关系"))
+        self.emergency_contact_relation: str = _extract_text(
+            fields.get("紧急联系人|关系")
+        )
 
         # Banking
         self.bank_account: str = _extract_text(fields.get("银行卡号"))
@@ -264,7 +282,9 @@ class OnboardingRecord:
 
         # Other
         self.training_id: str = _extract_text(fields.get("培训档案编号"))
-        self.transfer_history: str = _extract_text(fields.get("异动（含曾经工作部门、岗位)"))
+        self.transfer_history: str = _extract_text(
+            fields.get("异动（含曾经工作部门、岗位)")
+        )
         self.remarks: list[str] = _extract_multi_select(fields.get("备注"))
 
     @classmethod

@@ -1,4 +1,5 @@
 """测试 S.6 AI 填充功能"""
+
 import asyncio
 import os
 import sys
@@ -22,9 +23,9 @@ async def test_asset_categories():
         print(f"状态码: {resp.status_code}")
         print(f"成功: {data.get('success')}")
         print(f"分类数量: {len(data.get('data', []))}")
-        for cat in data.get('data', [])[:3]:
+        for cat in data.get("data", [])[:3]:
             print(f"  - {cat['category_name']}: {cat['description'][:50]}")
-        return data.get('success')
+        return data.get("success")
 
 
 async def test_ai_preview():
@@ -37,16 +38,18 @@ async def test_ai_preview():
         print(f"成功: {data.get('success')}")
         print(f"消息: {data.get('message')}")
 
-        if data.get('success') and data.get('data'):
-            result = data['data']
+        if data.get("success") and data.get("data"):
+            result = data["data"]
             print(f"\n提取字段数: {len(result.get('fields', []))}")
             print(f"Token 使用: {result.get('token_usage', {})}")
 
-            for field in result.get('fields', [])[:5]:
-                status = "✓" if field.get('value') else "✗"
-                print(f"  {status} {field['field_name']}: {str(field.get('value', ''))[:50]}")
+            for field in result.get("fields", [])[:5]:
+                status = "✓" if field.get("value") else "✗"
+                print(
+                    f"  {status} {field['field_name']}: {str(field.get('value', ''))[:50]}"
+                )
 
-        return data.get('success')
+        return data.get("success")
 
 
 async def main():
@@ -67,7 +70,9 @@ async def main():
     print("=" * 60)
 
     if not success2:
-        print("\n提示: 如果 AI 解析预览失败，请检查 .env 文件中的 LLM_API_KEY 是否已配置")
+        print(
+            "\n提示: 如果 AI 解析预览失败，请检查 .env 文件中的 LLM_API_KEY 是否已配置"
+        )
 
 
 if __name__ == "__main__":

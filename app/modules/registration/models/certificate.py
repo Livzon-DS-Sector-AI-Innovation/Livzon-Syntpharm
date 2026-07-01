@@ -32,7 +32,9 @@ class RegistrationCertificate(BaseModel):
         String(128), nullable=False, comment="国家/市场"
     )
     certificate_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="证书类型：domestic_approval/overseas_registration/wc/copp/gmp/other"
+        String(32),
+        nullable=False,
+        comment="证书类型：domestic_approval/overseas_registration/wc/copp/gmp/other",
     )
     certificate_no: Mapped[str | None] = mapped_column(
         String(128), nullable=True, comment="证书编号"
@@ -44,8 +46,10 @@ class RegistrationCertificate(BaseModel):
         Date, nullable=True, comment="有效期至"
     )
     status: Mapped[str] = mapped_column(
-        String(16), nullable=False, server_default="valid",
-        comment="证书状态：valid/expiring/expired/pending"
+        String(16),
+        nullable=False,
+        server_default="valid",
+        comment="证书状态：valid/expiring/expired/pending",
     )
     file_path: Mapped[str | None] = mapped_column(
         String(512), nullable=True, comment="证书文件路径"

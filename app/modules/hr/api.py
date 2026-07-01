@@ -141,6 +141,7 @@ def get_annual_training_plan_item_service(
 
 # ─── Employee Routes ───
 
+
 @router.get("/employees", summary="员工列表")
 async def list_employees(
     current_user: CurrentUser,
@@ -158,8 +159,7 @@ async def list_employees(
         page_size=page_params.page_size,
     )
     data = [
-        EmployeeResponse.model_validate(e).model_dump(mode="json")
-        for e in employees
+        EmployeeResponse.model_validate(e).model_dump(mode="json") for e in employees
     ]
     return paginated_response(
         data=data,
@@ -197,7 +197,9 @@ async def upload_employees(
         result = await service.upload_employees(content)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return success_response(data=result, message=f"新增 {result['created']}，更新 {result['updated']}")
+    return success_response(
+        data=result, message=f"新增 {result['created']}，更新 {result['updated']}"
+    )
 
 
 @router.post("/employees/sync-from-feishu", summary="从飞书多维表格同步员工数据")
@@ -365,7 +367,9 @@ async def export_onboarding_training_record_with_items(
     employee = await service.get_employee_by_number(employee_number)
     items = [it.model_dump() for it in body.training_items]
     try:
-        buffer: BytesIO = generate_onboarding_training_record(employee, training_items=items)
+        buffer: BytesIO = generate_onboarding_training_record(
+            employee, training_items=items
+        )
     except FileNotFoundError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -434,15 +438,15 @@ async def export_onboarding_evaluation_by_employee(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(employee.hire_date).replace("-", "") if employee.hire_date else "nodate"
+    safe_date = (
+        str(employee.hire_date).replace("-", "") if employee.hire_date else "nodate"
+    )
     filename = f"onboarding_evaluation_{employee.employee_number}_{safe_date}.xlsx"
     return StreamingResponse(
         _iterfile(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-
-
 
 
 @router.post("/training-sign-in-sheet", summary="生成培训签到表")
@@ -544,8 +548,13 @@ async def export_training_evaluation(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(payload.training_date).replace("-", "") if payload.training_date else "nodate"
+    safe_date = (
+        str(payload.training_date).replace("-", "")
+        if payload.training_date
+        else "nodate"
+    )
     from urllib.parse import quote
+
     safe_filename = f"training_evaluation_{safe_date}.docx"
     return StreamingResponse(
         _iterfile(),
@@ -568,7 +577,11 @@ async def export_onboarding_evaluation(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(payload.evaluation_date).replace("-", "") if payload.evaluation_date else "nodate"
+    safe_date = (
+        str(payload.evaluation_date).replace("-", "")
+        if payload.evaluation_date
+        else "nodate"
+    )
     filename = f"onboarding_evaluation_{safe_date}.xlsx"
     return StreamingResponse(
         _iterfile(),
@@ -578,6 +591,7 @@ async def export_onboarding_evaluation(
 
 
 # ─── Department Routes ───
+
 
 @router.get("/departments", summary="部门列表")
 async def list_departments(
@@ -655,6 +669,7 @@ async def delete_department(
 
 # ─── Team Routes ───
 
+
 @router.get("/teams", summary="班组列表")
 async def list_teams(
     current_user: CurrentUser,
@@ -669,10 +684,7 @@ async def list_teams(
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [
-        TeamResponse.model_validate(t).model_dump(mode="json")
-        for t in teams
-    ]
+    data = [TeamResponse.model_validate(t).model_dump(mode="json") for t in teams]
     return paginated_response(
         data=data,
         page=page_params.page,
@@ -733,6 +745,7 @@ async def delete_team(
 
 # ─── OffboardingRecord Routes ───
 
+
 @router.get("/offboarding-records", summary="离职记录列表")
 async def list_offboarding_records(
     current_user: CurrentUser,
@@ -771,8 +784,7 @@ async def create_offboarding_record(
         "id": str(record.id),
         "employee_id": str(record.employee_id),
         "offboarding_date": (
-            record.offboarding_date.isoformat()
-            if record.offboarding_date else None
+            record.offboarding_date.isoformat() if record.offboarding_date else None
         ),
         "offboarding_type": record.offboarding_type,
         "reason": record.reason,
@@ -825,6 +837,7 @@ async def delete_offboarding_record(
 
 
 # ─── OnboardingRecord Routes ───
+
 
 @router.get("/onboarding-records", summary="老厂入职台账列表")
 async def list_onboarding_records(
@@ -902,6 +915,7 @@ async def get_onboarding_record(
 
 
 # ─── DepartureRecord Routes ───
+
 
 @router.get("/departure-records", summary="老厂离职台账列表")
 async def list_departure_records(
@@ -1016,6 +1030,7 @@ async def get_departure_sync_status(
 
 # ─── TrainingLedger Routes ───
 
+
 @router.get("/training-ledgers", summary="培训台账列表")
 async def list_training_ledgers(
     current_user: CurrentUser,
@@ -1061,6 +1076,7 @@ async def create_training_ledger(
 
 
 # ─── TrainingLedgerPage Routes (must be before /{record_id}) ───
+
 
 @router.get("/training-ledgers/pages", summary="已创建的培训台账页面列表")
 async def list_training_ledger_pages(
@@ -1110,8 +1126,10 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
     ws.title = "员工培训台账"
 
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -1200,7 +1218,15 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
     for c in range(3, 8):
         ws.cell(row=6, column=c).border = thin_border
 
-    headers = ["年月日", "培训课程", "培训方式", "课时", "培训单位/培训师", "考核成绩", "备注"]
+    headers = [
+        "年月日",
+        "培训课程",
+        "培训方式",
+        "课时",
+        "培训单位/培训师",
+        "考核成绩",
+        "备注",
+    ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=7, column=col, value=header)
         cell.font = bold_font
@@ -1231,7 +1257,11 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
 
     footer_row = 8 + len(records)
     ws.merge_cells(f"A{footer_row}:G{footer_row}")
-    ws.cell(row=footer_row, column=1, value="备注：笔试考核设置为满分100分，考试合格线为80分。")
+    ws.cell(
+        row=footer_row,
+        column=1,
+        value="备注：笔试考核设置为满分100分，考试合格线为80分。",
+    )
     ws.cell(row=footer_row, column=1).alignment = left_align
     ws.cell(row=footer_row, column=1).border = thin_border
     for c in range(2, 8):
@@ -1322,6 +1352,7 @@ async def delete_training_ledger(
 
 
 # ─── AnnualTrainingPlan Routes ───
+
 
 @router.post("/annual-training-plans/upload", summary="上传年度培训计划")
 async def upload_annual_training_plan(
@@ -1420,7 +1451,9 @@ async def delete_annual_training_plan(
 async def list_annual_training_plan_items(
     plan_id: UUID,
     current_user: CurrentUser,
-    service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     items = await service.list_items(plan_id)
     data = [
@@ -1430,12 +1463,16 @@ async def list_annual_training_plan_items(
     return success_response(data=data)
 
 
-@router.put("/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细")
+@router.put(
+    "/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细"
+)
 async def batch_update_annual_training_plan_items(
     plan_id: UUID,
     payload: AnnualTrainingPlanItemBatchUpdate,
     current_user: CurrentUser,
-    service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     items = await service.batch_update_items(plan_id, payload)
     data = [
@@ -1456,12 +1493,16 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:
 
     # Styles
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
+    )
     bold_font = Font(bold=True, size=11)
     title_font = Font(bold=True, size=16)
 
@@ -1491,8 +1532,17 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:
     ws.row_dimensions[2].height = 22
 
     # Header row
-    headers = ["序号", "培训季度及课时", "培训内容及使用教材", "培训对象",
-               "授课单位及授课人", "考核方式", "培训跟踪", "确认人/日期", "备注"]
+    headers = [
+        "序号",
+        "培训季度及课时",
+        "培训内容及使用教材",
+        "培训对象",
+        "授课单位及授课人",
+        "考核方式",
+        "培训跟踪",
+        "确认人/日期",
+        "备注",
+    ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=3, column=col, value=header)
         cell.font = bold_font
@@ -1561,7 +1611,9 @@ async def export_annual_training_plan(
     plan_id: UUID,
     current_user: CurrentUser,
     plan_service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
-    item_service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    item_service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     """根据年度计划数据生成并导出Excel文件（7.7年度培训计划格式）。"""
     plan = await plan_service.get_plan(plan_id)
@@ -1588,6 +1640,7 @@ async def export_annual_training_plan(
         },
     )
 
+
 # ─── Trainer Routes ───
 
 
@@ -1605,7 +1658,9 @@ async def upload_trainers(
         result = await service.upload_trainers(content)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return success_response(data=result, message=f"新增 {result['created']}，更新 {result['updated']}")
+    return success_response(
+        data=result, message=f"新增 {result['created']}，更新 {result['updated']}"
+    )
 
 
 @router.get("/trainers", summary="内训师台账列表", response_model=TrainerListResponse)
@@ -1620,29 +1675,50 @@ async def list_trainers(
     from app.core.response import paginated_response
     from app.modules.hr.models import HrTrainer
 
-    query = select(HrTrainer).where(HrTrainer.is_deleted == False)
-    count_q = select(func.count()).select_from(HrTrainer).where(HrTrainer.is_deleted == False)
+    query = select(HrTrainer).where(not HrTrainer.is_deleted)
+    count_q = (
+        select(func.count()).select_from(HrTrainer).where(not HrTrainer.is_deleted)
+    )
     if department:
         query = query.where(HrTrainer.department == department)
         count_q = count_q.where(HrTrainer.department == department)
     if keyword:
         query = query.where(
-            or_(HrTrainer.name.ilike(f"%{keyword}%"), HrTrainer.trainable_departments.ilike(f"%{keyword}%"))
+            or_(
+                HrTrainer.name.ilike(f"%{keyword}%"),
+                HrTrainer.trainable_departments.ilike(f"%{keyword}%"),
+            )
         )
         count_q = count_q.where(
-            or_(HrTrainer.name.ilike(f"%{keyword}%"), HrTrainer.trainable_departments.ilike(f"%{keyword}%"))
+            or_(
+                HrTrainer.name.ilike(f"%{keyword}%"),
+                HrTrainer.trainable_departments.ilike(f"%{keyword}%"),
+            )
         )
 
     total = (await session.execute(count_q)).scalar() or 0
-    rows = (await session.execute(query.order_by(HrTrainer.department, HrTrainer.name).offset((page - 1) * page_size).limit(page_size))).scalars().all()
+    rows = (
+        (
+            await session.execute(
+                query.order_by(HrTrainer.department, HrTrainer.name)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
     return paginated_response(
         data=[TrainerResponse.model_validate(r).model_dump(mode="json") for r in rows],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
 # ─── SOP Catalog Routes ───
+
 
 @router.post("/sop-catalog/upload", summary="上传SOP目录")
 async def upload_sop_catalog(
@@ -1658,10 +1734,14 @@ async def upload_sop_catalog(
         result = await service.upload_sop_catalog(content)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return success_response(data=result, message=f"新增 {result['created']}，更新 {result['updated']}")
+    return success_response(
+        data=result, message=f"新增 {result['created']}，更新 {result['updated']}"
+    )
 
 
-@router.get("/sop-catalog", summary="SOP目录列表", response_model=SopCatalogListResponse)
+@router.get(
+    "/sop-catalog", summary="SOP目录列表", response_model=SopCatalogListResponse
+)
 async def list_sop_catalog(
     current_user: CurrentUser,
     department: str | None = Query(None),
@@ -1674,8 +1754,10 @@ async def list_sop_catalog(
     from app.core.response import paginated_response
     from app.modules.hr.models import SopCatalog
 
-    query = select(SopCatalog).where(SopCatalog.is_deleted == False)
-    count_q = select(func.count()).select_from(SopCatalog).where(SopCatalog.is_deleted == False)
+    query = select(SopCatalog).where(not SopCatalog.is_deleted)
+    count_q = (
+        select(func.count()).select_from(SopCatalog).where(not SopCatalog.is_deleted)
+    )
     if department:
         query = query.where(SopCatalog.department == department)
         count_q = count_q.where(SopCatalog.department == department)
@@ -1687,15 +1769,30 @@ async def list_sop_catalog(
         count_q = count_q.where(SopCatalog.file_name.ilike(f"%{keyword}%"))
 
     total = (await session.execute(count_q)).scalar() or 0
-    rows = (await session.execute(query.order_by(SopCatalog.category, SopCatalog.file_name).offset((page - 1) * page_size).limit(page_size))).scalars().all()
+    rows = (
+        (
+            await session.execute(
+                query.order_by(SopCatalog.category, SopCatalog.file_name)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
     return paginated_response(
-        data=[SopCatalogResponse.model_validate(r).model_dump(mode="json") for r in rows],
-        page=page, page_size=page_size, total=total,
+        data=[
+            SopCatalogResponse.model_validate(r).model_dump(mode="json") for r in rows
+        ],
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
 # ─── Dept Training Personnel ───
+
 
 @router.get("/dept-training-personnel", summary="部门培训人员列表")
 async def list_dept_training_personnel(
@@ -1706,7 +1803,9 @@ async def list_dept_training_personnel(
     session: AsyncSession = Depends(get_db),
 ):
     tbl = "hr.dept_training_personnel"
-    cols = "id, display_dept, department, admins, dept_head, primary_trainer, created_at"
+    cols = (
+        "id, display_dept, department, admins, dept_head, primary_trainer, created_at"
+    )
     query = f"SELECT {cols} FROM {tbl} WHERE is_deleted = false"
     count_q = f"SELECT count(*) FROM {tbl} WHERE is_deleted = false"
     if department:
@@ -1714,15 +1813,37 @@ async def list_dept_training_personnel(
         count_q += " AND (display_dept = :dept OR department = :dept)"
     query += " ORDER BY display_dept LIMIT :limit OFFSET :offset"
 
-    total = (await session.execute(text(count_q), {"dept": department} if department else {})).scalar() or 0
-    rows = (await session.execute(text(query), {"dept": department, "limit": page_size, "offset": (page-1)*page_size} if department else {"limit": page_size, "offset": (page-1)*page_size})).fetchall()
+    total = (
+        await session.execute(text(count_q), {"dept": department} if department else {})
+    ).scalar() or 0
+    rows = (
+        await session.execute(
+            text(query),
+            {"dept": department, "limit": page_size, "offset": (page - 1) * page_size}
+            if department
+            else {"limit": page_size, "offset": (page - 1) * page_size},
+        )
+    ).fetchall()
 
     from app.core.response import paginated_response
-    data = [{"id": r[0], "display_dept": r[1], "department": r[2], "admins": r[3], "dept_head": r[4], "primary_trainer": r[5], "created_at": str(r[6]) if r[6] else None} for r in rows]
+
+    data = [
+        {
+            "id": r[0],
+            "display_dept": r[1],
+            "department": r[2],
+            "admins": r[3],
+            "dept_head": r[4],
+            "primary_trainer": r[5],
+            "created_at": str(r[6]) if r[6] else None,
+        }
+        for r in rows
+    ]
     return paginated_response(data=data, page=page, page_size=page_size, total=total)
 
 
 # ─── Training Evaluation (补录) ───
+
 
 @router.post("/training-evaluations", summary="保存培训评估补录数据")
 async def save_training_evaluation(
@@ -1734,19 +1855,27 @@ async def save_training_evaluation(
     from app.modules.hr.evaluation_document_generator import (
         generate_training_evaluation,
     )
+
     buffer = generate_training_evaluation(payload)
 
     def _iter():
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(payload.training_date).replace("-", "") if payload.training_date else "nodate"
+    safe_date = (
+        str(payload.training_date).replace("-", "")
+        if payload.training_date
+        else "nodate"
+    )
     from urllib.parse import quote
+
     safe_fn = f"evaluation_{safe_date}.docx"
     return StreamingResponse(
         _iter(),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename=\"{safe_fn}\"; filename*=utf-8''{quote('培训效果评估表_' + safe_date + '.docx')}"},
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{safe_fn}\"; filename*=utf-8''{quote('培训效果评估表_' + safe_date + '.docx')}"
+        },
     )
 
 
@@ -1763,12 +1892,34 @@ async def list_training_evaluations(
     where = "WHERE is_deleted = false"
     if keyword:
         where += f" AND training_content ILIKE '%{keyword}%'"
-    count = (await session.execute(text(f"SELECT count(*) FROM {tbl} {where}"))).scalar() or 0
-    rows = (await session.execute(text(f"SELECT {cols} FROM {tbl} {where} ORDER BY created_at DESC LIMIT :l OFFSET :o"), {"l": page_size, "o": (page-1)*page_size})).fetchall()
-    data = [{"id": r[0], "training_content": r[1], "training_date": str(r[2]) if r[2] else None, "trainer": r[3],
-             "expected_count": r[4], "actual_count": r[5], "excellent_count": r[6], "qualified_count": r[7],
-             "unqualified_count": r[8], "created_at": str(r[9]) if r[9] else None} for r in rows]
+    count = (
+        await session.execute(text(f"SELECT count(*) FROM {tbl} {where}"))
+    ).scalar() or 0
+    rows = (
+        await session.execute(
+            text(
+                f"SELECT {cols} FROM {tbl} {where} ORDER BY created_at DESC LIMIT :l OFFSET :o"
+            ),
+            {"l": page_size, "o": (page - 1) * page_size},
+        )
+    ).fetchall()
+    data = [
+        {
+            "id": r[0],
+            "training_content": r[1],
+            "training_date": str(r[2]) if r[2] else None,
+            "trainer": r[3],
+            "expected_count": r[4],
+            "actual_count": r[5],
+            "excellent_count": r[6],
+            "qualified_count": r[7],
+            "unqualified_count": r[8],
+            "created_at": str(r[9]) if r[9] else None,
+        }
+        for r in rows
+    ]
     from app.core.response import paginated_response
+
     return paginated_response(data=data, page=page, page_size=page_size, total=count)
 
 
@@ -1779,7 +1930,9 @@ async def list_pending_evaluations(
     session: AsyncSession = Depends(get_db),
 ):
     """Return trainings from the annual plan that haven't been evaluated yet."""
-    rows = (await session.execute(text("""
+    rows = (
+        await session.execute(
+            text("""
         SELECT p.id, p.content_and_textbook, p.target_audience, p.training_method,
                p.training_hours, p.remarks, pl.department, pl.year
         FROM hr.annual_training_plan_items p
@@ -1788,10 +1941,23 @@ async def list_pending_evaluations(
         AND NOT EXISTS (SELECT 1 FROM hr.training_evaluations e WHERE e.is_deleted = false AND e.training_content = p.content_and_textbook)
         ORDER BY pl.year DESC, p.content_and_textbook
         LIMIT 200
-    """))).fetchall()
+    """)
+        )
+    ).fetchall()
 
-    data = [{"id": str(r[0]), "content": r[1], "audience": r[2], "method": r[3],
-             "hours": r[4], "remarks": r[5], "department": r[6], "year": r[7]} for r in rows]
+    data = [
+        {
+            "id": str(r[0]),
+            "content": r[1],
+            "audience": r[2],
+            "method": r[3],
+            "hours": r[4],
+            "remarks": r[5],
+            "department": r[6],
+            "year": r[7],
+        }
+        for r in rows
+    ]
     return success_response(data=data)
 
 

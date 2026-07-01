@@ -4,13 +4,14 @@ Revision ID: 5f70eb51dfc9
 Revises: f068904911a9
 Create Date: 2026-06-05 16:10:03.279684
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '5f70eb51dfc9'
-down_revision: str | None = 'f068904911a9'
+revision: str = "5f70eb51dfc9"
+down_revision: str | None = "f068904911a9"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

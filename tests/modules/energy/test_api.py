@@ -15,13 +15,9 @@ async def test_create_device_config_api(client, sample_device_config_data):
 
 @pytest.mark.asyncio
 async def test_list_device_configs_api(client, sample_device_config_data):
-    await client.post(
-        "/api/v1/energy/devices", json=sample_device_config_data
-    )
+    await client.post("/api/v1/energy/devices", json=sample_device_config_data)
 
-    response = await client.get(
-        "/api/v1/energy/devices?platform_code=zhiheng"
-    )
+    response = await client.get("/api/v1/energy/devices?platform_code=zhiheng")
     assert response.status_code == 200
     data = response.json()
     assert data["meta"]["total"] >= 1

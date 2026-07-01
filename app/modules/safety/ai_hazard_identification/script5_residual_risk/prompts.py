@@ -95,7 +95,10 @@ FEWSHOT_EXAMPLES = [
         "input": {
             "inherent_risk_level": "level_3",
             "inherent_risk_label": "三级/一般风险",
-            "l_inherent": 3, "e_inherent": 6, "c_inherent": 7, "d_inherent": 126,
+            "l_inherent": 3,
+            "e_inherent": 6,
+            "c_inherent": 7,
+            "d_inherent": 126,
             "existing_engineering_controls": "压力表、pH计在线监测、氮气置换管线、手推泵密闭输送",
             "existing_management_controls": "操作规程SOP-TL2-FY-001（含罐压确认步骤）、巡检制度、交接班记录",
             "existing_ppe": "防飞溅面屏、耐酸碱手套、防酸碱工作服、安全鞋",

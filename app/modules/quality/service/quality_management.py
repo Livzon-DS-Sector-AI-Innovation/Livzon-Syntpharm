@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.tasks import spawn_task
 from app.modules.quality.models import (
     CAPA,
     AttachmentReview,
@@ -95,6 +96,7 @@ STATUS_TO_PENDING = {
     "quality_head_review": "pending_quality_head_review",
 }
 
+
 # ============ Deviation Service ============
 async def get_deviation_list(
     db: AsyncSession,
@@ -105,8 +107,10 @@ async def get_deviation_list(
     page: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    query = select(Deviation).where(Deviation.is_deleted == False)
-    count_query = select(func.count()).select_from(Deviation).where(Deviation.is_deleted == False)
+    query = select(Deviation).where(not Deviation.is_deleted)
+    count_query = (
+        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
+    )
 
     if status:
         query = query.where(Deviation.status == status)
@@ -124,30 +128,46 @@ async def get_deviation_list(
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()
 
-    query = query.order_by(Deviation.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    query = (
+        query.order_by(Deviation.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     items = result.scalars().all()
 
     return {
-        "items": [DeviationListItem.model_validate(item).model_dump() for item in items],
+        "items": [
+            DeviationListItem.model_validate(item).model_dump() for item in items
+        ],
         "total": total,
         "page": page,
         "page_size": page_size,
     }
 
-async def get_deviation_detail(db: AsyncSession, deviation_id: uuid.UUID) -> DeviationDetail:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def get_deviation_detail(
+    db: AsyncSession, deviation_id: uuid.UUID
+) -> DeviationDetail:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
     return DeviationDetail.model_validate(deviation)
 
-async def create_deviation(db: AsyncSession, data: CreateDeviationRequest, user_id: str) -> dict[str, str]:
+
+async def create_deviation(
+    db: AsyncSession, data: CreateDeviationRequest, user_id: str
+) -> dict[str, str]:
     deviation = Deviation(
         deviation_code=f"DEV-{datetime.now(UTC).strftime('%Y%m%d')}-{uuid.uuid4().hex[:6]}",
         title=data.title,
         department=data.department,
-        discovery_date=datetime.fromisoformat(data.discovery_date) if data.discovery_date else None,
+        discovery_date=datetime.fromisoformat(data.discovery_date)
+        if data.discovery_date
+        else None,
         discovery_time=data.discovery_time,
         discovery_location=data.discovery_location,
         level=data.level,
@@ -159,32 +179,46 @@ async def create_deviation(db: AsyncSession, data: CreateDeviationRequest, user_
         batch_number=data.batch_number,
         handler=data.handler,
         needs_cross_dept_review=data.needs_cross_dept_review,
-        cross_dept_reviewers=[r.model_dump() for r in data.cross_dept_reviewers] if data.cross_dept_reviewers else [],
+        cross_dept_reviewers=[r.model_dump() for r in data.cross_dept_reviewers]
+        if data.cross_dept_reviewers
+        else [],
         status="draft",
         status_updated_at=datetime.now(UTC),
     )
     db.add(deviation)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     await db.refresh(deviation)
     return {"id": str(deviation.id), "code": deviation.deviation_code}
 
-async def update_deviation(db: AsyncSession, deviation_id: uuid.UUID, data: UpdateDeviationRequest, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def update_deviation(
+    db: AsyncSession,
+    deviation_id: uuid.UUID,
+    data: UpdateDeviationRequest,
+    user_id: str,
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field in ["ai_analysis", "investigation_records", "review_opinions", "cross_dept_reviewers", "report_versions"]:
+        if field in [
+            "ai_analysis",
+            "investigation_records",
+            "review_opinions",
+            "cross_dept_reviewers",
+            "report_versions",
+        ]:
             setattr(deviation, field, value)
         elif field == "discovery_date" and value:
             setattr(deviation, field, datetime.fromisoformat(value))
@@ -196,36 +230,45 @@ async def update_deviation(db: AsyncSession, deviation_id: uuid.UUID, data: Upda
         deviation.status_updated_at = datetime.now(UTC)
 
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def delete_deviation(db: AsyncSession, deviation_id: uuid.UUID) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def delete_deviation(
+    db: AsyncSession, deviation_id: uuid.UUID
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
     deviation.is_deleted = True
     deviation.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def submit_investigation(db: AsyncSession, deviation_id: uuid.UUID, data: SubmitInvestigationRequest, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def submit_investigation(
+    db: AsyncSession,
+    deviation_id: uuid.UUID,
+    data: SubmitInvestigationRequest,
+    user_id: str,
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
@@ -241,18 +284,21 @@ async def submit_investigation(db: AsyncSession, deviation_id: uuid.UUID, data: 
     deviation.status_updated_at = datetime.now(UTC)
     deviation.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def submit_review(db: AsyncSession, deviation_id: uuid.UUID, data: SubmitReviewRequest, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def submit_review(
+    db: AsyncSession, deviation_id: uuid.UUID, data: SubmitReviewRequest, user_id: str
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
@@ -280,11 +326,9 @@ async def submit_review(db: AsyncSession, deviation_id: uuid.UUID, data: SubmitR
         deviation.status_updated_at = datetime.now(UTC)
         deviation.updated_at = datetime.now(UTC)
         try:
-
             await db.commit()
 
         except Exception:
-
             await db.rollback()
 
             raise
@@ -304,18 +348,21 @@ async def submit_review(db: AsyncSession, deviation_id: uuid.UUID, data: SubmitR
     deviation.status_updated_at = datetime.now(UTC)
     deviation.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def submit_final_code(db: AsyncSession, deviation_id: uuid.UUID, final_code: str, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def submit_final_code(
+    db: AsyncSession, deviation_id: uuid.UUID, final_code: str, user_id: str
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
@@ -329,18 +376,21 @@ async def submit_final_code(db: AsyncSession, deviation_id: uuid.UUID, final_cod
     deviation.status_updated_at = datetime.now(UTC)
     deviation.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def resubmit_deviation(db: AsyncSession, deviation_id: uuid.UUID, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(Deviation).where(Deviation.id == deviation_id, Deviation.is_deleted == False))
+
+async def resubmit_deviation(
+    db: AsyncSession, deviation_id: uuid.UUID, user_id: str
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(Deviation).where(Deviation.id == deviation_id, not Deviation.is_deleted)
+    )
     deviation = result.scalar_one_or_none()
     if not deviation:
         raise ValueError(f"Deviation {deviation_id} not found")
@@ -348,22 +398,25 @@ async def resubmit_deviation(db: AsyncSession, deviation_id: uuid.UUID, user_id:
         raise ValueError("只有退回状态的偏差才能重新提交")
 
     returned_step = deviation.returned_step
-    target_status = STATUS_TO_PENDING.get(returned_step, "pending_investigation") if returned_step else "pending_investigation"
+    target_status = (
+        STATUS_TO_PENDING.get(returned_step, "pending_investigation")
+        if returned_step
+        else "pending_investigation"
+    )
 
     deviation.status = target_status
     deviation.returned_step = None
     deviation.status_updated_at = datetime.now(UTC)
     deviation.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
+
 
 # ============ CAPA Service ============
 async def get_capa_list(
@@ -375,8 +428,8 @@ async def get_capa_list(
     page: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    query = select(CAPA).where(CAPA.is_deleted == False)
-    count_query = select(func.count()).select_from(CAPA).where(CAPA.is_deleted == False)
+    query = select(CAPA).where(not CAPA.is_deleted)
+    count_query = select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
 
     if status:
         query = query.where(CAPA.status == status)
@@ -394,7 +447,11 @@ async def get_capa_list(
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()
 
-    query = query.order_by(CAPA.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    query = (
+        query.order_by(CAPA.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     items = result.scalars().all()
 
@@ -405,14 +462,20 @@ async def get_capa_list(
         "page_size": page_size,
     }
 
+
 async def get_capa_detail(db: AsyncSession, capa_id: uuid.UUID) -> CapaDetail:
-    result = await db.execute(select(CAPA).where(CAPA.id == capa_id, CAPA.is_deleted == False))
+    result = await db.execute(
+        select(CAPA).where(CAPA.id == capa_id, not CAPA.is_deleted)
+    )
     capa = result.scalar_one_or_none()
     if not capa:
         raise ValueError(f"CAPA {capa_id} not found")
     return CapaDetail.model_validate(capa)
 
-async def create_capa(db: AsyncSession, data: CreateCapaRequest, user_id: str) -> dict[str, str]:
+
+async def create_capa(
+    db: AsyncSession, data: CreateCapaRequest, user_id: str
+) -> dict[str, str]:
     capa = CAPA(
         capa_code=f"CAPA-{datetime.now(UTC).strftime('%Y%m%d')}-{uuid.uuid4().hex[:6]}",
         title=data.title,
@@ -424,37 +487,60 @@ async def create_capa(db: AsyncSession, data: CreateCapaRequest, user_id: str) -
         non_conformity_description=data.non_conformity_description,
         root_cause_analysis=data.root_cause_analysis,
         capa_content=data.capa_content,
-        capa_items=[item.model_dump() for item in data.capa_items] if data.capa_items else [],
+        capa_items=[item.model_dump() for item in data.capa_items]
+        if data.capa_items
+        else [],
         executors=data.executors,
-        expected_completion_date=datetime.fromisoformat(data.expected_completion_date) if data.expected_completion_date else None,
+        expected_completion_date=datetime.fromisoformat(data.expected_completion_date)
+        if data.expected_completion_date
+        else None,
         reporter=data.reporter,
         status="draft",
         status_updated_at=datetime.now(UTC),
     )
     db.add(capa)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     await db.refresh(capa)
     return {"id": str(capa.id), "code": capa.capa_code}
 
-async def update_capa(db: AsyncSession, capa_id: uuid.UUID, data: UpdateCapaRequest, user_id: str) -> dict[str, bool]:
-    result = await db.execute(select(CAPA).where(CAPA.id == capa_id, CAPA.is_deleted == False))
+
+async def update_capa(
+    db: AsyncSession, capa_id: uuid.UUID, data: UpdateCapaRequest, user_id: str
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(CAPA).where(CAPA.id == capa_id, not CAPA.is_deleted)
+    )
     capa = result.scalar_one_or_none()
     if not capa:
         raise ValueError(f"CAPA {capa_id} not found")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field in ["capa_items", "execution_tracks", "dept_head_confirmations", "report_versions"]:
+        if field in [
+            "capa_items",
+            "execution_tracks",
+            "dept_head_confirmations",
+            "report_versions",
+        ]:
             setattr(capa, field, value)
-        elif field in ["expected_completion_date", "evaluation_deadline", "evaluation_confirm_date", "closure_date", "qa_review_time", "q_head_approval_time"] and value:
+        elif (
+            field
+            in [
+                "expected_completion_date",
+                "evaluation_deadline",
+                "evaluation_confirm_date",
+                "closure_date",
+                "qa_review_time",
+                "q_head_approval_time",
+            ]
+            and value
+        ):
             setattr(capa, field, datetime.fromisoformat(value))
         else:
             setattr(capa, field, value)
@@ -464,56 +550,79 @@ async def update_capa(db: AsyncSession, capa_id: uuid.UUID, data: UpdateCapaRequ
         capa.status_updated_at = datetime.now(UTC)
 
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
+
 async def delete_capa(db: AsyncSession, capa_id: uuid.UUID) -> dict[str, bool]:
-    result = await db.execute(select(CAPA).where(CAPA.id == capa_id, CAPA.is_deleted == False))
+    result = await db.execute(
+        select(CAPA).where(CAPA.id == capa_id, not CAPA.is_deleted)
+    )
     capa = result.scalar_one_or_none()
     if not capa:
         raise ValueError(f"CAPA {capa_id} not found")
     capa.is_deleted = True
     capa.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
+
 # ============ Department Contact Service ============
-async def get_department_contact_list(db: AsyncSession, page: int = 1, page_size: int = 20) -> dict[str, Any]:
-    query = select(DepartmentContact).where(DepartmentContact.is_deleted == False)
-    count_query = select(func.count()).select_from(DepartmentContact).where(DepartmentContact.is_deleted == False)
+async def get_department_contact_list(
+    db: AsyncSession, page: int = 1, page_size: int = 20
+) -> dict[str, Any]:
+    query = select(DepartmentContact).where(not DepartmentContact.is_deleted)
+    count_query = (
+        select(func.count())
+        .select_from(DepartmentContact)
+        .where(not DepartmentContact.is_deleted)
+    )
 
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()
 
-    query = query.order_by(DepartmentContact.department).offset((page - 1) * page_size).limit(page_size)
+    query = (
+        query.order_by(DepartmentContact.department)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     items = result.scalars().all()
 
     return {
-        "items": [DepartmentContactOut.model_validate(item).model_dump() for item in items],
+        "items": [
+            DepartmentContactOut.model_validate(item).model_dump() for item in items
+        ],
         "total": total,
         "page": page,
         "page_size": page_size,
     }
 
-async def upsert_department_contact(db: AsyncSession, data: CreateDepartmentContactRequest | UpdateDepartmentContactRequest, department: str | None, user_id: str) -> dict[str, bool]:
+
+async def upsert_department_contact(
+    db: AsyncSession,
+    data: CreateDepartmentContactRequest | UpdateDepartmentContactRequest,
+    department: str | None,
+    user_id: str,
+) -> dict[str, bool]:
     if department:
-        result = await db.execute(select(DepartmentContact).where(DepartmentContact.department == department, DepartmentContact.is_deleted == False))
+        result = await db.execute(
+            select(DepartmentContact).where(
+                DepartmentContact.department == department,
+                not DepartmentContact.is_deleted,
+            )
+        )
         contact = result.scalar_one_or_none()
         if contact:
             update_data = data.model_dump(exclude_unset=True)
@@ -521,11 +630,9 @@ async def upsert_department_contact(db: AsyncSession, data: CreateDepartmentCont
                 setattr(contact, field, value)
             contact.updated_at = datetime.now(UTC)
             try:
-
                 await db.commit()
 
             except Exception:
-
                 await db.rollback()
 
                 raise
@@ -539,74 +646,90 @@ async def upsert_department_contact(db: AsyncSession, data: CreateDepartmentCont
         production_head_id=data.production_head_id,
         quality_head_id=data.quality_head_id,
         additional_contacts=data.additional_contacts,
-        is_production_workshop=data.is_production_workshop if hasattr(data, 'is_production_workshop') else False,
+        is_production_workshop=data.is_production_workshop
+        if hasattr(data, "is_production_workshop")
+        else False,
     )
     db.add(contact)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
-async def delete_department_contact(db: AsyncSession, contact_id: uuid.UUID) -> dict[str, bool]:
-    result = await db.execute(select(DepartmentContact).where(DepartmentContact.id == contact_id, DepartmentContact.is_deleted == False))
+
+async def delete_department_contact(
+    db: AsyncSession, contact_id: uuid.UUID
+) -> dict[str, bool]:
+    result = await db.execute(
+        select(DepartmentContact).where(
+            DepartmentContact.id == contact_id, not DepartmentContact.is_deleted
+        )
+    )
     contact = result.scalar_one_or_none()
     if not contact:
         raise ValueError(f"DepartmentContact {contact_id} not found")
     contact.is_deleted = True
     contact.updated_at = datetime.now(UTC)
     try:
-
         await db.commit()
 
     except Exception:
-
         await db.rollback()
 
         raise
     return {"success": True}
 
+
 # ============ Statistics ============
 async def get_deviation_statistics(db: AsyncSession) -> DeviationStatistics:
-    total_result = await db.execute(select(func.count()).select_from(Deviation).where(Deviation.is_deleted == False))
+    total_result = await db.execute(
+        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
+    )
     total = total_result.scalar_one()
 
     pending_result = await db.execute(
         select(func.count())
         .select_from(Deviation)
-        .where(Deviation.is_deleted == False, Deviation.status.like("pending_%"))
+        .where(not Deviation.is_deleted, Deviation.status.like("pending_%"))
     )
     pending = pending_result.scalar_one()
 
     dept_result = await db.execute(
         select(Deviation.department, func.count())
-        .where(Deviation.is_deleted == False)
+        .where(not Deviation.is_deleted)
         .group_by(Deviation.department)
     )
-    department_distribution = [{"name": row[0] or "未知", "count": row[1]} for row in dept_result.all()]
+    department_distribution = [
+        {"name": row[0] or "未知", "count": row[1]} for row in dept_result.all()
+    ]
 
     status_result = await db.execute(
         select(Deviation.status, func.count())
-        .where(Deviation.is_deleted == False)
+        .where(not Deviation.is_deleted)
         .group_by(Deviation.status)
     )
-    status_distribution = [{"status": row[0], "count": row[1]} for row in status_result.all()]
+    status_distribution = [
+        {"status": row[0], "count": row[1]} for row in status_result.all()
+    ]
 
     step_breakdown = []
     for step in APPROVAL_STEP_ORDER:
         pending_status = STATUS_TO_PENDING.get(step)
-        match = next((s for s in status_distribution if s["status"] == pending_status), None)
-        step_breakdown.append({
-            "step": step,
-            "label": APPROVAL_STEP_LABELS.get(step, step),
-            "roleLabel": STEP_ROLE_LABELS.get(step, ""),
-            "count": match["count"] if match else 0,
-        })
+        match = next(
+            (s for s in status_distribution if s["status"] == pending_status), None
+        )
+        step_breakdown.append(
+            {
+                "step": step,
+                "label": APPROVAL_STEP_LABELS.get(step, step),
+                "roleLabel": STEP_ROLE_LABELS.get(step, ""),
+                "count": match["count"] if match else 0,
+            }
+        )
 
     return DeviationStatistics(
         total=total,
@@ -616,29 +739,37 @@ async def get_deviation_statistics(db: AsyncSession) -> DeviationStatistics:
         stepBreakdown=step_breakdown,
     )
 
+
 async def get_capa_statistics(db: AsyncSession) -> CapaStatistics:
-    total_result = await db.execute(select(func.count()).select_from(CAPA).where(CAPA.is_deleted == False))
+    total_result = await db.execute(
+        select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
+    )
     total = total_result.scalar_one()
 
     status_result = await db.execute(
         select(CAPA.status, func.count())
-        .where(CAPA.is_deleted == False)
+        .where(not CAPA.is_deleted)
         .group_by(CAPA.status)
     )
-    status_distribution = [{"status": row[0], "count": row[1]} for row in status_result.all()]
+    status_distribution = [
+        {"status": row[0], "count": row[1]} for row in status_result.all()
+    ]
 
     source_result = await db.execute(
         select(CAPA.source, func.count())
-        .where(CAPA.is_deleted == False)
+        .where(not CAPA.is_deleted)
         .group_by(CAPA.source)
     )
-    source_distribution = [{"source": row[0] or "未知", "count": row[1]} for row in source_result.all()]
+    source_distribution = [
+        {"source": row[0] or "未知", "count": row[1]} for row in source_result.all()
+    ]
 
     return CapaStatistics(
         total=total,
         statusDistribution=status_distribution,
         sourceDistribution=source_distribution,
     )
+
 
 # ============ Attachment Reviews ============
 async def list_attachment_reviews(
@@ -648,7 +779,7 @@ async def list_attachment_reviews(
     attachment_url: str | None = None,
 ) -> list[dict]:
     """List attachment reviews with optional filters."""
-    query = select(AttachmentReview).where(AttachmentReview.is_deleted == False)
+    query = select(AttachmentReview).where(not AttachmentReview.is_deleted)
     if deviation_id:
         query = query.where(AttachmentReview.deviation_id == deviation_id)
     if capa_id:
@@ -660,6 +791,7 @@ async def list_attachment_reviews(
     result = await db.execute(query)
     items = result.scalars().all()
     return [AttachmentReviewOut.model_validate(item).model_dump() for item in items]
+
 
 async def create_attachment_review(
     db: AsyncSession,
@@ -680,6 +812,7 @@ async def create_attachment_review(
     await db.refresh(review)
     return AttachmentReviewOut.model_validate(review).model_dump()
 
+
 async def delete_attachment_review(db: AsyncSession, review_id: uuid.UUID) -> None:
     """Soft-delete an attachment review."""
     review = await db.get(AttachmentReview, review_id)
@@ -691,7 +824,10 @@ async def delete_attachment_review(db: AsyncSession, review_id: uuid.UUID) -> No
 
 # ============ NEW: Deviation Workflow Endpoints ============
 
-async def submit_for_review(db: AsyncSession, deviation_id: uuid.UUID, user_id: str) -> dict[str, bool]:
+
+async def submit_for_review(
+    db: AsyncSession, deviation_id: uuid.UUID, user_id: str
+) -> dict[str, bool]:
     """Submit deviation to start review workflow. draft → pending_ai_analysis."""
     deviation = await db.get(Deviation, deviation_id)
     if not deviation or deviation.is_deleted:
@@ -713,11 +849,15 @@ async def submit_for_review(db: AsyncSession, deviation_id: uuid.UUID, user_id: 
 async def _trigger_ai_analysis(deviation_id: uuid.UUID, user_id: str):
     """Async trigger AI analysis for a deviation."""
     from app.modules.quality.service.ai_analysis import analyze_deviation_async
+
     try:
         await analyze_deviation_async(deviation_id, user_id)
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error(f"AI analysis failed for deviation {deviation_id}: {e}")
+
+        logging.getLogger(__name__).error(
+            f"AI analysis failed for deviation {deviation_id}: {e}"
+        )
 
 
 async def complete_ai_analysis(
@@ -731,7 +871,9 @@ async def complete_ai_analysis(
     if not deviation or deviation.is_deleted:
         raise ValueError("偏差不存在")
     if deviation.status != "pending_ai_analysis":
-        raise ValueError(f"只有待AI分析状态的偏差才能完成AI分析，当前状态: {deviation.status}")
+        raise ValueError(
+            f"只有待AI分析状态的偏差才能完成AI分析，当前状态: {deviation.status}"
+        )
 
     if ai_analysis is not None:
         deviation.ai_analysis = ai_analysis
@@ -767,7 +909,11 @@ async def batch_update_status(
             failures.append({"id": str(did), "reason": str(e)})
 
     await db.flush()
-    return {"updated_count": updated, "failed_count": len(failures), "failures": failures}
+    return {
+        "updated_count": updated,
+        "failed_count": len(failures),
+        "failures": failures,
+    }
 
 
 async def get_department_confirmations(
@@ -778,7 +924,7 @@ async def get_department_confirmations(
 ) -> dict:
     """List department weekly confirmations."""
     query = select(DepartmentWeeklyConfirmation).where(
-        DepartmentWeeklyConfirmation.is_deleted == False
+        not DepartmentWeeklyConfirmation.is_deleted
     )
     if week_key:
         query = query.where(DepartmentWeeklyConfirmation.week_key == week_key)
@@ -794,7 +940,10 @@ async def get_department_confirmations(
     items = result.scalars().all()
 
     return {
-        "items": [DepartmentWeeklyConfirmationOut.model_validate(item).model_dump() for item in items],
+        "items": [
+            DepartmentWeeklyConfirmationOut.model_validate(item).model_dump()
+            for item in items
+        ],
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -810,7 +959,7 @@ async def confirm_production_status(
     query = select(DepartmentWeeklyConfirmation).where(
         DepartmentWeeklyConfirmation.department == data.department,
         DepartmentWeeklyConfirmation.week_key == data.week_key,
-        DepartmentWeeklyConfirmation.is_deleted == False,
+        not DepartmentWeeklyConfirmation.is_deleted,
     )
     result = await db.execute(query)
     existing = result.scalar_one_or_none()
@@ -842,7 +991,7 @@ async def get_stopped_departments(db: AsyncSession, week_key: str) -> list[str]:
     query = select(DepartmentWeeklyConfirmation.department).where(
         DepartmentWeeklyConfirmation.week_key == week_key,
         DepartmentWeeklyConfirmation.production_status == "stopped",
-        DepartmentWeeklyConfirmation.is_deleted == False,
+        not DepartmentWeeklyConfirmation.is_deleted,
     )
     result = await db.execute(query)
     return [row[0] for row in result.all()]
@@ -850,11 +999,10 @@ async def get_stopped_departments(db: AsyncSession, week_key: str) -> list[str]:
 
 # ============ NEW: CAPA Workflow Endpoints ============
 
+
 async def get_capa_departments(db: AsyncSession) -> list[str]:
     """Get all departments from department contacts."""
-    query = select(DepartmentContact.department).where(
-        DepartmentContact.is_deleted == False
-    )
+    query = select(DepartmentContact.department).where(not DepartmentContact.is_deleted)
     result = await db.execute(query)
     return [row[0] for row in result.all()]
 
@@ -867,14 +1015,18 @@ async def auto_fill_from_deviation(db: AsyncSession, deviation_id: uuid.UUID) ->
 
     # Extract from AI analysis
     ai_analysis = deviation.ai_analysis or {}
-    non_conformity = ai_analysis.get("structured_deviation_description", deviation.description or "")
+    non_conformity = ai_analysis.get(
+        "structured_deviation_description", deviation.description or ""
+    )
     root_cause = ai_analysis.get("preliminary_cause_analysis", "")
 
     # Extract from last investigation record
     investigation_records = deviation.investigation_records or []
     capa_content = ""
     if investigation_records:
-        last_record = investigation_records[-1] if isinstance(investigation_records, list) else {}
+        last_record = (
+            investigation_records[-1] if isinstance(investigation_records, list) else {}
+        )
         if isinstance(last_record, dict):
             non_conformity = last_record.get("nonconformityDescription", non_conformity)
             root_cause = last_record.get("rootCauseAnalysis", root_cause)
@@ -882,7 +1034,7 @@ async def auto_fill_from_deviation(db: AsyncSession, deviation_id: uuid.UUID) ->
             proposals = last_record.get("capaProposals", [])
             if proposals:
                 capa_content = "\n".join(
-                    f"{i+1}. {p.get('summary', p.get('content', ''))}"
+                    f"{i + 1}. {p.get('summary', p.get('content', ''))}"
                     for i, p in enumerate(proposals)
                 )
 
@@ -933,7 +1085,6 @@ async def complete_part(
 
     # Store completion in capa_items or a tracking field
     # For simplicity, update status when both parts are complete
-    items = capa.capa_items or []
     if part == "a":
         # Part A = problem description complete
         pass
@@ -946,7 +1097,9 @@ async def complete_part(
     return {"success": True}
 
 
-async def submit_capa(db: AsyncSession, capa_id: uuid.UUID, user_id: str) -> dict[str, bool]:
+async def submit_capa(
+    db: AsyncSession, capa_id: uuid.UUID, user_id: str
+) -> dict[str, bool]:
     """Submit CAPA for QA approval."""
     capa = await db.get(CAPA, capa_id)
     if not capa or capa.is_deleted:
@@ -997,12 +1150,10 @@ async def confirm_dept_head(
 
     # Check if all departments have approved
     all_approved = all(
-        isinstance(c, dict) and c.get("result") == "approved"
-        for c in confirmations
+        isinstance(c, dict) and c.get("result") == "approved" for c in confirmations
     )
     any_rejected = any(
-        isinstance(c, dict) and c.get("result") == "rejected"
-        for c in confirmations
+        isinstance(c, dict) and c.get("result") == "rejected" for c in confirmations
     )
 
     if all_approved and confirmations:
@@ -1057,7 +1208,9 @@ async def approve_capa(
     return {"success": True}
 
 
-async def resubmit_capa(db: AsyncSession, capa_id: uuid.UUID, user_id: str) -> dict[str, bool]:
+async def resubmit_capa(
+    db: AsyncSession, capa_id: uuid.UUID, user_id: str
+) -> dict[str, bool]:
     """Resubmit CAPA after rejection."""
     capa = await db.get(CAPA, capa_id)
     if not capa or capa.is_deleted:
@@ -1120,13 +1273,17 @@ async def delete_execution_track(
     return {"success": True}
 
 
-async def confirm_execution(db: AsyncSession, capa_id: uuid.UUID, user_id: str) -> dict[str, bool]:
+async def confirm_execution(
+    db: AsyncSession, capa_id: uuid.UUID, user_id: str
+) -> dict[str, bool]:
     """Confirm CAPA execution is complete, advance to pending_evaluation."""
     capa = await db.get(CAPA, capa_id)
     if not capa or capa.is_deleted:
         raise ValueError("CAPA不存在")
     if capa.status != "executing":
-        raise ValueError(f"只有执行中状态的CAPA可以确认执行完成，当前状态: {capa.status}")
+        raise ValueError(
+            f"只有执行中状态的CAPA可以确认执行完成，当前状态: {capa.status}"
+        )
 
     capa.status = "pending_evaluation"
     capa.status_updated_at = datetime.now(UTC)
@@ -1146,13 +1303,25 @@ async def submit_evaluation(
     if not capa or capa.is_deleted:
         raise ValueError("CAPA不存在")
     if capa.status != "pending_evaluation":
-        raise ValueError(f"只有待效果评价状态的CAPA可以提交评价，当前状态: {capa.status}")
+        raise ValueError(
+            f"只有待效果评价状态的CAPA可以提交评价，当前状态: {capa.status}"
+        )
 
     capa.evaluation_target = data.evaluation_target
     capa.evaluation_result = data.evaluation_result
-    capa.evaluation_confirmer_id = uuid.UUID(data.evaluation_confirmer) if data.evaluation_confirmer else None
-    capa.evaluation_confirm_date = datetime.fromisoformat(data.evaluation_confirm_date.replace("Z", "+00:00")) if data.evaluation_confirm_date else None
-    capa.closure_date = datetime.fromisoformat(data.closure_date.replace("Z", "+00:00")) if data.closure_date else None
+    capa.evaluation_confirmer_id = (
+        uuid.UUID(data.evaluation_confirmer) if data.evaluation_confirmer else None
+    )
+    capa.evaluation_confirm_date = (
+        datetime.fromisoformat(data.evaluation_confirm_date.replace("Z", "+00:00"))
+        if data.evaluation_confirm_date
+        else None
+    )
+    capa.closure_date = (
+        datetime.fromisoformat(data.closure_date.replace("Z", "+00:00"))
+        if data.closure_date
+        else None
+    )
     capa.status = "closed"
     capa.status_updated_at = datetime.now(UTC)
     capa.updated_by = uuid.UUID(user_id) if user_id != "system" else None

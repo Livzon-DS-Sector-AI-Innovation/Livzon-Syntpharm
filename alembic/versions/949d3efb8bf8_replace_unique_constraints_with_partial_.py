@@ -8,13 +8,14 @@ Revision ID: 949d3efb8bf8
 Revises: 6541942e5eaf
 Create Date: 2026-06-23 20:51:24.292747
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '949d3efb8bf8'
-down_revision: str | None = '6541942e5eaf'
+revision: str = "949d3efb8bf8"
+down_revision: str | None = "6541942e5eaf"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

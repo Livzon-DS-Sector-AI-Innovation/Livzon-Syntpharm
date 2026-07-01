@@ -60,9 +60,7 @@ class WorkOrder(BaseModel):
         {"schema": "equipment"},
     )
 
-    work_order_no: Mapped[str] = mapped_column(
-        String(50), comment="工单编号"
-    )
+    work_order_no: Mapped[str] = mapped_column(String(50), comment="工单编号")
     equipment_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("equipment.equipments.id"),
         comment="设备ID",

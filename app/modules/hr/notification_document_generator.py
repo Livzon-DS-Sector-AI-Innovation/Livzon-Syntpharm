@@ -82,8 +82,13 @@ def generate_training_notification(data: TrainingNotificationInput) -> BytesIO:
     _set_cell(table.rows[0].cells[1], " — ".join(topic_parts))
 
     # ── Row 1: 培训日期 | value | 课时 | value ──
-    _set_cell(table.rows[1].cells[1], str(data.training_date) if data.training_date else "")
-    _set_cell(table.rows[1].cells[3], _compute_hours(data.training_time_start, data.training_time_end))
+    _set_cell(
+        table.rows[1].cells[1], str(data.training_date) if data.training_date else ""
+    )
+    _set_cell(
+        table.rows[1].cells[3],
+        _compute_hours(data.training_time_start, data.training_time_end),
+    )
 
     # ── Row 2: 培训方式 | value | 授课人 | value ──
     _set_cell(table.rows[2].cells[1], data.training_method or "")
@@ -100,10 +105,11 @@ def generate_training_notification(data: TrainingNotificationInput) -> BytesIO:
     _set_cell(table.rows[5].cells[1], data.assessment_method or "")
 
     # ── Row 6: 注意事项 (merged cols 1-3) ──
-    _set_cell(table.rows[6].cells[1],
+    _set_cell(
+        table.rows[6].cells[1],
         "1. 请培训人员自带笔记本、笔，做好笔记。\n"
         "2. 请部门安排好参训人员的工作时间，做到培训工作两不误。\n"
-        "3. 不得无故缺席、迟到，到场签到，有特殊情况须提前请假。"
+        "3. 不得无故缺席、迟到，到场签到，有特殊情况须提前请假。",
     )
 
     # ── Para 0: department line ──
@@ -115,7 +121,9 @@ def generate_training_notification(data: TrainingNotificationInput) -> BytesIO:
                 r.text = ""
     if len(doc.paragraphs) > 0:
         dept_name = data.issuer_department or data.department or ""
-        doc.paragraphs[0].runs[0].text = f"部门/Dept：{dept_name}          签发人/ Issued by："
+        doc.paragraphs[0].runs[
+            0
+        ].text = f"部门/Dept：{dept_name}          签发人/ Issued by："
     if len(doc.paragraphs) > 1:
         d = data.training_date
         doc.paragraphs[1].runs[0].text = f"{d.year}年{d.month:02d}月{d.day:02d}日"

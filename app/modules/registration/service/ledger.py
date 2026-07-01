@@ -23,6 +23,7 @@ from app.modules.registration.schemas.ledger import (
 
 # ── Excel Parsing Helpers ──────────────────────────────────────────
 
+
 def _parse_date(value) -> date | None:
     """Parse date from Excel cell (datetime, date, string, or None)."""
     if value is None:
@@ -69,13 +70,16 @@ def _parse_int(value) -> int | None:
     return None
 
 
-
-def _find_header_row(ws, expected_headers: list[str], max_scan: int = 10) -> tuple[int, dict[str, int]]:
+def _find_header_row(
+    ws, expected_headers: list[str], max_scan: int = 10
+) -> tuple[int, dict[str, int]]:
     """
     自动寻找表头行，返回 (header_row_index, {field_name: column_index})
     expected_headers: 期望的表头名称列表
     """
-    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=max_scan, values_only=True), start=1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=1, max_row=max_scan, values_only=True), start=1
+    ):
         row_values = [str(cell).strip() if cell else "" for cell in row]
 
         # 检查这一行是否包含预期的表头
@@ -92,7 +96,9 @@ def _find_header_row(ws, expected_headers: list[str], max_scan: int = 10) -> tup
     return 1, {}
 
 
-def _get_cell_value(row: tuple, field_map: dict[str, int], field_name: str, default=None):
+def _get_cell_value(
+    row: tuple, field_map: dict[str, int], field_name: str, default=None
+):
     """从行数据中根据字段名获取值"""
     if field_name not in field_map:
         return default
@@ -105,7 +111,12 @@ def _get_cell_value(row: tuple, field_map: dict[str, int], field_name: str, defa
 def _fill_merged_cells(ws):
     """处理合并单元格，向下填充空值"""
     for merged_range in ws.merged_cells.ranges:
-        min_col, min_row, max_col, max_row = merged_range.min_col, merged_range.min_row, merged_range.max_col, merged_range.max_row
+        min_col, min_row, max_col, max_row = (
+            merged_range.min_col,
+            merged_range.min_row,
+            merged_range.max_col,
+            merged_range.max_row,
+        )
         # 获取合并区域的第一个单元格的值
         top_left_value = ws.cell(row=min_row, column=min_col).value
         # 填充整个合并区域
@@ -116,13 +127,23 @@ def _fill_merged_cells(ws):
 
 # ── CRUD Operations ───────────────────────────────────────────────
 
-async def list_domestic_approvals(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[DomesticApproval]:
-    stmt = select(DomesticApproval).where(DomesticApproval.is_deleted == False).offset(skip).limit(limit)
+
+async def list_domestic_approvals(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> list[DomesticApproval]:
+    stmt = (
+        select(DomesticApproval)
+        .where(not DomesticApproval.is_deleted)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def create_domestic_approval(db: AsyncSession, data: DomesticApprovalCreate) -> DomesticApproval:
+async def create_domestic_approval(
+    db: AsyncSession, data: DomesticApprovalCreate
+) -> DomesticApproval:
     obj = DomesticApproval(**data.model_dump())
     db.add(obj)
     await db.commit()
@@ -130,13 +151,22 @@ async def create_domestic_approval(db: AsyncSession, data: DomesticApprovalCreat
     return obj
 
 
-async def list_overseas_approvals(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[OverseasApproval]:
-    stmt = select(OverseasApproval).where(OverseasApproval.is_deleted == False).offset(skip).limit(limit)
+async def list_overseas_approvals(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> list[OverseasApproval]:
+    stmt = (
+        select(OverseasApproval)
+        .where(not OverseasApproval.is_deleted)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def create_overseas_approval(db: AsyncSession, data: OverseasApprovalCreate) -> OverseasApproval:
+async def create_overseas_approval(
+    db: AsyncSession, data: OverseasApprovalCreate
+) -> OverseasApproval:
     obj = OverseasApproval(**data.model_dump())
     db.add(obj)
     await db.commit()
@@ -144,13 +174,22 @@ async def create_overseas_approval(db: AsyncSession, data: OverseasApprovalCreat
     return obj
 
 
-async def list_international_reviews(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[InternationalReview]:
-    stmt = select(InternationalReview).where(InternationalReview.is_deleted == False).offset(skip).limit(limit)
+async def list_international_reviews(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> list[InternationalReview]:
+    stmt = (
+        select(InternationalReview)
+        .where(not InternationalReview.is_deleted)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def create_international_review(db: AsyncSession, data: InternationalReviewCreate) -> InternationalReview:
+async def create_international_review(
+    db: AsyncSession, data: InternationalReviewCreate
+) -> InternationalReview:
     obj = InternationalReview(**data.model_dump())
     db.add(obj)
     await db.commit()
@@ -158,13 +197,22 @@ async def create_international_review(db: AsyncSession, data: InternationalRevie
     return obj
 
 
-async def list_copp_certificates(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[CoppCertificate]:
-    stmt = select(CoppCertificate).where(CoppCertificate.is_deleted == False).offset(skip).limit(limit)
+async def list_copp_certificates(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> list[CoppCertificate]:
+    stmt = (
+        select(CoppCertificate)
+        .where(not CoppCertificate.is_deleted)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def create_copp_certificate(db: AsyncSession, data: CoppCertificateCreate) -> CoppCertificate:
+async def create_copp_certificate(
+    db: AsyncSession, data: CoppCertificateCreate
+) -> CoppCertificate:
     obj = CoppCertificate(**data.model_dump())
     db.add(obj)
     await db.commit()
@@ -172,13 +220,22 @@ async def create_copp_certificate(db: AsyncSession, data: CoppCertificateCreate)
     return obj
 
 
-async def list_wc_certificates(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[WcCertificate]:
-    stmt = select(WcCertificate).where(WcCertificate.is_deleted == False).offset(skip).limit(limit)
+async def list_wc_certificates(
+    db: AsyncSession, skip: int = 0, limit: int = 100
+) -> list[WcCertificate]:
+    stmt = (
+        select(WcCertificate)
+        .where(not WcCertificate.is_deleted)
+        .offset(skip)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def create_wc_certificate(db: AsyncSession, data: WcCertificateCreate) -> WcCertificate:
+async def create_wc_certificate(
+    db: AsyncSession, data: WcCertificateCreate
+) -> WcCertificate:
     obj = WcCertificate(**data.model_dump())
     db.add(obj)
     await db.commit()
@@ -188,37 +245,63 @@ async def create_wc_certificate(db: AsyncSession, data: WcCertificateCreate) -> 
 
 # ── Dashboard Summary ──────────────────────────────────────────────
 
+
 async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     # 国内已获批
-    stmt = select(func.count()).select_from(DomesticApproval).where(DomesticApproval.is_deleted == False)
+    stmt = (
+        select(func.count())
+        .select_from(DomesticApproval)
+        .where(not DomesticApproval.is_deleted)
+    )
     domestic_count = (await db.execute(stmt)).scalar() or 0
 
     # 国外已获批
-    stmt = select(func.count()).select_from(OverseasApproval).where(OverseasApproval.is_deleted == False)
+    stmt = (
+        select(func.count())
+        .select_from(OverseasApproval)
+        .where(not OverseasApproval.is_deleted)
+    )
     overseas_count = (await db.execute(stmt)).scalar() or 0
 
     # 国外获批国家数
-    stmt = select(func.count(func.distinct(OverseasApproval.issuing_authority))).select_from(OverseasApproval).where(
-        OverseasApproval.is_deleted == False,
-        OverseasApproval.issuing_authority.isnot(None),
+    stmt = (
+        select(func.count(func.distinct(OverseasApproval.issuing_authority)))
+        .select_from(OverseasApproval)
+        .where(
+            not OverseasApproval.is_deleted,
+            OverseasApproval.issuing_authority.isnot(None),
+        )
     )
     overseas_countries = (await db.execute(stmt)).scalar() or 0
 
     # 国际关联审评
-    stmt = select(func.count()).select_from(InternationalReview).where(InternationalReview.is_deleted == False)
+    stmt = (
+        select(func.count())
+        .select_from(InternationalReview)
+        .where(not InternationalReview.is_deleted)
+    )
     international_review_count = (await db.execute(stmt)).scalar() or 0
 
     # COPP证书
-    stmt = select(func.count()).select_from(CoppCertificate).where(CoppCertificate.is_deleted == False)
+    stmt = (
+        select(func.count())
+        .select_from(CoppCertificate)
+        .where(not CoppCertificate.is_deleted)
+    )
     copp_count = (await db.execute(stmt)).scalar() or 0
 
     # WC证书
-    stmt = select(func.count()).select_from(WcCertificate).where(WcCertificate.is_deleted == False)
+    stmt = (
+        select(func.count())
+        .select_from(WcCertificate)
+        .where(not WcCertificate.is_deleted)
+    )
     wc_count = (await db.execute(stmt)).scalar() or 0
 
     # 审评中（从drugs表统计）
     from app.modules.registration.models.drug import Drug
-    stmt = select(func.count()).select_from(Drug).where(Drug.is_deleted == False)
+
+    stmt = select(func.count()).select_from(Drug).where(not Drug.is_deleted)
     reviewing_count = (await db.execute(stmt)).scalar() or 0
 
     # 计划申报（暂时为0）
@@ -238,31 +321,47 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
 
 # ── Excel Import/Export ────────────────────────────────────────────
 
+
 def export_domestic_approvals_to_excel(data: list[DomesticApproval]) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "国内已获批"
 
-    headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-               "产品范围", "质量标准", "登记号", "证书是否过期", "生产车间", "产品有效期", "贮存条件"]
+    headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "质量标准",
+        "登记号",
+        "证书是否过期",
+        "生产车间",
+        "产品有效期",
+        "贮存条件",
+    ]
     ws.append(headers)
 
     for item in data:
-        ws.append([
-            item.product_name,
-            item.certificate_name or "",
-            item.batch_no or "",
-            item.issuing_authority or "",
-            item.issue_date.isoformat() if item.issue_date else "",
-            item.valid_until.isoformat() if item.valid_until else "",
-            item.product_scope or "",
-            item.quality_standard or "",
-            item.registration_no or "",
-            item.is_expired or "",
-            item.production_workshop or "",
-            item.product_validity or "",
-            item.storage_condition or "",
-        ])
+        ws.append(
+            [
+                item.product_name,
+                item.certificate_name or "",
+                item.batch_no or "",
+                item.issuing_authority or "",
+                item.issue_date.isoformat() if item.issue_date else "",
+                item.valid_until.isoformat() if item.valid_until else "",
+                item.product_scope or "",
+                item.quality_standard or "",
+                item.registration_no or "",
+                item.is_expired or "",
+                item.production_workshop or "",
+                item.product_validity or "",
+                item.storage_condition or "",
+            ]
+        )
 
     output = io.BytesIO()
     wb.save(output)
@@ -280,8 +379,21 @@ def import_domestic_approvals_from_excel(file_content: bytes) -> dict:
     _fill_merged_cells(ws)
 
     # 期望的表头
-    expected_headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-                        "产品范围", "质量标准", "登记号", "证书是否过期", "生产车间", "产品有效期", "贮存条件"]
+    expected_headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "质量标准",
+        "登记号",
+        "证书是否过期",
+        "生产车间",
+        "产品有效期",
+        "贮存条件",
+    ]
 
     # 自动寻找表头行
     header_row, field_map = _find_header_row(ws, expected_headers)
@@ -292,7 +404,7 @@ def import_domestic_approvals_from_excel(file_content: bytes) -> dict:
         "skipped_count": 0,
         "error_count": 0,
         "errors": [],
-        "items": []
+        "items": [],
     }
 
     if not field_map:
@@ -300,7 +412,9 @@ def import_domestic_approvals_from_excel(file_content: bytes) -> dict:
         return result
 
     # 从表头下一行开始读取数据
-    for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1
+    ):
         result["total_rows"] += 1
 
         # 跳过全空行
@@ -317,18 +431,32 @@ def import_domestic_approvals_from_excel(file_content: bytes) -> dict:
         try:
             item = DomesticApprovalCreate(
                 product_name=product_name,
-                certificate_name=_parse_str(_get_cell_value(row, field_map, "证书名称")),
+                certificate_name=_parse_str(
+                    _get_cell_value(row, field_map, "证书名称")
+                ),
                 batch_no=_parse_str(_get_cell_value(row, field_map, "批件号")),
-                issuing_authority=_parse_str(_get_cell_value(row, field_map, "国家/发证机关")),
+                issuing_authority=_parse_str(
+                    _get_cell_value(row, field_map, "国家/发证机关")
+                ),
                 issue_date=_parse_date(_get_cell_value(row, field_map, "发证日期")),
-                valid_until=_parse_date(_get_cell_value(row, field_map, "证书有效期至")),
+                valid_until=_parse_date(
+                    _get_cell_value(row, field_map, "证书有效期至")
+                ),
                 product_scope=_parse_str(_get_cell_value(row, field_map, "产品范围")),
-                quality_standard=_parse_str(_get_cell_value(row, field_map, "质量标准")),
+                quality_standard=_parse_str(
+                    _get_cell_value(row, field_map, "质量标准")
+                ),
                 registration_no=_parse_str(_get_cell_value(row, field_map, "登记号")),
                 is_expired=_parse_str(_get_cell_value(row, field_map, "证书是否过期")),
-                production_workshop=_parse_str(_get_cell_value(row, field_map, "生产车间")),
-                product_validity=_parse_str(_get_cell_value(row, field_map, "产品有效期")),
-                storage_condition=_parse_str(_get_cell_value(row, field_map, "贮存条件")),
+                production_workshop=_parse_str(
+                    _get_cell_value(row, field_map, "生产车间")
+                ),
+                product_validity=_parse_str(
+                    _get_cell_value(row, field_map, "产品有效期")
+                ),
+                storage_condition=_parse_str(
+                    _get_cell_value(row, field_map, "贮存条件")
+                ),
             )
             result["items"].append(item)
             result["success_count"] += 1
@@ -345,25 +473,39 @@ def export_overseas_approvals_to_excel(data: list[OverseasApproval]) -> bytes:
     ws = wb.active
     ws.title = "国外已获批"
 
-    headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-               "产品范围", "质量标准", "证书是否过期", "生产车间", "产品有效期", "贮存条件"]
+    headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "质量标准",
+        "证书是否过期",
+        "生产车间",
+        "产品有效期",
+        "贮存条件",
+    ]
     ws.append(headers)
 
     for item in data:
-        ws.append([
-            item.product_name,
-            item.certificate_name or "",
-            item.batch_no or "",
-            item.issuing_authority or "",
-            item.issue_date.isoformat() if item.issue_date else "",
-            item.valid_until.isoformat() if item.valid_until else "",
-            item.product_scope or "",
-            item.quality_standard or "",
-            item.is_expired or "",
-            item.production_workshop or "",
-            item.product_validity or "",
-            item.storage_condition or "",
-        ])
+        ws.append(
+            [
+                item.product_name,
+                item.certificate_name or "",
+                item.batch_no or "",
+                item.issuing_authority or "",
+                item.issue_date.isoformat() if item.issue_date else "",
+                item.valid_until.isoformat() if item.valid_until else "",
+                item.product_scope or "",
+                item.quality_standard or "",
+                item.is_expired or "",
+                item.production_workshop or "",
+                item.product_validity or "",
+                item.storage_condition or "",
+            ]
+        )
 
     output = io.BytesIO()
     wb.save(output)
@@ -375,17 +517,38 @@ def import_overseas_approvals_from_excel(file_content: bytes) -> dict:
     ws = wb.active
     _fill_merged_cells(ws)
 
-    expected_headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-                        "产品范围", "质量标准", "证书是否过期", "生产车间", "产品有效期", "贮存条件"]
+    expected_headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "质量标准",
+        "证书是否过期",
+        "生产车间",
+        "产品有效期",
+        "贮存条件",
+    ]
     header_row, field_map = _find_header_row(ws, expected_headers)
 
-    result = {"total_rows": 0, "success_count": 0, "skipped_count": 0, "error_count": 0, "errors": [], "items": []}
+    result = {
+        "total_rows": 0,
+        "success_count": 0,
+        "skipped_count": 0,
+        "error_count": 0,
+        "errors": [],
+        "items": [],
+    }
 
     if not field_map:
         result["errors"].append("未找到有效表头")
         return result
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1
+    ):
         result["total_rows"] += 1
         if not any(row):
             result["skipped_count"] += 1
@@ -399,17 +562,31 @@ def import_overseas_approvals_from_excel(file_content: bytes) -> dict:
         try:
             item = OverseasApprovalCreate(
                 product_name=product_name,
-                certificate_name=_parse_str(_get_cell_value(row, field_map, "证书名称")),
+                certificate_name=_parse_str(
+                    _get_cell_value(row, field_map, "证书名称")
+                ),
                 batch_no=_parse_str(_get_cell_value(row, field_map, "批件号")),
-                issuing_authority=_parse_str(_get_cell_value(row, field_map, "国家/发证机关")),
+                issuing_authority=_parse_str(
+                    _get_cell_value(row, field_map, "国家/发证机关")
+                ),
                 issue_date=_parse_date(_get_cell_value(row, field_map, "发证日期")),
-                valid_until=_parse_date(_get_cell_value(row, field_map, "证书有效期至")),
+                valid_until=_parse_date(
+                    _get_cell_value(row, field_map, "证书有效期至")
+                ),
                 product_scope=_parse_str(_get_cell_value(row, field_map, "产品范围")),
-                quality_standard=_parse_str(_get_cell_value(row, field_map, "质量标准")),
+                quality_standard=_parse_str(
+                    _get_cell_value(row, field_map, "质量标准")
+                ),
                 is_expired=_parse_str(_get_cell_value(row, field_map, "证书是否过期")),
-                production_workshop=_parse_str(_get_cell_value(row, field_map, "生产车间")),
-                product_validity=_parse_str(_get_cell_value(row, field_map, "产品有效期")),
-                storage_condition=_parse_str(_get_cell_value(row, field_map, "贮存条件")),
+                production_workshop=_parse_str(
+                    _get_cell_value(row, field_map, "生产车间")
+                ),
+                product_validity=_parse_str(
+                    _get_cell_value(row, field_map, "产品有效期")
+                ),
+                storage_condition=_parse_str(
+                    _get_cell_value(row, field_map, "贮存条件")
+                ),
             )
             result["items"].append(item)
             result["success_count"] += 1
@@ -426,22 +603,33 @@ def export_international_reviews_to_excel(data: list[InternationalReview]) -> by
     ws = wb.active
     ws.title = "国际关联审评"
 
-    headers = ["品名", "获批国家", "获批国家数量", "获批客户", "获批客户数量",
-               "审评中-国家", "审评中-国家数量", "审评中-客户", "审评中-客户数量"]
+    headers = [
+        "品名",
+        "获批国家",
+        "获批国家数量",
+        "获批客户",
+        "获批客户数量",
+        "审评中-国家",
+        "审评中-国家数量",
+        "审评中-客户",
+        "审评中-客户数量",
+    ]
     ws.append(headers)
 
     for item in data:
-        ws.append([
-            item.product_name,
-            item.approved_countries or "",
-            item.approved_country_count or 0,
-            item.approved_clients or "",
-            item.approved_client_count or 0,
-            item.reviewing_countries or "",
-            item.reviewing_country_count or 0,
-            item.reviewing_clients or "",
-            item.reviewing_client_count or 0,
-        ])
+        ws.append(
+            [
+                item.product_name,
+                item.approved_countries or "",
+                item.approved_country_count or 0,
+                item.approved_clients or "",
+                item.approved_client_count or 0,
+                item.reviewing_countries or "",
+                item.reviewing_country_count or 0,
+                item.reviewing_clients or "",
+                item.reviewing_client_count or 0,
+            ]
+        )
 
     output = io.BytesIO()
     wb.save(output)
@@ -453,17 +641,35 @@ def import_international_reviews_from_excel(file_content: bytes) -> dict:
     ws = wb.active
     _fill_merged_cells(ws)
 
-    expected_headers = ["品名", "获批国家", "获批国家数量", "获批客户", "获批客户数量",
-                        "审评中-国家", "审评中-国家数量", "审评中-客户", "审评中-客户数量"]
+    expected_headers = [
+        "品名",
+        "获批国家",
+        "获批国家数量",
+        "获批客户",
+        "获批客户数量",
+        "审评中-国家",
+        "审评中-国家数量",
+        "审评中-客户",
+        "审评中-客户数量",
+    ]
     header_row, field_map = _find_header_row(ws, expected_headers)
 
-    result = {"total_rows": 0, "success_count": 0, "skipped_count": 0, "error_count": 0, "errors": [], "items": []}
+    result = {
+        "total_rows": 0,
+        "success_count": 0,
+        "skipped_count": 0,
+        "error_count": 0,
+        "errors": [],
+        "items": [],
+    }
 
     if not field_map:
         result["errors"].append("未找到有效表头")
         return result
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1
+    ):
         result["total_rows"] += 1
         if not any(row):
             result["skipped_count"] += 1
@@ -477,14 +683,30 @@ def import_international_reviews_from_excel(file_content: bytes) -> dict:
         try:
             item = InternationalReviewCreate(
                 product_name=product_name,
-                approved_countries=_parse_str(_get_cell_value(row, field_map, "获批国家")),
-                approved_country_count=_parse_int(_get_cell_value(row, field_map, "获批国家数量")),
-                approved_clients=_parse_str(_get_cell_value(row, field_map, "获批客户")),
-                approved_client_count=_parse_int(_get_cell_value(row, field_map, "获批客户数量")),
-                reviewing_countries=_parse_str(_get_cell_value(row, field_map, "审评中-国家")),
-                reviewing_country_count=_parse_int(_get_cell_value(row, field_map, "审评中-国家数量")),
-                reviewing_clients=_parse_str(_get_cell_value(row, field_map, "审评中-客户")),
-                reviewing_client_count=_parse_int(_get_cell_value(row, field_map, "审评中-客户数量")),
+                approved_countries=_parse_str(
+                    _get_cell_value(row, field_map, "获批国家")
+                ),
+                approved_country_count=_parse_int(
+                    _get_cell_value(row, field_map, "获批国家数量")
+                ),
+                approved_clients=_parse_str(
+                    _get_cell_value(row, field_map, "获批客户")
+                ),
+                approved_client_count=_parse_int(
+                    _get_cell_value(row, field_map, "获批客户数量")
+                ),
+                reviewing_countries=_parse_str(
+                    _get_cell_value(row, field_map, "审评中-国家")
+                ),
+                reviewing_country_count=_parse_int(
+                    _get_cell_value(row, field_map, "审评中-国家数量")
+                ),
+                reviewing_clients=_parse_str(
+                    _get_cell_value(row, field_map, "审评中-客户")
+                ),
+                reviewing_client_count=_parse_int(
+                    _get_cell_value(row, field_map, "审评中-客户数量")
+                ),
             )
             result["items"].append(item)
             result["success_count"] += 1
@@ -501,22 +723,33 @@ def export_copp_certificates_to_excel(data: list[CoppCertificate]) -> bytes:
     ws = wb.active
     ws.title = "COPP证书"
 
-    headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-               "产品范围", "适用国家", "证书是否过期"]
+    headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "适用国家",
+        "证书是否过期",
+    ]
     ws.append(headers)
 
     for item in data:
-        ws.append([
-            item.product_name,
-            item.certificate_name or "",
-            item.batch_no or "",
-            item.issuing_authority or "",
-            item.issue_date.isoformat() if item.issue_date else "",
-            item.valid_until.isoformat() if item.valid_until else "",
-            item.product_scope or "",
-            item.applicable_countries or "",
-            item.is_expired or "",
-        ])
+        ws.append(
+            [
+                item.product_name,
+                item.certificate_name or "",
+                item.batch_no or "",
+                item.issuing_authority or "",
+                item.issue_date.isoformat() if item.issue_date else "",
+                item.valid_until.isoformat() if item.valid_until else "",
+                item.product_scope or "",
+                item.applicable_countries or "",
+                item.is_expired or "",
+            ]
+        )
 
     output = io.BytesIO()
     wb.save(output)
@@ -528,17 +761,35 @@ def import_copp_certificates_from_excel(file_content: bytes) -> dict:
     ws = wb.active
     _fill_merged_cells(ws)
 
-    expected_headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-                        "产品范围", "适用国家", "证书是否过期"]
+    expected_headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "适用国家",
+        "证书是否过期",
+    ]
     header_row, field_map = _find_header_row(ws, expected_headers)
 
-    result = {"total_rows": 0, "success_count": 0, "skipped_count": 0, "error_count": 0, "errors": [], "items": []}
+    result = {
+        "total_rows": 0,
+        "success_count": 0,
+        "skipped_count": 0,
+        "error_count": 0,
+        "errors": [],
+        "items": [],
+    }
 
     if not field_map:
         result["errors"].append("未找到有效表头")
         return result
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1
+    ):
         result["total_rows"] += 1
         if not any(row):
             result["skipped_count"] += 1
@@ -552,13 +803,21 @@ def import_copp_certificates_from_excel(file_content: bytes) -> dict:
         try:
             item = CoppCertificateCreate(
                 product_name=product_name,
-                certificate_name=_parse_str(_get_cell_value(row, field_map, "证书名称")),
+                certificate_name=_parse_str(
+                    _get_cell_value(row, field_map, "证书名称")
+                ),
                 batch_no=_parse_str(_get_cell_value(row, field_map, "批件号")),
-                issuing_authority=_parse_str(_get_cell_value(row, field_map, "国家/发证机关")),
+                issuing_authority=_parse_str(
+                    _get_cell_value(row, field_map, "国家/发证机关")
+                ),
                 issue_date=_parse_date(_get_cell_value(row, field_map, "发证日期")),
-                valid_until=_parse_date(_get_cell_value(row, field_map, "证书有效期至")),
+                valid_until=_parse_date(
+                    _get_cell_value(row, field_map, "证书有效期至")
+                ),
                 product_scope=_parse_str(_get_cell_value(row, field_map, "产品范围")),
-                applicable_countries=_parse_str(_get_cell_value(row, field_map, "适用国家")),
+                applicable_countries=_parse_str(
+                    _get_cell_value(row, field_map, "适用国家")
+                ),
                 is_expired=_parse_str(_get_cell_value(row, field_map, "证书是否过期")),
             )
             result["items"].append(item)
@@ -576,21 +835,31 @@ def export_wc_certificates_to_excel(data: list[WcCertificate]) -> bytes:
     ws = wb.active
     ws.title = "WC证书"
 
-    headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-               "产品范围", "证书是否过期"]
+    headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "证书是否过期",
+    ]
     ws.append(headers)
 
     for item in data:
-        ws.append([
-            item.product_name,
-            item.certificate_name or "",
-            item.batch_no or "",
-            item.issuing_authority or "",
-            item.issue_date.isoformat() if item.issue_date else "",
-            item.valid_until.isoformat() if item.valid_until else "",
-            item.product_scope or "",
-            item.is_expired or "",
-        ])
+        ws.append(
+            [
+                item.product_name,
+                item.certificate_name or "",
+                item.batch_no or "",
+                item.issuing_authority or "",
+                item.issue_date.isoformat() if item.issue_date else "",
+                item.valid_until.isoformat() if item.valid_until else "",
+                item.product_scope or "",
+                item.is_expired or "",
+            ]
+        )
 
     output = io.BytesIO()
     wb.save(output)
@@ -602,17 +871,34 @@ def import_wc_certificates_from_excel(file_content: bytes) -> dict:
     ws = wb.active
     _fill_merged_cells(ws)
 
-    expected_headers = ["品名", "证书名称", "批件号", "国家/发证机关", "发证日期", "证书有效期至",
-                        "产品范围", "证书是否过期"]
+    expected_headers = [
+        "品名",
+        "证书名称",
+        "批件号",
+        "国家/发证机关",
+        "发证日期",
+        "证书有效期至",
+        "产品范围",
+        "证书是否过期",
+    ]
     header_row, field_map = _find_header_row(ws, expected_headers)
 
-    result = {"total_rows": 0, "success_count": 0, "skipped_count": 0, "error_count": 0, "errors": [], "items": []}
+    result = {
+        "total_rows": 0,
+        "success_count": 0,
+        "skipped_count": 0,
+        "error_count": 0,
+        "errors": [],
+        "items": [],
+    }
 
     if not field_map:
         result["errors"].append("未找到有效表头")
         return result
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for row_idx, row in enumerate(
+        ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1
+    ):
         result["total_rows"] += 1
         if not any(row):
             result["skipped_count"] += 1
@@ -626,11 +912,17 @@ def import_wc_certificates_from_excel(file_content: bytes) -> dict:
         try:
             item = WcCertificateCreate(
                 product_name=product_name,
-                certificate_name=_parse_str(_get_cell_value(row, field_map, "证书名称")),
+                certificate_name=_parse_str(
+                    _get_cell_value(row, field_map, "证书名称")
+                ),
                 batch_no=_parse_str(_get_cell_value(row, field_map, "批件号")),
-                issuing_authority=_parse_str(_get_cell_value(row, field_map, "国家/发证机关")),
+                issuing_authority=_parse_str(
+                    _get_cell_value(row, field_map, "国家/发证机关")
+                ),
                 issue_date=_parse_date(_get_cell_value(row, field_map, "发证日期")),
-                valid_until=_parse_date(_get_cell_value(row, field_map, "证书有效期至")),
+                valid_until=_parse_date(
+                    _get_cell_value(row, field_map, "证书有效期至")
+                ),
                 product_scope=_parse_str(_get_cell_value(row, field_map, "产品范围")),
                 is_expired=_parse_str(_get_cell_value(row, field_map, "证书是否过期")),
             )

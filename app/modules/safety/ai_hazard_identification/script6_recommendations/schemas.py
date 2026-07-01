@@ -42,15 +42,11 @@ class RecommendationInput(BaseModel):
 class RecommendationOutput(BaseModel):
     """脚本6 输出：建议措施。"""
 
-    needs_recommendation: str = Field(
-        ..., description="是否需提出建议措施（是/否）"
-    )
+    needs_recommendation: str = Field(..., description="是否需提出建议措施（是/否）")
     recommendation_type: str = Field(
         ..., description="建议措施类型（工程控制/管理控制/PPE/应急/综合）"
     )
     recommendation_content: str = Field(
         ..., min_length=5, description="建议措施具体内容（可执行的详细描述）"
     )
-    recommendation_priority: str = Field(
-        ..., description="建议措施优先级（高/中/低）"
-    )
+    recommendation_priority: str = Field(..., description="建议措施优先级（高/中/低）")

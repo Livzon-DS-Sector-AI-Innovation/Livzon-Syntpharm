@@ -94,18 +94,14 @@ class EnergyDeviceConfig(BaseModel):
     monitor_level: Mapped[str] = mapped_column(
         String(20), nullable=False, default="normal", comment="监控等级"
     )
-    unit: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="计量单位"
-    )
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, comment="计量单位")
     collection_interval: Mapped[int] = mapped_column(
         Integer, nullable=False, default=60, comment="采集间隔(分钟)"
     )
     is_enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, comment="是否启用采集"
     )
-    remark: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="备注"
-    )
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
 
 class EnergyData(BaseModel):
@@ -134,9 +130,7 @@ class EnergyData(BaseModel):
     value: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), nullable=False, comment="能耗累计值"
     )
-    unit: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="计量单位"
-    )
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, comment="计量单位")
     collected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -257,8 +251,9 @@ class EnergyAlertRule(BaseModel):
         String(20), nullable=False, comment="能源类型"
     )
     monitor_metric: Mapped[str] = mapped_column(
-        String(20), nullable=False,
-        comment="监控指标: instant/daily_total/monthly_total"
+        String(20),
+        nullable=False,
+        comment="监控指标: instant/daily_total/monthly_total",
     )
     threshold_type: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="阈值类型"
@@ -266,9 +261,7 @@ class EnergyAlertRule(BaseModel):
     threshold_value: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), nullable=False, comment="阈值"
     )
-    unit: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="计量单位"
-    )
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, comment="计量单位")
     alert_level: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="预警等级"
     )
@@ -334,9 +327,7 @@ class EnergyAlertRecord(BaseModel):
     threshold_value: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), nullable=False, comment="阈值"
     )
-    unit: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="计量单位"
-    )
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, comment="计量单位")
     alert_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="预警触发时间"
     )

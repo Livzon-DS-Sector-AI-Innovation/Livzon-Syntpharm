@@ -194,16 +194,13 @@ class TurnoverAnalysisService:
         jc_result = await self.session.execute(jc_stmt)
         by_job_category = {row[0]: row[1] for row in jc_result.all() if row[0]}
 
-        reason_stmt = (
-            select(
-                DepartureRecord.offboarding_reason,
-                DepartureRecord.offboarding_reason_2,
-            )
-            .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
-                DepartureRecord.is_deleted.is_(False),
-            )
+        reason_stmt = select(
+            DepartureRecord.offboarding_reason,
+            DepartureRecord.offboarding_reason_2,
+        ).where(
+            DepartureRecord.offboarding_date >= start_date,
+            DepartureRecord.offboarding_date <= end_date,
+            DepartureRecord.is_deleted.is_(False),
         )
         reason_result = await self.session.execute(reason_stmt)
         reason_counter: Counter[str] = Counter()

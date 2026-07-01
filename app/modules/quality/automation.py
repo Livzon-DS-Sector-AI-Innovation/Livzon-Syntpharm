@@ -53,7 +53,7 @@ async def check_overdue_deviations(db: AsyncSession) -> list[dict]:
     """Find deviations that have exceeded their step deadline."""
     query = select(Deviation).where(
         and_(
-            Deviation.is_deleted == False,
+            not Deviation.is_deleted,
             Deviation.status.in_(PENDING_STATUSES),
             Deviation.status_updated_at.isnot(None),
         )
@@ -74,18 +74,20 @@ async def check_overdue_deviations(db: AsyncSession) -> list[dict]:
         if dev.status_updated_at:
             days_elapsed = (now - dev.status_updated_at).days
             if days_elapsed > limit_days:
-                overdue_items.append({
-                    "id": str(dev.id),
-                    "code": dev.deviation_code,
-                    "title": dev.title,
-                    "status": dev.status,
-                    "department": dev.department,
-                    "handler": dev.handler,
-                    "status_updated_at": dev.status_updated_at.isoformat(),
-                    "overdue_days": days_elapsed - limit_days,
-                    "step": step,
-                    "step_label": APPROVAL_STEP_LABELS.get(step, step),
-                })
+                overdue_items.append(
+                    {
+                        "id": str(dev.id),
+                        "code": dev.deviation_code,
+                        "title": dev.title,
+                        "status": dev.status,
+                        "department": dev.department,
+                        "handler": dev.handler,
+                        "status_updated_at": dev.status_updated_at.isoformat(),
+                        "overdue_days": days_elapsed - limit_days,
+                        "step": step,
+                        "step_label": APPROVAL_STEP_LABELS.get(step, step),
+                    }
+                )
 
     return overdue_items
 
@@ -100,8 +102,8 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]
     # Get all production workshops
     workshop_query = select(DepartmentContact).where(
         and_(
-            DepartmentContact.is_deleted == False,
-            DepartmentContact.is_production_workshop == True,
+            not DepartmentContact.is_deleted,
+            DepartmentContact.is_production_workshop,
         )
     )
     result = await db.execute(workshop_query)
@@ -121,18 +123,29 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]
 
         if not confirm:
             # No confirmation yet - check if they have production
-            unsubmitted.append({
-                "department": workshop.department,
-                "dept_head_id": str(workshop.dept_head_id) if workshop.dept_head_id else None,
-                "gmp_staff_ids": workshop.gmp_staff_ids or [],
-            })
-        elif confirm.production_status == "production" and confirm.deviation_status == "unsubmitted":
+            unsubmitted.append(
+                {
+                    "department": workshop.department,
+                    "dept_head_id": str(workshop.dept_head_id)
+                    if workshop.dept_head_id
+                    else None,
+                    "gmp_staff_ids": workshop.gmp_staff_ids or [],
+                }
+            )
+        elif (
+            confirm.production_status == "production"
+            and confirm.deviation_status == "unsubmitted"
+        ):
             # Confirmed production but no deviation submitted
-            unsubmitted.append({
-                "department": workshop.department,
-                "dept_head_id": str(workshop.dept_head_id) if workshop.dept_head_id else None,
-                "gmp_staff_ids": workshop.gmp_staff_ids or [],
-            })
+            unsubmitted.append(
+                {
+                    "department": workshop.department,
+                    "dept_head_id": str(workshop.dept_head_id)
+                    if workshop.dept_head_id
+                    else None,
+                    "gmp_staff_ids": workshop.gmp_staff_ids or [],
+                }
+            )
 
     return unsubmitted
 

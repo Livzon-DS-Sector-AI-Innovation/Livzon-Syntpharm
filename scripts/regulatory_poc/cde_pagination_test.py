@@ -32,6 +32,7 @@ window.chrome = {runtime: {}};
 
 TARGET_URL = "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
 
+
 def main():
     output = {
         "timestamp": datetime.now().isoformat(),
@@ -107,7 +108,9 @@ def main():
         try:
             body = response.text()
             entry["response_length"] = len(body)
-            if body.strip().startswith("{") or "json" in response.headers.get("content-type", ""):
+            if body.strip().startswith("{") or "json" in response.headers.get(
+                "content-type", ""
+            ):
                 try:
                     jd = json.loads(body)
                     entry["is_json"] = True
@@ -122,7 +125,9 @@ def main():
                                     entry[f"field_{k}_len"] = len(v)
                                     # 记录第一条记录的标题用于对比
                                     if k == "records" and v and isinstance(v[0], dict):
-                                        entry["first_record_title"] = v[0].get("title", "")
+                                        entry["first_record_title"] = v[0].get(
+                                            "title", ""
+                                        )
                                 elif isinstance(v, (int, float)):
                                     entry[f"field_{k}"] = v
                                 elif isinstance(v, dict) and k == "data":
@@ -137,7 +142,9 @@ def main():
                                         records = v["records"]
                                         entry["field_records_len"] = len(records)
                                         if records and isinstance(records[0], dict):
-                                            entry["first_record_title"] = records[0].get("title", "")
+                                            entry["first_record_title"] = records[
+                                                0
+                                            ].get("title", "")
                 except json.JSONDecodeError:
                     entry["is_json"] = False
             else:
@@ -171,7 +178,7 @@ def main():
         time.sleep(2)
         title = page.title()
         content_len = len(page.content())
-        print(f"   [{(i+1)*2}s] title='{title[:50]}' content={content_len}")
+        print(f"   [{(i + 1) * 2}s] title='{title[:50]}' content={content_len}")
         if title and len(title.strip()) > 2:
             print(f"   ✅ WAF 通过! 标题: {title}")
             output["waf_passed"] = True
@@ -201,7 +208,7 @@ def main():
     print("\n[5] 查找分页元素...")
     pagination_info = page.evaluate("""() => {
         const results = [];
-        
+
         // 查找所有可能的分页元素
         const selectors = [
             '.pagination', '.pager', '[class*="paging"]', '[class*="page"]',
@@ -209,7 +216,7 @@ def main():
             'a[href*="page"]', 'button[class*="page"]',
             'li[class*="page"]', 'span[class*="page"]'
         ];
-        
+
         for (const sel of selectors) {
             try {
                 const els = document.querySelectorAll(sel);
@@ -225,13 +232,15 @@ def main():
                 });
             } catch(e) {}
         }
-        
+
         return results;
     }""")
 
     print(f"   找到 {len(pagination_info)} 个分页相关元素")
     for info in pagination_info[:10]:
-        print(f"      [{info['selector']}] <{info['tag']}> '{info['text']}' visible={info['visible']}")
+        print(
+            f"      [{info['selector']}] <{info['tag']}> '{info['text']}' visible={info['visible']}"
+        )
 
     # 尝试翻页
     print("\n[6] 开始翻页测试...")
@@ -243,7 +252,7 @@ def main():
         'a:has-text(">>")',
         'a:has-text(">")',
         'button:has-text(">")',
-        '.next',
+        ".next",
         '[class*="next"]',
         'a[title="下一页"]',
     ]
@@ -298,13 +307,15 @@ def main():
         # 记录翻页事件
         new_count = len(output["getDomesticGuideList_captured"])
         if new_count > initial_count:
-            output["pagination_events"].append({
-                "action": "click_next",
-                "from_page": 1,
-                "to_page": 2,
-                "new_responses": new_count - initial_count,
-                "timestamp": datetime.now().isoformat()
-            })
+            output["pagination_events"].append(
+                {
+                    "action": "click_next",
+                    "from_page": 1,
+                    "to_page": 2,
+                    "new_responses": new_count - initial_count,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
             print(f"   ✅ 翻页成功! 新增 {new_count - initial_count} 个响应")
         else:
             print("   ⚠️ 翻页后无新响应")
@@ -339,13 +350,15 @@ def main():
 
         after_page3 = len(output["getDomesticGuideList_captured"])
         if after_page3 > before_page3:
-            output["pagination_events"].append({
-                "action": "click_next",
-                "from_page": 2,
-                "to_page": 3,
-                "new_responses": after_page3 - before_page3,
-                "timestamp": datetime.now().isoformat()
-            })
+            output["pagination_events"].append(
+                {
+                    "action": "click_next",
+                    "from_page": 2,
+                    "to_page": 3,
+                    "new_responses": after_page3 - before_page3,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
             print(f"   ✅ 翻页成功! 新增 {after_page3 - before_page3} 个响应")
         else:
             print("   ⚠️ 翻页后无新响应")
@@ -353,8 +366,13 @@ def main():
     # Cookie
     cookies = context.cookies()
     output["cookies"] = [
-        {"name": c["name"], "domain": c["domain"],
-         "expires_human": datetime.fromtimestamp(c["expires"]).isoformat() if c.get("expires", 0) > 0 else "Session"}
+        {
+            "name": c["name"],
+            "domain": c["domain"],
+            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat()
+            if c.get("expires", 0) > 0
+            else "Session",
+        }
         for c in cookies
     ]
 
@@ -380,9 +398,9 @@ def _cleanup(context, browser, pw, output):
 
 
 def _print_summary(output):
-    print(f"\n\n{'='*70}")
+    print(f"\n\n{'=' * 70}")
     print("翻页测试报告")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  WAF 通过: {'✅' if output['waf_passed'] else '❌'}")
     print(f"  页面标题: {output['page_title']}")
     print(f"  总 XHR/Fetch: {len(output['all_xhr_fetch'])}")
@@ -410,7 +428,9 @@ def _print_summary(output):
     if output["pagination_events"]:
         print("\n  翻页事件记录:")
         for event in output["pagination_events"]:
-            print(f"      {event['from_page']} → {event['to_page']} | 新增 {event['new_responses']} 个响应")
+            print(
+                f"      {event['from_page']} → {event['to_page']} | 新增 {event['new_responses']} 个响应"
+            )
 
     # 验证数据是否不同
     if len(output["getDomesticGuideList_captured"]) >= 2:

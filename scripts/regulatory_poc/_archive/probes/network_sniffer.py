@@ -67,16 +67,34 @@ class NetworkSniffer:
                             try:
                                 jd = json.loads(body)
                                 entry["is_json"] = True
-                                entry["json_keys"] = list(jd.keys()) if isinstance(jd, dict) else f"list[{len(jd)}]"
+                                entry["json_keys"] = (
+                                    list(jd.keys())
+                                    if isinstance(jd, dict)
+                                    else f"list[{len(jd)}]"
+                                )
                                 # 提取分页信息
                                 if isinstance(jd, dict):
-                                    for k in ("total", "totalCount", "total_count", "count", "records", "data", "rows", "list", "result"):
+                                    for k in (
+                                        "total",
+                                        "totalCount",
+                                        "total_count",
+                                        "count",
+                                        "records",
+                                        "data",
+                                        "rows",
+                                        "list",
+                                        "result",
+                                    ):
                                         if k in jd:
                                             v = jd[k]
                                             if isinstance(v, list):
                                                 entry[f"json_{k}_len"] = len(v)
                                                 if v:
-                                                    entry[f"json_{k}_sample_keys"] = list(v[0].keys()) if isinstance(v[0], dict) else type(v[0]).__name__
+                                                    entry[f"json_{k}_sample_keys"] = (
+                                                        list(v[0].keys())
+                                                        if isinstance(v[0], dict)
+                                                        else type(v[0]).__name__
+                                                    )
                                             else:
                                                 entry[f"json_{k}"] = v
                             except json.JSONDecodeError:
@@ -85,9 +103,9 @@ class NetworkSniffer:
                 pass
 
     def analyze(self, url, output_dir="/tmp"):
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"分析: {url}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         self.all_requests = []
         self.api_calls = []
@@ -137,7 +155,12 @@ class NetworkSniffer:
             for link in links:
                 text = link.inner_text().strip()
                 href = link.get_attribute("href") or ""
-                if text and len(text) > 8 and href and not href.startswith("javascript:"):
+                if (
+                    text
+                    and len(text) > 8
+                    and href
+                    and not href.startswith("javascript:")
+                ):
                     meaningful_links.append({"text": text[:80], "href": href[:150]})
 
             print(f"   有效链接: {len(meaningful_links)}")
@@ -149,7 +172,9 @@ class NetworkSniffer:
 
             # 检查分页
             print("\n[4] 分页元素:")
-            page_el = page.query_selector(".pagination, .pager, .page-bar, [class*='paging'], [class*='pageNav']")
+            page_el = page.query_selector(
+                ".pagination, .pager, .page-bar, [class*='paging'], [class*='pageNav']"
+            )
             if page_el:
                 print(f"   找到分页: {page_el.inner_text().strip()[:100]}")
             else:
@@ -158,8 +183,12 @@ class NetworkSniffer:
             # 检查是否有 Vue/React 标记
             print("\n[5] 前端框架检测:")
             has_vue = page.evaluate("() => !!window.__VUE__ || !!window.Vue")
-            has_react = page.evaluate("() => !!window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || !!document.querySelector('[data-reactroot]')")
-            has_angular = page.evaluate("() => !!window.ng || !!document.querySelector('[ng-app]')")
+            has_react = page.evaluate(
+                "() => !!window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || !!document.querySelector('[data-reactroot]')"
+            )
+            has_angular = page.evaluate(
+                "() => !!window.ng || !!document.querySelector('[ng-app]')"
+            )
             print(f"   Vue: {'✅' if has_vue else '❌'}")
             print(f"   React: {'✅' if has_react else '❌'}")
             print(f"   Angular: {'✅' if has_angular else '❌'}")
@@ -169,7 +198,9 @@ class NetworkSniffer:
             before_count = len(self.api_calls)
 
             # 找下一页按钮
-            next_btn = page.query_selector("a.next, .pagination .next, [class*='next'], a:has-text('下一页'), button:has-text('下一页')")
+            next_btn = page.query_selector(
+                "a.next, .pagination .next, [class*='next'], a:has-text('下一页'), button:has-text('下一页')"
+            )
             if next_btn:
                 print("   找到下一页按钮，点击...")
                 try:
@@ -177,7 +208,9 @@ class NetworkSniffer:
                     page.wait_for_timeout(3000)
                     after_count = len(self.api_calls)
                     if after_count > before_count:
-                        print(f"   ✅ 翻页后新增 {after_count - before_count} 个 API 请求!")
+                        print(
+                            f"   ✅ 翻页后新增 {after_count - before_count} 个 API 请求!"
+                        )
                     else:
                         print("   翻页后无新 API 请求")
                 except Exception as e:
@@ -188,6 +221,7 @@ class NetworkSniffer:
         except Exception as e:
             print(f"❌ 错误: {e}")
             import traceback
+
             traceback.print_exc()
         finally:
             context.close()
@@ -209,7 +243,11 @@ def main():
         sys.exit(1)
 
     url = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else f"/tmp/sniff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    output_file = (
+        sys.argv[2]
+        if len(sys.argv) > 2
+        else f"/tmp/sniff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    )
 
     print("=" * 70)
     print("网络请求嗅探工具 v2")
@@ -224,9 +262,9 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("汇总")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"总请求数: {len(result['all_requests'])}")
     print(f"API 请求: {len(result['api_calls'])}")
     print(f"JS 文件:  {len(result['js_files'])}")

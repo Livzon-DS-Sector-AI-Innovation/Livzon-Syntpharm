@@ -1,4 +1,5 @@
 """S.6 包装系统 AI 填充配置种子数据"""
+
 import asyncio
 import os
 import sys
@@ -279,7 +280,9 @@ async def seed():
             db.add(fm)
 
         await db.commit()
-        print(f"✓ S.6 种子数据写入完成: {len(S6_ASSET_CATEGORIES)} 个素材分类, {len(S6_FIELD_MAPPINGS)} 个字段映射")
+        print(
+            f"✓ S.6 种子数据写入完成: {len(S6_ASSET_CATEGORIES)} 个素材分类, {len(S6_FIELD_MAPPINGS)} 个字段映射"
+        )
 
 
 if __name__ == "__main__":

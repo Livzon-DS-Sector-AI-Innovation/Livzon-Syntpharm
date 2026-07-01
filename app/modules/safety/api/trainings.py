@@ -23,7 +23,9 @@ from app.modules.safety.service import (
 trainings_router = APIRouter()
 
 
-@trainings_router.get("/trainings", response_model=ApiResponse, summary="获取安全培训列表")
+@trainings_router.get(
+    "/trainings", response_model=ApiResponse, summary="获取安全培训列表"
+)
 async def get_trainings(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -36,14 +38,18 @@ async def get_trainings(
     """获取安全培训列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
-    items, total = await service.get_trainings(skip, page_size, status, training_type, department)
+    items, total = await service.get_trainings(
+        skip, page_size, status, training_type, department
+    )
     return ApiResponse(
         data=[SafetyTrainingResponse.model_validate(t) for t in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@trainings_router.get("/trainings/{training_id}", response_model=ApiResponse, summary="获取安全培训详情")
+@trainings_router.get(
+    "/trainings/{training_id}", response_model=ApiResponse, summary="获取安全培训详情"
+)
 async def get_training(
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -70,7 +76,9 @@ async def create_training(
     return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
 
 
-@trainings_router.put("/trainings/{training_id}", response_model=ApiResponse, summary="更新安全培训")
+@trainings_router.put(
+    "/trainings/{training_id}", response_model=ApiResponse, summary="更新安全培训"
+)
 async def update_training(
     training_id: uuid.UUID,
     data: SafetyTrainingUpdate,
@@ -86,7 +94,9 @@ async def update_training(
     return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
 
 
-@trainings_router.post("/trainings/{training_id}/start", response_model=ApiResponse, summary="开始培训")
+@trainings_router.post(
+    "/trainings/{training_id}/start", response_model=ApiResponse, summary="开始培训"
+)
 async def start_training(
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -101,7 +111,9 @@ async def start_training(
     return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
 
 
-@trainings_router.post("/trainings/{training_id}/complete", response_model=ApiResponse, summary="完成培训")
+@trainings_router.post(
+    "/trainings/{training_id}/complete", response_model=ApiResponse, summary="完成培训"
+)
 async def complete_training(
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -116,7 +128,9 @@ async def complete_training(
     return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
 
 
-@trainings_router.delete("/trainings/{training_id}", response_model=ApiResponse, summary="删除安全培训")
+@trainings_router.delete(
+    "/trainings/{training_id}", response_model=ApiResponse, summary="删除安全培训"
+)
 async def delete_training(
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -211,7 +225,9 @@ async def delete_training_record(
 # ==================== 培训证书接口 ====================
 
 
-@trainings_router.get("/training-certificates", response_model=ApiResponse, summary="获取证书列表")
+@trainings_router.get(
+    "/training-certificates", response_model=ApiResponse, summary="获取证书列表"
+)
 async def get_training_certificates(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -224,7 +240,10 @@ async def get_training_certificates(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_training_certificates(
-        skip, page_size, certificate_status, keyword,
+        skip,
+        page_size,
+        certificate_status,
+        keyword,
     )
     return ApiResponse(
         data=[TrainingRecordResponse.model_validate(r) for r in items],
@@ -232,7 +251,11 @@ async def get_training_certificates(
     )
 
 
-@trainings_router.get("/training-certificates/expiring", response_model=ApiResponse, summary="获取即将到期证书")
+@trainings_router.get(
+    "/training-certificates/expiring",
+    response_model=ApiResponse,
+    summary="获取即将到期证书",
+)
 async def get_expiring_certificates(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
@@ -241,5 +264,3 @@ async def get_expiring_certificates(
     service = SafetyService(db)
     items = await service.get_expiring_certificates()
     return ApiResponse(data=[TrainingRecordResponse.model_validate(r) for r in items])
-
-

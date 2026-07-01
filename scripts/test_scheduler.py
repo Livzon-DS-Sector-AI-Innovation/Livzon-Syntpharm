@@ -34,7 +34,9 @@ async def main():
             logger.error("CDE 数据源不存在")
             return
 
-        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
+        channel = await repo.get_channel_by_code(
+            db, source.id, "cde_domestic_guideline"
+        )
         if not channel:
             logger.error("栏目不存在")
             return

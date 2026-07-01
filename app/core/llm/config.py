@@ -16,6 +16,7 @@ from .exceptions import LLMConfigError
 @dataclass
 class LLMConfigData:
     """LLM configuration data."""
+
     id: str
     config_name: str
     config_type: str  # "text" or "vision"
@@ -56,14 +57,20 @@ class LLMConfigModel(BaseModel):
         Float, default=0.1, server_default="0.1", nullable=False, comment="Temperature"
     )
     timeout_seconds: Mapped[int] = mapped_column(
-        Integer, default=120, server_default="120", nullable=False, comment="Timeout seconds"
+        Integer,
+        default=120,
+        server_default="120",
+        nullable=False,
+        comment="Timeout seconds",
     )
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", nullable=False, comment="Is active config"
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+        comment="Is active config",
     )
-    notes: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="Notes"
-    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Notes")
 
     def to_config_data(self) -> LLMConfigData:
         """Convert to config data with decrypted API key."""
@@ -82,10 +89,10 @@ class LLMConfigModel(BaseModel):
 
 async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
     """Get active LLM config from database.
-    
+
     Args:
         config_type: "text" or "vision"
-    
+
     Returns:
         LLMConfigData or None if not found
     """
@@ -93,9 +100,9 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
         async with async_session_factory() as session:
             result = await session.execute(
                 select(LLMConfigModel).where(
-                    LLMConfigModel.is_active == True,
+                    LLMConfigModel.is_active,
                     LLMConfigModel.config_type == config_type,
-                    LLMConfigModel.is_deleted == False,
+                    not LLMConfigModel.is_deleted,
                 )
             )
             config = result.scalar_one_or_none()
@@ -109,7 +116,7 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
 
 def get_env_config() -> LLMConfigData | None:
     """Get LLM config from environment variables (for local dev).
-    
+
     Returns:
         LLMConfigData or None if not configured
     """
@@ -135,13 +142,13 @@ def get_env_config() -> LLMConfigData | None:
 
 async def get_config(config_type: str = "text") -> LLMConfigData:
     """Get LLM config - tries DB first, falls back to env.
-    
+
     Args:
         config_type: "text" or "vision"
-    
+
     Returns:
         LLMConfigData
-    
+
     Raises:
         LLMConfigError: If no config is available
     """

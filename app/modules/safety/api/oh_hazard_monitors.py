@@ -21,7 +21,11 @@ from app.modules.safety.service import (
 oh_hazard_monitors_router = APIRouter()
 
 
-@oh_hazard_monitors_router.get("/oh-hazard-monitors", response_model=ApiResponse, summary="获取职业危害因素监测列表")
+@oh_hazard_monitors_router.get(
+    "/oh-hazard-monitors",
+    response_model=ApiResponse,
+    summary="获取职业危害因素监测列表",
+)
 async def get_oh_hazard_monitors(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -44,7 +48,9 @@ async def get_oh_hazard_monitors(
     )
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors", response_model=ApiResponse, summary="创建职业危害因素监测")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors", response_model=ApiResponse, summary="创建职业危害因素监测"
+)
 async def create_oh_hazard_monitor(
     data: OhHazardMonitorCreate,
     db: AsyncSession = Depends(get_db),
@@ -57,7 +63,11 @@ async def create_oh_hazard_monitor(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.get("/oh-hazard-monitors/{monitor_id}", response_model=ApiResponse, summary="获取职业危害因素监测详情")
+@oh_hazard_monitors_router.get(
+    "/oh-hazard-monitors/{monitor_id}",
+    response_model=ApiResponse,
+    summary="获取职业危害因素监测详情",
+)
 async def get_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -71,7 +81,11 @@ async def get_oh_hazard_monitor(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.put("/oh-hazard-monitors/{monitor_id}", response_model=ApiResponse, summary="更新职业危害因素监测")
+@oh_hazard_monitors_router.put(
+    "/oh-hazard-monitors/{monitor_id}",
+    response_model=ApiResponse,
+    summary="更新职业危害因素监测",
+)
 async def update_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     data: OhHazardMonitorUpdate,
@@ -87,7 +101,11 @@ async def update_oh_hazard_monitor(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.delete("/oh-hazard-monitors/{monitor_id}", response_model=ApiResponse, summary="删除职业危害因素监测")
+@oh_hazard_monitors_router.delete(
+    "/oh-hazard-monitors/{monitor_id}",
+    response_model=ApiResponse,
+    summary="删除职业危害因素监测",
+)
 async def delete_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -105,7 +123,11 @@ async def delete_oh_hazard_monitor(
 # ── Monitor Workflow ──
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors/{monitor_id}/start", response_model=ApiResponse, summary="开始监测")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors/{monitor_id}/start",
+    response_model=ApiResponse,
+    summary="开始监测",
+)
 async def start_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -120,7 +142,11 @@ async def start_oh_hazard_monitor(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors/{monitor_id}/complete", response_model=ApiResponse, summary="完成监测")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors/{monitor_id}/complete",
+    response_model=ApiResponse,
+    summary="完成监测",
+)
 async def complete_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -135,7 +161,11 @@ async def complete_oh_hazard_monitor(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors/{monitor_id}/verify", response_model=ApiResponse, summary="验证监测")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors/{monitor_id}/verify",
+    response_model=ApiResponse,
+    summary="验证监测",
+)
 async def verify_oh_hazard_monitor(
     monitor_id: uuid.UUID,
     data: VerifyMonitorRequest,
@@ -154,7 +184,11 @@ async def verify_oh_hazard_monitor(
 # ── Monitor JSON Sub-records ──
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors/{monitor_id}/detection-results", response_model=ApiResponse, summary="添加检测结果")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors/{monitor_id}/detection-results",
+    response_model=ApiResponse,
+    summary="添加检测结果",
+)
 async def add_detection_result(
     monitor_id: uuid.UUID,
     data: dict,
@@ -170,7 +204,11 @@ async def add_detection_result(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.put("/oh-hazard-monitors/{monitor_id}/detection-results/{index}", response_model=ApiResponse, summary="更新检测结果")
+@oh_hazard_monitors_router.put(
+    "/oh-hazard-monitors/{monitor_id}/detection-results/{index}",
+    response_model=ApiResponse,
+    summary="更新检测结果",
+)
 async def update_detection_result(
     monitor_id: uuid.UUID,
     index: int,
@@ -187,7 +225,11 @@ async def update_detection_result(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.delete("/oh-hazard-monitors/{monitor_id}/detection-results/{index}", response_model=ApiResponse, summary="删除检测结果")
+@oh_hazard_monitors_router.delete(
+    "/oh-hazard-monitors/{monitor_id}/detection-results/{index}",
+    response_model=ApiResponse,
+    summary="删除检测结果",
+)
 async def delete_detection_result(
     monitor_id: uuid.UUID,
     index: int,
@@ -203,7 +245,11 @@ async def delete_detection_result(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.post("/oh-hazard-monitors/{monitor_id}/abnormality-records", response_model=ApiResponse, summary="添加异常处置记录")
+@oh_hazard_monitors_router.post(
+    "/oh-hazard-monitors/{monitor_id}/abnormality-records",
+    response_model=ApiResponse,
+    summary="添加异常处置记录",
+)
 async def add_monitor_abnormality_record(
     monitor_id: uuid.UUID,
     data: dict,
@@ -219,7 +265,11 @@ async def add_monitor_abnormality_record(
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
-@oh_hazard_monitors_router.put("/oh-hazard-monitors/{monitor_id}/abnormality-records/{index}", response_model=ApiResponse, summary="更新异常处置状态")
+@oh_hazard_monitors_router.put(
+    "/oh-hazard-monitors/{monitor_id}/abnormality-records/{index}",
+    response_model=ApiResponse,
+    summary="更新异常处置状态",
+)
 async def update_monitor_abnormality_status(
     monitor_id: uuid.UUID,
     index: int,
@@ -234,5 +284,3 @@ async def update_monitor_abnormality_status(
         return ApiResponse(code=400, message="无法更新，监测记录不存在或索引无效")
     await db.commit()
     return ApiResponse(data=OhHazardMonitorResponse.model_validate(item))
-
-

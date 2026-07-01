@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 # 共享 LEC 输出模型（脚本3/5/7 共用）
 # ═══════════════════════════════════════════════════════════════
 
+
 class LECOutput(BaseModel):
     """LEC 风险评价输出（脚本3/5/7 共用结构）。
 
@@ -23,18 +24,12 @@ class LECOutput(BaseModel):
     - D < 70 → level_4（低风险）
     """
 
-    l_value: float | None = Field(
-        None, ge=0.1, le=10, description="可能性 L（0.1~10）"
-    )
+    l_value: float | None = Field(None, ge=0.1, le=10, description="可能性 L（0.1~10）")
     e_value: float | None = Field(
         None, ge=0.5, le=10, description="暴露频率 E（0.5~10）"
     )
-    c_value: float | None = Field(
-        None, ge=1, le=100, description="严重性 C（1~100）"
-    )
-    d_value: float | None = Field(
-        None, description="风险值 D = L × E × C"
-    )
+    c_value: float | None = Field(None, ge=1, le=100, description="严重性 C（1~100）")
+    d_value: float | None = Field(None, description="风险值 D = L × E × C")
     risk_level: str | None = Field(
         None, description="风险等级 key（level_1 / level_2 / level_3 / level_4）"
     )
@@ -45,10 +40,7 @@ class LECOutput(BaseModel):
     @property
     def is_unconfirmed(self) -> bool:
         """任一项为 None 表示信息不足 → 待人工确认。"""
-        return any(
-            v is None
-            for v in [self.l_value, self.e_value, self.c_value]
-        )
+        return any(v is None for v in [self.l_value, self.e_value, self.c_value])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -100,6 +92,7 @@ RISK_LEVEL_TABLE = """
 # ═══════════════════════════════════════════════════════════════
 # 脚本3 输入/输出
 # ═══════════════════════════════════════════════════════════════
+
 
 class InherentRiskInput(BaseModel):
     """脚本3 输入：基础信息 + 脚本1+2输出（经人工确认）。"""

@@ -119,5 +119,3 @@ async def delete_special_operation_personnel(
         return ApiResponse(code=404, message="人员资质不存在")
     await db.commit()
     return ApiResponse(message="删除成功")
-
-

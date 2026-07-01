@@ -213,11 +213,15 @@ class DetectionResultItem(BaseModel):
     """检测结果记录"""
 
     factor_name: str = Field(..., description="危害因素名称")
-    factor_category: str = Field(..., description="危害因素类别: dust/chemical/physical")
+    factor_category: str = Field(
+        ..., description="危害因素类别: dust/chemical/physical"
+    )
     detection_value: float = Field(..., description="检测值")
     unit: str | None = Field(None, description="单位（mg/m³, dB(A), °C 等）")
     oel_limit: float | None = Field(None, description="职业接触限值（OEL）")
-    compliance_status: str | None = Field(None, description="合规状态: compliant/exceeding/marginal")
+    compliance_status: str | None = Field(
+        None, description="合规状态: compliant/exceeding/marginal"
+    )
     sampling_method: str | None = Field(None, description="采样方法")
     standard_ref: str | None = Field(None, description="标准参考")
 
@@ -243,5 +247,3 @@ class AbnormalityRecordItem(BaseModel):
     status: str = Field("open", description="状态: open/investigating/corrected/closed")
     completed_at: str | None = Field(None, description="完成时间")
     remarks: str | None = Field(None, description="备注")
-
-

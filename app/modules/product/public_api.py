@@ -8,7 +8,9 @@ from app.modules.product.repository import ProductRepository
 from app.modules.product.schemas import ProductResponse
 
 
-async def get_product_by_id(session: AsyncSession, product_id: UUID) -> ProductResponse | None:
+async def get_product_by_id(
+    session: AsyncSession, product_id: UUID
+) -> ProductResponse | None:
     repo = ProductRepository(session)
     product = await repo.get_by_id(product_id)
     if product:

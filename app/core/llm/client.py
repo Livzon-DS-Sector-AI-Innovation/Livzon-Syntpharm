@@ -10,14 +10,16 @@ from .exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 
 class LLMClient:
     """Unified LLM client for all modules.
-    
+
     Usage:
         from app.core.llm import llm_client
-        
+
         result = await llm_client.chat([{"role": "user", "content": "Hello"}])
     """
 
-    async def _get_client_and_config(self, config_type: str = "text") -> tuple[httpx.AsyncClient, LLMConfigData]:
+    async def _get_client_and_config(
+        self, config_type: str = "text"
+    ) -> tuple[httpx.AsyncClient, LLMConfigData]:
         """Get HTTP client and config."""
         config = await get_config(config_type)
 
@@ -40,17 +42,17 @@ class LLMClient:
         config_type: str = "text",
     ) -> str:
         """Send a chat completion request and return the response text.
-        
+
         Args:
             messages: List of message dicts with 'role' and 'content'
             response_format: "json_object" or None
             temperature: Override config temperature
             max_tokens: Max tokens in response
             config_type: "text" or "vision"
-        
+
         Returns:
             Response text from LLM
-        
+
         Raises:
             LLMProviderError: If provider returns error
             LLMRateLimitError: If rate limit exceeded
@@ -65,7 +67,10 @@ class LLMClient:
             msgs = [dict(m) for m in messages]
             if response_format == "json_object":
                 last = msgs[-1]
-                if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
+                if (
+                    isinstance(last.get("content"), str)
+                    and "json" not in last["content"].lower()
+                ):
                     last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
 
             body = {
@@ -104,16 +109,16 @@ class LLMClient:
         config_type: str = "text",
     ) -> dict:
         """Chat + parse JSON response.
-        
+
         Args:
             messages: List of message dicts
             expected_keys: Optional list of keys to validate
             temperature: Override config temperature
             config_type: "text" or "vision"
-        
+
         Returns:
             Parsed JSON dict
-        
+
         Raises:
             LLMOutputError: If response is not valid JSON or missing keys
         """
@@ -177,13 +182,13 @@ class LLMClient:
         max_tokens: int = 16384,
     ) -> str:
         """Send a multimodal chat request with images.
-        
+
         Args:
             text_prompt: Text prompt
             image_urls: List of image URLs (can be data: URIs or http URLs)
             temperature: Override config temperature
             max_tokens: Max tokens in response
-        
+
         Returns:
             Response text from LLM
         """
@@ -230,13 +235,13 @@ class LLMClient:
         temperature: float | None = None,
     ) -> dict:
         """Vision chat + parse JSON response.
-        
+
         Args:
             text_prompt: Text prompt
             image_urls: List of image URLs
             expected_keys: Optional list of keys to validate
             temperature: Override config temperature
-        
+
         Returns:
             Parsed JSON dict
         """
@@ -270,13 +275,15 @@ class LLMClient:
         if expected_keys:
             missing = [k for k in expected_keys if k not in parsed]
             if missing:
-                raise LLMOutputError(f"Vision LLM response missing keys: {missing}", raw)
+                raise LLMOutputError(
+                    f"Vision LLM response missing keys: {missing}", raw
+                )
 
         return parsed
 
     async def health_check(self) -> dict:
         """Check LLM connectivity.
-        
+
         Returns:
             Dict with 'status' and optional 'detail'
         """
@@ -298,7 +305,6 @@ class LLMClient:
         except Exception as e:
             return {"status": "error", "detail": str(e)}
 
-
     async def stream_chat(
         self,
         messages: list[dict],
@@ -306,7 +312,7 @@ class LLMClient:
         max_tokens: int = 4096,
     ):
         """Stream chat completion tokens.
-        
+
         Yields dicts with keys:
             - type: "reasoning" | "content"
             - text: the token text

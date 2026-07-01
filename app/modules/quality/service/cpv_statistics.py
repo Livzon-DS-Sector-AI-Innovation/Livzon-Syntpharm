@@ -81,8 +81,14 @@ async def get_statistics(
 
     # 获取批次（使用大 page_size 确保获取所有数据用于统计）
     batches, _ = await repo.get_batches(
-        db, product_id, parameter.parameter_type, batch_no, start_date, end_date,
-        page=1, page_size=100000
+        db,
+        product_id,
+        parameter.parameter_type,
+        batch_no,
+        start_date,
+        end_date,
+        page=1,
+        page_size=100000,
     )
 
     if not batches:
@@ -135,8 +141,12 @@ async def get_statistics(
     cpk_value = _calc_cpk(numeric_values, parameter.lower_limit, parameter.upper_limit)
 
     # Use auto-calculated limits from data when parameter limits are not set
-    effective_lower = parameter.lower_limit if parameter.lower_limit is not None else min_value
-    effective_upper = parameter.upper_limit if parameter.upper_limit is not None else max_value
+    effective_lower = (
+        parameter.lower_limit if parameter.lower_limit is not None else min_value
+    )
+    effective_upper = (
+        parameter.upper_limit if parameter.upper_limit is not None else max_value
+    )
 
     return CpvStatisticsResponse(
         total_batches=len(batches),
@@ -167,8 +177,14 @@ async def get_trend_data(
 
     # 获取批次（使用大 page_size 确保获取所有数据用于统计）
     batches, _ = await repo.get_batches(
-        db, product_id, parameter.parameter_type, batch_no, start_date, end_date,
-        page=1, page_size=100000
+        db,
+        product_id,
+        parameter.parameter_type,
+        batch_no,
+        start_date,
+        end_date,
+        page=1,
+        page_size=100000,
     )
 
     # 获取参数值
@@ -187,8 +203,16 @@ async def get_trend_data(
                 all_numeric.append(num_val)
 
     # Auto-calculate limits from data when parameter limits are not set
-    effective_lower = parameter.lower_limit if parameter.lower_limit is not None else (min(all_numeric) if all_numeric else 0.0)
-    effective_upper = parameter.upper_limit if parameter.upper_limit is not None else (max(all_numeric) if all_numeric else 0.0)
+    effective_lower = (
+        parameter.lower_limit
+        if parameter.lower_limit is not None
+        else (min(all_numeric) if all_numeric else 0.0)
+    )
+    effective_upper = (
+        parameter.upper_limit
+        if parameter.upper_limit is not None
+        else (max(all_numeric) if all_numeric else 0.0)
+    )
 
     # 构建趋势数据
     items = []

@@ -59,7 +59,11 @@ def _on_message_receive(data: P2ImMessageReceiveV1) -> None:
     logger.info(
         "设备机器人收到消息: type=%s, user_id=%s, open_id=%s, "
         "chat_type=%s, message_id=%s",
-        msg_type, user_id, open_id, chat_type, message_id,
+        msg_type,
+        user_id,
+        open_id,
+        chat_type,
+        message_id,
     )
 
     if _main_loop is None:
@@ -202,7 +206,9 @@ def _on_card_action(data: P2CardActionTriggerV1) -> None:
         user_id = event.operator.user_id or ""
 
     logger.info(
-        "卡片按钮点击: user_id=%s, value=%s", user_id, action_value,
+        "卡片按钮点击: user_id=%s, value=%s",
+        user_id,
+        action_value,
     )
 
     if _main_loop is None:
@@ -293,7 +299,7 @@ async def _handle_card_action_async(
                 title="⚠️ 无法验收",
                 receive_id_type="open_id",
                 content=f"工单 **{wo.work_order_no}** 当前状态为「{wo.status}」，"
-                        "只有「待验收」的工单才能验收。",
+                "只有「待验收」的工单才能验收。",
             )
             return
 

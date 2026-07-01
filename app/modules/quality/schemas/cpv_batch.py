@@ -33,7 +33,9 @@ class CpvBatchWideResponse(BaseModel):
     production_date: date
     data_type: str
     source: str
-    parameters: dict[str, dict]  # {param_name: {value, is_abnormal, lower_limit, upper_limit}}
+    parameters: dict[
+        str, dict
+    ]  # {param_name: {value, is_abnormal, lower_limit, upper_limit}}
     has_abnormal: bool = False
 
     model_config = {"from_attributes": True}

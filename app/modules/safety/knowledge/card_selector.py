@@ -92,7 +92,9 @@ class KnowledgeCardSelector:
             reasoning = result.get("reasoning", "")
             logger.info(
                 "卡片选择完成: %d/%d 张选中 → %s",
-                len(indices), len(cards), reasoning[:120],
+                len(indices),
+                len(cards),
+                reasoning[:120],
             )
 
             selected = self._resolve_cards(cards, indices, max_cards)
@@ -101,7 +103,8 @@ class KnowledgeCardSelector:
         except Exception as e:
             logger.warning(
                 "智能卡片选择失败 (%s)，回退到优先级排序取前 %d 张",
-                e, max_cards,
+                e,
+                max_cards,
             )
             return self._fallback_select(cards, max_cards)
 
@@ -161,7 +164,7 @@ class KnowledgeCardSelector:
         parts.append(
             f"## 任务\n"
             f"从以上卡片中选择与当前隐患最相关的 **最多 {max_cards} 张** 卡片。\n"
-            "返回 JSON：{\"selected_indices\": [0, 3, 7], \"reasoning\": \"选择理由\"}"
+            '返回 JSON：{"selected_indices": [0, 3, 7], "reasoning": "选择理由"}'
         )
         return "\n".join(parts)
 

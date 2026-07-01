@@ -78,8 +78,7 @@ def _parse_feishu_record(record: dict) -> dict:
 
     # Remove empty strings for optional text fields to avoid overwriting
     cleaned = {
-        k: v for k, v in data.items()
-        if v is not None or k in ("feishu_record_id",)
+        k: v for k, v in data.items() if v is not None or k in ("feishu_record_id",)
     }
     return cleaned
 
@@ -184,14 +183,20 @@ class ProductService:
                 existing = await self.repo.get_by_feishu_record_id(
                     parsed["feishu_record_id"]
                 )
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception as e:
                 import traceback
+
                 logger.error(
                     "Failed to sync Feishu record %s: %s\n%s",
                     rec.get("record_id"),

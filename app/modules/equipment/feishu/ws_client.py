@@ -55,18 +55,20 @@ async def _get_ws_url_and_config() -> tuple[str | None, str]:
                     if interval > 0:
                         _ping_interval = interval
                 logger.info(
-                    "设备机器人 WS URL 获取成功, service_id=%s, "
-                    "ping_interval=%s",
-                    service_id, _ping_interval,
+                    "设备机器人 WS URL 获取成功, service_id=%s, ping_interval=%s",
+                    service_id,
+                    _ping_interval,
                 )
                 return url, service_id
             logger.error(
                 "设备机器人获取 WS URL 失败: code=%s msg=%s",
-                data.get("code"), data.get("msg"),
+                data.get("code"),
+                data.get("msg"),
             )
         else:
             logger.error(
-                "设备机器人获取 WS URL HTTP 错误: %s", resp.status_code,
+                "设备机器人获取 WS URL HTTP 错误: %s",
+                resp.status_code,
             )
     return None, ""
 
@@ -150,7 +152,7 @@ async def start_equipment_ws() -> None:
             async with websockets.connect(
                 ws_url,
                 ssl=ssl_context,
-                max_size=2 ** 23,
+                max_size=2**23,
                 ping_interval=None,  # 用 protobuf PING 代替 WS ping
                 ping_timeout=None,
                 close_timeout=5,
@@ -166,7 +168,8 @@ async def start_equipment_ws() -> None:
                     while not _stop.is_set():
                         try:
                             message = await asyncio.wait_for(
-                                ws.recv(), timeout=180,
+                                ws.recv(),
+                                timeout=180,
                             )
                         except TimeoutError:
                             continue
@@ -180,7 +183,8 @@ async def start_equipment_ws() -> None:
             break
         except websockets.exceptions.ConnectionClosed as e:
             logger.warning(
-                "设备机器人 WebSocket 连接关闭: %s，5 秒后重连", e,
+                "设备机器人 WebSocket 连接关闭: %s，5 秒后重连",
+                e,
             )
             await asyncio.sleep(5)
         except Exception:
@@ -290,9 +294,11 @@ async def _handle_message_event(event_data: dict) -> None:
     content = message.get("content", "{}")
 
     logger.info(
-        "设备机器人收到消息: type=%s, user_id=%s, open_id=%s, "
-        "message_id=%s",
-        msg_type, user_id, open_id, message_id,
+        "设备机器人收到消息: type=%s, user_id=%s, open_id=%s, message_id=%s",
+        msg_type,
+        user_id,
+        open_id,
+        message_id,
     )
 
     # 消息去重
@@ -376,9 +382,7 @@ async def _handle_card_action_event(event_data: dict) -> None:
             return
 
         # 3. 卡片事件去重（防止飞书重试导致重复处理）
-        open_message_id = (
-            event_data.get("context", {}).get("open_message_id", "")
-        )
+        open_message_id = event_data.get("context", {}).get("open_message_id", "")
         from app.core.redis import redis_client
 
         dedup_key = f"feishu:card:{wo_id}:{result}"
@@ -435,7 +439,7 @@ async def _handle_card_action_event(event_data: dict) -> None:
                     title="⚠️ 无法验收",
                     receive_id_type="open_id",
                     content=f"工单 **{wo.work_order_no}** 当前为「{wo.status}」，"
-                            "只有「待验收」才可操作。",
+                    "只有「待验收」才可操作。",
                 )
                 return
 
@@ -503,7 +507,9 @@ async def _handle_card_action_event(event_data: dict) -> None:
                 else:
                     logger.warning(
                         "卡片更新失败: msg=%s, code=%s, msg=%s",
-                        open_message_id, resp.code, resp.msg,
+                        open_message_id,
+                        resp.code,
+                        resp.msg,
                     )
             except Exception:
                 logger.exception("更新卡片消息失败")
@@ -543,8 +549,10 @@ async def _handle_text_command(
         if text in ("取消", "放弃", "cancel"):
             await clear_selection(open_id)
             from app.modules.equipment.feishu.notification import send_user_card
+
             await send_user_card(
-                open_id=open_id, title="💡 提示",
+                open_id=open_id,
+                title="💡 提示",
                 receive_id_type="open_id",
                 content="已取消选择。",
             )
@@ -560,11 +568,13 @@ async def _handle_text_command(
                     from app.modules.equipment.service.inspection_feishu import (
                         process_feishu_text,
                     )
+
                     await process_feishu_text(open_id, str(num), user_id=user_id)
                 elif select_type == "work_order":
                     wo_no = opt.get("work_order_no", "")
                     wo_status = opt.get("status", "")
                     from app.modules.equipment.feishu.notification import send_user_card
+
                     if wo_status == "执行中":
                         await send_user_card(
                             open_id=open_id,
@@ -592,7 +602,8 @@ async def _handle_text_command(
         except ValueError:
             pass
         await send_user_card(
-            open_id=open_id, title="💡 提示",
+            open_id=open_id,
+            title="💡 提示",
             receive_id_type="open_id",
             content="请输入有效数字选择，或回复「取消」放弃。",
         )
@@ -600,24 +611,57 @@ async def _handle_text_command(
 
     # ── 1. 巡检路由 ──
     _INSPECTION_COMMANDS = {
-        "开始", "开始巡检", "start",
-        "提交", "确认", "确认提交", "submit", "ok", "好的",
-        "跳过", "skip", "pass",
-        "进度", "状态", "progress", "status",
-        "继续", "下一台", "下一个", "next", "continue",
-        "取消", "放弃", "取消提交", "cancel", "abort",
-        "退出", "返回", "exit", "quit", "back",
-        "帮助", "help", "?", "？",
-        "修改", "修正",
+        "开始",
+        "开始巡检",
+        "start",
+        "提交",
+        "确认",
+        "确认提交",
+        "submit",
+        "ok",
+        "好的",
+        "跳过",
+        "skip",
+        "pass",
+        "进度",
+        "状态",
+        "progress",
+        "status",
+        "继续",
+        "下一台",
+        "下一个",
+        "next",
+        "continue",
+        "取消",
+        "放弃",
+        "取消提交",
+        "cancel",
+        "abort",
+        "退出",
+        "返回",
+        "exit",
+        "quit",
+        "back",
+        "帮助",
+        "help",
+        "?",
+        "？",
+        "修改",
+        "修正",
     }
 
     session = await get_session(open_id)
-    is_inspection_cmd = text in _INSPECTION_COMMANDS or text.startswith("修改") or text.startswith("修正")
+    is_inspection_cmd = (
+        text in _INSPECTION_COMMANDS
+        or text.startswith("修改")
+        or text.startswith("修正")
+    )
 
     if session or is_inspection_cmd:
         from app.modules.equipment.service.inspection_feishu import (
             process_feishu_text,
         )
+
         await process_feishu_text(open_id, text, user_id=user_id)
         return
 
@@ -646,12 +690,14 @@ async def _handle_text_command(
         from app.modules.equipment.service.work_order_feishu import (
             list_user_work_orders,
         )
+
         await list_user_work_orders(user_id=user_id, open_id=open_id)
     elif text.startswith("完成"):
         rest = text[2:].strip()
         if not rest:
             await send_user_card(
-                open_id=open_id, title="💡 提示",
+                open_id=open_id,
+                title="💡 提示",
                 receive_id_type="open_id",
                 content="请输入工单号或序号，例如：`完成 WO-20260615-0001` 或 `完成 1`",
             )
@@ -677,9 +723,12 @@ async def _handle_text_command(
         from app.modules.equipment.service.work_order_feishu import (
             complete_work_order_by_no,
         )
+
         await complete_work_order_by_no(
-            user_id=user_id, open_id=open_id,
-            work_order_no=first_arg, repair_detail=detail,
+            user_id=user_id,
+            open_id=open_id,
+            work_order_no=first_arg,
+            repair_detail=detail,
         )
     else:
         await send_user_card(

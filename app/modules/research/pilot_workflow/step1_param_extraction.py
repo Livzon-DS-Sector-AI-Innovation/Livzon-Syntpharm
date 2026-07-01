@@ -27,6 +27,7 @@ def _read_document_text(document_path: str | None) -> str:
     if suffix == ".docx":
         try:
             from docx import Document
+
             doc = Document(str(path))
             return "\n".join(p.text for p in doc.paragraphs)
         except Exception as e:
@@ -36,6 +37,7 @@ def _read_document_text(document_path: str | None) -> str:
     if suffix == ".pdf":
         try:
             import pdfplumber
+
             text_parts = []
             with pdfplumber.open(str(path)) as pdf:
                 for page in pdf.pages:

@@ -55,7 +55,9 @@ class ControlMeasureExtractor(BasePlugin[ControlsInput, ControlsOutput]):
         return SYSTEM_ROLE
 
     def _build_prompt(
-        self, input_data: ControlsInput, context_text: str,
+        self,
+        input_data: ControlsInput,
+        context_text: str,
     ) -> str:
         return build_prompt(context_text, self.knowledge_context)
 
@@ -71,12 +73,12 @@ class ControlMeasureExtractor(BasePlugin[ControlsInput, ControlsOutput]):
                 emergency_measures=raw.get("emergency_measures", "待人工确认"),
             )
         except (PydanticValidationError, KeyError, TypeError) as e:
-            raise PluginError(
-                f"[ControlMeasureExtractor] AI 输出解析失败: {e}"
-            ) from e
+            raise PluginError(f"[ControlMeasureExtractor] AI 输出解析失败: {e}") from e
 
     def _validate(
-        self, input_data: ControlsInput, output: ControlsOutput,
+        self,
+        input_data: ControlsInput,
+        output: ControlsOutput,
     ) -> list[str]:
         return self.rule_engine.validate(input_data, output)
 

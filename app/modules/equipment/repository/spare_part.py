@@ -80,9 +80,13 @@ async def exists_spare_part_by_code(
     exclude_id: uuid.UUID | None = None,
 ) -> bool:
     """检查备件编码是否已存在"""
-    query = select(func.count()).select_from(SparePart).where(
-        SparePart.code == code,
-        SparePart.is_deleted == False,  # noqa: E712
+    query = (
+        select(func.count())
+        .select_from(SparePart)
+        .where(
+            SparePart.code == code,
+            SparePart.is_deleted == False,  # noqa: E712
+        )
     )
     if exclude_id:
         query = query.where(SparePart.id != exclude_id)

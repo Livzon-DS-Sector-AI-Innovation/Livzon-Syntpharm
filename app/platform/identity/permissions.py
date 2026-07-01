@@ -9,18 +9,18 @@ from app.platform.identity.models import User
 
 # Role hierarchy: admin > manager > member > viewer
 ROLE_HIERARCHY = {
-    'admin': 4,
-    'manager': 3,
-    'member': 2,
-    'viewer': 1,
+    "admin": 4,
+    "manager": 3,
+    "member": 2,
+    "viewer": 1,
 }
 
 # Permission definitions: what each role can do
 PERMISSIONS = {
-    'admin': ['read', 'write', 'delete', 'manage', 'approve'],
-    'manager': ['read', 'write', 'delete', 'approve'],
-    'member': ['read', 'write'],
-    'viewer': ['read'],
+    "admin": ["read", "write", "delete", "manage", "approve"],
+    "manager": ["read", "write", "delete", "approve"],
+    "member": ["read", "write"],
+    "viewer": ["read"],
 }
 
 
@@ -43,9 +43,8 @@ def has_permission(user: User | None, permission: str) -> bool:
 
 def require_role(required_role: str):
     """Dependency: require user to have at least the specified role."""
-    async def dependency(
-        current_user: User | None = Depends(get_current_user)
-    ) -> User:
+
+    async def dependency(current_user: User | None = Depends(get_current_user)) -> User:
         if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,14 +56,14 @@ def require_role(required_role: str):
                 detail=f"需要 {required_role} 及以上角色权限",
             )
         return current_user
+
     return dependency
 
 
 def require_permission(permission: str):
     """Dependency: require user to have the specified permission."""
-    async def dependency(
-        current_user: User | None = Depends(get_current_user)
-    ) -> User:
+
+    async def dependency(current_user: User | None = Depends(get_current_user)) -> User:
         if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,11 +75,12 @@ def require_permission(permission: str):
                 detail=f"没有 {permission} 权限",
             )
         return current_user
+
     return dependency
 
 
 # Convenient type aliases for FastAPI dependencies
-RequireAdmin = Annotated[User, Depends(require_role('admin'))]
-RequireManager = Annotated[User, Depends(require_role('manager'))]
-RequireMember = Annotated[User, Depends(require_role('member'))]
-RequireViewer = Annotated[User, Depends(require_role('viewer'))]
+RequireAdmin = Annotated[User, Depends(require_role("admin"))]
+RequireManager = Annotated[User, Depends(require_role("manager"))]
+RequireMember = Annotated[User, Depends(require_role("member"))]
+RequireViewer = Annotated[User, Depends(require_role("viewer"))]

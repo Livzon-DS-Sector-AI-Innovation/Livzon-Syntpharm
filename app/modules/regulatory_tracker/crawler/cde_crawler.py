@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 # 浏览器配置（通过环境变量覆盖，默认使用 Playwright 标准安装路径）
 CRAWLER_HEADLESS = get_settings().CRAWLER_HEADLESS.lower() == "true"
-CRAWLER_BROWSERS_PATH = get_settings().CRAWLER_BROWSERS_PATH  # 空字符串 = Playwright 默认路径
+CRAWLER_BROWSERS_PATH = (
+    get_settings().CRAWLER_BROWSERS_PATH
+)  # 空字符串 = Playwright 默认路径
 
 LAUNCH_ARGS = [
     "--no-sandbox",
@@ -49,10 +51,14 @@ window.navigator.permissions.query = (p) => (
 """
 
 # CDE 国内药品技术指导原则列表页 URL
-CDE_GUIDELINE_LIST_URL = "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
+CDE_GUIDELINE_LIST_URL = (
+    "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
+)
 
 # 详情页 URL 模板
-CDE_DETAIL_URL_TEMPLATE = "https://www.cde.org.cn/zdyz/domesticinfopage?zdyzIdCODE={zdyzIdCODE}"
+CDE_DETAIL_URL_TEMPLATE = (
+    "https://www.cde.org.cn/zdyz/domesticinfopage?zdyzIdCODE={zdyzIdCODE}"
+)
 
 
 class CdeDomesticGuidelineAdapter:
@@ -74,7 +80,9 @@ class CdeDomesticGuidelineAdapter:
 
     async def start(self):
         """启动浏览器"""
-        browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
+        browsers_path = await get_module_setting(
+            "regulatory_tracker", "CRAWLER_BROWSERS_PATH", ""
+        )
         if browsers_path:
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browsers_path
 
@@ -82,15 +90,17 @@ class CdeDomesticGuidelineAdapter:
         # Read headless mode from database if not overridden
         headless = self._headless_override
         if headless is None:
-            headless = await get_module_setting_bool("regulatory_tracker", "CRAWLER_HEADLESS", True)
+            headless = await get_module_setting_bool(
+                "regulatory_tracker", "CRAWLER_HEADLESS", True
+            )
 
         # Read list URL from database if not overridden
-        list_url = self._list_url_override
-        if list_url is None:
-            list_url = await get_module_setting(
+        self.list_url = self._list_url_override
+        if self.list_url is None:
+            self.list_url = await get_module_setting(
                 "regulatory_tracker",
                 "CDE_GUIDELINE_URL",
-                "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
+                "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7",
             )
 
         launch_kwargs: dict[str, Any] = {
@@ -151,7 +161,9 @@ class CdeDomesticGuidelineAdapter:
             return None
 
         if data.get("code") != 200:
-            logger.warning(f"API 返回非 200: code={data.get('code')}, msg={data.get('msg')}")
+            logger.warning(
+                f"API 返回非 200: code={data.get('code')}, msg={data.get('msg')}"
+            )
             return None
 
         response_data = data.get("data", {})
@@ -177,7 +189,9 @@ class CdeDomesticGuidelineAdapter:
             "success": True,
         }
 
-    async def _open_page_and_wait_for_first_response(self, timeout_ms: int = 30000) -> dict | None:
+    async def _open_page_and_wait_for_first_response(
+        self, timeout_ms: int = 30000
+    ) -> dict | None:
         """打开列表页并等待第一次 getDomesticGuideList 响应"""
         captured = {"result": None}
         event = asyncio.Event()
@@ -200,7 +214,9 @@ class CdeDomesticGuidelineAdapter:
         self._page.on("response", on_response)
 
         try:
-            await self._page.goto(list_url, wait_until="networkidle", timeout=timeout_ms)
+            await self._page.goto(
+                self.list_url, wait_until="networkidle", timeout=timeout_ms
+            )
             # 等待响应被捕获
             try:
                 await asyncio.wait_for(event.wait(), timeout=timeout_ms / 1000)
@@ -211,7 +227,9 @@ class CdeDomesticGuidelineAdapter:
 
         return captured["result"]
 
-    async def _click_next_page_and_capture(self, timeout_ms: int = 15000) -> dict | None:
+    async def _click_next_page_and_capture(
+        self, timeout_ms: int = 15000
+    ) -> dict | None:
         """点击下一页按钮并捕获响应"""
         captured = {"result": None}
         event = asyncio.Event()
@@ -307,23 +325,41 @@ class CdeDomesticGuidelineAdapter:
             }
         """
         if page_num < 1:
-            return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                    "success": False, "error": "页码必须 >= 1"}
+            return {
+                "page_num": page_num,
+                "records": [],
+                "total": 0,
+                "pages": 0,
+                "success": False,
+                "error": "页码必须 >= 1",
+            }
 
         try:
             # 第一页：直接打开页面
             if page_num == 1:
                 result = await self._open_page_and_wait_for_first_response()
                 if not result:
-                    return {"page_num": 1, "records": [], "total": 0, "pages": 0,
-                            "success": False, "error": "未捕获到 getDomesticGuideList 响应"}
+                    return {
+                        "page_num": 1,
+                        "records": [],
+                        "total": 0,
+                        "pages": 0,
+                        "success": False,
+                        "error": "未捕获到 getDomesticGuideList 响应",
+                    }
                 return {**result, "error": None}
 
             # 非第一页：先打开页面到第 1 页，然后翻页
             first_result = await self._open_page_and_wait_for_first_response()
             if not first_result:
-                return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                        "success": False, "error": "打开页面失败"}
+                return {
+                    "page_num": page_num,
+                    "records": [],
+                    "total": 0,
+                    "pages": 0,
+                    "success": False,
+                    "error": "打开页面失败",
+                }
 
             # 翻到目标页
             current_page = 1
@@ -334,25 +370,45 @@ class CdeDomesticGuidelineAdapter:
                 await asyncio.sleep(1)  # 避免请求过快
                 result = await self._click_next_page_and_capture()
                 if not result:
-                    return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                            "success": False, "error": f"翻页到第 {current_page + 1} 页失败"}
+                    return {
+                        "page_num": page_num,
+                        "records": [],
+                        "total": 0,
+                        "pages": 0,
+                        "success": False,
+                        "error": f"翻页到第 {current_page + 1} 页失败",
+                    }
                 current_page += 1
                 if current_page == page_num:
                     target_result = result
                     break
 
             if not target_result:
-                return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                        "success": False, "error": f"翻页到第 {page_num} 页失败"}
+                return {
+                    "page_num": page_num,
+                    "records": [],
+                    "total": 0,
+                    "pages": 0,
+                    "success": False,
+                    "error": f"翻页到第 {page_num} 页失败",
+                }
 
             return {**target_result, "error": None}
 
         except Exception as e:
             logger.exception(f"同步第 {page_num} 页异常")
-            return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                    "success": False, "error": str(e)}
+            return {
+                "page_num": page_num,
+                "records": [],
+                "total": 0,
+                "pages": 0,
+                "success": False,
+                "error": str(e),
+            }
 
-    async def sync_pages(self, start_page: int = 1, end_page: int = 3) -> list[dict[str, Any]]:
+    async def sync_pages(
+        self, start_page: int = 1, end_page: int = 3
+    ) -> list[dict[str, Any]]:
         """同步指定范围的页数据。
 
         Args:
@@ -367,8 +423,16 @@ class CdeDomesticGuidelineAdapter:
         # 打开页面获取第一页
         first_result = await self._open_page_and_wait_for_first_response()
         if not first_result:
-            return [{"page_num": start_page, "records": [], "total": 0, "pages": 0,
-                     "success": False, "error": "打开页面失败"}]
+            return [
+                {
+                    "page_num": start_page,
+                    "records": [],
+                    "total": 0,
+                    "pages": 0,
+                    "success": False,
+                    "error": "打开页面失败",
+                }
+            ]
 
         if start_page == 1:
             results.append({**first_result, "error": None})
@@ -384,10 +448,16 @@ class CdeDomesticGuidelineAdapter:
             current_page += 1
 
             if not result:
-                results.append({
-                    "page_num": target_page, "records": [], "total": 0, "pages": 0,
-                    "success": False, "error": f"翻页到第 {target_page} 页失败",
-                })
+                results.append(
+                    {
+                        "page_num": target_page,
+                        "records": [],
+                        "total": 0,
+                        "pages": 0,
+                        "success": False,
+                        "error": f"翻页到第 {target_page} 页失败",
+                    }
+                )
                 break
 
             if target_page >= start_page:

@@ -71,12 +71,15 @@ async def upload_images(
                 f.write(content)
             stored_path = file_path
 
-        image = await repo.create_image(db, {
-            "work_order_id": work_order_id,
-            "file_name": file.filename or stored_name,
-            "file_path": stored_path,
-            "file_size": file_size,
-        })
+        image = await repo.create_image(
+            db,
+            {
+                "work_order_id": work_order_id,
+                "file_name": file.filename or stored_name,
+                "file_path": stored_path,
+                "file_size": file_size,
+            },
+        )
         images.append(image)
 
     return images

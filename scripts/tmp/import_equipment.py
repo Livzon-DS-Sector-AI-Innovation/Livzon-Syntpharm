@@ -31,18 +31,18 @@ EXCEL_PATH = PROJECT_ROOT / "assets" / "设备清单.xlsx"
 DEFAULT_CATEGORY_NAME = "动力部设备"
 
 # ── Excel 列映射 ──
-COL_SEQ = 0        # 序号
-COL_ASSET_NO = 1   # 固资编号
-COL_EQ_NO = 2      # 设备编号
-COL_NAME = 3       # 设备名称
-COL_SPEC = 4       # 规格型号
-COL_MFR = 5        # 制造单位
-COL_FACTORY_NO = 6 # 出厂编号
-COL_IN_DATE = 7    # 入厂日期
-COL_VALUE = 8      # 设备原值
-COL_LOCATION = 9   # 安装地点
-COL_POWER = 10     # 功率/电流
-COL_STATUS = 11    # 未报废
+COL_SEQ = 0  # 序号
+COL_ASSET_NO = 1  # 固资编号
+COL_EQ_NO = 2  # 设备编号
+COL_NAME = 3  # 设备名称
+COL_SPEC = 4  # 规格型号
+COL_MFR = 5  # 制造单位
+COL_FACTORY_NO = 6  # 出厂编号
+COL_IN_DATE = 7  # 入厂日期
+COL_VALUE = 8  # 设备原值
+COL_LOCATION = 9  # 安装地点
+COL_POWER = 10  # 功率/电流
+COL_STATUS = 11  # 未报废
 
 
 def parse_date(value) -> date | None:
@@ -59,6 +59,7 @@ def parse_date(value) -> date | None:
     for fmt in ("%Y.%m.%d", "%Y.%m", "%Y-%m-%d", "%Y/%m/%d"):
         try:
             from datetime import datetime
+
             return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
@@ -133,7 +134,11 @@ async def import_equipment():
                 continue
 
             # 位置：自动创建不存在的，空值归入默认
-            loc_name = str(row[COL_LOCATION]).strip().replace("\n", "") if row[COL_LOCATION] else None
+            loc_name = (
+                str(row[COL_LOCATION]).strip().replace("\n", "")
+                if row[COL_LOCATION]
+                else None
+            )
             if not loc_name:
                 loc_name = "未指定位置"
             location_id = None
@@ -150,8 +155,16 @@ async def import_equipment():
 
             # 技术参数
             tech_params = {}
-            factory_no = str(row[COL_FACTORY_NO]).strip() if row[COL_FACTORY_NO] and str(row[COL_FACTORY_NO]).strip() != "/" else None
-            power_info = str(row[COL_POWER]).strip().replace("\n", " ") if row[COL_POWER] else None
+            factory_no = (
+                str(row[COL_FACTORY_NO]).strip()
+                if row[COL_FACTORY_NO] and str(row[COL_FACTORY_NO]).strip() != "/"
+                else None
+            )
+            power_info = (
+                str(row[COL_POWER]).strip().replace("\n", " ")
+                if row[COL_POWER]
+                else None
+            )
             asset_no = str(row[COL_ASSET_NO]).strip() if row[COL_ASSET_NO] else None
             if factory_no:
                 tech_params["出厂编号"] = factory_no
@@ -166,7 +179,9 @@ async def import_equipment():
                 equipment = Equipment(
                     equipment_no=eq_no,
                     name=name,
-                    model=str(row[COL_SPEC]).strip().replace("\n", " ") if row[COL_SPEC] else None,
+                    model=str(row[COL_SPEC]).strip().replace("\n", " ")
+                    if row[COL_SPEC]
+                    else None,
                     manufacturer=str(row[COL_MFR]).strip() if row[COL_MFR] else None,
                     production_date=parse_date(row[COL_IN_DATE]),
                     asset_value=parse_float(row[COL_VALUE]),
@@ -179,10 +194,12 @@ async def import_equipment():
                 await db.flush()
 
                 # 关联分类
-                db.add(EquipmentCategoryLink(
-                    equipment_id=equipment.id,
-                    category_id=category_id,
-                ))
+                db.add(
+                    EquipmentCategoryLink(
+                        equipment_id=equipment.id,
+                        category_id=category_id,
+                    )
+                )
                 await db.flush()
 
                 # 逐条提交，单条失败不影响其他

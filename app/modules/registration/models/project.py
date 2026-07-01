@@ -31,8 +31,10 @@ class RegistrationProject(BaseModel):
         String(64), nullable=True, comment="注册类型（新注册/再注册/变更等）"
     )
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, server_default="draft",
-        comment="状态：draft/preparing/submitted/accepted/under_review/supplementary/approved/withdrawn/terminated"
+        String(32),
+        nullable=False,
+        server_default="draft",
+        comment="状态：draft/preparing/submitted/accepted/under_review/supplementary/approved/withdrawn/terminated",
     )
     submitted_at: Mapped[date | None] = mapped_column(
         Date, nullable=True, comment="申报日期"

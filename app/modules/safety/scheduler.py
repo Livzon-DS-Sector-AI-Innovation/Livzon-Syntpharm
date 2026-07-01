@@ -25,7 +25,9 @@ async def scheduled_task_loop():
 
     while not stop_scheduled_task_flag.is_set():
         try:
-            await asyncio.wait_for(stop_scheduled_task_flag.wait(), timeout=TICK_INTERVAL)
+            await asyncio.wait_for(
+                stop_scheduled_task_flag.wait(), timeout=TICK_INTERVAL
+            )
         except TimeoutError:
             pass  # Normal tick timeout, loop continues
 

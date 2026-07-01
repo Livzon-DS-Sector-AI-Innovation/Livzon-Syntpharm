@@ -7,6 +7,7 @@ import uuid
 from datetime import UTC, datetime
 
 from app.core.llm import llm_client
+from app.modules.quality.models.deviations import Deviation
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +75,20 @@ async def analyze_deviation_async(deviation_id: uuid.UUID, user_id: str):
                 deviation.ai_analysis = result
                 deviation.status = "pending_investigation"
                 deviation.status_updated_at = datetime.now(UTC)
-                deviation.updated_by = uuid.UUID(user_id) if user_id != "system" else None
+                deviation.updated_by = (
+                    uuid.UUID(user_id) if user_id != "system" else None
+                )
                 await db.commit()
                 logger.info(f"AI analysis completed for deviation {deviation_id}")
             else:
-                logger.error(f"AI analysis returned invalid format for deviation {deviation_id}: {type(result)}")
+                logger.error(
+                    f"AI analysis returned invalid format for deviation {deviation_id}: {type(result)}"
+                )
 
     except Exception as e:
-        logger.error(f"AI analysis failed for deviation {deviation_id}: {e}", exc_info=True)
+        logger.error(
+            f"AI analysis failed for deviation {deviation_id}: {e}", exc_info=True
+        )
 
 
 async def analyze_deviation_sync(deviation: Deviation) -> dict | None:

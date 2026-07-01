@@ -21,8 +21,16 @@ UNCONFIRMED = "待人工确认"
 
 # 禁止在现有措施中出现的建议类表述
 BANNED_IN_CONTROLS = [
-    "建议", "应增加", "需完善", "可考虑", "宜", "推荐",
-    "最好", "应当增加", "需要补充", "有待加强",
+    "建议",
+    "应增加",
+    "需完善",
+    "可考虑",
+    "宜",
+    "推荐",
+    "最好",
+    "应当增加",
+    "需要补充",
+    "有待加强",
 ]
 
 
@@ -45,9 +53,7 @@ class ControlsRuleEngine:
         ]
 
         # 1. 四个维度不能全部为「待人工确认」
-        all_unconfirmed = all(
-            (v or "").strip() == UNCONFIRMED for _, v in fields
-        )
+        all_unconfirmed = all((v or "").strip() == UNCONFIRMED for _, v in fields)
         if all_unconfirmed:
             errors.append("四个维度不能全部为「待人工确认」")
 
@@ -65,9 +71,7 @@ class ControlsRuleEngine:
         for label, value in fields:
             if value and value.strip() and value.strip() != UNCONFIRMED:
                 if len(value.strip()) < 10:
-                    errors.append(
-                        f"{label} 过短（{len(value)}字），最少 10 字"
-                    )
+                    errors.append(f"{label} 过短（{len(value)}字），最少 10 字")
 
         # 4. PPE 维度不应包含工程或管理措施描述
         if output.ppe and output.ppe.strip() != UNCONFIRMED:
@@ -86,8 +90,10 @@ class ControlsRuleEngine:
 def auto_correct(output: ControlsOutput) -> ControlsOutput:
     """自动修正 AI 输出。"""
     for field_name in (
-        "engineering_controls", "management_controls",
-        "ppe", "emergency_measures",
+        "engineering_controls",
+        "management_controls",
+        "ppe",
+        "emergency_measures",
     ):
         value = getattr(output, field_name, None)
         if value is None or not value.strip():

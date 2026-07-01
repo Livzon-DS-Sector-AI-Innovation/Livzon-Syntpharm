@@ -36,9 +36,7 @@ async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
     links = getattr(equipment, "category_links", []) or []
     resp.category_ids = [link.category_id for link in links if not link.is_deleted]
     names = [
-        link.category.name
-        for link in links
-        if not link.is_deleted and link.category
+        link.category.name for link in links if not link.is_deleted and link.category
     ]
     resp.category_names = "、".join(names) if names else None
     resp.location_name = equipment.location.name if equipment.location else None

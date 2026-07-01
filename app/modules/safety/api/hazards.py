@@ -53,8 +53,16 @@ async def get_hazards(
     service = HazardService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_hazards(
-        skip, page_size, status, rectification_status, hazard_type, hazard_level,
-        hazard_category, inspection_category, department, keyword,
+        skip,
+        page_size,
+        status,
+        rectification_status,
+        hazard_type,
+        hazard_level,
+        hazard_category,
+        inspection_category,
+        department,
+        keyword,
     )
     return ApiResponse(
         data=[HazardReportResponse.model_validate(h) for h in items],
@@ -62,7 +70,9 @@ async def get_hazards(
     )
 
 
-@hazards_router.get("/hazards/stats", response_model=ApiResponse, summary="获取隐患统计数据")
+@hazards_router.get(
+    "/hazards/stats", response_model=ApiResponse, summary="获取隐患统计数据"
+)
 async def get_hazard_stats(
     db: AsyncSession = Depends(get_db),
 ):
@@ -72,7 +82,9 @@ async def get_hazard_stats(
     return ApiResponse(data=HazardStatsResponse(**stats))
 
 
-@hazards_router.get("/hazards/department-leader", response_model=ApiResponse, summary="查询部门负责人")
+@hazards_router.get(
+    "/hazards/department-leader", response_model=ApiResponse, summary="查询部门负责人"
+)
 async def get_department_leader(
     department_name: str = Query(..., min_length=1, description="部门名称"),
     db: AsyncSession = Depends(get_db),
@@ -87,15 +99,23 @@ async def get_department_leader(
     resolver = IdentityResolver(db)
     person = await resolver.resolve_department_leader(department_name)
     if person is None:
-        return ApiResponse(code=404, message=f"未找到部门 '{department_name}' 或其负责人")
-    return ApiResponse(data=DepartmentLeaderResponse(
-        department=person.department or department_name,
-        leader_name=person.name,
-        leader_id=person.id or None,
-    ))
+        return ApiResponse(
+            code=404, message=f"未找到部门 '{department_name}' 或其负责人"
+        )
+    return ApiResponse(
+        data=DepartmentLeaderResponse(
+            department=person.department or department_name,
+            leader_name=person.name,
+            leader_id=person.id or None,
+        )
+    )
 
 
-@hazards_router.get("/hazards/department-safety-officer", response_model=ApiResponse, summary="查询部门分管安全员")
+@hazards_router.get(
+    "/hazards/department-safety-officer",
+    response_model=ApiResponse,
+    summary="查询部门分管安全员",
+)
 async def get_department_safety_officer(
     department_name: str = Query(..., min_length=1, description="部门名称"),
     db: AsyncSession = Depends(get_db),
@@ -111,14 +131,18 @@ async def get_department_safety_officer(
     person = await resolver.resolve_safety_officer(department_name)
     if person is None:
         return ApiResponse(code=404, message=f"未找到部门 '{department_name}' 的安全员")
-    return ApiResponse(data=DepartmentSafetyOfficerResponse(
-        department=person.department or department_name,
-        safety_officer_name=person.name,
-        safety_officer_id=person.id or None,
-    ))
+    return ApiResponse(
+        data=DepartmentSafetyOfficerResponse(
+            department=person.department or department_name,
+            safety_officer_name=person.name,
+            safety_officer_id=person.id or None,
+        )
+    )
 
 
-@hazards_router.get("/hazards/{hazard_id}", response_model=ApiResponse, summary="获取隐患详情")
+@hazards_router.get(
+    "/hazards/{hazard_id}", response_model=ApiResponse, summary="获取隐患详情"
+)
 async def get_hazard(
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -146,7 +170,9 @@ async def create_hazard(
     return ApiResponse(data=HazardReportResponse.model_validate(item))
 
 
-@hazards_router.put("/hazards/{hazard_id}", response_model=ApiResponse, summary="更新隐患")
+@hazards_router.put(
+    "/hazards/{hazard_id}", response_model=ApiResponse, summary="更新隐患"
+)
 async def update_hazard(
     hazard_id: uuid.UUID,
     data: HazardReportUpdate,
@@ -181,7 +207,13 @@ async def upload_hazard_photo(
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
-        upload_object("safety", object_key, content, len(content), file.content_type or "image/jpeg")
+        upload_object(
+            "safety",
+            object_key,
+            content,
+            len(content),
+            file.content_type or "image/jpeg",
+        )
         stored_path = object_key
     else:
         upload_dir = os.path.join("uploads", "safety", "hazard")
@@ -194,7 +226,9 @@ async def upload_hazard_photo(
         stored_path = os.path.join("safety", "hazard", safe_name)
 
     service = HazardService(db)
-    item = await service.upload_hazard_photo(hazard_id, file.filename or "unknown", stored_path)
+    item = await service.upload_hazard_photo(
+        hazard_id, file.filename or "unknown", stored_path
+    )
     if not item:
         return ApiResponse(code=404, message="隐患不存在")
     await db.commit()
@@ -220,7 +254,13 @@ async def upload_rectification_photo(
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
-        upload_object("safety", object_key, content, len(content), file.content_type or "image/jpeg")
+        upload_object(
+            "safety",
+            object_key,
+            content,
+            len(content),
+            file.content_type or "image/jpeg",
+        )
         stored_path = object_key
     else:
         upload_dir = os.path.join("uploads", "safety", "hazard")
@@ -342,7 +382,9 @@ async def rework_rectification(
     return ApiResponse(data=HazardReportResponse.model_validate(item))
 
 
-@hazards_router.delete("/hazards/{hazard_id}", response_model=ApiResponse, summary="删除隐患")
+@hazards_router.delete(
+    "/hazards/{hazard_id}", response_model=ApiResponse, summary="删除隐患"
+)
 async def delete_hazard(
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -375,13 +417,17 @@ async def run_hazard_ai(
     service = HazardService(db)
     item = await service.run_hazard_ai_script(hazard_id, script_number)
     if item is None:
-        return ApiResponse(code=400, message="无法执行AI工作流，当前状态不允许或前置步骤未完成")
+        return ApiResponse(
+            code=400, message="无法执行AI工作流，当前状态不允许或前置步骤未完成"
+        )
     await db.commit()
 
     # AI 识别完成后异步通知责任人整改（与 Bitable 同步流程对齐：
     # _create_hazard_from_bitable → AI 完成 → _send_rectification_notification）
     if script_number == 1 and item and not item.ai_error_message:
-        spawn_task(_send_rectification_notification(item), name="rectification-notification")
+        spawn_task(
+            _send_rectification_notification(item), name="rectification-notification"
+        )
 
     return ApiResponse(data=HazardReportResponse.model_validate(item))
 
@@ -433,7 +479,9 @@ async def notify_reviewer(
     level_labels = {1: "部门负责人", 2: "分管领导", 3: "检查人员"}
 
     # 异步发送飞书通知，不阻塞响应
-    spawn_task(_send_verify_notification(hazard, current_level), name="verify-notification")
+    spawn_task(
+        _send_verify_notification(hazard, current_level), name="verify-notification"
+    )
 
     return ApiResponse(
         message=f"已向{level_labels[current_level]}发送飞书通知",
@@ -491,7 +539,9 @@ async def notify_rectification(
         return ApiResponse(code=404, message="隐患不存在")
 
     # 异步发送飞书通知，不阻塞响应
-    spawn_task(_send_rectification_notification(hazard), name="rectification-notification")
+    spawn_task(
+        _send_rectification_notification(hazard), name="rectification-notification"
+    )
 
     return ApiResponse(
         message="已向整改责任人发送飞书通知",
@@ -529,4 +579,3 @@ async def diagnose_bitable_catch_up(
 
     result = await diagnose_missed_records(db)
     return ApiResponse(data=result)
-

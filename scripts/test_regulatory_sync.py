@@ -47,7 +47,9 @@ async def check_prerequisites() -> tuple[DataSource, DataChannel] | None:
     async with async_session_factory() as db:
         # 检查表是否存在
         try:
-            await db.execute(text("SELECT 1 FROM regulatory_tracker.data_sources LIMIT 1"))
+            await db.execute(
+                text("SELECT 1 FROM regulatory_tracker.data_sources LIMIT 1")
+            )
         except Exception as e:
             logger.error(f"数据库表不存在或未创建: {e}")
             logger.error("请先执行: .venv/bin/alembic upgrade head")
@@ -61,7 +63,9 @@ async def check_prerequisites() -> tuple[DataSource, DataChannel] | None:
             return None
 
         # 检查栏目
-        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
+        channel = await repo.get_channel_by_code(
+            db, source.id, "cde_domestic_guideline"
+        )
         if not channel:
             logger.error("cde_domestic_guideline 栏目不存在，请先执行 seed")
             return None
@@ -119,15 +123,20 @@ async def show_db_stats():
     async with async_session_factory() as db:
         # 文档数量
         source = await repo.get_data_source_by_code(db, "CDE")
-        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
+        channel = await repo.get_channel_by_code(
+            db, source.id, "cde_domestic_guideline"
+        )
         doc_count = await repo.count_documents(db, source.id, channel.id)
 
         # 同步任务数量
         job_result = await db.execute(
-            select(SyncJob).where(
+            select(SyncJob)
+            .where(
                 SyncJob.source_id == source.id,
                 SyncJob.channel_id == channel.id,
-            ).order_by(SyncJob.created_at.desc()).limit(5)
+            )
+            .order_by(SyncJob.created_at.desc())
+            .limit(5)
         )
         jobs = list(job_result.scalars().all())
 
@@ -189,10 +198,14 @@ async def main():
     logger.info("\n" + "=" * 60)
     logger.info("测试完成")
     logger.info("=" * 60)
-    logger.info(f"测试 1 (第 1 页): {'✅' if result1['status'] == 'success' else '❌'} "
-                f"new={result1['new']} checked={result1['checked']}")
-    logger.info(f"测试 2 (第 1-3 页): {'✅' if result2['status'] == 'success' else '❌'} "
-                f"new={result2['new']} checked={result2['checked']}")
+    logger.info(
+        f"测试 1 (第 1 页): {'✅' if result1['status'] == 'success' else '❌'} "
+        f"new={result1['new']} checked={result1['checked']}"
+    )
+    logger.info(
+        f"测试 2 (第 1-3 页): {'✅' if result2['status'] == 'success' else '❌'} "
+        f"new={result2['new']} checked={result2['checked']}"
+    )
 
 
 if __name__ == "__main__":

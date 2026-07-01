@@ -17,50 +17,65 @@ TERMINAL_STATUSES = ("approved", "withdrawn", "terminated")
 
 async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
     # 已获批品种数
-    stmt_approved = select(func.count()).select_from(RegistrationProject).where(
-        RegistrationProject.is_deleted == False,
-        RegistrationProject.status == "approved",
+    stmt_approved = (
+        select(func.count())
+        .select_from(RegistrationProject)
+        .where(
+            not RegistrationProject.is_deleted,
+            RegistrationProject.status == "approved",
+        )
     )
     approved_count = (await db.execute(stmt_approved)).scalar() or 0
 
     # 海外市场获批数量
-    stmt_overseas = select(func.count()).select_from(RegistrationCertificate).where(
-        RegistrationCertificate.is_deleted == False,
-        RegistrationCertificate.status.in_(("valid", "expiring")),
+    stmt_overseas = (
+        select(func.count())
+        .select_from(RegistrationCertificate)
+        .where(
+            not RegistrationCertificate.is_deleted,
+            RegistrationCertificate.status.in_(("valid", "expiring")),
+        )
     )
     overseas_count = (await db.execute(stmt_overseas)).scalar() or 0
 
     # 已申报受理品种数
-    stmt_submitted = select(func.count()).select_from(RegistrationProject).where(
-        RegistrationProject.is_deleted == False,
-        RegistrationProject.status.in_(SUBMITTED_STATUSES),
+    stmt_submitted = (
+        select(func.count())
+        .select_from(RegistrationProject)
+        .where(
+            not RegistrationProject.is_deleted,
+            RegistrationProject.status.in_(SUBMITTED_STATUSES),
+        )
     )
     submitted_count = (await db.execute(stmt_submitted)).scalar() or 0
 
     # 进行中项目数
-    stmt_active = select(func.count()).select_from(RegistrationProject).where(
-        RegistrationProject.is_deleted == False,
-        RegistrationProject.status.notin_(TERMINAL_STATUSES),
+    stmt_active = (
+        select(func.count())
+        .select_from(RegistrationProject)
+        .where(
+            not RegistrationProject.is_deleted,
+            RegistrationProject.status.notin_(TERMINAL_STATUSES),
+        )
     )
     active_count = (await db.execute(stmt_active)).scalar() or 0
 
     # 最近项目（10条）
     stmt_recent = (
         select(RegistrationProject)
-        .where(RegistrationProject.is_deleted == False)
+        .where(not RegistrationProject.is_deleted)
         .order_by(RegistrationProject.updated_at.desc())
         .limit(10)
     )
     recent_result = await db.execute(stmt_recent)
     recent_projects = [
-        DashboardProjectItem.model_validate(p)
-        for p in recent_result.scalars().all()
+        DashboardProjectItem.model_validate(p) for p in recent_result.scalars().all()
     ]
 
     # 海外获批记录（10条）
     stmt_certs = (
         select(RegistrationCertificate)
-        .where(RegistrationCertificate.is_deleted == False)
+        .where(not RegistrationCertificate.is_deleted)
         .order_by(RegistrationCertificate.approved_at.desc().nullslast())
         .limit(10)
     )

@@ -49,11 +49,14 @@ async def bootstrap_permissions(db: AsyncSession, settings: Settings) -> None:
         admin_user = result.scalar_one_or_none()
         if admin_user:
             await perm_repo.assign_role_to_user(
-                db, admin_user.id, admin_role.id,
+                db,
+                admin_user.id,
+                admin_role.id,
             )
         else:
             logger.warning(
-                "Admin employee_no=%s not found, skipping", emp_no,
+                "Admin employee_no=%s not found, skipping",
+                emp_no,
             )
 
     await db.commit()

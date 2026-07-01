@@ -77,9 +77,7 @@ CORRECTION_SYSTEM_PROMPT = (
 )
 
 
-def build_correction_user_prompt(
-    current_results: list[dict], user_text: str
-) -> str:
+def build_correction_user_prompt(current_results: list[dict], user_text: str) -> str:
     """构建修正用户提示词。
 
     Args:
@@ -137,12 +135,12 @@ MANUAL_SUBMIT_SYSTEM_PROMPT = (
     "1. 用户可能逐项列出结果，也可能只描述异常项\n"
     "2. 用户提到的第N项、编号、序号等，对应检查项在列表中的位置（从1开始）\n"
     '3. result 只允许三个值："正常"、"异常"、"跳过"\n'
-    "4. 如果用户未明确说明某项的结果，默认为\"正常\"\n"
+    '4. 如果用户未明确说明某项的结果，默认为"正常"\n'
     "5. 从文本中提取实际值和备注信息\n"
     "6. 必须返回所有检查项（包括未提到的），不能遗漏\n"
     "7. 只返回 JSON，不要输出任何其他内容\n"
     "8. 注意识别中英文数字混合、带单位的数值（如 66.5℃、0.42MPa）\n"
-    "9. 如果用户先说\"提交\"或设备名，忽略，专注于检查结果内容"
+    '9. 如果用户先说"提交"或设备名，忽略，专注于检查结果内容'
 )
 
 
@@ -197,4 +195,3 @@ def build_manual_submit_user_prompt(
 - 必须返回所有检查项，用户未提到的默认为"正常"
 - 用户说"第2项异常"指的是 index=2 的项
 - 数值和单位尽量保留用户原文"""
-

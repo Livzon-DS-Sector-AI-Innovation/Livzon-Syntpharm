@@ -44,9 +44,7 @@ class LabelVerificationService:
         # 检查视频是否已处理（去重）
         existing = await self.repo.get_by_video_file_key(data.video_file_key)
         if existing:
-            logger.info(
-                f"视频 {data.video_file_key} 已处理，返回已有记录"
-            )
+            logger.info(f"视频 {data.video_file_key} 已处理，返回已有记录")
             return self._to_response(existing)
 
         verification = LabelVerification(

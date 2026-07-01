@@ -49,7 +49,9 @@ async def dry_run():
     api_key = os.getenv("LLM_API_KEY")
     model = os.getenv("LLM_MODEL")
     base_url = os.getenv("LLM_BASE_URL")
-    logger.info(f"LLM 配置: model={model}, base_url={base_url}, api_key={'***' + api_key[-6:] if api_key else 'MISSING'}")
+    logger.info(
+        f"LLM 配置: model={model}, base_url={base_url}, api_key={'***' + api_key[-6:] if api_key else 'MISSING'}"
+    )
 
     if not api_key:
         logger.error("LLM_API_KEY 未设置！")
@@ -60,12 +62,17 @@ async def dry_run():
 
     async with async_session_factory() as db:
         # 查询待分析文档
-        stmt = select(RegulatoryDocument).where(
-            and_(
-                RegulatoryDocument.is_deleted == False,
-                RegulatoryDocument.ai_analysis_status == None,
+        stmt = (
+            select(RegulatoryDocument)
+            .where(
+                and_(
+                    not RegulatoryDocument.is_deleted,
+                    RegulatoryDocument.ai_analysis_status is None,
+                )
             )
-        ).order_by(RegulatoryDocument.first_found_at.desc()).limit(DRY_RUN_LIMIT)
+            .order_by(RegulatoryDocument.first_found_at.desc())
+            .limit(DRY_RUN_LIMIT)
+        )
 
         result = await db.execute(stmt)
         documents = result.scalars().all()
@@ -83,30 +90,38 @@ async def dry_run():
 
                 # 重新从 DB 读取分析结果
                 await db.refresh(doc)
-                results.append({
-                    "index": i,
-                    "id": str(doc.id),
-                    "title": doc.title,
-                    "success": success,
-                    "elapsed_seconds": round(elapsed, 1),
-                    "error": None,
-                    "ai_analysis_status": doc.ai_analysis_status,
-                    "document_category": doc.document_category,
-                    "ai_relevance_score": float(doc.ai_relevance_score) if doc.ai_relevance_score else None,
-                    "ai_summary_preview": (doc.ai_summary or "")[:100],
-                })
+                results.append(
+                    {
+                        "index": i,
+                        "id": str(doc.id),
+                        "title": doc.title,
+                        "success": success,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "error": None,
+                        "ai_analysis_status": doc.ai_analysis_status,
+                        "document_category": doc.document_category,
+                        "ai_relevance_score": float(doc.ai_relevance_score)
+                        if doc.ai_relevance_score
+                        else None,
+                        "ai_summary_preview": (doc.ai_summary or "")[:100],
+                    }
+                )
                 status = "✅" if success else "❌"
-                logger.info(f"  {status} 耗时 {elapsed:.1f}s | status={doc.ai_analysis_status} | category={doc.document_category}")
+                logger.info(
+                    f"  {status} 耗时 {elapsed:.1f}s | status={doc.ai_analysis_status} | category={doc.document_category}"
+                )
             except Exception as e:
                 elapsed = time.time() - doc_start
-                results.append({
-                    "index": i,
-                    "id": str(doc.id),
-                    "title": doc.title,
-                    "success": False,
-                    "elapsed_seconds": round(elapsed, 1),
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "index": i,
+                        "id": str(doc.id),
+                        "title": doc.title,
+                        "success": False,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "error": str(e),
+                    }
+                )
                 logger.error(f"  ❌ 异常: {e}")
 
     total_elapsed = time.time() - start_all
@@ -128,7 +143,9 @@ async def dry_run():
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     logger.info("=" * 60)
-    logger.info(f"试跑完成: 成功={success_count}, 失败={failed_count}, 总耗时={total_elapsed:.1f}s")
+    logger.info(
+        f"试跑完成: 成功={success_count}, 失败={failed_count}, 总耗时={total_elapsed:.1f}s"
+    )
     logger.info(f"结果已保存到: {report_path}")
     logger.info("=" * 60)
 

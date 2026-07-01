@@ -26,7 +26,11 @@ async def seed_regulatory_documents():
     """Seed initial regulatory documents from JSON file."""
 
     # 读取 JSON 文件
-    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "seed", "cde_guidelines.json")
+    json_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "seed",
+        "cde_guidelines.json",
+    )
 
     if not os.path.exists(json_path):
         print(f"❌ 文件不存在: {json_path}")
@@ -65,7 +69,7 @@ async def seed_regulatory_documents():
         existing_count = await session.execute(
             select(RegulatoryDocument).where(
                 RegulatoryDocument.source_id == source_id,
-                RegulatoryDocument.channel_id == channel_id
+                RegulatoryDocument.channel_id == channel_id,
             )
         )
         existing_count = len(existing_count.scalars().all())
@@ -97,7 +101,7 @@ async def seed_regulatory_documents():
                 is_new=False,
                 is_read=True,
                 first_found_at=datetime.now() - timedelta(days=1),
-                last_checked_at=datetime.now()
+                last_checked_at=datetime.now(),
             )
             session.add(doc)
 

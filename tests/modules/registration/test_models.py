@@ -1,5 +1,8 @@
 """Registration module model tests."""
+
 from __future__ import annotations
+
+from datetime import date
 
 import pytest
 from sqlalchemy import select
@@ -15,5 +18,6 @@ async def test_drug_model_creation(db_session, sample_drug_data):
 
     result = await db_session.execute(select(Drug).where(Drug.id == drug.id))
     fetched = result.scalar_one()
-    assert fetched.drug_name == "阿莫西林"
-    assert fetched.generic_name == "Amoxicillin"
+    assert fetched.name == "阿莫西林"
+    assert fetched.type == "仿制药"
+    assert fetched.acceptance_date == date(2026, 1, 15)

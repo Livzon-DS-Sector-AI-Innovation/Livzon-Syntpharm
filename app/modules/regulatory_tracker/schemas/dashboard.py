@@ -21,6 +21,7 @@ class TrendItem(BaseModel):
 
 class PriorityDocument(BaseModel):
     """重点关注法规。"""
+
     id: str
     title: str
     publishDate: str | None = None

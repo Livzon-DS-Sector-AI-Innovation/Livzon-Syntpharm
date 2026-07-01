@@ -6,6 +6,7 @@
 映射数据源：app/modules/safety/feishu/bitable_open_ids.json
 刷新方式：重新运行 scripts/tmp/sync_all_bitable_by_userid.py
 """
+
 from __future__ import annotations
 
 import json
@@ -89,13 +90,15 @@ def get_bitable_open_id(
     if fallback_to_identity:
         logger.debug(
             "Bitable open_id 未找到(user_id=%s name=%s)，使用 identity open_id 回退",
-            user_id, name,
+            user_id,
+            name,
         )
         return fallback_to_identity
 
     logger.warning(
         "Bitable open_id 未找到且无回退值: user_id=%s name=%s",
-        user_id, name,
+        user_id,
+        name,
     )
     return None
 

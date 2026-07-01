@@ -25,7 +25,9 @@ async def daily_sync_job():
                 logger.error("CDE 数据源不存在，跳过同步")
                 return
 
-            channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
+            channel = await repo.get_channel_by_code(
+                db, source.id, "cde_domestic_guideline"
+            )
             if not channel:
                 logger.error("cde_domestic_guideline 栏目不存在，跳过同步")
                 return
@@ -34,7 +36,9 @@ async def daily_sync_job():
                 logger.info("数据源或栏目已禁用，跳过同步")
                 return
 
-            headless = await get_module_setting_bool("regulatory_tracker", "CRAWLER_HEADLESS", True)
+            headless = await get_module_setting_bool(
+                "regulatory_tracker", "CRAWLER_HEADLESS", True
+            )
             result = await run_sync_job(
                 db=db,
                 source=source,
@@ -100,3 +104,31 @@ daily_ai_analysis_task = TaskDefinition(
     module="regulatory_tracker",
     timeout_seconds=600,
 )
+
+
+# ── Scheduler startup ──────────────────────────────────────────
+
+_scheduler_engine = None
+
+
+def start_scheduler():
+    """Initialize and start the scheduler engine with all registered tasks."""
+    global _scheduler_engine
+
+    from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
+    from app.modules.equipment.scheduled import InspectionScheduleGenerator
+
+    registry = SchedulerRegistry()
+
+    # Register regulatory_tracker tasks
+    registry.register_task(daily_sync_task)
+    registry.register_task(daily_ai_analysis_task)
+
+    # Register equipment generators
+    registry.register_generator(InspectionScheduleGenerator())
+
+    # Create and start engine
+    _scheduler_engine = SchedulerEngine(registry)
+    import asyncio
+    asyncio.create_task(_scheduler_engine.run())
+    logger.info("Scheduler engine started with %d tasks", len(registry.tasks))

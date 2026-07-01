@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.research import repository as repo
@@ -73,7 +74,7 @@ async def get_rd_project(db: AsyncSession, project_id: UUID) -> RdProject:
     result = await db.execute(
         select(RdProject).where(
             RdProject.id == project_id,
-            RdProject.is_deleted == False,
+            not RdProject.is_deleted,
         )
     )
     project = result.scalar_one_or_none()
@@ -92,8 +93,13 @@ async def get_projects(
     page_size: int = 20,
 ) -> tuple[list[ResearchProject], int]:
     return await repo.get_projects(
-        db, stage=stage, status=status, keyword=keyword, project_type=project_type,
-        page=page, page_size=page_size
+        db,
+        stage=stage,
+        status=status,
+        keyword=keyword,
+        project_type=project_type,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -105,7 +111,9 @@ async def update_project(
     project = await get_project(db, project_id)
     update_data = data.model_dump(exclude_unset=True)
     if "project_no" in update_data and update_data["project_no"] != project.project_no:
-        if await repo.exists_by_project_no(db, update_data["project_no"], exclude_id=project_id):
+        if await repo.exists_by_project_no(
+            db, update_data["project_no"], exclude_id=project_id
+        ):
             raise DuplicateException("项目编号", update_data["project_no"])
     return await repo.update_project(db, project, update_data)
 
@@ -233,12 +241,15 @@ async def delete_ich_record(
     await db.commit()
 
 
-
-
-
 # ===== Milestone Service =====
 
-async def create_milestone(db: AsyncSession, project_id: UUID, data: RdMilestoneCreate, user_id: UUID | None = None) -> RdMilestone:
+
+async def create_milestone(
+    db: AsyncSession,
+    project_id: UUID,
+    data: RdMilestoneCreate,
+    user_id: UUID | None = None,
+) -> RdMilestone:
     """创建里程碑"""
     await get_rd_project(db, project_id)  # 验证项目存在
     milestone = RdMilestone(
@@ -246,7 +257,7 @@ async def create_milestone(db: AsyncSession, project_id: UUID, data: RdMilestone
         **data.model_dump(),
         status="planned",
         created_by=user_id,
-        updated_by=user_id
+        updated_by=user_id,
     )
     db.add(milestone)
     await db.commit()
@@ -258,16 +269,23 @@ async def get_milestones(db: AsyncSession, project_id: UUID) -> list[RdMilestone
     """获取项目的里程碑列表"""
     result = await db.execute(
         select(RdMilestone)
-        .where(RdMilestone.project_id == project_id, RdMilestone.is_deleted == False)
+        .where(RdMilestone.project_id == project_id, not RdMilestone.is_deleted)
         .order_by(RdMilestone.planned_date)
     )
     return list(result.scalars().all())
 
 
-async def update_milestone(db: AsyncSession, milestone_id: UUID, data: RdMilestoneUpdate, user_id: UUID | None = None) -> RdMilestone:
+async def update_milestone(
+    db: AsyncSession,
+    milestone_id: UUID,
+    data: RdMilestoneUpdate,
+    user_id: UUID | None = None,
+) -> RdMilestone:
     """更新里程碑"""
     result = await db.execute(
-        select(RdMilestone).where(RdMilestone.id == milestone_id, RdMilestone.is_deleted == False)
+        select(RdMilestone).where(
+            RdMilestone.id == milestone_id, not RdMilestone.is_deleted
+        )
     )
     milestone = result.scalar_one_or_none()
     if not milestone:
@@ -284,7 +302,13 @@ async def update_milestone(db: AsyncSession, milestone_id: UUID, data: RdMilesto
 
 # ===== Stage Record Service =====
 
-async def create_stage_record(db: AsyncSession, project_id: UUID, data: RdStageRecordCreate, user_id: UUID | None = None) -> RdStageRecord:
+
+async def create_stage_record(
+    db: AsyncSession,
+    project_id: UUID,
+    data: RdStageRecordCreate,
+    user_id: UUID | None = None,
+) -> RdStageRecord:
     """创建阶段记录"""
     await get_project(db, project_id)
     record = RdStageRecord(
@@ -292,7 +316,7 @@ async def create_stage_record(db: AsyncSession, project_id: UUID, data: RdStageR
         **data.model_dump(),
         status="not_started",
         created_by=user_id,
-        updated_by=user_id
+        updated_by=user_id,
     )
     db.add(record)
     await db.commit()
@@ -304,16 +328,23 @@ async def get_stage_records(db: AsyncSession, project_id: UUID) -> list[RdStageR
     """获取项目的阶段记录列表"""
     result = await db.execute(
         select(RdStageRecord)
-        .where(RdStageRecord.project_id == project_id, RdStageRecord.is_deleted == False)
+        .where(RdStageRecord.project_id == project_id, not RdStageRecord.is_deleted)
         .order_by(RdStageRecord.created_at)
     )
     return list(result.scalars().all())
 
 
-async def update_stage_record(db: AsyncSession, record_id: UUID, data: RdStageRecordUpdate, user_id: UUID | None = None) -> RdStageRecord:
+async def update_stage_record(
+    db: AsyncSession,
+    record_id: UUID,
+    data: RdStageRecordUpdate,
+    user_id: UUID | None = None,
+) -> RdStageRecord:
     """更新阶段记录"""
     result = await db.execute(
-        select(RdStageRecord).where(RdStageRecord.id == record_id, RdStageRecord.is_deleted == False)
+        select(RdStageRecord).where(
+            RdStageRecord.id == record_id, not RdStageRecord.is_deleted
+        )
     )
     record = result.scalar_one_or_none()
     if not record:
@@ -330,7 +361,13 @@ async def update_stage_record(db: AsyncSession, record_id: UUID, data: RdStageRe
 
 # ===== Research Track Service =====
 
-async def create_research_track(db: AsyncSession, project_id: UUID, data: RdResearchTrackCreate, user_id: UUID | None = None) -> RdResearchTrack:
+
+async def create_research_track(
+    db: AsyncSession,
+    project_id: UUID,
+    data: RdResearchTrackCreate,
+    user_id: UUID | None = None,
+) -> RdResearchTrack:
     """创建研究项"""
     await get_project(db, project_id)
     track = RdResearchTrack(
@@ -339,7 +376,7 @@ async def create_research_track(db: AsyncSession, project_id: UUID, data: RdRese
         status="active",
         conclusion_version=0,
         created_by=user_id,
-        updated_by=user_id
+        updated_by=user_id,
     )
     db.add(track)
     await db.commit()
@@ -347,20 +384,32 @@ async def create_research_track(db: AsyncSession, project_id: UUID, data: RdRese
     return track
 
 
-async def get_research_tracks(db: AsyncSession, project_id: UUID) -> list[RdResearchTrack]:
+async def get_research_tracks(
+    db: AsyncSession, project_id: UUID
+) -> list[RdResearchTrack]:
     """获取项目的研究项列表"""
     result = await db.execute(
         select(RdResearchTrack)
-        .where(RdResearchTrack.project_id == project_id, RdResearchTrack.is_deleted == False)
+        .where(
+            RdResearchTrack.project_id == project_id,
+            not RdResearchTrack.is_deleted,
+        )
         .order_by(RdResearchTrack.created_at)
     )
     return list(result.scalars().all())
 
 
-async def update_research_track(db: AsyncSession, track_id: UUID, data: RdResearchTrackUpdate, user_id: UUID | None = None) -> RdResearchTrack:
+async def update_research_track(
+    db: AsyncSession,
+    track_id: UUID,
+    data: RdResearchTrackUpdate,
+    user_id: UUID | None = None,
+) -> RdResearchTrack:
     """更新研究项"""
     result = await db.execute(
-        select(RdResearchTrack).where(RdResearchTrack.id == track_id, RdResearchTrack.is_deleted == False)
+        select(RdResearchTrack).where(
+            RdResearchTrack.id == track_id, not RdResearchTrack.is_deleted
+        )
     )
     track = result.scalar_one_or_none()
     if not track:
@@ -377,10 +426,18 @@ async def update_research_track(db: AsyncSession, track_id: UUID, data: RdResear
 
 # ===== Research Finding Service =====
 
-async def create_research_finding(db: AsyncSession, track_id: UUID, data: RdResearchFindingCreate, user_id: UUID | None = None) -> RdResearchFinding:
+
+async def create_research_finding(
+    db: AsyncSession,
+    track_id: UUID,
+    data: RdResearchFindingCreate,
+    user_id: UUID | None = None,
+) -> RdResearchFinding:
     """创建研究发现"""
     result = await db.execute(
-        select(RdResearchTrack).where(RdResearchTrack.id == track_id, RdResearchTrack.is_deleted == False)
+        select(RdResearchTrack).where(
+            RdResearchTrack.id == track_id, not RdResearchTrack.is_deleted
+        )
     )
     track = result.scalar_one_or_none()
     if not track:
@@ -391,7 +448,7 @@ async def create_research_finding(db: AsyncSession, track_id: UUID, data: RdRese
         **data.model_dump(),
         version=1,
         created_by=user_id,
-        updated_by=user_id
+        updated_by=user_id,
     )
     db.add(finding)
     await db.commit()
@@ -399,20 +456,32 @@ async def create_research_finding(db: AsyncSession, track_id: UUID, data: RdRese
     return finding
 
 
-async def get_research_findings(db: AsyncSession, track_id: UUID) -> list[RdResearchFinding]:
+async def get_research_findings(
+    db: AsyncSession, track_id: UUID
+) -> list[RdResearchFinding]:
     """获取研究项的发现列表"""
     result = await db.execute(
         select(RdResearchFinding)
-        .where(RdResearchFinding.track_id == track_id, RdResearchFinding.is_deleted == False)
+        .where(
+            RdResearchFinding.track_id == track_id,
+            not RdResearchFinding.is_deleted,
+        )
         .order_by(RdResearchFinding.created_at)
     )
     return list(result.scalars().all())
 
 
-async def update_research_finding(db: AsyncSession, finding_id: UUID, data: RdResearchFindingUpdate, user_id: UUID | None = None) -> RdResearchFinding:
+async def update_research_finding(
+    db: AsyncSession,
+    finding_id: UUID,
+    data: RdResearchFindingUpdate,
+    user_id: UUID | None = None,
+) -> RdResearchFinding:
     """更新研究发现"""
     result = await db.execute(
-        select(RdResearchFinding).where(RdResearchFinding.id == finding_id, RdResearchFinding.is_deleted == False)
+        select(RdResearchFinding).where(
+            RdResearchFinding.id == finding_id, not RdResearchFinding.is_deleted
+        )
     )
     finding = result.scalar_one_or_none()
     if not finding:
@@ -429,6 +498,7 @@ async def update_research_finding(db: AsyncSession, finding_id: UUID, data: RdRe
 
 # ===== Conclusion Version Service =====
 
+
 async def publish_conclusion_version(
     db: AsyncSession,
     track_id: UUID,
@@ -440,7 +510,9 @@ async def publish_conclusion_version(
 ) -> dict:
     """发布新的结论版本"""
     result = await db.execute(
-        select(RdResearchTrack).where(RdResearchTrack.id == track_id, RdResearchTrack.is_deleted == False)
+        select(RdResearchTrack).where(
+            RdResearchTrack.id == track_id, not RdResearchTrack.is_deleted
+        )
     )
     track = result.scalar_one_or_none()
     if not track:
@@ -472,7 +544,7 @@ async def publish_conclusion_version(
         "version": track.conclusion_version,
         "conclusion": track.current_conclusion,
         "confidence": track.conclusion_confidence,
-        "updated_at": track.updated_at.isoformat() if track.updated_at else None
+        "updated_at": track.updated_at.isoformat() if track.updated_at else None,
     }
 
 
@@ -496,6 +568,7 @@ async def get_conclusion_history(db: AsyncSession, track_id: UUID) -> list[dict]
 
 # ===== RdProject CRUD Service Functions =====
 
+
 async def get_rd_projects(
     db: AsyncSession,
     stage: str | None = None,
@@ -507,8 +580,13 @@ async def get_rd_projects(
 ) -> tuple[list[RdProject], int]:
     """获取 RdProject 列表"""
     return await repo.get_rd_projects(
-        db, stage=stage, status=status, keyword=keyword,
-        project_type=project_type, page=page, page_size=page_size
+        db,
+        stage=stage,
+        status=status,
+        keyword=keyword,
+        project_type=project_type,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -523,7 +601,10 @@ async def create_rd_project(
 
 
 async def update_rd_project(
-    db: AsyncSession, project_id: UUID, data: RdProjectUpdate, user_id: UUID | None = None
+    db: AsyncSession,
+    project_id: UUID,
+    data: RdProjectUpdate,
+    user_id: UUID | None = None,
 ) -> RdProject:
     """更新 RdProject"""
     project = await get_rd_project(db, project_id)
@@ -544,7 +625,14 @@ async def delete_rd_project(
 # ===== Stage Transition Service Functions =====
 
 # 阶段顺序定义
-STAGE_ORDER = ["initiation", "route_dev", "optimization", "pilot", "validation", "filing"]
+STAGE_ORDER = [
+    "initiation",
+    "route_dev",
+    "optimization",
+    "pilot",
+    "validation",
+    "filing",
+]
 
 STAGE_NAMES = {
     "initiation": "立项",
@@ -600,7 +688,10 @@ async def check_stage_transition(
                 "soft_all_passed": True,
             }
         else:
-            return {"allowed": False, "reason": f"项目尚未立项，请先流转到{STAGE_LABELS[STAGE_ORDER[0]]}"}
+            return {
+                "allowed": False,
+                "reason": f"项目尚未立项，请先流转到{STAGE_NAMES[STAGE_ORDER[0]]}",
+            }
 
     current_stage = project.current_stage
 
@@ -690,9 +781,8 @@ async def transition_stage(
 
 # ===== 中试研究 Service Functions =====
 
-async def get_pilot_studies(
-    db: AsyncSession, project_id: UUID
-) -> list[RdPilotStudy]:
+
+async def get_pilot_studies(db: AsyncSession, project_id: UUID) -> list[RdPilotStudy]:
     """获取项目的中试研究记录"""
     return await repo.get_pilot_studies_by_project(db, project_id)
 
@@ -708,7 +798,10 @@ async def create_pilot_study(
 
 
 async def update_pilot_study(
-    db: AsyncSession, study_id: UUID, data: RdPilotStudyUpdate, user_id: UUID | None = None
+    db: AsyncSession,
+    study_id: UUID,
+    data: RdPilotStudyUpdate,
+    user_id: UUID | None = None,
 ) -> RdPilotStudy:
     """更新中试研究记录"""
     study = await repo.get_pilot_study_by_id(db, study_id)
@@ -721,6 +814,7 @@ async def update_pilot_study(
 
 
 # ===== 工艺验证 Service Functions =====
+
 
 async def get_validations(
     db: AsyncSession, project_id: UUID
@@ -740,7 +834,10 @@ async def create_validation(
 
 
 async def update_validation(
-    db: AsyncSession, validation_id: UUID, data: RdProcessValidationUpdate, user_id: UUID | None = None
+    db: AsyncSession,
+    validation_id: UUID,
+    data: RdProcessValidationUpdate,
+    user_id: UUID | None = None,
 ) -> RdProcessValidation:
     """更新工艺验证记录"""
     validation = await repo.get_validation_by_id(db, validation_id)
@@ -754,9 +851,8 @@ async def update_validation(
 
 # ===== 申报资料 Service Functions =====
 
-async def get_filings(
-    db: AsyncSession, project_id: UUID
-) -> list[RdRegistrationFiling]:
+
+async def get_filings(db: AsyncSession, project_id: UUID) -> list[RdRegistrationFiling]:
     """获取项目的申报资料记录"""
     return await repo.get_filings_by_project(db, project_id)
 
@@ -772,7 +868,10 @@ async def create_filing(
 
 
 async def update_filing(
-    db: AsyncSession, filing_id: UUID, data: RdRegistrationFilingUpdate, user_id: UUID | None = None
+    db: AsyncSession,
+    filing_id: UUID,
+    data: RdRegistrationFilingUpdate,
+    user_id: UUID | None = None,
 ) -> RdRegistrationFiling:
     """更新申报资料记录"""
     filing = await repo.get_filing_by_id(db, filing_id)
@@ -785,6 +884,7 @@ async def update_filing(
 
 
 # ===== RdStageDeliverable Service Functions =====
+
 
 async def create_rd_stage_deliverable(
     db: AsyncSession, data: RdStageDeliverableCreate, user_id: UUID | None = None
@@ -819,7 +919,10 @@ async def list_rd_stage_deliverables(
 
 
 async def update_rd_stage_deliverable(
-    db: AsyncSession, deliverable_id: UUID, data: RdStageDeliverableUpdate, user_id: UUID | None = None
+    db: AsyncSession,
+    deliverable_id: UUID,
+    data: RdStageDeliverableUpdate,
+    user_id: UUID | None = None,
 ) -> RdStageDeliverable:
     """更新阶段交付物"""
     deliverable = await get_rd_stage_deliverable(db, deliverable_id)
@@ -863,9 +966,8 @@ async def delete_filing(
 
 # ===== 实验记录 Service =====
 
-async def get_experiment_logs(
-    db: AsyncSession, project_id: uuid.UUID
-):
+
+async def get_experiment_logs(db: AsyncSession, project_id: uuid.UUID):
     """获取项目的所有实验记录"""
     return await repo.get_experiment_logs_by_project(db, project_id)
 
@@ -901,16 +1003,13 @@ async def delete_experiment_log(
 
 # ===== 研发报告 Service =====
 
-async def get_reports(
-    db: AsyncSession, project_id: uuid.UUID
-):
+
+async def get_reports(db: AsyncSession, project_id: uuid.UUID):
     """获取项目的所有研发报告"""
     return await repo.get_reports_by_project(db, project_id)
 
 
-async def create_report(
-    db: AsyncSession, data, user_id: uuid.UUID | None = None
-):
+async def create_report(db: AsyncSession, data, user_id: uuid.UUID | None = None):
     """创建研发报告"""
     report_data = data.model_dump()
     if user_id:
@@ -941,16 +1040,13 @@ async def delete_report(
 
 # ===== 立项申请 Service =====
 
-async def get_initiations(
-    db: AsyncSession, project_id: uuid.UUID
-):
+
+async def get_initiations(db: AsyncSession, project_id: uuid.UUID):
     """获取项目的所有立项申请"""
     return await repo.get_initiations_by_project(db, project_id)
 
 
-async def create_initiation(
-    db: AsyncSession, data, user_id: uuid.UUID | None = None
-):
+async def create_initiation(db: AsyncSession, data, user_id: uuid.UUID | None = None):
     """创建立项申请"""
     initiation_data = data.model_dump()
     if user_id:
@@ -980,6 +1076,7 @@ async def delete_initiation(
 
 
 # ===== 交付物模板 Service =====
+
 
 async def get_deliverable_templates(
     db: AsyncSession,
@@ -1024,6 +1121,7 @@ async def delete_deliverable_template(
 
 # ===== AI 报告生成 Service =====
 
+
 async def generate_report_with_ai(
     db: AsyncSession,
     project_id: uuid.UUID,
@@ -1041,7 +1139,7 @@ async def generate_report_with_ai(
 
     # 1. 获取项目信息
     project_result = await db.execute(
-        select(RdProject).where(RdProject.id == project_id, RdProject.is_deleted == False)
+        select(RdProject).where(RdProject.id == project_id, not RdProject.is_deleted)
     )
     project = project_result.scalar_one_or_none()
     if not project:
@@ -1061,7 +1159,7 @@ async def generate_report_with_ai(
     tracks_result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.project_id == project_id,
-            RdResearchTrack.is_deleted == False,
+            not RdResearchTrack.is_deleted,
         )
     )
     tracks = tracks_result.scalars().all()
@@ -1072,21 +1170,23 @@ async def generate_report_with_ai(
         findings_result = await db.execute(
             select(RdResearchFinding).where(
                 RdResearchFinding.track_id == track.id,
-                RdResearchFinding.is_deleted == False,
+                not RdResearchFinding.is_deleted,
             )
         )
         findings = findings_result.scalars().all()
 
-        findings_text = "\n".join([
-            f"- {f.finding_type}: {f.conclusion or '无结论'} (置信度: {f.confidence})"
-            for f in findings
-        ])
+        findings_text = "\n".join(
+            [
+                f"- {f.finding_type}: {f.conclusion or '无结论'} (置信度: {f.confidence})"
+                for f in findings
+            ]
+        )
 
         track_summaries.append(f"""
 研究项: {track.name}
 类型: {track.type}
 状态: {track.status}
-当前结论: {track.current_conclusion or '暂无'}
+当前结论: {track.current_conclusion or "暂无"}
 研究发现:
 {findings_text}
 """)
@@ -1096,7 +1196,7 @@ async def generate_report_with_ai(
     experiments_result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.project_id == project_id,
-            RdExperimentLog.is_deleted == False,
+            not RdExperimentLog.is_deleted,
         )
     )
     experiments = experiments_result.scalars().all()
@@ -1108,33 +1208,33 @@ async def generate_report_with_ai(
 类型: {exp.experiment_type}
 日期: {exp.experiment_date}
 操作人: {exp.operator}
-目的: {exp.objective or '无'}
-步骤: {exp.procedure or '无'}
-现象: {exp.observations or '无'}
-结论: {exp.conclusion or '无'}
+目的: {exp.objective or "无"}
+步骤: {exp.procedure or "无"}
+现象: {exp.observations or "无"}
+结论: {exp.conclusion or "无"}
 """)
         data_sources.append(f"实验: {exp.title}")
 
     # 4. 构建提示词
     deliverable_type_names = {
-        'literature_review': '技术调研报告',
-        'development_plan': '研发总方案',
-        'route_confirmation': '工艺路线确认报告',
-        'safety_assessment': '工艺安全评估报告',
-        'impurity_analysis': '理论杂质分析',
-        'optimization_plan': '小试工艺优化方案',
-        'optimization_report': '小试工艺优化报告',
-        'scale_up_summary': '公斤级放大总结报告',
-        'pilot_plan': '中试方案',
-        'pilot_report': '中试报告',
-        'supplier_development': '供应商开发报告',
-        'validation_plan': '工艺验证方案',
-        'validation_report': '工艺验证报告',
-        'cleaning_procedure': '清洁操作规程和记录',
-        'cleaning_validation': '清洁验证总结报告',
-        'structure_confirmation': '原料药结构确证报告',
-        'crystal_form_study': '晶型和粒度研究报告',
-        'impurity_study': '杂质研究报告',
+        "literature_review": "技术调研报告",
+        "development_plan": "研发总方案",
+        "route_confirmation": "工艺路线确认报告",
+        "safety_assessment": "工艺安全评估报告",
+        "impurity_analysis": "理论杂质分析",
+        "optimization_plan": "小试工艺优化方案",
+        "optimization_report": "小试工艺优化报告",
+        "scale_up_summary": "公斤级放大总结报告",
+        "pilot_plan": "中试方案",
+        "pilot_report": "中试报告",
+        "supplier_development": "供应商开发报告",
+        "validation_plan": "工艺验证方案",
+        "validation_report": "工艺验证报告",
+        "cleaning_procedure": "清洁操作规程和记录",
+        "cleaning_validation": "清洁验证总结报告",
+        "structure_confirmation": "原料药结构确证报告",
+        "crystal_form_study": "晶型和粒度研究报告",
+        "impurity_study": "杂质研究报告",
     }
 
     deliverable_name = deliverable_type_names.get(deliverable_type, deliverable_type)
@@ -1144,10 +1244,10 @@ async def generate_report_with_ai(
 项目信息:
 - 项目名称: {project.name}
 - API 名称: {project.api_name}
-- CAS 号: {project.cas_number or '无'}
-- 分子式: {project.molecular_formula or '无'}
-- 分子量: {project.molecular_weight or '无'}
-- 适应症: {project.indication or '无'}
+- CAS 号: {project.cas_number or "无"}
+- 分子式: {project.molecular_formula or "无"}
+- 分子量: {project.molecular_weight or "无"}
+- 适应症: {project.indication or "无"}
 - 当前阶段: {project.current_stage}
 
 研究项数据:
@@ -1172,10 +1272,15 @@ async def generate_report_with_ai(
 
     # 5. 调用 LLM
     try:
-        result = await llm_client.chat([
-            {"role": "system", "content": "你是一位专业的原料药研发专家，擅长撰写各类研发报告。"},
-            {"role": "user", "content": prompt}
-        ])
+        result = await llm_client.chat(
+            [
+                {
+                    "role": "system",
+                    "content": "你是一位专业的原料药研发专家，擅长撰写各类研发报告。",
+                },
+                {"role": "user", "content": prompt},
+            ]
+        )
 
         return {
             "content": result,

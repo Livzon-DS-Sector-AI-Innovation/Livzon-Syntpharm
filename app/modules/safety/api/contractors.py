@@ -24,7 +24,9 @@ from app.modules.safety.service import (
 contractors_router = APIRouter()
 
 
-@contractors_router.get("/contractors", response_model=ApiResponse, summary="获取承包商列表")
+@contractors_router.get(
+    "/contractors", response_model=ApiResponse, summary="获取承包商列表"
+)
 async def get_contractors(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -39,7 +41,12 @@ async def get_contractors(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_contractors(
-        skip, page_size, status, qualification_type, training_status, keyword,
+        skip,
+        page_size,
+        status,
+        qualification_type,
+        training_status,
+        keyword,
     )
     return ApiResponse(
         data=[ContractorResponse.model_validate(c) for c in items],
@@ -47,7 +54,9 @@ async def get_contractors(
     )
 
 
-@contractors_router.get("/contractors/{contractor_id}", response_model=ApiResponse, summary="获取承包商详情")
+@contractors_router.get(
+    "/contractors/{contractor_id}", response_model=ApiResponse, summary="获取承包商详情"
+)
 async def get_contractor(
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -61,7 +70,9 @@ async def get_contractor(
     return ApiResponse(data=ContractorResponse.model_validate(item))
 
 
-@contractors_router.post("/contractors", response_model=ApiResponse, summary="创建承包商")
+@contractors_router.post(
+    "/contractors", response_model=ApiResponse, summary="创建承包商"
+)
 async def create_contractor(
     data: ContractorCreate,
     db: AsyncSession = Depends(get_db),
@@ -74,7 +85,9 @@ async def create_contractor(
     return ApiResponse(data=ContractorResponse.model_validate(item))
 
 
-@contractors_router.put("/contractors/{contractor_id}", response_model=ApiResponse, summary="更新承包商")
+@contractors_router.put(
+    "/contractors/{contractor_id}", response_model=ApiResponse, summary="更新承包商"
+)
 async def update_contractor(
     contractor_id: uuid.UUID,
     data: ContractorUpdate,
@@ -90,7 +103,9 @@ async def update_contractor(
     return ApiResponse(data=ContractorResponse.model_validate(item))
 
 
-@contractors_router.delete("/contractors/{contractor_id}", response_model=ApiResponse, summary="删除承包商")
+@contractors_router.delete(
+    "/contractors/{contractor_id}", response_model=ApiResponse, summary="删除承包商"
+)
 async def delete_contractor(
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -105,7 +120,11 @@ async def delete_contractor(
     return ApiResponse(message="删除成功")
 
 
-@contractors_router.post("/contractors/{contractor_id}/blacklist", response_model=ApiResponse, summary="加入黑名单")
+@contractors_router.post(
+    "/contractors/{contractor_id}/blacklist",
+    response_model=ApiResponse,
+    summary="加入黑名单",
+)
 async def blacklist_contractor(
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -120,7 +139,11 @@ async def blacklist_contractor(
     return ApiResponse(data=ContractorResponse.model_validate(item))
 
 
-@contractors_router.post("/contractors/{contractor_id}/activate", response_model=ApiResponse, summary="激活承包商")
+@contractors_router.post(
+    "/contractors/{contractor_id}/activate",
+    response_model=ApiResponse,
+    summary="激活承包商",
+)
 async def activate_contractor(
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -142,7 +165,9 @@ async def activate_contractor(
 )
 async def update_contractor_training(
     contractor_id: uuid.UUID,
-    training_status: str = Query(..., description="培训状态: untrained/in_progress/passed/expired"),
+    training_status: str = Query(
+        ..., description="培训状态: untrained/in_progress/passed/expired"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
@@ -171,7 +196,9 @@ async def get_work_records(
     """获取承包商的施工记录列表"""
     service = SafetyService(db)
     items = await service.get_work_records(contractor_id)
-    return ApiResponse(data=[ContractorWorkRecordResponse.model_validate(r) for r in items])
+    return ApiResponse(
+        data=[ContractorWorkRecordResponse.model_validate(r) for r in items]
+    )
 
 
 @contractors_router.post(
@@ -248,11 +275,12 @@ async def evaluate_work_record(
     """评价施工记录"""
     service = SafetyService(db)
     item = await service.evaluate_work_record(
-        record_id, data.score, data.comments, data.evaluator,
+        record_id,
+        data.score,
+        data.comments,
+        data.evaluator,
     )
     if not item:
         return ApiResponse(code=404, message="记录不存在")
     await db.commit()
     return ApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
-
-

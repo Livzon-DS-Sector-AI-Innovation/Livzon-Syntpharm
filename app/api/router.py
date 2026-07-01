@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.modules.administration import router as administration_router
 from app.modules.ai_exam import router as ai_exam_router
+from app.modules.dossier_writer import router as dossier_writer_router
 from app.modules.energy import router as energy_router
 from app.modules.environment import router as environment_router
 from app.modules.equipment import router as equipment_router
@@ -26,15 +27,11 @@ from app.platform.identity.api import (
     sync_router,
     user_router,
 )
-from app.platform.identity.api import (
-    router as identity_router,
-)
 from app.platform.permission.api import router as permission_router
 from app.platform.system import router as system_router
 
 api_router = APIRouter()
 
-api_router.include_router(identity_router, prefix="/identity", tags=["身份认证"])
 api_router.include_router(user_router, prefix="/identity", tags=["用户信息"])
 api_router.include_router(dept_router, prefix="/identity", tags=["组织架构"])
 api_router.include_router(personnel_router, prefix="/identity", tags=["人员名单"])
@@ -65,7 +62,9 @@ api_router.include_router(
     tags=["注册管理"],
 )
 api_router.include_router(quality_router, prefix="/quality", tags=["质量管理"])
-api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])
+api_router.include_router(
+    label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"]
+)
 api_router.include_router(
     workshop_product_router,
     prefix="/production",

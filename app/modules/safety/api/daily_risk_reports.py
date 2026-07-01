@@ -20,7 +20,11 @@ from app.modules.safety.service import (
 daily_risk_reports_router = APIRouter()
 
 
-@daily_risk_reports_router.get("/daily-risk-reports", response_model=ApiResponse, summary="获取每日风险作业报备列表")
+@daily_risk_reports_router.get(
+    "/daily-risk-reports",
+    response_model=ApiResponse,
+    summary="获取每日风险作业报备列表",
+)
 async def get_daily_risk_reports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -38,15 +42,20 @@ async def get_daily_risk_reports(
     parsed_date = None
     if report_date:
         from datetime import datetime as dt
+
         parsed_date = dt.fromisoformat(report_date)
-    items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword, report_type)
+    items, total = await service.get_reports(
+        skip, page_size, status, department, parsed_date, keyword, report_type
+    )
     return ApiResponse(
         data=[DailyRiskReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@daily_risk_reports_router.post("/daily-risk-reports", response_model=ApiResponse, summary="创建每日风险作业报备")
+@daily_risk_reports_router.post(
+    "/daily-risk-reports", response_model=ApiResponse, summary="创建每日风险作业报备"
+)
 async def create_daily_risk_report(
     data: DailyRiskReportCreate,
     db: AsyncSession = Depends(get_db),
@@ -59,7 +68,11 @@ async def create_daily_risk_report(
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
-@daily_risk_reports_router.get("/daily-risk-reports/{report_id}", response_model=ApiResponse, summary="获取每日风险作业报备详情")
+@daily_risk_reports_router.get(
+    "/daily-risk-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="获取每日风险作业报备详情",
+)
 async def get_daily_risk_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +86,11 @@ async def get_daily_risk_report(
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
-@daily_risk_reports_router.put("/daily-risk-reports/{report_id}", response_model=ApiResponse, summary="更新每日风险作业报备")
+@daily_risk_reports_router.put(
+    "/daily-risk-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="更新每日风险作业报备",
+)
 async def update_daily_risk_report(
     report_id: uuid.UUID,
     data: DailyRiskReportUpdate,
@@ -89,7 +106,11 @@ async def update_daily_risk_report(
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
-@daily_risk_reports_router.delete("/daily-risk-reports/{report_id}", response_model=ApiResponse, summary="删除每日风险作业报备")
+@daily_risk_reports_router.delete(
+    "/daily-risk-reports/{report_id}",
+    response_model=ApiResponse,
+    summary="删除每日风险作业报备",
+)
 async def delete_daily_risk_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -104,7 +125,11 @@ async def delete_daily_risk_report(
     return ApiResponse(message="删除成功")
 
 
-@daily_risk_reports_router.post("/daily-risk-reports/{report_id}/submit", response_model=ApiResponse, summary="提交每日风险作业报备")
+@daily_risk_reports_router.post(
+    "/daily-risk-reports/{report_id}/submit",
+    response_model=ApiResponse,
+    summary="提交每日风险作业报备",
+)
 async def submit_daily_risk_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -119,7 +144,11 @@ async def submit_daily_risk_report(
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
-@daily_risk_reports_router.post("/daily-risk-reports/{report_id}/approve", response_model=ApiResponse, summary="审批每日风险作业报备")
+@daily_risk_reports_router.post(
+    "/daily-risk-reports/{report_id}/approve",
+    response_model=ApiResponse,
+    summary="审批每日风险作业报备",
+)
 async def approve_daily_risk_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -134,7 +163,11 @@ async def approve_daily_risk_report(
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
-@daily_risk_reports_router.post("/daily-risk-reports/{report_id}/reject", response_model=ApiResponse, summary="驳回每日风险作业报备")
+@daily_risk_reports_router.post(
+    "/daily-risk-reports/{report_id}/reject",
+    response_model=ApiResponse,
+    summary="驳回每日风险作业报备",
+)
 async def reject_daily_risk_report(
     report_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
@@ -148,5 +181,3 @@ async def reject_daily_risk_report(
         return ApiResponse(code=400, message="无法驳回，当前状态不允许")
     await db.commit()
     return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
-
-

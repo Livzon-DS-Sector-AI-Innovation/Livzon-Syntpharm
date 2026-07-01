@@ -26,9 +26,7 @@ from app.modules.equipment.models.inspection_template import (
 
 
 # ═══════════ 路线 ═══════════
-async def create_route(
-    db: AsyncSession, data: dict
-) -> InspectionRoute:
+async def create_route(db: AsyncSession, data: dict) -> InspectionRoute:
     # 清理同 name 的已软删除记录，避免重复添加→删除→添加→删除时违反唯一约束
     name = data.get("name")
     if name:
@@ -58,8 +56,9 @@ async def get_route_by_id(
             .selectinload(RouteLocation.equipments)
             .selectinload(RouteLocationEquipment.templates_rel)
             .selectinload(RouteEquipmentTemplate.template),
-            selectinload(InspectionRoute.locations_rel)
-            .selectinload(RouteLocation.location),
+            selectinload(InspectionRoute.locations_rel).selectinload(
+                RouteLocation.location
+            ),
             selectinload(InspectionRoute.locations_rel)
             .selectinload(RouteLocation.equipments)
             .selectinload(RouteLocationEquipment.equipment),
@@ -96,16 +95,15 @@ async def get_routes(
     if keyword:
         conditions.append(InspectionRoute.name.ilike(f"%{keyword}%"))
 
-    count_stmt = select(func.count(InspectionRoute.id)).where(
-        and_(*conditions)
-    )
+    count_stmt = select(func.count(InspectionRoute.id)).where(and_(*conditions))
     total = (await db.execute(count_stmt)).scalar_one()
 
     stmt = (
         select(InspectionRoute)
         .options(
-            selectinload(InspectionRoute.locations_rel)
-            .selectinload(RouteLocation.equipments),
+            selectinload(InspectionRoute.locations_rel).selectinload(
+                RouteLocation.equipments
+            ),
         )
         .where(and_(*conditions))
         .order_by(InspectionRoute.created_at.desc())
@@ -252,9 +250,7 @@ async def get_max_task_no(db: AsyncSession) -> str | None:
     return result.scalar_one_or_none()
 
 
-async def create_task(
-    db: AsyncSession, data: dict
-) -> InspectionTask:
+async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
     task = InspectionTask(**data)
     db.add(task)
     await db.flush()
@@ -273,9 +269,7 @@ async def create_task(
     return result.scalar_one()
 
 
-async def get_task_by_id(
-    db: AsyncSession, task_id: uuid.UUID
-) -> InspectionTask | None:
+async def get_task_by_id(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask | None:
     stmt = (
         select(InspectionTask)
         .options(
@@ -319,9 +313,7 @@ async def get_tasks(
         conditions.append(
             or_(
                 InspectionTask.equipment_id == equipment_id,
-                cast(InspectionTask.equipment_ids, String).like(
-                    f'%"{equipment_id}"%'
-                ),
+                cast(InspectionTask.equipment_ids, String).like(f'%"{equipment_id}"%'),
             )
         )
     if planned_time_from:
@@ -329,9 +321,7 @@ async def get_tasks(
     if planned_time_to:
         conditions.append(InspectionTask.planned_time <= planned_time_to)
 
-    count_stmt = select(func.count(InspectionTask.id)).where(
-        and_(*conditions)
-    )
+    count_stmt = select(func.count(InspectionTask.id)).where(and_(*conditions))
     total = (await db.execute(count_stmt)).scalar_one()
 
     stmt = (
@@ -415,9 +405,7 @@ async def get_records_by_task(
 
 
 # ═══════════ 照片 ═══════════
-async def create_photo(
-    db: AsyncSession, data: dict
-) -> InspectionPhoto:
+async def create_photo(db: AsyncSession, data: dict) -> InspectionPhoto:
     # equipment_id 为 None 时（线路巡检照片）不传入构造
     if data.get("equipment_id") is None:
         data = {k: v for k, v in data.items() if k != "equipment_id" or v is not None}
@@ -479,9 +467,7 @@ async def delete_photo(db: AsyncSession, photo_id: uuid.UUID) -> bool:
     return True
 
 
-async def count_photos_by_task(
-    db: AsyncSession, task_id: uuid.UUID
-) -> int:
+async def count_photos_by_task(db: AsyncSession, task_id: uuid.UUID) -> int:
     stmt = select(func.count(InspectionPhoto.id)).where(
         InspectionPhoto.task_id == task_id,
         InspectionPhoto.is_deleted == False,  # noqa: E712
@@ -511,10 +497,16 @@ async def set_route_locations(
     db: AsyncSession, route_id: uuid.UUID, items: list[dict]
 ) -> list[RouteLocation]:
     """全量替换路线的地点→设备→模板配置"""
-    existing_locs = (await db.execute(
-        select(RouteLocation).where(RouteLocation.route_id == route_id)
-    )).scalars().all()
-    existing_loc_ids = {r.id for r in existing_locs}
+    existing_locs = (
+        (
+            await db.execute(
+                select(RouteLocation).where(RouteLocation.route_id == route_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    {r.id for r in existing_locs}
     existing_by_loc_id: dict[uuid.UUID, RouteLocation] = {}
     for r in existing_locs:
         if r.location_id not in existing_by_loc_id or not r.is_deleted:
@@ -559,23 +551,29 @@ async def set_route_locations(
     await db.flush()
 
     # Eager re-fetch
-    result = list((await db.execute(
-        select(RouteLocation)
-        .options(
-            selectinload(RouteLocation.equipments).selectinload(
-                RouteLocationEquipment.templates_rel
-            ).selectinload(RouteEquipmentTemplate.template),
-            selectinload(RouteLocation.equipments).selectinload(
-                RouteLocationEquipment.equipment
-            ),
-            selectinload(RouteLocation.location),
+    result = list(
+        (
+            await db.execute(
+                select(RouteLocation)
+                .options(
+                    selectinload(RouteLocation.equipments)
+                    .selectinload(RouteLocationEquipment.templates_rel)
+                    .selectinload(RouteEquipmentTemplate.template),
+                    selectinload(RouteLocation.equipments).selectinload(
+                        RouteLocationEquipment.equipment
+                    ),
+                    selectinload(RouteLocation.location),
+                )
+                .where(
+                    RouteLocation.id.in_(new_loc_ids),
+                    RouteLocation.is_deleted == False,  # noqa: E712
+                )
+                .order_by(RouteLocation.sort_order)
+            )
         )
-        .where(
-            RouteLocation.id.in_(new_loc_ids),
-            RouteLocation.is_deleted == False,  # noqa: E712
-        )
-        .order_by(RouteLocation.sort_order)
-    )).scalars().all())
+        .scalars()
+        .all()
+    )
     return result
 
 
@@ -584,11 +582,17 @@ async def _set_location_equipments(
 ) -> None:
     """替换某个地点下的设备→模板配置"""
     loc_id = route_location.id
-    existing_eqs = (await db.execute(
-        select(RouteLocationEquipment).where(
-            RouteLocationEquipment.route_location_id == loc_id,
+    existing_eqs = (
+        (
+            await db.execute(
+                select(RouteLocationEquipment).where(
+                    RouteLocationEquipment.route_location_id == loc_id,
+                )
+            )
         )
-    )).scalars().all()
+        .scalars()
+        .all()
+    )
     existing_by_eq_id: dict[uuid.UUID, RouteLocationEquipment] = {}
     for r in existing_eqs:
         if r.equipment_id not in existing_by_eq_id or not r.is_deleted:
@@ -628,11 +632,17 @@ async def _set_equipment_templates(
     db: AsyncSession, route_equipment: RouteLocationEquipment, template_ids: list
 ) -> None:
     """替换某个设备的模板绑定"""
-    existing = (await db.execute(
-        select(RouteEquipmentTemplate).where(
-            RouteEquipmentTemplate.route_equipment_id == route_equipment.id,
+    existing = (
+        (
+            await db.execute(
+                select(RouteEquipmentTemplate).where(
+                    RouteEquipmentTemplate.route_equipment_id == route_equipment.id,
+                )
+            )
         )
-    )).scalars().all()
+        .scalars()
+        .all()
+    )
     existing_by_tid: dict[uuid.UUID, RouteEquipmentTemplate] = {}
     for r in existing:
         if r.template_id not in existing_by_tid or not r.is_deleted:
@@ -645,10 +655,12 @@ async def _set_equipment_templates(
         if t and t.is_deleted:
             t.is_deleted = False
         elif not t:
-            db.add(RouteEquipmentTemplate(
-                route_equipment_id=route_equipment.id,
-                template_id=tid,
-            ))
+            db.add(
+                RouteEquipmentTemplate(
+                    route_equipment_id=route_equipment.id,
+                    template_id=tid,
+                )
+            )
 
     for tid, t in existing_by_tid.items():
         if tid not in new_tids and not t.is_deleted:
@@ -657,9 +669,8 @@ async def _set_equipment_templates(
 
 # ═══════════ 路线定时任务 ═══════════
 
-async def create_schedule(
-    db: AsyncSession, data: dict
-) -> InspectionRouteSchedule:
+
+async def create_schedule(db: AsyncSession, data: dict) -> InspectionRouteSchedule:
     route_id = data.get("route_id")
     cron_expr = data.get("cron_expression")
     assigned_to = data.get("assigned_to")
@@ -736,7 +747,9 @@ async def get_schedule_by_id(
 
 
 async def update_schedule(
-    db: AsyncSession, schedule_id: uuid.UUID, data: dict,
+    db: AsyncSession,
+    schedule_id: uuid.UUID,
+    data: dict,
     schedule: InspectionRouteSchedule | None = None,
 ) -> InspectionRouteSchedule | None:
     if schedule is None:
@@ -759,9 +772,7 @@ async def update_schedule(
     return result.scalar_one_or_none()
 
 
-async def delete_schedule(
-    db: AsyncSession, schedule_id: uuid.UUID
-) -> bool:
+async def delete_schedule(db: AsyncSession, schedule_id: uuid.UUID) -> bool:
     schedule = await get_schedule_by_id(db, schedule_id)
     if not schedule:
         return False
@@ -779,11 +790,11 @@ async def get_due_schedules(
         select(InspectionRouteSchedule)
         .join(InspectionRoute)
         .where(
-            InspectionRouteSchedule.is_active == True,    # noqa: E712
+            InspectionRouteSchedule.is_active == True,  # noqa: E712
             InspectionRouteSchedule.is_deleted == False,  # noqa: E712
             InspectionRouteSchedule.next_trigger_at <= now,
-            InspectionRoute.is_active == True,            # noqa: E712
-            InspectionRoute.is_deleted == False,          # noqa: E712
+            InspectionRoute.is_active == True,  # noqa: E712
+            InspectionRoute.is_deleted == False,  # noqa: E712
         )
     )
     return list(result.scalars().all())

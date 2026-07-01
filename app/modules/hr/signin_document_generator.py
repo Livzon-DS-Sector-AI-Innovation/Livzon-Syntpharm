@@ -45,7 +45,7 @@ def _set_cell_text(cell, text: str) -> None:
     if first_run is not None:
         first_run.text = str(text or "")
     elif cell.paragraphs:
-        run = cell.paragraphs[0].add_run(str(text or ""))
+        cell.paragraphs[0].add_run(str(text or ""))
 
 
 def _set_xml_cell_text(tc, text: str) -> None:
@@ -94,7 +94,9 @@ def _fill_metadata(table, data: TrainingSignInSheetInput) -> None:
     # Row 2, Col 3: 考核方式
     _set_cell_text(table.rows[2].cells[3], data.assessment_method or "")
     # Row 3, Col 1: 培训日期 (merged cols 1-3)
-    _set_cell_text(table.rows[3].cells[1], str(data.training_date) if data.training_date else "")
+    _set_cell_text(
+        table.rows[3].cells[1], str(data.training_date) if data.training_date else ""
+    )
 
 
 def _fill_employee_rows(table, employee_names: list[str], department: str) -> None:
@@ -140,7 +142,10 @@ def _update_section_header_page_numbers(section, page: int, total_pages: int) ->
             if runs[i].text.strip() == "第" and runs[i + 2].text.strip() == "页":
                 page_run_idx = i + 1
             if i + 6 < len(runs):
-                if runs[i + 4].text.strip() == "，共" and runs[i + 6].text.strip() == "页":
+                if (
+                    runs[i + 4].text.strip() == "，共"
+                    and runs[i + 6].text.strip() == "页"
+                ):
                     total_run_idx = i + 5
         if page_run_idx is not None:
             runs[page_run_idx].text = str(page)
@@ -160,6 +165,7 @@ def _add_page_break(doc: Document) -> None:
 
 
 # ─── public API ───
+
 
 def generate_training_sign_in_sheet(data: TrainingSignInSheetInput) -> BytesIO:
     """Generate sign-in sheet from template, matching the preview layout.

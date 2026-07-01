@@ -12,7 +12,7 @@ from app.modules.registration.schemas.project import ProjectCreate, ProjectUpdat
 async def get_projects(db: AsyncSession) -> list[RegistrationProject]:
     stmt = (
         select(RegistrationProject)
-        .where(RegistrationProject.is_deleted == False)
+        .where(not RegistrationProject.is_deleted)
         .order_by(RegistrationProject.updated_at.desc())
     )
     result = await db.execute(stmt)
@@ -22,7 +22,7 @@ async def get_projects(db: AsyncSession) -> list[RegistrationProject]:
 async def get_project(db: AsyncSession, project_id: uuid.UUID) -> RegistrationProject:
     stmt = select(RegistrationProject).where(
         RegistrationProject.id == project_id,
-        RegistrationProject.is_deleted == False,
+        not RegistrationProject.is_deleted,
     )
     result = await db.execute(stmt)
     project = result.scalar_one_or_none()
@@ -31,9 +31,7 @@ async def get_project(db: AsyncSession, project_id: uuid.UUID) -> RegistrationPr
     return project
 
 
-async def create_project(
-    db: AsyncSession, data: ProjectCreate
-) -> RegistrationProject:
+async def create_project(db: AsyncSession, data: ProjectCreate) -> RegistrationProject:
     project = RegistrationProject(**data.model_dump(exclude_unset=True))
     db.add(project)
     await db.commit()

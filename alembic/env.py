@@ -50,7 +50,6 @@ def include_name(
     return True
 
 
-
 def process_revision_directives(context, revision, directives):
     """Auto-generate CREATE SCHEMA statements for new schemas.
 
@@ -69,13 +68,14 @@ def process_revision_directives(context, revision, directives):
     for op_list in upgrade_ops:
         for op in op_list.ops:
             # Check for create_table operations
-            if hasattr(op, 'table_name') and hasattr(op, 'schema'):
-                if op.schema and op.schema not in ('public', 'pg_catalog'):
+            if hasattr(op, "table_name") and hasattr(op, "schema"):
+                if op.schema and op.schema not in ("public", "pg_catalog"):
                     schemas_to_create.add(op.schema)
 
     # If we found new schemas, prepend CREATE SCHEMA statements
     if schemas_to_create:
         from alembic.operations import ops
+
         create_schema_ops = []
 
         for schema in sorted(schemas_to_create):
@@ -83,7 +83,7 @@ def process_revision_directives(context, revision, directives):
             has_create_schema = False
             for op_list in upgrade_ops:
                 for op in op_list.ops:
-                    if hasattr(op, 'sql') and 'CREATE SCHEMA' in str(op.sql).upper():
+                    if hasattr(op, "sql") and "CREATE SCHEMA" in str(op.sql).upper():
                         if schema in str(op.sql):
                             has_create_schema = True
                             break
@@ -130,7 +130,7 @@ def run_migrations_online() -> None:
     parsed = urlparse(f"postgresql://{db_url}")
 
     # Extract database name from path
-    db_name = parsed.path.lstrip('/') or "postgres"
+    db_name = parsed.path.lstrip("/") or "postgres"
 
     # Build connection URL with db name for pg8000
     sync_url = f"postgresql+pg8000://{quote_plus(parsed.username)}:{quote_plus(parsed.password)}@{parsed.hostname}:{parsed.port or 5432}/{db_name}"

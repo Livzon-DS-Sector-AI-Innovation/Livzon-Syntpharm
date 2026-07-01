@@ -99,9 +99,20 @@ EXPECTED_KEYS = ["hazard_type", "possible_accident", "unsafe_behavior"]
 
 # ── GB 6441 14 种危险类型 ──
 VALID_HAZARD_TYPES_6441 = [
-    "物体打击", "车辆伤害", "机械伤害", "起重伤害", "触电", "淹溺",
-    "灼烫", "火灾", "高处坠落", "坍塌", "容器爆炸", "其他爆炸",
-    "中毒和窒息", "其他伤害",
+    "物体打击",
+    "车辆伤害",
+    "机械伤害",
+    "起重伤害",
+    "触电",
+    "淹溺",
+    "灼烫",
+    "火灾",
+    "高处坠落",
+    "坍塌",
+    "容器爆炸",
+    "其他爆炸",
+    "中毒和窒息",
+    "其他伤害",
 ]
 
 FEWSHOT_EXAMPLES = [
@@ -149,8 +160,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     if knowledge_context:
         sections.append(
             "## 参考文档（知识库）\n\n"
-            "以下为本企业相关的知识库信息，优先参照：\n\n"
-            + knowledge_context
+            "以下为本企业相关的知识库信息，优先参照：\n\n" + knowledge_context
         )
 
     sections.append(OUTPUT_FORMAT)

@@ -90,7 +90,10 @@ def generate_training_evaluation(data: TrainingEvaluationInput) -> BytesIO:
     # Row 1: date(cols 1-7), label(cols 8-10), hours(cols 11-14)
     date_str = data.training_date.strftime("%Y.%m.%d") if data.training_date else ""
     _set_cell(table.rows[1].cells[1], date_str)
-    _set_cell(table.rows[1].cells[11], _compute_hours(data.training_time_start, data.training_time_end))
+    _set_cell(
+        table.rows[1].cells[11],
+        _compute_hours(data.training_time_start, data.training_time_end),
+    )
 
     # Row 2: method(cols 1-7), label(cols 8-10), trainer(cols 11-14)
     _set_cell(table.rows[2].cells[1], data.training_method or "")
@@ -100,7 +103,9 @@ def generate_training_evaluation(data: TrainingEvaluationInput) -> BytesIO:
 
     # Row 4: 培训对象 (cols 1-14 merged)
     people = "、".join(data.trainee_names) if data.trainee_names else ""
-    _set_cell(table.rows[4].cells[1], f"部门/班组/人员(Dept./group/personnel)：{people}")
+    _set_cell(
+        table.rows[4].cells[1], f"部门/班组/人员(Dept./group/personnel)：{people}"
+    )
 
     # Row 5-7: 应到/实到/缺席 (fill if data available)
     if data.expected_count is not None:

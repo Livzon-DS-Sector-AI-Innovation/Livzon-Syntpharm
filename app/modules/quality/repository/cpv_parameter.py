@@ -17,7 +17,9 @@ async def create_parameter(db: AsyncSession, data: dict[str, Any]) -> CpvParamet
     return parameter
 
 
-async def get_parameter_by_id(db: AsyncSession, parameter_id: uuid.UUID) -> CpvParameter | None:
+async def get_parameter_by_id(
+    db: AsyncSession, parameter_id: uuid.UUID
+) -> CpvParameter | None:
     """根据ID获取参数"""
     result = await db.execute(
         select(CpvParameter).where(
@@ -87,9 +89,14 @@ async def count_parameters(
 ) -> int:
     """统计参数数量"""
     from sqlalchemy import func
-    query = select(func.count()).select_from(CpvParameter).where(
-        CpvParameter.product_id == product_id,
-        CpvParameter.is_deleted == False,  # noqa: E712
+
+    query = (
+        select(func.count())
+        .select_from(CpvParameter)
+        .where(
+            CpvParameter.product_id == product_id,
+            CpvParameter.is_deleted == False,  # noqa: E712
+        )
     )
 
     if parameter_type:

@@ -1,4 +1,9 @@
 """字段填充服务 - 编排素材提取和填充流程"""
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 import fnmatch
 import re
 from pathlib import Path
@@ -22,10 +27,14 @@ class FieldFillService:
 
     async def get_field_mappings(self, chapter_code: str) -> list[FieldMapping]:
         """获取指定章节的字段映射配置"""
-        stmt = select(FieldMapping).where(
-            FieldMapping.chapter_code == chapter_code,
-            FieldMapping.is_deleted == False
-        ).order_by(FieldMapping.sort_order)
+        stmt = (
+            select(FieldMapping)
+            .where(
+                FieldMapping.chapter_code == chapter_code,
+                not FieldMapping.is_deleted,
+            )
+            .order_by(FieldMapping.sort_order)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -33,7 +42,7 @@ class FieldFillService:
         self,
         dossier: ProductDossier,
         chapter: DossierChapter,
-        assets: list[ChapterAsset]
+        assets: list[ChapterAsset],
     ) -> dict[str, Any]:
         """填充章节的所有字段"""
         results = []
@@ -46,7 +55,7 @@ class FieldFillService:
                 "success": False,
                 "message": f"章节 {chapter.chapter_code} 没有配置字段映射",
                 "filled_count": 0,
-                "results": []
+                "results": [],
             }
 
         # 打开 working copy
@@ -56,7 +65,7 @@ class FieldFillService:
                 "success": False,
                 "message": f"工作副本不存在: {chapter.working_file}",
                 "filled_count": 0,
-                "results": []
+                "results": [],
             }
 
         doc = Document(str(working_path))
@@ -68,7 +77,7 @@ class FieldFillService:
                 chapter=chapter,
                 mapping=mapping,
                 assets=assets,
-                doc=doc
+                doc=doc,
             )
             results.append(result)
 
@@ -90,10 +99,10 @@ class FieldFillService:
                 {
                     "field_name": r.field_name if r else mapping.field_name,
                     "status": r.status if r else "failed",
-                    "filled_value": r.filled_value if r else None
+                    "filled_value": r.filled_value if r else None,
                 }
                 for r, mapping in zip(results, mappings)
-            ]
+            ],
         }
 
     async def _fill_single_field(
@@ -102,7 +111,7 @@ class FieldFillService:
         chapter: DossierChapter,
         mapping: FieldMapping,
         assets: list[ChapterAsset],
-        doc: Document
+        doc: Document,
     ) -> FieldFillResult | None:
         """填充单个字段"""
 
@@ -127,7 +136,7 @@ class FieldFillService:
                 field_name=mapping.field_name,
                 filled_value=fill_value,
                 fill_method="manual",
-                status="filled" if filled else "failed"
+                status="filled" if filled else "failed",
             )
 
         # 从素材提取
@@ -142,7 +151,7 @@ class FieldFillService:
                     field_mapping_id=mapping.id,
                     field_name=mapping.field_name,
                     fill_method="rule",
-                    status="pending"
+                    status="pending",
                 )
 
             # 对于图片类型，直接传递素材路径
@@ -152,8 +161,7 @@ class FieldFillService:
             else:
                 # 提取内容
                 extracted_value = await self._extract_from_asset(
-                    asset=matched_asset,
-                    mapping=mapping
+                    asset=matched_asset, mapping=mapping
                 )
 
                 if not extracted_value:
@@ -164,7 +172,7 @@ class FieldFillService:
                         field_name=mapping.field_name,
                         source_asset_id=matched_asset.id,
                         fill_method="rule",
-                        status="pending"
+                        status="pending",
                     )
 
                 # 填充到文档
@@ -178,15 +186,13 @@ class FieldFillService:
                 filled_value=extracted_value,
                 source_asset_id=matched_asset.id,
                 fill_method="rule",
-                status="filled" if filled else "failed"
+                status="filled" if filled else "failed",
             )
 
         return None
 
     def _find_matching_asset(
-        self,
-        assets: list[ChapterAsset],
-        pattern: str | None
+        self, assets: list[ChapterAsset], pattern: str | None
     ) -> ChapterAsset | None:
         """查找匹配的素材"""
         if not pattern:
@@ -199,9 +205,7 @@ class FieldFillService:
         return None
 
     async def _extract_from_asset(
-        self,
-        asset: ChapterAsset,
-        mapping: FieldMapping
+        self, asset: ChapterAsset, mapping: FieldMapping
     ) -> str | None:
         """从素材提取字段值"""
         asset_path = Path(asset.file_path)
@@ -216,15 +220,25 @@ class FieldFillService:
             content = self.extractor.extract_text_from_docx(asset_path)
         elif file_type == "doc":
             # doc 文件需要先转换为 docx
-            docx_path = asset_path.with_suffix('.docx')
+            docx_path = asset_path.with_suffix(".docx")
             if not docx_path.exists():
                 # 使用 libreoffice 转换
                 import subprocess
+
                 try:
-                    subprocess.run([
-                        'libreoffice', '--headless', '--convert-to', 'docx',
-                        '--outdir', str(asset_path.parent), str(asset_path)
-                    ], check=True, timeout=30)
+                    subprocess.run(
+                        [
+                            "libreoffice",
+                            "--headless",
+                            "--convert-to",
+                            "docx",
+                            "--outdir",
+                            str(asset_path.parent),
+                            str(asset_path),
+                        ],
+                        check=True,
+                        timeout=30,
+                    )
                 except Exception as e:
                     logger.warning("Doc conversion failed: %s", e)
                     return None
@@ -244,29 +258,29 @@ class FieldFillService:
         # 根据字段名提取特定值
         if mapping.field_name == "包装形式":
             # 从终产品QS中提取 "包装形式：xxx"
-            match = re.search(r'包装形式[：:]\s*([^\n。]+)', full_text)
+            match = re.search(r"包装形式[：:]\s*([^\n。]+)", full_text)
             if match:
                 return match.group(1).strip()
 
         elif mapping.field_name == "包装规格":
             # 从终产品QS中提取 "规格：xxx" 或 "包装规格：xxx"
-            match = re.search(r'(?:包装)?规格[：:]\s*([^\n。]+)', full_text)
+            match = re.search(r"(?:包装)?规格[：:]\s*([^\n。]+)", full_text)
             if match:
                 return match.group(1).strip()
 
         elif mapping.field_name == "包材类型":
             # 从铝瓶QS中提取物料名称
-            match = re.search(r'物料名称[：:]\s*([^\n]+)', full_text)
+            match = re.search(r"物料名称[：:]\s*([^\n]+)", full_text)
             if match:
                 return match.group(1).strip()
             # 或者从文档标题提取
-            match = re.search(r'药用铝瓶[ⅠI1]', full_text)
+            match = re.search(r"药用铝瓶[ⅠI1]", full_text)
             if match:
                 return "药用铝瓶Ⅰ"
 
         elif mapping.field_name == "厂内名称":
             # 从铝瓶QS中提取物料代码后的名称
-            match = re.search(r'物料代码[：:]\s*([^\n]+?)(?:\s|$)', full_text)
+            match = re.search(r"物料代码[：:]\s*([^\n]+?)(?:\s|$)", full_text)
             if match:
                 return match.group(1).strip()
             # 或者使用固定值
@@ -275,12 +289,15 @@ class FieldFillService:
         elif mapping.field_name == "包材生产商":
             # 从授权书OCR中提取公司名称
             # OCR文本可能有换行，使用跨行匹配
-            match = re.search(r'([\u4e00-\u9fa5]{2,}(?:市)?[\u4e00-\u9fa5]{1,2})\s*\n?\s*(包装有限公司)', full_text)
+            match = re.search(
+                r"([\u4e00-\u9fa5]{2,}(?:市)?[\u4e00-\u9fa5]{1,2})\s*\n?\s*(包装有限公司)",
+                full_text,
+            )
             if match:
                 name = match.group(1) + match.group(2)
                 # 常见OCR错误校正
-                name = name.replace('五家庄', '石家庄')
-                name = name.replace('华导', '华辰')
+                name = name.replace("五家庄", "石家庄")
+                name = name.replace("华导", "华辰")
                 return name
             # 如果没找到，返回标准名称
             return "石家庄市华辰包装有限公司"
@@ -291,17 +308,17 @@ class FieldFillService:
             if match:
                 return match.group(1)
             # 直接匹配格式
-            match = re.search(r'\b([A-Z]\d{10,})\b', full_text)
+            match = re.search(r"\b([A-Z]\d{10,})\b", full_text)
             if match:
                 return match.group(1)
 
         elif mapping.field_name == "执行质量标准号":
             # 从铝瓶QS中提取标准号
-            match = re.search(r'标准依据[：:]\s*([^\n]+)', full_text)
+            match = re.search(r"标准依据[：:]\s*([^\n]+)", full_text)
             if match:
                 text = match.group(1)
                 # 提取标准号（如 Q/HCH11-2017）
-                std_match = re.search(r'([A-Z]/[A-Z]+\d+-\d+)', text)
+                std_match = re.search(r"([A-Z]/[A-Z]+\d+-\d+)", text)
                 if std_match:
                     return std_match.group(1)
                 return text.strip()
@@ -309,6 +326,7 @@ class FieldFillService:
         elif mapping.field_name == "包装材料质量标准表":
             # 从铝瓶QS中提取检验项目表格
             import json
+
             if "tables" in content and len(content["tables"]) > 0:
                 # 找到包含"检验项目"的表格
                 for table in content["tables"]:
@@ -339,10 +357,7 @@ class FieldFillService:
         return None
 
     async def _fill_to_document(
-        self,
-        doc: Document,
-        mapping: FieldMapping,
-        value: str
+        self, doc: Document, mapping: FieldMapping, value: str
     ) -> bool:
         """将值填充到文档"""
 
@@ -361,15 +376,12 @@ class FieldFillService:
 
         return False
 
-
     def _fill_complete_table(
-        self,
-        doc: Document,
-        hint: str,
-        table_data_json: str
+        self, doc: Document, hint: str, table_data_json: str
     ) -> bool:
         """填充完整表格（从JSON解析表格数据）"""
         import json
+
         try:
             table_data = json.loads(table_data_json)
             if not table_data or not isinstance(table_data, list):
@@ -398,19 +410,14 @@ class FieldFillService:
             logger.warning("Table fill failed: %s", e)
             return False
 
-
     async def _insert_image(
-        self,
-        doc: Document,
-        mapping: FieldMapping,
-        source_asset_path: str
+        self, doc: Document, mapping: FieldMapping, source_asset_path: str
     ) -> bool:
         """将PDF或图片转换为图片并插入到文档指定位置"""
         import tempfile
         from pathlib import Path
 
         from pdf2image import convert_from_path
-
 
         source_path = Path(source_asset_path)
         if not source_path.exists():
@@ -430,12 +437,14 @@ class FieldFillService:
                 return False
 
             # 转换PDF为图片
-            if source_path.suffix.lower() == '.pdf':
+            if source_path.suffix.lower() == ".pdf":
                 images = convert_from_path(str(source_path), dpi=150)
                 if images:
                     # 插入第一页（如果是多页，只插入第一页或提示用户）
-                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                        images[0].save(tmp.name, 'PNG')
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".png", delete=False
+                    ) as tmp:
+                        images[0].save(tmp.name, "PNG")
                         # 清空段落内容并插入图片
                         for run in target_paragraph.runs:
                             run.clear()
@@ -456,24 +465,19 @@ class FieldFillService:
 
         return False
 
-    def _fill_paragraph(
-        self,
-        doc: Document,
-        hint: str,
-        value: str
-    ) -> bool:
+    def _fill_paragraph(self, doc: Document, hint: str, value: str) -> bool:
         """填充段落"""
         for para in doc.paragraphs:
             if hint and hint in para.text:
                 # 查找冒号位置
                 text = para.text
-                colon_pos = text.find('：')
+                colon_pos = text.find("：")
                 if colon_pos == -1:
-                    colon_pos = text.find(':')
+                    colon_pos = text.find(":")
 
                 if colon_pos != -1:
                     # 清空冒号后的内容并填入新值
-                    new_text = text[:colon_pos + 1] + value
+                    new_text = text[: colon_pos + 1] + value
                     # 清空所有 run 并重建
                     for run in para.runs:
                         run.text = ""
@@ -482,12 +486,7 @@ class FieldFillService:
                     return True
         return False
 
-    def _fill_table(
-        self,
-        doc: Document,
-        hint: str,
-        value: str
-    ) -> bool:
+    def _fill_table(self, doc: Document, hint: str, value: str) -> bool:
         """填充表格"""
         for table in doc.tables:
             for row in table.rows:

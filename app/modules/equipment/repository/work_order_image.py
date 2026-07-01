@@ -8,9 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.equipment.models.work_order_image import WorkOrderImage
 
 
-async def create_image(
-    db: AsyncSession, data: dict
-) -> WorkOrderImage:
+async def create_image(db: AsyncSession, data: dict) -> WorkOrderImage:
     image = WorkOrderImage(**data)
     db.add(image)
     await db.flush()
@@ -21,10 +19,12 @@ async def get_images_by_work_order(
     db: AsyncSession, work_order_id: uuid.UUID
 ) -> list[WorkOrderImage]:
     result = await db.execute(
-        select(WorkOrderImage).where(
+        select(WorkOrderImage)
+        .where(
             WorkOrderImage.work_order_id == work_order_id,
             WorkOrderImage.is_deleted == False,  # noqa: E712
-        ).order_by(WorkOrderImage.uploaded_at.asc())
+        )
+        .order_by(WorkOrderImage.uploaded_at.asc())
     )
     return list(result.scalars().all())
 

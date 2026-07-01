@@ -21,7 +21,12 @@ from app.platform.integrations.ai.document_parser import DocumentParser
 logger = logging.getLogger(__name__)
 
 # 上传文件存储目录
-UPLOADS_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "uploads" / "safety" / "knowledge"
+UPLOADS_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent.parent
+    / "uploads"
+    / "safety"
+    / "knowledge"
+)
 
 # 飞书 Drive API
 FEISHU_DRIVE_BASE = "https://open.feishu.cn/open-apis/drive/v1"
@@ -92,7 +97,9 @@ class DocumentLoader:
 
         logger.info(
             "解析完成: title=%s chars=%d preview=%s...",
-            title, len(text), text[:80].replace("\n", " "),
+            title,
+            len(text),
+            text[:80].replace("\n", " "),
         )
         return text, str(file_path)
 
@@ -123,21 +130,27 @@ class DocumentLoader:
                     title=doc.title,
                     max_chars=max_chars,
                 )
-                results.append({
-                    "meta": doc,
-                    "text": text,
-                    "file_path": file_path,
-                })
+                results.append(
+                    {
+                        "meta": doc,
+                        "text": text,
+                        "file_path": file_path,
+                    }
+                )
             except Exception as e:
                 logger.error(
                     "加载文档失败 [%s/%s]: %s — %s",
-                    doc.priority, doc.title, doc.file_token, e,
+                    doc.priority,
+                    doc.title,
+                    doc.file_token,
+                    e,
                 )
                 continue
 
         logger.info(
             "批量加载完成: 成功=%d/%d",
-            len(results), len(documents),
+            len(results),
+            len(documents),
         )
         return results
 
@@ -161,7 +174,9 @@ class DocumentLoader:
                         return data.get("data", {})
                 logger.warning(
                     "获取文件元信息失败: file_token=%s status=%s body=%s",
-                    file_token, resp.status_code, (resp.text or "")[:200],
+                    file_token,
+                    resp.status_code,
+                    (resp.text or "")[:200],
                 )
         except Exception as e:
             logger.error("获取文件元信息异常: file_token=%s error=%s", file_token, e)
@@ -190,14 +205,17 @@ class DocumentLoader:
                     text = resp.content[:500].decode(errors="replace")
                     logger.warning(
                         "飞书 Drive 返回非文件内容 (ct=%s): %s",
-                        ct, text,
+                        ct,
+                        text,
                     )
                     return None
                 return resp.content
 
             logger.warning(
                 "飞书 Drive 下载失败: file_token=%s status=%s body=%s",
-                file_token, resp.status_code, (resp.text or "")[:200],
+                file_token,
+                resp.status_code,
+                (resp.text or "")[:200],
             )
             return None
 

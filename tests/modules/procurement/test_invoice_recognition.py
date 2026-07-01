@@ -29,10 +29,7 @@ def test_parse_invoice_text_from_layout_pdf_text() -> None:
                 "信  统一社会信用代码/纳税人识别号：91640221574877733M"
                 "           信  统一社会信用代码/纳税人识别号：91150103MA0Q8T6YX5"
             ),
-            (
-                "项目名称 规格型号 单 位 数 量 单 价 金 额 "
-                "税率/征收率 税 额"
-            ),
+            ("项目名称 规格型号 单 位 数 量 单 价 金 额 税率/征收率 税 额"),
             (
                 "*食品添加剂*黄原胶       25kg/袋        kg          "
                 "100012.5663716814159 12566.37   13%            1633.63"
@@ -61,10 +58,7 @@ def test_parse_invoice_text_uses_total_tax_amount_for_multi_page_invoice() -> No
                 "购  名称：丽珠集团（宁夏）制药有限公司"
                 "                            销  名称：宁夏金海星宁商贸有限公司"
             ),
-            (
-                "项目名称 规格型号 单 位 数 量 单 价 金 额 "
-                "税率/征收率 税 额"
-            ),
+            ("项目名称 规格型号 单 位 数 量 单 价 金 额 税率/征收率 税 额"),
             "*塑料制品*塑料三角瓶 250ml 个 30 4.8672566371681 146.02 13% 18.98",
             "小        计 ¥17399.99 ¥2262.01",
             "合        计 ¥70889.64 ¥9215.66",
@@ -91,10 +85,7 @@ def test_parse_invoice_text_includes_line_items_when_requested() -> None:
                 "购  名称：丽珠集团(宁夏)制药有限公司"
                 "                            销  名称：内蒙古臻合生物科技有限公司"
             ),
-            (
-                "项目名称 规格型号 单 位 数 量 单 价 金 额 "
-                "税率/征收率 税 额"
-            ),
+            ("项目名称 规格型号 单 位 数 量 单 价 金 额 税率/征收率 税 额"),
             (
                 "*食品添加剂*黄原胶       25kg/袋        kg          "
                 "100012.5663716814159 12566.37   13%            1633.63"
@@ -121,10 +112,7 @@ def test_parse_invoice_text_infers_conjoined_detail_quantity() -> None:
                 "购  名称：丽珠集团（宁夏）制药有限公司"
                 "                            销  名称：宁夏金海星宁商贸有限公司"
             ),
-            (
-                "项目名称 规格型号 单 位 数 量 单 价 金 额 "
-                "税率/征收率 税 额"
-            ),
+            ("项目名称 规格型号 单 位 数 量 单 价 金 额 税率/征收率 税 额"),
             (
                 "*橡胶制品*丁腈手套            中号               包"
                 "                  2115.0442477876106        230.09"
@@ -153,10 +141,7 @@ def test_parse_invoice_text_handles_reversed_seller_and_dense_amounts() -> None:
                 "                                   宁夏伊品贸易有限公司销"
                 "                                           名称："
             ),
-            (
-                "项目名称 规格型号 单 位 数 量 单 价 金 额 "
-                "税率/征收率 税 额"
-            ),
+            ("项目名称 规格型号 单 位 数 量 单 价 金 额 税率/征收率 税 额"),
             (
                 "*淀粉制品*液体葡萄糖                  吨"
                 "             345.021680.53095473579816.7913%"
@@ -230,7 +215,7 @@ async def test_recognize_invoice_api_rejects_oversized_pdf(
         response = await client.post(
             "/api/v1/procurement/invoices/recognize",
             files={"file": ("invoice.pdf", b"0123456789", "application/pdf")},
-    )
+        )
 
     assert response.status_code == 413
     assert "不能超过" in response.json()["message"]

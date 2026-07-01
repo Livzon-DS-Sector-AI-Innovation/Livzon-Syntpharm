@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 # ── 角色 Schema ──
 
+
 class RoleCreate(BaseModel):
     """创建角色请求"""
 
@@ -42,6 +43,7 @@ class RoleResponse(BaseModel):
 
 
 # ── 人员 Schema ──
+
 
 class PersonnelAddRequest(BaseModel):
     """添加人员请求 — 从 identity.users 选取"""
@@ -141,6 +143,7 @@ class PersonnelListResponse(BaseModel):
 
 # ── 候选人查询 Schema ──
 
+
 class CandidateResponse(BaseModel):
     """可分配人员信息（供其他业务模块调用）"""
 
@@ -153,6 +156,7 @@ class CandidateResponse(BaseModel):
 
 
 # ── 飞书刷新结果 ──
+
 
 class FeishuRefreshResult(BaseModel):
     """飞书刷新结果"""

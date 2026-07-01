@@ -148,10 +148,12 @@ class TestSchemas:
     def test_enum_rejection(self):
         """非法枚举值应被拒绝。"""
         with pytest.raises(ValueError):
-            RectificationReviewOutput(**{
-                **VALID_OUTPUT_DICT,
-                "review_conclusion": "invalid_conclusion",
-            })
+            RectificationReviewOutput(
+                **{
+                    **VALID_OUTPUT_DICT,
+                    "review_conclusion": "invalid_conclusion",
+                }
+            )
 
     def test_config_defaults(self):
         """配置默认值。"""
@@ -383,8 +385,7 @@ class TestRuleEngine:
         """输入输出不相关检测。"""
         inp = make_input(original_description="防爆电箱堵头缺失 积尘严重")
         out = make_output(
-            review_comments="本次审核涉及完全不同的内容安全施工"
-            + "x" * 50,
+            review_comments="本次审核涉及完全不同的内容安全施工" + "x" * 50,
             photo_match_analysis="无关内容" + "x" * 50,
         )
         result = self.engine.validate(inp, out)
@@ -443,6 +444,7 @@ class TestIntegration:
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
         )
+
         return AIRectificationReviewer(MockAIService())
 
     @pytest.mark.asyncio
@@ -499,9 +501,7 @@ class TestIntegration:
         ]
         results = await plugin.review_batch(inputs)
         assert len(results) == 2
-        assert all(
-            r.review_conclusion == ReviewConclusion.PASS for r in results
-        )
+        assert all(r.review_conclusion == ReviewConclusion.PASS for r in results)
 
     @pytest.mark.asyncio
     async def test_vision_fallback_to_text(self):

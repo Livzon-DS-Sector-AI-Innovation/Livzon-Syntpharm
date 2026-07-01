@@ -26,18 +26,24 @@ async def main():
     async with async_session() as session:
         # 1. 查询 employees_old 表中有手机号的员工
         result = await session.execute(
-            text("SELECT id, employee_number, name, phone FROM hr.employees_old WHERE phone IS NOT NULL AND is_deleted = false")
+            text(
+                "SELECT id, employee_number, name, phone FROM hr.employees_old WHERE phone IS NOT NULL AND is_deleted = false"
+            )
         )
         employees_old = result.mappings().all()
 
         # 2. 查询 employees_new 表中有手机号的员工
         result = await session.execute(
-            text("SELECT id, employee_number, name, phone FROM hr.employees_new WHERE phone IS NOT NULL AND is_deleted = false")
+            text(
+                "SELECT id, employee_number, name, phone FROM hr.employees_new WHERE phone IS NOT NULL AND is_deleted = false"
+            )
         )
         employees_new = result.mappings().all()
 
         all_employees = list(employees_old) + list(employees_new)
-        print(f"Total employees: {len(all_employees)} (old: {len(employees_old)}, new: {len(employees_new)})")
+        print(
+            f"Total employees: {len(all_employees)} (old: {len(employees_old)}, new: {len(employees_new)})"
+        )
 
         # 3. 分批获取 open_id（每批 50 个）
         im = FeishuIM()
@@ -49,7 +55,7 @@ async def main():
             batch = all_employees[i : i + batch_size]
             mobiles = [e.phone for e in batch if e.phone]
 
-            print(f"\nBatch {i+1}-{min(i+batch_size, len(all_employees))}...")
+            print(f"\nBatch {i + 1}-{min(i + batch_size, len(all_employees))}...")
             try:
                 mapping = await im.batch_get_open_ids_by_mobile(mobiles)
             except Exception as e:
@@ -61,11 +67,15 @@ async def main():
             for emp in batch:
                 open_id = mapping.get(emp.phone) if emp.phone else None
                 # 判断是 old 还是 new 表
-                table = "hr.employees_old" if emp in employees_old else "hr.employees_new"
+                table = (
+                    "hr.employees_old" if emp in employees_old else "hr.employees_new"
+                )
                 if open_id:
                     await session.execute(
-                        text(f"UPDATE {table} SET feishu_open_id = :open_id WHERE id = :id"),
-                        {"open_id": open_id, "id": str(emp.id)}
+                        text(
+                            f"UPDATE {table} SET feishu_open_id = :open_id WHERE id = :id"
+                        ),
+                        {"open_id": open_id, "id": str(emp.id)},
                     )
                     updated += 1
                     print(f"  [OK] {emp.employee_number} ({emp.phone}) -> {open_id}")

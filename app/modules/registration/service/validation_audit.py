@@ -54,7 +54,9 @@ STORAGE_SUBDIR = "registration/validation-audit"
 def _task_storage_path(task_id: UUID, subdir: str = "files") -> Path:
     """返回任务存储目录: storage/registration/validation-audit/tasks/{task_id}/{subdir}/"""
     settings = get_settings()
-    base = Path(settings.STORAGE_ROOT) / STORAGE_SUBDIR / "tasks" / str(task_id) / subdir
+    base = (
+        Path(settings.STORAGE_ROOT) / STORAGE_SUBDIR / "tasks" / str(task_id) / subdir
+    )
     base.mkdir(parents=True, exist_ok=True)
     return base
 
@@ -157,7 +159,9 @@ class ValidationAuditService:
                 await self.file_repo.update_parse_result(
                     audit_file, parse_status="parsing"
                 )
-                text = DocumentParser.extract_text(audit_file.file_path, max_chars=80000)
+                text = DocumentParser.extract_text(
+                    audit_file.file_path, max_chars=80000
+                )
                 await self.file_repo.update_parse_result(
                     audit_file, parse_status="completed", parsed_text=text
                 )
@@ -167,7 +171,9 @@ class ValidationAuditService:
                     audit_file, parse_status="failed"
                 )
                 await self.task_repo.update(task, status=TaskStatus.FAILED.value)
-                raise RuntimeError(f"文件解析失败: {audit_file.original_filename}: {e}") from e
+                raise RuntimeError(
+                    f"文件解析失败: {audit_file.original_filename}: {e}"
+                ) from e
 
         await self.task_repo.update(task, status=TaskStatus.UPLOADED.value)
 
@@ -199,7 +205,9 @@ class ValidationAuditService:
             {"role": "system", "content": GOLDEN_STANDARD_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(messages, response_format="json_object", temperature=0.1)
+        raw = await llm_client.chat(
+            messages, response_format="json_object", temperature=0.1
+        )
         try:
             return json.loads(raw)
         except json.JSONDecodeError:
@@ -211,7 +219,9 @@ class ValidationAuditService:
     async def run_audit(self, task: ValidationAuditTask) -> AuditResult:
         """执行 AI 审核"""
         files = await self.file_repo.list_by_task_id(task.id)
-        parsed_files = [f for f in files if f.parse_status == "completed" and f.parsed_text]
+        parsed_files = [
+            f for f in files if f.parse_status == "completed" and f.parsed_text
+        ]
 
         if not parsed_files:
             raise RuntimeError("没有已解析的文件可供审核")
@@ -241,7 +251,9 @@ class ValidationAuditService:
         self, task: ValidationAuditTask, files: list[ValidationAuditFile]
     ) -> AuditResult:
         protocol_file = next((f for f in files if f.file_type == "protocol"), files[0])
-        golden = await self.build_golden_standard(protocol_file.parsed_text or "", "验证方案")
+        golden = await self.build_golden_standard(
+            protocol_file.parsed_text or "", "验证方案"
+        )
 
         user_prompt = AUDIT_PROTOCOL_USER_TEMPLATE.format(
             product_name=task.product_name,
@@ -253,14 +265,18 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_PROTOCOL_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(messages, response_format="json_object", temperature=0.1, max_tokens=32768)
+        raw = await llm_client.chat(
+            messages, response_format="json_object", temperature=0.1, max_tokens=32768
+        )
         return self._parse_audit_result(raw)
 
     async def _audit_report(
         self, task: ValidationAuditTask, files: list[ValidationAuditFile]
     ) -> AuditResult:
         report_file = next((f for f in files if f.file_type == "report"), files[0])
-        golden = await self.build_golden_standard(report_file.parsed_text or "", "验证报告")
+        golden = await self.build_golden_standard(
+            report_file.parsed_text or "", "验证报告"
+        )
 
         user_prompt = AUDIT_REPORT_USER_TEMPLATE.format(
             product_name=task.product_name,
@@ -272,7 +288,9 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_REPORT_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(messages, response_format="json_object", temperature=0.1, max_tokens=32768)
+        raw = await llm_client.chat(
+            messages, response_format="json_object", temperature=0.1, max_tokens=32768
+        )
         return self._parse_audit_result(raw)
 
     async def _audit_cross(
@@ -294,8 +312,12 @@ class ValidationAuditService:
         user_prompt = AUDIT_CROSS_USER_TEMPLATE.format(
             product_name=task.product_name,
             method_name=task.method_name,
-            golden_standard_protocol=json.dumps(golden_protocol, ensure_ascii=False, indent=2),
-            golden_standard_report=json.dumps(golden_report, ensure_ascii=False, indent=2),
+            golden_standard_protocol=json.dumps(
+                golden_protocol, ensure_ascii=False, indent=2
+            ),
+            golden_standard_report=json.dumps(
+                golden_report, ensure_ascii=False, indent=2
+            ),
             protocol_text=protocol_file.parsed_text or "",
             report_text=report_file.parsed_text or "",
         )
@@ -303,7 +325,9 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_CROSS_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(messages, response_format="json_object", temperature=0.1, max_tokens=32768)
+        raw = await llm_client.chat(
+            messages, response_format="json_object", temperature=0.1, max_tokens=32768
+        )
         return self._parse_audit_result(raw)
 
     def _parse_audit_result(self, raw: str) -> AuditResult:
@@ -321,16 +345,18 @@ class ValidationAuditService:
         issues_data = data.get("issues", [])
         issues = []
         for item in issues_data:
-            issues.append({
-                "issue_no": item.get("issue_no", "P000"),
-                "dimension": item.get("dimension", "未分类"),
-                "check_item": item.get("check_item", ""),
-                "description": item.get("description", ""),
-                "suggestion": item.get("suggestion"),
-                "issue_type": item.get("issue_type", "general"),
-                "page_no": item.get("page_no"),
-                "evidence_text": item.get("evidence_text"),
-            })
+            issues.append(
+                {
+                    "issue_no": item.get("issue_no", "P000"),
+                    "dimension": item.get("dimension", "未分类"),
+                    "check_item": item.get("check_item", ""),
+                    "description": item.get("description", ""),
+                    "suggestion": item.get("suggestion"),
+                    "issue_type": item.get("issue_type", "general"),
+                    "page_no": item.get("page_no"),
+                    "evidence_text": item.get("evidence_text"),
+                }
+            )
 
         return AuditResult(
             conclusion=data.get("conclusion", "fail"),
@@ -349,14 +375,46 @@ class ValidationAuditService:
         """保存审核问题到数据库"""
         issue_models = []
         for idx, issue_data in enumerate(result.issues, start=1):
-            issue_type = issue_data["issue_type"] if isinstance(issue_data, dict) else issue_data.issue_type
-            issue_no = issue_data["issue_no"] if isinstance(issue_data, dict) else issue_data.issue_no
-            dimension = issue_data["dimension"] if isinstance(issue_data, dict) else issue_data.dimension
-            check_item = issue_data["check_item"] if isinstance(issue_data, dict) else issue_data.check_item
-            description = issue_data["description"] if isinstance(issue_data, dict) else issue_data.description
-            suggestion = issue_data.get("suggestion") if isinstance(issue_data, dict) else issue_data.suggestion
-            page_no = issue_data.get("page_no") if isinstance(issue_data, dict) else issue_data.page_no
-            evidence_text = issue_data.get("evidence_text") if isinstance(issue_data, dict) else issue_data.evidence_text
+            issue_type = (
+                issue_data["issue_type"]
+                if isinstance(issue_data, dict)
+                else issue_data.issue_type
+            )
+            issue_no = (
+                issue_data["issue_no"]
+                if isinstance(issue_data, dict)
+                else issue_data.issue_no
+            )
+            dimension = (
+                issue_data["dimension"]
+                if isinstance(issue_data, dict)
+                else issue_data.dimension
+            )
+            check_item = (
+                issue_data["check_item"]
+                if isinstance(issue_data, dict)
+                else issue_data.check_item
+            )
+            description = (
+                issue_data["description"]
+                if isinstance(issue_data, dict)
+                else issue_data.description
+            )
+            suggestion = (
+                issue_data.get("suggestion")
+                if isinstance(issue_data, dict)
+                else issue_data.suggestion
+            )
+            page_no = (
+                issue_data.get("page_no")
+                if isinstance(issue_data, dict)
+                else issue_data.page_no
+            )
+            evidence_text = (
+                issue_data.get("evidence_text")
+                if isinstance(issue_data, dict)
+                else issue_data.evidence_text
+            )
 
             issue_model = ValidationAuditIssue(
                 task_id=str(task.id),
@@ -374,15 +432,30 @@ class ValidationAuditService:
         saved_issues = await self.issue_repo.create_batch(issue_models)
 
         # 统计问题数量
-        serious = sum(1 for i in result.issues if (i["issue_type"] if isinstance(i, dict) else i.issue_type) == "serious")
-        general = sum(1 for i in result.issues if (i["issue_type"] if isinstance(i, dict) else i.issue_type) == "general")
-        suggestion = sum(1 for i in result.issues if (i["issue_type"] if isinstance(i, dict) else i.issue_type) == "suggestion")
+        serious = sum(
+            1
+            for i in result.issues
+            if (i["issue_type"] if isinstance(i, dict) else i.issue_type) == "serious"
+        )
+        general = sum(
+            1
+            for i in result.issues
+            if (i["issue_type"] if isinstance(i, dict) else i.issue_type) == "general"
+        )
+        suggestion = sum(
+            1
+            for i in result.issues
+            if (i["issue_type"] if isinstance(i, dict) else i.issue_type)
+            == "suggestion"
+        )
 
         # 更新任务状态和统计
         await self.task_repo.update(
             task,
             status=TaskStatus.COMPLETED.value,
-            conclusion=result.conclusion.value if hasattr(result.conclusion, "value") else result.conclusion,
+            conclusion=result.conclusion.value
+            if hasattr(result.conclusion, "value")
+            else result.conclusion,
             risk_level=result.risk_level,
             serious_count=serious,
             general_count=general,

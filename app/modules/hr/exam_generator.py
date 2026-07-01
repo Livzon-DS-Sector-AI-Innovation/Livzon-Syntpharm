@@ -90,12 +90,14 @@ def build_generate_prompt(file_content: str) -> str:
 
 
 # ─── 字号常量 ───
-SIZE_S4 = Pt(12)   # 小四
-SIZE_4 = Pt(14)    # 四号
-SIZE_X3 = Pt(15)   # 小三号
+SIZE_S4 = Pt(12)  # 小四
+SIZE_4 = Pt(14)  # 四号
+SIZE_X3 = Pt(15)  # 小三号
 
 
-def _set_run_font(run, western: str, east_asian: str, size: Pt, bold: bool = False) -> None:
+def _set_run_font(
+    run, western: str, east_asian: str, size: Pt, bold: bool = False
+) -> None:
     """设置 run 的字体：西文字体 + 中文字体 + 字号 + 加粗."""
     run.font.name = western
     run.font.size = size

@@ -9,6 +9,7 @@ ProviderType = Literal["openai", "deepseek", "qwen", "moonshot", "custom"]
 @dataclass
 class ProviderConfig:
     """Provider configuration."""
+
     name: str
     base_url: str
     default_model: str

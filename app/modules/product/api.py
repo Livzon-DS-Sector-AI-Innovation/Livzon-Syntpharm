@@ -25,6 +25,7 @@ def get_product_service(session: AsyncSession = Depends(get_db)) -> ProductServi
 
 # ─── Product Routes ───
 
+
 @router.get("/products", summary="产品列表")
 async def list_products(
     current_user: CurrentUser,
@@ -43,10 +44,7 @@ async def list_products(
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [
-        ProductResponse.model_validate(p).model_dump(mode="json")
-        for p in products
-    ]
+    data = [ProductResponse.model_validate(p).model_dump(mode="json") for p in products]
     return paginated_response(
         data=data,
         page=page_params.page,

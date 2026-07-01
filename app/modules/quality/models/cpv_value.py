@@ -12,7 +12,8 @@ class CpvValue(BaseModel):
     __tablename__ = "cpv_values"
     __table_args__ = (
         UniqueConstraint(
-            "batch_id", "parameter_id",
+            "batch_id",
+            "parameter_id",
             name="uq_cpv_values_batch_parameter",
         ),
         {"schema": "quality", "comment": "CPV参数值表"},

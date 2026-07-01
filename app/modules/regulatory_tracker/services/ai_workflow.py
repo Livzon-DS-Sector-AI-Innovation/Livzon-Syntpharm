@@ -29,7 +29,7 @@ class AIWorkflow(Protocol):
 class SequentialAIWorkflow:
     """
     顺序执行的 AI 工作流（V1 实现）
-    
+
     在后台任务中顺序处理文档，不阻塞主流程。
     未来可替换为队列实现。
     """
@@ -40,7 +40,7 @@ class SequentialAIWorkflow:
     async def submit_documents(self, document_ids: list[UUID]) -> None:
         """
         提交文档进行 AI 分析
-        
+
         Args:
             document_ids: 待分析的文档 ID 列表
         """
@@ -58,8 +58,11 @@ class SequentialAIWorkflow:
                 async with self.session_factory() as session:
                     # 查询文档
                     from sqlalchemy import select
+
                     result = await session.execute(
-                        select(RegulatoryDocument).where(RegulatoryDocument.id == doc_id)
+                        select(RegulatoryDocument).where(
+                            RegulatoryDocument.id == doc_id
+                        )
                     )
                     document = result.scalar_one_or_none()
 
@@ -91,5 +94,6 @@ def get_ai_workflow() -> SequentialAIWorkflow:
     global _workflow_instance
     if _workflow_instance is None:
         from app.core.database import async_session_factory
+
         _workflow_instance = SequentialAIWorkflow(async_session_factory)
     return _workflow_instance

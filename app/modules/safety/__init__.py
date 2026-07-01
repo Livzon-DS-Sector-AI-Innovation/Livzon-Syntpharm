@@ -6,15 +6,18 @@ __all__ = ["router"]
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_safety_ws():
     """Start safety module's Feishu WebSocket client."""
     from app.modules.safety.feishu.event_client import start_ws
+
     await start_ws()
 
 
 async def _stop_safety_ws():
     """Stop safety module's Feishu WebSocket client."""
     from app.modules.safety.feishu.event_client import stop_ws
+
     await stop_ws()
 
 
@@ -28,12 +31,14 @@ register_background_worker(
 async def _start_safety_scheduler():
     """Start safety module's scheduled task loop."""
     from app.modules.safety.scheduler import scheduled_task_loop
+
     await scheduled_task_loop()
 
 
 async def _stop_safety_scheduler():
     """Stop safety module's scheduled task loop."""
     from app.modules.safety.scheduler import stop_scheduled_task_flag
+
     stop_scheduled_task_flag.set()
 
 

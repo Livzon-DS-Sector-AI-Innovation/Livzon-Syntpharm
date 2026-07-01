@@ -134,29 +134,35 @@ async def upload_files(
         filename = upload_file.filename or "unknown"
         ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
         if ext not in ("docx", "pdf"):
-            results.append({
-                "filename": filename,
-                "status": "failed",
-                "error": "仅支持 .docx 和 .pdf 格式",
-            })
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "failed",
+                    "error": "仅支持 .docx 和 .pdf 格式",
+                }
+            )
             continue
 
         try:
             content = await upload_file.read()
             saved = await service.save_uploaded_file(task, filename, content, file_type)
-            results.append({
-                "file_id": str(saved.id),
-                "filename": saved.original_filename,
-                "file_size": saved.file_size,
-                "status": "success",
-            })
+            results.append(
+                {
+                    "file_id": str(saved.id),
+                    "filename": saved.original_filename,
+                    "file_size": saved.file_size,
+                    "status": "success",
+                }
+            )
         except Exception as e:
             logger.exception("文件上传失败: %s", filename)
-            results.append({
-                "filename": filename,
-                "status": "failed",
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "failed",
+                    "error": str(e),
+                }
+            )
 
     return success_response(data=results, message="上传完成")
 
@@ -279,6 +285,7 @@ async def export_report(
         return error_response(message="报告尚未生成", status_code=404)
 
     import os
+
     if not os.path.exists(report_path):
         return error_response(message="报告文件不存在", status_code=404)
 

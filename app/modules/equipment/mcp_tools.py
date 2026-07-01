@@ -124,9 +124,7 @@ def _it_to_dict(task: Any) -> dict[str, Any]:
     }
 
 
-async def _get_template_item_map(
-    db: AsyncSession, task: Any
-) -> dict[str, str]:
+async def _get_template_item_map(db: AsyncSession, task: Any) -> dict[str, str]:
     """根据任务类型获取模板检查项的 item_name → template_item_id 映射。
 
     线路巡检：从路线 → 地点 → 设备 → 模板绑定获取（可能多个模板合并）

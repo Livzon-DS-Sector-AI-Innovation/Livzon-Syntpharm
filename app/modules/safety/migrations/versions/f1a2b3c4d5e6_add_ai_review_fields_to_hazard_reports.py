@@ -4,6 +4,7 @@ Revision ID: f1a2b3c4d5e6
 Revises: e1k2m3n4o5p6
 Create Date: 2026-06-24 15:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -12,8 +13,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'f1a2b3c4d5e6'
-down_revision: str | None = 'e1k2m3n4o5p6'
+revision: str = "f1a2b3c4d5e6"
+down_revision: str | None = "e1k2m3n4o5p6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -25,7 +26,7 @@ def upgrade() -> None:
             "ai_review_result",
             JSONB,
             nullable=True,
-            comment="AI 整改初审结果 JSON（RectificationReviewOutput 完整输出）"
+            comment="AI 整改初审结果 JSON（RectificationReviewOutput 完整输出）",
         ),
         schema="safety",
     )
@@ -36,7 +37,7 @@ def upgrade() -> None:
             sa.String(32),
             nullable=False,
             server_default="pending",
-            comment="AI 初审状态: pending / processing / completed / failed"
+            comment="AI 初审状态: pending / processing / completed / failed",
         ),
         schema="safety",
     )
@@ -46,7 +47,7 @@ def upgrade() -> None:
             "ai_review_completed_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="AI 初审完成时间"
+            comment="AI 初审完成时间",
         ),
         schema="safety",
     )

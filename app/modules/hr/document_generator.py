@@ -49,19 +49,26 @@ def generate_onboarding_training_record(
 
     # ── Replace all employee info placeholders ──
     quals = employee.qualifications
-    qual_str = ", ".join(quals) if isinstance(quals, list) else (str(quals) if quals else "")
+    qual_str = (
+        ", ".join(quals) if isinstance(quals, list) else (str(quals) if quals else "")
+    )
 
-    _replace_all(doc, {
-        "{姓名}": employee.name or "",
-        "{学历}": employee.education or "",
-        "{毕业院校}": employee.school or "",
-        "{毕业时间}": str(employee.graduation_date) if employee.graduation_date else "",
-        "{体现部门}": employee.department or "",
-        "{体现岗位}": employee.position or "",
-        "{证书}": qual_str,
-        "{入职日期}": str(employee.hire_date) if employee.hire_date else "",
-        "{异动类别}": "新员工",
-    })
+    _replace_all(
+        doc,
+        {
+            "{姓名}": employee.name or "",
+            "{学历}": employee.education or "",
+            "{毕业院校}": employee.school or "",
+            "{毕业时间}": str(employee.graduation_date)
+            if employee.graduation_date
+            else "",
+            "{体现部门}": employee.department or "",
+            "{体现岗位}": employee.position or "",
+            "{证书}": qual_str,
+            "{入职日期}": str(employee.hire_date) if employee.hire_date else "",
+            "{异动类别}": "新员工",
+        },
+    )
 
     # ── Table 1: fill training items ──
     if training_items and len(doc.tables) > 1:

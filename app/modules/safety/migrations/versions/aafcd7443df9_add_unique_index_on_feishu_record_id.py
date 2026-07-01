@@ -9,8 +9,8 @@ from collections.abc import Sequence
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'aafcd7443df9'
-down_revision: str | tuple[str, ...] | None = 'd640ce4ef846'
+revision: str = "aafcd7443df9"
+down_revision: str | tuple[str, ...] | None = "d640ce4ef846"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,4 +1,5 @@
 """Dossier Writer API endpoints."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -28,6 +29,7 @@ router = APIRouter()
 
 # ====== Product Dossier ======
 
+
 @router.post("/products", response_model=dict)
 async def create_product_dossier(
     current_user: CurrentUser,
@@ -39,8 +41,7 @@ async def create_product_dossier(
     try:
         dossier = await service.create_product_dossier(data)
         return success_response(
-            data=ProductDossierResponse.model_validate(dossier),
-            message="创建成功"
+            data=ProductDossierResponse.model_validate(dossier), message="创建成功"
         )
     except ValueError as e:
         return error_response(message=str(e), status_code=400)
@@ -63,7 +64,7 @@ async def list_product_dossiers(
             "skip": skip,
             "limit": limit,
         },
-        message="获取成功"
+        message="获取成功",
     )
 
 
@@ -79,8 +80,7 @@ async def get_product_dossier(
     if not dossier:
         raise HTTPException(status_code=404, detail="品种资料不存在")
     return success_response(
-        data=ProductDossierResponse.model_validate(dossier),
-        message="获取成功"
+        data=ProductDossierResponse.model_validate(dossier), message="获取成功"
     )
 
 
@@ -97,8 +97,7 @@ async def update_product_dossier(
     if not dossier:
         raise HTTPException(status_code=404, detail="品种资料不存在")
     return success_response(
-        data=ProductDossierResponse.model_validate(dossier),
-        message="更新成功"
+        data=ProductDossierResponse.model_validate(dossier), message="更新成功"
     )
 
 
@@ -118,6 +117,7 @@ async def delete_product_dossier(
 
 # ====== Template Upload ======
 
+
 @router.post("/products/{dossier_id}/templates", response_model=dict)
 async def upload_templates(
     current_user: CurrentUser,
@@ -131,44 +131,58 @@ async def upload_templates(
     results = []
     for file in files:
         # 验证文件类型
-        if not file.filename or not file.filename.lower().endswith('.docx'):
-            results.append({
-                "filename": file.filename,
-                "status": "failed",
-                "error": "仅支持 .docx 格式文件"
-            })
+        if not file.filename or not file.filename.lower().endswith(".docx"):
+            results.append(
+                {
+                    "filename": file.filename,
+                    "status": "failed",
+                    "error": "仅支持 .docx 格式文件",
+                }
+            )
             continue
 
         try:
             # 读取文件内容
             content = await file.read()
             import logging
+
             _logger = logging.getLogger(__name__)
-            _logger.info(f"[Upload] Processing file: {file.filename}, size: {len(content)} bytes")
+            _logger.info(
+                f"[Upload] Processing file: {file.filename}, size: {len(content)} bytes"
+            )
 
             # 保存模板
-            template = await service.save_template_file(dossier_id, file.filename, content)
-            _logger.info(f"[Upload] Saved template: {template.id}, filename: {template.original_filename}")
+            template = await service.save_template_file(
+                dossier_id, file.filename, content
+            )
+            _logger.info(
+                f"[Upload] Saved template: {template.id}, filename: {template.original_filename}"
+            )
 
-            results.append({
-                "file_id": str(template.id),
-                "filename": template.original_filename,
-                "file_path": template.file_path,
-                "file_size": template.file_size,
-                "status": "success"
-            })
+            results.append(
+                {
+                    "file_id": str(template.id),
+                    "filename": template.original_filename,
+                    "file_path": template.file_path,
+                    "file_size": template.file_size,
+                    "status": "success",
+                }
+            )
         except Exception as e:
             import logging
+
             _logger = logging.getLogger(__name__)
-            _logger.error(f"[Upload] Failed to save {file.filename}: {e}", exc_info=True)
-            results.append({
-                "filename": file.filename,
-                "status": "failed",
-                "error": str(e)
-            })
+            _logger.error(
+                f"[Upload] Failed to save {file.filename}: {e}", exc_info=True
+            )
+            results.append(
+                {"filename": file.filename, "status": "failed", "error": str(e)}
+            )
 
     # 更新品种状态为 template_uploaded
-    await service.repo.update_product_dossier(dossier_id, parse_status="template_uploaded")
+    await service.repo.update_product_dossier(
+        dossier_id, parse_status="template_uploaded"
+    )
     await service.db.commit()
 
     success_count = sum(1 for r in results if r["status"] == "success")
@@ -185,11 +199,12 @@ async def upload_templates(
             "matched_count": match_result.get("matched_count", 0),
             "unmatched_files": match_result.get("unmatched_files", []),
         },
-        message=f"上传完成：成功 {success_count} 个，匹配 {match_result.get('matched_count', 0)} 个"
+        message=f"上传完成：成功 {success_count} 个，匹配 {match_result.get('matched_count', 0)} 个",
     )
 
 
 # ====== Template Parsing ======
+
 
 @router.post("/products/{dossier_id}/parse", response_model=dict)
 async def parse_templates(
@@ -208,6 +223,7 @@ async def parse_templates(
 
 
 # ====== Chapter ======
+
 
 @router.get("/products/{dossier_id}/chapters", response_model=dict)
 async def get_chapter_tree(
@@ -237,6 +253,7 @@ async def get_chapter_detail(
 
 # ====== Asset ======
 
+
 @router.post("/chapters/{chapter_id}/assets", response_model=dict)
 async def upload_asset(
     current_user: CurrentUser,
@@ -253,19 +270,24 @@ async def upload_asset(
             continue
         content = await file.read()
         asset = await service.upload_chapter_asset(chapter_id, file.filename, content)
-        results.append(AssetUploadResponse(
-            id=asset.id,
-            original_filename=asset.original_filename,
-            file_path=asset.file_path,
-            file_type=asset.file_type,
-            file_size=asset.file_size,
-            uploaded_at=asset.uploaded_at,
-            category_id=asset.category_id,
-        ))
+        results.append(
+            AssetUploadResponse(
+                id=asset.id,
+                original_filename=asset.original_filename,
+                file_path=asset.file_path,
+                file_type=asset.file_type,
+                file_size=asset.file_size,
+                uploaded_at=asset.uploaded_at,
+                category_id=asset.category_id,
+            )
+        )
 
     return success_response(
-        data={"assets": [r.model_dump(mode="json") for r in results], "count": len(results)},
-        message=f"成功上传 {len(results)} 个素材"
+        data={
+            "assets": [r.model_dump(mode="json") for r in results],
+            "count": len(results),
+        },
+        message=f"成功上传 {len(results)} 个素材",
     )
 
 
@@ -279,8 +301,7 @@ async def list_assets(
     service = DossierService(db)
     assets = await service.list_chapter_assets(chapter_id)
     return success_response(
-        data=[AssetResponse.model_validate(a) for a in assets],
-        message="获取成功"
+        data=[AssetResponse.model_validate(a) for a in assets], message="获取成功"
     )
 
 
@@ -313,9 +334,7 @@ async def update_asset_category(
     category_id = body.get("category_id")
     asset.category_id = category_id if category_id else None
     await db.commit()
-    result = await db.execute(
-        select(ChapterAsset).where(ChapterAsset.id == asset_id)
-    )
+    result = await db.execute(select(ChapterAsset).where(ChapterAsset.id == asset_id))
     asset = result.scalar_one()
 
     return success_response(
@@ -328,6 +347,7 @@ async def update_asset_category(
 
 
 # ====== Export ======
+
 
 @router.post("/products/{dossier_id}/export", response_model=dict)
 async def export_dossier(
@@ -360,6 +380,7 @@ async def download_exported_file(
         raise HTTPException(status_code=404, detail="品种资料不存在")
 
     from pathlib import Path
+
     file_path = Path(dossier.outputs_path) / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
@@ -367,8 +388,9 @@ async def download_exported_file(
     return FileResponse(
         path=str(file_path),
         filename=filename,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
+
 
 @router.get("/chapters/{chapter_id}/preview", response_model=dict)
 async def get_chapter_preview(
@@ -414,7 +436,7 @@ async def get_chapter_docx_file(
         path=str(file_path),
         filename=chapter.working_file,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
     )
 
 
@@ -432,6 +454,7 @@ async def match_assets_to_chapters(
         return success_response(data=result, message=result["message"])
     else:
         return error_response(message=result["message"])
+
 
 # ====== Field Mapping ======
 
@@ -466,10 +489,7 @@ async def fill_chapter_fields(
     # 执行填充
     result = await fill_service.fill_chapter_fields(dossier, chapter, assets)
 
-    return success_response(
-        data=result,
-        message=result["message"]
-    )
+    return success_response(data=result, message=result["message"])
 
 
 @router.get("/chapters/{chapter_code}/field-mappings", response_model=dict)
@@ -496,11 +516,11 @@ async def get_field_mappings(
                 "fixed_value": m.fixed_value,
                 "appendix_slot": m.appendix_slot,
                 "sort_order": m.sort_order,
-                "is_required": m.is_required
+                "is_required": m.is_required,
             }
             for m in mappings
         ],
-        message="获取成功"
+        message="获取成功",
     )
 
 
@@ -511,6 +531,7 @@ async def init_s6_field_mappings(
 ):
     """初始化 S.6 包装系统的字段映射配置（从数据库 seed 数据）"""
     from .service import DossierService
+
     service = DossierService(db)
     result = await service.init_chapter_ai_config("3.2.S.6")
     return success_response(data=result, message=result["message"])
@@ -524,10 +545,14 @@ async def get_fill_results(
 ):
     """获取章节的填充结果"""
 
-    stmt = select(FieldFillResult).where(
-        FieldFillResult.chapter_id == chapter_id,
-        FieldFillResult.is_deleted == False
-    ).order_by(FieldFillResult.created_at.desc())
+    stmt = (
+        select(FieldFillResult)
+        .where(
+            FieldFillResult.chapter_id == chapter_id,
+            not FieldFillResult.is_deleted,
+        )
+        .order_by(FieldFillResult.created_at.desc())
+    )
 
     result = await db.execute(stmt)
     fills = list(result.scalars().all())
@@ -540,15 +565,16 @@ async def get_fill_results(
                 "filled_value": f.filled_value,
                 "fill_method": f.fill_method,
                 "status": f.status,
-                "created_at": f.created_at.isoformat() if f.created_at else None
+                "created_at": f.created_at.isoformat() if f.created_at else None,
             }
             for f in fills
         ],
-        message="获取成功"
+        message="获取成功",
     )
 
 
 # ====== AI Fill Service ======
+
 
 @router.post("/chapters/{chapter_id}/ai-preview", response_model=dict)
 async def ai_preview_extraction(
@@ -714,7 +740,7 @@ async def get_appendix_slots(
         and_(
             FieldMapping.chapter_code == chapter_code,
             FieldMapping.appendix_slot.isnot(None),
-            FieldMapping.is_deleted == False
+            not FieldMapping.is_deleted,
         )
     )
     result = await db.execute(stmt)
@@ -722,7 +748,3 @@ async def get_appendix_slots(
 
     slots = sorted(set(m.appendix_slot for m in mappings if m.appendix_slot))
     return success_response(data=slots, message="获取成功")
-
-
-
-

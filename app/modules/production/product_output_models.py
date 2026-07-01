@@ -41,9 +41,7 @@ class ProductOutput(BaseModel):
     product_name: Mapped[str] = mapped_column(
         String(255), nullable=False, comment="产品名称（冗余字段）"
     )
-    batch_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, comment="批号"
-    )
+    batch_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="批号")
     production_date: Mapped[date] = mapped_column(
         Date, nullable=False, comment="生产日期"
     )
@@ -56,6 +54,4 @@ class ProductOutput(BaseModel):
     unit: Mapped[str] = mapped_column(
         String(20), nullable=False, default="kg", comment="单位"
     )
-    notes: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="备注"
-    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")

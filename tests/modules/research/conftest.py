@@ -1,4 +1,5 @@
 """Research module test fixtures."""
+
 from __future__ import annotations
 
 import pytest
@@ -8,6 +9,7 @@ import pytest
 def sample_project_data():
     return {
         "project_no": "PROJ-2026-001",
-        "project_name": "阿莫西林工艺优化",
-        "status": "active",
+        "name": "阿莫西林工艺优化",
+        "stage": "立项",
+        "status": "进行中",
     }

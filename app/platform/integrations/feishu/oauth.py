@@ -133,15 +133,16 @@ class FeishuOAuthClient:
         headers = {"Authorization": f"Bearer {user_access_token}"}
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                _USER_INFO_URL, headers=headers, timeout=10.0,
+                _USER_INFO_URL,
+                headers=headers,
+                timeout=10.0,
             )
             resp.raise_for_status()
             data = resp.json()
 
         if data.get("code") != 0:
             raise OAuthError(
-                f"get_user_info failed: code={data.get('code')}, "
-                f"msg={data.get('msg')}",
+                f"get_user_info failed: code={data.get('code')}, msg={data.get('msg')}",
             )
         return data.get("data", {})
 

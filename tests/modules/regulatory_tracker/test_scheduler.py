@@ -1,4 +1,5 @@
 """Tests for regulatory_tracker SchedulerEngine integration."""
+
 from __future__ import annotations
 
 from app.modules.regulatory_tracker.tasks.sync_tasks import (

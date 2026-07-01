@@ -50,38 +50,49 @@ async def upsert_document(
     if not document_id:
         return ("skipped", uuid.UUID(int=0))
 
-    existing = await repo.get_document_by_document_id(db, source_id, channel_id, document_id)
+    existing = await repo.get_document_by_document_id(
+        db, source_id, channel_id, document_id
+    )
 
     if existing:
         # 已存在：更新 last_checked_at，标记为非新文档
         logger.debug(f"法规已存在，更新: {existing.title[:40]}...")
-        await repo.update_document(db, existing.id, {
-            "last_checked_at": datetime.now(UTC),
-            "is_new": False,
-            "title": normalized.get("title", existing.title),
-            "publish_date": normalized.get("publish_date") or existing.publish_date,
-            "status_text": normalized.get("status_text", existing.status_text),
-            "classification": normalized.get("classification", existing.classification),
-            "raw_data": normalized.get("raw_data", existing.raw_data),
-        })
+        await repo.update_document(
+            db,
+            existing.id,
+            {
+                "last_checked_at": datetime.now(UTC),
+                "is_new": False,
+                "title": normalized.get("title", existing.title),
+                "publish_date": normalized.get("publish_date") or existing.publish_date,
+                "status_text": normalized.get("status_text", existing.status_text),
+                "classification": normalized.get(
+                    "classification", existing.classification
+                ),
+                "raw_data": normalized.get("raw_data", existing.raw_data),
+            },
+        )
         return ("updated", existing.id)
 
     # 不存在：新增
     logger.info(f"法规入库: {normalized.get('title', '')[:40]}...")
-    doc = await repo.create_document(db, {
-        "source_id": source_id,
-        "channel_id": channel_id,
-        "document_id": document_id,
-        "title": normalized.get("title", ""),
-        "publish_date": normalized.get("publish_date"),
-        "status_text": normalized.get("status_text"),
-        "classification": normalized.get("classification"),
-        "original_url": normalized.get("original_url"),
-        "raw_data": normalized.get("raw_data"),
-        "is_new": True,
-        "first_found_at": datetime.now(UTC),
-        "last_checked_at": datetime.now(UTC),
-    })
+    doc = await repo.create_document(
+        db,
+        {
+            "source_id": source_id,
+            "channel_id": channel_id,
+            "document_id": document_id,
+            "title": normalized.get("title", ""),
+            "publish_date": normalized.get("publish_date"),
+            "status_text": normalized.get("status_text"),
+            "classification": normalized.get("classification"),
+            "original_url": normalized.get("original_url"),
+            "raw_data": normalized.get("raw_data"),
+            "is_new": True,
+            "first_found_at": datetime.now(UTC),
+            "last_checked_at": datetime.now(UTC),
+        },
+    )
     await db.flush()  # 确保 doc.id 可用
     return ("created", doc)
 
@@ -102,35 +113,46 @@ async def sync_page_to_db(
     stats = {"checked": 0, "new": 0, "updated": 0, "failed": 0, "new_doc_ids": []}
 
     # 记录分页开始
-    page_record = await repo.create_sync_job_page(db, {
-        "sync_job_id": job_id,
-        "page_number": page_num,
-        "page_size": 10,
-        "total_records_on_page": 0,
-        "new_records": 0,
-        "status": "running",
-        "started_at": datetime.now(UTC),
-    })
+    page_record = await repo.create_sync_job_page(
+        db,
+        {
+            "sync_job_id": job_id,
+            "page_number": page_num,
+            "page_size": 10,
+            "total_records_on_page": 0,
+            "new_records": 0,
+            "status": "running",
+            "started_at": datetime.now(UTC),
+        },
+    )
 
     try:
         logger.info(f"开始同步第 {page_num} 页...")
         result = await adapter.sync_page(page_num)
 
         if not result.get("success"):
-            await repo.update_sync_job_page(db, page_record.id, {
-                "status": "failed",
-                "finished_at": datetime.now(UTC),
-                "error_message": result.get("error", "未知错误"),
-            })
+            await repo.update_sync_job_page(
+                db,
+                page_record.id,
+                {
+                    "status": "failed",
+                    "finished_at": datetime.now(UTC),
+                    "error_message": result.get("error", "未知错误"),
+                },
+            )
             return stats
 
         records = result.get("records", [])
         total_on_page = len(records)
         new_on_page = 0
 
-        await repo.update_sync_job_page(db, page_record.id, {
-            "total_records_on_page": total_on_page,
-        })
+        await repo.update_sync_job_page(
+            db,
+            page_record.id,
+            {
+                "total_records_on_page": total_on_page,
+            },
+        )
 
         for record in records:
             stats["checked"] += 1
@@ -150,19 +172,27 @@ async def sync_page_to_db(
                 stats["failed"] += 1
                 logger.error(f"处理记录失败: {record.get('zdyzIdCODE', 'N/A')}: {e}")
 
-        await repo.update_sync_job_page(db, page_record.id, {
-            "new_records": new_on_page,
-            "status": "synced",
-            "finished_at": datetime.now(UTC),
-        })
+        await repo.update_sync_job_page(
+            db,
+            page_record.id,
+            {
+                "new_records": new_on_page,
+                "status": "synced",
+                "finished_at": datetime.now(UTC),
+            },
+        )
 
     except Exception as e:
         logger.exception(f"同步第 {page_num} 页异常")
-        await repo.update_sync_job_page(db, page_record.id, {
-            "status": "failed",
-            "finished_at": datetime.now(UTC),
-            "error_message": str(e),
-        })
+        await repo.update_sync_job_page(
+            db,
+            page_record.id,
+            {
+                "status": "failed",
+                "finished_at": datetime.now(UTC),
+                "error_message": str(e),
+            },
+        )
 
     return stats
 
@@ -197,13 +227,16 @@ async def run_sync_job(
     logger.info(f"===== 同步任务开始: {source.code}/{channel.code} =====")
 
     # 创建同步任务
-    job = await repo.create_sync_job(db, {
-        "source_id": source.id,
-        "channel_id": channel.id,
-        "job_type": job_type,
-        "status": "running",
-        "started_at": datetime.now(UTC),
-    })
+    job = await repo.create_sync_job(
+        db,
+        {
+            "source_id": source.id,
+            "channel_id": channel.id,
+            "job_type": job_type,
+            "status": "running",
+            "started_at": datetime.now(UTC),
+        },
+    )
 
     total_stats = {"checked": 0, "new": 0, "updated": 0, "failed": 0}
     new_doc_ids = []  # 收集所有新增文档 ID
@@ -250,14 +283,18 @@ async def run_sync_job(
         error_message = str(e)
 
     # 更新任务状态
-    await repo.update_sync_job(db, job.id, {
-        "status": status,
-        "finished_at": datetime.now(UTC),
-        "checked_count": total_stats["checked"],
-        "new_count": total_stats["new"],
-        "updated_count": total_stats["updated"],
-        "error_message": error_message,
-    })
+    await repo.update_sync_job(
+        db,
+        job.id,
+        {
+            "status": status,
+            "finished_at": datetime.now(UTC),
+            "checked_count": total_stats["checked"],
+            "new_count": total_stats["new"],
+            "updated_count": total_stats["updated"],
+            "error_message": error_message,
+        },
+    )
     await db.commit()
 
     sync_elapsed = time.time() - sync_start_time

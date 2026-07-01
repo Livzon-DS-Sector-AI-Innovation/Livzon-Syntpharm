@@ -62,10 +62,14 @@ signal.signal(signal.SIGTERM, _signal_handler)
 
 async def get_pending_count(db) -> int:
     """获取待分析文档数量。"""
-    stmt = select(func.count()).select_from(RegulatoryDocument).where(
-        and_(
-            RegulatoryDocument.is_deleted == False,
-            RegulatoryDocument.ai_analysis_status == None,
+    stmt = (
+        select(func.count())
+        .select_from(RegulatoryDocument)
+        .where(
+            and_(
+                not RegulatoryDocument.is_deleted,
+                RegulatoryDocument.ai_analysis_status is None,
+            )
         )
     )
     result = await db.execute(stmt)
@@ -74,12 +78,17 @@ async def get_pending_count(db) -> int:
 
 async def get_pending_documents(db, batch_size: int):
     """获取一批待分析文档。"""
-    stmt = select(RegulatoryDocument).where(
-        and_(
-            RegulatoryDocument.is_deleted == False,
-            RegulatoryDocument.ai_analysis_status == None,
+    stmt = (
+        select(RegulatoryDocument)
+        .where(
+            and_(
+                not RegulatoryDocument.is_deleted,
+                RegulatoryDocument.ai_analysis_status is None,
+            )
         )
-    ).order_by(RegulatoryDocument.first_found_at.desc()).limit(batch_size)
+        .order_by(RegulatoryDocument.first_found_at.desc())
+        .limit(batch_size)
+    )
 
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -91,7 +100,9 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
     api_key = os.getenv("LLM_API_KEY")
     model = os.getenv("LLM_MODEL")
     base_url = os.getenv("LLM_BASE_URL")
-    logger.info(f"LLM 配置: model={model}, base_url={base_url}, api_key={'***' + api_key[-6:] if api_key else 'MISSING'}")
+    logger.info(
+        f"LLM 配置: model={model}, base_url={base_url}, api_key={'***' + api_key[-6:] if api_key else 'MISSING'}"
+    )
 
     if not api_key:
         logger.error("LLM_API_KEY 未设置！")
@@ -111,7 +122,9 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
             total_success = prev.get("total_success", 0)
             total_failed = prev.get("total_failed", 0)
             total_skipped = prev.get("total_skipped", 0)
-            logger.info(f"恢复进度: 已完成={total_success}, 失败={total_failed}, 跳过={total_skipped}")
+            logger.info(
+                f"恢复进度: 已完成={total_success}, 失败={total_failed}, 跳过={total_skipped}"
+            )
 
     if dry_run:
         logger.info("=== DRY RUN 模式：仅统计待处理数量，不执行分析 ===")
@@ -134,7 +147,9 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
                 logger.info("✅ 所有文档已处理完成！")
                 break
 
-            logger.info(f"--- 批次 {batch_num} | 剩余 {pending_count} 条 | 累计成功={total_success} 失败={total_failed} ---")
+            logger.info(
+                f"--- 批次 {batch_num} | 剩余 {pending_count} 条 | 累计成功={total_success} 失败={total_failed} ---"
+            )
 
             documents = await get_pending_documents(db, batch_size)
             if not documents:
@@ -148,7 +163,9 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
 
                 doc_start = time.time()
                 doc_num = total_success + total_failed + total_skipped + i
-                logger.info(f"[{doc_num}] ({i}/{len(documents)}) 分析: {doc.title[:50]}...")
+                logger.info(
+                    f"[{doc_num}] ({i}/{len(documents)}) 分析: {doc.title[:50]}..."
+                )
 
                 try:
                     success = await analyze_and_update(db, doc)
@@ -211,8 +228,10 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     logger.info("=" * 60)
-    logger.info(f"全量回填结束: 成功={total_success} 失败={total_failed} 跳过={total_skipped}")
-    logger.info(f"总耗时: {total_elapsed:.0f}s ({total_elapsed/3600:.1f}h)")
+    logger.info(
+        f"全量回填结束: 成功={total_success} 失败={total_failed} 跳过={total_skipped}"
+    )
+    logger.info(f"总耗时: {total_elapsed:.0f}s ({total_elapsed / 3600:.1f}h)")
     if _stop_requested:
         logger.info("（因停止信号退出，重新运行即可续跑）")
     logger.info(f"报告: {report_path}")
@@ -223,11 +242,15 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
 
 def main():
     parser = argparse.ArgumentParser(description="Task7 全量 AI 回填")
-    parser.add_argument("--batch-size", type=int, default=20, help="每批处理数量 (default: 20)")
+    parser.add_argument(
+        "--batch-size", type=int, default=20, help="每批处理数量 (default: 20)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="仅统计，不执行分析")
     args = parser.parse_args()
 
-    report = asyncio.run(full_backfill(batch_size=args.batch_size, dry_run=args.dry_run))
+    report = asyncio.run(
+        full_backfill(batch_size=args.batch_size, dry_run=args.dry_run)
+    )
     sys.exit(0 if report else 1)
 
 

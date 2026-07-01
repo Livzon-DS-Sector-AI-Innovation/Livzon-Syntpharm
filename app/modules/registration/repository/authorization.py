@@ -99,9 +99,7 @@ class SupplementaryReplyRepository:
         )
 
         if drug_name:
-            stmt = stmt.where(
-                SupplementaryReply.drug_name.ilike(f"%{drug_name}%")
-            )
+            stmt = stmt.where(SupplementaryReply.drug_name.ilike(f"%{drug_name}%"))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -149,14 +147,10 @@ class ReferenceStandardRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list["ReferenceStandard"], int]:
-        stmt = select(ReferenceStandard).where(
-            ReferenceStandard.is_deleted.is_(False)
-        )
+        stmt = select(ReferenceStandard).where(ReferenceStandard.is_deleted.is_(False))
 
         if drug_name:
-            stmt = stmt.where(
-                ReferenceStandard.drug_name.ilike(f"%{drug_name}%")
-            )
+            stmt = stmt.where(ReferenceStandard.drug_name.ilike(f"%{drug_name}%"))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)

@@ -18,7 +18,11 @@ def extract_text(value: Any) -> str:
     if isinstance(value, dict):
         if "text" in value:
             return value.get("text", "")
-        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
+        if (
+            "value" in value
+            and isinstance(value["value"], list)
+            and len(value["value"]) > 0
+        ):
             inner = value["value"][0]
             if isinstance(inner, dict) and "text" in inner:
                 return inner.get("text", "")

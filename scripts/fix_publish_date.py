@@ -32,9 +32,7 @@ async def fix_publish_date():
 
     async with async_session_factory() as db:
         # 统计修复前数据
-        total_result = await db.execute(
-            select(func.count(RegulatoryDocument.id))
-        )
+        total_result = await db.execute(select(func.count(RegulatoryDocument.id)))
         total_count = total_result.scalar()
 
         no_date_result = await db.execute(
@@ -49,9 +47,7 @@ async def fix_publish_date():
 
         # 查询所有 publish_date 为空的记录
         result = await db.execute(
-            select(RegulatoryDocument).where(
-                RegulatoryDocument.publish_date.is_(None)
-            )
+            select(RegulatoryDocument).where(RegulatoryDocument.publish_date.is_(None))
         )
         docs = result.scalars().all()
 
@@ -73,11 +69,15 @@ async def fix_publish_date():
                 try:
                     publish_date = datetime.strptime(issue_date_str, "%Y%m%d").date()
                 except ValueError as e:
-                    logger.warning(f"文档 {doc.document_id} 日期解析失败: {issue_date_str}, 错误: {e}")
+                    logger.warning(
+                        f"文档 {doc.document_id} 日期解析失败: {issue_date_str}, 错误: {e}"
+                    )
                     failed_count += 1
                     continue
             else:
-                logger.warning(f"文档 {doc.document_id} 日期格式错误: {issue_date_str} (长度: {len(issue_date_str)})")
+                logger.warning(
+                    f"文档 {doc.document_id} 日期格式错误: {issue_date_str} (长度: {len(issue_date_str)})"
+                )
                 failed_count += 1
                 continue
 
@@ -89,9 +89,7 @@ async def fix_publish_date():
         await db.commit()
 
         # 统计修复后数据
-        total_result_after = await db.execute(
-            select(func.count(RegulatoryDocument.id))
-        )
+        total_result_after = await db.execute(select(func.count(RegulatoryDocument.id)))
         total_count_after = total_result_after.scalar()
 
         no_date_result_after = await db.execute(

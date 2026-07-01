@@ -54,8 +54,17 @@ async def get_hazard_identifications(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_hazard_identifications(
-        skip, page_size, department, overall_status, ai_node_progress, keyword,
-        position, risk_level, date_from, date_to, batch_id,
+        skip,
+        page_size,
+        department,
+        overall_status,
+        ai_node_progress,
+        keyword,
+        position,
+        risk_level,
+        date_from,
+        date_to,
+        batch_id,
     )
     return ApiResponse(
         data=[HazardIdentificationResponse.model_validate(i) for i in items],
@@ -95,7 +104,11 @@ async def get_hazard_identification_ledger_stats(
     """获取危险源辨识台账统计（总记录/按风险等级分组）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_ledger_stats(
-        department, position, risk_level, date_from, date_to,
+        department,
+        position,
+        risk_level,
+        date_from,
+        date_to,
     )
     return ApiResponse(data=stats)
 
@@ -116,7 +129,9 @@ async def get_hazard_risk_options(
     """返回风险等级为 level_1/level_2 且 overall_status=completed 的危险源辨识项"""
     service = DailyRiskReportService(db)
     skip = (page - 1) * page_size
-    items, total = await service.get_hazard_risk_options(department, keyword, skip, page_size)
+    items, total = await service.get_hazard_risk_options(
+        department, keyword, skip, page_size
+    )
     return ApiResponse(
         data=[HazardRiskOption.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
@@ -296,7 +311,13 @@ async def upload_hazard_attachment(
 
     if minio_enabled():
         object_key = f"hazard-identification/{safe_name}"
-        upload_object("safety", object_key, content, len(content), file.content_type or "application/octet-stream")
+        upload_object(
+            "safety",
+            object_key,
+            content,
+            len(content),
+            file.content_type or "application/octet-stream",
+        )
         stored_path = object_key
     else:
         upload_dir = os.path.join("uploads", "safety", "hazard")
@@ -307,9 +328,7 @@ async def upload_hazard_attachment(
         stored_path = file_path
 
     service = SafetyService(db)
-    item = await service.upload_attachment(
-        hid, file.filename or "unknown", stored_path
-    )
+    item = await service.upload_attachment(hid, file.filename or "unknown", stored_path)
     if not item:
         return ApiResponse(code=404, message="记录不存在")
     await db.commit()
@@ -398,11 +417,9 @@ async def export_hazard_ledger_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; "
+                f'attachment; filename="{ascii_filename}"; '
                 f"filename*=UTF-8''{quote(filename)}"
             ),
             "Content-Length": str(len(pdf_bytes)),
         },
     )
-
-

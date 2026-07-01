@@ -92,7 +92,9 @@ class EmployeeBitableDataSource:
     def __init__(self) -> None:
         self.client = BitableClient()
         # New employee base: https://j0eukrlohu.feishu.cn/base/KHLsboPBGaah6Vs3EpgcpvzsnuH
-        self.client.app_token = _settings.HR_BITABLE_APP_TOKEN or "KHLsboPBGaah6Vs3EpgcpvzsnuH"
+        self.client.app_token = (
+            _settings.HR_BITABLE_APP_TOKEN or "KHLsboPBGaah6Vs3EpgcpvzsnuH"
+        )
         self.table_id = _settings.HR_BITABLE_EMPLOYEE_TABLE_ID or "tblrcSHfS5ivun7e"
 
     def _is_enabled(self) -> bool:
@@ -148,7 +150,9 @@ class EmployeeBitableDataSource:
         items = await self._search(filter_str=filter_str, page_size=page_size)
         return [EmployeeRecord.from_api(item) for item in items]
 
-    async def find_by_employee_number(self, employee_number: str) -> "EmployeeRecord | None":
+    async def find_by_employee_number(
+        self, employee_number: str
+    ) -> "EmployeeRecord | None":
         """Find single employee by employee number (工号)."""
         items = await self._search(
             filter_str=f'CurrentValue.[工号] = "{employee_number}"'
@@ -159,16 +163,12 @@ class EmployeeBitableDataSource:
 
     async def find_by_name(self, name: str) -> list["EmployeeRecord"]:
         """Find employees by name (may return multiple)."""
-        items = await self._search(
-            filter_str=f'CurrentValue.[姓名] contains "{name}"'
-        )
+        items = await self._search(filter_str=f'CurrentValue.[姓名] contains "{name}"')
         return [EmployeeRecord.from_api(item) for item in items]
 
     async def find_by_domain_account(self, account: str) -> "EmployeeRecord | None":
         """Find by domain account (域账号)."""
-        items = await self._search(
-            filter_str=f'CurrentValue.[域账号] = "{account}"'
-        )
+        items = await self._search(filter_str=f'CurrentValue.[域账号] = "{account}"')
         if not items:
             return None
         return EmployeeRecord.from_api(items[0])
@@ -249,11 +249,18 @@ class EmployeeBitableDataSource:
             if value is None:
                 continue
             if key in {
-                "参加工作时间", "进厂时间", "入丽珠时间", "毕业时间",
-                "第一次合同起点时间", "第一次合同终止时间",
-                "第二次合同起点时间", "第二次合同终止时间",
-                "第三次合同起点时间", "第三次合同终止时间",
-                "第四次合同起点时间", "第四次合同终止时间",
+                "参加工作时间",
+                "进厂时间",
+                "入丽珠时间",
+                "毕业时间",
+                "第一次合同起点时间",
+                "第一次合同终止时间",
+                "第二次合同起点时间",
+                "第二次合同终止时间",
+                "第三次合同起点时间",
+                "第三次合同终止时间",
+                "第四次合同起点时间",
+                "第四次合同终止时间",
             }:
                 prepared[key] = _to_ms_timestamp(value)
             else:
@@ -296,7 +303,9 @@ class EmployeeRecord:
         self.major: str = _extract_text(fields.get("专业"))
 
         # Career
-        self.qualifications: list[str] = _extract_multi_select(fields.get("职称／职业资格"))
+        self.qualifications: list[str] = _extract_multi_select(
+            fields.get("职称／职业资格")
+        )
         self.qualification_type: str = fields.get("职称类型", "")
         self.classification: str = fields.get("分类", "")
         self.status: str = fields.get("统计类别", "")
@@ -319,7 +328,9 @@ class EmployeeRecord:
 
         # Other
         self.training_id: str = _extract_text(fields.get("培训档案编号"))
-        self.transfer_history: str = _extract_text(fields.get("异动（含曾经工作部门、岗位)"))
+        self.transfer_history: str = _extract_text(
+            fields.get("异动（含曾经工作部门、岗位)")
+        )
         self.remarks: list[str] = _extract_multi_select(fields.get("备注"))
 
         # Formula / computed (read-only)
@@ -383,10 +394,18 @@ class EmployeeRecord:
             "classification": self.classification,
             "status": self.status,
             "contract_type": self.contract_type,
-            "work_start_date": self.work_start_date.isoformat() if self.work_start_date else None,
-            "factory_entry_date": self.factory_entry_date.isoformat() if self.factory_entry_date else None,
-            "livo_entry_date": self.livo_entry_date.isoformat() if self.livo_entry_date else None,
-            "graduation_date": self.graduation_date.isoformat() if self.graduation_date else None,
+            "work_start_date": self.work_start_date.isoformat()
+            if self.work_start_date
+            else None,
+            "factory_entry_date": self.factory_entry_date.isoformat()
+            if self.factory_entry_date
+            else None,
+            "livo_entry_date": self.livo_entry_date.isoformat()
+            if self.livo_entry_date
+            else None,
+            "graduation_date": self.graduation_date.isoformat()
+            if self.graduation_date
+            else None,
             "bank_account": self.bank_account,
             "emergency_contact_phone": self.emergency_contact_phone,
             "emergency_contact": self.emergency_contact,

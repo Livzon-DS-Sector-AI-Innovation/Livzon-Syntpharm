@@ -96,8 +96,12 @@ EXPECTED_KEYS = ["lec"]
 FEWSHOT_EXAMPLES = [
     {
         "input": {
-            "l_residual": 1, "e_residual": 6, "c_residual": 3, "d_residual": 18,
-            "residual_risk_level": "level_4", "residual_risk_label": "四级/低风险",
+            "l_residual": 1,
+            "e_residual": 6,
+            "c_residual": 3,
+            "d_residual": 18,
+            "residual_risk_level": "level_4",
+            "residual_risk_label": "四级/低风险",
             "recommendation_content": (
                 "1. 反应罐R201增设罐压联锁开盖装置\n"
                 "2. pH计增设自动加酸定量控制系统\n"

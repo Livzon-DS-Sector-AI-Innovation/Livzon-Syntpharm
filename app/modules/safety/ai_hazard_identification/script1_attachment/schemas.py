@@ -14,9 +14,7 @@ class AttachmentInput(BaseModel):
     department: str = Field(..., description="部门")
     position: str = Field(..., description="岗位")
     production_step: str = Field(..., description="生产步骤")
-    attachment_text: str | None = Field(
-        None, description="附件文档解析后的纯文本内容"
-    )
+    attachment_text: str | None = Field(None, description="附件文档解析后的纯文本内容")
 
 
 class AttachmentOutput(BaseModel):

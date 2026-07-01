@@ -12,9 +12,12 @@ from dataclasses import dataclass
 @dataclass
 class BackgroundWorker:
     """A background worker that runs for the lifetime of the application."""
-    name: str                           # Unique identifier (e.g., "safety.ws_client")
+
+    name: str  # Unique identifier (e.g., "safety.ws_client")
     start: Callable[[], Awaitable[None]]  # Async function to start the worker
-    stop: Callable[[], Awaitable[None]] | Callable[[], None] | None = None  # Optional graceful shutdown (sync or async)
+    stop: Callable[[], Awaitable[None]] | Callable[[], None] | None = (
+        None  # Optional graceful shutdown (sync or async)
+    )
 
 
 # Global registry of background workers
@@ -27,20 +30,20 @@ def register_background_worker(
     stop: Callable[[], Awaitable[None]] | Callable[[], None] | None = None,
 ) -> None:
     """Register a background worker to be auto-started by the application.
-    
+
     Args:
         name: Unique identifier for the worker (e.g., "safety.ws_client")
         start: Async function that starts the worker
         stop: Optional function for graceful shutdown (can be sync or async)
-    
+
     Example:
         # In app/modules/safety/__init__.py
         from app.shared.lifecycle import register_background_worker
-        
+
         async def _start_safety_ws():
             from app.modules.safety.feishu.event_client import start_ws
             await start_ws()
-        
+
         register_background_worker("safety.ws_client", _start_safety_ws)
     """
     # Check for duplicate names

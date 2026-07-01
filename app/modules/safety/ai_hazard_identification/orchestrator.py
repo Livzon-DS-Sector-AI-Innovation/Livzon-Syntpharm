@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class OrchestratorError(Exception):
     """编排器错误。"""
+
     pass
 
 
@@ -48,7 +49,7 @@ class HazardIdentificationOrchestrator:
         4: ("pending_script4", "pending_script5", "script4_review_status"),
         5: ("pending_script5", "pending_script6", "script5_review_status"),
         6: ("pending_script6", "pending_script7", "script6_review_status"),
-        7: ("pending_script7", "completed",     "script7_review_status"),
+        7: ("pending_script7", "completed", "script7_review_status"),
     }
 
     def __init__(
@@ -138,7 +139,8 @@ class HazardIdentificationOrchestrator:
                     attachment_text = item.chapter7_context
                     logger.info(
                         "脚本1 使用工段特化操规内容: %s (%d 字符)",
-                        getattr(item, "stage_name", "?"), len(attachment_text),
+                        getattr(item, "stage_name", "?"),
+                        len(attachment_text),
                     )
                 else:
                     stmt = select(OperationRegulation).where(
@@ -153,26 +155,30 @@ class HazardIdentificationOrchestrator:
                             attachment_text = reg.content
                             logger.info(
                                 "脚本1 使用完整操规内容: %s (%d 字符)",
-                                reg.regulation_name, len(reg.content),
+                                reg.regulation_name,
+                                len(reg.content),
                             )
                         elif reg.document_path:
                             try:
                                 from app.modules.safety.ai_hazard_identification.script1_attachment.plugin import (
                                     DocumentParser,
                                 )
+
                                 attachment_text = DocumentParser.extract_text(
-                                    reg.document_path, max_chars=30000,
+                                    reg.document_path,
+                                    max_chars=30000,
                                 )
                                 logger.info(
                                     "脚本1 解析引用操规文档: %s (%d 字符)",
-                                    reg.regulation_name, len(attachment_text or ""),
+                                    reg.regulation_name,
+                                    len(attachment_text or ""),
                                 )
                             except Exception as e:
                                 logger.warning("引用操规文档解析失败: %s", e)
 
             # 回退：使用上传的附件文本（旧模式兼容）
             if not attachment_text:
-                attachment_text = getattr(item, '_attachment_text', None)
+                attachment_text = getattr(item, "_attachment_text", None)
 
             return AttachmentInput(
                 department=item.department or "",
@@ -185,6 +191,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script2_hazard_id.schemas import (
                 HazardIdInput,
             )
+
             return HazardIdInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -200,6 +207,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script3_inherent_risk.schemas import (
                 InherentRiskInput,
             )
+
             return InherentRiskInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -217,6 +225,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script4_controls.schemas import (
                 ControlsInput,
             )
+
             return ControlsInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -239,6 +248,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script5_residual_risk.schemas import (
                 ResidualRiskInput,
             )
+
             return ResidualRiskInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -266,6 +276,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script6_recommendations.schemas import (
                 RecommendationInput,
             )
+
             return RecommendationInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -299,6 +310,7 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script7_post_risk.schemas import (
                 PostRiskInput,
             )
+
             return PostRiskInput(
                 department=item.department or "",
                 position=item.position or "",
@@ -349,36 +361,47 @@ class HazardIdentificationOrchestrator:
             from app.modules.safety.ai_hazard_identification.script1_attachment.plugin import (
                 AttachmentParser,
             )
+
             return AttachmentParser(self.ai_service, self.config, knowledge_context)
         elif script_number == 2:
             from app.modules.safety.ai_hazard_identification.script2_hazard_id.plugin import (
                 HazardIdentifier,
             )
+
             return HazardIdentifier(self.ai_service, self.config, knowledge_context)
         elif script_number == 3:
             from app.modules.safety.ai_hazard_identification.script3_inherent_risk.plugin import (
                 InherentRiskAssessor,
             )
+
             return InherentRiskAssessor(self.ai_service, self.config, knowledge_context)
         elif script_number == 4:
             from app.modules.safety.ai_hazard_identification.script4_controls.plugin import (
                 ControlMeasureExtractor,
             )
-            return ControlMeasureExtractor(self.ai_service, self.config, knowledge_context)
+
+            return ControlMeasureExtractor(
+                self.ai_service, self.config, knowledge_context
+            )
         elif script_number == 5:
             from app.modules.safety.ai_hazard_identification.script5_residual_risk.plugin import (
                 ResidualRiskAssessor,
             )
+
             return ResidualRiskAssessor(self.ai_service, self.config, knowledge_context)
         elif script_number == 6:
             from app.modules.safety.ai_hazard_identification.script6_recommendations.plugin import (
                 RecommendationGenerator,
             )
-            return RecommendationGenerator(self.ai_service, self.config, knowledge_context)
+
+            return RecommendationGenerator(
+                self.ai_service, self.config, knowledge_context
+            )
         elif script_number == 7:
             from app.modules.safety.ai_hazard_identification.script7_post_risk.plugin import (
                 PostMeasureAssessor,
             )
+
             return PostMeasureAssessor(self.ai_service, self.config, knowledge_context)
         raise OrchestratorError(f"未知脚本编号: {script_number}")
 
@@ -387,7 +410,9 @@ class HazardIdentificationOrchestrator:
     # ═══════════════════════════════════════════════════════════
 
     def _map_output_to_db(
-        self, script_number: int, output: Any,
+        self,
+        script_number: int,
+        output: Any,
     ) -> dict[str, Any]:
         """将 Plugin Output（Pydantic 对象）映射为 DB update_data dict。
 
@@ -474,7 +499,9 @@ class HazardIdentificationOrchestrator:
     # ═══════════════════════════════════════════════════════════
 
     def _calculate_lec_fallback(
-        self, script_number: int, update_data: dict[str, Any],
+        self,
+        script_number: int,
+        update_data: dict[str, Any],
     ) -> None:
         """当 AI 未输出 D 值或风险等级时，用 L×E×C 兜底计算。
 
@@ -492,17 +519,23 @@ class HazardIdentificationOrchestrator:
         if script_number == 3:
             l_key, e_key, c_key = "l_inherent", "e_inherent", "c_inherent"
             d_key, level_key, label_key = (
-                "d_inherent", "inherent_risk_level", "inherent_risk_label",
+                "d_inherent",
+                "inherent_risk_level",
+                "inherent_risk_label",
             )
         elif script_number == 5:
             l_key, e_key, c_key = "l_residual", "e_residual", "c_residual"
             d_key, level_key, label_key = (
-                "d_residual", "residual_risk_level", "residual_risk_label",
+                "d_residual",
+                "residual_risk_level",
+                "residual_risk_label",
             )
         elif script_number == 7:
             l_key, e_key, c_key = "l_post", "e_post", "c_post"
             d_key, level_key, label_key = (
-                "d_post", "post_risk_level", "post_risk_label",
+                "d_post",
+                "post_risk_level",
+                "post_risk_label",
             )
         else:
             return
@@ -527,9 +560,15 @@ class HazardIdentificationOrchestrator:
             if script_number == 3:
                 for rl in RISK_LEVELS:
                     if rl["key"] == update_data.get(level_key):
-                        if "control_level" not in update_data or update_data["control_level"] is None:
+                        if (
+                            "control_level" not in update_data
+                            or update_data["control_level"] is None
+                        ):
                             update_data["control_level"] = rl["control_level"]
-                        if "responsible_person" not in update_data or update_data["responsible_person"] is None:
+                        if (
+                            "responsible_person" not in update_data
+                            or update_data["responsible_person"] is None
+                        ):
                             update_data["responsible_person"] = rl["responsible_person"]
                         break
 
@@ -538,7 +577,9 @@ class HazardIdentificationOrchestrator:
     # ═══════════════════════════════════════════════════════════
 
     async def _load_knowledge_context(
-        self, script_number: int, item: Any,
+        self,
+        script_number: int,
+        item: Any,
     ) -> str | None:
         """从 knowledge_articles 表加载与当前脚本相关的知识上下文。
 
@@ -553,6 +594,7 @@ class HazardIdentificationOrchestrator:
 
         try:
             from app.modules.safety.knowledge import KnowledgeInjector
+
             injector = KnowledgeInjector(self.session)
 
             # 根据脚本类型筛选知识卡片类别

@@ -437,9 +437,7 @@ async def get_collect_log_detail(
 # ── 预警规则 ──
 
 
-async def create_alert_rule(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyAlertRule:
+async def create_alert_rule(db: AsyncSession, data: dict[str, Any]) -> EnergyAlertRule:
     obj = EnergyAlertRule(**data)
     db.add(obj)
     await db.flush()

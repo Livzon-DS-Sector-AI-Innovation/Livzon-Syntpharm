@@ -22,31 +22,29 @@ class ProductRepository:
 
     async def get_by_id(self, product_id: uuid.UUID) -> Product | None:
         result = await self.db.execute(
-            select(Product).where(
-                Product.id == product_id,
-                Product.is_deleted == False
-            )
+            select(Product).where(Product.id == product_id, not Product.is_deleted)
         )
         return result.scalar_one_or_none()
 
     async def get_by_workshop(self, workshop: str) -> list[Product]:
         result = await self.db.execute(
-            select(Product).where(
-                Product.workshop == workshop,
-                Product.is_deleted == False
-            ).order_by(Product.name)
+            select(Product)
+            .where(Product.workshop == workshop, not Product.is_deleted)
+            .order_by(Product.name)
         )
         return list(result.scalars().all())
 
     async def get_all(self) -> list[Product]:
         result = await self.db.execute(
-            select(Product).where(
-                Product.is_deleted == False
-            ).order_by(Product.workshop, Product.name)
+            select(Product)
+            .where(not Product.is_deleted)
+            .order_by(Product.workshop, Product.name)
         )
         return list(result.scalars().all())
 
-    async def update(self, product_id: uuid.UUID, data: ProductUpdate) -> Product | None:
+    async def update(
+        self, product_id: uuid.UUID, data: ProductUpdate
+    ) -> Product | None:
         product = await self.get_by_id(product_id)
         if not product:
             return None
@@ -71,7 +69,7 @@ class ProductRepository:
                 and_(
                     Product.workshop == workshop,
                     Product.name == name,
-                    Product.is_deleted == False
+                    not Product.is_deleted,
                 )
             )
         )

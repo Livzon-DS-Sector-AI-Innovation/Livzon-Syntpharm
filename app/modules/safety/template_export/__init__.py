@@ -107,6 +107,7 @@ __all__ = [
 # 顶层便捷函数
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 async def fill_and_export(
     data: list[dict],
     template_path: str | Path,
@@ -169,9 +170,7 @@ def fill_template(
     Path — 生成的 .xlsx 文件路径。
     """
     cfg = config or HAZARD_TEMPLATE_CONFIG
-    return ExcelTemplateFiller(cfg).fill_and_save(
-        template_path, data, output_path
-    )
+    return ExcelTemplateFiller(cfg).fill_and_save(template_path, data, output_path)
 
 
 def inspect_template(
@@ -279,4 +278,3 @@ def quick_export(
     # 仅 xlsx
     filler = ExcelTemplateFiller(config)
     return filler.fill_and_save(template, data, output_path)
-

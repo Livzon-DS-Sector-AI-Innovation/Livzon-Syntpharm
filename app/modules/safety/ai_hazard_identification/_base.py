@@ -42,11 +42,13 @@ logger = logging.getLogger(__name__)
 
 class PluginError(Exception):
     """Plugin 执行失败异常。"""
+
     pass
 
 
 class UnknownValueError(PluginError):
     """AI 判定依据不足（信息不足→待人工确认）。不是真正的错误，但需要人工介入。"""
+
     pass
 
 
@@ -130,7 +132,8 @@ class BasePlugin[TInput: BaseModel, TOutput: BaseModel](ABC):
             else:
                 logger.warning(
                     "[%s] AI 输出验证失败（非严格模式）: %s",
-                    script_name, error_detail,
+                    script_name,
+                    error_detail,
                 )
 
         # ── 阶段四：返回结果 ──

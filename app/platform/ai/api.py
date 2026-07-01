@@ -91,9 +91,7 @@ def _detect_query_intent(text: str) -> tuple[str, dict] | None:
     return None
 
 
-async def _build_db_context(
-    session: AsyncSession, text: str
-) -> str:
+async def _build_db_context(session: AsyncSession, text: str) -> str:
     """Query HR database based on user intent and return formatted context."""
     parts: list[str] = []
 
@@ -166,9 +164,7 @@ async def _build_db_context(
             seen.add(name)
             employees = await search_employees_by_name(session, name)
             if employees:
-                parts.append(
-                    f"【数据库查询结果】姓名包含'{name}'的员工："
-                )
+                parts.append(f"【数据库查询结果】姓名包含'{name}'的员工：")
                 for emp in employees:
                     parts.append(
                         f"- {emp['name']}（工号:{emp['employee_number']}）"
@@ -227,9 +223,7 @@ def _extract_months(text: str) -> list[int] | None:
     return None
 
 
-async def _build_vehicle_db_context(
-    session: AsyncSession, text: str
-) -> str:
+async def _build_vehicle_db_context(session: AsyncSession, text: str) -> str:
     """Query vehicle/administration database based on user intent."""
     parts: list[str] = []
 
@@ -252,12 +246,12 @@ async def _build_vehicle_db_context(
             total_count += count
 
         if len(months) == 1:
-            parts.append(f"【数据库查询结果】{months[0]}月用车申请总数：{total_count}条。")
+            parts.append(
+                f"【数据库查询结果】{months[0]}月用车申请总数：{total_count}条。"
+            )
         else:
             month_details = "，".join(f"{m}月{c}条" for m, c in month_counts)
-            parts.append(
-                f"【数据库查询结果】{month_details}，合计：{total_count}条。"
-            )
+            parts.append(f"【数据库查询结果】{month_details}，合计：{total_count}条。")
     else:
         # 2. 统计用车申请数量（按状态）
         status_count_keywords = [
@@ -269,16 +263,22 @@ async def _build_vehicle_db_context(
         for status, pattern in status_count_keywords:
             if re.search(pattern, text):
                 total = await count_vehicle_requests(session, status=status)
-                parts.append(f"【数据库查询结果】状态为'{status}'的用车申请共有{total}条。")
+                parts.append(
+                    f"【数据库查询结果】状态为'{status}'的用车申请共有{total}条。"
+                )
                 break
         else:
             # 总数量
-            if re.search(r"(?:总共|一共|全部).*?(?:用车申请|申请).*?(?:多少|数量|几个)", text):
+            if re.search(
+                r"(?:总共|一共|全部).*?(?:用车申请|申请).*?(?:多少|数量|几个)", text
+            ):
                 total = await count_vehicle_requests(session)
                 parts.append(f"【数据库查询结果】用车申请总数量：{total}条。")
 
     # 2. 按申请人查询（只匹配纯中文人名，避免误匹配月份数字）
-    applicant_match = re.search(r"([一-龥]{2,10})(?:的用车申请|申请了车|申请用车)", text)
+    applicant_match = re.search(
+        r"([一-龥]{2,10})(?:的用车申请|申请了车|申请用车)", text
+    )
     if applicant_match:
         name = applicant_match.group(1)
         requests, total = await search_vehicle_requests(
@@ -309,7 +309,9 @@ async def _build_vehicle_db_context(
                 session, status=status, page=1, page_size=20
             )
             if requests:
-                parts.append(f"【数据库查询结果】状态为'{status}'的用车申请共{total}条：")
+                parts.append(
+                    f"【数据库查询结果】状态为'{status}'的用车申请共{total}条："
+                )
                 for r in requests:
                     parts.append(
                         f"- 申请人:{r['applicant_name']}（{r['applicant_department']}）"
@@ -430,9 +432,7 @@ async def chat_stream(
 
     # 4. Append page context as the last user message hint if provided
     if request.page_context and request.page_context.data_summary:
-        summary_text = json.dumps(
-            request.page_context.data_summary, ensure_ascii=False
-        )
+        summary_text = json.dumps(request.page_context.data_summary, ensure_ascii=False)
         if messages and messages[-1]["role"] == "user":
             original = messages[-1]["content"]
             if isinstance(original, list):
@@ -445,14 +445,15 @@ async def chat_stream(
                         break
             else:
                 messages[-1]["content"] = (
-                    f"[当前页面数据概览]\n{summary_text}\n\n"
-                    f"[用户问题]\n{original}"
+                    f"[当前页面数据概览]\n{summary_text}\n\n[用户问题]\n{original}"
                 )
 
     async def event_generator() -> AsyncGenerator[str, None]:
         if service is None:
             payload = json.dumps(
-                {"content": "\n\n[提示] Moonshot API Key 未配置，请在后端 .env 文件中设置 MOONSHOT_API_KEY"},
+                {
+                    "content": "\n\n[提示] Moonshot API Key 未配置，请在后端 .env 文件中设置 MOONSHOT_API_KEY"
+                },
                 ensure_ascii=False,
             )
             yield f"data: {payload}\n\n"
@@ -514,7 +515,10 @@ async def _call_moonshot_for_exam(
     response = await client.chat.completions.create(
         model="kimi-k2.5",
         messages=[
-            {"role": "system", "content": "你是一个专业的培训考核出题专家，只输出JSON格式内容。"},
+            {
+                "role": "system",
+                "content": "你是一个专业的培训考核出题专家，只输出JSON格式内容。",
+            },
             {"role": "user", "content": prompt},
         ],
         temperature=1,

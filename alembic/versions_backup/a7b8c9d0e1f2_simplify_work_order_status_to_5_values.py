@@ -4,13 +4,14 @@ Revision ID: a7b8c9d0e1f2
 Revises: 6a44a65836b7
 Create Date: 2026-06-07 12:00:00.000000
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'a7b8c9d0e1f2'
-down_revision: str | None = '6a44a65836b7'
+revision: str = "a7b8c9d0e1f2"
+down_revision: str | None = "6a44a65836b7"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

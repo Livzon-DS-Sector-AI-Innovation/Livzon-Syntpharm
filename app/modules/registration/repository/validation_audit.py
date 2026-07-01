@@ -142,10 +142,12 @@ class ValidationAuditFileRepository:
 
     async def list_by_task_id(self, task_id: UUID) -> list[ValidationAuditFile]:
         result = await self.session.execute(
-            select(ValidationAuditFile).where(
+            select(ValidationAuditFile)
+            .where(
                 ValidationAuditFile.task_id == task_id,
                 ValidationAuditFile.is_deleted.is_(False),
-            ).order_by(ValidationAuditFile.created_at)
+            )
+            .order_by(ValidationAuditFile.created_at)
         )
         return list(result.scalars().all())
 
@@ -160,7 +162,11 @@ class ValidationAuditFileRepository:
         return result.scalar_one()
 
     async def update_parse_result(
-        self, file: ValidationAuditFile, *, parse_status: str, parsed_text: str | None = None
+        self,
+        file: ValidationAuditFile,
+        *,
+        parse_status: str,
+        parsed_text: str | None = None,
     ) -> ValidationAuditFile:
         file.parse_status = parse_status
         if parsed_text is not None:
@@ -194,17 +200,21 @@ class ValidationAuditIssueRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def create_batch(self, issues: list[ValidationAuditIssue]) -> list[ValidationAuditIssue]:
+    async def create_batch(
+        self, issues: list[ValidationAuditIssue]
+    ) -> list[ValidationAuditIssue]:
         self.session.add_all(issues)
         await self.session.flush()
         if not issues:
             return []
         task_id = issues[0].task_id
         result = await self.session.execute(
-            select(ValidationAuditIssue).where(
+            select(ValidationAuditIssue)
+            .where(
                 ValidationAuditIssue.task_id == task_id,
                 ValidationAuditIssue.is_deleted.is_(False),
-            ).order_by(ValidationAuditIssue.issue_no)
+            )
+            .order_by(ValidationAuditIssue.issue_no)
         )
         return list(result.scalars().all())
 
@@ -215,10 +225,12 @@ class ValidationAuditReportRepository:
 
     async def get_by_task_id(self, task_id: UUID) -> ValidationAuditReport | None:
         result = await self.session.execute(
-            select(ValidationAuditReport).where(
+            select(ValidationAuditReport)
+            .where(
                 ValidationAuditReport.task_id == task_id,
                 ValidationAuditReport.is_deleted.is_(False),
-            ).order_by(ValidationAuditReport.version.desc())
+            )
+            .order_by(ValidationAuditReport.version.desc())
         )
         return result.scalars().first()
 
@@ -239,13 +251,17 @@ class ValidationAuditKnowledgeBaseRepository:
 
     async def list_all(self) -> list[ValidationAuditKnowledgeBase]:
         result = await self.session.execute(
-            select(ValidationAuditKnowledgeBase).where(
+            select(ValidationAuditKnowledgeBase)
+            .where(
                 ValidationAuditKnowledgeBase.is_deleted.is_(False),
-            ).order_by(ValidationAuditKnowledgeBase.frequency.desc())
+            )
+            .order_by(ValidationAuditKnowledgeBase.frequency.desc())
         )
         return list(result.scalars().all())
 
-    async def create(self, entry: ValidationAuditKnowledgeBase) -> ValidationAuditKnowledgeBase:
+    async def create(
+        self, entry: ValidationAuditKnowledgeBase
+    ) -> ValidationAuditKnowledgeBase:
         self.session.add(entry)
         await self.session.flush()
         result = await self.session.execute(

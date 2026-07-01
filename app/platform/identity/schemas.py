@@ -67,6 +67,7 @@ class DepartmentResponse(BaseModel):
 
 class DepartmentTreeNode(BaseModel):
     """组织架构树节点（含子部门）"""
+
     id: UUID
     feishu_department_id: str
     name: str
@@ -83,6 +84,7 @@ class DepartmentTreeNode(BaseModel):
 
 class PersonnelItem(BaseModel):
     """人员列表项"""
+
     id: UUID
     name: str
     en_name: str | None = None
@@ -122,6 +124,7 @@ class PersonnelItem(BaseModel):
 
 class PersonnelListResponse(BaseModel):
     """人员分页列表"""
+
     items: list[PersonnelItem]
     total: int
     offset: int

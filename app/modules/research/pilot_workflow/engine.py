@@ -119,8 +119,7 @@ async def start_workflow(workflow_id: uuid.UUID) -> None:
         workflow = result.scalar_one()
 
         result = await session.execute(
-            select(PilotWorkflowStep)
-            .where(
+            select(PilotWorkflowStep).where(
                 PilotWorkflowStep.workflow_id == workflow_id,
                 PilotWorkflowStep.step_order == 1,
             )
@@ -189,7 +188,7 @@ async def approve_step(workflow_id: uuid.UUID) -> dict:
 
         # 准备下一步
         next_step = steps[next_idx]
-        next_defn = STEP_DEFINITIONS[next_idx]
+        STEP_DEFINITIONS[next_idx]
 
         # 累积所有已完成步骤的输出作为下一步的输入
         accumulated_results = {}
@@ -206,7 +205,10 @@ async def approve_step(workflow_id: uuid.UUID) -> dict:
         await session.commit()
 
         # 在后台异步执行下一步
-        spawn_task(_execute_next_step_async(workflow_id, next_idx), name="research.workflow_step")
+        spawn_task(
+            _execute_next_step_async(workflow_id, next_idx),
+            name="research.workflow_step",
+        )
 
         return {
             "status": "running",

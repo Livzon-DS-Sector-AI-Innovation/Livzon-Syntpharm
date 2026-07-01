@@ -60,7 +60,7 @@ async def generate_authorization_letter(
     remarks: str | None = Form(None, description="备注"),
     replacements: str | None = Form(
         None,
-        description="替换规则 JSON，格式: [{\"old\": \"原文本\", \"new\": \"新文本\"}]",
+        description='替换规则 JSON，格式: [{"old": "原文本", "new": "新文本"}]',
     ),
     service: AuthorizationLetterService = Depends(get_service),
 ):
@@ -90,7 +90,9 @@ async def generate_authorization_letter(
         template_file_name=template_file_name,
         template_placeholders=template_placeholders,
     )
-    return success_response(data=letter.model_dump(mode="json"), message="授权书生成成功", status_code=201)
+    return success_response(
+        data=letter.model_dump(mode="json"), message="授权书生成成功", status_code=201
+    )
 
 
 @router.get("/{letter_id}", summary="授权书记录详情")

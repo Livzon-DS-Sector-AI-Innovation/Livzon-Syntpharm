@@ -93,9 +93,7 @@ class Employee(BaseModel):
     )
 
     # ─── Personal info ───
-    gender: Mapped[str | None] = mapped_column(
-        String(8), nullable=True, comment="性别"
-    )
+    gender: Mapped[str | None] = mapped_column(String(8), nullable=True, comment="性别")
     native_place: Mapped[str | None] = mapped_column(
         String(64), nullable=True, comment="籍贯"
     )
@@ -162,9 +160,7 @@ class Employee(BaseModel):
     school: Mapped[str | None] = mapped_column(
         String(128), nullable=True, comment="毕业学校"
     )
-    major: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="专业"
-    )
+    major: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="专业")
 
     # ─── ID & address ───
     id_card: Mapped[str | None] = mapped_column(
@@ -320,41 +316,81 @@ class DepartureRecord(BaseModel):
     department: Mapped[str] = mapped_column(String(64), nullable=False, comment="部门")
     team: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="班组")
     position: Mapped[str] = mapped_column(String(64), nullable=False, comment="职位")
-    job_category: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="职类")
+    job_category: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="职类"
+    )
     gender: Mapped[str | None] = mapped_column(String(8), nullable=True, comment="性别")
-    status_category: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="统计类别")
+    status_category: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="统计类别"
+    )
 
     # ─── Dates & tenure ───
-    livo_entry_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="入丽珠时间")
-    factory_entry_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="进厂时间")
-    work_start_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="参加工作时间")
-    offboarding_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="离职日期")
-    company_tenure_at_leave: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="离职时司龄")
+    livo_entry_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="入丽珠时间"
+    )
+    factory_entry_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="进厂时间"
+    )
+    work_start_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="参加工作时间"
+    )
+    offboarding_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="离职日期"
+    )
+    company_tenure_at_leave: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="离职时司龄"
+    )
 
     # ─── Education ───
-    education: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="学历")
-    school: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="毕业学校")
+    education: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="学历"
+    )
+    school: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="毕业学校"
+    )
     major: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="专业")
-    classification: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="分类：全日制/非全日制")
+    classification: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="分类：全日制/非全日制"
+    )
 
     # ─── Personal ───
-    id_card: Mapped[str | None] = mapped_column(String(18), nullable=True, comment="身份证号")
-    native_place: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="籍贯")
-    household_type: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="户籍类型")
-    marital_status: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="婚姻状况")
-    political_status: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="政治面貌")
+    id_card: Mapped[str | None] = mapped_column(
+        String(18), nullable=True, comment="身份证号"
+    )
+    native_place: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="籍贯"
+    )
+    household_type: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="户籍类型"
+    )
+    marital_status: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="婚姻状况"
+    )
+    political_status: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="政治面貌"
+    )
 
     # ─── Contact ───
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="手机")
-    emergency_contact_phone: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="紧急联系人电话")
-    emergency_contact_relation: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="紧急联系人|关系")
-    bank_account: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="银行卡号")
+    emergency_contact_phone: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="紧急联系人电话"
+    )
+    emergency_contact_relation: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="紧急联系人|关系"
+    )
+    bank_account: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="银行卡号"
+    )
 
     # ─── Contract ───
-    contract_type: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="合同期限")
+    contract_type: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="合同期限"
+    )
 
     # ─── Work history ───
-    transfer_history: Mapped[str | None] = mapped_column(Text, nullable=True, comment="异动（含曾经工作部门、岗位)")
+    transfer_history: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="异动（含曾经工作部门、岗位)"
+    )
 
     # ─── Offboarding specific ───
     offboarding_type: Mapped[str] = mapped_column(
@@ -406,9 +442,7 @@ class TrainingLedger(BaseModel):
     training_method: Mapped[str | None] = mapped_column(
         String(32), nullable=True, comment="培训方式"
     )
-    duration_hours: Mapped[float | None] = mapped_column(
-        nullable=True, comment="课时"
-    )
+    duration_hours: Mapped[float | None] = mapped_column(nullable=True, comment="课时")
     location: Mapped[str | None] = mapped_column(
         String(128), nullable=True, comment="培训地点"
     )
@@ -438,7 +472,9 @@ class TrainingLedgerPage(BaseModel):
 
     __tablename__ = "training_ledger_pages"
     __table_args__ = (
-        Index("ix_training_ledger_pages_employee_number", "employee_number", unique=True),
+        Index(
+            "ix_training_ledger_pages_employee_number", "employee_number", unique=True
+        ),
         {"schema": "hr"},
     )
 
@@ -562,9 +598,7 @@ class OnboardingRecord(BaseModel):
     education: Mapped[str | None] = mapped_column(
         String(16), nullable=True, comment="学历"
     )
-    major: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="专业"
-    )
+    major: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="专业")
     classification: Mapped[str | None] = mapped_column(
         String(16), nullable=True, comment="分类：全日制/非全日制"
     )
@@ -671,7 +705,9 @@ class AnnualTrainingPlanItem(BaseModel):
         comment="年度计划ID",
     )
     month: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="月份")
-    trainee_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="培训人数")
+    trainee_count: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="培训人数"
+    )
     duration_hours: Mapped[float | None] = mapped_column(nullable=True, comment="课时")
     content_and_textbook: Mapped[str | None] = mapped_column(
         String(512), nullable=True, comment="培训内容及使用教材"
@@ -685,11 +721,15 @@ class AnnualTrainingPlanItem(BaseModel):
     training_method: Mapped[str | None] = mapped_column(
         String(64), nullable=True, comment="培训方式"
     )
-    training_hours: Mapped[float | None] = mapped_column(nullable=True, comment="培训学时")
+    training_hours: Mapped[float | None] = mapped_column(
+        nullable=True, comment="培训学时"
+    )
     confirmer: Mapped[str | None] = mapped_column(
         String(64), nullable=True, comment="确认者"
     )
-    confirm_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="确认日期")
+    confirm_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="确认日期"
+    )
     remarks: Mapped[str | None] = mapped_column(
         String(512), nullable=True, comment="备注"
     )
@@ -711,6 +751,7 @@ class AnnualTrainingPlanItem(BaseModel):
 
 # ─── Trainer ───
 
+
 class HrTrainer(BaseModel):
     __tablename__ = "trainers"
     __table_args__ = (
@@ -721,17 +762,22 @@ class HrTrainer(BaseModel):
 
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     department: Mapped[str | None] = mapped_column(String(64))
-    trainable_departments: Mapped[str | None] = mapped_column(Text, comment="可培训部门")
+    trainable_departments: Mapped[str | None] = mapped_column(
+        Text, comment="可培训部门"
+    )
     qualification_scope: Mapped[str | None] = mapped_column(Text, comment="资格范围")
     certification_date: Mapped[date | None] = mapped_column(Date)
     confirmation_date: Mapped[date | None] = mapped_column(Date)
     confirmation_reminder: Mapped[date | None] = mapped_column(Date)
     remarks: Mapped[str | None] = mapped_column(Text)
-    is_primary_trainer: Mapped[bool] = mapped_column(default=False, server_default="false")
+    is_primary_trainer: Mapped[bool] = mapped_column(
+        default=False, server_default="false"
+    )
     admin: Mapped[str | None] = mapped_column(String(64))
 
 
 # ─── SOP Catalog ───
+
 
 class SopCatalog(BaseModel):
     __tablename__ = "sop_catalog"

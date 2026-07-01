@@ -1,4 +1,9 @@
 """素材文本提取器 - 将各种格式的素材统一转为纯文本，供 AI 解析"""
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 import subprocess
 import tempfile
 from pathlib import Path
@@ -55,12 +60,14 @@ class AssetTextExtractor:
                 for row in table.rows:
                     cells = [cell.text.strip() for cell in row.cells]
                     rows_data.append(cells)
-                tables.append({
-                    "index": t_idx,
-                    "rows": len(table.rows),
-                    "cols": len(table.columns),
-                    "data": rows_data,
-                })
+                tables.append(
+                    {
+                        "index": t_idx,
+                        "rows": len(table.rows),
+                        "cols": len(table.columns),
+                        "data": rows_data,
+                    }
+                )
 
             full_text = "\n".join(p["text"] for p in paragraphs)
             return {"text": full_text, "paragraphs": paragraphs, "tables": tables}
@@ -80,8 +87,13 @@ class AssetTextExtractor:
             with tempfile.TemporaryDirectory() as tmpdir:
                 result = subprocess.run(
                     [
-                        "libreoffice", "--headless", "--convert-to", "docx",
-                        "--outdir", tmpdir, str(file_path),
+                        "libreoffice",
+                        "--headless",
+                        "--convert-to",
+                        "docx",
+                        "--outdir",
+                        tmpdir,
+                        str(file_path),
                     ],
                     capture_output=True,
                     text=True,
@@ -101,6 +113,7 @@ class AssetTextExtractor:
         # 尝试 pdfplumber（对文字型 PDF 更快更准）
         try:
             import pdfplumber
+
             with pdfplumber.open(str(file_path)) as pdf:
                 page_texts = []
                 for i, page in enumerate(pdf.pages):
@@ -115,11 +128,14 @@ class AssetTextExtractor:
                         "page_texts": page_texts,
                     }
         except Exception:
-            logger.warning("PDF extraction with pdfplumber failed, falling back to PaddleOCR")
+            logger.warning(
+                "PDF extraction with pdfplumber failed, falling back to PaddleOCR"
+            )
 
         # 回退到 PaddleOCR PP-StructureV3（对扫描件更好，保持结构）
         try:
             from app.shared.ocr_service import get_ocr_service
+
             ocr_service = get_ocr_service()
 
             # 使用 PP-StructureV3 提取 Markdown（保持表格、公式等结构）
@@ -152,10 +168,13 @@ class AssetTextExtractor:
             return {"text": "", "error": f"文本提取失败: {str(e)}"}
 
     @staticmethod
-    def pdf_page_to_image(file_path: Path, page_number: int, dpi: int = 200) -> Path | None:
+    def pdf_page_to_image(
+        file_path: Path, page_number: int, dpi: int = 200
+    ) -> Path | None:
         """将 PDF 指定页转为图片，返回图片路径"""
         try:
             from pdf2image import convert_from_path
+
             images = convert_from_path(
                 str(file_path),
                 dpi=dpi,

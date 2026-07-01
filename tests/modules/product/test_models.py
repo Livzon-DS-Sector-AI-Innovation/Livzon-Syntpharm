@@ -1,4 +1,5 @@
 """Product module model tests."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,5 +16,5 @@ async def test_product_model_creation(db_session, sample_product_data):
 
     result = await db_session.execute(select(Product).where(Product.id == product.id))
     fetched = result.scalar_one()
-    assert fetched.product_code == "PROD-001"
-    assert fetched.product_name == "阿莫西林胶囊"
+    assert fetched.name == "阿莫西林胶囊"
+    assert fetched.major_category == "SM"

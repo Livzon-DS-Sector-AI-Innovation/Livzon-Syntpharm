@@ -32,9 +32,19 @@ router.include_router(projects_router, prefix="/projects", tags=["注册项目"]
 router.include_router(certificates_router, prefix="/certificates", tags=["注册证书"])
 router.include_router(drugs_router, prefix="/drugs", tags=["申报进度-药品"])
 router.include_router(holidays_router, prefix="/holidays", tags=["申报进度-节假日"])
-router.include_router(auth_letters_router, prefix="/authorization-letters", tags=["授权书管理"])
-router.include_router(ref_substances_router, prefix="/reference-substances", tags=["对照品说明表"])
-router.include_router(ref_standards_router, prefix="/reference-standards", tags=["对照物质说明表"])
-router.include_router(supp_replies_router, prefix="/supplementary-replies", tags=["发补回复"])
-router.include_router(validation_audit_router, prefix="/validation-audit", tags=["验证文件审核"])
+router.include_router(
+    auth_letters_router, prefix="/authorization-letters", tags=["授权书管理"]
+)
+router.include_router(
+    ref_substances_router, prefix="/reference-substances", tags=["对照品说明表"]
+)
+router.include_router(
+    ref_standards_router, prefix="/reference-standards", tags=["对照物质说明表"]
+)
+router.include_router(
+    supp_replies_router, prefix="/supplementary-replies", tags=["发补回复"]
+)
+router.include_router(
+    validation_audit_router, prefix="/validation-audit", tags=["验证文件审核"]
+)
 router.include_router(ledger_router, prefix="/ledger", tags=["注册台账"])

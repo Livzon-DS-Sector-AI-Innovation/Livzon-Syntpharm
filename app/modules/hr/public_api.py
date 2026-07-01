@@ -69,7 +69,9 @@ async def list_employees_by_department(
 ) -> tuple[list[dict[str, str | None]], int]:
     """List employees by department name."""
     repo = EmployeeRepository(session)
-    employees, total = await repo.list_employees(department=department, page=1, page_size=200)
+    employees, total = await repo.list_employees(
+        department=department, page=1, page_size=200
+    )
     data = [_employee_to_dict(e) for e in employees]
     return data, total
 
@@ -112,7 +114,9 @@ async def count_employees(
     return total
 
 
-async def search_employees_by_name(session: AsyncSession, name: str) -> list[dict[str, str | None]]:
+async def search_employees_by_name(
+    session: AsyncSession, name: str
+) -> list[dict[str, str | None]]:
     """Search employees by name keyword.
 
     Returns a lightweight list of employee facts for AI context injection.
@@ -122,7 +126,9 @@ async def search_employees_by_name(session: AsyncSession, name: str) -> list[dic
     return [_employee_to_dict(e) for e in employees]
 
 
-async def search_employees_fuzzy(session: AsyncSession, name: str) -> list[dict[str, str | None]]:
+async def search_employees_fuzzy(
+    session: AsyncSession, name: str
+) -> list[dict[str, str | None]]:
     """Fuzzy search: when exact match returns empty, search by each Chinese character.
 
     Returns employees whose name contains any character from the query name.

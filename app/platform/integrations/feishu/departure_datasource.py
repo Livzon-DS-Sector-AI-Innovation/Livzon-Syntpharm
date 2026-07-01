@@ -159,20 +159,30 @@ class DepartureRecord:
         # Contact
         self.phone: str = _extract_text(fields.get("手机"))
         self.emergency_contact_phone: str = _extract_text(fields.get("紧急联系人电话"))
-        self.emergency_contact_relation: str = _extract_text(fields.get("紧急联系人|关系"))
+        self.emergency_contact_relation: str = _extract_text(
+            fields.get("紧急联系人|关系")
+        )
         self.bank_account: str = _extract_text(fields.get("银行卡号"))
 
         # Contract
         self.contract_type: str = fields.get("合同期限", "")
 
         # Work history
-        self.transfer_history: str = _extract_text(fields.get("异动(含曾经工作部门、岗位)"))
+        self.transfer_history: str = _extract_text(
+            fields.get("异动(含曾经工作部门、岗位)")
+        )
 
         # Offboarding specific
         self.offboarding_type: str = _extract_text(fields.get("离职类型"))
-        self.offboarding_reason: list[str] = _extract_multi_select(fields.get("离职原因"))
-        self.offboarding_reason_2: list[str] = _extract_multi_select(fields.get("离职原因2"))
-        self.offboarding_remarks: list[str] = _extract_multi_select(fields.get("离职备注"))
+        self.offboarding_reason: list[str] = _extract_multi_select(
+            fields.get("离职原因")
+        )
+        self.offboarding_reason_2: list[str] = _extract_multi_select(
+            fields.get("离职原因2")
+        )
+        self.offboarding_remarks: list[str] = _extract_multi_select(
+            fields.get("离职备注")
+        )
 
         # Other
         self.remarks: str = _extract_text(fields.get("备注"))

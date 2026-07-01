@@ -54,9 +54,7 @@ class KnowledgeCard(BaseModel):
     full_document_ref: str | None = Field(
         None, description="完整文档的存储引用（knowledge_articles.id 或文件路径）"
     )
-    extracted_at: str | None = Field(
-        None, description="知识卡片提取时间（ISO 格式）"
-    )
+    extracted_at: str | None = Field(None, description="知识卡片提取时间（ISO 格式）")
     version: int = Field(1, description="知识卡片版本号")
 
 

@@ -17,24 +17,25 @@ TARGETS = [
     {
         "source": "CDE",
         "column": "法规政策",
-        "url": "https://www.cde.org.cn/main/policy/listpage/9f9c74c73e0f8f56a8bfbc646055026d"
+        "url": "https://www.cde.org.cn/main/policy/listpage/9f9c74c73e0f8f56a8bfbc646055026d",
     },
     {
         "source": "CDE",
         "column": "指导原则专栏",
-        "url": "https://www.cde.org.cn/zdyz/index"
+        "url": "https://www.cde.org.cn/zdyz/index",
     },
     {
         "source": "NMPA",
         "column": "药品法规文件",
-        "url": "https://www.nmpa.gov.cn/yaopin/ypfgwj/index.html"
+        "url": "https://www.nmpa.gov.cn/yaopin/ypfgwj/index.html",
     },
     {
         "source": "NMPA",
         "column": "药品政策解读",
-        "url": "https://www.nmpa.gov.cn/yaopin/ypzhcjd/index.html"
-    }
+        "url": "https://www.nmpa.gov.cn/yaopin/ypzhcjd/index.html",
+    },
 ]
+
 
 def test_channel(page, target):
     """测试单个栏目"""
@@ -51,14 +52,14 @@ def test_channel(page, target):
         "content_extractable": False,
         "attachment_extractable": False,
         "records": [],
-        "error": None
+        "error": None,
     }
 
     try:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"测试: {target['source']} - {target['column']}")
         print(f"URL: {target['url']}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # 1. 访问列表页
         print("\n[1/7] 访问列表页...")
@@ -90,9 +91,15 @@ def test_channel(page, target):
         # 3. 提取发布日期
         print("\n[3/7] 提取发布日期...")
         date_selectors = [
-            ".date", ".time", ".publish-date", ".pub-date",
-            "span.date", "div.date", "td.date",
-            "[class*='date']", "[class*='time']"
+            ".date",
+            ".time",
+            ".publish-date",
+            ".pub-date",
+            "span.date",
+            "div.date",
+            "td.date",
+            "[class*='date']",
+            "[class*='time']",
         ]
 
         dates = []
@@ -122,6 +129,7 @@ def test_channel(page, target):
                     detail_urls.append(href)
                 elif href.startswith("/"):
                     from urllib.parse import urljoin
+
                     full_url = urljoin(target["url"], href)
                     detail_urls.append(full_url)
 
@@ -146,9 +154,14 @@ def test_channel(page, target):
                 # 6. 提取正文内容
                 print("\n[6/7] 提取正文内容...")
                 content_selectors = [
-                    ".content", ".article-content", ".detail-content",
-                    "#content", "#article", ".main-content",
-                    "article", ".post-content"
+                    ".content",
+                    ".article-content",
+                    ".detail-content",
+                    "#content",
+                    "#article",
+                    ".main-content",
+                    "article",
+                    ".post-content",
                 ]
 
                 content_text = ""
@@ -174,9 +187,13 @@ def test_channel(page, target):
                 # 7. 提取附件链接
                 print("\n[7/7] 提取附件链接...")
                 attachment_selectors = [
-                    "a[href$='.pdf']", "a[href$='.doc']", "a[href$='.docx']",
-                    "a[href*='download']", "a[href*='attachment']",
-                    ".attachment a", ".download a"
+                    "a[href$='.pdf']",
+                    "a[href$='.doc']",
+                    "a[href$='.docx']",
+                    "a[href*='download']",
+                    "a[href*='attachment']",
+                    ".attachment a",
+                    ".download a",
                 ]
 
                 attachments = []
@@ -189,6 +206,7 @@ def test_channel(page, target):
                                 attachments.append(href)
                             elif href.startswith("/"):
                                 from urllib.parse import urljoin
+
                                 full_url = urljoin(detail_url, href)
                                 attachments.append(full_url)
 
@@ -207,10 +225,12 @@ def test_channel(page, target):
         # 构建样本记录
         if title_texts and detail_urls:
             for i in range(min(3, len(title_texts), len(detail_urls))):
-                result["records"].append({
-                    "title": title_texts[i] if i < len(title_texts) else None,
-                    "detail_url": detail_urls[i] if i < len(detail_urls) else None
-                })
+                result["records"].append(
+                    {
+                        "title": title_texts[i] if i < len(title_texts) else None,
+                        "detail_url": detail_urls[i] if i < len(detail_urls) else None,
+                    }
+                )
 
     except PlaywrightTimeoutError as e:
         result["error"] = f"Timeout: {e}"
@@ -219,15 +239,17 @@ def test_channel(page, target):
         result["error"] = str(e)
         print(f"\n❌ 错误: {e}")
         import traceback
+
         traceback.print_exc()
 
     return result
 
+
 def main():
     """主函数"""
-    print("="*60)
+    print("=" * 60)
     print("CDE 和 NMPA 栏目可行性测试")
-    print("="*60)
+    print("=" * 60)
     print(f"测试时间: {datetime.now().isoformat()}")
 
     results = []
@@ -237,7 +259,7 @@ def main():
         pw, browser = create_browser()
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         )
         page = context.new_page()
         print("✅ 浏览器启动成功")
@@ -255,6 +277,7 @@ def main():
     except Exception as e:
         print(f"\n❌ 浏览器启动失败: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -263,9 +286,9 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("测试结果汇总")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     for result in results:
         print(f"\n{result['source']} - {result['column']}")
@@ -276,10 +299,11 @@ def main():
         print(f"  详情页: {'✅' if result['detail_accessible'] else '❌'}")
         print(f"  正文: {'✅' if result['content_extractable'] else '❌'}")
         print(f"  附件: {'✅' if result['attachment_extractable'] else '❌'}")
-        if result['error']:
+        if result["error"]:
             print(f"  错误: {result['error']}")
 
     print(f"\n✅ 结果已保存到: {output_file}")
+
 
 if __name__ == "__main__":
     main()

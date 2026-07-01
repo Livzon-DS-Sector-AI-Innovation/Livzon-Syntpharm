@@ -70,8 +70,11 @@ async def auth_callback(
     # Validate state for CSRF protection
     if state and not validate_state_token(state):
         await log_repo.create(
-            db, status="failed", login_type="feishu_sso",
-            ip_address=ip_address, user_agent=user_agent,
+            db,
+            status="failed",
+            login_type="feishu_sso",
+            ip_address=ip_address,
+            user_agent=user_agent,
             error_message="invalid_state: 登录状态已过期",
         )
         await db.commit()
@@ -88,8 +91,11 @@ async def auth_callback(
         await db.rollback()
         try:
             await log_repo.create(
-                db, status="failed", login_type="feishu_sso",
-                ip_address=ip_address, user_agent=user_agent,
+                db,
+                status="failed",
+                login_type="feishu_sso",
+                ip_address=ip_address,
+                user_agent=user_agent,
                 error_message=f"OAuth回调失败: {exc}",
             )
             await db.commit()
@@ -143,6 +149,7 @@ async def get_me(
     """
     if current_user is None:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="未登录或登录已过期")
     return success_response(data=UserResponse.model_validate(current_user).model_dump())
 
@@ -151,7 +158,8 @@ async def get_me(
 
 
 def _build_department_tree(
-    depts: list, parent_id: str | None = None,
+    depts: list,
+    parent_id: str | None = None,
 ) -> list[DepartmentTreeNode]:
     """递归构建部门树。"""
     result: list[DepartmentTreeNode] = []
@@ -167,7 +175,8 @@ def _build_department_tree(
                 leader_user_id=d.leader_user_id,
                 order=d.order,
                 children=_build_department_tree(
-                    depts, d.feishu_department_id,
+                    depts,
+                    d.feishu_department_id,
                 ),
             )
             result.append(node)
@@ -202,6 +211,7 @@ async def get_department(
     dept = await repo.get_by_feishu_id(db, dept_id)
     if dept is None:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="部门不存在")
     return success_response(data=DepartmentResponse.model_validate(dept).model_dump())
 

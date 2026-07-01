@@ -73,11 +73,10 @@ async def create_maintenance_plan(
 ) -> MaintenancePlan:
     """创建维护计划"""
     # 校验 equipment_id 和 category_id 互斥（schema 已有，这里做二次保险）
-    if (data.equipment_id is None and data.category_id is None) or \
-       (data.equipment_id is not None and data.category_id is not None):
-        raise AppException(
-            message="equipment_id 和 category_id 必须恰好提供一个"
-        )
+    if (data.equipment_id is None and data.category_id is None) or (
+        data.equipment_id is not None and data.category_id is not None
+    ):
+        raise AppException(message="equipment_id 和 category_id 必须恰好提供一个")
 
     plan_data = data.model_dump()
 
@@ -139,9 +138,7 @@ async def update_maintenance_plan(
     # 如果更新了频率或上次日期，重新计算下次日期
     frequency = update_data.get("frequency", plan.frequency)
     frequency_unit = update_data.get("frequency_unit", plan.frequency_unit)
-    last_date = update_data.get(
-        "last_maintenance_date", plan.last_maintenance_date
-    )
+    last_date = update_data.get("last_maintenance_date", plan.last_maintenance_date)
 
     # last_maintenance_date 被显式清空时，同步清除 next_maintenance_date
     if "last_maintenance_date" in update_data and last_date is None:
@@ -210,7 +207,8 @@ async def generate_due_work_orders(
             if not equipment_ids:
                 logger.info(
                     "维护计划 %s (%s) 的分类下无可用设备，跳过",
-                    plan.id, plan.plan_name,
+                    plan.id,
+                    plan.plan_name,
                 )
                 skipped_count += 1
                 continue
@@ -221,13 +219,12 @@ async def generate_due_work_orders(
             continue
 
         # 检查该计划是否已有未关闭工单（提前到循环外，避免 N 次重复查询）
-        has_unclosed = await repo.exists_unclosed_work_order_for_plan(
-            db, plan.id
-        )
+        has_unclosed = await repo.exists_unclosed_work_order_for_plan(db, plan.id)
         if has_unclosed:
             logger.info(
                 "维护计划 %s (%s) 已有未关闭工单，跳过",
-                plan.id, plan.plan_name,
+                plan.id,
+                plan.plan_name,
             )
             skipped_count += 1
             continue
@@ -249,14 +246,19 @@ async def generate_due_work_orders(
             if not equipment:
                 logger.warning(
                     "维护计划 %s (%s) 的设备 %s 不存在或已删除，跳过",
-                    plan.id, plan.plan_name, eq_id,
+                    plan.id,
+                    plan.plan_name,
+                    eq_id,
                 )
                 continue
 
             if equipment.status in ("停用", "报废"):
                 logger.info(
                     "维护计划 %s (%s) 的设备 %s 状态为 %s，跳过",
-                    plan.id, plan.plan_name, equipment.name, equipment.status,
+                    plan.id,
+                    plan.plan_name,
+                    equipment.name,
+                    equipment.status,
                 )
                 continue
 
@@ -312,4 +314,3 @@ async def generate_due_work_orders(
             skipped_count += 1
 
     return created_count, skipped_count
-

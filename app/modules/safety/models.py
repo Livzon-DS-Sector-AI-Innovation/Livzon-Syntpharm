@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum as PyEnum
+from enum import StrEnum
 
 from sqlalchemy import (
     JSON,
@@ -28,7 +28,7 @@ from app.shared.base_model import BaseModel
 # ==================== Enums ====================
 
 
-class CheckType(str, PyEnum):
+class CheckType(StrEnum):
     """检查类型枚举（16种）"""
 
     DAILY = "daily"  # 日常检查
@@ -49,7 +49,7 @@ class CheckType(str, PyEnum):
     HEATSTROKE_PREVENTION = "heatstroke_prevention"  # 防暑降温专项
 
 
-class ChangeType(str, PyEnum):
+class ChangeType(StrEnum):
     """变更类型枚举（三大类）"""
 
     PROCESS_TECH = "process_tech"  # 工艺技术变更
@@ -57,14 +57,14 @@ class ChangeType(str, PyEnum):
     MANAGEMENT = "management"  # 管理变更
 
 
-class ChangeGrade(str, PyEnum):
+class ChangeGrade(StrEnum):
     """变更等级枚举"""
 
     MAJOR = "major"  # 重大变更
     GENERAL = "general"  # 一般变更
 
 
-class ChangeDuration(str, PyEnum):
+class ChangeDuration(StrEnum):
     """变更期限枚举"""
 
     PERMANENT = "permanent"  # 永久性
@@ -72,7 +72,7 @@ class ChangeDuration(str, PyEnum):
     EMERGENCY = "emergency"  # 紧急
 
 
-class EhsChangeStatus(str, PyEnum):
+class EhsChangeStatus(StrEnum):
     """EHS变更状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -84,7 +84,7 @@ class EhsChangeStatus(str, PyEnum):
     CLOSED = "closed"  # 已关闭
 
 
-class RiskAssessmentMethod(str, PyEnum):
+class RiskAssessmentMethod(StrEnum):
     """风险评估方法枚举"""
 
     LEC = "LEC"  # LEC评价法
@@ -98,7 +98,7 @@ class RiskAssessmentMethod(str, PyEnum):
     OTHER = "other"  # 其他
 
 
-class RiskLevel(str, PyEnum):
+class RiskLevel(StrEnum):
     """风险等级枚举"""
 
     LEVEL_1 = "level_1"  # 一级/重大风险
@@ -107,7 +107,7 @@ class RiskLevel(str, PyEnum):
     LEVEL_4 = "level_4"  # 四级/低风险
 
 
-class ApprovalDecision(str, PyEnum):
+class ApprovalDecision(StrEnum):
     """审批决定枚举"""
 
     PENDING = "pending"  # 待审批
@@ -115,7 +115,7 @@ class ApprovalDecision(str, PyEnum):
     REJECTED = "rejected"  # 驳回
 
 
-class ActionItemStatus(str, PyEnum):
+class ActionItemStatus(StrEnum):
     """行动项状态枚举"""
 
     PENDING = "pending"  # 待完成
@@ -123,7 +123,7 @@ class ActionItemStatus(str, PyEnum):
     COMPLETED = "completed"  # 已完成
 
 
-class PSSRResult(str, PyEnum):
+class PSSRResult(StrEnum):
     """PSSR检查结果枚举"""
 
     PASS = "pass"  # 通过
@@ -131,7 +131,7 @@ class PSSRResult(str, PyEnum):
     NA = "na"  # 不适用
 
 
-class HazardType(str, PyEnum):
+class HazardType(StrEnum):
     """隐患类型枚举（人/物/环/管）"""
 
     UNSAFE_CONDITION = "unsafe_condition"  # 物的不安全状态
@@ -140,7 +140,7 @@ class HazardType(str, PyEnum):
     ENVIRONMENTAL = "environmental"  # 环境因素
 
 
-class HazardLevel(str, PyEnum):
+class HazardLevel(StrEnum):
     """隐患等级枚举（三级）"""
 
     GENERAL = "general"  # 一般隐患
@@ -148,7 +148,7 @@ class HazardLevel(str, PyEnum):
     MAJOR = "major"  # 重大隐患
 
 
-class HazardCategory(str, PyEnum):
+class HazardCategory(StrEnum):
     """隐患类别枚举（13种）"""
 
     EQUIPMENT = "equipment"  # 设备设施
@@ -166,7 +166,7 @@ class HazardCategory(str, PyEnum):
     SPECIAL_OPERATION = "special_operation"  # 特殊作业
 
 
-class AccidentType(str, PyEnum):
+class AccidentType(StrEnum):
     """事故类型枚举"""
 
     INJURY = "injury"  # 工伤事故
@@ -181,7 +181,7 @@ class AccidentType(str, PyEnum):
     OTHER = "other"  # 其他
 
 
-class AccidentLevel(str, PyEnum):
+class AccidentLevel(StrEnum):
     """事故等级枚举"""
 
     GENERAL = "general"  # 一般事故
@@ -190,7 +190,7 @@ class AccidentLevel(str, PyEnum):
     CATASTROPHIC = "catastrophic"  # 特别重大事故
 
 
-class AccidentStatus(str, PyEnum):
+class AccidentStatus(StrEnum):
     """事故处理状态枚举"""
 
     REPORTED = "reported"  # 已报告
@@ -200,7 +200,7 @@ class AccidentStatus(str, PyEnum):
     CLOSED = "closed"  # 已关闭
 
 
-class InjurySeverity(str, PyEnum):
+class InjurySeverity(StrEnum):
     """伤害程度枚举"""
 
     DEATH = "death"  # 死亡
@@ -209,7 +209,7 @@ class InjurySeverity(str, PyEnum):
     NO_INJURY = "no_injury"  # 无伤害
 
 
-class ContractorStatus(str, PyEnum):
+class ContractorStatus(StrEnum):
     """承包商状态枚举"""
 
     ACTIVE = "active"  # 活跃
@@ -217,7 +217,7 @@ class ContractorStatus(str, PyEnum):
     BLACKLISTED = "blacklisted"  # 黑名单
 
 
-class QualificationType(str, PyEnum):
+class QualificationType(StrEnum):
     """承包资质类型枚举"""
 
     CONSTRUCTION = "construction"  # 建筑施工
@@ -228,7 +228,7 @@ class QualificationType(str, PyEnum):
     OTHER = "other"  # 其他
 
 
-class QualificationLevel(str, PyEnum):
+class QualificationLevel(StrEnum):
     """资质等级枚举"""
 
     GRADE_A = "grade_a"  # 甲级/一级
@@ -236,7 +236,7 @@ class QualificationLevel(str, PyEnum):
     GRADE_C = "grade_c"  # 丙级/三级
 
 
-class ContractorTrainingStatus(str, PyEnum):
+class ContractorTrainingStatus(StrEnum):
     """承包商培训状态枚举"""
 
     UNTRAINED = "untrained"  # 未培训
@@ -245,7 +245,7 @@ class ContractorTrainingStatus(str, PyEnum):
     EXPIRED = "expired"  # 已过期
 
 
-class WorkRecordStatus(str, PyEnum):
+class WorkRecordStatus(StrEnum):
     """施工记录状态枚举"""
 
     IN_PROGRESS = "in_progress"  # 施工中
@@ -253,7 +253,7 @@ class WorkRecordStatus(str, PyEnum):
     EVALUATED = "evaluated"  # 已评价
 
 
-class TrainingType(str, PyEnum):
+class TrainingType(StrEnum):
     """培训类型枚举"""
 
     INDUCTION = "induction"  # 入职培训
@@ -264,7 +264,7 @@ class TrainingType(str, PyEnum):
     REFRESHER = "refresher"  # 复训
 
 
-class TrainingLevel(str, PyEnum):
+class TrainingLevel(StrEnum):
     """培训级别枚举"""
 
     COMPANY = "company"  # 公司级
@@ -272,7 +272,7 @@ class TrainingLevel(str, PyEnum):
     TEAM = "team"  # 班组级
 
 
-class CertificateStatus(str, PyEnum):
+class CertificateStatus(StrEnum):
     """证书状态枚举"""
 
     VALID = "valid"  # 有效
@@ -280,7 +280,7 @@ class CertificateStatus(str, PyEnum):
     EXPIRED = "expired"  # 已过期
 
 
-class TrainingMode(str, PyEnum):
+class TrainingMode(StrEnum):
     """培训方式枚举"""
 
     ONLINE = "online"  # 线上
@@ -288,28 +288,28 @@ class TrainingMode(str, PyEnum):
     BLENDED = "blended"  # 混合
 
 
-class RevisionType(str, PyEnum):
+class RevisionType(StrEnum):
     """操规修订类型枚举"""
 
     MANUAL = "manual"  # 人工修订
     AI = "ai"  # AI修订
 
 
-class RevisionScope(str, PyEnum):
+class RevisionScope(StrEnum):
     """修订范围枚举"""
 
     PROCESS = "process"  # 工艺
     SAFETY_REQUIREMENT = "safety_requirement"  # 安全要求
 
 
-class ReviewOpinion(str, PyEnum):
+class ReviewOpinion(StrEnum):
     """审核意见枚举"""
 
     PENDING = "pending"  # 待审核
     APPROVED = "approved"  # 已审核
 
 
-class OperationType(str, PyEnum):
+class OperationType(StrEnum):
     """特殊作业类型枚举（GB 30871-2022 八大特殊作业）"""
 
     HOT_WORK = "hot_work"  # 动火作业
@@ -322,7 +322,7 @@ class OperationType(str, PyEnum):
     ROAD_BREAKING = "road_breaking"  # 断路作业
 
 
-class OperationLevel(str, PyEnum):
+class OperationLevel(StrEnum):
     """特殊作业级别枚举"""
 
     SPECIAL = "special"  # 特级
@@ -331,7 +331,7 @@ class OperationLevel(str, PyEnum):
     NOT_APPLICABLE = "not_applicable"  # 不涉及
 
 
-class PersonnelStatus(str, PyEnum):
+class PersonnelStatus(StrEnum):
     """人员资质状态枚举"""
 
     ACTIVE = "active"  # 有效
@@ -339,7 +339,7 @@ class PersonnelStatus(str, PyEnum):
     REVOKED = "revoked"  # 已撤销
 
 
-class PermitStatus(str, PyEnum):
+class PermitStatus(StrEnum):
     """作业票状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -351,14 +351,14 @@ class PermitStatus(str, PyEnum):
     ARCHIVED = "archived"  # 已归档
 
 
-class CompletionMethod(str, PyEnum):
+class CompletionMethod(StrEnum):
     """完工方式枚举"""
 
     NORMAL = "normal"  # 正常完工
     EARLY_TERMINATION = "early_termination"  # 提前终止
 
 
-class KnowledgeCategory(str, PyEnum):
+class KnowledgeCategory(StrEnum):
     """安全知识库分类枚举"""
 
     LAWS_REGULATIONS = "laws_regulations"  # 法律法规
@@ -371,7 +371,7 @@ class KnowledgeCategory(str, PyEnum):
     OTHER = "other"  # 其他
 
 
-class DetectionType(str, PyEnum):
+class DetectionType(StrEnum):
     """检测类型枚举"""
 
     REGULAR = "regular"  # 定期检测
@@ -380,7 +380,7 @@ class DetectionType(str, PyEnum):
     ACCIDENT = "accident"  # 事故调查检测
 
 
-class HazardFactorCategory(str, PyEnum):
+class HazardFactorCategory(StrEnum):
     """危害因素类别枚举"""
 
     DUST = "dust"  # 粉尘（总尘/呼尘）
@@ -388,7 +388,7 @@ class HazardFactorCategory(str, PyEnum):
     PHYSICAL = "physical"  # 物理因素（噪声、高温、振动、辐射、照度）
 
 
-class OELComplianceStatus(str, PyEnum):
+class OELComplianceStatus(StrEnum):
     """OEL合规状态枚举"""
 
     COMPLIANT = "compliant"  # 符合
@@ -396,7 +396,7 @@ class OELComplianceStatus(str, PyEnum):
     MARGINAL = "marginal"  # 临界（接近限值）
 
 
-class MonitorStatus(str, PyEnum):
+class MonitorStatus(StrEnum):
     """监测状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -405,7 +405,7 @@ class MonitorStatus(str, PyEnum):
     VERIFIED = "verified"  # 已验证
 
 
-class ExamType(str, PyEnum):
+class ExamType(StrEnum):
     """体检类型枚举"""
 
     PRE_EMPLOYMENT = "pre_employment"  # 上岗前
@@ -414,7 +414,7 @@ class ExamType(str, PyEnum):
     EMERGENCY = "emergency"  # 应急/事故后
 
 
-class ExamConclusion(str, PyEnum):
+class ExamConclusion(StrEnum):
     """体检结论枚举"""
 
     NORMAL = "normal"  # 未见异常
@@ -425,7 +425,7 @@ class ExamConclusion(str, PyEnum):
     RE_EXAMINATION = "re_examination"  # 复查
 
 
-class ExamStatus(str, PyEnum):
+class ExamStatus(StrEnum):
     """体检状态枚举"""
 
     SCHEDULED = "scheduled"  # 已安排
@@ -434,7 +434,7 @@ class ExamStatus(str, PyEnum):
     ARCHIVED = "archived"  # 已归档
 
 
-class AbnormalityStatus(str, PyEnum):
+class AbnormalityStatus(StrEnum):
     """异常处置状态枚举"""
 
     OPEN = "open"  # 待处理
@@ -443,16 +443,16 @@ class AbnormalityStatus(str, PyEnum):
     CLOSED = "closed"  # 已关闭
 
 
-class RegulationStatus(str, PyEnum):
+class RegulationStatus(StrEnum):
     """操规标准化生成状态"""
 
-    DRAFT = "draft"          # 初始状态
+    DRAFT = "draft"  # 初始状态
     GENERATED = "generated"  # 已生成标准化 Markdown
-    REVIEWED = "reviewed"    # 人工编辑审核完成
-    EXPORTED = "exported"    # 已导出 PDF
+    REVIEWED = "reviewed"  # 人工编辑审核完成
+    EXPORTED = "exported"  # 已导出 PDF
 
 
-class ReportStatus(str, PyEnum):
+class ReportStatus(StrEnum):
     """报备状态枚举"""
 
     DRAFT = "draft"
@@ -469,28 +469,54 @@ class SafetyCheck(BaseModel):
 
     __tablename__ = "safety_checks"
     __table_args__ = (
-        Index("uq_safety_checks_check_no", "check_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_safety_checks_check_no",
+            "check_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    check_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="检查编号")
+    check_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="检查编号"
+    )
     check_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="daily", server_default="daily", comment="检查类型"
+        String(32),
+        nullable=False,
+        default="daily",
+        server_default="daily",
+        comment="检查类型",
     )
     check_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="检查日期"
     )
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="检查部门")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="检查部门"
+    )
     inspector: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="检查人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="检查人",
     )
-    inspector_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="检查人姓名")
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="检查地点")
-    findings: Mapped[str | None] = mapped_column(Text, nullable=True, comment="检查发现")
+    inspector_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="检查人姓名"
+    )
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="检查地点"
+    )
+    findings: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="检查发现"
+    )
     result: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="检查结果: qualified/unqualified/need_rectification"
+        String(32),
+        nullable=True,
+        comment="检查结果: qualified/unqualified/need_rectification",
     )
-    rectification_required: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否需要整改")
+    rectification_required: Mapped[bool] = mapped_column(
+        Boolean, default=False, comment="是否需要整改"
+    )
     rectification_deadline: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="整改期限"
     )
@@ -504,7 +530,11 @@ class SafetyCheck(BaseModel):
         Boolean, default=False, server_default="false", comment="安全办确认"
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False, comment="状态"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -522,41 +552,68 @@ class HazardReport(BaseModel):
 
     __tablename__ = "hazard_reports"
     __table_args__ = (
-        Index("uq_hazard_reports_hazard_no", "hazard_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_hazard_reports_hazard_no",
+            "hazard_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         Index(
             "uq_hazard_reports_feishu_record_id",
             "feishu_record_id",
             unique=True,
-            postgresql_where=text("is_deleted = false AND feishu_record_id IS NOT NULL"),
+            postgresql_where=text(
+                "is_deleted = false AND feishu_record_id IS NOT NULL"
+            ),
         ),
         {"schema": "safety"},
     )
 
-    hazard_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="隐患编号")
+    hazard_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="隐患编号"
+    )
     inspection_category: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="检查类别（Bitable 多选，逗号分隔，如「月度安全检查, 周检」）"
+        String(128),
+        nullable=True,
+        comment="检查类别（Bitable 多选，逗号分隔，如「月度安全检查, 周检」）",
     )
     hazard_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="隐患分类（AI）：人的不安全行为/物的不安全状态/环境的不安全因素/管理的缺陷"
+        String(32),
+        nullable=False,
+        comment="隐患分类（AI）：人的不安全行为/物的不安全状态/环境的不安全因素/管理的缺陷",
     )
     hazard_level: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="general", comment="隐患等级（AI）：一般隐患/较大隐患/重大隐患"
+        String(16),
+        nullable=False,
+        default="general",
+        comment="隐患等级（AI）：一般隐患/较大隐患/重大隐患",
     )
     hazard_category: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="隐患类别（AI）：设备设施/危化储存/仪表+电气/…（13种）"
+        String(32),
+        nullable=True,
+        comment="隐患类别（AI）：设备设施/危化储存/仪表+电气/…（13种）",
     )
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="隐患描述")
     discovered_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="发现人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="发现人",
     )
-    discovered_by_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="检查人员姓名")
+    discovered_by_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="检查人员姓名"
+    )
     inspector_department: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="检查人员部门（Bitable 多选，逗号分隔，如「EHS部, 生产部」）"
+        String(500),
+        nullable=True,
+        comment="检查人员部门（Bitable 多选，逗号分隔，如「EHS部, 生产部」）",
     )
     discovered_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=None, nullable=False, comment="检查日期"
     )
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任部门")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="责任部门"
+    )
     major_hazard_basis: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="隐患判定依据（AI）"
     )
@@ -567,7 +624,10 @@ class HazardReport(BaseModel):
         Text, nullable=True, comment="缺陷图片JSON数组"
     )
     rectification_responsible_person: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="整改责任人（FK → identity.users）"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="整改责任人（FK → identity.users）",
     )
     rectification_responsible_person_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="整改责任人姓名（Bitable「责任人」）"
@@ -588,26 +648,46 @@ class HazardReport(BaseModel):
         Text, nullable=True, comment="整改后图片JSON数组"
     )
     rectification_status: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending", nullable=False, comment="整改进度"
+        String(32),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="整改进度",
     )
     # ── 三级复核 ──
     verify_level_1_status: Mapped[str] = mapped_column(
-        String(20), default="pending", server_default="pending", nullable=False,
-        comment="部门负责人复核状态 (Bitable「部门负责人复核」): pending/approved/rejected"
+        String(20),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="部门负责人复核状态 (Bitable「部门负责人复核」): pending/approved/rejected",
     )
     verify_level_2_status: Mapped[str] = mapped_column(
-        String(20), default="pending", server_default="pending", nullable=False,
-        comment="分管领导复核状态 (Bitable「分管领导复核」): pending/approved/rejected/no_review_needed"
+        String(20),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="分管领导复核状态 (Bitable「分管领导复核」): pending/approved/rejected/no_review_needed",
     )
     verify_level_3_status: Mapped[str] = mapped_column(
-        String(20), default="pending", server_default="pending", nullable=False,
-        comment="检查人员复核状态 (Bitable「检查人员复核」): pending/approved/rejected"
+        String(20),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="检查人员复核状态 (Bitable「检查人员复核」): pending/approved/rejected",
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="open", server_default="open", nullable=False, comment="状态"
+        String(32),
+        default="open",
+        server_default="open",
+        nullable=False,
+        comment="状态",
     )
     check_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("safety.safety_checks.id"), nullable=True, comment="关联检查ID"
+        UUID(as_uuid=True),
+        ForeignKey("safety.safety_checks.id"),
+        nullable=True,
+        comment="关联检查ID",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -653,12 +733,16 @@ class HazardReport(BaseModel):
 
     # ── AI 整改初审 ──
     ai_review_result: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True,
-        comment="AI 整改初审结果 JSON（RectificationReviewOutput 完整输出）"
+        JSON,
+        nullable=True,
+        comment="AI 整改初审结果 JSON（RectificationReviewOutput 完整输出）",
     )
     ai_review_status: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending", nullable=False,
-        comment="AI 初审状态: pending / processing / completed / failed"
+        String(32),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="AI 初审状态: pending / processing / completed / failed",
     )
     ai_review_completed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="AI 初审完成时间"
@@ -701,44 +785,74 @@ class Accident(BaseModel):
 
     __tablename__ = "accidents"
     __table_args__ = (
-        Index("uq_accidents_accident_no", "accident_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_accidents_accident_no",
+            "accident_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    accident_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="事故编号")
-    accident_type: Mapped[str] = mapped_column(String(32), nullable=False, comment="事故类型")
+    accident_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="事故编号"
+    )
+    accident_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="事故类型"
+    )
     accident_level: Mapped[str] = mapped_column(
         String(32), nullable=False, default="general", comment="事故等级"
     )
     happened_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="发生时间"
     )
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="发生地点")
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="发生部门")
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="发生地点"
+    )
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="发生部门"
+    )
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="事故描述")
-    casualties: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="伤亡情况汇总")
-    property_damage: Mapped[float | None] = mapped_column(Float, nullable=True, comment="财产损失(元)")
-    loss_work_days: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="损失工作日")
+    casualties: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="伤亡情况汇总"
+    )
+    property_damage: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="财产损失(元)"
+    )
+    loss_work_days: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="损失工作日"
+    )
     # ── 伤员详情 ──
     injury_details: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="伤员详情 JSON [{\"name\",\"position\",\"injury_part\",\"severity\",\"hospital\"}]"
+        JSON,
+        nullable=True,
+        comment='伤员详情 JSON [{"name","position","injury_part","severity","hospital"}]',
     )
     # ── 调查信息 ──
     investigation_team: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, comment="调查组 JSON [{\"name\",\"role\"}]"
+        JSON, nullable=True, comment='调查组 JSON [{"name","role"}]'
     )
     investigation_method: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="调查方法: 5-Why/FTA/Event Tree/BowTie等"
     )
-    investigation_findings: Mapped[str | None] = mapped_column(Text, nullable=True, comment="调查发现")
+    investigation_findings: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="调查发现"
+    )
     investigation_report_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="调查报告文件路径"
     )
-    direct_cause: Mapped[str | None] = mapped_column(Text, nullable=True, comment="直接原因")
-    root_cause: Mapped[str | None] = mapped_column(Text, nullable=True, comment="根本原因")
-    handling_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="处理措施")
-    corrective_actions: Mapped[str | None] = mapped_column(Text, nullable=True, comment="纠正预防措施")
+    direct_cause: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="直接原因"
+    )
+    root_cause: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="根本原因"
+    )
+    handling_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="处理措施"
+    )
+    corrective_actions: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="纠正预防措施"
+    )
     # ── CAPA 跟踪 ──
     corrective_action_deadline: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="CAPA截止日期"
@@ -747,30 +861,51 @@ class Accident(BaseModel):
         String(100), nullable=True, comment="CAPA责任人"
     )
     corrective_action_status: Mapped[str | None] = mapped_column(
-        String(32), default="pending", nullable=True, comment="CAPA状态: pending/in_progress/completed/verified"
+        String(32),
+        default="pending",
+        nullable=True,
+        comment="CAPA状态: pending/in_progress/completed/verified",
     )
     verified_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="CAPA验证人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="CAPA验证人",
     )
-    verified_by_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="验证人姓名")
+    verified_by_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="验证人姓名"
+    )
     verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="验证时间"
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="reported", server_default="reported", nullable=False,
-        comment="状态: reported/investigating/investigated/capa_in_progress/closed"
+        String(32),
+        default="reported",
+        server_default="reported",
+        nullable=False,
+        comment="状态: reported/investigating/investigated/capa_in_progress/closed",
     )
     reported_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="报告人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="报告人",
     )
-    reported_by_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="报告人姓名")
+    reported_by_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="报告人姓名"
+    )
     reported_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="报告时间"
     )
     investigator: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="调查人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="调查人",
     )
-    investigator_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="调查人姓名")
+    investigator_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="调查人姓名"
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
 
@@ -782,12 +917,21 @@ class SafetyTraining(BaseModel):
 
     __tablename__ = "safety_trainings"
     __table_args__ = (
-        Index("uq_safety_trainings_training_no", "training_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_safety_trainings_training_no",
+            "training_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    training_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="培训编号")
-    training_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="培训名称")
+    training_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="培训编号"
+    )
+    training_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, comment="培训名称"
+    )
     training_type: Mapped[str] = mapped_column(
         String(32), nullable=False, default="annual", comment="培训类型"
     )
@@ -795,19 +939,34 @@ class SafetyTraining(BaseModel):
         String(16), nullable=False, default="offline", comment="培训方式"
     )
     training_level: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="dept", server_default="dept", comment="培训级别: company/dept/team"
+        String(32),
+        nullable=False,
+        default="dept",
+        server_default="dept",
+        comment="培训级别: company/dept/team",
     )
     trainer: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="培训讲师"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="培训讲师",
     )
-    trainer_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="讲师姓名")
+    trainer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="讲师姓名"
+    )
     training_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="培训日期"
     )
-    duration_hours: Mapped[float | None] = mapped_column(Float, nullable=True, comment="培训时长(小时)")
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="培训地点")
+    duration_hours: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="培训时长(小时)"
+    )
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="培训地点"
+    )
     content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="培训内容")
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="培训部门")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="培训部门"
+    )
     exam_passing_score: Mapped[float | None] = mapped_column(
         Float, default=60, server_default="60", nullable=True, comment="及格分数线"
     )
@@ -815,7 +974,11 @@ class SafetyTraining(BaseModel):
         String(500), nullable=True, comment="课程资料路径"
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False, comment="状态"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -838,15 +1001,30 @@ class TrainingRecord(BaseModel):
         comment="培训ID",
     )
     employee_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="员工ID"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="员工ID",
     )
-    employee_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="员工姓名")
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="部门")
-    position: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="岗位")
+    employee_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="员工姓名"
+    )
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="部门"
+    )
+    position: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="岗位"
+    )
     attendance: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否出席")
-    score: Mapped[float | None] = mapped_column(Float, nullable=True, comment="考核成绩")
-    passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True, comment="是否合格")
-    certificate_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="证书编号")
+    score: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="考核成绩"
+    )
+    passed: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, comment="是否合格"
+    )
+    certificate_no: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="证书编号"
+    )
     certificate_expiry: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="证书有效期至"
     )
@@ -859,7 +1037,9 @@ class TrainingRecord(BaseModel):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
     # 关系
-    training: Mapped["SafetyTraining"] = relationship("SafetyTraining", back_populates="records")
+    training: Mapped["SafetyTraining"] = relationship(
+        "SafetyTraining", back_populates="records"
+    )
 
 
 # ==================== 危险源辨识 ====================
@@ -870,16 +1050,27 @@ class HazardIdentification(BaseModel):
 
     __tablename__ = "hazard_identifications"
     __table_args__ = (
-        Index("uq_hazard_identifications_no", "hazard_id_no", unique=True, postgresql_where=text("is_deleted = false")),
-        Index("ix_hazard_identifications_regulation_batch", "regulation_id", "batch_id"),
+        Index(
+            "uq_hazard_identifications_no",
+            "hazard_id_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        Index(
+            "ix_hazard_identifications_regulation_batch", "regulation_id", "batch_id"
+        ),
         {"schema": "safety"},
     )
 
     # ── 基础信息（人工输入） ──
-    hazard_id_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="危险源编号")
+    hazard_id_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="危险源编号"
+    )
     department: Mapped[str] = mapped_column(String(100), nullable=False, comment="部门")
     position: Mapped[str] = mapped_column(String(100), nullable=False, comment="岗位")
-    production_step: Mapped[str] = mapped_column(Text, nullable=False, comment="生产步骤")
+    production_step: Mapped[str] = mapped_column(
+        Text, nullable=False, comment="生产步骤"
+    )
     attachment_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="岗位资料附件路径"
     )
@@ -895,34 +1086,61 @@ class HazardIdentification(BaseModel):
 
     # ── 多工段辨识（batch / per-stage）──
     batch_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, index=True, comment="批次ID，同一regulation多工段同时创建时共享"
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
+        comment="批次ID，同一regulation多工段同时创建时共享",
     )
     stage_name: Mapped[str | None] = mapped_column(
         String(255), nullable=True, comment="工艺阶段名称（Chapter 7 H2 标题）"
     )
     chapter7_context: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="该工段对应的 Chapter 7 节选 Markdown（供Script 1使用）"
+        Text,
+        nullable=True,
+        comment="该工段对应的 Chapter 7 节选 Markdown（供Script 1使用）",
     )
 
     # ── 脚本1 输出：附件解析（AI → 人工审核） ──
-    specific_activity: Mapped[str | None] = mapped_column(Text, nullable=True, comment="具体作业活动")
-    equipment_facilities: Mapped[str | None] = mapped_column(Text, nullable=True, comment="设备设施")
-    raw_auxiliary_materials: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原辅料")
+    specific_activity: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="具体作业活动"
+    )
+    equipment_facilities: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="设备设施"
+    )
+    raw_auxiliary_materials: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="原辅料"
+    )
     operation_frequency: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="作业频次"
     )
-    operator_count: Mapped[int | None] = mapped_column(nullable=True, comment="操作人数")
+    operator_count: Mapped[int | None] = mapped_column(
+        nullable=True, comment="操作人数"
+    )
 
     # ── 脚本2 输出：AI危险源辨识（AI → 人工审核） ──
-    hazard_type: Mapped[str | None] = mapped_column(Text, nullable=True, comment="危险类型（人机料法环）")
-    possible_accident: Mapped[str | None] = mapped_column(Text, nullable=True, comment="可能导致事故")
-    unsafe_behavior: Mapped[str | None] = mapped_column(Text, nullable=True, comment="不规范作业行为表现")
+    hazard_type: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="危险类型（人机料法环）"
+    )
+    possible_accident: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="可能导致事故"
+    )
+    unsafe_behavior: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="不规范作业行为表现"
+    )
 
     # ── 脚本3 输出：固有风险 LEC（AI → 人工审核） ──
-    l_inherent: Mapped[float | None] = mapped_column(nullable=True, comment="可能性L（固有）")
-    e_inherent: Mapped[float | None] = mapped_column(nullable=True, comment="暴露频率E（固有）")
-    c_inherent: Mapped[float | None] = mapped_column(nullable=True, comment="严重性C（固有）")
-    d_inherent: Mapped[float | None] = mapped_column(nullable=True, comment="风险值D（固有）")
+    l_inherent: Mapped[float | None] = mapped_column(
+        nullable=True, comment="可能性L（固有）"
+    )
+    e_inherent: Mapped[float | None] = mapped_column(
+        nullable=True, comment="暴露频率E（固有）"
+    )
+    c_inherent: Mapped[float | None] = mapped_column(
+        nullable=True, comment="严重性C（固有）"
+    )
+    d_inherent: Mapped[float | None] = mapped_column(
+        nullable=True, comment="风险值D（固有）"
+    )
     inherent_risk_level: Mapped[str | None] = mapped_column(
         String(20), nullable=True, comment="固有风险等级"
     )
@@ -945,10 +1163,18 @@ class HazardIdentification(BaseModel):
     )
 
     # ── 脚本5 输出：残余风险（AI → 人工审核） ──
-    l_residual: Mapped[float | None] = mapped_column(nullable=True, comment="可能性L（残余）")
-    e_residual: Mapped[float | None] = mapped_column(nullable=True, comment="暴露频率E（残余）")
-    c_residual: Mapped[float | None] = mapped_column(nullable=True, comment="严重性C（残余）")
-    d_residual: Mapped[float | None] = mapped_column(nullable=True, comment="风险值D（残余）")
+    l_residual: Mapped[float | None] = mapped_column(
+        nullable=True, comment="可能性L（残余）"
+    )
+    e_residual: Mapped[float | None] = mapped_column(
+        nullable=True, comment="暴露频率E（残余）"
+    )
+    c_residual: Mapped[float | None] = mapped_column(
+        nullable=True, comment="严重性C（残余）"
+    )
+    d_residual: Mapped[float | None] = mapped_column(
+        nullable=True, comment="风险值D（残余）"
+    )
     residual_risk_level: Mapped[str | None] = mapped_column(
         String(20), nullable=True, comment="残余风险等级"
     )
@@ -971,10 +1197,18 @@ class HazardIdentification(BaseModel):
     )
 
     # ── 脚本7 输出：建议措施后风险（AI → 人工审核） ──
-    l_post: Mapped[float | None] = mapped_column(nullable=True, comment="可能性L（建议措施后）")
-    e_post: Mapped[float | None] = mapped_column(nullable=True, comment="暴露频率E（建议措施后）")
-    c_post: Mapped[float | None] = mapped_column(nullable=True, comment="严重性C（建议措施后）")
-    d_post: Mapped[float | None] = mapped_column(nullable=True, comment="风险值D（建议措施后）")
+    l_post: Mapped[float | None] = mapped_column(
+        nullable=True, comment="可能性L（建议措施后）"
+    )
+    e_post: Mapped[float | None] = mapped_column(
+        nullable=True, comment="暴露频率E（建议措施后）"
+    )
+    c_post: Mapped[float | None] = mapped_column(
+        nullable=True, comment="严重性C（建议措施后）"
+    )
+    d_post: Mapped[float | None] = mapped_column(
+        nullable=True, comment="风险值D（建议措施后）"
+    )
     post_risk_level: Mapped[str | None] = mapped_column(
         String(20), nullable=True, comment="建议措施后风险等级"
     )
@@ -1043,12 +1277,21 @@ class OperationRegulation(BaseModel):
 
     __tablename__ = "operation_regulations"
     __table_args__ = (
-        Index("uq_operation_regulations_no", "regulation_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_operation_regulations_no",
+            "regulation_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    regulation_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="操规编号")
-    regulation_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="操规名称")
+    regulation_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="操规编号"
+    )
+    regulation_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, comment="操规名称"
+    )
     document_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="操规文档路径（当前最新版本）"
     )
@@ -1089,37 +1332,63 @@ class RegulationRevision(BaseModel):
 
     __tablename__ = "regulation_revisions"
     __table_args__ = (
-        Index("uq_regulation_revisions_no", "revision_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_regulation_revisions_no",
+            "revision_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    revision_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="修订编号")
+    revision_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="修订编号"
+    )
     regulation_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.operation_regulations.id"),
         nullable=False,
         comment="关联操规ID",
     )
-    regulation_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="安全操规名称")
+    regulation_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, comment="安全操规名称"
+    )
     old_document_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="旧文档路径"
     )
     reviser: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="修订人"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="修订人",
     )
-    reviser_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="修订人姓名")
+    reviser_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="修订人姓名"
+    )
     revision_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="修订时间"
     )
     revision_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="manual", server_default="manual", comment="修订类型: manual/ai"
+        String(32),
+        nullable=False,
+        default="manual",
+        server_default="manual",
+        comment="修订类型: manual/ai",
     )
-    revision_opinion: Mapped[str | None] = mapped_column(Text, nullable=True, comment="修订意见/内容")
+    revision_opinion: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="修订意见/内容"
+    )
     revision_scope: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="修订范围（逗号分隔: process/safety_requirement）"
+        String(100),
+        nullable=True,
+        comment="修订范围（逗号分隔: process/safety_requirement）",
     )
     review_opinion: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending", nullable=False, comment="审核意见: pending/approved"
+        String(32),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+        comment="审核意见: pending/approved",
     )
     new_document_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="新文档路径"
@@ -1140,13 +1409,22 @@ class SpecialOperationPersonnel(BaseModel):
 
     __tablename__ = "special_operation_personnel"
     __table_args__ = (
-        Index("uq_special_op_personnel_no", "personnel_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_special_op_personnel_no",
+            "personnel_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    personnel_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="人员编号")
+    personnel_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="人员编号"
+    )
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="姓名")
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="所属部门")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="所属部门"
+    )
     certificate_type: Mapped[str] = mapped_column(
         String(32), nullable=False, comment="证书类型（对应8种特殊作业）"
     )
@@ -1165,10 +1443,15 @@ class SpecialOperationPersonnel(BaseModel):
     certificate_file_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="证书文件路径"
     )
-    qualification_scope: Mapped[str | None] = mapped_column(Text, nullable=True, comment="资质范围")
+    qualification_scope: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="资质范围"
+    )
     status: Mapped[str] = mapped_column(
-        String(32), default="active", server_default="active", nullable=False,
-        comment="状态: active/expired/revoked"
+        String(32),
+        default="active",
+        server_default="active",
+        nullable=False,
+        comment="状态: active/expired/revoked",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -1181,23 +1464,37 @@ class SpecialOperationPermit(BaseModel):
 
     __tablename__ = "special_operation_permits"
     __table_args__ = (
-        Index("uq_special_op_permits_permit_no", "permit_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_special_op_permits_permit_no",
+            "permit_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    permit_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="作业票编号")
+    permit_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="作业票编号"
+    )
     operation_type: Mapped[str] = mapped_column(
         String(32), nullable=False, comment="作业类型（8种）"
     )
     operation_level: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="grade2", server_default="grade2",
-        comment="作业级别: special/grade1/grade2"
+        String(16),
+        nullable=False,
+        default="grade2",
+        server_default="grade2",
+        comment="作业级别: special/grade1/grade2",
     )
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作业地点")
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="作业地点"
+    )
     equipment_tag: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="设备位号"
     )
-    work_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="作业内容描述")
+    work_description: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="作业内容描述"
+    )
     planned_start_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="计划开始时间"
     )
@@ -1225,28 +1522,42 @@ class SpecialOperationPermit(BaseModel):
     approver_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="审批人姓名"
     )
-    safety_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="安全措施")
+    safety_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="安全措施"
+    )
     emergency_equipment: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="应急消防器材"
     )
-    gas_analysis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="气体分析结果")
-    risk_assessment: Mapped[str | None] = mapped_column(Text, nullable=True, comment="风险评估")
+    gas_analysis: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="气体分析结果"
+    )
+    risk_assessment: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="风险评估"
+    )
     safety_briefing_confirmed: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="安全交底确认"
     )
     safety_briefing_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="安全交底时间"
     )
-    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="驳回原因")
+    rejection_reason: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="驳回原因"
+    )
     completion_method: Mapped[str | None] = mapped_column(
         String(32), nullable=True, comment="完工方式: normal/early_termination"
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False, comment="状态"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态",
     )
     check_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("safety.safety_checks.id"), nullable=True,
-        comment="关联安全检查ID"
+        UUID(as_uuid=True),
+        ForeignKey("safety.safety_checks.id"),
+        nullable=True,
+        comment="关联安全检查ID",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -1263,13 +1574,22 @@ class SafetyKnowledgeArticle(BaseModel):
     title: Mapped[str] = mapped_column(String(255), nullable=False, comment="文章标题")
     summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="摘要")
     content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="正文内容")
-    tags: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="标签（逗号分隔）")
+    tags: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="标签（逗号分隔）"
+    )
     category: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="other", server_default="other", comment="分类"
+        String(32),
+        nullable=False,
+        default="other",
+        server_default="other",
+        comment="分类",
     )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False,
-        comment="状态: draft/published/archived"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态: draft/published/archived",
     )
     view_count: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", nullable=False, comment="浏览次数"
@@ -1282,7 +1602,9 @@ class SafetyKnowledgeArticle(BaseModel):
     )
     # ── AI 知识增强字段 ──
     knowledge_card: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True, comment="AI 知识卡片 JSON（结构化法规摘要，供 AI 识别注入 prompt）"
+        JSON,
+        nullable=True,
+        comment="AI 知识卡片 JSON（结构化法规摘要，供 AI 识别注入 prompt）",
     )
     card_generated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="知识卡片生成时间"
@@ -1300,11 +1622,18 @@ class SpecialOperationReport(BaseModel):
 
     __tablename__ = "special_operation_reports"
     __table_args__ = (
-        Index("uq_special_operation_reports_no", "report_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_special_operation_reports_no",
+            "report_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    report_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="报备编号")
+    report_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="报备编号"
+    )
     permit_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.special_operation_permits.id"),
@@ -1315,15 +1644,24 @@ class SpecialOperationReport(BaseModel):
         String(32), nullable=False, comment="作业类型（8种）"
     )
     operation_level: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="grade2", server_default="grade2",
-        comment="作业级别: special/grade1/grade2"
+        String(16),
+        nullable=False,
+        default="grade2",
+        server_default="grade2",
+        comment="作业级别: special/grade1/grade2",
     )
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="报备部门")
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作业地点")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="报备部门"
+    )
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="作业地点"
+    )
     equipment_tag: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="设备位号"
     )
-    work_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="作业内容描述")
+    work_description: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="作业内容描述"
+    )
     planned_start_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="计划开始时间"
     )
@@ -1342,12 +1680,18 @@ class SpecialOperationReport(BaseModel):
     risk_level: Mapped[str | None] = mapped_column(
         String(20), nullable=True, comment="风险等级: level_1/level_2/level_3/level_4"
     )
-    safety_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="安全措施")
+    safety_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="安全措施"
+    )
     emergency_equipment: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="应急消防器材"
     )
-    gas_analysis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="气体分析结果")
-    risk_assessment: Mapped[str | None] = mapped_column(Text, nullable=True, comment="风险评估描述")
+    gas_analysis: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="气体分析结果"
+    )
+    risk_assessment: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="风险评估描述"
+    )
     applicant_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="报备申请人姓名"
     )
@@ -1357,15 +1701,23 @@ class SpecialOperationReport(BaseModel):
     approved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="审批时间"
     )
-    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="驳回原因")
+    rejection_reason: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="驳回原因"
+    )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False,
-        comment="状态: draft/submitted/approved/rejected"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态: draft/submitted/approved/rejected",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
     is_critical: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", nullable=False,
-        comment="是否关键作业（AI自动判定+可手动修改）"
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+        comment="是否关键作业（AI自动判定+可手动修改）",
     )
     is_critical_reason: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="关键作业判定理由"
@@ -1385,15 +1737,24 @@ class DailyRiskReport(BaseModel):
 
     __tablename__ = "daily_risk_reports"
     __table_args__ = (
-        Index("uq_daily_risk_reports_no", "report_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_daily_risk_reports_no",
+            "report_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    report_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="报备编号")
+    report_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="报备编号"
+    )
     report_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, comment="报备作业日期"
     )
-    department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="报备部门")
+    department: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="报备部门"
+    )
     hazard_identification_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.hazard_identifications.id"),
@@ -1403,17 +1764,27 @@ class DailyRiskReport(BaseModel):
     operation_description: Mapped[str] = mapped_column(
         Text, nullable=False, comment="风险作业描述"
     )
-    operation_steps: Mapped[str | None] = mapped_column(Text, nullable=True, comment="作业步骤")
-    hazard_factors: Mapped[str | None] = mapped_column(Text, nullable=True, comment="危险因素")
+    operation_steps: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="作业步骤"
+    )
+    hazard_factors: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="危险因素"
+    )
     risk_level: Mapped[str | None] = mapped_column(
         String(20), nullable=True, comment="风险等级: level_1/level_2/level_3/level_4"
     )
-    control_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="控制措施")
+    control_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="控制措施"
+    )
     responsible_person: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="作业负责人"
     )
-    operator_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="作业人数")
-    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作业地点")
+    operator_count: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="作业人数"
+    )
+    location: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="作业地点"
+    )
     planned_start_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="计划开始时间"
     )
@@ -1429,10 +1800,15 @@ class DailyRiskReport(BaseModel):
     approved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="审批时间"
     )
-    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="驳回原因")
+    rejection_reason: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="驳回原因"
+    )
     status: Mapped[str] = mapped_column(
-        String(32), default="draft", server_default="draft", nullable=False,
-        comment="状态: draft/submitted/approved/rejected"
+        String(32),
+        default="draft",
+        server_default="draft",
+        nullable=False,
+        comment="状态: draft/submitted/approved/rejected",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -1450,7 +1826,12 @@ class EhsChange(BaseModel):
 
     __tablename__ = "ehs_changes"
     __table_args__ = (
-        Index("uq_ehs_changes_change_no", "change_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_ehs_changes_change_no",
+            "change_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety", "comment": "EHS变更管理表"},
     )
 
@@ -1460,17 +1841,25 @@ class EhsChange(BaseModel):
     )
 
     # ── 基础信息 ──
-    title: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="变更标题"
-    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False, comment="变更标题")
     change_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="变更类型: process_tech/equipment_facility/management"
+        String(32),
+        nullable=False,
+        comment="变更类型: process_tech/equipment_facility/management",
     )
     change_grade: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="general", server_default="general", comment="变更等级: major/general"
+        String(16),
+        nullable=False,
+        default="general",
+        server_default="general",
+        comment="变更等级: major/general",
     )
     change_duration: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="permanent", server_default="permanent", comment="变更期限: permanent/temporary/emergency"
+        String(16),
+        nullable=False,
+        default="permanent",
+        server_default="permanent",
+        comment="变更期限: permanent/temporary/emergency",
     )
     department: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="申请部门"
@@ -1502,10 +1891,17 @@ class EhsChange(BaseModel):
 
     # ── 状态与申请人 ──
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="draft", server_default="draft", comment="状态"
+        String(32),
+        nullable=False,
+        default="draft",
+        server_default="draft",
+        comment="状态",
     )
     applicant_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="申请人ID"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="申请人ID",
     )
     applicant_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="申请人姓名"
@@ -1524,33 +1920,42 @@ class EhsChange(BaseModel):
 
     # ── JSON 子记录 ──
     risk_assessments: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="风险评估 JSON数组 [{method, severity, likelihood, risk_level, description, control_measures, assessed_by, assessed_date, participants}]"
+        JSON,
+        nullable=True,
+        comment="风险评估 JSON数组 [{method, severity, likelihood, risk_level, description, control_measures, assessed_by, assessed_date, participants}]",
     )
     approval_chain: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="审批链 JSON数组 [{level, approver_role, approver, decision, comments, decided_at}]"
+        JSON,
+        nullable=True,
+        comment="审批链 JSON数组 [{level, approver_role, approver, decision, comments, decided_at}]",
     )
     action_items: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="行动项 JSON数组 [{task, owner, due_date, status, completed_at}]"
+        JSON,
+        nullable=True,
+        comment="行动项 JSON数组 [{task, owner, due_date, status, completed_at}]",
     )
     pssr_checklist: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="PSSR清单 JSON数组 [{item, result, checked_by, checked_at, remarks}]"
+        JSON,
+        nullable=True,
+        comment="PSSR清单 JSON数组 [{item, result, checked_by, checked_at, remarks}]",
     )
     verification: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True,
-        comment="变更验证 {expected_effect_achieved, comments, psi_updated, documents_updated, accepted_by, accepted_date}"
+        JSON,
+        nullable=True,
+        comment="变更验证 {expected_effect_achieved, comments, psi_updated, documents_updated, accepted_by, accepted_date}",
     )
     closure: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True,
-        comment="变更关闭 {closed_by, closed_date, temp_expiry_date, restored_date}"
+        JSON,
+        nullable=True,
+        comment="变更关闭 {closed_by, closed_date, temp_expiry_date, restored_date}",
     )
 
     # ── 关联 ──
     linked_safety_check_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("safety.safety_checks.id"), nullable=True, comment="关联安全检查ID（变更验收）"
+        UUID(as_uuid=True),
+        ForeignKey("safety.safety_checks.id"),
+        nullable=True,
+        comment="关联安全检查ID（变更验收）",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -1571,7 +1976,12 @@ class OhHazardMonitor(BaseModel):
 
     __tablename__ = "oh_hazard_monitors"
     __table_args__ = (
-        Index("uq_oh_hazard_monitors_monitor_no", "monitor_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_oh_hazard_monitors_monitor_no",
+            "monitor_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety", "comment": "职业危害因素监测表"},
     )
 
@@ -1593,7 +2003,9 @@ class OhHazardMonitor(BaseModel):
 
     # ── 检测信息 ──
     detection_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="检测类型: regular/commissioned/evaluation/accident"
+        String(32),
+        nullable=False,
+        comment="检测类型: regular/commissioned/evaluation/accident",
     )
     detection_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="检测日期"
@@ -1604,7 +2016,11 @@ class OhHazardMonitor(BaseModel):
 
     # ── 状态 ──
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="draft", server_default="draft", comment="状态"
+        String(32),
+        nullable=False,
+        default="draft",
+        server_default="draft",
+        comment="状态",
     )
 
     # ── 责任人 ──
@@ -1617,20 +2033,21 @@ class OhHazardMonitor(BaseModel):
 
     # ── JSON 子记录：检测结果数组 ──
     detection_results: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="检测结果 JSON数组 [{factor_name, factor_category, detection_value, unit, oel_limit, compliance_status, sampling_method, standard_ref}]"
+        JSON,
+        nullable=True,
+        comment="检测结果 JSON数组 [{factor_name, factor_category, detection_value, unit, oel_limit, compliance_status, sampling_method, standard_ref}]",
     )
 
     # ── JSON：异常处置记录 ──
     abnormality_records: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="异常处置记录 JSON数组 [{abnormality_desc, corrective_action, responsible_person, deadline, status, completed_at, remarks}]"
+        JSON,
+        nullable=True,
+        comment="异常处置记录 JSON数组 [{abnormality_desc, corrective_action, responsible_person, deadline, status, completed_at, remarks}]",
     )
 
     # ── JSON：附件 ──
     attachments: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="附件列表 JSON数组 [{name, path}]"
+        JSON, nullable=True, comment="附件列表 JSON数组 [{name, path}]"
     )
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
@@ -1644,21 +2061,27 @@ class OhHealthExam(BaseModel):
 
     __tablename__ = "oh_health_exams"
     __table_args__ = (
-        Index("uq_oh_health_exams_exam_no", "exam_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_oh_health_exams_exam_no",
+            "exam_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety", "comment": "职业健康体检表"},
     )
 
     # ── 核心标识 ──
-    exam_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, comment="体检编号"
-    )
+    exam_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="体检编号")
 
     # ── 人员信息 ──
     employee_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="员工姓名"
     )
     employee_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="关联用户ID"
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="关联用户ID",
     )
     department: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="部门"
@@ -1669,10 +2092,16 @@ class OhHealthExam(BaseModel):
 
     # ── 体检类型与状态 ──
     exam_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="体检类型: pre_employment/periodic/post_employment/emergency"
+        String(32),
+        nullable=False,
+        comment="体检类型: pre_employment/periodic/post_employment/emergency",
     )
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="scheduled", server_default="scheduled", comment="状态"
+        String(32),
+        nullable=False,
+        default="scheduled",
+        server_default="scheduled",
+        comment="状态",
     )
 
     # ── 体检信息 ──
@@ -1691,8 +2120,7 @@ class OhHealthExam(BaseModel):
 
     # ── 暴露因素关联 ──
     hazard_factors: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="关联的危害因素列表 [string]"
+        JSON, nullable=True, comment="关联的危害因素列表 [string]"
     )
 
     # ── 个人体检结论 ──
@@ -1702,20 +2130,19 @@ class OhHealthExam(BaseModel):
 
     # ── JSON 子记录：体检项目结果 ──
     exam_items: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="体检项目结果 JSON数组 [{item_name, category, result, reference_range, is_abnormal, remarks}]"
+        JSON,
+        nullable=True,
+        comment="体检项目结果 JSON数组 [{item_name, category, result, reference_range, is_abnormal, remarks}]",
     )
 
     # ── JSON：异常处置记录 ──
     abnormality_records: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="异常处置记录 JSON数组"
+        JSON, nullable=True, comment="异常处置记录 JSON数组"
     )
 
     # ── JSON：附件 ──
     attachments: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="附件列表"
+        JSON, nullable=True, comment="附件列表"
     )
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
@@ -1729,20 +2156,39 @@ class Contractor(BaseModel):
 
     __tablename__ = "contractors"
     __table_args__ = (
-        Index("uq_contractors_contractor_no", "contractor_no", unique=True, postgresql_where=text("is_deleted = false")),
+        Index(
+            "uq_contractors_contractor_no",
+            "contractor_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "safety"},
     )
 
-    contractor_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="承包商编号")
-    company_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="公司名称")
+    contractor_no: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="承包商编号"
+    )
+    company_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, comment="公司名称"
+    )
     legal_representative: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="法定代表人"
     )
-    contact_person: Mapped[str] = mapped_column(String(100), nullable=False, comment="联系人")
-    contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="联系电话")
-    business_scope: Mapped[str | None] = mapped_column(Text, nullable=True, comment="经营范围")
+    contact_person: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="联系人"
+    )
+    contact_phone: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, comment="联系电话"
+    )
+    business_scope: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="经营范围"
+    )
     qualification_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="other", server_default="other", comment="资质类型"
+        String(32),
+        nullable=False,
+        default="other",
+        server_default="other",
+        comment="资质类型",
     )
     qualification_level: Mapped[str | None] = mapped_column(
         String(16), nullable=True, comment="资质等级: grade_a/grade_b/grade_c"
@@ -1759,7 +2205,9 @@ class Contractor(BaseModel):
     safety_license_expiry: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="安全生产许可证有效期"
     )
-    insurance_info: Mapped[str | None] = mapped_column(Text, nullable=True, comment="保险信息")
+    insurance_info: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="保险信息"
+    )
     insurance_expiry: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="保险有效期至"
     )
@@ -1770,12 +2218,16 @@ class Contractor(BaseModel):
         String(20), nullable=True, comment="安全负责人电话"
     )
     special_op_personnel: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="特种作业人员列表 [{\"name\",\"cert_type\",\"cert_no\",\"expiry\"}]"
+        JSON,
+        nullable=True,
+        comment='特种作业人员列表 [{"name","cert_type","cert_no","expiry"}]',
     )
     training_status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="untrained", server_default="untrained",
-        comment="培训状态: untrained/in_progress/passed/expired"
+        String(32),
+        nullable=False,
+        default="untrained",
+        server_default="untrained",
+        comment="培训状态: untrained/in_progress/passed/expired",
     )
     training_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="最近培训日期"
@@ -1784,11 +2236,18 @@ class Contractor(BaseModel):
         Integer, nullable=True, comment="安全绩效评分（0-100）"
     )
     blacklisted: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", nullable=False, comment="是否黑名单"
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+        comment="是否黑名单",
     )
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="active", server_default="active",
-        comment="状态: active/inactive/blacklisted"
+        String(32),
+        nullable=False,
+        default="active",
+        server_default="active",
+        comment="状态: active/inactive/blacklisted",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -1835,21 +2294,26 @@ class ContractorWorkRecord(BaseModel):
     leading_person: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="带班负责人"
     )
-    worker_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="施工人数")
+    worker_count: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="施工人数"
+    )
     safety_briefing_done: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="安全交底确认"
     )
     violations: Mapped[list | None] = mapped_column(
-        JSON, nullable=True,
-        comment="违章记录 [{\"date\",\"description\",\"severity\",\"handler\",\"result\"}]"
+        JSON,
+        nullable=True,
+        comment='违章记录 [{"date","description","severity","handler","result"}]',
     )
     evaluation: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True,
-        comment="评价 {\"score\",\"comments\",\"evaluator\",\"date\"}"
+        JSON, nullable=True, comment='评价 {"score","comments","evaluator","date"}'
     )
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="in_progress", server_default="in_progress",
-        comment="状态: in_progress/completed/evaluated"
+        String(32),
+        nullable=False,
+        default="in_progress",
+        server_default="in_progress",
+        comment="状态: in_progress/completed/evaluated",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 

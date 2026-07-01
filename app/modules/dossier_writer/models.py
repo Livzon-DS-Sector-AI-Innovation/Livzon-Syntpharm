@@ -1,4 +1,5 @@
 """Dossier Writer ORM models."""
+
 import uuid
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, text
@@ -17,6 +18,7 @@ from .field_models import (  # noqa: F401
 
 class ProductDossier(BaseModel):
     """品种资料主表"""
+
     __tablename__ = "product_dossiers"
     __table_args__ = {"schema": "dossier_writer"}
 
@@ -52,22 +54,35 @@ class ProductDossier(BaseModel):
 
     # 状态
     status: Mapped[str] = mapped_column(
-        String(50), default="draft", server_default="draft", comment="状态: draft/active"
+        String(50),
+        default="draft",
+        server_default="draft",
+        comment="状态: draft/active",
     )
     parse_status: Mapped[str] = mapped_column(
-        String(50), default="pending", server_default="pending", comment="解析状态: pending/parsing/completed/failed"
+        String(50),
+        default="pending",
+        server_default="pending",
+        comment="解析状态: pending/parsing/completed/failed",
     )
     parse_error: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="解析错误信息"
     )
 
     # 关系
-    templates = relationship("DossierTemplate", back_populates="product_dossier", cascade="all, delete-orphan")
-    chapters = relationship("DossierChapter", back_populates="product_dossier", cascade="all, delete-orphan")
+    templates = relationship(
+        "DossierTemplate",
+        back_populates="product_dossier",
+        cascade="all, delete-orphan",
+    )
+    chapters = relationship(
+        "DossierChapter", back_populates="product_dossier", cascade="all, delete-orphan"
+    )
 
 
 class DossierTemplate(BaseModel):
     """模板文件记录"""
+
     __tablename__ = "dossier_templates"
     __table_args__ = {"schema": "dossier_writer"}
 
@@ -87,7 +102,10 @@ class DossierTemplate(BaseModel):
         Integer, nullable=True, comment="文件大小(字节)"
     )
     uploaded_at = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"), comment="上传时间"
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        comment="上传时间",
     )
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="上传人"
@@ -99,6 +117,7 @@ class DossierTemplate(BaseModel):
 
 class DossierChapter(BaseModel):
     """章节树"""
+
     __tablename__ = "dossier_chapters"
     __table_args__ = {"schema": "dossier_writer"}
 
@@ -153,12 +172,17 @@ class DossierChapter(BaseModel):
 
     # 关系
     product_dossier = relationship("ProductDossier", back_populates="chapters")
-    parent = relationship("DossierChapter", remote_side="DossierChapter.id", backref="children_rel")
-    assets = relationship("ChapterAsset", back_populates="chapter", cascade="all, delete-orphan")
+    parent = relationship(
+        "DossierChapter", remote_side="DossierChapter.id", backref="children_rel"
+    )
+    assets = relationship(
+        "ChapterAsset", back_populates="chapter", cascade="all, delete-orphan"
+    )
 
 
 class ChapterAsset(BaseModel):
     """章节素材"""
+
     __tablename__ = "chapter_assets"
     __table_args__ = {"schema": "dossier_writer"}
 
@@ -183,7 +207,10 @@ class ChapterAsset(BaseModel):
         Integer, nullable=True, comment="文件大小(字节)"
     )
     uploaded_at = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()"), comment="上传时间"
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+        comment="上传时间",
     )
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="上传人"

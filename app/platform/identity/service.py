@@ -119,6 +119,7 @@ def generate_jwt(user: User) -> str:
 def generate_state_token() -> str:
     """Generate a short-lived state token for CSRF protection."""
     import secrets
+
     settings = get_settings()
     nonce = secrets.token_urlsafe(32)
     now = datetime.now(UTC)

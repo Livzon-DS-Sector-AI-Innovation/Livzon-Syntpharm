@@ -1,4 +1,5 @@
 """素材处理器 - 从各种格式的素材中提取内容"""
+
 import re
 from pathlib import Path
 from typing import Any
@@ -23,11 +24,13 @@ class AssetExtractor:
         for i, para in enumerate(doc.paragraphs):
             text = para.text.strip()
             if text:
-                paragraphs.append({
-                    "index": i,
-                    "text": text,
-                    "style": para.style.name if para.style else "Normal"
-                })
+                paragraphs.append(
+                    {
+                        "index": i,
+                        "text": text,
+                        "style": para.style.name if para.style else "Normal",
+                    }
+                )
 
         # 提取表格
         tables = []
@@ -36,17 +39,19 @@ class AssetExtractor:
             for r_idx, row in enumerate(table.rows):
                 cells = [cell.text.strip() for cell in row.cells]
                 table_data.append(cells)
-            tables.append({
-                "index": t_idx,
-                "rows": len(table.rows),
-                "cols": len(table.columns),
-                "data": table_data
-            })
+            tables.append(
+                {
+                    "index": t_idx,
+                    "rows": len(table.rows),
+                    "cols": len(table.columns),
+                    "data": table_data,
+                }
+            )
 
         return {
             "paragraphs": paragraphs,
             "tables": tables,
-            "full_text": "\n".join([p["text"] for p in paragraphs])
+            "full_text": "\n".join([p["text"] for p in paragraphs]),
         }
 
     @staticmethod
@@ -65,22 +70,15 @@ class AssetExtractor:
             all_text = []
             for page_num, image in enumerate(images):
                 text = ocr_service.extract(image, output_format="text")
-                all_text.append({
-                    "page": page_num + 1,
-                    "text": text.strip()
-                })
+                all_text.append({"page": page_num + 1, "text": text.strip()})
 
             return {
                 "pages": all_text,
                 "full_text": full_text,
-                "page_count": len(images)
+                "page_count": len(images),
             }
         except Exception as e:
-            return {
-                "pages": [],
-                "full_text": "",
-                "error": str(e)
-            }
+            return {"pages": [], "full_text": "", "error": str(e)}
 
     @staticmethod
     def extract_from_image(file_path: Path) -> dict[str, Any]:
@@ -90,16 +88,9 @@ class AssetExtractor:
             image = Image.open(str(file_path))
             # 使用 PP-OCR 进行快速文本提取
             text = ocr_service.extract_text(image)
-            return {
-                "text": text.strip(),
-                "format": image.format,
-                "size": image.size
-            }
+            return {"text": text.strip(), "format": image.format, "size": image.size}
         except Exception as e:
-            return {
-                "text": "",
-                "error": str(e)
-            }
+            return {"text": "", "error": str(e)}
 
     @staticmethod
     def extract_field_value(content: str, field_name: str) -> str | None:
@@ -107,9 +98,9 @@ class AssetExtractor:
         # 常见模式匹配
         patterns = [
             # "字段名：值" 或 "字段名: 值"
-            rf'{field_name}[：:]\s*([^\n]+)',
+            rf"{field_name}[：:]\s*([^\n]+)",
             # "字段名  值" (多个空格)
-            rf'{field_name}\s+([^\n]+)',
+            rf"{field_name}\s+([^\n]+)",
         ]
 
         for pattern in patterns:
@@ -143,13 +134,13 @@ class ContentFiller:
             if keyword in para.text:
                 # 查找冒号位置
                 text = para.text
-                colon_pos = text.find('：')
+                colon_pos = text.find("：")
                 if colon_pos == -1:
-                    colon_pos = text.find(':')
+                    colon_pos = text.find(":")
 
                 if colon_pos != -1:
                     # 清空冒号后的内容并填入新值
-                    new_text = text[:colon_pos + 1] + value
+                    new_text = text[: colon_pos + 1] + value
                     # 清空所有 run 并重建
                     for run in para.runs:
                         run.text = ""
@@ -182,7 +173,9 @@ class ContentFiller:
         return False
 
     @staticmethod
-    def insert_image_at_placeholder(doc: Document, placeholder: str, image_path: Path) -> bool:
+    def insert_image_at_placeholder(
+        doc: Document, placeholder: str, image_path: Path
+    ) -> bool:
         """在占位符位置插入图片"""
         for para in doc.paragraphs:
             if placeholder in para.text:

@@ -238,5 +238,3 @@ async def archive_special_operation_permit(
         return ApiResponse(code=400, message="无法归档，当前状态不允许")
     await db.commit()
     return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
-
-

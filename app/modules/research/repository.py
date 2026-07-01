@@ -1,10 +1,10 @@
-
 """Research database queries."""
 
 import uuid
 from typing import Any
 
 from sqlalchemy import desc, func, or_, select
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.research.models import (
@@ -65,8 +65,12 @@ async def get_projects(
     query = select(ResearchProject).where(
         ResearchProject.is_deleted == False,  # noqa: E712
     )
-    count_query = select(func.count()).select_from(ResearchProject).where(
-        ResearchProject.is_deleted == False,  # noqa: E712
+    count_query = (
+        select(func.count())
+        .select_from(ResearchProject)
+        .where(
+            ResearchProject.is_deleted == False,  # noqa: E712
+        )
     )
 
     if stage:
@@ -85,17 +89,21 @@ async def get_projects(
         count_query = count_query.where(like_filter)
     if project_type is not None:
         if project_type == "":
-            query = query.where(ResearchProject.project_type == None)
-            count_query = count_query.where(ResearchProject.project_type == None)
+            query = query.where(ResearchProject.project_type is None)
+            count_query = count_query.where(ResearchProject.project_type is None)
         else:
             query = query.where(ResearchProject.project_type == project_type)
-            count_query = count_query.where(ResearchProject.project_type == project_type)
+            count_query = count_query.where(
+                ResearchProject.project_type == project_type
+            )
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(ResearchProject.updated_at.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(ResearchProject.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
@@ -116,15 +124,10 @@ async def delete_project(db: AsyncSession, project: ResearchProject) -> None:
     await db.flush()
 
 
-
-
 # ===== Pilot Workflow Repository =====
 
 
-
-async def create_workflow(
-    db: AsyncSession, data: dict[str, Any]
-) -> PilotWorkflow:
+async def create_workflow(db: AsyncSession, data: dict[str, Any]) -> PilotWorkflow:
     workflow = PilotWorkflow(**data)
     db.add(workflow)
     await db.flush()
@@ -153,8 +156,12 @@ async def get_workflows(
     query = select(PilotWorkflow).where(
         PilotWorkflow.is_deleted == False,  # noqa: E712
     )
-    count_query = select(func.count()).select_from(PilotWorkflow).where(
-        PilotWorkflow.is_deleted == False,  # noqa: E712
+    count_query = (
+        select(func.count())
+        .select_from(PilotWorkflow)
+        .where(
+            PilotWorkflow.is_deleted == False,  # noqa: E712
+        )
     )
 
     if status:
@@ -167,16 +174,16 @@ async def get_workflows(
 
     total = (await db.execute(count_query)).scalar_one()
 
-    query = query.order_by(PilotWorkflow.created_at.desc()).offset(
-        (page - 1) * page_size
-    ).limit(page_size)
+    query = (
+        query.order_by(PilotWorkflow.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(query)
     return result.scalars().all(), total
 
 
-async def delete_workflow(
-    db: AsyncSession, workflow: PilotWorkflow
-) -> None:
+async def delete_workflow(db: AsyncSession, workflow: PilotWorkflow) -> None:
     workflow.is_deleted = True
     await db.flush()
 
@@ -228,7 +235,7 @@ async def get_rd_projects(
     page_size: int = 20,
 ) -> tuple[list[RdProject], int]:
     """获取 RdProject 列表"""
-    query = select(RdProject).where(RdProject.is_deleted == False)
+    query = select(RdProject).where(not RdProject.is_deleted)
 
     if stage:
         query = query.where(RdProject.current_stage == stage)
@@ -266,15 +273,13 @@ async def get_rd_project_by_id(
     result = await db.execute(
         select(RdProject).where(
             RdProject.id == project_id,
-            RdProject.is_deleted == False,
+            not RdProject.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_rd_project(
-    db: AsyncSession, data: dict[str, Any]
-) -> RdProject:
+async def create_rd_project(db: AsyncSession, data: dict[str, Any]) -> RdProject:
     """创建 RdProject"""
     project = RdProject(**data)
     db.add(project)
@@ -295,15 +300,14 @@ async def update_rd_project(
     return project
 
 
-async def delete_rd_project(
-    db: AsyncSession, project: RdProject
-) -> None:
+async def delete_rd_project(db: AsyncSession, project: RdProject) -> None:
     """删除 RdProject（软删除）"""
     project.is_deleted = True
     await db.flush()
 
 
 # ===== RdMilestone Repository Functions =====
+
 
 async def get_milestones_by_project(
     db: AsyncSession, project_id: uuid.UUID
@@ -313,7 +317,7 @@ async def get_milestones_by_project(
         select(RdMilestone)
         .where(
             RdMilestone.project_id == project_id,
-            RdMilestone.is_deleted == False,
+            not RdMilestone.is_deleted,
         )
         .order_by(RdMilestone.planned_date.asc())
     )
@@ -327,15 +331,13 @@ async def get_milestone_by_id(
     result = await db.execute(
         select(RdMilestone).where(
             RdMilestone.id == milestone_id,
-            RdMilestone.is_deleted == False,
+            not RdMilestone.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_milestone(
-    db: AsyncSession, data: dict[str, Any]
-) -> RdMilestone:
+async def create_milestone(db: AsyncSession, data: dict[str, Any]) -> RdMilestone:
     """创建里程碑"""
     milestone = RdMilestone(**data)
     db.add(milestone)
@@ -358,6 +360,7 @@ async def update_milestone(
 
 # ===== RdStageRecord Repository Functions =====
 
+
 async def get_stages_by_project(
     db: AsyncSession, project_id: uuid.UUID
 ) -> list[RdStageRecord]:
@@ -366,7 +369,7 @@ async def get_stages_by_project(
         select(RdStageRecord)
         .where(
             RdStageRecord.project_id == project_id,
-            RdStageRecord.is_deleted == False,
+            not RdStageRecord.is_deleted,
         )
         .order_by(RdStageRecord.version.desc())
     )
@@ -380,15 +383,13 @@ async def get_stage_by_id(
     result = await db.execute(
         select(RdStageRecord).where(
             RdStageRecord.id == record_id,
-            RdStageRecord.is_deleted == False,
+            not RdStageRecord.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_stage_record(
-    db: AsyncSession, data: dict[str, Any]
-) -> RdStageRecord:
+async def create_stage_record(db: AsyncSession, data: dict[str, Any]) -> RdStageRecord:
     """创建阶段记录"""
     record = RdStageRecord(**data)
     db.add(record)
@@ -411,6 +412,7 @@ async def update_stage_record(
 
 # ===== RdResearchTrack Repository Functions =====
 
+
 async def get_tracks_by_project(
     db: AsyncSession, project_id: uuid.UUID
 ) -> list[RdResearchTrack]:
@@ -419,7 +421,7 @@ async def get_tracks_by_project(
         select(RdResearchTrack)
         .where(
             RdResearchTrack.project_id == project_id,
-            RdResearchTrack.is_deleted == False,
+            not RdResearchTrack.is_deleted,
         )
         .order_by(RdResearchTrack.created_at.desc())
     )
@@ -433,7 +435,7 @@ async def get_track_by_id(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            RdResearchTrack.is_deleted == False,
+            not RdResearchTrack.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -464,6 +466,7 @@ async def update_research_track(
 
 # ===== RdResearchFinding Repository Functions =====
 
+
 async def get_findings_by_track(
     db: AsyncSession, track_id: uuid.UUID
 ) -> list[RdResearchFinding]:
@@ -472,7 +475,7 @@ async def get_findings_by_track(
         select(RdResearchFinding)
         .where(
             RdResearchFinding.track_id == track_id,
-            RdResearchFinding.is_deleted == False,
+            not RdResearchFinding.is_deleted,
         )
         .order_by(RdResearchFinding.version.desc())
     )
@@ -486,7 +489,7 @@ async def get_finding_by_id(
     result = await db.execute(
         select(RdResearchFinding).where(
             RdResearchFinding.id == finding_id,
-            RdResearchFinding.is_deleted == False,
+            not RdResearchFinding.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -532,7 +535,7 @@ async def get_pilot_studies_by_project(
         select(RdPilotStudy)
         .where(
             RdPilotStudy.project_id == project_id,
-            RdPilotStudy.is_deleted == False,
+            not RdPilotStudy.is_deleted,
         )
         .order_by(RdPilotStudy.created_at.desc())
     )
@@ -546,15 +549,13 @@ async def get_pilot_study_by_id(
     result = await db.execute(
         select(RdPilotStudy).where(
             RdPilotStudy.id == study_id,
-            RdPilotStudy.is_deleted == False,
+            not RdPilotStudy.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_pilot_study(
-    db: AsyncSession, data: dict[str, Any]
-) -> RdPilotStudy:
+async def create_pilot_study(db: AsyncSession, data: dict[str, Any]) -> RdPilotStudy:
     """创建中试研究记录"""
     study = RdPilotStudy(**data)
     db.add(study)
@@ -577,6 +578,7 @@ async def update_pilot_study(
 
 # ===== RdProcessValidation Repository Functions =====
 
+
 async def get_validations_by_project(
     db: AsyncSession, project_id: uuid.UUID
 ) -> list[RdProcessValidation]:
@@ -585,7 +587,7 @@ async def get_validations_by_project(
         select(RdProcessValidation)
         .where(
             RdProcessValidation.project_id == project_id,
-            RdProcessValidation.is_deleted == False,
+            not RdProcessValidation.is_deleted,
         )
         .order_by(RdProcessValidation.created_at.desc())
     )
@@ -599,7 +601,7 @@ async def get_validation_by_id(
     result = await db.execute(
         select(RdProcessValidation).where(
             RdProcessValidation.id == validation_id,
-            RdProcessValidation.is_deleted == False,
+            not RdProcessValidation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -630,6 +632,7 @@ async def update_validation(
 
 # ===== RdRegistrationFiling Repository Functions =====
 
+
 async def get_filings_by_project(
     db: AsyncSession, project_id: uuid.UUID
 ) -> list[RdRegistrationFiling]:
@@ -638,7 +641,7 @@ async def get_filings_by_project(
         select(RdRegistrationFiling)
         .where(
             RdRegistrationFiling.project_id == project_id,
-            RdRegistrationFiling.is_deleted == False,
+            not RdRegistrationFiling.is_deleted,
         )
         .order_by(RdRegistrationFiling.created_at.desc())
     )
@@ -652,15 +655,13 @@ async def get_filing_by_id(
     result = await db.execute(
         select(RdRegistrationFiling).where(
             RdRegistrationFiling.id == filing_id,
-            RdRegistrationFiling.is_deleted == False,
+            not RdRegistrationFiling.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_filing(
-    db: AsyncSession, data: dict[str, Any]
-) -> RdRegistrationFiling:
+async def create_filing(db: AsyncSession, data: dict[str, Any]) -> RdRegistrationFiling:
     """创建申报资料记录"""
     filing = RdRegistrationFiling(**data)
     db.add(filing)
@@ -682,6 +683,7 @@ async def update_filing(
 
 
 # ===== RdStageDeliverable Repository =====
+
 
 async def create_rd_stage_deliverable(
     db: AsyncSession, data: dict
@@ -728,7 +730,9 @@ async def list_rd_stage_deliverables(
         count_query = count_query.where(RdStageDeliverable.stage == stage)
     if deliverable_type:
         query = query.where(RdStageDeliverable.deliverable_type == deliverable_type)
-        count_query = count_query.where(RdStageDeliverable.deliverable_type == deliverable_type)
+        count_query = count_query.where(
+            RdStageDeliverable.deliverable_type == deliverable_type
+        )
     if status:
         query = query.where(RdStageDeliverable.status == status)
         count_query = count_query.where(RdStageDeliverable.status == status)
@@ -769,9 +773,7 @@ async def delete_pilot_study(
     db: AsyncSession, study_id: uuid.UUID, user_id: uuid.UUID | None = None
 ) -> None:
     """软删除中试研究"""
-    result = await db.execute(
-        select(RdPilotStudy).where(RdPilotStudy.id == study_id)
-    )
+    result = await db.execute(select(RdPilotStudy).where(RdPilotStudy.id == study_id))
     study = result.scalar_one_or_none()
     if not study:
         raise HTTPException(status_code=404, detail="中试研究不存在")
@@ -815,41 +817,41 @@ async def delete_filing(
 
 # ===== RdExperimentLog Repository Functions =====
 
+
 async def get_experiment_logs_by_project(
     db: AsyncSession, project_id: uuid.UUID
 ) -> list:
     """获取项目的所有实验记录"""
     from app.modules.research.models import RdExperimentLog
+
     result = await db.execute(
         select(RdExperimentLog)
         .where(
             RdExperimentLog.project_id == project_id,
-            RdExperimentLog.is_deleted == False,
+            not RdExperimentLog.is_deleted,
         )
         .order_by(RdExperimentLog.created_at.desc())
     )
     return list(result.scalars().all())
 
 
-async def get_experiment_log_by_id(
-    db: AsyncSession, log_id: uuid.UUID
-):
+async def get_experiment_log_by_id(db: AsyncSession, log_id: uuid.UUID):
     """根据 ID 获取实验记录"""
     from app.modules.research.models import RdExperimentLog
+
     result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.id == log_id,
-            RdExperimentLog.is_deleted == False,
+            not RdExperimentLog.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_experiment_log(
-    db: AsyncSession, data: dict[str, Any]
-):
+async def create_experiment_log(db: AsyncSession, data: dict[str, Any]):
     """创建实验记录"""
     from app.modules.research.models import RdExperimentLog
+
     log = RdExperimentLog(**data)
     db.add(log)
     await db.flush()
@@ -857,9 +859,7 @@ async def create_experiment_log(
     return log
 
 
-async def update_experiment_log(
-    db: AsyncSession, log, data: dict[str, Any]
-):
+async def update_experiment_log(db: AsyncSession, log, data: dict[str, Any]):
     """更新实验记录"""
     for key, value in data.items():
         if value is not None:
@@ -874,10 +874,11 @@ async def delete_experiment_log(
 ) -> None:
     """删除实验记录"""
     from app.modules.research.models import RdExperimentLog
+
     result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.id == log_id,
-            RdExperimentLog.is_deleted == False,
+            not RdExperimentLog.is_deleted,
         )
     )
     log = result.scalar_one_or_none()
@@ -890,41 +891,39 @@ async def delete_experiment_log(
 
 # ===== RdReport Repository Functions =====
 
-async def get_reports_by_project(
-    db: AsyncSession, project_id: uuid.UUID
-) -> list:
+
+async def get_reports_by_project(db: AsyncSession, project_id: uuid.UUID) -> list:
     """获取项目的所有研发报告"""
     from app.modules.research.models import RdReport
+
     result = await db.execute(
         select(RdReport)
         .where(
             RdReport.project_id == project_id,
-            RdReport.is_deleted == False,
+            not RdReport.is_deleted,
         )
         .order_by(RdReport.created_at.desc())
     )
     return list(result.scalars().all())
 
 
-async def get_report_by_id(
-    db: AsyncSession, report_id: uuid.UUID
-):
+async def get_report_by_id(db: AsyncSession, report_id: uuid.UUID):
     """根据 ID 获取研发报告"""
     from app.modules.research.models import RdReport
+
     result = await db.execute(
         select(RdReport).where(
             RdReport.id == report_id,
-            RdReport.is_deleted == False,
+            not RdReport.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_report(
-    db: AsyncSession, data: dict[str, Any]
-):
+async def create_report(db: AsyncSession, data: dict[str, Any]):
     """创建研发报告"""
     from app.modules.research.models import RdReport
+
     report = RdReport(**data)
     db.add(report)
     await db.flush()
@@ -932,9 +931,7 @@ async def create_report(
     return report
 
 
-async def update_report(
-    db: AsyncSession, report, data: dict[str, Any]
-):
+async def update_report(db: AsyncSession, report, data: dict[str, Any]):
     """更新研发报告"""
     for key, value in data.items():
         if value is not None:
@@ -949,10 +946,11 @@ async def delete_report(
 ) -> None:
     """删除研发报告"""
     from app.modules.research.models import RdReport
+
     result = await db.execute(
         select(RdReport).where(
             RdReport.id == report_id,
-            RdReport.is_deleted == False,
+            not RdReport.is_deleted,
         )
     )
     report = result.scalar_one_or_none()
@@ -965,41 +963,39 @@ async def delete_report(
 
 # ===== RdInitiation Repository Functions =====
 
-async def get_initiations_by_project(
-    db: AsyncSession, project_id: uuid.UUID
-) -> list:
+
+async def get_initiations_by_project(db: AsyncSession, project_id: uuid.UUID) -> list:
     """获取项目的所有立项申请"""
     from app.modules.research.models import RdInitiation
+
     result = await db.execute(
         select(RdInitiation)
         .where(
             RdInitiation.project_id == project_id,
-            RdInitiation.is_deleted == False,
+            not RdInitiation.is_deleted,
         )
         .order_by(RdInitiation.created_at.desc())
     )
     return list(result.scalars().all())
 
 
-async def get_initiation_by_id(
-    db: AsyncSession, initiation_id: uuid.UUID
-):
+async def get_initiation_by_id(db: AsyncSession, initiation_id: uuid.UUID):
     """根据 ID 获取立项申请"""
     from app.modules.research.models import RdInitiation
+
     result = await db.execute(
         select(RdInitiation).where(
             RdInitiation.id == initiation_id,
-            RdInitiation.is_deleted == False,
+            not RdInitiation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_initiation(
-    db: AsyncSession, data: dict[str, Any]
-):
+async def create_initiation(db: AsyncSession, data: dict[str, Any]):
     """创建立项申请"""
     from app.modules.research.models import RdInitiation
+
     initiation = RdInitiation(**data)
     db.add(initiation)
     await db.flush()
@@ -1007,9 +1003,7 @@ async def create_initiation(
     return initiation
 
 
-async def update_initiation(
-    db: AsyncSession, initiation, data: dict[str, Any]
-):
+async def update_initiation(db: AsyncSession, initiation, data: dict[str, Any]):
     """更新立项申请"""
     for key, value in data.items():
         if value is not None:
@@ -1024,10 +1018,11 @@ async def delete_initiation(
 ) -> None:
     """删除立项申请"""
     from app.modules.research.models import RdInitiation
+
     result = await db.execute(
         select(RdInitiation).where(
             RdInitiation.id == initiation_id,
-            RdInitiation.is_deleted == False,
+            not RdInitiation.is_deleted,
         )
     )
     initiation = result.scalar_one_or_none()
@@ -1040,27 +1035,26 @@ async def delete_initiation(
 
 # ===== RdTrackConclusionVersion Repository Functions =====
 
-async def get_conclusion_versions(
-    db: AsyncSession, track_id: uuid.UUID
-) -> list:
+
+async def get_conclusion_versions(db: AsyncSession, track_id: uuid.UUID) -> list:
     """获取研究项的结论版本历史"""
     from app.modules.research.models import RdTrackConclusionVersion
+
     result = await db.execute(
         select(RdTrackConclusionVersion)
         .where(
             RdTrackConclusionVersion.track_id == track_id,
-            RdTrackConclusionVersion.is_deleted == False,
+            not RdTrackConclusionVersion.is_deleted,
         )
         .order_by(RdTrackConclusionVersion.version.desc())
     )
     return list(result.scalars().all())
 
 
-async def create_conclusion_version(
-    db: AsyncSession, data: dict[str, Any]
-):
+async def create_conclusion_version(db: AsyncSession, data: dict[str, Any]):
     """创建结论版本"""
     from app.modules.research.models import RdTrackConclusionVersion
+
     version = RdTrackConclusionVersion(**data)
     db.add(version)
     await db.flush()
@@ -1068,16 +1062,15 @@ async def create_conclusion_version(
     return version
 
 
-async def get_latest_conclusion_version(
-    db: AsyncSession, track_id: uuid.UUID
-):
+async def get_latest_conclusion_version(db: AsyncSession, track_id: uuid.UUID):
     """获取最新结论版本"""
     from app.modules.research.models import RdTrackConclusionVersion
+
     result = await db.execute(
         select(RdTrackConclusionVersion)
         .where(
             RdTrackConclusionVersion.track_id == track_id,
-            RdTrackConclusionVersion.is_deleted == False,
+            not RdTrackConclusionVersion.is_deleted,
         )
         .order_by(RdTrackConclusionVersion.version.desc())
         .limit(1)
@@ -1087,6 +1080,7 @@ async def get_latest_conclusion_version(
 
 # ===== RdDeliverableTemplate Repository Functions =====
 
+
 async def get_deliverable_templates(
     db: AsyncSession,
     stage: str | None = None,
@@ -1095,8 +1089,9 @@ async def get_deliverable_templates(
 ) -> list:
     """获取交付物模板列表"""
     from app.modules.research.models import RdDeliverableTemplate
+
     query = select(RdDeliverableTemplate).where(
-        RdDeliverableTemplate.is_deleted == False,
+        not RdDeliverableTemplate.is_deleted,
     )
     if stage:
         query = query.where(RdDeliverableTemplate.stage == stage)
@@ -1109,25 +1104,23 @@ async def get_deliverable_templates(
     return list(result.scalars().all())
 
 
-async def get_deliverable_template_by_id(
-    db: AsyncSession, template_id: uuid.UUID
-):
+async def get_deliverable_template_by_id(db: AsyncSession, template_id: uuid.UUID):
     """根据 ID 获取交付物模板"""
     from app.modules.research.models import RdDeliverableTemplate
+
     result = await db.execute(
         select(RdDeliverableTemplate).where(
             RdDeliverableTemplate.id == template_id,
-            RdDeliverableTemplate.is_deleted == False,
+            not RdDeliverableTemplate.is_deleted,
         )
     )
     return result.scalar_one_or_none()
 
 
-async def create_deliverable_template(
-    db: AsyncSession, data: dict[str, Any]
-):
+async def create_deliverable_template(db: AsyncSession, data: dict[str, Any]):
     """创建交付物模板"""
     from app.modules.research.models import RdDeliverableTemplate
+
     template = RdDeliverableTemplate(**data)
     db.add(template)
     await db.flush()
@@ -1135,9 +1128,7 @@ async def create_deliverable_template(
     return template
 
 
-async def update_deliverable_template(
-    db: AsyncSession, template, data: dict[str, Any]
-):
+async def update_deliverable_template(db: AsyncSession, template, data: dict[str, Any]):
     """更新交付物模板"""
     for key, value in data.items():
         if value is not None:
@@ -1152,10 +1143,11 @@ async def delete_deliverable_template(
 ) -> None:
     """删除交付物模板"""
     from app.modules.research.models import RdDeliverableTemplate
+
     result = await db.execute(
         select(RdDeliverableTemplate).where(
             RdDeliverableTemplate.id == template_id,
-            RdDeliverableTemplate.is_deleted == False,
+            not RdDeliverableTemplate.is_deleted,
         )
     )
     template = result.scalar_one_or_none()

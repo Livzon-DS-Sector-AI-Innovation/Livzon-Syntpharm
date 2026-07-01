@@ -224,8 +224,8 @@ class PurchaseRequestRepository:
         page: int | None = None,
         page_size: int | None = None,
     ) -> tuple[list[tuple[PurchaseRequest, PurchaseRequestItem]], int]:
-        request_item_match = (
-            PurchaseRequestItem.purchase_request_id == cast(PurchaseRequest.id, String)
+        request_item_match = PurchaseRequestItem.purchase_request_id == cast(
+            PurchaseRequest.id, String
         )
         filters = [
             PurchaseRequest.is_deleted.is_(False),

@@ -68,9 +68,9 @@ def _resolve_local_path(file_path: str) -> str | None:
     #      uploads/safety/hazard/f.jpg  →  safety/hazard/f.jpg  →  OK
     #      safety/hazard/f.jpg          →  safety/hazard/f.jpg  →  OK
     if file_path.startswith("uploads/"):
-        relative = file_path[len("uploads/"):]
+        relative = file_path[len("uploads/") :]
     elif file_path.startswith("uploads\\"):
-        relative = file_path[len("uploads\\"):]
+        relative = file_path[len("uploads\\") :]
     else:
         relative = file_path
     candidate = os.path.normpath(os.path.join(uploads_base, relative))

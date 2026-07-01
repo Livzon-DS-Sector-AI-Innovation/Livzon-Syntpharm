@@ -77,9 +77,7 @@ class BitableDataSource:
     async def get_by_field(self, field_name: str, value: str) -> dict[str, Any] | None:
         """根据单个字段精确查找一行。"""
         # 注意：field_name 是飞书字段名，如果包含特殊字符建议用 field_id
-        items = await self.query(
-            filter_str=f'CurrentValue.[{field_name}] = "{value}"'
-        )
+        items = await self.query(filter_str=f'CurrentValue.[{field_name}] = "{value}"')
         return items[0] if items else None
 
     # ─── 批量同步（本地 PostgreSQL ↔ 多维表格） ───
@@ -140,7 +138,9 @@ class BitableDataSource:
     # ─── 字段类型转换辅助 ───
 
     @staticmethod
-    def prepare_fields(raw: dict[str, Any], date_fields: set[str] | None = None) -> dict[str, Any]:
+    def prepare_fields(
+        raw: dict[str, Any], date_fields: set[str] | None = None
+    ) -> dict[str, Any]:
         """将 Python 原生类型转换为飞书多维表格接受的格式。
 
         自动处理：

@@ -74,5 +74,3 @@ class SetExamConclusionRequest(BaseModel):
 
     conclusion: str = Field(..., description="体检结论")
     remarks: str | None = Field(None, description="备注")
-
-

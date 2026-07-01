@@ -23,7 +23,7 @@ async def get_drugs(db: AsyncSession) -> list[Drug]:
     query = (
         select(Drug)
         .where(Drug.is_deleted == False)  # noqa: E712
-        .options(selectinload(Drug.nodes.and_(DrugNode.is_deleted == False)))
+        .options(selectinload(Drug.nodes.and_(not DrugNode.is_deleted)))
         .order_by(Drug.created_at)
     )
     result = await db.execute(query)
@@ -35,7 +35,7 @@ async def get_drug_by_id(db: AsyncSession, drug_id: uuid.UUID) -> Drug | None:
     query = (
         select(Drug)
         .where(Drug.id == drug_id, Drug.is_deleted == False)  # noqa: E712
-        .options(selectinload(Drug.nodes.and_(DrugNode.is_deleted == False)))
+        .options(selectinload(Drug.nodes.and_(not DrugNode.is_deleted)))
     )
     result = await db.execute(query)
     return result.scalar_one_or_none()
@@ -93,13 +93,10 @@ async def update_drug_node(
     data: dict[str, Any],
 ) -> DrugNode | None:
     """更新药品节点"""
-    query = (
-        select(DrugNode)
-        .where(
-            DrugNode.drug_id == drug_id,
-            DrugNode.node_index == node_index,
-            DrugNode.is_deleted == False,  # noqa: E712
-        )
+    query = select(DrugNode).where(
+        DrugNode.drug_id == drug_id,
+        DrugNode.node_index == node_index,
+        DrugNode.is_deleted == False,  # noqa: E712
     )
     result = await db.execute(query)
     node = result.scalar_one_or_none()

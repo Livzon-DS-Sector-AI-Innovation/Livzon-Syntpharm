@@ -6,15 +6,18 @@ __all__ = ["router"]
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_energy_collection():
     """Start energy module's data collection loop."""
     from app.modules.energy.scheduler import energy_collection_loop
+
     await energy_collection_loop()
 
 
 async def _stop_energy_collection():
     """Stop energy module's data collection loop."""
     from app.modules.energy.scheduler import stop_energy_collection_flag
+
     stop_energy_collection_flag.set()
 
 

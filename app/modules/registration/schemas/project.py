@@ -7,8 +7,15 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 ProjectStatus = Literal[
-    "draft", "preparing", "submitted", "accepted",
-    "under_review", "supplementary", "approved", "withdrawn", "terminated"
+    "draft",
+    "preparing",
+    "submitted",
+    "accepted",
+    "under_review",
+    "supplementary",
+    "approved",
+    "withdrawn",
+    "terminated",
 ]
 
 

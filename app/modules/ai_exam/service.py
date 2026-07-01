@@ -55,7 +55,9 @@ def _parse_file(file_bytes: bytes, filename: str) -> dict:
     return _extract_text_content(file_bytes)
 
 
-def _build_prompt(full_text: str, bold_texts: list[str], config: dict | None = None) -> str:
+def _build_prompt(
+    full_text: str, bold_texts: list[str], config: dict | None = None
+) -> str:
     """Build AI prompt with configurable question types and counts."""
     if config:
         choice_count = config.get("choice_count", 5)
@@ -74,7 +76,9 @@ def _build_prompt(full_text: str, bold_texts: list[str], config: dict | None = N
     req_lines = []
     i = 1
     if choice_count > 0:
-        req_lines.append(f"{i}. 出 {choice_count} 道单选题（每道 4 个选项 A/B/C/D，只有一个正确答案）")
+        req_lines.append(
+            f"{i}. 出 {choice_count} 道单选题（每道 4 个选项 A/B/C/D，只有一个正确答案）"
+        )
         i += 1
     if tf_count > 0:
         req_lines.append(f"{i}. 出 {tf_count} 道判断题（正确/错误）")
@@ -90,9 +94,13 @@ def _build_prompt(full_text: str, bold_texts: list[str], config: dict | None = N
 
     json_parts = []
     if choice_count > 0:
-        json_parts.append('"choice_questions": [{"question": "...", "options": [{"label": "A", "text": "..."}, {"label": "B", "text": "..."}, {"label": "C", "text": "..."}, {"label": "D", "text": "..."}], "answer": "A"}]')
+        json_parts.append(
+            '"choice_questions": [{"question": "...", "options": [{"label": "A", "text": "..."}, {"label": "B", "text": "..."}, {"label": "C", "text": "..."}, {"label": "D", "text": "..."}], "answer": "A"}]'
+        )
     if tf_count > 0:
-        json_parts.append('"true_false_questions": [{"question": "...", "answer": "正确"}]')
+        json_parts.append(
+            '"true_false_questions": [{"question": "...", "answer": "正确"}]'
+        )
     if qa_count > 0:
         json_parts.append('"qa_questions": [{"question": "...", "answer": "参考答案"}]')
 
@@ -108,7 +116,9 @@ def _build_prompt(full_text: str, bold_texts: list[str], config: dict | None = N
 {full_text[:8000]}{bold_hint}"""
 
 
-async def generate_exam(file_bytes: bytes, filename: str, config: dict | None = None) -> dict:
+async def generate_exam(
+    file_bytes: bytes, filename: str, config: dict | None = None
+) -> dict:
     """Generate exam questions from uploaded file."""
     content = _parse_file(file_bytes, filename)
     if not content["full_text"].strip():
@@ -117,7 +127,10 @@ async def generate_exam(file_bytes: bytes, filename: str, config: dict | None = 
     bold_texts = content["bold_texts"]
     logger.info(
         "AI exam: %d chars, %d bold segments from %s, config=%s",
-        len(content["full_text"]), len(bold_texts), filename, config,
+        len(content["full_text"]),
+        len(bold_texts),
+        filename,
+        config,
     )
 
     settings = get_settings()
@@ -137,7 +150,10 @@ async def generate_exam(file_bytes: bytes, filename: str, config: dict | None = 
             json={
                 "model": settings.HR_AI_MODEL,
                 "messages": [
-                    {"role": "system", "content": "你是一名严谨的考核出题老师，只输出 JSON。"},
+                    {
+                        "role": "system",
+                        "content": "你是一名严谨的考核出题老师，只输出 JSON。",
+                    },
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.7,

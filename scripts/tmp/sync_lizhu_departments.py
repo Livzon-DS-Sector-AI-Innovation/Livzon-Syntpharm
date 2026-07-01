@@ -22,7 +22,9 @@ from app.core.database import async_session_factory  # noqa: E402
 from app.platform.identity.models import Department  # noqa: E402
 
 # 从 .env 读取同步目标（缺省福州福兴）
-_DEPT_ID = os.environ.get("FEISHU_SYNC_ROOT_DEPT_ID", "od-071212463565ebca263941d217cb6e52")
+_DEPT_ID = os.environ.get(
+    "FEISHU_SYNC_ROOT_DEPT_ID", "od-071212463565ebca263941d217cb6e52"
+)
 CONCURRENCY = 15
 
 
@@ -39,6 +41,7 @@ async def _get_client_and_token(settings: Settings):
         InternalTenantAccessTokenRequest,
         InternalTenantAccessTokenRequestBody,
     )
+
     req = (
         InternalTenantAccessTokenRequest.builder()
         .request_body(
@@ -57,7 +60,9 @@ async def _get_client_and_token(settings: Settings):
 
 
 async def _fetch_children(
-    client, token: str, parent_id: str,
+    client,
+    token: str,
+    parent_id: str,
 ) -> list[dict]:
     """获取某部门所有直接子部门"""
     from lark_oapi.api.contact.v3 import ListDepartmentRequest
@@ -89,15 +94,17 @@ async def _fetch_children(
                 order_val = int(it.get("order", "0") or "0")
             except (ValueError, TypeError):
                 order_val = 0
-            items.append({
-                "department_id": oid,
-                "name": name,
-                "parent_department_id": parent_id,
-                "leader_user_id": it.get("leader_user_id", "") or "",
-                "member_count": it.get("member_count", 0) or 0,
-                "status_is_deleted": False,
-                "order": order_val,
-            })
+            items.append(
+                {
+                    "department_id": oid,
+                    "name": name,
+                    "parent_department_id": parent_id,
+                    "leader_user_id": it.get("leader_user_id", "") or "",
+                    "member_count": it.get("member_count", 0) or 0,
+                    "status_is_deleted": False,
+                    "order": order_val,
+                }
+            )
         if not data.get("has_more"):
             break
         page_token = data.get("page_token", "")
@@ -119,6 +126,7 @@ async def main():
 
     # 获取丽珠自身
     from lark_oapi.api.contact.v3 import GetDepartmentRequest
+
     req = (
         GetDepartmentRequest.builder()
         .department_id_type("open_department_id")
@@ -134,13 +142,17 @@ async def main():
 
     # 并发 BFS
     sem = asyncio.Semaphore(CONCURRENCY)
-    all_depts: list[dict] = [{
-        "department_id": _DEPT_ID, "name": root_name,
-        "parent_department_id": "",
-        "leader_user_id": root_info.get("leader_user_id", "") or "",
-        "member_count": root_info.get("member_count", 0) or 0,
-        "status_is_deleted": False, "order": 0,
-    }]
+    all_depts: list[dict] = [
+        {
+            "department_id": _DEPT_ID,
+            "name": root_name,
+            "parent_department_id": "",
+            "leader_user_id": root_info.get("leader_user_id", "") or "",
+            "member_count": root_info.get("member_count", 0) or 0,
+            "status_is_deleted": False,
+            "order": 0,
+        }
+    ]
     visited: set[str] = {_DEPT_ID}
     queue: list[tuple[str, str]] = [(_DEPT_ID, root_name)]
 
@@ -189,13 +201,17 @@ async def main():
                 existing.status_is_deleted = d["status_is_deleted"]
                 existing.order = d["order"]
             else:
-                db.add(Department(
-                    feishu_department_id=d["department_id"], name=d["name"],
-                    parent_feishu_department_id=d["parent_department_id"] or None,
-                    leader_user_id=d["leader_user_id"] or None,
-                    member_count=d["member_count"],
-                    status_is_deleted=d["status_is_deleted"], order=d["order"],
-                ))
+                db.add(
+                    Department(
+                        feishu_department_id=d["department_id"],
+                        name=d["name"],
+                        parent_feishu_department_id=d["parent_department_id"] or None,
+                        leader_user_id=d["leader_user_id"] or None,
+                        member_count=d["member_count"],
+                        status_is_deleted=d["status_is_deleted"],
+                        order=d["order"],
+                    )
+                )
         await db.commit()
 
     print(f"✅ 完成: {len(all_depts)} 个部门 | 总耗时 {time.time() - t0:.1f}s")

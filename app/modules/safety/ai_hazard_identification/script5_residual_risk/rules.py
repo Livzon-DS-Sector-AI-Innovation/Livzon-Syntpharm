@@ -39,13 +39,13 @@ class ResidualRiskRuleEngine:
         # 1. 全 null 检查
         if lec.is_unconfirmed:
             if lec.d_value is not None or lec.risk_level is not None:
-                errors.append(
-                    "L/E/C 中有 null 值，但 D 或 risk_level 不为 null"
-                )
+                errors.append("L/E/C 中有 null 值，但 D 或 risk_level 不为 null")
             return errors
 
         # 2. D = L×E×C 校验
-        if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)):
+        if all(
+            v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)
+        ):
             expected_d = lec.l_value * lec.e_value * lec.c_value
             if expected_d > 0:
                 deviation = abs(lec.d_value - expected_d) / expected_d
@@ -59,7 +59,11 @@ class ResidualRiskRuleEngine:
             ranges = RISK_LEVEL_RANGES.get(lec.risk_level)
             if ranges:
                 min_d, max_d = ranges
-                if not (min_d <= lec.d_value < max_d if max_d != float("inf") else lec.d_value >= min_d):
+                if not (
+                    min_d <= lec.d_value < max_d
+                    if max_d != float("inf")
+                    else lec.d_value >= min_d
+                ):
                     errors.append(
                         f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致"
                     )
@@ -85,7 +89,8 @@ class ResidualRiskRuleEngine:
                 logger.warning(
                     "残余 C=%s 较固有 C=%s 下降超过 50%%，"
                     "但未发现可降低后果严重性的工程措施（防爆/泄压），请人工审核",
-                    lec.c_value, input_data.c_inherent,
+                    lec.c_value,
+                    input_data.c_inherent,
                 )
 
         return errors
@@ -96,6 +101,9 @@ def auto_correct(output: ResidualRiskOutput) -> ResidualRiskOutput:
     lec = output.lec
     if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value)):
         calculated_d = lec.l_value * lec.e_value * lec.c_value
-        if lec.d_value is None or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1:
+        if (
+            lec.d_value is None
+            or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1
+        ):
             lec.d_value = calculated_d
     return output

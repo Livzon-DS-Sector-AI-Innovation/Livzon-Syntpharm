@@ -1,4 +1,5 @@
 """Tests for app.core.tasks spawn_task utility."""
+
 from __future__ import annotations
 
 import pytest
@@ -23,6 +24,7 @@ async def test_spawn_task_success():
 @pytest.mark.asyncio
 async def test_spawn_task_error_handling():
     """Test that spawn_task catches and logs exceptions."""
+
     async def failing_coro():
         raise ValueError("Test error")
 
@@ -37,6 +39,7 @@ async def test_spawn_task_error_handling():
 @pytest.mark.asyncio
 async def test_spawn_task_with_name():
     """Test that spawn_task accepts and uses custom names."""
+
     async def test_coro():
         pass
 
@@ -48,6 +51,7 @@ async def test_spawn_task_with_name():
 @pytest.mark.asyncio
 async def test_spawn_task_default_name():
     """Test that spawn_task generates default names."""
+
     async def test_coro():
         pass
 

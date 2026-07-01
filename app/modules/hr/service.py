@@ -65,6 +65,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Feishu field mapping helpers ───
 
+
 def _extract_text(value) -> str:
     """Extract text from Feishu array format or plain string."""
     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
@@ -86,7 +87,11 @@ def _extract_number(value) -> int | None:
     if isinstance(value, (int, float)):
         return int(value)
     if isinstance(value, dict):
-        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
+        if (
+            "value" in value
+            and isinstance(value["value"], list)
+            and len(value["value"]) > 0
+        ):
             return int(value["value"][0])
     return None
 
@@ -117,7 +122,9 @@ def _parse_feishu_record(record: dict) -> dict:
         "position": _extract_text(gt("职位")),
         "job_category": gt("职类") or "",
         "level": gt("级别") or "",
-        "qualifications": gt("职称／职业资格") if isinstance(gt("职称／职业资格"), list) else None,
+        "qualifications": gt("职称／职业资格")
+        if isinstance(gt("职称／职业资格"), list)
+        else None,
         "qualification_type": gt("职称类型") or "",
         "gender": gt("性别") or "",
         "native_place": _extract_text(gt("籍贯")),
@@ -177,11 +184,17 @@ def _parse_feishu_record(record: dict) -> dict:
         data["feishu_synced_at"] = date.today()
 
     # Remove empty strings for optional text fields to avoid overwriting existing data
-    cleaned = {k: v for k, v in data.items() if v != "" or k in ("department", "name", "employee_number", "status", "position")}
+    cleaned = {
+        k: v
+        for k, v in data.items()
+        if v != ""
+        or k in ("department", "name", "employee_number", "status", "position")
+    }
     return cleaned
 
 
 # ─── Services ───
+
 
 class EmployeeService:
     def __init__(self, session: AsyncSession) -> None:
@@ -216,7 +229,9 @@ class EmployeeService:
 
                 im = FeishuIM()
                 # 飞书接口要求手机号带 +86 区号
-                mobile = data.phone if data.phone.startswith("+") else f"+86{data.phone}"
+                mobile = (
+                    data.phone if data.phone.startswith("+") else f"+86{data.phone}"
+                )
                 mapping = await im.batch_get_open_ids_by_mobile([mobile])
                 open_id = mapping.get(mobile) or mapping.get(data.phone)
                 if open_id:
@@ -304,16 +319,28 @@ class EmployeeService:
     }
 
     _DATE_FIELDS: set[str] = {
-        "work_start_date", "factory_entry_date", "livo_entry_date",
-        "hire_date", "graduation_date", "id_card_expiry",
-        "contract_start_date", "contract_end_date",
-        "contract_start_2", "contract_end_2",
-        "contract_start_3", "contract_end_3",
-        "contract_start_4", "contract_end_4",
+        "work_start_date",
+        "factory_entry_date",
+        "livo_entry_date",
+        "hire_date",
+        "graduation_date",
+        "id_card_expiry",
+        "contract_start_date",
+        "contract_end_date",
+        "contract_start_2",
+        "contract_end_2",
+        "contract_start_3",
+        "contract_end_3",
+        "contract_start_4",
+        "contract_end_4",
     }
 
     _INT_FIELDS: set[str] = {
-        "birth_year", "birth_month", "birth_day", "age", "work_years",
+        "birth_year",
+        "birth_month",
+        "birth_day",
+        "age",
+        "work_years",
     }
 
     async def upload_employees(self, file_bytes: bytes) -> dict:
@@ -371,9 +398,14 @@ class EmployeeService:
                     errors.append(f"第{row_idx}行: 缺少工号")
                     continue
 
-                existing = await self.repo.get_by_employee_number(data["employee_number"])
+                existing = await self.repo.get_by_employee_number(
+                    data["employee_number"]
+                )
                 if existing:
-                    if "department" in data and data["department"] != existing.department:
+                    if (
+                        "department" in data
+                        and data["department"] != existing.department
+                    ):
                         existing.department = data["department"]
                         await self.repo.session.flush()
                     if "position" in data and data["position"] != existing.position:
@@ -409,12 +441,16 @@ class EmployeeService:
 
         return result
 
-    async def update_employee(self, employee_id: UUID, data: EmployeeUpdate) -> Employee:
+    async def update_employee(
+        self, employee_id: UUID, data: EmployeeUpdate
+    ) -> Employee:
         employee = await self.get_employee(employee_id)
         update_data = data.model_dump(exclude_unset=True)
 
         if "employee_number" in update_data:
-            existing = await self.repo.get_by_employee_number(update_data["employee_number"])
+            existing = await self.repo.get_by_employee_number(
+                update_data["employee_number"]
+            )
             if existing and existing.id != employee_id:
                 raise DuplicateException("工号", update_data["employee_number"])
 
@@ -576,12 +612,21 @@ class EmployeeService:
 
                 await self.repo.upsert_by_employee_number(parsed)
                 existing = await self.repo.get_by_employee_number(emp_no)
-                if existing and existing.created_at and (datetime.utcnow() - existing.created_at.replace(tzinfo=None)).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception as e:
-                logger.error("Failed to sync Feishu record %s: %s", rec.get("record_id"), e)
+                logger.error(
+                    "Failed to sync Feishu record %s: %s", rec.get("record_id"), e
+                )
                 stats["failed"] += 1
 
         return stats
@@ -687,7 +732,9 @@ class EmployeeService:
         if employee.graduation_date:
             fields["毕业时间"] = _to_ms_timestamp(employee.graduation_date)
         if employee.contract_start_date:
-            fields["第一次合同起点时间"] = _to_ms_timestamp(employee.contract_start_date)
+            fields["第一次合同起点时间"] = _to_ms_timestamp(
+                employee.contract_start_date
+            )
         if employee.contract_end_date:
             fields["第一次合同终止时间"] = _to_ms_timestamp(employee.contract_end_date)
         if employee.contract_start_2:
@@ -745,7 +792,11 @@ class EmployeeService:
         if not rows:
             raise ValueError("文件为空")
         header = [str(c).strip() if c else "" for c in rows[0]]
-        col_map = {idx: self._PLAN_COLUMN_MAP[h] for idx, h in enumerate(header) if h in self._PLAN_COLUMN_MAP}
+        col_map = {
+            idx: self._PLAN_COLUMN_MAP[h]
+            for idx, h in enumerate(header)
+            if h in self._PLAN_COLUMN_MAP
+        }
 
         plan_cache: dict[tuple, AnnualTrainingPlan] = {}
         created, updated, errors = 0, 0, []
@@ -770,7 +821,8 @@ class EmployeeService:
                 dept = data.get("department", "")
                 year = data.get("year", 2026)
                 if not dept:
-                    errors.append(f"第{row_idx}行: 缺少部门"); continue
+                    errors.append(f"第{row_idx}行: 缺少部门")
+                    continue
 
                 # 找或创建年度计划
                 cache_key = (year, dept)
@@ -779,18 +831,22 @@ class EmployeeService:
                     q = select(AnnualTrainingPlan).where(
                         AnnualTrainingPlan.year == year,
                         AnnualTrainingPlan.department == dept,
-                        AnnualTrainingPlan.is_deleted == False,
+                        not AnnualTrainingPlan.is_deleted,
                     )
                     r = await self.repo.session.execute(q)
                     plan = r.scalar_one_or_none()
                     if not plan:
-                        plan = AnnualTrainingPlan(year=year, department=dept, status="草稿")
+                        plan = AnnualTrainingPlan(
+                            year=year, department=dept, status="草稿"
+                        )
                         self.repo.session.add(plan)
                         await self.repo.session.flush()
                     plan_cache[cache_key] = plan
 
                 # 添加计划项
-                item_data = {k: v for k, v in data.items() if k not in ("year", "department")}
+                item_data = {
+                    k: v for k, v in data.items() if k not in ("year", "department")
+                }
                 item = AnnualTrainingPlanItem(plan_id=plan.id, **item_data)
                 self.repo.session.add(item)
                 await self.repo.session.flush()
@@ -878,7 +934,6 @@ class EmployeeService:
 
         return {"created": created, "updated": updated, "errors": errors}
 
-
     # ── 内训师上传 ──
 
     _TRAINER_COLUMN_MAP: dict[str, str] = {
@@ -908,7 +963,11 @@ class EmployeeService:
         if not rows:
             raise ValueError("文件为空")
         header = [str(c).strip() if c else "" for c in rows[0]]
-        col_map = {idx: self._TRAINER_COLUMN_MAP.get(h, "") for idx, h in enumerate(header) if h in self._TRAINER_COLUMN_MAP}
+        col_map = {
+            idx: self._TRAINER_COLUMN_MAP.get(h, "")
+            for idx, h in enumerate(header)
+            if h in self._TRAINER_COLUMN_MAP
+        }
         created, updated, errors = 0, 0, []
         for row_idx, row in enumerate(rows[1:], start=2):
             if all(c is None for c in row):
@@ -927,17 +986,21 @@ class EmployeeService:
                 name = data.get("name")
                 dept = data.get("department")
                 if not name:
-                    errors.append(f"第{row_idx}行: 缺少姓名"); continue
+                    errors.append(f"第{row_idx}行: 缺少姓名")
+                    continue
                 existing = None
                 if name:
-                    q = select(HrTrainer).where(HrTrainer.name == name, HrTrainer.is_deleted == False)
+                    q = select(HrTrainer).where(
+                        HrTrainer.name == name, not HrTrainer.is_deleted
+                    )
                     if dept:
                         q = q.where(HrTrainer.department == dept)
                     r = await self.repo.session.execute(q)
                     existing = r.scalar_one_or_none()
                 if existing:
                     for k, v in data.items():
-                        if v is not None: setattr(existing, k, v)
+                        if v is not None:
+                            setattr(existing, k, v)
                     updated += 1
                 else:
                     self.repo.session.add(HrTrainer(**data))
@@ -974,7 +1037,9 @@ class DepartmentService:
 
         return result
 
-    async def update_department(self, department_id: UUID, data: DepartmentUpdate) -> HrDepartment:
+    async def update_department(
+        self, department_id: UUID, data: DepartmentUpdate
+    ) -> HrDepartment:
         department = await self.get_department(department_id)
         update_data = data.model_dump(exclude_unset=True)
 
@@ -1021,9 +1086,12 @@ class DepartmentService:
         from sqlalchemy import func, select
 
         from app.modules.hr.models import Employee
+
         for dept in departments:
             count = await self.repo.session.scalar(
-                select(func.count()).select_from(Employee).where(
+                select(func.count())
+                .select_from(Employee)
+                .where(
                     Employee.department == dept.name,
                     Employee.is_deleted.is_(False),
                 )
@@ -1057,7 +1125,9 @@ class TeamService:
         update_data = data.model_dump(exclude_unset=True)
 
         if "department_id" in update_data:
-            department = await self.department_repo.get_by_id(update_data["department_id"])
+            department = await self.department_repo.get_by_id(
+                update_data["department_id"]
+            )
             if not department:
                 raise NotFoundException("部门", str(update_data["department_id"]))
 
@@ -1126,7 +1196,9 @@ class OffboardingRecordService:
 
         return record
 
-    async def update_record(self, record_id: UUID, data: OffboardingRecordUpdate) -> OffboardingRecord:
+    async def update_record(
+        self, record_id: UUID, data: OffboardingRecordUpdate
+    ) -> OffboardingRecord:
         record = await self.get_record(record_id)
         update_data = data.model_dump(exclude_unset=True)
 
@@ -1160,6 +1232,7 @@ class OffboardingRecordService:
             page=page,
             page_size=page_size,
         )
+
 
 class OnboardingRecordService:
     def __init__(self, session: AsyncSession) -> None:
@@ -1222,20 +1295,31 @@ class OnboardingRecordService:
                     continue
 
                 # Skip records with empty critical fields (blank rows in Bitable)
-                if not data.get("name") or not data.get("department") or not data.get("hire_date"):
+                if (
+                    not data.get("name")
+                    or not data.get("department")
+                    or not data.get("hire_date")
+                ):
                     logger.debug("Skipping blank onboarding record: %s", rid)
                     continue
 
                 await self.repo.upsert_by_feishu_record_id(data)
                 existing = await self.repo.get_by_feishu_record_id(rid)
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception as e:
-                logger.error("Failed to sync onboarding record %s: %s", rec.get("record_id"), e)
+                logger.error(
+                    "Failed to sync onboarding record %s: %s", rec.get("record_id"), e
+                )
                 stats["failed"] += 1
 
         return stats
@@ -1292,7 +1376,9 @@ class DepartureRecordService:
         record = DepartureRecord(**data.model_dump())
         return await self.repo.create(record)
 
-    async def update_record(self, record_id: UUID, data: DepartureRecordUpdate) -> DepartureRecord:
+    async def update_record(
+        self, record_id: UUID, data: DepartureRecordUpdate
+    ) -> DepartureRecord:
         record = await self.get_record(record_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -1331,14 +1417,21 @@ class DepartureRecordService:
 
                 await self.repo.upsert_by_feishu_record_id(data)
                 existing = await self.repo.get_by_feishu_record_id(rid)
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception:
-                logger.exception("Failed to sync departure record %s", rec.get("record_id"))
+                logger.exception(
+                    "Failed to sync departure record %s", rec.get("record_id")
+                )
                 stats["failed"] += 1
 
         return stats
@@ -1442,7 +1535,9 @@ class TrainingLedgerPageService:
     async def list_pages(self) -> list[TrainingLedgerPage]:
         return await self.repo.list_pages()
 
-    async def list_pages_with_department(self) -> list[tuple[TrainingLedgerPage, str | None]]:
+    async def list_pages_with_department(
+        self,
+    ) -> list[tuple[TrainingLedgerPage, str | None]]:
         return await self.repo.list_pages_with_department()
 
     async def create_page(self, data) -> TrainingLedgerPage:
@@ -1465,13 +1560,17 @@ class AnnualTrainingPlanService:
         return plan
 
     async def create_plan(self, data: AnnualTrainingPlanCreate) -> AnnualTrainingPlan:
-        existing = await self.repo.get_by_year_and_department(data.year, data.department)
+        existing = await self.repo.get_by_year_and_department(
+            data.year, data.department
+        )
         if existing:
             raise DuplicateException("年度培训计划", f"{data.year}年-{data.department}")
         plan = AnnualTrainingPlan(**data.model_dump())
         return await self.repo.create(plan)
 
-    async def update_plan(self, plan_id: UUID, data: AnnualTrainingPlanUpdate) -> AnnualTrainingPlan:
+    async def update_plan(
+        self, plan_id: UUID, data: AnnualTrainingPlanUpdate
+    ) -> AnnualTrainingPlan:
         plan = await self.get_plan(plan_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():

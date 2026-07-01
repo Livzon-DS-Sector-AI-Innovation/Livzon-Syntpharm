@@ -1,6 +1,5 @@
 """Module settings API — CRUD for runtime configuration."""
 
-
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -19,6 +18,7 @@ router = APIRouter(prefix="/module-settings", tags=["Module Settings"])
 
 class ModuleSettingResponse(BaseModel):
     """Response schema for a module setting."""
+
     id: str
     module: str
     key: str
@@ -31,11 +31,13 @@ class ModuleSettingResponse(BaseModel):
 
 class ModuleSettingUpdate(BaseModel):
     """Request schema for updating a setting value."""
+
     value: str = Field(..., description="New value (as string)")
 
 
 class ModuleSettingCreate(BaseModel):
     """Request schema for creating a new setting."""
+
     module: str = Field(..., max_length=50, description="Module name")
     key: str = Field(..., max_length=100, description="Setting key")
     value: str = Field(..., description="Setting value")
@@ -53,7 +55,7 @@ async def list_settings(
     current_user=Depends(get_current_user),
 ):
     """List all module settings, optionally filtered by module."""
-    query = select(ModuleSetting).where(ModuleSetting.is_deleted == False)
+    query = select(ModuleSetting).where(not ModuleSetting.is_deleted)
 
     if module:
         query = query.where(ModuleSetting.module == module)
@@ -63,19 +65,21 @@ async def list_settings(
     result = await db.execute(query)
     settings = result.scalars().all()
 
-    return ApiResponse(data=[
-        ModuleSettingResponse(
-            id=str(s.id),
-            module=s.module,
-            key=s.key,
-            value=s.value,
-            value_type=s.value_type,
-            description=s.description,
-            created_at=s.created_at.isoformat(),
-            updated_at=s.updated_at.isoformat(),
-        )
-        for s in settings
-    ])
+    return ApiResponse(
+        data=[
+            ModuleSettingResponse(
+                id=str(s.id),
+                module=s.module,
+                key=s.key,
+                value=s.value,
+                value_type=s.value_type,
+                description=s.description,
+                created_at=s.created_at.isoformat(),
+                updated_at=s.updated_at.isoformat(),
+            )
+            for s in settings
+        ]
+    )
 
 
 @router.get("/{module}/{key}", response_model=ApiResponse)
@@ -90,7 +94,7 @@ async def get_setting(
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            ModuleSetting.is_deleted == False,
+            not ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()
@@ -98,16 +102,18 @@ async def get_setting(
     if not setting:
         return ApiResponse(code=404, message="Setting not found")
 
-    return ApiResponse(data=ModuleSettingResponse(
-        id=str(setting.id),
-        module=setting.module,
-        key=setting.key,
-        value=setting.value,
-        value_type=setting.value_type,
-        description=setting.description,
-        created_at=setting.created_at.isoformat(),
-        updated_at=setting.updated_at.isoformat(),
-    ))
+    return ApiResponse(
+        data=ModuleSettingResponse(
+            id=str(setting.id),
+            module=setting.module,
+            key=setting.key,
+            value=setting.value,
+            value_type=setting.value_type,
+            description=setting.description,
+            created_at=setting.created_at.isoformat(),
+            updated_at=setting.updated_at.isoformat(),
+        )
+    )
 
 
 @router.put("/{module}/{key}", response_model=ApiResponse)
@@ -123,7 +129,7 @@ async def update_setting(
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            ModuleSetting.is_deleted == False,
+            not ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()
@@ -137,16 +143,18 @@ async def update_setting(
     await db.commit()
     await db.refresh(setting)
 
-    return ApiResponse(data=ModuleSettingResponse(
-        id=str(setting.id),
-        module=setting.module,
-        key=setting.key,
-        value=setting.value,
-        value_type=setting.value_type,
-        description=setting.description,
-        created_at=setting.created_at.isoformat(),
-        updated_at=setting.updated_at.isoformat(),
-    ))
+    return ApiResponse(
+        data=ModuleSettingResponse(
+            id=str(setting.id),
+            module=setting.module,
+            key=setting.key,
+            value=setting.value,
+            value_type=setting.value_type,
+            description=setting.description,
+            created_at=setting.created_at.isoformat(),
+            updated_at=setting.updated_at.isoformat(),
+        )
+    )
 
 
 @router.post("", response_model=ApiResponse, status_code=201)
@@ -161,7 +169,7 @@ async def create_setting(
         select(ModuleSetting).where(
             ModuleSetting.module == data.module,
             ModuleSetting.key == data.key,
-            ModuleSetting.is_deleted == False,
+            not ModuleSetting.is_deleted,
         )
     )
     existing = result.scalar_one_or_none()
@@ -182,16 +190,18 @@ async def create_setting(
     await db.commit()
     await db.refresh(setting)
 
-    return ApiResponse(data=ModuleSettingResponse(
-        id=str(setting.id),
-        module=setting.module,
-        key=setting.key,
-        value=setting.value,
-        value_type=setting.value_type,
-        description=setting.description,
-        created_at=setting.created_at.isoformat(),
-        updated_at=setting.updated_at.isoformat(),
-    ))
+    return ApiResponse(
+        data=ModuleSettingResponse(
+            id=str(setting.id),
+            module=setting.module,
+            key=setting.key,
+            value=setting.value,
+            value_type=setting.value_type,
+            description=setting.description,
+            created_at=setting.created_at.isoformat(),
+            updated_at=setting.updated_at.isoformat(),
+        )
+    )
 
 
 @router.delete("/{module}/{key}", response_model=ApiResponse)
@@ -206,7 +216,7 @@ async def delete_setting(
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            ModuleSetting.is_deleted == False,
+            not ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()

@@ -40,10 +40,12 @@ _ping_interval: int = 120
 
 def on_event(event_type: str):
     """装饰器：注册安全模块事件处理器。"""
+
     def decorator(func):
         _handlers.setdefault(event_type, []).append(func)
         logger.info("注册安全飞书事件: type=%s handler=%s", event_type, func.__name__)
         return func
+
     return decorator
 
 
@@ -61,7 +63,8 @@ async def _dispatch(event_type: str, event_data: dict[str, Any]) -> Any:
         return result
     logger.warning(
         "安全飞书未注册的 event_type=%s (data_keys=%s)，请检查是否已添加 @on_event 处理器",
-        event_type, list(event_data.keys())[:10],
+        event_type,
+        list(event_data.keys())[:10],
     )
     return None
 
@@ -97,12 +100,14 @@ async def _get_ws_url_and_config() -> tuple[str | None, int]:
                         _ping_interval = interval
                 logger.info(
                     "安全飞书 WS URL 获取成功, service_id=%s, ping_interval=%s",
-                    service_id, _ping_interval,
+                    service_id,
+                    _ping_interval,
                 )
                 return url, service_id
             logger.error(
                 "安全飞书获取 WS URL 失败: code=%s msg=%s",
-                data.get("code"), data.get("msg"),
+                data.get("code"),
+                data.get("msg"),
             )
         else:
             logger.error("安全飞书获取 WS URL HTTP 错误: %s", resp.status_code)
@@ -165,7 +170,13 @@ async def _ping_loop(ws, service_id: int) -> None:
 
 
 # 帧活动计数器（用于诊断连接是否存活）
-_frame_count: dict[str, int] = {"received": 0, "control": 0, "data": 0, "event": 0, "error": 0}
+_frame_count: dict[str, int] = {
+    "received": 0,
+    "control": 0,
+    "data": 0,
+    "event": 0,
+    "error": 0,
+}
 
 # PONG 看门狗：记录最后一次收到 PONG 的时间，用于检测静默断连
 _last_pong_at: float = 0.0  # monotonic seconds
@@ -197,11 +208,21 @@ async def _handle_binary_message(ws, message: bytes) -> None:
                 msg_type = MessageType(type_val)
                 if msg_type == MessageType.PONG:
                     _last_pong_at = asyncio.get_running_loop().time()
-                    logger.debug("安全飞书 ← PONG (连接存活, 共收到 %d 帧)", _frame_count["received"])
+                    logger.debug(
+                        "安全飞书 ← PONG (连接存活, 共收到 %d 帧)",
+                        _frame_count["received"],
+                    )
                 else:
-                    logger.info("安全飞书 CONTROL 帧: %s (共 %d 帧)", msg_type, _frame_count["received"])
+                    logger.info(
+                        "安全飞书 CONTROL 帧: %s (共 %d 帧)",
+                        msg_type,
+                        _frame_count["received"],
+                    )
             except Exception:
-                logger.info("安全飞书 CONTROL 帧(无 type header, 共 %d 帧)", _frame_count["received"])
+                logger.info(
+                    "安全飞书 CONTROL 帧(无 type header, 共 %d 帧)",
+                    _frame_count["received"],
+                )
             return
 
         if ft == FrameType.DATA:
@@ -222,7 +243,8 @@ async def _handle_binary_message(ws, message: bytes) -> None:
                 if event_type == "card.action.trigger":
                     try:
                         card_resp = await asyncio.wait_for(
-                            _dispatch_event(event), timeout=2.9,
+                            _dispatch_event(event),
+                            timeout=2.9,
                         )
                     except TimeoutError:
                         logger.warning("卡片操作超时，返回通用 ACK")
@@ -232,10 +254,13 @@ async def _handle_binary_message(ws, message: bytes) -> None:
                     # 卡片内容必须 base64 编码后放在 data 字段，不能直接作为 payload
                     if card_resp and isinstance(card_resp, dict):
                         import base64 as _b64
+
                         card_json = json.dumps(card_resp, ensure_ascii=False)
                         resp = {
                             "code": 200,
-                            "data": _b64.b64encode(card_json.encode("utf-8")).decode("ascii"),
+                            "data": _b64.b64encode(card_json.encode("utf-8")).decode(
+                                "ascii"
+                            ),
                         }
                     else:
                         resp = {"code": 200}
@@ -246,7 +271,11 @@ async def _handle_binary_message(ws, message: bytes) -> None:
                     resp = {"code": 200}
                 frame.payload = json.dumps(resp, ensure_ascii=False).encode("utf-8")
             else:
-                logger.info("安全飞书 DATA 帧: type=%s (共 %d 帧)", msg_type, _frame_count["received"])
+                logger.info(
+                    "安全飞书 DATA 帧: type=%s (共 %d 帧)",
+                    msg_type,
+                    _frame_count["received"],
+                )
 
             # 发送 ACK（飞书要求 3 秒内回复，现在立即发送）
             end_ms = int(round(time.time() * 1000))
@@ -298,8 +327,8 @@ async def start_ws() -> None:
             async with websockets.connect(
                 ws_url,
                 ssl=ssl_context,
-                max_size=2 ** 23,
-                ping_interval=None,   # 禁用 WS 级 ping，使用 protobuf PING
+                max_size=2**23,
+                ping_interval=None,  # 禁用 WS 级 ping，使用 protobuf PING
                 ping_timeout=None,
                 close_timeout=5,
             ) as ws:
@@ -355,11 +384,17 @@ async def start_ws() -> None:
                                 else:
                                     logger.info(
                                         "安全飞书收到文本事件: type=%s",
-                                        msg_type or event.get("header", {}).get("event_type", "?"),
+                                        msg_type
+                                        or event.get("header", {}).get(
+                                            "event_type", "?"
+                                        ),
                                     )
                                     await _dispatch_event(event)
                             except json.JSONDecodeError:
-                                logger.debug("安全飞书收到非 JSON 文本消息: %s", str(message)[:100])
+                                logger.debug(
+                                    "安全飞书收到非 JSON 文本消息: %s",
+                                    str(message)[:100],
+                                )
                 finally:
                     ping_task.cancel()
 
@@ -369,7 +404,8 @@ async def start_ws() -> None:
             attempt += 1
             logger.warning(
                 "安全飞书 WebSocket 连接关闭: %s，第 %d 次重试，10 秒后重连",
-                e, attempt,
+                e,
+                attempt,
             )
         except Exception:
             attempt += 1
@@ -402,7 +438,9 @@ async def _dispatch_event(event: dict[str, Any]) -> Any:
         event_data = event.get("event", event)
         return await _dispatch(event_type, event_data)
     else:
-        logger.debug("安全飞书无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200])
+        logger.debug(
+            "安全飞书无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200]
+        )
         return None
 
 
@@ -453,5 +491,7 @@ async def get_ws_status() -> dict:
         "mode": "unlimited",  # 无限重连模式，与设备交互机器人一致
         "frame_stats": _get_frame_stats(),
         "last_pong_seconds_ago": round(pong_ago, 1) if pong_ago is not None else None,
-        "pong_watchdog_healthy": pong_ago is not None and pong_ago < 300 if pong_ago is not None else None,
+        "pong_watchdog_healthy": pong_ago is not None and pong_ago < 300
+        if pong_ago is not None
+        else None,
     }

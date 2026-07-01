@@ -77,9 +77,7 @@ class FakePurchaseRequestRepository:
             records = [record for record in records if record.status == status]
         if keyword:
             records = [
-                record
-                for record in records
-                if keyword in record.request_department
+                record for record in records if keyword in record.request_department
             ]
         return records[(page - 1) * page_size : page * page_size], len(records)
 
@@ -96,8 +94,7 @@ class FakePurchaseRequestRepository:
         matching_ids = []
         for request_id, approvals in self.approvals.items():
             if any(
-                approval.approval_role == approval_role
-                and approval.result == result
+                approval.approval_role == approval_role and approval.result == result
                 for approval in approvals
             ):
                 matching_ids.append(request_id)
@@ -111,9 +108,7 @@ class FakePurchaseRequestRepository:
             records = [record for record in records if record.category == category]
         if keyword:
             records = [
-                record
-                for record in records
-                if keyword in record.request_department
+                record for record in records if keyword in record.request_department
             ]
         return records[(page - 1) * page_size : page * page_size], len(records)
 
@@ -268,8 +263,7 @@ async def test_purchase_request_amount_and_two_step_approval_flow() -> None:
         ),
     )
     assert (
-        department_approved.status
-        == PurchaseRequestStatus.pending_responsible_leader
+        department_approved.status == PurchaseRequestStatus.pending_responsible_leader
     )
     assert department_approved.approvals[0].approval_role == (
         PurchaseApprovalRole.department_head
@@ -332,21 +326,23 @@ async def test_purchase_request_role_approval_views() -> None:
         ),
     )
 
-    department_completed, department_completed_total = (
-        await procurement_service.list_purchase_requests(
-            FakeDb(),
-            category=PurchaseRequestCategory.hardware.value,
-            approval_role=PurchaseApprovalRole.department_head,
-            approval_view=PurchaseApprovalView.completed,
-        )
+    (
+        department_completed,
+        department_completed_total,
+    ) = await procurement_service.list_purchase_requests(
+        FakeDb(),
+        category=PurchaseRequestCategory.hardware.value,
+        approval_role=PurchaseApprovalRole.department_head,
+        approval_view=PurchaseApprovalView.completed,
     )
-    leader_pending, leader_pending_total = (
-        await procurement_service.list_purchase_requests(
-            FakeDb(),
-            category=PurchaseRequestCategory.hardware.value,
-            approval_role=PurchaseApprovalRole.responsible_leader,
-            approval_view=PurchaseApprovalView.pending,
-        )
+    (
+        leader_pending,
+        leader_pending_total,
+    ) = await procurement_service.list_purchase_requests(
+        FakeDb(),
+        category=PurchaseRequestCategory.hardware.value,
+        approval_role=PurchaseApprovalRole.responsible_leader,
+        approval_view=PurchaseApprovalView.pending,
     )
 
     assert department_completed_total == 1
@@ -377,21 +373,23 @@ async def test_purchase_request_role_rejected_view() -> None:
         ),
     )
 
-    department_rejected, department_rejected_total = (
-        await procurement_service.list_purchase_requests(
-            FakeDb(),
-            category=PurchaseRequestCategory.hardware.value,
-            approval_role=PurchaseApprovalRole.department_head,
-            approval_view=PurchaseApprovalView.rejected,
-        )
+    (
+        department_rejected,
+        department_rejected_total,
+    ) = await procurement_service.list_purchase_requests(
+        FakeDb(),
+        category=PurchaseRequestCategory.hardware.value,
+        approval_role=PurchaseApprovalRole.department_head,
+        approval_view=PurchaseApprovalView.rejected,
     )
-    leader_rejected, leader_rejected_total = (
-        await procurement_service.list_purchase_requests(
-            FakeDb(),
-            category=PurchaseRequestCategory.hardware.value,
-            approval_role=PurchaseApprovalRole.responsible_leader,
-            approval_view=PurchaseApprovalView.rejected,
-        )
+    (
+        leader_rejected,
+        leader_rejected_total,
+    ) = await procurement_service.list_purchase_requests(
+        FakeDb(),
+        category=PurchaseRequestCategory.hardware.value,
+        approval_role=PurchaseApprovalRole.responsible_leader,
+        approval_view=PurchaseApprovalView.rejected,
     )
 
     assert department_rejected_total == 1

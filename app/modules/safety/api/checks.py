@@ -34,14 +34,18 @@ async def get_checks(
     """获取安全检查列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
-    items, total = await service.get_checks(skip, page_size, status, check_type, department)
+    items, total = await service.get_checks(
+        skip, page_size, status, check_type, department
+    )
     return ApiResponse(
         data=[SafetyCheckResponse.model_validate(c) for c in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@checks_router.get("/checks/{check_id}", response_model=ApiResponse, summary="获取安全检查详情")
+@checks_router.get(
+    "/checks/{check_id}", response_model=ApiResponse, summary="获取安全检查详情"
+)
 async def get_check(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -68,7 +72,9 @@ async def create_check(
     return ApiResponse(data=SafetyCheckResponse.model_validate(item))
 
 
-@checks_router.put("/checks/{check_id}", response_model=ApiResponse, summary="更新安全检查")
+@checks_router.put(
+    "/checks/{check_id}", response_model=ApiResponse, summary="更新安全检查"
+)
 async def update_check(
     check_id: uuid.UUID,
     data: SafetyCheckUpdate,
@@ -84,7 +90,9 @@ async def update_check(
     return ApiResponse(data=SafetyCheckResponse.model_validate(item))
 
 
-@checks_router.post("/checks/{check_id}/submit", response_model=ApiResponse, summary="提交安全检查")
+@checks_router.post(
+    "/checks/{check_id}/submit", response_model=ApiResponse, summary="提交安全检查"
+)
 async def submit_check(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -99,7 +107,9 @@ async def submit_check(
     return ApiResponse(data=SafetyCheckResponse.model_validate(item))
 
 
-@checks_router.post("/checks/{check_id}/review", response_model=ApiResponse, summary="审核安全检查")
+@checks_router.post(
+    "/checks/{check_id}/review", response_model=ApiResponse, summary="审核安全检查"
+)
 async def review_check(
     check_id: uuid.UUID,
     result: str = Query(..., description="审核结果: qualified/unqualified"),
@@ -115,7 +125,9 @@ async def review_check(
     return ApiResponse(data=SafetyCheckResponse.model_validate(item))
 
 
-@checks_router.post("/checks/{check_id}/confirm", response_model=ApiResponse, summary="确认检查")
+@checks_router.post(
+    "/checks/{check_id}/confirm", response_model=ApiResponse, summary="确认检查"
+)
 async def confirm_check(
     check_id: uuid.UUID,
     data: ConfirmCheckRequest,
@@ -131,7 +143,9 @@ async def confirm_check(
     return ApiResponse(data=SafetyCheckResponse.model_validate(item))
 
 
-@checks_router.delete("/checks/{check_id}", response_model=ApiResponse, summary="删除安全检查")
+@checks_router.delete(
+    "/checks/{check_id}", response_model=ApiResponse, summary="删除安全检查"
+)
 async def delete_check(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -144,5 +158,3 @@ async def delete_check(
         return ApiResponse(code=404, message="检查记录不存在")
     await db.commit()
     return ApiResponse(message="删除成功")
-
-

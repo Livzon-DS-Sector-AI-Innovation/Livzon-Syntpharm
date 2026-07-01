@@ -63,7 +63,14 @@ class EhsChangeService:
     ) -> tuple[list[EhsChange], int]:
         """获取EHS变更列表"""
         return await self.repo.get_ehs_changes(
-            skip, limit, status, change_type, change_grade, change_duration, department, keyword
+            skip,
+            limit,
+            status,
+            change_type,
+            change_grade,
+            change_duration,
+            department,
+            keyword,
         )
 
     async def get_ehs_change(self, change_id: uuid.UUID) -> EhsChange | None:
@@ -105,22 +112,22 @@ class EhsChangeService:
         # 紧急变更：自动批准，保留审批链追溯
         if change.change_duration == "emergency":
             approval_chain = list(change.approval_chain or [])
-            approval_chain.append({
-                "level": 1,
-                "approver_role": "系统自动批准（紧急变更）",
-                "approver": "系统",
-                "decision": "approved",
-                "comments": "紧急变更，自动批准。需在48小时内补办审批手续。",
-                "decided_at": datetime.now().isoformat(),
-            })
+            approval_chain.append(
+                {
+                    "level": 1,
+                    "approver_role": "系统自动批准（紧急变更）",
+                    "approver": "系统",
+                    "decision": "approved",
+                    "comments": "紧急变更，自动批准。需在48小时内补办审批手续。",
+                    "decided_at": datetime.now().isoformat(),
+                }
+            )
             return await self.repo.update_ehs_change(
                 change_id,
                 {"status": "approved", "approval_chain": approval_chain},
             )
 
-        return await self.repo.update_ehs_change(
-            change_id, {"status": "under_review"}
-        )
+        return await self.repo.update_ehs_change(change_id, {"status": "under_review"})
 
     async def approve_change(
         self, change_id: uuid.UUID, decision: str, comments: str | None = None
@@ -131,13 +138,9 @@ class EhsChangeService:
             return None
 
         if decision == "approved":
-            return await self.repo.update_ehs_change(
-                change_id, {"status": "approved"}
-            )
+            return await self.repo.update_ehs_change(change_id, {"status": "approved"})
         elif decision == "rejected":
-            return await self.repo.update_ehs_change(
-                change_id, {"status": "rejected"}
-            )
+            return await self.repo.update_ehs_change(change_id, {"status": "rejected"})
         return None
 
     async def reject_change(
@@ -147,9 +150,7 @@ class EhsChangeService:
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change or change.status != "under_review":
             return None
-        return await self.repo.update_ehs_change(
-            change_id, {"status": "rejected"}
-        )
+        return await self.repo.update_ehs_change(change_id, {"status": "rejected"})
 
     async def start_implementation(self, change_id: uuid.UUID) -> EhsChange | None:
         """开始实施（已批准→实施中）"""
@@ -239,9 +240,7 @@ class EhsChangeService:
         items[index] = {**items[index], "status": status}
         if status == "completed":
             items[index]["completed_at"] = datetime.now().isoformat()
-        return await self.repo.update_ehs_change(
-            change_id, {"action_items": items}
-        )
+        return await self.repo.update_ehs_change(change_id, {"action_items": items})
 
     async def update_pssr_checklist(
         self, change_id: uuid.UUID, items: list[dict]
@@ -250,9 +249,7 @@ class EhsChangeService:
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:
             return None
-        return await self.repo.update_ehs_change(
-            change_id, {"pssr_checklist": items}
-        )
+        return await self.repo.update_ehs_change(change_id, {"pssr_checklist": items})
 
     async def submit_verification(
         self, change_id: uuid.UUID, data: dict
@@ -261,11 +258,7 @@ class EhsChangeService:
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:
             return None
-        return await self.repo.update_ehs_change(
-            change_id, {"verification": data}
-        )
+        return await self.repo.update_ehs_change(change_id, {"verification": data})
 
 
 # ==================== 职业危害因素监测 Service ====================
-
-

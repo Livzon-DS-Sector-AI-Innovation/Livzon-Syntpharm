@@ -31,7 +31,7 @@ def load_synonyms():
 def build_solvent_index(ich_data, synonyms):
     """
     Build a searchable index of solvents from ICH data and synonyms.
-    
+
     Returns:
     {
         "normalized_name": {
@@ -65,7 +65,7 @@ def build_solvent_index(ich_data, synonyms):
                     "class": class_name,
                     "pde": None,
                     "limit": "5000",
-                    "aliases": [canonical]
+                    "aliases": [canonical],
                 }
             else:
                 # Class 1/2 solvents are dicts
@@ -75,7 +75,7 @@ def build_solvent_index(ich_data, synonyms):
                     "class": class_name,
                     "pde": solvent.get("pde_mg_day") or solvent.get("pde"),
                     "limit": solvent.get("ppm") or solvent.get("limit"),
-                    "aliases": [canonical]
+                    "aliases": [canonical],
                 }
 
     # Add synonyms
@@ -95,14 +95,14 @@ def build_solvent_index(ich_data, synonyms):
 def classify_solvents(solvents, solvent_index):
     """
     Classify LLM-extracted solvents against ICH database.
-    
+
     If LLM already provided ich_class, use it and just enrich with PDE/limit.
     Otherwise, use solvent_index for matching (fallback).
-    
+
     Args:
         solvents: List of solvent dicts with 'solvent' and optionally 'ich_class' keys
         solvent_index: ICH solvent database
-    
+
     Returns:
         List of classified solvents
     """
@@ -130,55 +130,73 @@ def classify_solvents(solvents, solvent_index):
 
             if lookup_name in solvent_index:
                 ich_data = solvent_index[lookup_name]
-                classified.append({
-                    "solvent": ich_data["canonical"],
-                    "original_name": solvent_entry.get("original_name", solvent_name),
-                    "matched_as": solvent_name,
-                    "class": ich_data["class"],
-                    "pde": ich_data.get("pde"),
-                    "limit": ich_data.get("limit"),
-                    "purpose": solvent_entry.get("purpose", "unknown"),
-                    "amount": solvent_entry.get("amount")
-                })
+                classified.append(
+                    {
+                        "solvent": ich_data["canonical"],
+                        "original_name": solvent_entry.get(
+                            "original_name", solvent_name
+                        ),
+                        "matched_as": solvent_name,
+                        "class": ich_data["class"],
+                        "pde": ich_data.get("pde"),
+                        "limit": ich_data.get("limit"),
+                        "purpose": solvent_entry.get("purpose", "unknown"),
+                        "amount": solvent_entry.get("amount"),
+                    }
+                )
             else:
                 # LLM classified but not in our index - use LLM class, no PDE/limit
-                classified.append({
-                    "solvent": solvent_name,
-                    "original_name": solvent_entry.get("original_name", solvent_name),
-                    "matched_as": solvent_name,
-                    "class": llm_class.lower().replace(" ", ""),  # "Class 3" -> "class3"
-                    "pde": None,
-                    "limit": None,
-                    "purpose": solvent_entry.get("purpose", "unknown"),
-                    "amount": solvent_entry.get("amount")
-                })
+                classified.append(
+                    {
+                        "solvent": solvent_name,
+                        "original_name": solvent_entry.get(
+                            "original_name", solvent_name
+                        ),
+                        "matched_as": solvent_name,
+                        "class": llm_class.lower().replace(
+                            " ", ""
+                        ),  # "Class 3" -> "class3"
+                        "pde": None,
+                        "limit": None,
+                        "purpose": solvent_entry.get("purpose", "unknown"),
+                        "amount": solvent_entry.get("amount"),
+                    }
+                )
         else:
             # Fallback: LLM didn't classify, use solvent_index matching
             if solvent_lower in solvent_index:
                 ich_data = solvent_index[solvent_lower]
-                classified.append({
-                    "solvent": ich_data["canonical"],
-                    "original_name": solvent_entry.get("original_name", solvent_name),
-                    "matched_as": solvent_name,
-                    "class": ich_data["class"],
-                    "pde": ich_data.get("pde"),
-                    "limit": ich_data.get("limit"),
-                    "purpose": solvent_entry.get("purpose", "unknown"),
-                    "amount": solvent_entry.get("amount")
-                })
+                classified.append(
+                    {
+                        "solvent": ich_data["canonical"],
+                        "original_name": solvent_entry.get(
+                            "original_name", solvent_name
+                        ),
+                        "matched_as": solvent_name,
+                        "class": ich_data["class"],
+                        "pde": ich_data.get("pde"),
+                        "limit": ich_data.get("limit"),
+                        "purpose": solvent_entry.get("purpose", "unknown"),
+                        "amount": solvent_entry.get("amount"),
+                    }
+                )
             else:
                 # Unknown solvent - not in ICH list
-                classified.append({
-                    "solvent": solvent_name,
-                    "original_name": solvent_entry.get("original_name", solvent_name),
-                    "matched_as": solvent_name,
-                    "class": "unknown",
-                    "pde": None,
-                    "limit": None,
-                    "purpose": solvent_entry.get("purpose", "unknown"),
-                    "amount": solvent_entry.get("amount"),
-                    "warning": "Not found in ICH Q3C - requires toxicological justification"
-                })
+                classified.append(
+                    {
+                        "solvent": solvent_name,
+                        "original_name": solvent_entry.get(
+                            "original_name", solvent_name
+                        ),
+                        "matched_as": solvent_name,
+                        "class": "unknown",
+                        "pde": None,
+                        "limit": None,
+                        "purpose": solvent_entry.get("purpose", "unknown"),
+                        "amount": solvent_entry.get("amount"),
+                        "warning": "Not found in ICH Q3C - requires toxicological justification",
+                    }
+                )
 
     return classified
 
@@ -186,11 +204,11 @@ def classify_solvents(solvents, solvent_index):
 def analyze_steps(llm_data, solvent_index):
     """
     Analyze LLM-extracted solvents and classify against ICH database.
-    
+
     Args:
         llm_data: Output from llm_extract.py
         solvent_index: ICH solvent database
-    
+
     Returns:
         Structured analysis
     """
@@ -205,33 +223,34 @@ def analyze_steps(llm_data, solvent_index):
         # Classify solvents
         classified = classify_solvents(raw_solvents, solvent_index)
 
-        analysis.append({
-            "step_number": step_number,
-            "step_title": step_title,
-            "solvents": classified,
-            "solvent_count": len(classified)
-        })
+        analysis.append(
+            {
+                "step_number": step_number,
+                "step_title": step_title,
+                "solvents": classified,
+                "solvent_count": len(classified),
+            }
+        )
 
         # Aggregate
         for solvent_entry in classified:
             solvent_name = solvent_entry["solvent"]
             if solvent_name not in all_solvents:
-                all_solvents[solvent_name] = {
-                    **solvent_entry,
-                    "steps_used": []
-                }
+                all_solvents[solvent_name] = {**solvent_entry, "steps_used": []}
             all_solvents[solvent_name]["steps_used"].append(step_number)
 
     return {
         "step_analysis": analysis,
         "all_solvents": all_solvents,
-        "total_unique_solvents": len(all_solvents)
+        "total_unique_solvents": len(all_solvents),
     }
 
 
 def main():
     if len(sys.argv) < 3:
-        logger.info("Usage: solvent_match.py --llm <llm_analysis_json> <ich_json> [output_json]")
+        logger.info(
+            "Usage: solvent_match.py --llm <llm_analysis_json> <ich_json> [output_json]"
+        )
         logger.info("  llm_analysis_json: Output from llm_extract.py")
         logger.info("  ich_json: ICH Q3C data (data/ich-q3c-full.json)")
         logger.info("  output_json: Output path (optional, defaults to stdout)")
@@ -251,7 +270,7 @@ def main():
 
     # Load synonyms
     script_dir = Path(__file__).parent
-    data_dir = script_dir.parent / "data"
+    script_dir.parent / "data"
     synonyms = load_synonyms()
 
     logger.info("Building solvent index...")
@@ -266,7 +285,7 @@ def main():
 
     # Output results
     if output_path:
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(analysis, f, indent=2, ensure_ascii=False)
         logger.info(f"Saved to {output_path}")
     else:

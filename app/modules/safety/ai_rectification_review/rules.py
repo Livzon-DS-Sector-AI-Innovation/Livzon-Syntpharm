@@ -37,8 +37,14 @@ def _enum_value(val: object) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 BANNED_PHRASES = [
-    "加强管理", "注意安全", "加强培训", "提高意识",
-    "严格执行", "认真对待", "高度重视", "切实落实",
+    "加强管理",
+    "注意安全",
+    "加强培训",
+    "提高意识",
+    "严格执行",
+    "认真对待",
+    "高度重视",
+    "切实落实",
 ]
 
 # 各维度逻辑一致性规则（v2 — 实效导向）
@@ -104,16 +110,12 @@ class RuleEngine:
         valid_photo = {e.value for e in PhotoMatchLevel}
         photo_val = _enum_value(output.photo_match_level)
         if photo_val not in valid_photo:
-            errors.append(
-                f"无效的图片比对结论: {photo_val}，合法值: {valid_photo}"
-            )
+            errors.append(f"无效的图片比对结论: {photo_val}，合法值: {valid_photo}")
 
         valid_quality = {e.value for e in MeasureQualityLevel}
         quality_val = _enum_value(output.measure_quality_level)
         if quality_val not in valid_quality:
-            errors.append(
-                f"无效的措施质量等级: {quality_val}，合法值: {valid_quality}"
-            )
+            errors.append(f"无效的措施质量等级: {quality_val}，合法值: {valid_quality}")
 
         valid_compliance = {e.value for e in ComplianceLevel}
         compliance_val = _enum_value(output.standard_compliance_level)
@@ -145,9 +147,7 @@ class RuleEngine:
         for field_name, text, min_len in text_checks:
             actual_len = len(text.strip())
             if actual_len < min_len:
-                errors.append(
-                    f"{field_name}过短（{actual_len}字），最少{min_len}字"
-                )
+                errors.append(f"{field_name}过短（{actual_len}字），最少{min_len}字")
 
     def _validate_banned_phrases(
         self,
@@ -162,9 +162,7 @@ class RuleEngine:
         for field_name, text in text_fields:
             for phrase in BANNED_PHRASES:
                 if phrase in text:
-                    warnings.append(
-                        f"{field_name}包含泛泛表述: '{phrase}'"
-                    )
+                    warnings.append(f"{field_name}包含泛泛表述: '{phrase}'")
 
     def _check_consistency(
         self,
@@ -213,7 +211,10 @@ class RuleEngine:
                 )
 
         # 如果图片匹配且措施有效但结论为不通过，给出 warning
-        if photo == PhotoMatchLevel.MATCHED.value and conclusion == ReviewConclusion.FAIL.value:
+        if (
+            photo == PhotoMatchLevel.MATCHED.value
+            and conclusion == ReviewConclusion.FAIL.value
+        ):
             if quality == MeasureQualityLevel.ADEQUATE.value:
                 warnings.append(
                     "图片匹配且措施有效但判定为不通过，请确认驳回理由是否充分"
@@ -231,7 +232,9 @@ class RuleEngine:
         desc_words = set(desc.replace("，", " ").replace("、", " ").split())
         review_words = set(
             (output.review_comments + output.photo_match_analysis)
-            .replace("，", " ").replace("、", " ").split()
+            .replace("，", " ")
+            .replace("、", " ")
+            .split()
         )
 
         if desc_words and review_words:

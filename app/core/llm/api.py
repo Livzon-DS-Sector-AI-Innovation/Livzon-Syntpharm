@@ -18,6 +18,7 @@ router = APIRouter(prefix="/llm/configs", tags=["LLM Configuration"])
 
 class LLMConfigCreate(BaseModel):
     """Request body for creating LLM config."""
+
     config_name: str = Field(..., max_length=128)
     config_type: str = Field(default="text", pattern="^(text|vision)$")
     api_base_url: str = Field(..., max_length=500)
@@ -31,6 +32,7 @@ class LLMConfigCreate(BaseModel):
 
 class LLMConfigUpdate(BaseModel):
     """Request body for updating LLM config."""
+
     config_name: str | None = Field(None, max_length=128)
     config_type: str | None = Field(None, pattern="^(text|vision)$")
     api_base_url: str | None = Field(None, max_length=500)
@@ -44,6 +46,7 @@ class LLMConfigUpdate(BaseModel):
 
 class LLMConfigResponse(BaseModel):
     """Response body for LLM config (never returns raw API key)."""
+
     id: str
     config_name: str
     config_type: str
@@ -65,7 +68,7 @@ async def list_configs(
     current_user=Depends(get_current_user),
 ):
     """List all LLM configurations."""
-    query = select(LLMConfigModel).where(LLMConfigModel.is_deleted == False)
+    query = select(LLMConfigModel).where(not LLMConfigModel.is_deleted)
 
     if config_type:
         query = query.where(LLMConfigModel.config_type == config_type)
@@ -107,7 +110,7 @@ async def create_config(
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == data.config_type,
-                LLMConfigModel.is_deleted == False,
+                not LLMConfigModel.is_deleted,
             )
             .values(is_active=False)
         )
@@ -156,7 +159,7 @@ async def get_config(
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            LLMConfigModel.is_deleted == False,
+            not LLMConfigModel.is_deleted,
         )
     )
     config = result.scalar_one_or_none()
@@ -191,7 +194,7 @@ async def update_config(
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            LLMConfigModel.is_deleted == False,
+            not LLMConfigModel.is_deleted,
         )
     )
     config = result.scalar_one_or_none()
@@ -206,7 +209,7 @@ async def update_config(
             .where(
                 LLMConfigModel.config_type == config.config_type,
                 LLMConfigModel.id != config.id,
-                LLMConfigModel.is_deleted == False,
+                not LLMConfigModel.is_deleted,
             )
             .values(is_active=False)
         )
@@ -252,7 +255,7 @@ async def delete_config(
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            LLMConfigModel.is_deleted == False,
+            not LLMConfigModel.is_deleted,
         )
     )
     config = result.scalar_one_or_none()
@@ -272,5 +275,6 @@ async def test_connection(
 ):
     """Test LLM connectivity using active config."""
     from .client import llm_client
+
     result = await llm_client.health_check()
     return result

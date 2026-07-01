@@ -15,10 +15,7 @@ def _build_prompt(
 ) -> str:
     """构建报告撰写的 LLM prompt"""
     prompt_start = "你是一个制药工艺报告撰写专家。"
-    prompt_start += (
-        "请基于以下中试研究的全部分析结果，"
-        "撰写一份完整的中试放大报告。"
-    )
+    prompt_start += "请基于以下中试研究的全部分析结果，撰写一份完整的中试放大报告。"
     return f"""{prompt_start}
 
 ## 产品基本信息

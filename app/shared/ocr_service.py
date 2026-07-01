@@ -3,6 +3,7 @@
 Supports both PP-OCR (simple text extraction) and PP-StructureV3 (structured document analysis)
 with a hybrid approach that allows automatic or manual engine selection.
 """
+
 import logging
 from pathlib import Path
 from typing import Any
@@ -50,17 +51,19 @@ class OCRService:
     def _is_pdf(self, image_input: str | Path | Image.Image) -> bool:
         """Check if input is a PDF file."""
         if isinstance(image_input, (str, Path)):
-            path = Path(image_input) if not isinstance(image_input, Path) else image_input
-            return path.suffix.lower() == '.pdf'
+            path = (
+                Path(image_input) if not isinstance(image_input, Path) else image_input
+            )
+            return path.suffix.lower() == ".pdf"
         return False
 
     def extract_text(self, image_input: str | Path | Image.Image) -> str:
         """
         Extract text from image using PP-OCR (fast, simple text extraction).
-        
+
         Args:
             image_input: File path (str or Path) or PIL Image object
-            
+
         Returns:
             Extracted text as a single string
         """
@@ -69,18 +72,20 @@ class OCRService:
 
         texts = []
         for res in result:
-            if hasattr(res, 'res') and 'rec_texts' in res.res:
-                texts.extend(res.res['rec_texts'])
+            if hasattr(res, "res") and "rec_texts" in res.res:
+                texts.extend(res.res["rec_texts"])
 
-        return '\n'.join(texts)
+        return "\n".join(texts)
 
-    def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
+    def extract_with_positions(
+        self, image_input: str | Path | Image.Image
+    ) -> list[dict[str, Any]]:
         """
         Extract text with bounding boxes and confidence scores using PP-OCR.
-        
+
         Args:
             image_input: File path (str or Path) or PIL Image object
-            
+
         Returns:
             List of dicts with keys: text, bbox (x_min, y_min, x_max, y_max), confidence
         """
@@ -89,12 +94,16 @@ class OCRService:
 
         blocks = []
         for res in result:
-            if hasattr(res, 'res'):
+            if hasattr(res, "res"):
                 rec_data = res.res
-                if 'rec_texts' in rec_data and 'rec_scores' in rec_data and 'rec_polys' in rec_data:
-                    texts = rec_data['rec_texts']
-                    scores = rec_data['rec_scores']
-                    polys = rec_data['rec_polys']
+                if (
+                    "rec_texts" in rec_data
+                    and "rec_scores" in rec_data
+                    and "rec_polys" in rec_data
+                ):
+                    texts = rec_data["rec_texts"]
+                    scores = rec_data["rec_scores"]
+                    polys = rec_data["rec_polys"]
 
                     for text, score, poly in zip(texts, scores, polys):
                         x_coords = [p[0] for p in poly]
@@ -103,25 +112,25 @@ class OCRService:
                             int(min(x_coords)),
                             int(min(y_coords)),
                             int(max(x_coords)),
-                            int(max(y_coords))
+                            int(max(y_coords)),
                         )
 
-                        blocks.append({
-                            'text': text,
-                            'bbox': bbox,
-                            'confidence': float(score)
-                        })
+                        blocks.append(
+                            {"text": text, "bbox": bbox, "confidence": float(score)}
+                        )
 
         return blocks
 
-    def extract_structure(self, image_input: str | Path | Image.Image) -> dict[str, Any]:
+    def extract_structure(
+        self, image_input: str | Path | Image.Image
+    ) -> dict[str, Any]:
         """
         Extract structured document content using PP-StructureV3.
         Detects layout, tables, formulas, and preserves document structure.
-        
+
         Args:
             image_input: File path (str or Path) or PIL Image object
-            
+
         Returns:
             Dictionary with structured content including:
             - markdown: Markdown representation
@@ -133,45 +142,42 @@ class OCRService:
         result = self.pp_structure.predict(input_data)
 
         # Extract structured data from result
-        output = {
-            'markdown': '',
-            'json': {},
-            'layout': [],
-            'tables': []
-        }
+        output = {"markdown": "", "json": {}, "layout": [], "tables": []}
 
         for res in result:
             # Get Markdown output
-            if hasattr(res, 'save_to_markdown'):
+            if hasattr(res, "save_to_markdown"):
                 import tempfile
+
                 with tempfile.TemporaryDirectory() as tmpdir:
                     res.save_to_markdown(save_path=tmpdir)
                     # Read the generated markdown file
-                    md_files = list(Path(tmpdir).glob('*.md'))
+                    md_files = list(Path(tmpdir).glob("*.md"))
                     if md_files:
-                        output['markdown'] = md_files[0].read_text(encoding='utf-8')
+                        output["markdown"] = md_files[0].read_text(encoding="utf-8")
 
             # Get JSON output
-            if hasattr(res, 'save_to_json'):
+            if hasattr(res, "save_to_json"):
                 import json
                 import tempfile
+
                 with tempfile.TemporaryDirectory() as tmpdir:
                     res.save_to_json(save_path=tmpdir)
                     # Read the generated JSON file
-                    json_files = list(Path(tmpdir).glob('*.json'))
+                    json_files = list(Path(tmpdir).glob("*.json"))
                     if json_files:
-                        with open(json_files[0], encoding='utf-8') as f:
-                            output['json'] = json.load(f)
+                        with open(json_files[0], encoding="utf-8") as f:
+                            output["json"] = json.load(f)
 
             # Extract layout and table information from result
-            if hasattr(res, 'res'):
+            if hasattr(res, "res"):
                 res_data = res.res
-                if 'layout_parsing_res' in res_data:
-                    for item in res_data['layout_parsing_res']:
-                        if 'block_label' in item:
-                            if item['block_label'] == 'table':
-                                output['tables'].append(item)
-                            output['layout'].append(item)
+                if "layout_parsing_res" in res_data:
+                    for item in res_data["layout_parsing_res"]:
+                        if "block_label" in item:
+                            if item["block_label"] == "table":
+                                output["tables"].append(item)
+                            output["layout"].append(item)
 
         return output
 
@@ -179,30 +185,30 @@ class OCRService:
         """
         Extract document as Markdown using PP-StructureV3.
         Best for documents with tables, formulas, and complex layouts.
-        
+
         Args:
             image_input: File path (str or Path) or PIL Image object
-            
+
         Returns:
             Markdown representation of the document
         """
         result = self.extract_structure(image_input)
-        return result.get('markdown', '')
+        return result.get("markdown", "")
 
     def extract(
         self,
         image_input: str | Path | Image.Image,
         engine: str | None = None,
-        output_format: str = "text"
+        output_format: str = "text",
     ) -> str | list[dict] | dict:
         """
         Hybrid extraction method with automatic or manual engine selection.
-        
+
         Args:
             image_input: File path (str or Path) or PIL Image object
             engine: "pp_ocr", "pp_structurev3", or None for auto-detection
             output_format: "text", "markdown", "json", "positions", "structure"
-            
+
         Returns:
             Extracted content in the specified format
         """
@@ -225,15 +231,17 @@ class OCRService:
                 return self.extract_markdown(image_input)
             elif output_format == "json":
                 result = self.extract_structure(image_input)
-                return result.get('json', {})
+                return result.get("json", {})
             elif output_format == "structure":
                 return self.extract_structure(image_input)
             else:  # text
                 result = self.extract_structure(image_input)
-                return result.get('markdown', '')
+                return result.get("markdown", "")
 
         else:
-            raise ValueError(f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'")
+            raise ValueError(
+                f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'"
+            )
 
 
 # Global instance

@@ -78,7 +78,11 @@ def probe():
                 "timestamp": datetime.now().isoformat(),
             }
             report["captured_requests"].append(entry)
-            rtype = "API" if request.resource_type in ("xhr", "fetch") else request.resource_type[:3].upper()
+            rtype = (
+                "API"
+                if request.resource_type in ("xhr", "fetch")
+                else request.resource_type[:3].upper()
+            )
             print(f"   [REQ {rtype}] {request.method} {url[:130]}")
 
     def on_response(response):
@@ -107,7 +111,9 @@ def probe():
                                 if isinstance(v, list):
                                     entry[f"field_{k}_len"] = len(v)
                                     if v and isinstance(v[0], dict):
-                                        entry[f"field_{k}_item_keys"] = list(v[0].keys())
+                                        entry[f"field_{k}_item_keys"] = list(
+                                            v[0].keys()
+                                        )
                                 else:
                                     entry[f"field_{k}"] = v
                         entry["body_preview"] = body[:3000]
@@ -142,7 +148,11 @@ def probe():
     # Step 2: 加载页面
     print("\n[2] 加载 CDE 指导原则页面...")
     try:
-        page.goto("https://www.cde.org.cn/zdyz/index", timeout=30000, wait_until="domcontentloaded")
+        page.goto(
+            "https://www.cde.org.cn/zdyz/index",
+            timeout=30000,
+            wait_until="domcontentloaded",
+        )
         print(f"   初始标题: '{page.title()}'")
     except Exception as e:
         print(f"   页面导航异常: {e}")
@@ -154,7 +164,9 @@ def probe():
         title = page.title()
         url = page.url
         cookies = context.cookies()
-        print(f"   [{(i+1)*2}s] title='{title}' url={url[:80]} cookies={len(cookies)}")
+        print(
+            f"   [{(i + 1) * 2}s] title='{title}' url={url[:80]} cookies={len(cookies)}"
+        )
 
         if title and len(title) > 2:
             print(f"   ✅ 页面标题出现: {title}")
@@ -168,12 +180,21 @@ def probe():
     print("\n[4] Cookie 快照...")
     cookies = context.cookies()
     report["cookies_after"] = [
-        {"name": c["name"], "domain": c["domain"], "expires": c.get("expires", -1),
-         "httpOnly": c.get("httpOnly", False), "value_preview": c["value"][:80]}
+        {
+            "name": c["name"],
+            "domain": c["domain"],
+            "expires": c.get("expires", -1),
+            "httpOnly": c.get("httpOnly", False),
+            "value_preview": c["value"][:80],
+        }
         for c in cookies
     ]
     for c in report["cookies_after"]:
-        exp = datetime.fromtimestamp(c["expires"]).isoformat() if c["expires"] > 0 else "Session"
+        exp = (
+            datetime.fromtimestamp(c["expires"]).isoformat()
+            if c["expires"] > 0
+            else "Session"
+        )
         print(f"   {c['name']} @ {c['domain']} expires={exp}")
 
     # Step 5: 如果 WAF 通过了但 API 还没触发，等待更久或滚动触发
@@ -238,7 +259,9 @@ def probe():
                 if "records" in data:
                     report["api_data"]["field_records_len"] = len(data["records"])
                     if data["records"]:
-                        report["api_data"]["field_records_item_keys"] = list(data["records"][0].keys())
+                        report["api_data"]["field_records_item_keys"] = list(
+                            data["records"][0].keys()
+                        )
                         report["api_data"]["first_record"] = data["records"][0]
                 for k in ("total", "pages", "current"):
                     if k in data:
@@ -272,9 +295,9 @@ def main():
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     # 打印汇总
-    print(f"\n\n{'='*70}")
+    print(f"\n\n{'=' * 70}")
     print("探测结果汇总")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  模式: {report['mode']}")
     print(f"  WAF 通过: {'✅' if report['waf_passed'] else '❌'}")
     print(f"  API 捕获: {'✅' if report['api_found'] else '❌'}")
@@ -287,14 +310,16 @@ def main():
         print("\n  API 数据:")
         print(f"    URL: {report['api_data'].get('url', 'N/A')}")
         print(f"    Status: {report['api_data'].get('status')}")
-        if report['api_data'].get('is_json'):
+        if report["api_data"].get("is_json"):
             print(f"    JSON keys: {report['api_data'].get('json_keys')}")
-            if 'field_records_len' in report['api_data']:
+            if "field_records_len" in report["api_data"]:
                 print(f"    records: {report['api_data']['field_records_len']} 条")
-            if 'field_total' in report['api_data']:
+            if "field_total" in report["api_data"]:
                 print(f"    total: {report['api_data']['field_total']}")
-            if 'first_record' in report['api_data']:
-                print(f"    首条记录: {json.dumps(report['api_data']['first_record'], ensure_ascii=False)[:300]}")
+            if "first_record" in report["api_data"]:
+                print(
+                    f"    首条记录: {json.dumps(report['api_data']['first_record'], ensure_ascii=False)[:300]}"
+                )
 
     if report["errors"]:
         print("\n  错误:")

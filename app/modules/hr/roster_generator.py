@@ -10,7 +10,9 @@ from docx import Document
 TEMPLATE = Path("/Users/chenjiangyue/Downloads/花名册-模板.docx")
 
 
-def generate_roster_sync(employees: list[tuple], department: str | None = None) -> BytesIO:
+def generate_roster_sync(
+    employees: list[tuple], department: str | None = None
+) -> BytesIO:
     """同步生成花名册。employees: list of (name, department, gender, education, hire_date, status)"""
     if not TEMPLATE.exists():
         raise FileNotFoundError(f"模板未找到: {TEMPLATE}")
@@ -21,11 +23,11 @@ def generate_roster_sync(employees: list[tuple], department: str | None = None) 
     for section in doc.sections:
         for p in section.header.paragraphs:
             for r in p.runs:
-                t = r.text or ''
-                if t.strip() == '第':
-                    r.text = '第____'
-                elif t.strip() == '共':
-                    r.text = '共____'
+                t = r.text or ""
+                if t.strip() == "第":
+                    r.text = "第____"
+                elif t.strip() == "共":
+                    r.text = "共____"
 
     table = doc.tables[0]
     if len(table.rows) < 2 or not employees:
@@ -64,9 +66,9 @@ def generate_roster_sync(employees: list[tuple], department: str | None = None) 
             full = "".join(r.text for r in cell.paragraphs[0].runs)
             for ph, val in mapping.items():
                 full = full.replace(ph, val)
-            full = re.sub(r'\{入职日期\|[^}]*\}', hire_str, full)
-            full = re.sub(r'\{\#[\w一-鿿/]+\}', '', full)
-            full = re.sub(r'\{\/[\w一-鿿/]+\}', '', full)
+            full = re.sub(r"\{入职日期\|[^}]*\}", hire_str, full)
+            full = re.sub(r"\{\#[\w一-鿿/]+\}", "", full)
+            full = re.sub(r"\{\/[\w一-鿿/]+\}", "", full)
 
             cell.paragraphs[0].runs[0].text = full
             for r in cell.paragraphs[0].runs[1:]:

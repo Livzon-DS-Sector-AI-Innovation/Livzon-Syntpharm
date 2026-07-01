@@ -53,7 +53,9 @@ class DocumentParser:
 
         # If no text extracted, this is likely a scanned PDF - use OCR
         if len(text.strip()) < 100:  # Less than 100 chars means probably empty
-            logger.info(f"PDF appears to be scanned (extracted {len(text)} chars), attempting OCR...")
+            logger.info(
+                f"PDF appears to be scanned (extracted {len(text)} chars), attempting OCR..."
+            )
             text = DocumentParser._extract_pdf_ocr(path, max_pages=10)
 
         return text
@@ -61,9 +63,9 @@ class DocumentParser:
     @staticmethod
     def _extract_pdf_ocr(path: str, max_pages: int = 10) -> str:
         """Extract text from scanned PDF using PaddleOCR.
-        
+
         Uses PP-StructureV3 for better structure preservation (tables, formulas, layout).
-        
+
         Args:
             path: PDF file path
             max_pages: Maximum pages to process (to avoid timeout)
@@ -72,6 +74,7 @@ class DocumentParser:
             from pdf2image import convert_from_path
 
             from app.shared.ocr_service import get_ocr_service
+
             ocr_service = get_ocr_service()
 
             # Convert PDF to images with lower DPI for speed
@@ -86,7 +89,7 @@ class DocumentParser:
                 # Returns Markdown format which preserves tables, formulas, etc.
                 text = ocr_service.extract(image, output_format="markdown")
                 if text.strip():
-                    parts.append(f"--- Page {i+1} ---\n{text.strip()}")
+                    parts.append(f"--- Page {i + 1} ---\n{text.strip()}")
 
             if not parts:
                 return "[OCR未能提取到文本内容]"

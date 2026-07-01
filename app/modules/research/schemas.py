@@ -14,9 +14,13 @@ ResearchProjectStatus = Literal["进行中", "已暂停", "已完成", "已终�
 class ResearchProjectCreate(BaseModel):
     """创建研发项目请求"""
 
-    project_no: str | None = Field(default=None, max_length=50, description="项目编号（可选，不填则自动生成）")
+    project_no: str | None = Field(
+        default=None, max_length=50, description="项目编号（可选，不填则自动生成）"
+    )
     name: str = Field(..., min_length=1, max_length=200, description="项目名称")
-    project_type: str | None = Field(default=None, max_length=100, description="项目类型")
+    project_type: str | None = Field(
+        default=None, max_length=100, description="项目类型"
+    )
     stage: ResearchProjectStage = Field(default="立项", description="项目阶段")
     status: ResearchProjectStatus = Field(default="进行中", description="项目状态")
     leader: str | None = Field(default=None, max_length=100, description="项目负责人")
@@ -81,7 +85,9 @@ class EDBOOptimizeResponse(BaseModel):
 
 # ===== Pilot Workflow Schemas =====
 
-PilotWorkflowStatus = Literal["pending", "running", "waiting_approval", "completed", "failed"]
+PilotWorkflowStatus = Literal[
+    "pending", "running", "waiting_approval", "completed", "failed"
+]
 PilotWorkflowStepStatus = Literal[
     "pending", "running", "waiting_approval", "completed", "failed", "skipped"
 ]
@@ -164,6 +170,7 @@ PilotWorkflowListItem = PilotWorkflowListResponse
 
 # ===== Rd Project Schemas (from rd_project) =====
 
+
 class RdProjectBase(BaseModel):
     name: str = Field(..., max_length=200, description="品种名称")
     api_name: str = Field(..., max_length=200, description="API全称")
@@ -171,7 +178,9 @@ class RdProjectBase(BaseModel):
     molecular_formula: str | None = Field(None, max_length=200, description="分子式")
     molecular_weight: float | None = Field(None, description="分子量")
     indication: str | None = Field(None, max_length=500, description="适应症")
-    project_type: str | None = Field(None, max_length=50, description="generic/improved")
+    project_type: str | None = Field(
+        None, max_length=50, description="generic/improved"
+    )
     priority: str = Field("normal", max_length=20, description="low/normal/high/urgent")
     project_manager_id: UUID | None = Field(None, description="项目经理ID")
     start_date: date | None = Field(None, description="开始日期")
@@ -218,12 +227,17 @@ class RdProjectResponse(RdProjectBase):
 
 # ===== Milestone Schemas =====
 
+
 class RdMilestoneBase(BaseModel):
     title: str = Field(..., max_length=200, description="标题")
-    milestone_type: str | None = Field(None, max_length=50, description="gate_review/decision/achievement")
+    milestone_type: str | None = Field(
+        None, max_length=50, description="gate_review/decision/achievement"
+    )
     stage: str | None = Field(None, max_length=50, description="关联阶段")
     planned_date: date | None = Field(None, description="计划日期")
-    decision: str | None = Field(None, max_length=50, description="go/no_go/hold/conditional")
+    decision: str | None = Field(
+        None, max_length=50, description="go/no_go/hold/conditional"
+    )
     decision_rationale: str | None = Field(None, description="决策理由")
 
 
@@ -255,8 +269,13 @@ class RdMilestoneResponse(RdMilestoneBase):
 
 # ===== Stage Record Schemas =====
 
+
 class RdStageRecordBase(BaseModel):
-    stage: str = Field(..., max_length=50, description="initiation/route_dev/optimization/pilot/validation/filing")
+    stage: str = Field(
+        ...,
+        max_length=50,
+        description="initiation/route_dev/optimization/pilot/validation/filing",
+    )
     version: int = Field(1, description="版本号")
     input_summary: dict | None = Field(None, description="上游输入摘要")
     input_references: dict | None = Field(None, description="关联的上游记录ID")
@@ -299,8 +318,13 @@ class RdStageRecordResponse(RdStageRecordBase):
 
 # ===== Research Track Schemas =====
 
+
 class RdResearchTrackBase(BaseModel):
-    type: str = Field(..., max_length=50, description="impurity/crystal_form/stability/quality_standard/custom")
+    type: str = Field(
+        ...,
+        max_length=50,
+        description="impurity/crystal_form/stability/quality_standard/custom",
+    )
     name: str = Field(..., max_length=200, description="研究项名称")
     description: str | None = Field(None, description="描述")
     priority: str = Field("normal", max_length=20, description="low/normal/high/urgent")
@@ -340,11 +364,18 @@ class RdResearchTrackResponse(RdResearchTrackBase):
 
 # ===== Research Finding Schemas =====
 
+
 class RdResearchFindingBase(BaseModel):
-    finding_type: str | None = Field(None, max_length=50, description="identification/classification/control_strategy/characterization")
+    finding_type: str | None = Field(
+        None,
+        max_length=50,
+        description="identification/classification/control_strategy/characterization",
+    )
     data: dict | None = Field(None, description="结构化数据")
     conclusion: str | None = Field(None, description="结论")
-    confidence: str = Field("preliminary", max_length=50, description="preliminary/confirmed/final")
+    confidence: str = Field(
+        "preliminary", max_length=50, description="preliminary/confirmed/final"
+    )
     experiment_date: date | None = None
     operator: str | None = None
     experiment_conditions: dict | None = None
@@ -402,6 +433,7 @@ RdResearchFindingResponse.model_rebuild()
 
 # ===== 中试研究 Schemas =====
 
+
 class RdPilotStudyBase(BaseModel):
     project_id: UUID
     stage_record_id: UUID | None = None
@@ -441,6 +473,7 @@ class RdPilotStudyResponse(RdPilotStudyBase):
 
 # ===== 工艺验证 Schemas =====
 
+
 class RdProcessValidationBase(BaseModel):
     project_id: UUID
     stage_record_id: UUID | None = None
@@ -474,6 +507,7 @@ class RdProcessValidationResponse(RdProcessValidationBase):
 
 # ===== 申报资料 Schemas =====
 
+
 class RdRegistrationFilingBase(BaseModel):
     project_id: UUID
     stage_record_id: UUID | None = None
@@ -505,12 +539,15 @@ class RdRegistrationFilingResponse(RdRegistrationFilingBase):
 
 # ===== Stage Deliverable Schemas =====
 
+
 class RdStageDeliverableBase(BaseModel):
     project_id: UUID = Field(..., description="项目ID")
     stage: str = Field(..., max_length=50, description="阶段")
     deliverable_type: str = Field(..., max_length=100, description="交付物类型")
     title: str = Field(..., max_length=500, description="标题")
-    status: str = Field("draft", max_length=50, description="draft/in_progress/completed/approved")
+    status: str = Field(
+        "draft", max_length=50, description="draft/in_progress/completed/approved"
+    )
     version: str = Field("v1.0", max_length=50, description="版本号")
     file_url: str | None = Field(None, max_length=1000, description="附件URL")
     file_name: str | None = Field(None, max_length=500, description="文件名")
@@ -580,6 +617,7 @@ DELIVERABLE_TYPES = {
 
 # ===== 实验记录 Schemas =====
 
+
 class RdExperimentLogBase(BaseModel):
     project_id: UUID
     stage_record_id: UUID | None = None
@@ -633,6 +671,7 @@ class RdExperimentLogResponse(RdExperimentLogBase):
 
 # ===== 研发报告 Schemas =====
 
+
 class RdReportBase(BaseModel):
     project_id: UUID
     title: str = Field(..., max_length=500)
@@ -677,6 +716,7 @@ class RdReportResponse(RdReportBase):
 
 
 # ===== 立项申请 Schemas =====
+
 
 class RdInitiationBase(BaseModel):
     project_id: UUID
@@ -736,6 +776,7 @@ class RdInitiationResponse(RdInitiationBase):
 
 # ===== Conclusion Version Schemas =====
 
+
 class RdTrackConclusionVersionCreate(BaseModel):
     track_id: UUID
     conclusion: str | None = None
@@ -759,6 +800,7 @@ class RdTrackConclusionVersionResponse(BaseModel):
 
 
 # ===== 交付物模板 Schemas =====
+
 
 class RdDeliverableTemplateBase(BaseModel):
     name: str = Field(..., max_length=200)
@@ -791,6 +833,7 @@ class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
 
 
 # ===== AI 报告生成 Schemas =====
+
 
 class RdReportGenerateRequest(BaseModel):
     project_id: UUID

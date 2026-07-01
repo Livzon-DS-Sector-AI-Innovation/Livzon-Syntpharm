@@ -32,24 +32,30 @@ from app.platform.identity.models import User
 @pytest.fixture
 def symptom_data() -> dict:
     return {
-        "code": "NOISE", "name": "异响",
-        "description": "设备运行时发出异常声音", "sort_order": 1,
+        "code": "NOISE",
+        "name": "异响",
+        "description": "设备运行时发出异常声音",
+        "sort_order": 1,
     }
 
 
 @pytest.fixture
 def cause_data() -> dict:
     return {
-        "code": "WEAR", "name": "轴承磨损",
-        "description": "轴承因长期使用磨损", "sort_order": 1,
+        "code": "WEAR",
+        "name": "轴承磨损",
+        "description": "轴承因长期使用磨损",
+        "sort_order": 1,
     }
 
 
 @pytest.fixture
 def action_data() -> dict:
     return {
-        "code": "REPLACE", "name": "更换部件",
-        "description": "更换损坏的部件", "sort_order": 1,
+        "code": "REPLACE",
+        "name": "更换部件",
+        "description": "更换损坏的部件",
+        "sort_order": 1,
     }
 
 
@@ -187,14 +193,17 @@ async def test_create_work_order(db_session: AsyncSession) -> None:
     db_session.add(equipment)
     await db_session.flush()
 
-    wo = await repo_create_work_order(db_session, {
-        "work_order_no": "WO-20260603-0001",
-        "equipment_id": equipment.id,
-        "order_type": "故障维修",
-        "priority": "中",
-        "status": "待处理",
-        "reporter_id": user.id,
-    })
+    wo = await repo_create_work_order(
+        db_session,
+        {
+            "work_order_no": "WO-20260603-0001",
+            "equipment_id": equipment.id,
+            "order_type": "故障维修",
+            "priority": "中",
+            "status": "待处理",
+            "reporter_id": user.id,
+        },
+    )
     assert wo.work_order_no == "WO-20260603-0001"
     assert wo.status == "待处理"
 
@@ -209,7 +218,5 @@ async def test_count_open_work_orders_by_equipment(
     db_session: AsyncSession,
 ) -> None:
     """测试统计设备未关闭工单数"""
-    count = await count_open_work_orders_by_equipment(
-        db_session, uuid.uuid4()
-    )
+    count = await count_open_work_orders_by_equipment(db_session, uuid.uuid4())
     assert count == 0

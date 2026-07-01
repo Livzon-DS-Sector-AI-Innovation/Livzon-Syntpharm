@@ -33,7 +33,9 @@ async def send_user_card(
         True 表示发送成功，False 表示失败
     """
     logger.info(
-        "设备机器人 send_user_card: %s=%s", receive_id_type, open_id,
+        "设备机器人 send_user_card: %s=%s",
+        receive_id_type,
+        open_id,
     )
     try:
         from app.modules.equipment.feishu.client import (
@@ -81,7 +83,9 @@ async def send_user_card(
         if not resp.success():
             logger.error(
                 "设备机器人 send_user_card 失败: user_id=%s, code=%s, msg=%s",
-                open_id, resp.code, resp.msg,
+                open_id,
+                resp.code,
+                resp.msg,
             )
             return False
         logger.info("设备机器人卡片已发送: user_id=%s, title=%s", open_id, title)
@@ -89,7 +93,9 @@ async def send_user_card(
     except Exception as e:
         logger.error(
             "设备机器人 send_user_card 异常: user_id=%s, %s: %s",
-            open_id, type(e).__name__, e,
+            open_id,
+            type(e).__name__,
+            e,
         )
         return False
 
@@ -124,14 +130,16 @@ async def _upload_image_to_feishu(
                     if image_key:
                         logger.info(
                             "图片上传飞书成功: size=%d → %s",
-                            len(image_data), image_key,
+                            len(image_data),
+                            image_key,
                         )
                         return image_key
                 logger.warning("飞书图片上传失败: %s", data)
             else:
                 logger.warning(
                     "飞书图片上传 HTTP 错误: status=%s, body=%s",
-                    resp.status_code, resp.text[:200],
+                    resp.status_code,
+                    resp.text[:200],
                 )
     except Exception:
         logger.exception("飞书图片上传异常: size=%d", len(image_data))
@@ -152,8 +160,11 @@ async def send_verification_card(
 
     先上传图片到飞书获取 image_key，再构建卡片发送。
     """
-    logger.info("设备机器人 send_verification_card: user=%s, wo=%s",
-                feishu_user_id, work_order_no)
+    logger.info(
+        "设备机器人 send_verification_card: user=%s, wo=%s",
+        feishu_user_id,
+        work_order_no,
+    )
     try:
         from app.modules.equipment.feishu.client import (
             get_equipment_feishu_client,
@@ -174,27 +185,33 @@ async def send_verification_card(
         ]
         if assignee_name:
             info_lines.append(f"**维修人员：**{assignee_name}")
-        elements.append({
-            "tag": "markdown",
-            "content": "\n".join(info_lines),
-        })
+        elements.append(
+            {
+                "tag": "markdown",
+                "content": "\n".join(info_lines),
+            }
+        )
 
         # 维修描述
         if repair_detail:
             elements.append({"tag": "hr"})
-            elements.append({
-                "tag": "markdown",
-                "content": f"**维修描述：**\n{repair_detail}",
-            })
+            elements.append(
+                {
+                    "tag": "markdown",
+                    "content": f"**维修描述：**\n{repair_detail}",
+                }
+            )
 
         # 现场照片
         image_paths = image_paths or []
         if image_paths:
             elements.append({"tag": "hr"})
-            elements.append({
-                "tag": "markdown",
-                "content": f"**现场照片**（共 {len(image_paths)} 张）",
-            })
+            elements.append(
+                {
+                    "tag": "markdown",
+                    "content": f"**现场照片**（共 {len(image_paths)} 张）",
+                }
+            )
 
             # 上传图片到飞书（最多3张，避免卡片过大）
             img_elements: list[dict] = []
@@ -205,7 +222,9 @@ async def send_verification_card(
 
                     if minio_enabled():
                         result = await asyncio.to_thread(
-                            get_object, "equipment", img_path,
+                            get_object,
+                            "equipment",
+                            img_path,
                         )
                         if result:
                             img_data, _ = result
@@ -217,55 +236,66 @@ async def send_verification_card(
                         if not os.path.exists(img_path):
                             continue
                         img_data = await asyncio.to_thread(
-                            _read_file_bytes, img_path,
+                            _read_file_bytes,
+                            img_path,
                         )
 
                     img_key = await _upload_image_to_feishu(img_data, token)
                     if img_key:
-                        img_elements.append({
-                            "tag": "img",
-                            "img_key": img_key,
-                            "mode": "fit_horizontal",
-                            "alt": {"tag": "plain_text", "content": "现场照片"},
-                        })
+                        img_elements.append(
+                            {
+                                "tag": "img",
+                                "img_key": img_key,
+                                "mode": "fit_horizontal",
+                                "alt": {"tag": "plain_text", "content": "现场照片"},
+                            }
+                        )
                 except Exception:
                     logger.exception("处理照片 %d 失败", idx)
 
             if img_elements:
                 elements.extend(img_elements)
             else:
-                elements.append({
-                    "tag": "markdown",
-                    "content": "（照片加载失败，请在系统中查看）",
-                })
+                elements.append(
+                    {
+                        "tag": "markdown",
+                        "content": "（照片加载失败，请在系统中查看）",
+                    }
+                )
 
         # 操作按钮
         elements.append({"tag": "hr"})
-        elements.append({
-            "tag": "action",
-            "actions": [
-                {
-                    "tag": "button",
-                    "text": {"tag": "plain_text", "content": "✅ 验收通过"},
-                    "type": "primary",
-                    "value": json.dumps({
-                        "action": "verify",
-                        "work_order_id": work_order_id,
-                        "result": "合格",
-                    }),
-                },
-                {
-                    "tag": "button",
-                    "text": {"tag": "plain_text", "content": "↩️ 退回"},
-                    "type": "danger",
-                    "value": json.dumps({
-                        "action": "verify",
-                        "work_order_id": work_order_id,
-                        "result": "不合格",
-                    }),
-                },
-            ],
-        })
+        elements.append(
+            {
+                "tag": "action",
+                "actions": [
+                    {
+                        "tag": "button",
+                        "text": {"tag": "plain_text", "content": "✅ 验收通过"},
+                        "type": "primary",
+                        "value": json.dumps(
+                            {
+                                "action": "verify",
+                                "work_order_id": work_order_id,
+                                "result": "合格",
+                            }
+                        ),
+                    },
+                    {
+                        "tag": "button",
+                        "text": {"tag": "plain_text", "content": "↩️ 退回"},
+                        "type": "danger",
+                        "value": json.dumps(
+                            {
+                                "action": "verify",
+                                "work_order_id": work_order_id,
+                                "result": "不合格",
+                            }
+                        ),
+                    },
+                ],
+            }
+        )
 
         card = {
             "config": {"wide_screen_mode": True},
@@ -303,7 +333,9 @@ async def send_verification_card(
         if not resp.success():
             logger.error(
                 "send_verification_card 失败: user=%s, code=%s, msg=%s",
-                feishu_user_id, resp.code, resp.msg,
+                feishu_user_id,
+                resp.code,
+                resp.msg,
             )
             return False
         logger.info("验收卡片已发送: user=%s, wo=%s", feishu_user_id, work_order_no)
@@ -311,6 +343,8 @@ async def send_verification_card(
     except Exception as e:
         logger.error(
             "send_verification_card 异常: user=%s, %s: %s",
-            feishu_user_id, type(e).__name__, e,
+            feishu_user_id,
+            type(e).__name__,
+            e,
         )
         return False

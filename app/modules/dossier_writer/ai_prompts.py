@@ -1,4 +1,5 @@
 """AI 填充服务的 Prompt 模板"""
+
 from typing import Any
 
 
@@ -77,7 +78,9 @@ def build_split_pages_prompt(
         truncated = p["text"][:500] if len(p["text"]) > 500 else p["text"]
         pages_desc += f"\n--- 第 {p['page']} 页 ---\n{truncated}\n"
 
-    appendix_desc = ", ".join(available_appendix_slots) if available_appendix_slots else "无"
+    appendix_desc = (
+        ", ".join(available_appendix_slots) if available_appendix_slots else "无"
+    )
 
     return [
         {

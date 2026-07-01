@@ -6,15 +6,18 @@ __all__ = ["Department", "User"]
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_member_sync():
     """Start identity module's member sync loop."""
     from app.platform.identity.scheduler import member_sync_loop
+
     await member_sync_loop()
 
 
 async def _stop_member_sync():
     """Stop identity module's member sync loop."""
     from app.platform.identity.scheduler import stop_member_sync_flag
+
     stop_member_sync_flag.set()
 
 

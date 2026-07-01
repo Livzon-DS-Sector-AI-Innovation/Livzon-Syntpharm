@@ -39,7 +39,11 @@ async def get_accidents(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_accidents(
-        skip, page_size, status, accident_type, accident_level,
+        skip,
+        page_size,
+        status,
+        accident_type,
+        accident_level,
         department,
         datetime.fromisoformat(date_from) if date_from else None,
         datetime.fromisoformat(date_to) if date_to else None,
@@ -51,7 +55,9 @@ async def get_accidents(
     )
 
 
-@accidents_router.get("/accidents/{accident_id}", response_model=ApiResponse, summary="获取事故详情")
+@accidents_router.get(
+    "/accidents/{accident_id}", response_model=ApiResponse, summary="获取事故详情"
+)
 async def get_accident(
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -78,7 +84,9 @@ async def create_accident(
     return ApiResponse(data=AccidentResponse.model_validate(item))
 
 
-@accidents_router.put("/accidents/{accident_id}", response_model=ApiResponse, summary="更新事故")
+@accidents_router.put(
+    "/accidents/{accident_id}", response_model=ApiResponse, summary="更新事故"
+)
 async def update_accident(
     accident_id: uuid.UUID,
     data: AccidentUpdate,
@@ -134,8 +142,13 @@ async def resolve_accident(
     """完成调查事故"""
     service = SafetyService(db)
     item = await service.resolve_accident(
-        accident_id, direct_cause, root_cause, handling_measures, corrective_actions,
-        investigation_findings, investigation_method,
+        accident_id,
+        direct_cause,
+        root_cause,
+        handling_measures,
+        corrective_actions,
+        investigation_findings,
+        investigation_method,
     )
     if not item:
         return ApiResponse(code=400, message="无法完成调查，当前状态不允许")
@@ -150,7 +163,9 @@ async def resolve_accident(
 )
 async def start_capa(
     accident_id: uuid.UUID,
-    corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
+    corrective_action_deadline: str = Query(
+        ..., description="CAPA截止日期 (YYYY-MM-DD)"
+    ),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
@@ -208,7 +223,9 @@ async def close_accident(
     return ApiResponse(data=AccidentResponse.model_validate(item))
 
 
-@accidents_router.delete("/accidents/{accident_id}", response_model=ApiResponse, summary="删除事故")
+@accidents_router.delete(
+    "/accidents/{accident_id}", response_model=ApiResponse, summary="删除事故"
+)
 async def delete_accident(
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -221,5 +238,3 @@ async def delete_accident(
         return ApiResponse(code=404, message="事故不存在")
     await db.commit()
     return ApiResponse(message="删除成功")
-
-

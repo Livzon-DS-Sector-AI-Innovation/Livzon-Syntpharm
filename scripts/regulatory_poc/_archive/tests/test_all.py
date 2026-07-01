@@ -1,6 +1,7 @@
 """法规自动监控可行性 POC 测试脚本
 测试 9 个来源网站的可抓取性，输出 feasibility_sample.json 和 feasibility_report.md
 """
+
 import json
 import time
 from datetime import datetime
@@ -17,7 +18,21 @@ HEADERS = {
 
 results = []
 
-def make_result(source, column, url, status, samples, issues, risk, needs_js, needs_login, has_captcha, attachments_ok, tech_stack):
+
+def make_result(
+    source,
+    column,
+    url,
+    status,
+    samples,
+    issues,
+    risk,
+    needs_js,
+    needs_login,
+    has_captcha,
+    attachments_ok,
+    tech_stack,
+):
     return {
         "source": source,
         "column": column,
@@ -52,7 +67,11 @@ def test_nmpa():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select(".zx_list li")
+        items = (
+            soup.select("ul.list li")
+            or soup.select(".listCon li")
+            or soup.select(".zx_list li")
+        )
         if not items:
             items = soup.select("li")
         samples = []
@@ -64,20 +83,58 @@ def test_nmpa():
             link = urljoin(url, a.get("href", ""))
             date_span = item.select_one("span") or item.select_one(".date")
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "法规文件", "source": "NMPA", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "法规文件",
+                    "source": "NMPA",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(items) == 0:
             issues.append("未找到列表项，可能需要JS渲染")
 
-        results.append(make_result(
-            "NMPA", "法规文件", url, status, samples, issues,
-            "中" if len(samples) < 3 else "低",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "NMPA",
+                "法规文件",
+                url,
+                status,
+                samples,
+                issues,
+                "中" if len(samples) < 3 else "低",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("NMPA", "法规文件", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "NMPA",
+                "法规文件",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  NMPA done: {len(results[-1]['samples'])} samples")
 
 
@@ -89,7 +146,9 @@ def test_cde():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        items = (
+            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -99,20 +158,58 @@ def test_cde():
             link = urljoin("https://www.cde.org.cn", a.get("href", ""))
             date_span = item.select_one("span") or item.select_one(".date")
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "指导原则", "source": "CDE", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "指导原则",
+                    "source": "CDE",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(items) == 0:
             issues.append("未找到列表项，可能需要JS渲染")
 
-        results.append(make_result(
-            "CDE", "指导原则", url, status, samples, issues,
-            "中" if len(samples) < 3 else "低",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "CDE",
+                "指导原则",
+                url,
+                status,
+                samples,
+                issues,
+                "中" if len(samples) < 3 else "低",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("CDE", "指导原则", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "CDE",
+                "指导原则",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  CDE done: {len(results[-1]['samples'])} samples")
 
 
@@ -124,7 +221,9 @@ def test_cfdi():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        items = (
+            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -134,20 +233,58 @@ def test_cfdi():
             link = urljoin("https://www.nifdc.org.cn", a.get("href", ""))
             date_span = item.select_one("span") or item.select_one(".date")
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "公告通告", "source": "CFDI", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "公告通告",
+                    "source": "CFDI",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(items) == 0:
             issues.append("未找到列表项，可能需要JS渲染")
 
-        results.append(make_result(
-            "CFDI", "公告通告", url, status, samples, issues,
-            "中" if len(samples) < 3 else "低",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "CFDI",
+                "公告通告",
+                url,
+                status,
+                samples,
+                issues,
+                "中" if len(samples) < 3 else "低",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("CFDI", "公告通告", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "CFDI",
+                "公告通告",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  CFDI done: {len(results[-1]['samples'])} samples")
 
 
@@ -162,7 +299,9 @@ def test_chp():
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
         # 尝试找公告/通知栏目
-        items = soup.select(".news-list li") or soup.select(".list li") or soup.select("li")
+        items = (
+            soup.select(".news-list li") or soup.select(".list li") or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -174,20 +313,58 @@ def test_chp():
             link = urljoin("https://www.chp.org.cn", a.get("href", ""))
             date_span = item.select_one("span") or item.select_one(".date")
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "公告", "source": "国家药典委", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "公告",
+                    "source": "国家药典委",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("页面结构复杂，需进一步适配栏目选择器")
 
-        results.append(make_result(
-            "国家药典委", "公告", url, status, samples, issues,
-            "中" if len(samples) < 3 else "低",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "国家药典委",
+                "公告",
+                url,
+                status,
+                samples,
+                issues,
+                "中" if len(samples) < 3 else "低",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("国家药典委", "公告", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "国家药典委",
+                "公告",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  CHP done: {len(results[-1]['samples'])} samples")
 
 
@@ -199,7 +376,9 @@ def test_gdpa():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        items = (
+            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -211,20 +390,58 @@ def test_gdpa():
             link = urljoin("https://mpa.gd.gov.cn", a.get("href", ""))
             date_span = item.select_one("span") or item.select_one(".date")
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "法规文件", "source": "广东省药监局", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "法规文件",
+                    "source": "广东省药监局",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("页面结构复杂，需进一步适配栏目选择器")
 
-        results.append(make_result(
-            "广东省药监局", "法规文件", url, status, samples, issues,
-            "中" if len(samples) < 3 else "低",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "广东省药监局",
+                "法规文件",
+                url,
+                status,
+                samples,
+                issues,
+                "中" if len(samples) < 3 else "低",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("广东省药监局", "法规文件", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "广东省药监局",
+                "法规文件",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  GDPA done: {len(results[-1]['samples'])} samples")
 
 
@@ -236,7 +453,11 @@ def test_fda():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select("li.views-row") or soup.select(".view-content li") or soup.select("li")
+        items = (
+            soup.select("li.views-row")
+            or soup.select(".view-content li")
+            or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -246,22 +467,64 @@ def test_fda():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.fda.gov", a.get("href", ""))
-            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
+            date_span = (
+                item.select_one("time")
+                or item.select_one(".date")
+                or item.select_one("span")
+            )
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "Guidance", "source": "FDA", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "Guidance",
+                    "source": "FDA",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("FDA页面结构复杂，可能需要调整选择器或使用RSS")
 
-        results.append(make_result(
-            "FDA", "Guidance Documents", url, status, samples, issues,
-            "低" if len(samples) >= 3 else "中",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "FDA",
+                "Guidance Documents",
+                url,
+                status,
+                samples,
+                issues,
+                "低" if len(samples) >= 3 else "中",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("FDA", "Guidance Documents", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "FDA",
+                "Guidance Documents",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  FDA done: {len(results[-1]['samples'])} samples")
 
 
@@ -273,7 +536,11 @@ def test_ema():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select(".ecl-content-item") or soup.select("article") or soup.select("li")
+        items = (
+            soup.select(".ecl-content-item")
+            or soup.select("article")
+            or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -283,22 +550,64 @@ def test_ema():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.ema.europa.eu", a.get("href", ""))
-            date_span = item.select_one("time") or item.select_one(".ecl-date-block") or item.select_one("span")
+            date_span = (
+                item.select_one("time")
+                or item.select_one(".ecl-date-block")
+                or item.select_one("span")
+            )
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "Public Consultation", "source": "EMA", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "Public Consultation",
+                    "source": "EMA",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("EMA页面可能需要调整选择器")
 
-        results.append(make_result(
-            "EMA", "Public Consultations", url, status, samples, issues,
-            "低" if len(samples) >= 3 else "中",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "EMA",
+                "Public Consultations",
+                url,
+                status,
+                samples,
+                issues,
+                "低" if len(samples) >= 3 else "中",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("EMA", "Public Consultations", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "EMA",
+                "Public Consultations",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  EMA done: {len(results[-1]['samples'])} samples")
 
 
@@ -320,22 +629,64 @@ def test_edqm():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.edqm.eu", a.get("href", ""))
-            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
+            date_span = (
+                item.select_one("time")
+                or item.select_one(".date")
+                or item.select_one("span")
+            )
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "News", "source": "EDQM", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "News",
+                    "source": "EDQM",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("EDQM页面可能需要调整选择器")
 
-        results.append(make_result(
-            "EDQM", "News & Events", url, status, samples, issues,
-            "低" if len(samples) >= 3 else "中",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "EDQM",
+                "News & Events",
+                url,
+                status,
+                samples,
+                issues,
+                "低" if len(samples) >= 3 else "中",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("EDQM", "News & Events", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "EDQM",
+                "News & Events",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  EDQM done: {len(results[-1]['samples'])} samples")
 
 
@@ -347,7 +698,11 @@ def test_ich():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = soup.select(".node--type-guideline") or soup.select("article") or soup.select("li")
+        items = (
+            soup.select(".node--type-guideline")
+            or soup.select("article")
+            or soup.select("li")
+        )
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -357,22 +712,64 @@ def test_ich():
             if len(title) < 5:
                 continue
             link = urljoin("https://www.ich.org", a.get("href", ""))
-            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
+            date_span = (
+                item.select_one("time")
+                or item.select_one(".date")
+                or item.select_one("span")
+            )
             pub_date = date_span.get_text(strip=True) if date_span else ""
-            samples.append({"title": title, "pub_date": pub_date, "link": link, "type": "Guideline", "source": "ICH", "effective_date": "", "attachment_link": "", "content_preview": ""})
+            samples.append(
+                {
+                    "title": title,
+                    "pub_date": pub_date,
+                    "link": link,
+                    "type": "Guideline",
+                    "source": "ICH",
+                    "effective_date": "",
+                    "attachment_link": "",
+                    "content_preview": "",
+                }
+            )
 
         issues = []
         if len(samples) < 3:
             issues.append("ICH页面可能需要调整选择器")
 
-        results.append(make_result(
-            "ICH", "Guidelines", url, status, samples, issues,
-            "低" if len(samples) >= 3 else "中",
-            len(samples) == 0, False, False, True,
-            ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"]
-        ))
+        results.append(
+            make_result(
+                "ICH",
+                "Guidelines",
+                url,
+                status,
+                samples,
+                issues,
+                "低" if len(samples) >= 3 else "中",
+                len(samples) == 0,
+                False,
+                False,
+                True,
+                ["httpx", "BeautifulSoup"]
+                if samples
+                else ["Playwright", "BeautifulSoup"],
+            )
+        )
     except Exception as e:
-        results.append(make_result("ICH", "Guidelines", url, "error", [], [str(e)], "高", False, False, False, False, ["unknown"]))
+        results.append(
+            make_result(
+                "ICH",
+                "Guidelines",
+                url,
+                "error",
+                [],
+                [str(e)],
+                "高",
+                False,
+                False,
+                False,
+                False,
+                ["unknown"],
+            )
+        )
     print(f"  ICH done: {len(results[-1]['samples'])} samples")
 
 
@@ -398,7 +795,9 @@ def generate_report():
         report += f"- **需要JS渲染**: {'是' if r['needs_js_rendering'] else '否'}\n"
         report += f"- **需要登录**: {'是' if r['needs_login'] else '否'}\n"
         report += f"- **验证码**: {'是' if r['has_captcha'] else '否'}\n"
-        report += f"- **附件可下载**: {'是' if r['attachments_downloadable'] else '待验证'}\n"
+        report += (
+            f"- **附件可下载**: {'是' if r['attachments_downloadable'] else '待验证'}\n"
+        )
         report += f"- **推荐技术栈**: {', '.join(r['recommended_tech_stack'])}\n"
         if r["issues"]:
             report += f"- **问题**: {'; '.join(r['issues'])}\n"
@@ -450,12 +849,16 @@ if __name__ == "__main__":
     test_ich()
 
     # 保存 JSON 结果
-    with open("scripts/regulatory_poc/feasibility_sample.json", "w", encoding="utf-8") as f:
+    with open(
+        "scripts/regulatory_poc/feasibility_sample.json", "w", encoding="utf-8"
+    ) as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
     # 生成报告
     report = generate_report()
-    with open("scripts/regulatory_poc/feasibility_report.md", "w", encoding="utf-8") as f:
+    with open(
+        "scripts/regulatory_poc/feasibility_report.md", "w", encoding="utf-8"
+    ) as f:
         f.write(report)
 
     print("\n" + "=" * 60)

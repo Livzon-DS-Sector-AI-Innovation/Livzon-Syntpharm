@@ -86,13 +86,16 @@ class KnowledgeInjector:
         cards = await self._load_cards(include_priority)
         if not cards:
             logger.warning("未找到已发布的知识卡片，使用空上下文")
-            return "(法规知识库暂未加载，请依据通用安全知识进行判断，但不要编造法规条文。)"
+            return (
+                "(法规知识库暂未加载，请依据通用安全知识进行判断，但不要编造法规条文。)"
+            )
 
         # 智能选择
         if ai_service and len(cards) > max_cards:
             from app.modules.safety.knowledge.card_selector import (
                 KnowledgeCardSelector,
             )
+
             selector = KnowledgeCardSelector(ai_service)
             selected = await selector.select(
                 cards=cards,
@@ -104,7 +107,8 @@ class KnowledgeInjector:
                 cards = selected
                 logger.info(
                     "智能卡片选择: %d/%d 张被选中用于隐患识别",
-                    len(cards), len(self._cache or []),
+                    len(cards),
+                    len(self._cache or []),
                 )
 
         sections: list[str] = [KNOWLEDGE_HEADER]
@@ -126,7 +130,9 @@ class KnowledgeInjector:
         clauses: list[str] = []
         for card in cards:
             if card.legal_basis_clauses:
-                clauses.append(f"**{card.document_title}** 相关条文：\n{card.legal_basis_clauses}")
+                clauses.append(
+                    f"**{card.document_title}** 相关条文：\n{card.legal_basis_clauses}"
+                )
         return "\n\n".join(clauses) if clauses else ""
 
     async def build_context(
@@ -165,6 +171,7 @@ class KnowledgeInjector:
             from app.modules.safety.knowledge.card_selector import (
                 KnowledgeCardSelector,
             )
+
             selector = KnowledgeCardSelector(ai_service)
             selected = await selector.select(
                 cards=cards,
@@ -196,9 +203,12 @@ class KnowledgeInjector:
         """获取知识卡片状态摘要（供诊断命令使用）。"""
         cards = await self._load_cards("P2")
         field_names = [
-            "hazard_type_definitions", "hazard_category_criteria",
-            "hazard_level_criteria", "key_defect_examples",
-            "rectification_requirements", "legal_basis_clauses",
+            "hazard_type_definitions",
+            "hazard_category_criteria",
+            "hazard_level_criteria",
+            "key_defect_examples",
+            "rectification_requirements",
+            "legal_basis_clauses",
         ]
         return [
             {
@@ -252,8 +262,12 @@ class KnowledgeInjector:
                 card_data = row.knowledge_card
                 if isinstance(card_data, str):
                     card_data = _json.loads(card_data)
-                card_data["document_title"] = row.title or card_data.get("document_title", "")
-                card_data["document_category"] = row.category or card_data.get("document_category", "")
+                card_data["document_title"] = row.title or card_data.get(
+                    "document_title", ""
+                )
+                card_data["document_category"] = row.category or card_data.get(
+                    "document_category", ""
+                )
                 card_data["full_document_ref"] = str(row.id)
                 card_data.setdefault("priority", "P1")
                 card_data.setdefault("version", getattr(row, "card_version", 1) or 1)
@@ -265,7 +279,9 @@ class KnowledgeInjector:
         return cards
 
     @staticmethod
-    def _filter_by_priority(cards: list[KnowledgeCard], max_priority: str) -> list[KnowledgeCard]:
+    def _filter_by_priority(
+        cards: list[KnowledgeCard], max_priority: str
+    ) -> list[KnowledgeCard]:
         """按优先级筛选卡片（P0 < P1 < P2）。"""
         priority_order = {"P0": 0, "P1": 1, "P2": 2}
         max_level = priority_order.get(max_priority, 2)
@@ -305,7 +321,6 @@ class KnowledgeInjector:
             #   GB/T 13861、GB 30871、安全生产法、重大隐患判定标准、十大禁令
             #   （Harness + 危险源辨识共用）
             # ═══════════════════════════════════════════════════════════════
-
             # ━━ P0-1: GB/T 13861-2022（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="GB/T 13861-2022 《生产过程危险和有害因素分类与代码》",
@@ -354,7 +369,6 @@ class KnowledgeInjector:
                     "的分类原则、编码方法和代码结构。"
                 ),
             ),
-
             # ━━ P0-2: GB 30871-2022（新增 — Harness 第5.1节 #3）━━
             KnowledgeCard(
                 document_title="GB 30871-2022 《危险化学品企业特殊作业安全规范》",
@@ -397,7 +411,6 @@ class KnowledgeInjector:
                     "第6.3条：受限空间作业前应进行气体检测。"
                 ),
             ),
-
             # ━━ P0-3: 安全生产法（新增 — Harness #1 + 危险源辨识清单 #1）━━
             KnowledgeCard(
                 document_title="《中华人民共和国安全生产法》（2021年修订）",
@@ -423,7 +436,6 @@ class KnowledgeInjector:
                     "享有同等安全生产权利。"
                 ),
             ),
-
             # ━━ P0-4: 化工重大隐患判定标准（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="《化工和危险化学品生产经营单位重大生产安全事故隐患判定标准（试行）》",
@@ -454,7 +466,6 @@ class KnowledgeInjector:
                     "全文共20条，规定了化工企业重大隐患的具体判定情形。"
                 ),
             ),
-
             # ━━ P0-5: 十大禁令（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="《集团安全生产十大禁令》",
@@ -478,11 +489,9 @@ class KnowledgeInjector:
                     "违反任何一条即为重大隐患，应立即停止相关作业并整改。"
                 ),
             ),
-
             # ═══════════════════════════════════════════════════════════════
             # P1（12 张）—— 类别判定与整改措施
             # ═══════════════════════════════════════════════════════════════
-
             # ━━ P1-1: GB 3836.1-2010（新增 — Harness #4）━━
             KnowledgeCard(
                 document_title="GB 3836.1-2010 《爆炸性环境 第1部分：设备 通用要求》",
@@ -512,7 +521,6 @@ class KnowledgeInjector:
                     "GB 3836.2-2010 第11章：隔爆型 'd' 的隔爆接合面要求。"
                 ),
             ),
-
             # ━━ P1-2: GB 50016（新增 — Harness #5）━━
             KnowledgeCard(
                 document_title="GB 50016 《建筑设计防火规范》",
@@ -534,7 +542,6 @@ class KnowledgeInjector:
                     "第7.1.8条：消防车道的净宽度和净高度均不应小于4.0m。"
                 ),
             ),
-
             # ━━ P1-3: GB 50160（新增 — Harness #6）━━
             KnowledgeCard(
                 document_title="GB 50160 《石油化工企业设计防火标准》",
@@ -561,7 +568,6 @@ class KnowledgeInjector:
                     "第5章：石油化工工艺装置的防火设计。第6章：储运设施的防火设计。"
                 ),
             ),
-
             # ━━ P1-4: 工贸行业重大隐患判定标准（新增 — Harness #8）━━
             KnowledgeCard(
                 document_title="《工贸行业重大生产安全事故隐患判定标准》",
@@ -581,7 +587,6 @@ class KnowledgeInjector:
                     "涵盖粉尘防爆、有限空间、涉氨制冷、冶金、建材、机械等行业。"
                 ),
             ),
-
             # ━━ P1-5: 危化品安全管理条例（新增 — Harness #9）━━
             KnowledgeCard(
                 document_title="《危险化学品安全管理条例》",
@@ -607,7 +612,6 @@ class KnowledgeInjector:
                     "- 未在专用仓库储存危险化学品（第19条）"
                 ),
             ),
-
             # ━━ P1-6: 安监总局16号令（新增 — Harness #12）━━
             KnowledgeCard(
                 document_title="《安全生产事故隐患排查治理暂行规定》（安监总局16号令）",
@@ -634,7 +638,6 @@ class KnowledgeInjector:
                     "治理的时限和要求、安全措施和应急预案。"
                 ),
             ),
-
             # ━━ P1-7: GB 6441-2025（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="GB 6441-2025 《企业职工伤亡事故分类》",
@@ -665,7 +668,6 @@ class KnowledgeInjector:
                     "第4章：各类伤亡事故的定义、判定要点和典型场景。"
                 ),
             ),
-
             # ━━ P1-8: GB 12801-2025（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="GB 12801-2025 《生产过程安全基本要求》",
@@ -695,7 +697,6 @@ class KnowledgeInjector:
                     "第7章：特种设备安全要求；第8章：危险化学品安全要求。"
                 ),
             ),
-
             # ━━ P1-9: GB 5083-2023（新增 — 危险源辨识清单 #7）━━
             KnowledgeCard(
                 document_title="GB 5083-2023 《生产设备安全卫生设计总则》",
@@ -724,7 +725,6 @@ class KnowledgeInjector:
                     "第7章：紧急停止和联锁保护。第10章：噪声与振动控制。"
                 ),
             ),
-
             # ━━ P1-10: HG 20571-2014（新增 — 危险源辨识清单 #9）━━
             KnowledgeCard(
                 document_title="HG 20571-2014 《化工企业安全卫生设计规范》",
@@ -756,7 +756,6 @@ class KnowledgeInjector:
                     "第5章：防火防爆设计。第8章：职业卫生防护。"
                 ),
             ),
-
             # ━━ P1-11: 双重预防机制建设指导手册（已有卡片，保持不变）━━
             KnowledgeCard(
                 document_title="《危险化学品双重预防机制建设指导手册》（2021版）",
@@ -784,7 +783,6 @@ class KnowledgeInjector:
                     "风险分级管控体系建设；第5章：隐患排查治理体系建设。"
                 ),
             ),
-
             # ━━ P1-12: 双重预防机制建设通则（新增 — 危险源辨识清单 #15）━━
             KnowledgeCard(
                 document_title="《企业安全风险分级管控和隐患排查治理双重预防机制建设 通则》",
@@ -814,11 +812,9 @@ class KnowledgeInjector:
                     "第5章：风险分级管控。第6章：隐患排查治理。第7章：持续改进。"
                 ),
             ),
-
             # ═══════════════════════════════════════════════════════════════
             # P2（9 张）—— 专项技术标准与补充
             # ═══════════════════════════════════════════════════════════════
-
             # ━━ P2-1: 特种设备安全法（新增 — Harness #10 + 危险源辨识清单 #5）━━
             KnowledgeCard(
                 document_title="《中华人民共和国特种设备安全法》",
@@ -847,7 +843,6 @@ class KnowledgeInjector:
                     "叉车。"
                 ),
             ),
-
             # ━━ P2-2: GB 4053.3-2009（新增 — Harness #11）━━
             KnowledgeCard(
                 document_title="GB 4053.3-2009 《固定式钢梯及平台安全要求》",
@@ -877,7 +872,6 @@ class KnowledgeInjector:
                     "第5章：钢直梯的安全要求。第6章：平台及通道的安全要求。"
                 ),
             ),
-
             # ━━ P2-3: 职业病危害因素分类目录（新增 — 危险源辨识清单 #4）━━
             KnowledgeCard(
                 document_title="国卫疾控发[2015]92号 《职业病危害因素分类目录》",
@@ -903,7 +897,6 @@ class KnowledgeInjector:
                     "职业病危害因素的，应当及时、如实向所在地卫生行政部门申报危害项目。"
                 ),
             ),
-
             # ━━ P2-4: GB/T 50493-2019（新增 — 危险源辨识清单 #8）━━
             KnowledgeCard(
                 document_title="GB/T 50493-2019 《石油化工可燃气体和有毒气体检测报警设计标准》",
@@ -933,7 +926,6 @@ class KnowledgeInjector:
                     "第5章：检测器和报警控制器的设置。第6章：检测报警系统的安装。"
                 ),
             ),
-
             # ━━ P2-5: SH/T 3097-2017（新增 — 危险源辨识清单 #10）━━
             KnowledgeCard(
                 document_title="SH/T 3097-2017 《石油化工静电接地设计规范》",
@@ -963,7 +955,6 @@ class KnowledgeInjector:
                     "第6章：静电接地的检测与维护。"
                 ),
             ),
-
             # ━━ P2-6: GB 7231（新增 — 危险源辨识清单 #11）━━
             KnowledgeCard(
                 document_title="GB 7231 《工业管道的基本识别色、识别符号和安全标识》",
@@ -997,7 +988,6 @@ class KnowledgeInjector:
                     "第6章：安全标识。"
                 ),
             ),
-
             # ━━ P2-7: GB/T 4272-2024（新增 — 危险源辨识清单 #12）━━
             KnowledgeCard(
                 document_title="GB/T 4272-2024 《设备及管道绝热技术通则》",
@@ -1029,7 +1019,6 @@ class KnowledgeInjector:
                     "第6章：绝热工程施工与验收。"
                 ),
             ),
-
             # ━━ P2-8: 双重预防数字化建设指南（新增 — 危险源辨识清单 #14）━━
             KnowledgeCard(
                 document_title="《危险化学品企业双重预防机制数字化建设工作指南（试行）》",
@@ -1059,7 +1048,6 @@ class KnowledgeInjector:
                     "第3章：数字化建设内容。第4章：功能要求。第5章：数据管理。"
                 ),
             ),
-
             # ━━ LEC 方法论（保留，非法规但用于危险源辨识风险评价）━━
             KnowledgeCard(
                 document_title="LEC 风险评价法——作业条件危险性评价",
@@ -1108,8 +1096,7 @@ class KnowledgeInjector:
 
         parts: list[str] = [
             "### 文档: " + card.document_title,
-            "**类别**: " + card.document_category
-            + " | **优先级**: " + card.priority,
+            "**类别**: " + card.document_category + " | **优先级**: " + card.priority,
         ]
 
         for attr, label in attr_labels.items():

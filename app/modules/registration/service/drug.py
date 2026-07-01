@@ -35,7 +35,7 @@ async def update_drug(
 ) -> Drug:
     """更新药品"""
     # 检查药品是否存在
-    drug = await get_drug(db, drug_id)
+    await get_drug(db, drug_id)
 
     # 更新药品基本信息
     update_data = data.model_dump(exclude_unset=True, exclude={"nodes"})

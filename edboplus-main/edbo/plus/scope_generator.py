@@ -1,4 +1,3 @@
-
 import itertools
 import os
 from pathlib import Path
@@ -6,9 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 
-def create_reaction_scope(components, directory='./', filename='reaction.csv',
-                          check_overwrite=True):
-
+def create_reaction_scope(
+    components, directory="./", filename="reaction.csv", check_overwrite=True
+):
     """
     Reaction scope generator. Pass components dictionary, each
     dictionary key contains a list of the choices for a given component.
@@ -41,8 +40,8 @@ def create_reaction_scope(components, directory='./', filename='reaction.csv',
     # Ask to overwrite previous scope.
 
     if os.path.exists(csv_filename) and check_overwrite is True:
-        overwrite = input('Scope already exists. Overwrite? Y = yes, N = no\n')
-        if overwrite.lower() != 'y':
+        overwrite = input("Scope already exists. Overwrite? Y = yes, N = no\n")
+        if overwrite.lower() != "y":
             return
 
     # Predict how large will the scope be.
@@ -57,10 +56,8 @@ def create_reaction_scope(components, directory='./', filename='reaction.csv',
     keys = components.keys()
     values = (components[key] for key in keys)
 
-    scope = [dict(zip(keys, combination)) for combination in
-                itertools.product(*values)]
+    scope = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
     df_scope = pd.DataFrame(scope)
-    df_scope.to_csv(csv_filename, index=False, mode='w',
-                    header=list(keys))
+    df_scope.to_csv(csv_filename, index=False, mode="w", header=list(keys))
 
     return df_scope, n_combinations

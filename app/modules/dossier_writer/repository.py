@@ -1,4 +1,5 @@
 """Dossier Writer database queries."""
+
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -20,15 +21,12 @@ class DossierRepository:
         self, product_name: str, manufacturer: str, sterile_type: str
     ) -> ProductDossier | None:
         """检查是否存在相同的品种资料"""
-        stmt = (
-            select(ProductDossier)
-            .where(
-                and_(
-                    ProductDossier.product_name == product_name,
-                    ProductDossier.manufacturer == manufacturer,
-                    ProductDossier.sterile_type == sterile_type,
-                    ProductDossier.is_deleted == False,
-                )
+        stmt = select(ProductDossier).where(
+            and_(
+                ProductDossier.product_name == product_name,
+                ProductDossier.manufacturer == manufacturer,
+                ProductDossier.sterile_type == sterile_type,
+                not ProductDossier.is_deleted,
             )
         )
         result = await self.db.execute(stmt)
@@ -44,7 +42,7 @@ class DossierRepository:
         """获取品种资料详情"""
         stmt = (
             select(ProductDossier)
-            .where(and_(ProductDossier.id == dossier_id, ProductDossier.is_deleted == False))
+            .where(and_(ProductDossier.id == dossier_id, not ProductDossier.is_deleted))
             .options(selectinload(ProductDossier.templates))
         )
         result = await self.db.execute(stmt)
@@ -55,8 +53,10 @@ class DossierRepository:
     ) -> tuple[list[ProductDossier], int]:
         """获取品种资料列表"""
         # 查询总数
-        count_stmt = select(func.count()).select_from(ProductDossier).where(
-            ProductDossier.is_deleted == False
+        count_stmt = (
+            select(func.count())
+            .select_from(ProductDossier)
+            .where(not ProductDossier.is_deleted)
         )
         total_result = await self.db.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -64,7 +64,7 @@ class DossierRepository:
         # 查询列表
         stmt = (
             select(ProductDossier)
-            .where(ProductDossier.is_deleted == False)
+            .where(not ProductDossier.is_deleted)
             .order_by(ProductDossier.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -104,7 +104,9 @@ class DossierRepository:
         await self.db.flush()
         return template
 
-    async def get_template_by_filename(self, dossier_id: UUID, filename: str) -> DossierTemplate | None:
+    async def get_template_by_filename(
+        self, dossier_id: UUID, filename: str
+    ) -> DossierTemplate | None:
         """根据文件名查找模板（用于覆盖更新），返回最新的一条"""
         stmt = (
             select(DossierTemplate)

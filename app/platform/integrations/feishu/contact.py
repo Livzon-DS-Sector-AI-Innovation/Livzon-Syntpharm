@@ -102,15 +102,17 @@ async def get_all_departments() -> list[dict]:
                     order_val = int(order_str)
                 except (ValueError, TypeError):
                     order_val = 0
-                all_depts.append({
-                    "department_id": oid,
-                    "name": name,
-                    "parent_department_id": parent_oid if parent_id != "0" else "",
-                    "leader_user_id": it.get("leader_user_id", "") or "",
-                    "member_count": it.get("member_count", 0) or 0,
-                    "status_is_deleted": False,
-                    "order": order_val,
-                })
+                all_depts.append(
+                    {
+                        "department_id": oid,
+                        "name": name,
+                        "parent_department_id": parent_oid if parent_id != "0" else "",
+                        "leader_user_id": it.get("leader_user_id", "") or "",
+                        "member_count": it.get("member_count", 0) or 0,
+                        "status_is_deleted": False,
+                        "order": order_val,
+                    }
+                )
                 # 继续递归子部门
                 queue.append((oid, oid))
             if not data.get("has_more"):
@@ -155,12 +157,14 @@ async def get_department_members(dept_id: str) -> list[dict]:
             data = json.loads(raw.decode("utf-8")).get("data", {})
             items = data.get("items", [])
             for item in items:
-                all_members.append({
-                    "user_id": item.get("user_id", ""),
-                    "name": item.get("name", ""),
-                    "employee_no": item.get("employee_no", ""),
-                    "department_id": dept_id,
-                })
+                all_members.append(
+                    {
+                        "user_id": item.get("user_id", ""),
+                        "name": item.get("name", ""),
+                        "employee_no": item.get("employee_no", ""),
+                        "department_id": dept_id,
+                    }
+                )
             if not data.get("has_more"):
                 break
             page_token = data.get("page_token", "")
@@ -243,16 +247,18 @@ async def get_all_users() -> list[dict]:
         if raw:
             data = json.loads(raw.decode("utf-8")).get("data", {})
             for u in data.get("items", []):
-                all_users.append({
-                    "user_id": u.get("user_id", ""),
-                    "open_id": u.get("open_id", ""),
-                    "name": u.get("name", ""),
-                    "employee_no": u.get("employee_no", ""),
-                    "email": u.get("email", ""),
-                    "mobile": u.get("mobile", ""),
-                    "job_title": u.get("job_title", ""),
-                    "department_ids": u.get("department_ids", []),
-                })
+                all_users.append(
+                    {
+                        "user_id": u.get("user_id", ""),
+                        "open_id": u.get("open_id", ""),
+                        "name": u.get("name", ""),
+                        "employee_no": u.get("employee_no", ""),
+                        "email": u.get("email", ""),
+                        "mobile": u.get("mobile", ""),
+                        "job_title": u.get("job_title", ""),
+                        "department_ids": u.get("department_ids", []),
+                    }
+                )
             if not data.get("has_more"):
                 break
             page_token = data.get("page_token", "")
@@ -292,7 +298,9 @@ async def find_users_by_department(department_id: str) -> list[dict]:
         if not resp.success():
             logger.error(
                 "Failed to find users by department %s: code=%s, msg=%s",
-                department_id, resp.code, resp.msg,
+                department_id,
+                resp.code,
+                resp.msg,
             )
             break
 
@@ -301,12 +309,14 @@ async def find_users_by_department(department_id: str) -> list[dict]:
                 positions: list[dict] = []
                 if u.positions:
                     for p in u.positions:
-                        positions.append({
-                            "position_code": p.position_code,
-                            "position_name": p.position_name,
-                            "department_id": p.department_id,
-                            "is_major": p.is_major,
-                        })
+                        positions.append(
+                            {
+                                "position_code": p.position_code,
+                                "position_name": p.position_name,
+                                "department_id": p.department_id,
+                                "is_major": p.is_major,
+                            }
+                        )
 
                 department_path: list[dict] = []
                 if u.department_path:
@@ -314,31 +324,32 @@ async def find_users_by_department(department_id: str) -> list[dict]:
                         dept_name = ""
                         if dp.department_name:
                             dept_name = dp.department_name.name or ""
-                        dept_id_val = (
-                            str(dp.department_id)
-                            if dp.department_id else ""
+                        dept_id_val = str(dp.department_id) if dp.department_id else ""
+                        department_path.append(
+                            {
+                                "department_id": dept_id_val,
+                                "department_name": dept_name,
+                            }
                         )
-                        department_path.append({
-                            "department_id": dept_id_val,
-                            "department_name": dept_name,
-                        })
 
-                all_users.append({
-                    "user_id": u.user_id or "",
-                    "open_id": u.open_id or "",
-                    "name": u.name or "",
-                    "en_name": u.en_name or "",
-                    "email": u.email or "",
-                    "mobile": u.mobile or "",
-                    "employee_no": u.employee_no or "",
-                    "job_title": u.job_title or "",
-                    "department_ids": u.department_ids or [],
-                    "positions": positions,
-                    "department_path": department_path,
-                    "avatar_key": u.avatar_key or "",
-                    "join_time": u.join_time or 0,
-                    "is_frozen": u.is_frozen if u.is_frozen is not None else False,
-                })
+                all_users.append(
+                    {
+                        "user_id": u.user_id or "",
+                        "open_id": u.open_id or "",
+                        "name": u.name or "",
+                        "en_name": u.en_name or "",
+                        "email": u.email or "",
+                        "mobile": u.mobile or "",
+                        "employee_no": u.employee_no or "",
+                        "job_title": u.job_title or "",
+                        "department_ids": u.department_ids or [],
+                        "positions": positions,
+                        "department_path": department_path,
+                        "avatar_key": u.avatar_key or "",
+                        "join_time": u.join_time or 0,
+                        "is_frozen": u.is_frozen if u.is_frozen is not None else False,
+                    }
+                )
 
             if not resp.data.has_more:
                 break
@@ -347,7 +358,9 @@ async def find_users_by_department(department_id: str) -> list[dict]:
             break
 
     logger.info(
-        "Fetched %d users from department %s", len(all_users), department_id,
+        "Fetched %d users from department %s",
+        len(all_users),
+        department_id,
     )
     return all_users
 
@@ -362,18 +375,15 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict |
 
     from lark_oapi.api.contact.v3 import GetUserRequest
 
-    req = (
-        GetUserRequest.builder()
-        .user_id_type(user_id_type)
-        .user_id(user_id)
-        .build()
-    )
+    req = GetUserRequest.builder().user_id_type(user_id_type).user_id(user_id).build()
     req.headers["Authorization"] = f"Bearer {token}"
     resp = await client.contact.v3.user.aget(req)
     if not resp.success():
         logger.error(
             "Failed to get user %s: code=%s, msg=%s",
-            user_id, resp.code, resp.msg,
+            user_id,
+            resp.code,
+            resp.msg,
         )
         return None
 
@@ -382,12 +392,14 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict |
         positions: list[dict] = []
         if u.positions:
             for p in u.positions:
-                positions.append({
-                    "position_code": p.position_code,
-                    "position_name": p.position_name,
-                    "department_id": p.department_id,
-                    "is_major": p.is_major,
-                })
+                positions.append(
+                    {
+                        "position_code": p.position_code,
+                        "position_name": p.position_name,
+                        "department_id": p.department_id,
+                        "is_major": p.is_major,
+                    }
+                )
 
         department_path: list[dict] = []
         if u.department_path:
@@ -395,10 +407,14 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict |
                 dept_name = ""
                 if dp.department_name:
                     dept_name = dp.department_name.name or ""
-                department_path.append({
-                    "department_id": str(dp.department_id) if dp.department_id else "",
-                    "department_name": dept_name,
-                })
+                department_path.append(
+                    {
+                        "department_id": str(dp.department_id)
+                        if dp.department_id
+                        else "",
+                        "department_name": dept_name,
+                    }
+                )
 
         return {
             "user_id": u.user_id or "",

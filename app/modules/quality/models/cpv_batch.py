@@ -14,7 +14,9 @@ class CpvBatch(BaseModel):
     __tablename__ = "cpv_batches"
     __table_args__ = (
         UniqueConstraint(
-            "product_id", "batch_no", "data_type",
+            "product_id",
+            "batch_no",
+            "data_type",
             name="uq_cpv_batches_product_batch_type",
         ),
         {"schema": "quality", "comment": "CPV批次表"},
@@ -23,9 +25,7 @@ class CpvBatch(BaseModel):
     product_id: Mapped[str] = mapped_column(
         ForeignKey("quality.cpv_products.id"), nullable=False, comment="产品ID"
     )
-    batch_no: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="批号"
-    )
+    batch_no: Mapped[str] = mapped_column(String(100), nullable=False, comment="批号")
     production_date: Mapped[date] = mapped_column(
         Date, nullable=False, comment="生产日期"
     )
@@ -33,8 +33,10 @@ class CpvBatch(BaseModel):
         String(10), nullable=False, comment="数据类型: CPP/CQA"
     )
     source: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="manual",
-        comment="数据来源: excel/feishu/manual"
+        String(20),
+        nullable=False,
+        default="manual",
+        comment="数据来源: excel/feishu/manual",
     )
     import_task_id: Mapped[str | None] = mapped_column(
         ForeignKey("quality.cpv_import_tasks.id"), nullable=True, comment="导入任务ID"

@@ -23,7 +23,8 @@ class InspectionScheduleGenerator(TaskGenerator):
 
     name = "equipment.inspection_schedules"
     schedule = ScheduleConfig(
-        strategy=ScheduleStrategy.INTERVAL, interval_seconds=30,
+        strategy=ScheduleStrategy.INTERVAL,
+        interval_seconds=30,
     )
 
     async def find_due(self, session):
@@ -32,24 +33,26 @@ class InspectionScheduleGenerator(TaskGenerator):
     async def execute_one(self, session, item) -> None:
         now = datetime.now(_CST)
 
-        task = await create_task(session, {
-            "plan_type": "线路巡检",
-            "route_id": str(item.route_id),
-            "assigned_to": (
-                str(item.assigned_to)
-                if item.assigned_to else None
-            ),
-            "planned_time": now,
-        })
+        task = await create_task(
+            session,
+            {
+                "plan_type": "线路巡检",
+                "route_id": str(item.route_id),
+                "assigned_to": (str(item.assigned_to) if item.assigned_to else None),
+                "planned_time": now,
+            },
+        )
 
         await start_task(session, task.id)
 
         item.last_triggered_at = now
         item.next_trigger_at = compute_next_cron(
-            item.cron_expression, now,
+            item.cron_expression,
+            now,
         )
 
         logger.info(
             "Schedule triggered: route=%s task=%s",
-            item.route_id, task.task_no,
+            item.route_id,
+            task.task_no,
         )

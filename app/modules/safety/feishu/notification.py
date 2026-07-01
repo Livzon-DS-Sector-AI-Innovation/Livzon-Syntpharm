@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 def _json_dumps(obj) -> str:
     """JSON 序列化，自动将 UUID 转为字符串。"""
-    return json.dumps(obj, ensure_ascii=False, default=lambda o: str(o) if isinstance(o, UUID) else o)
+    return json.dumps(
+        obj, ensure_ascii=False, default=lambda o: str(o) if isinstance(o, UUID) else o
+    )
 
 
 async def send_user_card(
@@ -85,7 +87,9 @@ async def send_user_card(
         if not resp.success():
             logger.error(
                 "安全模块 send_user_card 失败: open_id=%s, code=%s, msg=%s",
-                open_id, resp.code, resp.msg,
+                open_id,
+                resp.code,
+                resp.msg,
             )
             return False
         logger.info("安全模块卡片已发送: open_id=%s, title=%s", open_id, title)
@@ -120,11 +124,7 @@ async def update_card(message_id: str, card: dict) -> bool:
         req = (
             PatchMessageRequest.builder()
             .message_id(message_id)
-            .request_body(
-                PatchMessageRequestBody.builder()
-                .content(card_json)
-                .build()
-            )
+            .request_body(PatchMessageRequestBody.builder().content(card_json).build())
             .build()
         )
         req.headers["Authorization"] = f"Bearer {token}"
@@ -132,7 +132,9 @@ async def update_card(message_id: str, card: dict) -> bool:
         if not resp.success():
             logger.error(
                 "安全模块 update_card 失败: message_id=%s, code=%s, msg=%s",
-                message_id, resp.code, resp.msg,
+                message_id,
+                resp.code,
+                resp.msg,
             )
             return False
         logger.info("安全模块卡片已更新: message_id=%s", message_id)
@@ -202,11 +204,15 @@ async def send_group_card(
         if not resp.success():
             logger.error(
                 "安全模块 send_group_card 失败: chat_id=%s, code=%s, msg=%s",
-                chat_id, resp.code, resp.msg,
+                chat_id,
+                resp.code,
+                resp.msg,
             )
             return None
         message_id = resp.data.message_id if resp.data else None
-        logger.info("安全模块群卡片已发送: chat_id=%s, message_id=%s", chat_id, message_id)
+        logger.info(
+            "安全模块群卡片已发送: chat_id=%s, message_id=%s", chat_id, message_id
+        )
         return message_id
     except Exception:
         logger.exception("安全模块 send_group_card 异常")
@@ -308,7 +314,9 @@ async def upload_image_to_feishu(file_path: str) -> str | None:
     else:
         abs_path = _resolve_local_image_path(file_path)
         if not abs_path:
-            logger.warning("图片文件不存在，跳过上传: %s (checked multiple variants)", file_path)
+            logger.warning(
+                "图片文件不存在，跳过上传: %s (checked multiple variants)", file_path
+            )
             return None
         with open(abs_path, "rb") as f:
             image_data = f.read()

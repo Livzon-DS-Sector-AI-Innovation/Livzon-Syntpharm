@@ -85,7 +85,7 @@ def _get_upload_dir() -> Path:
 
 def _is_docx_format(data: bytes) -> bool:
     """检测文件是否为 DOCX 格式（ZIP 压缩包）"""
-    return data[:4] == b'PK'
+    return data[:4] == b"PK"
 
 
 def generate_authorization_letter_bytes(
@@ -117,16 +117,16 @@ def _docx_replace(
     """对 DOCX 文件执行 XML 文本替换"""
     replacement_dict = {old: new for old, new in replacements}
 
-    with zipfile.ZipFile(io.BytesIO(template_data), 'r') as z:
+    with zipfile.ZipFile(io.BytesIO(template_data), "r") as z:
         # 读取所有文件
         files = {}
         for name in z.namelist():
             files[name] = z.read(name)
 
         # 处理 document.xml
-        if 'word/document.xml' in files:
+        if "word/document.xml" in files:
             try:
-                doc_xml = files['word/document.xml'].decode('utf-8')
+                doc_xml = files["word/document.xml"].decode("utf-8")
             except UnicodeDecodeError:
                 raise ValueError("模板文件编码错误：DOCX 文档包含非 UTF-8 编码的内容")
 
@@ -137,11 +137,11 @@ def _docx_replace(
                 else:
                     logger.warning(f"未找到文本：'{old_text}'")
 
-            files['word/document.xml'] = doc_xml.encode('utf-8')
+            files["word/document.xml"] = doc_xml.encode("utf-8")
 
         # 创建新的 docx 文件
         output = io.BytesIO()
-        with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as out_z:
+        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as out_z:
             for name, content in files.items():
                 out_z.writestr(name, content)
 
@@ -348,9 +348,12 @@ class SupplementaryReplyService:
         # 2. 合并药品信息（用户手动输入优先于 PDF 提取）
         drug_info = {
             "drug_name": drug_name_override or metadata.get("drug_name", "未知药品"),
-            "registration_number": registration_number_override or metadata.get("registration_number", ""),
-            "acceptance_number": acceptance_number_override or metadata.get("acceptance_number", ""),
-            "company_name": company_name_override or metadata.get("company_name", API_COMPANY),
+            "registration_number": registration_number_override
+            or metadata.get("registration_number", ""),
+            "acceptance_number": acceptance_number_override
+            or metadata.get("acceptance_number", ""),
+            "company_name": company_name_override
+            or metadata.get("company_name", API_COMPANY),
             "doc_type": "补充资料",
             "application_type": "首次登记",
             "contact": "魏永红",

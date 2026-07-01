@@ -8,13 +8,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ProductInfo(BaseModel):
     """品种登记号对照表条目"""
+
     product_name: str = Field(..., description="品种名称")
     registration_number: str = Field(..., description="登记号")
 
 
 class AuthorizationLetterCreate(BaseModel):
     """生成授权书请求"""
-    product_name: str = Field(..., max_length=128, description="产品名称（对照表标准名）")
+
+    product_name: str = Field(
+        ..., max_length=128, description="产品名称（对照表标准名）"
+    )
     registration_number: str = Field(..., max_length=32, description="产品登记号")
     preparation_unit: str = Field(..., max_length=256, description="制剂单位名称")
     preparation_name: str = Field(..., max_length=256, description="制剂名称")
@@ -53,10 +57,13 @@ class AuthorizationLetterListItem(BaseModel):
 
 class SupplementaryReplyCreate(BaseModel):
     """生成发补回复请求"""
+
     drug_name: str | None = Field(None, max_length=128, description="药品名称")
     registration_number: str | None = Field(None, max_length=64, description="登记号")
     acceptance_number: str | None = Field(None, max_length=64, description="受理号")
-    company_name: str | None = Field(None, max_length=256, description="申请人/公司名称")
+    company_name: str | None = Field(
+        None, max_length=256, description="申请人/公司名称"
+    )
     remarks: str | None = Field(None, description="备注")
 
 
@@ -92,8 +99,11 @@ class SupplementaryReplyListItem(BaseModel):
 
 class ReferenceStandardCreate(BaseModel):
     """生成对照物质说明表请求"""
+
     drug_name: str = Field(..., max_length=128, description="药品名称")
-    reference_substance_name: str | None = Field(None, max_length=256, description="对照物质名称")
+    reference_substance_name: str | None = Field(
+        None, max_length=256, description="对照物质名称"
+    )
     batch_number: str | None = Field(None, max_length=64, description="批号")
     manufacturer: str | None = Field(None, max_length=256, description="生产厂家")
     english_name: str | None = Field(None, max_length=256, description="英文名")
@@ -110,6 +120,7 @@ class ReferenceStandardCreate(BaseModel):
 
 class ReferenceStandardResponse(BaseModel):
     """对照物质说明表记录响应"""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -135,6 +146,7 @@ class ReferenceStandardResponse(BaseModel):
 
 class ReferenceStandardListItem(BaseModel):
     """对照物质说明表列表项"""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

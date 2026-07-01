@@ -175,8 +175,17 @@ class SpecialOperationReportService:
     ) -> tuple[list[SpecialOperationReport], int]:
         """获取特殊作业报备列表"""
         return await self.repo.get_special_operation_reports(
-            skip, limit, status, operation_type, operation_level,
-            risk_level, department, date_from, date_to, keyword, is_critical,
+            skip,
+            limit,
+            status,
+            operation_type,
+            operation_level,
+            risk_level,
+            department,
+            date_from,
+            date_to,
+            keyword,
+            is_critical,
         )
 
     async def get_report(self, report_id: uuid.UUID) -> SpecialOperationReport | None:
@@ -198,14 +207,18 @@ class SpecialOperationReportService:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_special_operation_report(report_id, update_data)
         if item:
-            await self._audit("update", "special_operation_report", resource_id=report_id)
+            await self._audit(
+                "update", "special_operation_report", resource_id=report_id
+            )
         return item
 
     async def delete_report(self, report_id: uuid.UUID) -> bool:
         """删除报备"""
         result = await self.repo.delete_special_operation_report(report_id)
         if result:
-            await self._audit("delete", "special_operation_report", resource_id=report_id)
+            await self._audit(
+                "delete", "special_operation_report", resource_id=report_id
+            )
         return result
 
     # ── 工作流 ──
@@ -222,11 +235,12 @@ class SpecialOperationReportService:
         is_critical, critical_reason = await self._identify_critical(report)
 
         return await self.repo.update_special_operation_report(
-            report_id, {
+            report_id,
+            {
                 "status": "submitted",
                 "is_critical": is_critical,
                 "is_critical_reason": critical_reason,
-            }
+            },
         )
 
     async def approve_report(
@@ -254,18 +268,23 @@ class SpecialOperationReportService:
         )
 
     async def set_critical_manual(
-        self, report_id: uuid.UUID, is_critical: bool, reason: str | None, updated_by: str | None
+        self,
+        report_id: uuid.UUID,
+        is_critical: bool,
+        reason: str | None,
+        updated_by: str | None,
     ) -> SpecialOperationReport | None:
         """手动修改关键作业标记"""
         report = await self.repo.get_special_operation_report_by_id(report_id)
         if not report:
             return None
         return await self.repo.update_special_operation_report(
-            report_id, {
+            report_id,
+            {
                 "is_critical": is_critical,
                 "is_critical_reason": reason,
                 "is_critical_updated_by": updated_by,
-            }
+            },
         )
 
     # ── AI 判定 ──
@@ -273,6 +292,7 @@ class SpecialOperationReportService:
     async def _get_ai_service(self) -> "AIService":
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
+
         return await create_ai_service("text")
 
     async def _identify_critical(
@@ -291,10 +311,14 @@ class SpecialOperationReportService:
     ) -> tuple[bool, str | None]:
         """使用 AI 判定关键作业（提示词由工作流配置提供）"""
         OP_TYPE_LABELS = {
-            "hot_work": "动火作业", "confined_space": "受限空间",
-            "height_work": "高处作业", "temporary_electricity": "临时用电",
-            "blind_plate": "盲板抽堵", "excavation": "动土作业",
-            "lifting": "起重吊装", "road_breaking": "断路作业",
+            "hot_work": "动火作业",
+            "confined_space": "受限空间",
+            "height_work": "高处作业",
+            "temporary_electricity": "临时用电",
+            "blind_plate": "盲板抽堵",
+            "excavation": "动土作业",
+            "lifting": "起重吊装",
+            "road_breaking": "断路作业",
         }
         op_label = OP_TYPE_LABELS.get(report.operation_type, report.operation_type)
 
@@ -314,7 +338,10 @@ class SpecialOperationReportService:
         prompt = CRITICAL_IDENTIFICATION_PROMPT + "\n\n## 本次判定输入\n" + context
 
         messages = [
-            {"role": "system", "content": "你是一名化工安全专家，严格按照 GB 30871-2022 标准判定。只返回 JSON。"},
+            {
+                "role": "system",
+                "content": "你是一名化工安全专家，严格按照 GB 30871-2022 标准判定。只返回 JSON。",
+            },
             {"role": "user", "content": prompt},
         ]
 
@@ -338,7 +365,10 @@ class SpecialOperationReportService:
             critical_reasons.append(f"风险等级为{report.risk_level}")
 
         # 高风险作业类型 + 特级/一级
-        if report.operation_type in high_risk_types and report.operation_level in ("special", "grade1"):
+        if report.operation_type in high_risk_types and report.operation_level in (
+            "special",
+            "grade1",
+        ):
             if not critical_reasons:
                 critical_reasons.append(
                     f"{report.operation_type} 作业类型属于高风险作业"
@@ -387,15 +417,17 @@ class SpecialOperationReportService:
 
     # ── AI 导出 ──
 
-    async def parse_natural_query(
-        self, natural_query: str
-    ) -> dict:
+    async def parse_natural_query(self, natural_query: str) -> dict:
         """使用 AI 将自然语言筛选条件解析为结构化参数（提示词由工作流配置提供）"""
         OP_TYPE_LABELS = {
-            "动火作业": "hot_work", "受限空间": "confined_space",
-            "高处作业": "height_work", "临时用电": "temporary_electricity",
-            "盲板抽堵": "blind_plate", "动土作业": "excavation",
-            "起重吊装": "lifting", "断路作业": "road_breaking",
+            "动火作业": "hot_work",
+            "受限空间": "confined_space",
+            "高处作业": "height_work",
+            "临时用电": "temporary_electricity",
+            "盲板抽堵": "blind_plate",
+            "动土作业": "excavation",
+            "起重吊装": "lifting",
+            "断路作业": "road_breaking",
         }
 
         # 使用硬编码提示词构建 prompt
@@ -409,6 +441,7 @@ class SpecialOperationReportService:
             ]
             response_text = await ai.chat(messages, response_format="json_object")
             import json
+
             result = json.loads(response_text)
             # 验证 operation_type 值
             if result.get("operation_type"):
@@ -419,7 +452,10 @@ class SpecialOperationReportService:
             return {k: v for k, v in result.items() if v is not None}
         except Exception as e:
             logger.warning("AI 自然语言解析失败: %s", e)
-            return {"explanation": f"AI 解析失败，将使用原始查询: {natural_query}", "keyword": natural_query}
+            return {
+                "explanation": f"AI 解析失败，将使用原始查询: {natural_query}",
+                "keyword": natural_query,
+            }
 
     async def export_ledger_excel(
         self,
@@ -439,21 +475,40 @@ class SpecialOperationReportService:
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
         items, _ = await self.get_ledger(
-            skip=0, limit=10000,  # 导出全部（上限1万条）
-            operation_type=operation_type, operation_level=operation_level,
-            risk_level=risk_level, department=department,
-            date_from=date_from, date_to=date_to,
-            keyword=keyword, is_critical=is_critical,
+            skip=0,
+            limit=10000,  # 导出全部（上限1万条）
+            operation_type=operation_type,
+            operation_level=operation_level,
+            risk_level=risk_level,
+            department=department,
+            date_from=date_from,
+            date_to=date_to,
+            keyword=keyword,
+            is_critical=is_critical,
         )
 
         OP_TYPE_LABELS = {
-            "hot_work": "动火作业", "confined_space": "受限空间",
-            "height_work": "高处作业", "temporary_electricity": "临时用电",
-            "blind_plate": "盲板抽堵", "excavation": "动土作业",
-            "lifting": "起重吊装", "road_breaking": "断路作业",
+            "hot_work": "动火作业",
+            "confined_space": "受限空间",
+            "height_work": "高处作业",
+            "temporary_electricity": "临时用电",
+            "blind_plate": "盲板抽堵",
+            "excavation": "动土作业",
+            "lifting": "起重吊装",
+            "road_breaking": "断路作业",
         }
-        OP_LEVEL_LABELS = {"special": "特级", "grade1": "一级", "grade2": "二级", "not_applicable": "不涉及"}
-        STATUS_LABELS = {"draft": "草稿", "submitted": "审批中", "approved": "已审批", "rejected": "已驳回"}
+        OP_LEVEL_LABELS = {
+            "special": "特级",
+            "grade1": "一级",
+            "grade2": "二级",
+            "not_applicable": "不涉及",
+        }
+        STATUS_LABELS = {
+            "draft": "草稿",
+            "submitted": "审批中",
+            "approved": "已审批",
+            "rejected": "已驳回",
+        }
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -461,8 +516,12 @@ class SpecialOperationReportService:
 
         # 标题样式
         header_font = Font(name="微软雅黑", bold=True, size=11, color="FFFFFF")
-        header_fill = PatternFill(start_color="5645D4", end_color="5645D4", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        header_fill = PatternFill(
+            start_color="5645D4", end_color="5645D4", fill_type="solid"
+        )
+        header_alignment = Alignment(
+            horizontal="center", vertical="center", wrap_text=True
+        )
         cell_font = Font(name="微软雅黑", size=10)
         cell_alignment = Alignment(vertical="center", wrap_text=True)
         thin_border = Border(
@@ -471,14 +530,28 @@ class SpecialOperationReportService:
             top=Side(style="thin", color="D9D9D9"),
             bottom=Side(style="thin", color="D9D9D9"),
         )
-        critical_fill = PatternFill(start_color="FDE0EC", end_color="FDE0EC", fill_type="solid")
+        critical_fill = PatternFill(
+            start_color="FDE0EC", end_color="FDE0EC", fill_type="solid"
+        )
 
         # 表头
         headers = [
-            "序号", "报备编号", "作业类型", "作业级别", "作业地点",
-            "作业内容", "作业部门", "计划开始", "计划结束",
-            "报备人", "审批人", "审批时间",
-            "状态", "是否关键作业", "关键作业判定理由", "备注",
+            "序号",
+            "报备编号",
+            "作业类型",
+            "作业级别",
+            "作业地点",
+            "作业内容",
+            "作业部门",
+            "计划开始",
+            "计划结束",
+            "报备人",
+            "审批人",
+            "审批时间",
+            "状态",
+            "是否关键作业",
+            "关键作业判定理由",
+            "备注",
         ]
         for col_idx, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_idx, value=header)
@@ -497,8 +570,12 @@ class SpecialOperationReportService:
                 item.location or "",
                 item.work_description or "",
                 item.department or "",
-                item.planned_start_time.strftime("%Y-%m-%d %H:%M") if item.planned_start_time else "",
-                item.planned_end_time.strftime("%Y-%m-%d %H:%M") if item.planned_end_time else "",
+                item.planned_start_time.strftime("%Y-%m-%d %H:%M")
+                if item.planned_start_time
+                else "",
+                item.planned_end_time.strftime("%Y-%m-%d %H:%M")
+                if item.planned_end_time
+                else "",
                 item.applicant_name or "",
                 item.approver_name or "",
                 item.approved_at.strftime("%Y-%m-%d %H:%M") if item.approved_at else "",
@@ -519,7 +596,9 @@ class SpecialOperationReportService:
         # 列宽
         col_widths = [6, 14, 10, 8, 14, 24, 12, 16, 16, 8, 8, 16, 8, 10, 28, 20]
         for col_idx, width in enumerate(col_widths, 1):
-            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
+            ws.column_dimensions[
+                openpyxl.utils.get_column_letter(col_idx)
+            ].width = width
 
         # 冻结首行
         ws.freeze_panes = "A2"
@@ -528,5 +607,3 @@ class SpecialOperationReportService:
         wb.save(output)
         output.seek(0)
         return output.getvalue()
-
-

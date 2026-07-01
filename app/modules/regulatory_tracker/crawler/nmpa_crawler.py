@@ -109,7 +109,6 @@ delete navigator.__proto__.webdriver;
 NMPA_DATASEARCH_HOME = "https://www.nmpa.gov.cn/datasearch/home-index.html"
 
 
-
 # 已知的 NMPA 数据 API URL 关键词（按优先级）
 API_MATCH_PATTERNS = [
     "nmpa.gov.cn/datasearch/data",
@@ -119,7 +118,6 @@ API_MATCH_PATTERNS = [
     "nmpa.gov.cn/data",
     "nmpa.gov.cn/search",
 ]
-
 
 
 class NmpaRecordAdapter:
@@ -168,30 +166,36 @@ class NmpaRecordAdapter:
         # Read config from database if not overridden
         self.headless = self._headless_override
         if self.headless is None:
-            self.headless = await get_module_setting_bool("regulatory_tracker", "NMPA_CRAWLER_HEADLESS", False)
+            self.headless = await get_module_setting_bool(
+                "regulatory_tracker", "NMPA_CRAWLER_HEADLESS", False
+            )
 
         self.list_url = self._list_url_override
         if self.list_url is None:
             self.list_url = await get_module_setting(
                 "regulatory_tracker",
                 "NMPA_BAXX_SEARCH_URL",
-                "https://www.nmpa.gov.cn/datasearch/search-result.html"
+                "https://www.nmpa.gov.cn/datasearch/search-result.html",
             )
 
         self.discovery_mode = self._discovery_mode_override
         if self.discovery_mode is None:
-            self.discovery_mode = await get_module_setting_bool("regulatory_tracker", "NMPA_API_DISCOVERY_MODE", True)
+            self.discovery_mode = await get_module_setting_bool(
+                "regulatory_tracker", "NMPA_API_DISCOVERY_MODE", True
+            )
 
         self.browsers_path = self._browsers_path_override
         if self.browsers_path is None:
-            self.browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
+            self.browsers_path = await get_module_setting(
+                "regulatory_tracker", "CRAWLER_BROWSERS_PATH", ""
+            )
 
         self.detail_url_template = self._detail_url_template_override
         if self.detail_url_template is None:
             self.detail_url_template = await get_module_setting(
                 "regulatory_tracker",
                 "NMPA_DETAIL_URL_TEMPLATE",
-                "https://www.nmpa.gov.cn/datasearch/search-info?recordId={record_id}"
+                "https://www.nmpa.gov.cn/datasearch/search-info?recordId={record_id}",
             )
 
         if self.browsers_path:
@@ -217,7 +221,9 @@ class NmpaRecordAdapter:
         await self._context.add_init_script(STEALTH_JS)
         self._page = await self._context.new_page()
         self._discovered_responses = []
-        logger.info(f"NMPA 浏览器启动 (headless={self.headless}, discovery={self.discovery_mode})")
+        logger.info(
+            f"NMPA 浏览器启动 (headless={self.headless}, discovery={self.discovery_mode})"
+        )
 
     async def stop(self):
         """关闭浏览器"""
@@ -365,22 +371,28 @@ class NmpaRecordAdapter:
                 body = await response.text()
                 # 自动发现模式：记录所有响应
                 if self.discovery_mode:
-                    self._discovered_responses.append({
-                        "url": url,
-                        "status": response.status,
-                        "method": response.request.method,
-                        "resource_type": response.request.resource_type,
-                        "body_len": len(body),
-                        "body_head": body[:500],
-                    })
-                    logger.info(f"[DISCOVERY] XHR: {response.status} {url[:150]} body_len={len(body)}")
+                    self._discovered_responses.append(
+                        {
+                            "url": url,
+                            "status": response.status,
+                            "method": response.request.method,
+                            "resource_type": response.request.resource_type,
+                            "body_len": len(body),
+                            "body_head": body[:500],
+                        }
+                    )
+                    logger.info(
+                        f"[DISCOVERY] XHR: {response.status} {url[:150]} body_len={len(body)}"
+                    )
 
                 result = self._parse_api_response(url, body)
                 if result:
                     captured["result"] = result
                     event.set()
                     if not self.discovery_mode:
-                        logger.info(f"✅ 捕获数据 API 响应: {url[:120]}, records={len(result['records'])}")
+                        logger.info(
+                            f"✅ 捕获数据 API 响应: {url[:120]}, records={len(result['records'])}"
+                        )
             except Exception as e:
                 logger.debug(f"处理响应异常: {e}")
 
@@ -393,7 +405,9 @@ class NmpaRecordAdapter:
                 wait_until="networkidle",
                 timeout=timeout_ms,
             )
-            logger.info(f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self._page.title()}")
+            logger.info(
+                f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self._page.title()}"
+            )
 
             # 等待数据响应
             try:
@@ -411,7 +425,9 @@ class NmpaRecordAdapter:
 
         return captured["result"]
 
-    async def _click_next_page_and_capture(self, timeout_ms: int = 20000) -> dict | None:
+    async def _click_next_page_and_capture(
+        self, timeout_ms: int = 20000
+    ) -> dict | None:
         """点击分页按钮并捕获响应（CDE 模式）"""
         captured: dict[str, Any] = {"result": None}
         event = asyncio.Event()
@@ -423,13 +439,15 @@ class NmpaRecordAdapter:
             try:
                 body = await response.text()
                 if self.discovery_mode:
-                    self._discovered_responses.append({
-                        "url": url,
-                        "status": response.status,
-                        "method": response.request.method,
-                        "body_len": len(body),
-                        "body_head": body[:500],
-                    })
+                    self._discovered_responses.append(
+                        {
+                            "url": url,
+                            "status": response.status,
+                            "method": response.request.method,
+                            "body_len": len(body),
+                            "body_head": body[:500],
+                        }
+                    )
                 result = self._parse_api_response(url, body)
                 if result:
                     captured["result"] = result
@@ -509,27 +527,50 @@ class NmpaRecordAdapter:
              "success": bool, "error": str | None}
         """
         if page_num < 1:
-            return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                    "success": False, "error": "页码必须 >= 1"}
+            return {
+                "page_num": page_num,
+                "records": [],
+                "total": 0,
+                "pages": 0,
+                "success": False,
+                "error": "页码必须 >= 1",
+            }
 
         try:
             if page_num == 1:
                 result = await self._open_page_and_capture()
                 if not result:
                     if self.discovery_mode and self._discovered_responses:
-                        return {"page_num": 1, "records": [], "total": 0, "pages": 0,
-                                "success": False,
-                                "error": f"自动发现模式：发现 {len(self._discovered_responses)} 个响应，"
-                                         f"但未匹配到数据模式。请检查日志"}
-                    return {"page_num": 1, "records": [], "total": 0, "pages": 0,
-                            "success": False, "error": "未捕获到数据 API 响应"}
+                        return {
+                            "page_num": 1,
+                            "records": [],
+                            "total": 0,
+                            "pages": 0,
+                            "success": False,
+                            "error": f"自动发现模式：发现 {len(self._discovered_responses)} 个响应，"
+                            f"但未匹配到数据模式。请检查日志",
+                        }
+                    return {
+                        "page_num": 1,
+                        "records": [],
+                        "total": 0,
+                        "pages": 0,
+                        "success": False,
+                        "error": "未捕获到数据 API 响应",
+                    }
                 return {**result, "error": None}
 
             # 翻页模式
             first_result = await self._open_page_and_capture()
             if not first_result:
-                return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                        "success": False, "error": "打开页面失败"}
+                return {
+                    "page_num": page_num,
+                    "records": [],
+                    "total": 0,
+                    "pages": 0,
+                    "success": False,
+                    "error": "打开页面失败",
+                }
 
             current = 1
             target_result = None
@@ -538,23 +579,41 @@ class NmpaRecordAdapter:
                 await asyncio.sleep(1.5)
                 result = await self._click_next_page_and_capture()
                 if not result:
-                    return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                            "success": False, "error": f"翻页到第 {current + 1} 页失败"}
+                    return {
+                        "page_num": page_num,
+                        "records": [],
+                        "total": 0,
+                        "pages": 0,
+                        "success": False,
+                        "error": f"翻页到第 {current + 1} 页失败",
+                    }
                 current += 1
                 if current == page_num:
                     target_result = result
                     break
 
             if not target_result:
-                return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                        "success": False, "error": f"未获取到第 {page_num} 页数据"}
+                return {
+                    "page_num": page_num,
+                    "records": [],
+                    "total": 0,
+                    "pages": 0,
+                    "success": False,
+                    "error": f"未获取到第 {page_num} 页数据",
+                }
 
             return {**target_result, "error": None}
 
         except Exception as e:
             logger.exception(f"同步第 {page_num} 页异常")
-            return {"page_num": page_num, "records": [], "total": 0, "pages": 0,
-                    "success": False, "error": str(e)}
+            return {
+                "page_num": page_num,
+                "records": [],
+                "total": 0,
+                "pages": 0,
+                "success": False,
+                "error": str(e),
+            }
 
     async def get_total_pages(self) -> int | None:
         """获取总页数"""
@@ -576,24 +635,35 @@ class NmpaRecordAdapter:
         """
         # ID
         doc_id = str(
-            record.get("id") or record.get("recordId") or
-            record.get("备案编号") or record.get("批准文号") or ""
+            record.get("id")
+            or record.get("recordId")
+            or record.get("备案编号")
+            or record.get("批准文号")
+            or ""
         )
 
         # 标题/名称
         title = (
-            record.get("title") or record.get("name") or
-            record.get("产品名称") or record.get("备案产品名称") or
-            record.get("药品名称") or record.get("genericName") or ""
+            record.get("title")
+            or record.get("name")
+            or record.get("产品名称")
+            or record.get("备案产品名称")
+            or record.get("药品名称")
+            or record.get("genericName")
+            or ""
         )
 
         # 日期
         publish_date = None
         date_str = (
-            record.get("publishDate") or record.get("publish_date") or
-            record.get("createTime") or record.get("issueDate") or
-            record.get("date") or record.get("发布日期") or
-            record.get("备案日期") or ""
+            record.get("publishDate")
+            or record.get("publish_date")
+            or record.get("createTime")
+            or record.get("issueDate")
+            or record.get("date")
+            or record.get("发布日期")
+            or record.get("备案日期")
+            or ""
         )
         if isinstance(date_str, str) and date_str.strip():
             for fmt in ("%Y-%m-%d", "%Y%m%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d"):
@@ -605,14 +675,20 @@ class NmpaRecordAdapter:
 
         # 状态
         status = (
-            record.get("status") or record.get("state") or
-            record.get("nowstate") or record.get("状态") or ""
+            record.get("status")
+            or record.get("state")
+            or record.get("nowstate")
+            or record.get("状态")
+            or ""
         )
 
         # 分类
         classification = (
-            record.get("classification") or record.get("category") or
-            record.get("fclass") or record.get("分类") or ""
+            record.get("classification")
+            or record.get("category")
+            or record.get("fclass")
+            or record.get("分类")
+            or ""
         )
 
         # 原文链接

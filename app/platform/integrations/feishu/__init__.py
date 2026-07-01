@@ -50,6 +50,7 @@ __all__ = [
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_platform_ws():
     """Start platform-level Feishu WebSocket client."""
     import asyncio
@@ -64,6 +65,7 @@ async def _start_platform_ws():
 def _stop_platform_ws():
     """Stop platform-level Feishu WebSocket client."""
     from app.platform.integrations.feishu.ws_client import stop_ws_client
+
     stop_ws_client()
 
 

@@ -53,9 +53,7 @@ class AttachmentRuleEngine:
 
         # 2. 若附件有实质内容但输出全是「待人工确认」→ 严重警告
         if input_data.attachment_text and len(input_data.attachment_text.strip()) > 100:
-            all_unconfirmed = all(
-                v.strip() == UNCONFIRMED for _, v in fields
-            )
+            all_unconfirmed = all(v.strip() == UNCONFIRMED for _, v in fields)
             if all_unconfirmed:
                 errors.append(
                     f"附件包含 {len(input_data.attachment_text)} 字符内容，"
@@ -66,17 +64,13 @@ class AttachmentRuleEngine:
         for label, value in fields:
             if value and value.strip() and value.strip() != UNCONFIRMED:
                 if len(value.strip()) < 5:
-                    errors.append(
-                        f"{label} 过短（当前 {len(value)} 字），最少 5 字"
-                    )
+                    errors.append(f"{label} 过短（当前 {len(value)} 字），最少 5 字")
 
         # 4. 来源标注检查（可选，非阻塞）
         for label, value in fields:
             if value and value.strip() and value.strip() != UNCONFIRMED:
                 if "附件" not in value and "见第" not in value:
-                    logger.debug(
-                        "字段 %s 未标注附件来源页码，建议补充", label
-                    )
+                    logger.debug("字段 %s 未标注附件来源页码，建议补充", label)
 
         return errors
 
@@ -87,7 +81,11 @@ def auto_correct(output: AttachmentOutput) -> AttachmentOutput:
     - 去除各字段首尾空白
     - 保障字段非空（至少为「待人工确认」）
     """
-    for field_name in ("specific_activity", "equipment_facilities", "raw_auxiliary_materials"):
+    for field_name in (
+        "specific_activity",
+        "equipment_facilities",
+        "raw_auxiliary_materials",
+    ):
         value = getattr(output, field_name, None)
         if value is None or not value.strip():
             setattr(output, field_name, UNCONFIRMED)

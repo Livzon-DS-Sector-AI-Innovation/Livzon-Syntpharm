@@ -36,7 +36,8 @@ def start_ws_client(
 
     if not resolved_app_id or not resolved_app_secret:
         logger.warning(
-            "[%s] 飞书 APP_ID/APP_SECRET 未配置，跳过长连接启动", name,
+            "[%s] 飞书 APP_ID/APP_SECRET 未配置，跳过长连接启动",
+            name,
         )
         return
 

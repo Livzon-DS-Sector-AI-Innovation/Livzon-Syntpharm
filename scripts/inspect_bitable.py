@@ -6,6 +6,7 @@ Usage:
 
 Requires FEISHU_APP_ID and FEISHU_APP_SECRET in environment.
 """
+
 import asyncio
 import os
 import sys
@@ -22,36 +23,72 @@ TABLE_ID = _settings.FEISHU_BITABLE_EMPLOYEE_TABLE_ID
 # Fields expected by the current sync logic in service.py + employee_datasource.py
 EXPECTED_FIELDS = {
     # Basic info
-    "工号", "姓名", "域账号", "部门", "班组", "职位", "职类", "级别",
+    "工号",
+    "姓名",
+    "域账号",
+    "部门",
+    "班组",
+    "职位",
+    "职类",
+    "级别",
     # Personal info
-    "性别", "籍贯", "政治面貌", "婚姻状况", "户籍类型",
+    "性别",
+    "籍贯",
+    "政治面貌",
+    "婚姻状况",
+    "户籍类型",
     # Status / classification
-    "统计类别", "分类",
+    "统计类别",
+    "分类",
     # Birth date (split into year/month/day in code)
-    "年", "月", "日", "年龄",
+    "年",
+    "月",
+    "日",
+    "年龄",
     # Career
-    "职称／职业资格", "职称类型", "工作年限", "厂龄", "司龄",
+    "职称／职业资格",
+    "职称类型",
+    "工作年限",
+    "厂龄",
+    "司龄",
     # Education
-    "学历", "毕业学校", "专业", "毕业时间",
+    "学历",
+    "毕业学校",
+    "专业",
+    "毕业时间",
     # IDs
-    "身份证号", "身份证到期日", "身份证地址|家庭地址", "现住址",
+    "身份证号",
+    "身份证到期日",
+    "身份证地址|家庭地址",
+    "现住址",
     # Contract
     "合同期限",
-    "第一次合同起点时间", "第一次合同终止时间",
-    "第二次合同起点时间", "第二次合同终止时间",
-    "第三次合同起点时间", "第三次合同终止时间",
-    "第四次合同起点时间", "第四次合同终止时间",
+    "第一次合同起点时间",
+    "第一次合同终止时间",
+    "第二次合同起点时间",
+    "第二次合同终止时间",
+    "第三次合同起点时间",
+    "第三次合同终止时间",
+    "第四次合同起点时间",
+    "第四次合同终止时间",
     # Contact
-    "手机", "邮箱地址", "紧急联系人电话", "紧急联系人|关系",
+    "手机",
+    "邮箱地址",
+    "紧急联系人电话",
+    "紧急联系人|关系",
     # Banking / other
-    "银行卡号", "培训档案编号",
+    "银行卡号",
+    "培训档案编号",
     # Work history
-    "参加工作时间", "进厂时间", "入丽珠时间",
+    "参加工作时间",
+    "进厂时间",
+    "入丽珠时间",
     "异动（含曾经工作部门、岗位)",
     # Remarks
     "备注",
     # Formula / read-only fields (ignored on write but read on sync)
-    "入职月份", "字段 1",
+    "入职月份",
+    "字段 1",
 }
 
 FIELD_TYPE_MAP = {
@@ -149,7 +186,9 @@ async def inspect_table():
         out("\n  [OK] All expected fields are present in the new table.")
 
     if extra:
-        out(f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):")
+        out(
+            f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):"
+        )
         for name in sorted(extra):
             out(f"      - {name}")
     else:

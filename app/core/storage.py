@@ -36,6 +36,7 @@ def _init() -> None:
     _enabled = settings.MINIO_ENABLED
     if _enabled:
         from minio import Minio
+
         _client = Minio(
             endpoint=settings.MINIO_ENDPOINT,
             access_key=settings.MINIO_ACCESS_KEY,
@@ -97,6 +98,7 @@ def get_object(module: str, object_key: str) -> tuple[bytes, str] | None:  # typ
     if client is None:
         return None
     from minio.error import S3Error
+
     try:
         resp = client.get_object(
             bucket_name=_module_bucket(module),

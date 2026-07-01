@@ -117,7 +117,9 @@ class SpecialOperationService:
             personnel_id, update_data
         )
         if item:
-            await self._audit("update", "special_operation_personnel", resource_id=personnel_id)
+            await self._audit(
+                "update", "special_operation_personnel", resource_id=personnel_id
+            )
         return item
 
     async def delete_personnel(self, personnel_id: uuid.UUID) -> bool:
@@ -127,7 +129,9 @@ class SpecialOperationService:
         if result:
             if personnel:
                 self._cleanup_file(personnel.certificate_file_path)
-            await self._audit("delete", "special_operation_personnel", resource_id=personnel_id)
+            await self._audit(
+                "delete", "special_operation_personnel", resource_id=personnel_id
+            )
         return result
 
     # ==================== 作业票 CRUD ====================
@@ -146,9 +150,7 @@ class SpecialOperationService:
             skip, limit, status, operation_type, operation_level, keyword
         )
 
-    async def get_permit(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def get_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """获取作业票详情"""
         return await self.repo.get_special_operation_permit_by_id(permit_id)
 
@@ -168,19 +170,25 @@ class SpecialOperationService:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_special_operation_permit(permit_id, update_data)
         if item:
-            await self._audit("update", "special_operation_permit", resource_id=permit_id)
+            await self._audit(
+                "update", "special_operation_permit", resource_id=permit_id
+            )
         return item
 
     async def delete_permit(self, permit_id: uuid.UUID) -> bool:
         """删除作业票"""
         result = await self.repo.delete_special_operation_permit(permit_id)
         if result:
-            await self._audit("delete", "special_operation_permit", resource_id=permit_id)
+            await self._audit(
+                "delete", "special_operation_permit", resource_id=permit_id
+            )
         return result
 
     # ==================== 作业票工作流 ====================
 
-    async def submit_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
+    async def submit_permit(
+        self, permit_id: uuid.UUID
+    ) -> SpecialOperationPermit | None:
         """提交作业票（草稿→已提交）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "draft":
@@ -211,9 +219,7 @@ class SpecialOperationService:
             permit_id, {"status": "rejected", "rejection_reason": reason}
         )
 
-    async def start_permit(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def start_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """开始作业（已审批→作业中）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "approved":
@@ -252,5 +258,3 @@ class SpecialOperationService:
 
 
 # ==================== 安全知识库 Service ====================
-
-

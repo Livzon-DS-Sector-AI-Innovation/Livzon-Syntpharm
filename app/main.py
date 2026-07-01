@@ -131,14 +131,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ── 安全模块专属飞书事件订阅（WebSocket 长连接，独立应用凭据）──
     from app.modules.safety.feishu.event_client import start_ws
 
-    safety_ws_task = asyncio.create_task(start_ws())
+    asyncio.create_task(start_ws())
 
     # ── 安全模块定时任务调度引擎 ──
     from app.modules.safety.scheduler import (
         scheduled_task_loop,
     )
 
-    scheduler_task = asyncio.create_task(scheduled_task_loop())
+    asyncio.create_task(scheduled_task_loop())
 
     # ── 统一调度引擎（平台级，各模块可渐进迁移）──
 
@@ -153,13 +153,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         daily_ai_analysis_task,
         daily_sync_task,
     )
+
     scheduler_registry.register_task(daily_sync_task)
     scheduler_registry.register_task(daily_ai_analysis_task)
     scheduler_engine = SchedulerEngine(scheduler_registry)
     scheduler_engine_task = asyncio.create_task(scheduler_engine.run())
 
-    logger.info("Background tasks started (%d workers, %d generators)",
-                len(workers), len(scheduler_registry.generators))
+    logger.info(
+        "Background tasks started (%d workers, %d generators)",
+        len(workers),
+        len(scheduler_registry.generators),
+    )
 
     yield
 
@@ -210,7 +214,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     stop_ws_client()
 
     logger.info("Shutting down %s", settings.APP_NAME)
-
 
 
 from fastmcp.utilities.lifespan import combine_lifespans  # noqa: E402
@@ -278,13 +281,11 @@ async def validation_exception_handler(
     )
 
 
-
-
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(request: Request, exc: IntegrityError):
-    msg = str(exc.orig) if hasattr(exc, 'orig') else str(exc)
+    msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
     # Extract constraint info for a user-friendly message
-    if 'duplicate key' in msg or 'unique constraint' in msg:
+    if "duplicate key" in msg or "unique constraint" in msg:
         return error_response(
             message="数据重复，该记录已存在",
             detail=msg,

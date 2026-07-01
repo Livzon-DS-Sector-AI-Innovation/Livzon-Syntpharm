@@ -48,9 +48,7 @@ class BitableClient:
         )
         return data.get("record", {})
 
-    async def update_record(
-        self, table_id: str, record_id: str, fields: dict
-    ) -> dict:
+    async def update_record(self, table_id: str, record_id: str, fields: dict) -> dict:
         """Update a single record."""
         if not self.app_token or not table_id:
             raise RuntimeError("Bitable app_token or table_id not configured")
@@ -125,7 +123,11 @@ class FeishuBitableSync:
         }
         try:
             record = await self.bitable.create_record(self.department_table, fields)
-            logger.info("Department synced to Feishu: %s, record_id=%s", dept.get("name"), record.get("record_id"))
+            logger.info(
+                "Department synced to Feishu: %s, record_id=%s",
+                dept.get("name"),
+                record.get("record_id"),
+            )
         except Exception as e:
             logger.error("Failed to sync department to Feishu: %s", e)
             raise
@@ -208,7 +210,11 @@ class FeishuBitableSync:
         fields = self._build_employee_fields(emp)
         try:
             record = await self.bitable.create_record(self.employee_table, fields)
-            logger.info("Employee synced to Feishu: %s, record_id=%s", emp.get("name"), record.get("record_id"))
+            logger.info(
+                "Employee synced to Feishu: %s, record_id=%s",
+                emp.get("name"),
+                record.get("record_id"),
+            )
         except Exception as e:
             logger.error("Failed to sync employee to Feishu: %s", e)
             raise
@@ -267,7 +273,11 @@ class FeishuBitableSync:
         }
         try:
             rec = await self.bitable.create_record(self.offboarding_table, fields)
-            logger.info("Offboarding synced to Feishu: %s, record_id=%s", employee.get("name"), rec.get("record_id"))
+            logger.info(
+                "Offboarding synced to Feishu: %s, record_id=%s",
+                employee.get("name"),
+                rec.get("record_id"),
+            )
         except Exception as e:
             logger.error("Failed to sync offboarding to Feishu: %s", e)
             raise
@@ -306,7 +316,11 @@ class FeishuBitableSync:
         }
         try:
             record = await self.bitable.create_record(self.approval_table, fields)
-            logger.info("Approval record synced to Feishu: %s, record_id=%s", emp.get("name"), record.get("record_id"))
+            logger.info(
+                "Approval record synced to Feishu: %s, record_id=%s",
+                emp.get("name"),
+                record.get("record_id"),
+            )
         except Exception as e:
             logger.error("Failed to sync approval record to Feishu: %s", e)
             raise

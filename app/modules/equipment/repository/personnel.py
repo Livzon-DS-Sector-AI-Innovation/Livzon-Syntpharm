@@ -14,6 +14,7 @@ from app.modules.equipment.models.personnel import (
 
 # ── 角色 Repository ──
 
+
 async def create_role(db: AsyncSession, role: EquipmentRole) -> EquipmentRole:
     # 清理同 code 的已软删除记录，避免软删除后无法创建同编码角色
     deleted_result = await db.execute(
@@ -61,8 +62,12 @@ async def list_roles(
     stmt = select(EquipmentRole).where(
         EquipmentRole.is_deleted == False,  # noqa: E712
     )
-    count_stmt = select(func.count()).select_from(EquipmentRole).where(
-        EquipmentRole.is_deleted == False,  # noqa: E712
+    count_stmt = (
+        select(func.count())
+        .select_from(EquipmentRole)
+        .where(
+            EquipmentRole.is_deleted == False,  # noqa: E712
+        )
     )
 
     if scope is not None:
@@ -86,6 +91,7 @@ async def soft_delete_role(db: AsyncSession, role: EquipmentRole) -> None:
 
 
 # ── 人员 Repository ──
+
 
 async def get_personnel_by_user_id(
     db: AsyncSession, user_id: uuid.UUID
@@ -123,8 +129,12 @@ async def list_personnel(
     stmt = select(EquipmentPersonnel).where(
         EquipmentPersonnel.is_deleted == False,  # noqa: E712
     )
-    count_stmt = select(func.count()).select_from(EquipmentPersonnel).where(
-        EquipmentPersonnel.is_deleted == False,  # noqa: E712
+    count_stmt = (
+        select(func.count())
+        .select_from(EquipmentPersonnel)
+        .where(
+            EquipmentPersonnel.is_deleted == False,  # noqa: E712
+        )
     )
 
     if is_active is not None:
@@ -171,6 +181,7 @@ async def list_all_personnel_by_user_ids(
 
 
 # ── 人员角色关联 Repository ──
+
 
 async def add_personnel_roles(
     db: AsyncSession, personnel_id: uuid.UUID, role_ids: list[uuid.UUID]
@@ -232,6 +243,7 @@ async def soft_delete_personnel_roles(
 
 
 # ── 人员分类约束 Repository ──
+
 
 async def add_personnel_categories(
     db: AsyncSession,
@@ -306,6 +318,7 @@ async def soft_delete_personnel_categories(
 
 # ── 候选人查询 ──
 
+
 async def get_candidates(
     db: AsyncSession,
     role_ids: list[uuid.UUID],
@@ -379,10 +392,7 @@ async def get_candidates(
                 filtered[pid] = info
             else:
                 # 有约束 → 只保留匹配的角色
-                filtered_roles = [
-                    r for r in info["roles"]
-                    if (pid, r["id"]) in matched
-                ]
+                filtered_roles = [r for r in info["roles"] if (pid, r["id"]) in matched]
                 if filtered_roles:
                     info["roles"] = filtered_roles
                     filtered[pid] = info

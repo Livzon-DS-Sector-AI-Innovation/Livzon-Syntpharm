@@ -57,7 +57,9 @@ class ResidualRiskAssessor(BasePlugin[ResidualRiskInput, ResidualRiskOutput]):
         return SYSTEM_ROLE
 
     def _build_prompt(
-        self, input_data: ResidualRiskInput, context_text: str,
+        self,
+        input_data: ResidualRiskInput,
+        context_text: str,
     ) -> str:
         return build_prompt(context_text, self.knowledge_context)
 
@@ -79,12 +81,12 @@ class ResidualRiskAssessor(BasePlugin[ResidualRiskInput, ResidualRiskOutput]):
             )
             return ResidualRiskOutput(lec=lec)
         except (PydanticValidationError, KeyError, TypeError) as e:
-            raise PluginError(
-                f"[ResidualRiskAssessor] AI 输出解析失败: {e}"
-            ) from e
+            raise PluginError(f"[ResidualRiskAssessor] AI 输出解析失败: {e}") from e
 
     def _validate(
-        self, input_data: ResidualRiskInput, output: ResidualRiskOutput,
+        self,
+        input_data: ResidualRiskInput,
+        output: ResidualRiskOutput,
     ) -> list[str]:
         return self.rule_engine.validate(input_data, output)
 

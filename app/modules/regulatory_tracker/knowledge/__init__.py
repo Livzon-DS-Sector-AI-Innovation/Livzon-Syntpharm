@@ -64,11 +64,11 @@ def get_all_rules() -> dict:
 
 def build_prompt_summary() -> str:
     """构建 Prompt 中使用的规则摘要。
-    
+
     将 YAML 规则转换为简洁的文本摘要，供 AI Prompt 引用。
     """
     impact_rules = get_impact_rules()
-    keyword_rules = get_keyword_rules()
+    get_keyword_rules()
     action_guidance = get_action_guidance()
 
     lines = []
@@ -83,7 +83,9 @@ def build_prompt_summary() -> str:
     # 中影响法规主题
     lines.append("")
     lines.append("## 默认中影响法规（通用要求类）")
-    lines.append("以下法规主题默认 impact_level=medium, relevance_level=related 或 weak_related：")
+    lines.append(
+        "以下法规主题默认 impact_level=medium, relevance_level=related 或 weak_related："
+    )
     for rule in impact_rules.get("medium_impact_rules", []):
         keywords_str = "、".join(rule.get("keywords", [])[:5])
         lines.append(f"- {rule['topic']}（关键词：{keywords_str}）")

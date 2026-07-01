@@ -2,12 +2,12 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class BatchStatus(str, Enum):
+class BatchStatus(StrEnum):
     """批次状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -17,7 +17,7 @@ class BatchStatus(str, Enum):
     CANCELLED = "cancelled"  # 已取消
 
 
-class PlanStatus(str, Enum):
+class PlanStatus(StrEnum):
     """计划状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -26,7 +26,7 @@ class PlanStatus(str, Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class ProcessSpecStatus(str, Enum):
+class ProcessSpecStatus(StrEnum):
     """工艺规程状态枚举"""
 
     DRAFT = "draft"  # 草稿
@@ -35,7 +35,7 @@ class ProcessSpecStatus(str, Enum):
     ARCHIVED = "archived"  # 已归档
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     """任务状态枚举"""
 
     PENDING = "pending"  # 待执行
@@ -44,7 +44,7 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class OperationType(str, Enum):
+class OperationType(StrEnum):
     """操作类型枚举"""
 
     MATERIAL_ADD = "material_add"  # 投料
@@ -477,7 +477,9 @@ class MaterialBalanceUpdate(BaseModel):
     output_qty: float | None = Field(None, ge=0, description="产出总量")
     loss_qty: float | None = Field(None, description="损耗总量")
     balance_rate: float | None = Field(None, ge=0, le=100, description="平衡率(%)")
-    min_balance_rate: float | None = Field(None, ge=0, le=100, description="最低平衡率(%)")
+    min_balance_rate: float | None = Field(
+        None, ge=0, le=100, description="最低平衡率(%)"
+    )
     notes: str | None = Field(None, description="备注")
 
 

@@ -164,7 +164,10 @@ def build_prompt(workflow_config: dict) -> str:
 
     这样前端保存的 4 字段结构化配置和硬编码 fallback 的单一 prompt 都能正常工作。
     """
-    if any(k in workflow_config for k in ("input_info", "work_rules", "reference_docs", "output_format")):
+    if any(
+        k in workflow_config
+        for k in ("input_info", "work_rules", "reference_docs", "output_format")
+    ):
         parts = []
         if workflow_config.get("input_info"):
             parts.append("## 输入信息\n" + workflow_config["input_info"])
@@ -279,8 +282,10 @@ WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
         ),
         "reference_docs": (
             "LEC风险评价法标准（格雷厄姆-金尼法）\n\n"
-            + LEC_SCORING_GUIDE + "\n"
-            + RISK_LEVEL_TABLE + "\n"
+            + LEC_SCORING_GUIDE
+            + "\n"
+            + RISK_LEVEL_TABLE
+            + "\n"
             "企业风险分级管控管理制度\n"
             "企业知识库：危险有害因素辨识结果表"
         ),
@@ -359,9 +364,7 @@ WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             "10. 信息不足时填写「待人工确认」"
         ),
         "reference_docs": (
-            "LEC风险评价法标准\n\n"
-            + LEC_SCORING_GUIDE + "\n"
-            + RISK_LEVEL_TABLE + "\n"
+            "LEC风险评价法标准\n\n" + LEC_SCORING_GUIDE + "\n" + RISK_LEVEL_TABLE + "\n"
             "企业风险分级管控管理制度\n"
             "企业知识库：危险有害因素辨识结果表"
         ),
@@ -448,9 +451,7 @@ WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             "11. 信息不足时填写「待人工确认」"
         ),
         "reference_docs": (
-            "LEC风险评价法标准\n\n"
-            + LEC_SCORING_GUIDE + "\n"
-            + RISK_LEVEL_TABLE + "\n"
+            "LEC风险评价法标准\n\n" + LEC_SCORING_GUIDE + "\n" + RISK_LEVEL_TABLE + "\n"
             "企业风险分级管控管理制度\n"
             "企业风险管控层级规定\n"
             "GB/T 12801-2008《生产过程安全卫生要求总则》"
@@ -521,14 +522,14 @@ STANDALONE_WORKFLOW_CONFIG: dict[str, dict[str, Any]] = {
             "- 企业风险分级管控标准"
         ),
         "output_format": (
-            '## 输出格式\n'
-            '返回 JSON 格式（只返回 JSON，不要额外说明）：\n'
-            '```json\n'
-            '{\n'
+            "## 输出格式\n"
+            "返回 JSON 格式（只返回 JSON，不要额外说明）：\n"
+            "```json\n"
+            "{\n"
             '  "is_critical": true,\n'
             '  "reason": "判定理由（说明符合哪些关键作业判定条件，或不符合的原因）"\n'
-            '}\n'
-            '```'
+            "}\n"
+            "```"
         ),
         "expected_keys": ["is_critical", "reason"],
     },
@@ -573,10 +574,10 @@ STANDALONE_WORKFLOW_CONFIG: dict[str, dict[str, Any]] = {
             "- 企业风险分级管控标准"
         ),
         "output_format": (
-            '## 输出格式\n'
-            '返回 JSON 格式（未匹配字段设为 null，只返回 JSON 不要额外说明）：\n'
-            '```json\n'
-            '{\n'
+            "## 输出格式\n"
+            "返回 JSON 格式（未匹配字段设为 null，只返回 JSON 不要额外说明）：\n"
+            "```json\n"
+            "{\n"
             '  "operation_type": null,\n'
             '  "operation_level": null,\n'
             '  "risk_level": null,\n'
@@ -586,13 +587,19 @@ STANDALONE_WORKFLOW_CONFIG: dict[str, dict[str, Any]] = {
             '  "keyword": null,\n'
             '  "is_critical": null,\n'
             '  "explanation": "用中文简述你理解的筛选条件"\n'
-            '}\n'
-            '```'
+            "}\n"
+            "```"
         ),
         "expected_keys": [
-            "operation_type", "operation_level", "risk_level",
-            "department", "date_from", "date_to",
-            "keyword", "is_critical", "explanation",
+            "operation_type",
+            "operation_level",
+            "risk_level",
+            "department",
+            "date_from",
+            "date_to",
+            "keyword",
+            "is_critical",
+            "explanation",
         ],
     },
     "hazard-identification-export": {
@@ -630,10 +637,10 @@ STANDALONE_WORKFLOW_CONFIG: dict[str, dict[str, Any]] = {
             "- 你是一个数据库查询助手，只返回 JSON"
         ),
         "output_format": (
-            '## 输出格式\n'
-            '返回 JSON 格式（只返回 JSON 不要额外说明）：\n'
-            '```json\n'
-            '{\n'
+            "## 输出格式\n"
+            "返回 JSON 格式（只返回 JSON 不要额外说明）：\n"
+            "```json\n"
+            "{\n"
             '  "department": null,\n'
             '  "position": null,\n'
             '  "risk_level": null,\n'
@@ -641,12 +648,17 @@ STANDALONE_WORKFLOW_CONFIG: dict[str, dict[str, Any]] = {
             '  "date_to": null,\n'
             '  "keyword": null,\n'
             '  "explanation": "用中文简述你理解的筛选条件"\n'
-            '}\n'
-            '```'
+            "}\n"
+            "```"
         ),
         "expected_keys": [
-            "department", "position", "risk_level",
-            "date_from", "date_to", "keyword", "explanation",
+            "department",
+            "position",
+            "risk_level",
+            "date_from",
+            "date_to",
+            "keyword",
+            "explanation",
         ],
     },
 }
@@ -697,8 +709,11 @@ HAZARD_WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             '"major_hazard_basis":"重大隐患判定依据或空"}'
         ),
         "expected_keys": [
-            "hazard_type", "hazard_level", "hazard_category",
-            "key_defect", "major_hazard_basis",
+            "hazard_type",
+            "hazard_level",
+            "hazard_category",
+            "key_defect",
+            "major_hazard_basis",
         ],
     },
     2: {
@@ -730,9 +745,7 @@ HAZARD_WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             "企业应急预案及应急处置卡\n"
             "行业最佳实践"
         ),
-        "output_format": (
-            '{"corrective_preventive_measures":"具体纠正预防措施"}'
-        ),
+        "output_format": ('{"corrective_preventive_measures":"具体纠正预防措施"}'),
         "expected_keys": ["corrective_preventive_measures"],
     },
 }

@@ -20,11 +20,12 @@ logger = logging.getLogger(__name__)
 _SESSION_PREFIX = "inspection:session:"
 _SESSION_TTL = 7200  # 2 小时
 
+
 # ── 会话状态枚举 ──
 class SessionState:
-    SELECTING = "selecting"   # 多个任务/工单待选择
-    GUIDING = "guiding"       # 等待用户发送照片或手动填写
-    CONFIRMING = "confirming" # AI 分析完成，等待确认/修改/取消
+    SELECTING = "selecting"  # 多个任务/工单待选择
+    GUIDING = "guiding"  # 等待用户发送照片或手动填写
+    CONFIRMING = "confirming"  # AI 分析完成，等待确认/修改/取消
 
 
 def _session_key(open_id: str) -> str:
@@ -34,6 +35,7 @@ def _session_key(open_id: str) -> str:
 async def _renew_ttl(open_id: str) -> None:
     """续期会话 TTL（每次交互自动调用）。"""
     from app.core.redis import redis_client
+
     await redis_client.expire(_session_key(open_id), _SESSION_TTL)
 
 
@@ -80,8 +82,11 @@ async def save_session(
     )
     logger.info(
         "巡检会话已保存: open_id=%s, task=%s, equipment=%d/%d, state=%s",
-        open_id, task_no, current_equipment_index + 1,
-        len(equipment_order), state,
+        open_id,
+        task_no,
+        current_equipment_index + 1,
+        len(equipment_order),
+        state,
     )
 
 
@@ -214,18 +219,26 @@ def get_progress(session: dict) -> dict:
         loc_name = eq.get("location_name", "")
         if loc_name != current_loc:
             current_loc = loc_name
-            locations.append({
-                "location_name": loc_name,
-                "equipment": [],
-            })
+            locations.append(
+                {
+                    "location_name": loc_name,
+                    "equipment": [],
+                }
+            )
         eid = eq["equipment_id"]
-        status = "completed" if eid in completed else ("skipped" if eid in skipped else "pending")
-        locations[-1]["equipment"].append({
-            "equipment_id": eid,
-            "equipment_name": eq["equipment_name"],
-            "equipment_no": eq.get("equipment_no", ""),
-            "status": status,
-        })
+        status = (
+            "completed"
+            if eid in completed
+            else ("skipped" if eid in skipped else "pending")
+        )
+        locations[-1]["equipment"].append(
+            {
+                "equipment_id": eid,
+                "equipment_name": eq["equipment_name"],
+                "equipment_no": eq.get("equipment_no", ""),
+                "status": status,
+            }
+        )
 
     return {
         "total": total,

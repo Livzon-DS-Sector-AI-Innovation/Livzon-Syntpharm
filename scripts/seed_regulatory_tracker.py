@@ -59,8 +59,12 @@ async def seed_regulatory_tracker():
                 enabled=True,
             )
             session.add(cde_guideline_channel)
-            print(f"✅ Created data channel: cde_domestic_guideline (id={cde_guideline_channel.id})")
-            created.append(f"CDE source={cde_source.id} channel={cde_guideline_channel.id}")
+            print(
+                f"✅ Created data channel: cde_domestic_guideline (id={cde_guideline_channel.id})"
+            )
+            created.append(
+                f"CDE source={cde_source.id} channel={cde_guideline_channel.id}"
+            )
 
         # ── NMPA ──
         if not has_nmpa:
@@ -86,7 +90,9 @@ async def seed_regulatory_tracker():
             )
             session.add(nmpa_baxx_channel)
             print(f"✅ Created data channel: nmpa_baxx (id={nmpa_baxx_channel.id})")
-            created.append(f"NMPA source={nmpa_source.id} channel={nmpa_baxx_channel.id}")
+            created.append(
+                f"NMPA source={nmpa_source.id} channel={nmpa_baxx_channel.id}"
+            )
 
         await session.commit()
         print("\n✅ Seed completed successfully")

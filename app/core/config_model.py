@@ -9,10 +9,11 @@ from app.shared.base_model import BaseModel
 
 class ModuleSetting(BaseModel):
     """Runtime configuration setting for a module.
-    
+
     Each setting belongs to a specific module and has a key-value pair.
     The value is stored as a string with a type hint for proper parsing.
     """
+
     __tablename__ = "module_settings"
     __table_args__ = (
         sa.UniqueConstraint("module", "key", name="uq_module_setting"),

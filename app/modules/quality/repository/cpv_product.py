@@ -17,7 +17,9 @@ async def create_product(db: AsyncSession, data: dict[str, Any]) -> CpvProduct:
     return product
 
 
-async def get_product_by_id(db: AsyncSession, product_id: uuid.UUID) -> CpvProduct | None:
+async def get_product_by_id(
+    db: AsyncSession, product_id: uuid.UUID
+) -> CpvProduct | None:
     """根据ID获取产品"""
     result = await db.execute(
         select(CpvProduct).where(
@@ -45,6 +47,7 @@ async def get_products(
 
     # Count total
     from sqlalchemy import func
+
     count_query = select(func.count()).select_from(query.subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar_one()

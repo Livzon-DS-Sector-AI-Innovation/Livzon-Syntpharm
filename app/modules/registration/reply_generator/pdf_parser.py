@@ -20,6 +20,7 @@ class PDFParser:
         """提取 PDF 全文"""
         try:
             import pdfplumber
+
             with pdfplumber.open(io.BytesIO(self.pdf_data)) as pdf:
                 for page in pdf.pages:
                     page_text = page.extract_text()
@@ -90,31 +91,37 @@ class PDFParser:
             # 一级标题：1、2、3...
             m1 = re.match(r"^(\d+)[、.]\s*(.+)", line)
             if m1:
-                questions.append({
-                    "level": 1,
-                    "l1_num": m1.group(1),
-                    "title": line,
-                })
+                questions.append(
+                    {
+                        "level": 1,
+                        "l1_num": m1.group(1),
+                        "title": line,
+                    }
+                )
                 continue
 
             # 二级标题：（1）（2）（3）...
             m2 = re.match(r"^（(\d+)）\s*(.+)", line)
             if m2:
-                questions.append({
-                    "level": 2,
-                    "l2_num": m2.group(1),
-                    "title": line,
-                })
+                questions.append(
+                    {
+                        "level": 2,
+                        "l2_num": m2.group(1),
+                        "title": line,
+                    }
+                )
                 continue
 
             # 三级标题：① ② ③...
             m3 = re.match(r"^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)", line)
             if m3:
-                questions.append({
-                    "level": 3,
-                    "l3_num": m3.group(1),
-                    "title": line,
-                })
+                questions.append(
+                    {
+                        "level": 3,
+                        "l3_num": m3.group(1),
+                        "title": line,
+                    }
+                )
                 continue
 
         self.questions = questions

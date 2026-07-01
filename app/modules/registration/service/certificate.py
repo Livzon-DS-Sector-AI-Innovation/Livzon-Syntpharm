@@ -15,7 +15,7 @@ from app.modules.registration.schemas.certificate import (
 async def get_certificates(db: AsyncSession) -> list[RegistrationCertificate]:
     stmt = (
         select(RegistrationCertificate)
-        .where(RegistrationCertificate.is_deleted == False)
+        .where(not RegistrationCertificate.is_deleted)
         .order_by(RegistrationCertificate.updated_at.desc())
     )
     result = await db.execute(stmt)
@@ -27,7 +27,7 @@ async def get_certificate(
 ) -> RegistrationCertificate:
     stmt = select(RegistrationCertificate).where(
         RegistrationCertificate.id == certificate_id,
-        RegistrationCertificate.is_deleted == False,
+        not RegistrationCertificate.is_deleted,
     )
     result = await db.execute(stmt)
     cert = result.scalar_one_or_none()

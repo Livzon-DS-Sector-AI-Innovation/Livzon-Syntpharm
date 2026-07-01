@@ -27,6 +27,7 @@ router = APIRouter()
 
 # ── Domestic Approvals ─────────────────────────────────────────────
 
+
 @router.get("/domestic-approvals", response_model=list[DomesticApprovalResponse])
 async def list_domestic_approvals(
     skip: int = 0,
@@ -61,29 +62,38 @@ async def import_domestic_approvals(
 
         # 记录日志
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"📥 Import file: {filename}, size: {file_size} bytes")
-        logger.info(f"📊 Parse result: total={parse_result['total_rows']}, success={parse_result['success_count']}, skipped={parse_result['skipped_count']}, errors={parse_result['error_count']}")
-        if parse_result['errors']:
+        logger.info(
+            f"📊 Parse result: total={parse_result['total_rows']}, success={parse_result['success_count']}, skipped={parse_result['skipped_count']}, errors={parse_result['error_count']}"
+        )
+        if parse_result["errors"]:
             logger.info(f"⚠️ Parse errors: {parse_result['errors'][:5]}")
 
         # 如果解析失败，直接返回
-        if parse_result['success_count'] == 0:
-            error_msg = parse_result['errors'][0] if parse_result['errors'] else "未解析到有效数据"
-            return success_response(data={
-                "count": 0,
-                "message": f"文件已解析但未导入有效数据: {error_msg}",
-                "total_rows": parse_result['total_rows'],
-                "success_count": 0,
-                "skipped_count": parse_result['skipped_count'],
-                "error_count": parse_result['error_count'],
-                "errors": parse_result['errors']
-            })
+        if parse_result["success_count"] == 0:
+            error_msg = (
+                parse_result["errors"][0]
+                if parse_result["errors"]
+                else "未解析到有效数据"
+            )
+            return success_response(
+                data={
+                    "count": 0,
+                    "message": f"文件已解析但未导入有效数据: {error_msg}",
+                    "total_rows": parse_result["total_rows"],
+                    "success_count": 0,
+                    "skipped_count": parse_result["skipped_count"],
+                    "error_count": parse_result["error_count"],
+                    "errors": parse_result["errors"],
+                }
+            )
 
         # 写入数据库
         created = []
         db_errors = []
-        for i, item in enumerate(parse_result['items'], 1):
+        for i, item in enumerate(parse_result["items"], 1):
             try:
                 obj = await ledger_service.create_domestic_approval(db, item)
                 created.append(obj)
@@ -94,22 +104,25 @@ async def import_domestic_approvals(
                 await db.rollback()
                 db_errors.append(f"第{i}行: 数据库错误")
 
-        all_errors = parse_result['errors'] + db_errors
+        all_errors = parse_result["errors"] + db_errors
         message = f"成功导入 {len(created)} 条记录"
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(data={
-            "count": len(created),
-            "message": message,
-            "total_rows": parse_result['total_rows'],
-            "success_count": len(created),
-            "skipped_count": parse_result['skipped_count'],
-            "error_count": parse_result['error_count'] + len(db_errors),
-            "errors": all_errors
-        })
+        return success_response(
+            data={
+                "count": len(created),
+                "message": message,
+                "total_rows": parse_result["total_rows"],
+                "success_count": len(created),
+                "skipped_count": parse_result["skipped_count"],
+                "error_count": parse_result["error_count"] + len(db_errors),
+                "errors": all_errors,
+            }
+        )
     except Exception as e:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"❌ Import failed: {str(e)}", exc_info=True)
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
@@ -130,6 +143,7 @@ async def export_domestic_approvals(
 
 
 # ── Overseas Approvals ─────────────────────────────────────────────
+
 
 @router.get("/overseas-approvals", response_model=list[OverseasApprovalResponse])
 async def list_overseas_approvals(
@@ -162,27 +176,39 @@ async def import_overseas_approvals(
 
         # 记录日志
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"📥 Import file: {filename}, size: {file_size} bytes")
 
         parse_result = ledger_service.import_overseas_approvals_from_excel(content)
 
-        logger.info(f"📊 Parse result: total={parse_result['total_rows']}, success={parse_result['success_count']}, skipped={parse_result['skipped_count']}, errors={parse_result['error_count']}")
-        if parse_result['errors']:
+        logger.info(
+            f"📊 Parse result: total={parse_result['total_rows']}, success={parse_result['success_count']}, skipped={parse_result['skipped_count']}, errors={parse_result['error_count']}"
+        )
+        if parse_result["errors"]:
             logger.info(f"⚠️ Parse errors: {parse_result['errors'][:5]}")
 
-        if parse_result['success_count'] == 0:
-            error_msg = parse_result['errors'][0] if parse_result['errors'] else "未解析到有效数据"
-            return success_response(data={
-                "count": 0, "message": f"文件已解析但未导入有效数据: {error_msg}",
-                "total_rows": parse_result['total_rows'], "success_count": 0,
-                "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'],
-                "errors": parse_result['errors']
-            })
+        if parse_result["success_count"] == 0:
+            error_msg = (
+                parse_result["errors"][0]
+                if parse_result["errors"]
+                else "未解析到有效数据"
+            )
+            return success_response(
+                data={
+                    "count": 0,
+                    "message": f"文件已解析但未导入有效数据: {error_msg}",
+                    "total_rows": parse_result["total_rows"],
+                    "success_count": 0,
+                    "skipped_count": parse_result["skipped_count"],
+                    "error_count": parse_result["error_count"],
+                    "errors": parse_result["errors"],
+                }
+            )
 
         created = []
         db_errors = []
-        for i, item in enumerate(parse_result['items'], 1):
+        for i, item in enumerate(parse_result["items"], 1):
             try:
                 obj = await ledger_service.create_overseas_approval(db, item)
                 created.append(obj)
@@ -193,17 +219,22 @@ async def import_overseas_approvals(
                 await db.rollback()
                 db_errors.append(f"第{i}行: 数据库错误")
 
-        all_errors = parse_result['errors'] + db_errors
+        all_errors = parse_result["errors"] + db_errors
         message = f"成功导入 {len(created)} 条记录"
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(data={
-            "count": len(created), "message": message,
-            "total_rows": parse_result['total_rows'], "success_count": len(created),
-            "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'] + len(db_errors),
-            "errors": all_errors
-        })
+        return success_response(
+            data={
+                "count": len(created),
+                "message": message,
+                "total_rows": parse_result["total_rows"],
+                "success_count": len(created),
+                "skipped_count": parse_result["skipped_count"],
+                "error_count": parse_result["error_count"] + len(db_errors),
+                "errors": all_errors,
+            }
+        )
     except Exception as e:
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
 
@@ -223,6 +254,7 @@ async def export_overseas_approvals(
 
 
 # ── International Reviews ──────────────────────────────────────────
+
 
 @router.get("/international-reviews", response_model=list[InternationalReviewResponse])
 async def list_international_reviews(
@@ -252,18 +284,27 @@ async def import_international_reviews(
         content = await file.read()
         parse_result = ledger_service.import_international_reviews_from_excel(content)
 
-        if parse_result['success_count'] == 0:
-            error_msg = parse_result['errors'][0] if parse_result['errors'] else "未解析到有效数据"
-            return success_response(data={
-                "count": 0, "message": f"文件已解析但未导入有效数据: {error_msg}",
-                "total_rows": parse_result['total_rows'], "success_count": 0,
-                "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'],
-                "errors": parse_result['errors']
-            })
+        if parse_result["success_count"] == 0:
+            error_msg = (
+                parse_result["errors"][0]
+                if parse_result["errors"]
+                else "未解析到有效数据"
+            )
+            return success_response(
+                data={
+                    "count": 0,
+                    "message": f"文件已解析但未导入有效数据: {error_msg}",
+                    "total_rows": parse_result["total_rows"],
+                    "success_count": 0,
+                    "skipped_count": parse_result["skipped_count"],
+                    "error_count": parse_result["error_count"],
+                    "errors": parse_result["errors"],
+                }
+            )
 
         created = []
         db_errors = []
-        for i, item in enumerate(parse_result['items'], 1):
+        for i, item in enumerate(parse_result["items"], 1):
             try:
                 obj = await ledger_service.create_international_review(db, item)
                 created.append(obj)
@@ -274,17 +315,22 @@ async def import_international_reviews(
                 await db.rollback()
                 db_errors.append(f"第{i}行: 数据库错误")
 
-        all_errors = parse_result['errors'] + db_errors
+        all_errors = parse_result["errors"] + db_errors
         message = f"成功导入 {len(created)} 条记录"
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(data={
-            "count": len(created), "message": message,
-            "total_rows": parse_result['total_rows'], "success_count": len(created),
-            "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'] + len(db_errors),
-            "errors": all_errors
-        })
+        return success_response(
+            data={
+                "count": len(created),
+                "message": message,
+                "total_rows": parse_result["total_rows"],
+                "success_count": len(created),
+                "skipped_count": parse_result["skipped_count"],
+                "error_count": parse_result["error_count"] + len(db_errors),
+                "errors": all_errors,
+            }
+        )
     except Exception as e:
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
 
@@ -299,11 +345,14 @@ async def export_international_reviews(
     return StreamingResponse(
         iter([excel_bytes]),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=international_reviews.xlsx"},
+        headers={
+            "Content-Disposition": "attachment; filename=international_reviews.xlsx"
+        },
     )
 
 
 # ── COPP Certificates ──────────────────────────────────────────────
+
 
 @router.get("/copp-certificates", response_model=list[CoppCertificateResponse])
 async def list_copp_certificates(
@@ -333,18 +382,27 @@ async def import_copp_certificates(
         content = await file.read()
         parse_result = ledger_service.import_copp_certificates_from_excel(content)
 
-        if parse_result['success_count'] == 0:
-            error_msg = parse_result['errors'][0] if parse_result['errors'] else "未解析到有效数据"
-            return success_response(data={
-                "count": 0, "message": f"文件已解析但未导入有效数据: {error_msg}",
-                "total_rows": parse_result['total_rows'], "success_count": 0,
-                "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'],
-                "errors": parse_result['errors']
-            })
+        if parse_result["success_count"] == 0:
+            error_msg = (
+                parse_result["errors"][0]
+                if parse_result["errors"]
+                else "未解析到有效数据"
+            )
+            return success_response(
+                data={
+                    "count": 0,
+                    "message": f"文件已解析但未导入有效数据: {error_msg}",
+                    "total_rows": parse_result["total_rows"],
+                    "success_count": 0,
+                    "skipped_count": parse_result["skipped_count"],
+                    "error_count": parse_result["error_count"],
+                    "errors": parse_result["errors"],
+                }
+            )
 
         created = []
         db_errors = []
-        for i, item in enumerate(parse_result['items'], 1):
+        for i, item in enumerate(parse_result["items"], 1):
             try:
                 obj = await ledger_service.create_copp_certificate(db, item)
                 created.append(obj)
@@ -355,17 +413,22 @@ async def import_copp_certificates(
                 await db.rollback()
                 db_errors.append(f"第{i}行: 数据库错误")
 
-        all_errors = parse_result['errors'] + db_errors
+        all_errors = parse_result["errors"] + db_errors
         message = f"成功导入 {len(created)} 条记录"
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(data={
-            "count": len(created), "message": message,
-            "total_rows": parse_result['total_rows'], "success_count": len(created),
-            "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'] + len(db_errors),
-            "errors": all_errors
-        })
+        return success_response(
+            data={
+                "count": len(created),
+                "message": message,
+                "total_rows": parse_result["total_rows"],
+                "success_count": len(created),
+                "skipped_count": parse_result["skipped_count"],
+                "error_count": parse_result["error_count"] + len(db_errors),
+                "errors": all_errors,
+            }
+        )
     except Exception as e:
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
 
@@ -385,6 +448,7 @@ async def export_copp_certificates(
 
 
 # ── WC Certificates ────────────────────────────────────────────────
+
 
 @router.get("/wc-certificates", response_model=list[WcCertificateResponse])
 async def list_wc_certificates(
@@ -414,18 +478,27 @@ async def import_wc_certificates(
         content = await file.read()
         parse_result = ledger_service.import_wc_certificates_from_excel(content)
 
-        if parse_result['success_count'] == 0:
-            error_msg = parse_result['errors'][0] if parse_result['errors'] else "未解析到有效数据"
-            return success_response(data={
-                "count": 0, "message": f"文件已解析但未导入有效数据: {error_msg}",
-                "total_rows": parse_result['total_rows'], "success_count": 0,
-                "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'],
-                "errors": parse_result['errors']
-            })
+        if parse_result["success_count"] == 0:
+            error_msg = (
+                parse_result["errors"][0]
+                if parse_result["errors"]
+                else "未解析到有效数据"
+            )
+            return success_response(
+                data={
+                    "count": 0,
+                    "message": f"文件已解析但未导入有效数据: {error_msg}",
+                    "total_rows": parse_result["total_rows"],
+                    "success_count": 0,
+                    "skipped_count": parse_result["skipped_count"],
+                    "error_count": parse_result["error_count"],
+                    "errors": parse_result["errors"],
+                }
+            )
 
         created = []
         db_errors = []
-        for i, item in enumerate(parse_result['items'], 1):
+        for i, item in enumerate(parse_result["items"], 1):
             try:
                 obj = await ledger_service.create_wc_certificate(db, item)
                 created.append(obj)
@@ -436,17 +509,22 @@ async def import_wc_certificates(
                 await db.rollback()
                 db_errors.append(f"第{i}行: 数据库错误")
 
-        all_errors = parse_result['errors'] + db_errors
+        all_errors = parse_result["errors"] + db_errors
         message = f"成功导入 {len(created)} 条记录"
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(data={
-            "count": len(created), "message": message,
-            "total_rows": parse_result['total_rows'], "success_count": len(created),
-            "skipped_count": parse_result['skipped_count'], "error_count": parse_result['error_count'] + len(db_errors),
-            "errors": all_errors
-        })
+        return success_response(
+            data={
+                "count": len(created),
+                "message": message,
+                "total_rows": parse_result["total_rows"],
+                "success_count": len(created),
+                "skipped_count": parse_result["skipped_count"],
+                "error_count": parse_result["error_count"] + len(db_errors),
+                "errors": all_errors,
+            }
+        )
     except Exception as e:
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
 
@@ -467,6 +545,7 @@ async def export_wc_certificates(
 
 # ── Dashboard Summary ──────────────────────────────────────────────
 
+
 @router.get("/summary", response_model=LedgerSummary)
 async def get_ledger_summary(
     db: AsyncSession = Depends(get_db),
@@ -477,6 +556,7 @@ async def get_ledger_summary(
 
 # ── Reviewing (from drugs table) ───────────────────────────────────
 
+
 @router.get("/reviewing")
 async def list_reviewing_drugs(
     db: AsyncSession = Depends(get_db),
@@ -486,33 +566,40 @@ async def list_reviewing_drugs(
 
     from app.modules.registration.models.drug import Drug, DrugNode
 
-    stmt = select(Drug).where(Drug.is_deleted == False).order_by(Drug.acceptance_date.desc())
+    stmt = select(Drug).where(not Drug.is_deleted).order_by(Drug.acceptance_date.desc())
     result = await db.execute(stmt)
     drugs = result.scalars().all()
 
     items = []
     for drug in drugs:
         # 获取节点信息
-        node_stmt = select(DrugNode).where(
-            DrugNode.drug_id == drug.id,
-            DrugNode.is_deleted == False
-        ).order_by(DrugNode.node_index)
+        node_stmt = (
+            select(DrugNode)
+            .where(DrugNode.drug_id == drug.id, not DrugNode.is_deleted)
+            .order_by(DrugNode.node_index)
+        )
         node_result = await db.execute(node_stmt)
         nodes = node_result.scalars().all()
 
         node_info = {}
         for node in nodes:
-            node_info[f"node_{node.node_index}"] = node.actual_date.isoformat() if node.actual_date else None
+            node_info[f"node_{node.node_index}"] = (
+                node.actual_date.isoformat() if node.actual_date else None
+            )
 
-        items.append({
-            "id": str(drug.id),
-            "product_name": drug.name,
-            "drug_type": drug.type,
-            "acceptance_date": drug.acceptance_date.isoformat() if drug.acceptance_date else None,
-            "current_node": drug.current_node,
-            **node_info,
-            "created_at": drug.created_at.isoformat() if drug.created_at else None,
-            "updated_at": drug.updated_at.isoformat() if drug.updated_at else None,
-        })
+        items.append(
+            {
+                "id": str(drug.id),
+                "product_name": drug.name,
+                "drug_type": drug.type,
+                "acceptance_date": drug.acceptance_date.isoformat()
+                if drug.acceptance_date
+                else None,
+                "current_node": drug.current_node,
+                **node_info,
+                "created_at": drug.created_at.isoformat() if drug.created_at else None,
+                "updated_at": drug.updated_at.isoformat() if drug.updated_at else None,
+            }
+        )
 
     return items

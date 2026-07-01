@@ -21,7 +21,9 @@ from app.modules.safety.service import (
 oh_health_exams_router = APIRouter()
 
 
-@oh_health_exams_router.get("/oh-health-exams", response_model=ApiResponse, summary="获取职业健康体检列表")
+@oh_health_exams_router.get(
+    "/oh-health-exams", response_model=ApiResponse, summary="获取职业健康体检列表"
+)
 async def get_oh_health_exams(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -44,7 +46,9 @@ async def get_oh_health_exams(
     )
 
 
-@oh_health_exams_router.post("/oh-health-exams", response_model=ApiResponse, summary="创建职业健康体检")
+@oh_health_exams_router.post(
+    "/oh-health-exams", response_model=ApiResponse, summary="创建职业健康体检"
+)
 async def create_oh_health_exam(
     data: OhHealthExamCreate,
     db: AsyncSession = Depends(get_db),
@@ -57,7 +61,11 @@ async def create_oh_health_exam(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.get("/oh-health-exams/{exam_id}", response_model=ApiResponse, summary="获取职业健康体检详情")
+@oh_health_exams_router.get(
+    "/oh-health-exams/{exam_id}",
+    response_model=ApiResponse,
+    summary="获取职业健康体检详情",
+)
 async def get_oh_health_exam(
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -71,7 +79,9 @@ async def get_oh_health_exam(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.put("/oh-health-exams/{exam_id}", response_model=ApiResponse, summary="更新职业健康体检")
+@oh_health_exams_router.put(
+    "/oh-health-exams/{exam_id}", response_model=ApiResponse, summary="更新职业健康体检"
+)
 async def update_oh_health_exam(
     exam_id: uuid.UUID,
     data: OhHealthExamUpdate,
@@ -87,7 +97,9 @@ async def update_oh_health_exam(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.delete("/oh-health-exams/{exam_id}", response_model=ApiResponse, summary="删除职业健康体检")
+@oh_health_exams_router.delete(
+    "/oh-health-exams/{exam_id}", response_model=ApiResponse, summary="删除职业健康体检"
+)
 async def delete_oh_health_exam(
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -105,7 +117,9 @@ async def delete_oh_health_exam(
 # ── Exam Workflow ──
 
 
-@oh_health_exams_router.post("/oh-health-exams/{exam_id}/start", response_model=ApiResponse, summary="开始体检")
+@oh_health_exams_router.post(
+    "/oh-health-exams/{exam_id}/start", response_model=ApiResponse, summary="开始体检"
+)
 async def start_oh_health_exam(
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -120,7 +134,11 @@ async def start_oh_health_exam(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.post("/oh-health-exams/{exam_id}/complete", response_model=ApiResponse, summary="完成体检")
+@oh_health_exams_router.post(
+    "/oh-health-exams/{exam_id}/complete",
+    response_model=ApiResponse,
+    summary="完成体检",
+)
 async def complete_oh_health_exam(
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -135,7 +153,9 @@ async def complete_oh_health_exam(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.post("/oh-health-exams/{exam_id}/archive", response_model=ApiResponse, summary="归档体检")
+@oh_health_exams_router.post(
+    "/oh-health-exams/{exam_id}/archive", response_model=ApiResponse, summary="归档体检"
+)
 async def archive_oh_health_exam(
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -153,7 +173,11 @@ async def archive_oh_health_exam(
 # ── Exam JSON Sub-records ──
 
 
-@oh_health_exams_router.post("/oh-health-exams/{exam_id}/exam-items", response_model=ApiResponse, summary="添加体检项目")
+@oh_health_exams_router.post(
+    "/oh-health-exams/{exam_id}/exam-items",
+    response_model=ApiResponse,
+    summary="添加体检项目",
+)
 async def add_exam_item(
     exam_id: uuid.UUID,
     data: dict,
@@ -169,7 +193,11 @@ async def add_exam_item(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.put("/oh-health-exams/{exam_id}/exam-items/{index}", response_model=ApiResponse, summary="更新体检项目")
+@oh_health_exams_router.put(
+    "/oh-health-exams/{exam_id}/exam-items/{index}",
+    response_model=ApiResponse,
+    summary="更新体检项目",
+)
 async def update_exam_item(
     exam_id: uuid.UUID,
     index: int,
@@ -186,7 +214,11 @@ async def update_exam_item(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.delete("/oh-health-exams/{exam_id}/exam-items/{index}", response_model=ApiResponse, summary="删除体检项目")
+@oh_health_exams_router.delete(
+    "/oh-health-exams/{exam_id}/exam-items/{index}",
+    response_model=ApiResponse,
+    summary="删除体检项目",
+)
 async def delete_exam_item(
     exam_id: uuid.UUID,
     index: int,
@@ -202,7 +234,11 @@ async def delete_exam_item(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.put("/oh-health-exams/{exam_id}/conclusion", response_model=ApiResponse, summary="设置体检结论")
+@oh_health_exams_router.put(
+    "/oh-health-exams/{exam_id}/conclusion",
+    response_model=ApiResponse,
+    summary="设置体检结论",
+)
 async def set_exam_conclusion(
     exam_id: uuid.UUID,
     data: SetExamConclusionRequest,
@@ -218,7 +254,11 @@ async def set_exam_conclusion(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.post("/oh-health-exams/{exam_id}/abnormality-records", response_model=ApiResponse, summary="添加体检异常处置记录")
+@oh_health_exams_router.post(
+    "/oh-health-exams/{exam_id}/abnormality-records",
+    response_model=ApiResponse,
+    summary="添加体检异常处置记录",
+)
 async def add_exam_abnormality_record(
     exam_id: uuid.UUID,
     data: dict,
@@ -234,7 +274,11 @@ async def add_exam_abnormality_record(
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
 
 
-@oh_health_exams_router.put("/oh-health-exams/{exam_id}/abnormality-records/{index}", response_model=ApiResponse, summary="更新体检异常处置状态")
+@oh_health_exams_router.put(
+    "/oh-health-exams/{exam_id}/abnormality-records/{index}",
+    response_model=ApiResponse,
+    summary="更新体检异常处置状态",
+)
 async def update_exam_abnormality_status(
     exam_id: uuid.UUID,
     index: int,
@@ -249,5 +293,3 @@ async def update_exam_abnormality_status(
         return ApiResponse(code=400, message="无法更新，体检记录不存在或索引无效")
     await db.commit()
     return ApiResponse(data=OhHealthExamResponse.model_validate(item))
-
-

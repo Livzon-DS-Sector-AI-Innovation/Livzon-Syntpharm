@@ -156,6 +156,7 @@ FEWSHOT_EXAMPLES = [
 # Prompt 构建
 # ═══════════════════════════════════════════════════════════════
 
+
 def build_prompt(context_text: str, knowledge_context: str | None = None) -> str:
     """构建完整的 4 段式 user prompt。
 
@@ -175,8 +176,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     if knowledge_context:
         sections.append(
             "## 参考文档（知识库）\n\n"
-            "以下为本企业相关的知识库信息，优先参照：\n\n"
-            + knowledge_context
+            "以下为本企业相关的知识库信息，优先参照：\n\n" + knowledge_context
         )
 
     # ── 段4: OUTPUT_FORMAT ──
@@ -188,6 +188,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
 # ═══════════════════════════════════════════════════════════════
 # 种子配置（供 ai_workflow_configs 表初始化）
 # ═══════════════════════════════════════════════════════════════
+
 
 def get_db_seed_config() -> dict:
     """返回脚本1的 DB 种子配置。"""

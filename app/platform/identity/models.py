@@ -32,18 +32,32 @@ class User(BaseModel):
     feishu_user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     feishu_open_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     feishu_union_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    en_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="英文名")
-    avatar_thumb: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="小头像URL")
-    avatar_middle: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="中头像URL")
-    avatar_big: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="大头像URL")
-    enterprise_email: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="企业邮箱")
-    tenant_key: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="租户标识")
+    en_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="英文名"
+    )
+    avatar_thumb: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, comment="小头像URL"
+    )
+    avatar_middle: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, comment="中头像URL"
+    )
+    avatar_big: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, comment="大头像URL"
+    )
+    enterprise_email: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="企业邮箱"
+    )
+    tenant_key: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="租户标识"
+    )
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     feishu_department_ids: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="飞书部门ID列表，JSON数组"
     )
     external_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    role: Mapped[str] = mapped_column(String(50), default="member", comment="角色: admin/manager/member/viewer")
+    role: Mapped[str] = mapped_column(
+        String(50), default="member", comment="角色: admin/manager/member/viewer"
+    )
 
 
 class Department(BaseModel):
@@ -119,6 +133,4 @@ class LoginLog(BaseModel):
     error_message: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="失败原因"
     )
-    extra: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True, comment="额外信息"
-    )
+    extra: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="额外信息")

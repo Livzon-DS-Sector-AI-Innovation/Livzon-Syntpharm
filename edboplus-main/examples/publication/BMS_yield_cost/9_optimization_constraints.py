@@ -1,4 +1,3 @@
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,9 +26,9 @@ import pandas as pd
 # # Combinations of constraints tested in this example.
 # # Columns that remain constant after EDBO suggest the best sample using batch=1.
 set_constraints = [
-    ['ligand'],
-    ['ligand', 'base'],
-    ['solvent', 'concentration', 'temperature'],
+    ["ligand"],
+    ["ligand", "base"],
+    ["solvent", "concentration", "temperature"],
 ]
 
 # df_results = pd.DataFrame(columns=['seed', 'constraints',
@@ -134,53 +133,52 @@ set_constraints = [
 
 
 # Plot results.
-df_results = pd.read_csv('constraint_optimization_results.csv')
-colors = [ '#0343DF', '#FAC205', '#DC143C']
+df_results = pd.read_csv("constraint_optimization_results.csv")
+colors = ["#0343DF", "#FAC205", "#DC143C"]
 count = 0
 
-mpl.rcParams['grid.linestyle'] = ':'
-mpl.rcParams['grid.linewidth'] = 0.1
-plt.rcParams['font.family'] = 'Helvetica'
+mpl.rcParams["grid.linestyle"] = ":"
+mpl.rcParams["grid.linewidth"] = 0.1
+plt.rcParams["font.family"] = "Helvetica"
 
-fig, ax = plt.subplots(figsize=(4., 4.0), dpi=500, nrows=1, ncols=1)
+fig, ax = plt.subplots(figsize=(4.0, 4.0), dpi=500, nrows=1, ncols=1)
 
 for constraints in set_constraints:
     # Get subset for constraints.
     constraints = str(constraints)
-    df_constraint = df_results[df_results['constraints'] == constraints]
+    df_constraint = df_results[df_results["constraints"] == constraints]
 
     # Get average, max and min hypervolume explored at each step.
-    df_avg = df_constraint.groupby(['n_exp']).agg([np.average])
-    df_max = df_constraint.groupby(['n_exp']).agg([np.max])
-    df_min = df_constraint.groupby(['n_exp']).agg([np.min])
+    df_avg = df_constraint.groupby(["n_exp"]).agg([np.average])
+    df_max = df_constraint.groupby(["n_exp"]).agg([np.max])
+    df_min = df_constraint.groupby(["n_exp"]).agg([np.min])
 
-
-    n_exp = np.unique(df_results['n_exp'].values).flatten()
-    hypervol_avg = df_avg['hypervolume'].values.flatten()
-    hypervol_max = df_max['hypervolume'].values.flatten()
-    hypervol_min = df_min['hypervolume'].values.flatten()
+    n_exp = np.unique(df_results["n_exp"].values).flatten()
+    hypervol_avg = df_avg["hypervolume"].values.flatten()
+    hypervol_max = df_max["hypervolume"].values.flatten()
+    hypervol_min = df_min["hypervolume"].values.flatten()
 
     color = colors[count]
 
-    ax.plot(n_exp, hypervol_avg, color=color, lw=2.5,
-            label=str(constraints))
-    ax.fill_between(x=n_exp,
-                    y1=hypervol_avg,
-                    y2=hypervol_max, color=color, alpha=0.3, lw=0.)
-    ax.fill_between(x=n_exp,
-                    y1=hypervol_min,
-                    y2=hypervol_avg, color=color, alpha=0.3, lw=0.)
-    ax.plot(n_exp, hypervol_min, color=color, alpha=1., lw=1., ls='--')
-    ax.plot(n_exp, hypervol_max, color=color, alpha=1., lw=1., ls='--')
-    ax.plot(n_exp, np.ones_like(n_exp)*100,
-                dashes=[8, 4], color='black', linewidth=0.8)
-    ax.scatter(n_exp, hypervol_avg, marker='o', s=0., color=color)
+    ax.plot(n_exp, hypervol_avg, color=color, lw=2.5, label=str(constraints))
+    ax.fill_between(
+        x=n_exp, y1=hypervol_avg, y2=hypervol_max, color=color, alpha=0.3, lw=0.0
+    )
+    ax.fill_between(
+        x=n_exp, y1=hypervol_min, y2=hypervol_avg, color=color, alpha=0.3, lw=0.0
+    )
+    ax.plot(n_exp, hypervol_min, color=color, alpha=1.0, lw=1.0, ls="--")
+    ax.plot(n_exp, hypervol_max, color=color, alpha=1.0, lw=1.0, ls="--")
+    ax.plot(
+        n_exp, np.ones_like(n_exp) * 100, dashes=[8, 4], color="black", linewidth=0.8
+    )
+    ax.scatter(n_exp, hypervol_avg, marker="o", s=0.0, color=color)
     count += 1
 
 ax.set_xticks(np.arange(0, 120, 10))
 ax.set_xlim(0, np.max(n_exp[:-1]))
 ax.set_ylim(0, 100)
-ax.set_xlabel('Number of experiments')
-ax.set_ylabel('Hypervolume (%)')
+ax.set_xlabel("Number of experiments")
+ax.set_ylabel("Hypervolume (%)")
 plt.legend()
-plt.savefig('./results_plots/optimization_constraints.svg', format='svg')
+plt.savefig("./results_plots/optimization_constraints.svg", format="svg")

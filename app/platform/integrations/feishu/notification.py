@@ -53,7 +53,8 @@ async def _get_tenant_token(client) -> str:
     if not resp.success():
         logger.error(
             "Failed to get tenant token: code=%s, msg=%s",
-            resp.code, resp.msg,
+            resp.code,
+            resp.msg,
         )
         raise RuntimeError(
             f"Failed to get tenant token: code={resp.code}, msg={resp.msg}"
@@ -126,9 +127,10 @@ async def send_user_card(
         resp = await client.im.v1.message.acreate(req)
         if not resp.success():
             logger.error(
-                "❌ send_user_card FAILED: open_id=%s, code=%s, msg=%s, "
-                "status_code=%s",
-                open_id, resp.code, resp.msg,
+                "❌ send_user_card FAILED: open_id=%s, code=%s, msg=%s, status_code=%s",
+                open_id,
+                resp.code,
+                resp.msg,
                 resp.status_code if hasattr(resp, "status_code") else "N/A",
             )
             return False
@@ -137,7 +139,9 @@ async def send_user_card(
     except Exception as e:
         logger.error(
             "❌ send_user_card EXCEPTION for open_id=%s: %s: %s",
-            open_id, type(e).__name__, e,
+            open_id,
+            type(e).__name__,
+            e,
         )
         return False
 

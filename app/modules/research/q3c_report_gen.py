@@ -3,6 +3,9 @@
 Generate Markdown compliance report from solvent analysis.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
 import json
 import re
 from datetime import datetime
@@ -12,9 +15,10 @@ def load_solvent_synonyms():
     """Load solvent synonyms including Chinese names."""
     try:
         from app.modules.research.ich_service import DATA_DIR
+
         synonyms_file = DATA_DIR / "solvent-synonyms.json"
         if synonyms_file.exists():
-            with open(synonyms_file, encoding='utf-8') as f:
+            with open(synonyms_file, encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
         logger.warning("Failed to load synonym file")
@@ -32,7 +36,7 @@ def get_chinese_name(solvent_name, synonyms):
         # Find Chinese name (contains Chinese characters)
         for synonym in synonym_list:
             # Check if contains Chinese characters
-            if any('\u4e00' <= char <= '\u9fff' for char in synonym):
+            if any("\u4e00" <= char <= "\u9fff" for char in synonym):
                 return synonym
     return solvent_name  # Return original if no Chinese name found
 
@@ -40,19 +44,19 @@ def get_chinese_name(solvent_name, synonyms):
 def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     """
     Generate Markdown report from analysis results.
-    
+
     Follows the three-section structure per SKILL.md specification:
     1. 各步骤使用的溶剂
     2. 需要控制的溶剂
        2.1 批批检验
        2.2 10% 标准 - 仅工艺控制
     3. 推荐测试方法
-    
+
     Args:
         analysis: Output from solvent_match.py
         flag_class1: Whether to highlight Class 1 violations
         ich_data_source: Source of ICH data (for documentation)
-    
+
     Returns:
         Markdown string (in Chinese)
     """
@@ -78,9 +82,13 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     # Class 1 warning
     if flag_class1 and class_counts["class1"] > 0:
-        lines.append("⚠️ **合规问题:** 检出 {} 种 Class 1 溶剂!".format(class_counts['class1']))
+        lines.append(
+            "⚠️ **合规问题:** 检出 {} 种 Class 1 溶剂!".format(class_counts["class1"])
+        )
         lines.append("")
-        lines.append("**根据 ICH Q3C 第 3.1 节:** Class 1 溶剂不应使用，除非能提供**强有力的科学依据**,即使残留量低于限值。")
+        lines.append(
+            "**根据 ICH Q3C 第 3.1 节:** Class 1 溶剂不应使用，除非能提供**强有力的科学依据**,即使残留量低于限值。"
+        )
         lines.append("")
 
     # ============================================================
@@ -101,7 +109,11 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     for solvent_name, data in all_solvents.items():
         solvent_english = data.get("canonical") or data.get("solvent") or solvent_name
         solvent_display = get_chinese_name(solvent_english, synonyms)
-        class_display = data["class"].replace("class", "Class ") if data["class"] != "unknown" else "未列出"
+        class_display = (
+            data["class"].replace("class", "Class ")
+            if data["class"] != "unknown"
+            else "未列出"
+        )
         limit = data.get("limit") or "N/A"
         # Convert limit to string for consistent display
         if isinstance(limit, int):
@@ -111,11 +123,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         for step in steps_unique:
             if step not in step_solvents:
                 step_solvents[step] = []
-            step_solvents[step].append({
-                "solvent": solvent_display,
-                "class": class_display,
-                "limit": limit
-            })
+            step_solvents[step].append(
+                {"solvent": solvent_display, "class": class_display, "limit": limit}
+            )
 
     # Generate separate table for each step
     for step in sorted(step_solvents.keys()):
@@ -164,31 +174,35 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
         if in_final_step:
             # Routine release: used in final step
-            routine_release.append({
-                "solvent": solvent_display,
-                "class": class_display,
-                "limit": limit or "N/A",
-                "reason": f"用于最终步骤 ({final_step})"
-            })
+            routine_release.append(
+                {
+                    "solvent": solvent_display,
+                    "class": class_display,
+                    "limit": limit or "N/A",
+                    "reason": f"用于最终步骤 ({final_step})",
+                }
+            )
         else:
             # 10% criteria: used in early steps only (Class 2 AND Class 3)
             if limit and limit != "N/A":
                 try:
                     # Convert to string first (limit might be int or "720 ppm" format)
                     limit_str = str(limit)
-                    match = re.search(r'(\d+)', limit_str)
+                    match = re.search(r"(\d+)", limit_str)
                     if match:
                         limit_val = float(match.group(1))
                         threshold = limit_val * 0.1
                         # Deduplicate steps for display
                         steps_unique = list(dict.fromkeys(steps_used))
-                        dev_control_10pct.append({
-                            "solvent": solvent_display,
-                            "class": class_display,
-                            "limit": limit,
-                            "threshold": f"{threshold:.1f}",
-                            "reason": f"用于早期步骤 ({', '.join(steps_unique)})"
-                        })
+                        dev_control_10pct.append(
+                            {
+                                "solvent": solvent_display,
+                                "class": class_display,
+                                "limit": limit,
+                                "threshold": f"{threshold:.1f}",
+                                "reason": f"用于早期步骤 ({', '.join(steps_unique)})",
+                            }
+                        )
                 except (ValueError, TypeError):
                     pass
 
@@ -199,7 +213,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     if routine_release:
         for item in routine_release:
-            lines.append(f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['reason']} |")
+            lines.append(
+                f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['reason']} |"
+            )
     else:
         lines.append("| - | - | - | 无溶剂需要批批检验 |")
 
@@ -214,9 +230,13 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     if dev_control_10pct:
         for item in dev_control_10pct:
-            lines.append(f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['threshold']} | {item['reason']} |")
+            lines.append(
+                f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['threshold']} | {item['reason']} |"
+            )
     else:
-        lines.append("| - | - | - | - | No solvents qualify for development control only |")
+        lines.append(
+            "| - | - | - | - | No solvents qualify for development control only |"
+        )
 
     lines.append("")
 
@@ -255,8 +275,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     # Sort solvents for consistent output
     sort_order = {"class1": 0, "class2": 1, "class3": 2, "unknown": 3}
     sorted_solvents = sorted(
-        all_solvents.items(),
-        key=lambda x: (sort_order.get(x[1]["class"], 3), x[0])
+        all_solvents.items(), key=lambda x: (sort_order.get(x[1]["class"], 3), x[0])
     )
 
     for solvent_name, data in sorted_solvents:
@@ -271,7 +290,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         else:  # class3
             method = "LOD ≤0.5% 或 GC"
 
-        lines.append(f"| {solvent_display} | {data['class'].replace('class', 'Class ')} | {method} |")
+        lines.append(
+            f"| {solvent_display} | {data['class'].replace('class', 'Class ')} | {method} |"
+        )
 
     lines.append("")
 
@@ -279,8 +300,12 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     lines.append("### 说明:")
     lines.append("")
     lines.append("- **Class 2 溶剂:** 根据 ICH Q3C 第 3.5 节，必须使用 GC 进行定量测试")
-    lines.append("- **Class 3 溶剂:** 根据 ICH Q3C 第 3.5 节，LOD ≤0.5% 可接受，或使用已验证的 GC 方法")
-    lines.append("- **10% 标准:** 第 2.2 节中的溶剂可通过工艺开发阶段控制，提供代表性数据证明残留量持续 ≤10% ICH 限值，可豁免批批检验。根据 EMA/EDQM CEP 要求，代表性数据需来自 **6 批连续中试规模批次** 或 **3 批连续工业生产规模批次** (EMA Annex I, CPMP/QWP/450/03-Rev.1)")
+    lines.append(
+        "- **Class 3 溶剂:** 根据 ICH Q3C 第 3.5 节，LOD ≤0.5% 可接受，或使用已验证的 GC 方法"
+    )
+    lines.append(
+        "- **10% 标准:** 第 2.2 节中的溶剂可通过工艺开发阶段控制，提供代表性数据证明残留量持续 ≤10% ICH 限值，可豁免批批检验。根据 EMA/EDQM CEP 要求，代表性数据需来自 **6 批连续中试规模批次** 或 **3 批连续工业生产规模批次** (EMA Annex I, CPMP/QWP/450/03-Rev.1)"
+    )
     lines.append("")
 
     # Unknown solvents section
@@ -294,7 +319,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
         for solvent_name, data in all_solvents.items():
             if data["class"] == "unknown":
-                solvent_english = data.get("canonical") or data.get("solvent") or solvent_name
+                solvent_english = (
+                    data.get("canonical") or data.get("solvent") or solvent_name
+                )
                 solvent_display = get_chinese_name(solvent_english, synonyms)
                 matched_as = data.get("matched_as", solvent_name)
                 lines.append(f"- **{solvent_display}** (匹配为：{matched_as})")
@@ -306,7 +333,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     # When to consult original documents
     needs_consultation = []
     if class_counts["class1"] > 0:
-        needs_consultation.append("检出 Class 1 溶剂 (需要根据 ICH Q3C 第 3.1 节提供获益/风险评估依据)")
+        needs_consultation.append(
+            "检出 Class 1 溶剂 (需要根据 ICH Q3C 第 3.1 节提供获益/风险评估依据)"
+        )
     if class_counts["unknown"] > 0:
         needs_consultation.append("未列出溶剂需要根据 ICH Q3C 第 5 节进行毒理学评估")
 
@@ -319,7 +348,9 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
             lines.append(f"- {item}")
         lines.append("")
         lines.append("**参考文件:**")
-        lines.append("- ICH Q3C(R9): https://database.ich.org/sites/default/files/ICH_Q3C-R9_Guideline_2024_2024_Approved.pdf")
+        lines.append(
+            "- ICH Q3C(R9): https://database.ich.org/sites/default/files/ICH_Q3C-R9_Guideline_2024_2024_Approved.pdf"
+        )
         lines.append("- EMA/EDQM CEP: PA/PH/CEP (04) 1, 7R (2024 年 3 月)")
         lines.append("")
 
@@ -332,12 +363,21 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 def main():
     import argparse
 
-
     parser = argparse.ArgumentParser(description="Generate ICH Q3C compliance report")
-    parser.add_argument("analysis_json", help="Path to analysis JSON from solvent_match.py")
-    parser.add_argument("-o", "--output", default="-", help="Output file (default: stdout)")
-    parser.add_argument("--no-flag-class1", action="store_true", help="Don't highlight Class 1 violations")
-    parser.add_argument("--ich-data-source", default="", help="Source of ICH data for documentation")
+    parser.add_argument(
+        "analysis_json", help="Path to analysis JSON from solvent_match.py"
+    )
+    parser.add_argument(
+        "-o", "--output", default="-", help="Output file (default: stdout)"
+    )
+    parser.add_argument(
+        "--no-flag-class1",
+        action="store_true",
+        help="Don't highlight Class 1 violations",
+    )
+    parser.add_argument(
+        "--ich-data-source", default="", help="Source of ICH data for documentation"
+    )
 
     args = parser.parse_args()
 
@@ -349,14 +389,14 @@ def main():
     report = generate_q3c_report(
         analysis,
         flag_class1=not args.no_flag_class1,
-        ich_data_source=args.ich_data_source
+        ich_data_source=args.ich_data_source,
     )
 
     # Output
     if args.output == "-":
         logger.info(report)
     else:
-        with open(args.output, 'w') as f:
+        with open(args.output, "w") as f:
             f.write(report)
         logger.info(f"Report saved to {args.output}")
 

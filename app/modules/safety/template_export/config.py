@@ -27,7 +27,7 @@ HAZARD_COLUMN_MAPPING: dict[str, str] = {
     "f": "possible_accident",
     "g": "existing_engineering_controls",
     "h": "existing_management_controls",
-    "i": "",   # 培训教育措施·现有 — no DB field yet
+    "i": "",  # 培训教育措施·现有 — no DB field yet
     "j": "existing_ppe",
     "k": "existing_emergency_measures",
     "l": "l_inherent",
@@ -42,7 +42,7 @@ HAZARD_COLUMN_MAPPING: dict[str, str] = {
     "u": "control_level",
     "v": "department",
     "w": "responsible_person",
-    "x": "",   # 检查频次 — no DB field yet
+    "x": "",  # 检查频次 — no DB field yet
 }
 
 # Columns whose values should be cast to float (risk scores)
@@ -54,16 +54,16 @@ NUMERIC_COLUMNS = frozenset({"l", "m", "n"})
 # ═══════════════════════════════════════════════════════════════════════════════
 
 RISK_LABEL_COLORS: dict[str, str] = {
-    "一级": "FF0000",   # red
+    "一级": "FF0000",  # red
     "重大": "FF0000",
     "level_1": "FF0000",
-    "二级": "FF8C00",   # orange
+    "二级": "FF8C00",  # orange
     "较大": "FF8C00",
     "level_2": "FF8C00",
-    "三级": "0000FF",   # blue
+    "三级": "0000FF",  # blue
     "一般": "0000FF",
     "level_3": "0000FF",
-    "四级": "008000",   # green
+    "四级": "008000",  # green
     "level_4": "008000",
 }
 
@@ -72,19 +72,21 @@ RISK_LABEL_COLORS: dict[str, str] = {
 # 页面 / 打印设置
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class PageSetup:
     """openpyxl 页面设置，影响 PDF 导出效果。"""
 
-    orientation: str = "landscape"   # "portrait" | "landscape"
-    paper_size: int = 8             # 8=A3 (297×420mm), 9=A4, 13=B4, …
-    fit_to_width: int = 1           # 0=不缩放, 1=适应1页宽
-    fit_to_height: int = 0          # 0=自动（按需分页）
+    orientation: str = "landscape"  # "portrait" | "landscape"
+    paper_size: int = 8  # 8=A3 (297×420mm), 9=A4, 13=B4, …
+    fit_to_width: int = 1  # 0=不缩放, 1=适应1页宽
+    fit_to_height: int = 0  # 0=自动（按需分页）
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 模板结构描述符
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class TemplateConfig:
@@ -139,24 +141,24 @@ class TemplateConfig:
 
     # ── 风险着色 ──
     risk_label_column: str = "o"
-    risk_label_colors: dict[str, str] = field(
-        default_factory=lambda: RISK_LABEL_COLORS
-    )
+    risk_label_colors: dict[str, str] = field(default_factory=lambda: RISK_LABEL_COLORS)
 
     # ── 页面设置 ──
     page_setup: PageSetup = field(default_factory=PageSetup)
 
     # ── 序号列 ──
-    sequence_column: int = 1   # 1=A, 0=disabled
+    sequence_column: int = 1  # 1=A, 0=disabled
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 预置配置
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def _default_title_resolver(data: list[dict]) -> str:
     """从记录中取出现最多的部门名作为标题替换文本。"""
     from collections import Counter
+
     depts = [r.get("department", "") for r in data if r.get("department")]
     if not depts:
         return ""
@@ -176,7 +178,7 @@ HAZARD_TEMPLATE_CONFIG = TemplateConfig(
     risk_label_colors=RISK_LABEL_COLORS,
     page_setup=PageSetup(
         orientation="landscape",
-        paper_size=8,       # A3
+        paper_size=8,  # A3
         fit_to_width=1,
         fit_to_height=0,
     ),
@@ -188,16 +190,17 @@ HAZARD_TEMPLATE_CONFIG = TemplateConfig(
 # 模板自动检测器
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class InspectionResult:
     """``TemplateInspector.inspect()`` 的返回结果。"""
 
     config: TemplateConfig
-    merged_cells: list[dict]        # 合并单元格信息
-    has_column_letters_row: bool    # 是否存在 a, b, c, … 列字母行
-    column_letters_row: int         # 列字母行号，0 表示不存在
-    title_cell_ref: str             # 标题单元格引用（如 "A1"）
-    empty_data_rows: int            # 模板中预留给数据的空行数
+    merged_cells: list[dict]  # 合并单元格信息
+    has_column_letters_row: bool  # 是否存在 a, b, c, … 列字母行
+    column_letters_row: int  # 列字母行号，0 表示不存在
+    title_cell_ref: str  # 标题单元格引用（如 "A1"）
+    empty_data_rows: int  # 模板中预留给数据的空行数
 
 
 class TemplateInspector:
@@ -223,9 +226,7 @@ class TemplateInspector:
     _COLUMN_LETTER_THRESHOLD = 10
 
     # 常见列字母序列
-    _COLUMN_LETTERS = tuple(
-        chr(ord("a") + i) for i in range(26)
-    )  # a-z
+    _COLUMN_LETTERS = tuple(chr(ord("a") + i) for i in range(26))  # a-z
     _COLUMN_LETTERS_UPPER = tuple(chr(ord("A") + i) for i in range(26))
 
     def inspect(
@@ -270,10 +271,10 @@ class TemplateInspector:
             title_placeholder=title_placeholder,
             title_resolver=_default_title_resolver if title_placeholder else None,
             column_mapping=column_mapping,
-            numeric_columns=frozenset(),   # 调用方自行设置
-            risk_label_column="",          # 调用方自行设置
+            numeric_columns=frozenset(),  # 调用方自行设置
+            risk_label_column="",  # 调用方自行设置
             risk_label_colors=RISK_LABEL_COLORS,
-            page_setup=PageSetup(),        # 调用方自行设置
+            page_setup=PageSetup(),  # 调用方自行设置
             sequence_column=1,
         )
 
@@ -284,7 +285,8 @@ class TemplateInspector:
             has_column_letters_row=has_col_letters,
             column_letters_row=col_letters_row,
             title_cell_ref=f"{openpyxl.utils.get_column_letter(1)}{title_row}"
-            if title_row else "",
+            if title_row
+            else "",
             empty_data_rows=0,  # 需调用方根据实际需求设置
         )
 
@@ -353,8 +355,14 @@ class TemplateInspector:
                 matches = 0
                 expected_idx = 0
                 for letter in letters:
-                    exp_lower = cls._COLUMN_LETTERS[expected_idx] if expected_idx < 26 else ""
-                    exp_upper = cls._COLUMN_LETTERS_UPPER[expected_idx] if expected_idx < 26 else ""
+                    exp_lower = (
+                        cls._COLUMN_LETTERS[expected_idx] if expected_idx < 26 else ""
+                    )
+                    exp_upper = (
+                        cls._COLUMN_LETTERS_UPPER[expected_idx]
+                        if expected_idx < 26
+                        else ""
+                    )
                     if letter == exp_lower or letter == exp_upper:
                         matches += 1
                         expected_idx += 1
@@ -380,13 +388,15 @@ class TemplateInspector:
         """捕获所有合并单元格的范围信息。"""
         result = []
         for merged_range in ws.merged_cells.ranges:
-            result.append({
-                "range": str(merged_range),
-                "min_row": merged_range.min_row,
-                "max_row": merged_range.max_row,
-                "min_col": merged_range.min_col,
-                "max_col": merged_range.max_col,
-            })
+            result.append(
+                {
+                    "range": str(merged_range),
+                    "min_row": merged_range.min_row,
+                    "max_row": merged_range.max_row,
+                    "min_col": merged_range.min_col,
+                    "max_col": merged_range.max_col,
+                }
+            )
         return result
 
     @staticmethod
@@ -394,9 +404,7 @@ class TemplateInspector:
         """根据列数生成空的列映射。"""
         from openpyxl.utils import get_column_letter
 
-        return {
-            get_column_letter(c).lower(): "" for c in range(1, total_cols + 1)
-        }
+        return {get_column_letter(c).lower(): "" for c in range(1, total_cols + 1)}
 
     # ── 便捷方法 ──────────────────────────────────────────────────────────
 

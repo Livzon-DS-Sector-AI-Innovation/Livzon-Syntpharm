@@ -33,23 +33,28 @@ tkwargs = {
 
 
 class EDBOplus:
-
     def __init__(self):
 
         self.predicted_mean = []
         self.predicted_variance = []
 
     @staticmethod
-    def generate_reaction_scope(components, directory='./', filename='reaction.csv',
-                                check_overwrite=True):
+    def generate_reaction_scope(
+        components, directory="./", filename="reaction.csv", check_overwrite=True
+    ):
         """
         Creates a reaction scope from a dictionary of components and values.
         """
         print("Generating a reaction scope...")
-        df, n_combinations = create_reaction_scope(components=components, directory=directory,
-                                   filename=filename,
-                                   check_overwrite=check_overwrite)
-        print(f"The scope was generated and contains {n_combinations} possible reactions!")
+        df, n_combinations = create_reaction_scope(
+            components=components,
+            directory=directory,
+            filename=filename,
+            check_overwrite=check_overwrite,
+        )
+        print(
+            f"The scope was generated and contains {n_combinations} possible reactions!"
+        )
         return df
 
     @staticmethod
@@ -60,16 +65,23 @@ class EDBOplus:
         numeric_cols = df._get_numeric_data().columns
         ohe_columns = list(OrderedSet(df.columns) - OrderedSet(numeric_cols))
         if len(ohe_columns) > 0:
-            print(f"The following columns are categorical and will be encoded"
-                  f" using One-Hot-Encoding: {ohe_columns}")
+            print(
+                f"The following columns are categorical and will be encoded"
+                f" using One-Hot-Encoding: {ohe_columns}"
+            )
         # Encode OHE.
-        df_sampling = pd.get_dummies(df, prefix=ohe_columns,
-                                     columns=ohe_columns, drop_first=True, dtype=np.float64)
+        df_sampling = pd.get_dummies(
+            df,
+            prefix=ohe_columns,
+            columns=ohe_columns,
+            drop_first=True,
+            dtype=np.float64,
+        )
 
         class HiddenPrints:
             def __enter__(self):
                 self._original_stdout = sys.stdout
-                sys.stdout = open(os.devnull, 'w')
+                sys.stdout = open(os.devnull, "w")
 
             def __exit__(self, exc_type, exc_val, exc_tb):
                 sys.stdout.close()
@@ -78,11 +90,13 @@ class EDBOplus:
         # Order df according to initial sampling method (random samples).
         with HiddenPrints():
             idaes = None
-            if sampling_method == 'random':
+            if sampling_method == "random":
                 samples = df_sampling.sample(n=batch, random_state=seed)
-            elif sampling_method.lower() == 'lhs':
-                idaes = LatinHypercubeSampling(df_sampling, batch, sampling_type="selection")
-            elif sampling_method.lower() == 'cvt':
+            elif sampling_method.lower() == "lhs":
+                idaes = LatinHypercubeSampling(
+                    df_sampling, batch, sampling_type="selection"
+                )
+            elif sampling_method.lower() == "cvt":
                 idaes = CVTSampling(df_sampling, batch, sampling_type="selection")
 
             if idaes is not None:
@@ -92,40 +106,53 @@ class EDBOplus:
             # IMPORTANT: Sample from df_sampling (encoded), not df (original), to match dimensions
             additional_samples = None
             if len(samples) < batch:
-                additional_samples = df_sampling.sample(n=batch-len(samples), random_state=seed, replace=True)
+                additional_samples = df_sampling.sample(
+                    n=batch - len(samples), random_state=seed, replace=True
+                )
                 additional_samples = additional_samples.reset_index(drop=True)
             # Add the additional samples to the samples dataframe. If some of the additional_samples are already in samples, generate new ones until the batch size is reached.
             extra_seed = 1
             while len(samples) < batch:
-                samples = pd.concat([samples,additional_samples]).drop_duplicates(ignore_index=True)
-                additional_samples = df_sampling.sample(n=batch-len(samples), random_state=seed+extra_seed, replace=True)
-                extra_seed +=1
+                samples = pd.concat([samples, additional_samples]).drop_duplicates(
+                    ignore_index=True
+                )
+                additional_samples = df_sampling.sample(
+                    n=batch - len(samples), random_state=seed + extra_seed, replace=True
+                )
+                extra_seed += 1
 
         # Get index of the best samples according to the random sampling method.
         df_sampling_matrix = df_sampling.to_numpy()
         priority_list = np.zeros_like(df_sampling.index)
 
         for sample in samples.to_numpy():
-            d_i = cdist([sample], df_sampling_matrix, metric='cityblock')
+            d_i = cdist([sample], df_sampling_matrix, metric="cityblock")
             a = np.argmin(d_i)
-            priority_list[a] = 1.
-        df['priority'] = priority_list
+            priority_list[a] = 1.0
+        df["priority"] = priority_list
 
-        print(f"Generated {len(samples)} initial samples using {sampling_method} sampling (seed = {seed}). Run finished!")
+        print(
+            f"Generated {len(samples)} initial samples using {sampling_method} sampling (seed = {seed}). Run finished!"
+        )
 
         return df
 
-
-    def run(self,
-            objectives, objective_mode, objective_thresholds=None,
-            directory='.', filename='reaction.csv',
-            columns_features='all',
-            batch=5, init_sampling_method='cvt', seed=0,
-            scaler_features=MinMaxScaler(),
-            scaler_objectives=EDBOStandardScaler(),
-            acquisition_function='NoisyEHVI',
-            acquisition_function_sampler='SobolQMCNormalSampler'):
-
+    def run(
+        self,
+        objectives,
+        objective_mode,
+        objective_thresholds=None,
+        directory=".",
+        filename="reaction.csv",
+        columns_features="all",
+        batch=5,
+        init_sampling_method="cvt",
+        seed=0,
+        scaler_features=MinMaxScaler(),
+        scaler_objectives=EDBOStandardScaler(),
+        acquisition_function="NoisyEHVI",
+        acquisition_function_sampler="SobolQMCNormalSampler",
+    ):
         """
         Parameters
         ----------
@@ -203,15 +230,14 @@ class EDBOplus:
         # 1. Safe checks.
         self.objective_names = objectives
         # Check whether the columns_features contains the objectives.
-        if columns_features != 'all':
+        if columns_features != "all":
             for objective in objectives:
                 if objective in columns_features:
                     columns_features.remove(objective)
-                if 'priority' in columns_features:
-                    columns_features.remove('priority')
+                if "priority" in columns_features:
+                    columns_features.remove("priority")
 
         # Check objectives is a list (even for single objective optimization).
-        ohe_features = False
         if type(objectives) != list:
             objectives = [objectives]
         if type(objective_mode) != list:
@@ -223,7 +249,7 @@ class EDBOplus:
 
         # 2. Load reaction.
         df = pd.read_csv(f"{csv_filename}")
-        df = df.dropna(axis='columns', how='all')
+        df = df.dropna(axis="columns", how="all")
         original_df = df.copy(deep=True)  # Make a copy of the original data.
 
         # 2.1. Initialize sampling (only in the first iteration).
@@ -232,15 +258,15 @@ class EDBOplus:
         # TODO CHECK: Check whether new objective has been added – if not add PENDING.
         for obj_i in self.objective_names:
             if obj_i not in original_df.columns.values:
-                original_df[obj_i] = ['PENDING'] * len(original_df.values)
+                original_df[obj_i] = ["PENDING"] * len(original_df.values)
 
-        if columns_features != 'all':
-            if 'priority' in df.columns.values:
+        if columns_features != "all":
+            if "priority" in df.columns.values:
                 for obj_i in objectives:
                     if obj_i not in df.columns.values:
-                        df[obj_i] = ['PENDING'] * len(df.values)
+                        df[obj_i] = ["PENDING"] * len(df.values)
 
-                df = df[columns_features + objectives + ['priority']]
+                df = df[columns_features + objectives + ["priority"]]
             else:
                 if len(obj_in_df) == 0:
                     df = df[columns_features]
@@ -249,23 +275,32 @@ class EDBOplus:
 
         # No objectives columns in the scope? Then random initialization.
         if len(obj_in_df) == 0:
-            print("There are no experimental observations yet. Random samples will be drawn.")
-            df = self._init_sampling(df=df, batch=batch, seed=seed,
-                                     sampling_method=init_sampling_method)
-            original_df['priority'] = df['priority']
+            print(
+                "There are no experimental observations yet. Random samples will be drawn."
+            )
+            df = self._init_sampling(
+                df=df, batch=batch, seed=seed, sampling_method=init_sampling_method
+            )
+            original_df["priority"] = df["priority"]
             # Append objectives.
             for objective in objectives:
                 if objective not in original_df.columns.values:
-                    original_df[objective] = ['PENDING'] * len(original_df)
+                    original_df[objective] = ["PENDING"] * len(original_df)
 
             # Sort values and save dataframe.
-            original_df = original_df.sort_values('priority', ascending=False)
-            original_df = original_df.loc[:,~original_df.columns.str.contains('^Unnamed')]
+            original_df = original_df.sort_values("priority", ascending=False)
+            original_df = original_df.loc[
+                :, ~original_df.columns.str.contains("^Unnamed")
+            ]
             original_df.to_csv(csv_filename, index=False)
             return original_df
 
-        if columns_features == 'all':  # replacing with actual list of all features for printout
-            columns_features = list(set(df.columns.tolist())- set(objectives) - set(['priority']))
+        if (
+            columns_features == "all"
+        ):  # replacing with actual list of all features for printout
+            columns_features = list(
+                set(df.columns.tolist()) - set(objectives) - set(["priority"])
+            )
         print(f"This run will optimize for the following objectives: {objectives}")
         print(f"The following features will be used: {columns_features}")
 
@@ -274,59 +309,82 @@ class EDBOplus:
         # 3.1. Auto-detect dummy features (one-hot-encoding).
         numeric_cols = df._get_numeric_data().columns
         for nc in numeric_cols:
-            df[nc] = pd.to_numeric(df[nc], downcast='float')
+            df[nc] = pd.to_numeric(df[nc], downcast="float")
         ohe_columns = list(OrderedSet(df.columns) - OrderedSet(numeric_cols))
         ohe_columns = list(OrderedSet(ohe_columns) - OrderedSet(objectives))
 
         if len(ohe_columns) > 0:
-            print(f"The following columns are categorical and will be encoded"
-                  f" using One-Hot-Encoding: {ohe_columns}")
-            ohe_features = True
+            print(
+                f"The following columns are categorical and will be encoded"
+                f" using One-Hot-Encoding: {ohe_columns}"
+            )
 
-        data = pd.get_dummies(df, prefix=ohe_columns, columns=ohe_columns, drop_first=True, dtype=np.float64)
+        data = pd.get_dummies(
+            df,
+            prefix=ohe_columns,
+            columns=ohe_columns,
+            drop_first=True,
+            dtype=np.float64,
+        )
 
         # 3.2. Any sample with a value 'PENDING' in any objective is a test.
-        idx_test = (data[data.apply(lambda r: r.astype(str).str.contains('PENDING', case=False).any(), axis=1)]).index.values
-        idx_train = (data[~data.apply(lambda r: r.astype(str).str.contains('PENDING', case=False).any(), axis=1)]).index.values
+        idx_test = (
+            data[
+                data.apply(
+                    lambda r: r.astype(str).str.contains("PENDING", case=False).any(),
+                    axis=1,
+                )
+            ]
+        ).index.values
+        idx_train = (
+            data[
+                ~data.apply(
+                    lambda r: r.astype(str).str.contains("PENDING", case=False).any(),
+                    axis=1,
+                )
+            ]
+        ).index.values
 
         # Data only contains featurized information (train and test).
         df_train_y = data.loc[idx_train][objectives]
-        if 'priority' in data.columns.tolist():
-            data = data.drop(columns=objectives + ['priority'])
+        if "priority" in data.columns.tolist():
+            data = data.drop(columns=objectives + ["priority"])
         else:
             data = data.drop(columns=objectives)
         df_train_x = data.loc[idx_train]
         df_test_x = data.loc[idx_test]
 
         if len(df_train_x.values) == 0:
-            msg = 'The scope was already generated, please ' \
-                  'insert at least one experimental observation ' \
-                  'value and then press run.'
+            msg = (
+                "The scope was already generated, please "
+                "insert at least one experimental observation "
+                "value and then press run."
+            )
             print(msg)
             return original_df
 
         # Run the BO process.
         priority_list = self._model_run(
-                data=data,
-                df_train_x=df_train_x,
-                df_test_x=df_test_x,
-                df_train_y=df_train_y,
-                batch=batch,
-                objective_mode=objective_mode,
-                objective_thresholds=objective_thresholds,
-                seed=seed,
-                scaler_x=scaler_features,
-                scaler_y=scaler_objectives,
-                acquisition_function=acquisition_function
+            data=data,
+            df_train_x=df_train_x,
+            df_test_x=df_test_x,
+            df_train_y=df_train_y,
+            batch=batch,
+            objective_mode=objective_mode,
+            objective_thresholds=objective_thresholds,
+            seed=seed,
+            scaler_x=scaler_features,
+            scaler_y=scaler_objectives,
+            acquisition_function=acquisition_function,
         )
 
         # Low priority to the samples that have been already collected.
         for i in range(0, len(idx_train)):
             priority_list[idx_train[i]] = -1
 
-        original_df['priority'] = priority_list
+        original_df["priority"] = priority_list
 
-        cols_sort = ['priority'] + original_df.columns.values.tolist()
+        cols_sort = ["priority"] + original_df.columns.values.tolist()
         # Attach objectives predictions and expected improvement.
         cols_for_preds = []
         for idx_obj in range(0, len(objectives)):
@@ -337,26 +395,40 @@ class EDBOplus:
             original_df[f"{name}_predicted_mean"] = mean
             original_df[f"{name}_predicted_variance"] = var
             original_df[f"{name}_expected_improvement"] = ei
-            cols_for_preds.append([f"{name}_predicted_mean",
-                                   f"{name}_predicted_variance",
-                                   f"{name}_expected_improvement"
-                                   ])
+            cols_for_preds.append(
+                [
+                    f"{name}_predicted_mean",
+                    f"{name}_predicted_variance",
+                    f"{name}_expected_improvement",
+                ]
+            )
         cols_for_preds = np.ravel(cols_for_preds)
 
         original_df = original_df.sort_values(cols_sort, ascending=False)
         # Save extra df containing predictions, uncertainties and EI.
         original_df.to_csv(f"{directory}/pred_{filename}", index=False)
         # Drop predictions, uncertainties and EI.
-        original_df = original_df.drop(columns=cols_for_preds, axis='columns')
+        original_df = original_df.drop(columns=cols_for_preds, axis="columns")
         original_df = original_df.sort_values(cols_sort, ascending=False)
         original_df.to_csv(csv_filename, index=False)
 
         print("Run finished!")
         return original_df
 
-    def _model_run(self, data, df_train_x,  df_test_x, df_train_y, batch,
-                   objective_mode, objective_thresholds, seed,
-                   scaler_x, scaler_y, acquisition_function):
+    def _model_run(
+        self,
+        data,
+        df_train_x,
+        df_test_x,
+        df_train_y,
+        batch,
+        objective_mode,
+        objective_thresholds,
+        seed,
+        scaler_x,
+        scaler_y,
+        acquisition_function,
+    ):
         """
         Runs the surrogate machine learning model.
         Returns a priority list for a given scope (top priority to low priority).
@@ -373,7 +445,7 @@ class EDBOplus:
 
         individual_models = []
         for i in range(0, n_objectives):
-            if objective_mode[i].lower() == 'min':
+            if objective_mode[i].lower() == "min":
                 y[:, i] = -y[:, i]
         y = scaler_y.fit_transform(y)
 
@@ -381,13 +453,20 @@ class EDBOplus:
         for i in range(0, n_objectives):
             train_x = torch.tensor(init_train).to(**tkwargs).double()
             train_y = np.array(y)[:, i]
-            train_y = (np.atleast_2d(train_y).reshape(len(train_y), -1))
+            train_y = np.atleast_2d(train_y).reshape(len(train_y), -1)
             train_y_i = torch.tensor(train_y.tolist()).to(**tkwargs).double()
 
-            gp, likelihood = build_and_optimize_model(train_x=train_x, train_y=train_y_i,)
+            gp, likelihood = build_and_optimize_model(
+                train_x=train_x,
+                train_y=train_y_i,
+            )
 
-            model_i = SingleTaskGP(train_X=train_x, train_Y=train_y_i,
-                                   covar_module=gp.covar_module, likelihood=likelihood)
+            model_i = SingleTaskGP(
+                train_X=train_x,
+                train_Y=train_y_i,
+                covar_module=gp.covar_module,
+                likelihood=likelihood,
+            )
             individual_models.append(model_i)
 
         print("Model generated!")
@@ -403,7 +482,7 @@ class EDBOplus:
                     ref_point[i] = ref_mins[i]
                 else:
                     ref_point[i] = objective_thresholds[i]
-                    if objective_mode[i].lower() == 'min':
+                    if objective_mode[i].lower() == "min":
                         ref_point[i] = -ref_point[i]
             # Scale.
             ref_point = scaler_y.transform(np.array([ref_point]))
@@ -424,70 +503,68 @@ class EDBOplus:
 
         y_torch = torch.tensor(y).to(**tkwargs).double()
 
-        if self.acquisition_sampler == 'IIDNormalSampler':
-            sampler = IIDNormalSampler(num_samples=sobol_num_samples, collapse_batch_dims=True, seed=seed)
-        if self.acquisition_sampler == 'SobolQMCNormalSampler':
-            sampler = SobolQMCNormalSampler(num_samples=sobol_num_samples, collapse_batch_dims=True, seed=seed)
+        if self.acquisition_sampler == "IIDNormalSampler":
+            sampler = IIDNormalSampler(
+                num_samples=sobol_num_samples, collapse_batch_dims=True, seed=seed
+            )
+        if self.acquisition_sampler == "SobolQMCNormalSampler":
+            sampler = SobolQMCNormalSampler(
+                num_samples=sobol_num_samples, collapse_batch_dims=True, seed=seed
+            )
 
-        print ("Optimizing acqusition function...")
+        print("Optimizing acqusition function...")
 
         surrogate_model = None
 
-        if acquisition_function.lower() == 'ehvi':
-
-            partitioning = NondominatedPartitioning(
-                ref_point=ref_point,
-                Y=y_torch)
+        if acquisition_function.lower() == "ehvi":
+            partitioning = NondominatedPartitioning(ref_point=ref_point, Y=y_torch)
 
             surrogate_model = ModelListGP(*individual_models)
             individual_models = []  # empty to reuduce memory
 
             EHVI = qExpectedHypervolumeImprovement(
-                model=surrogate_model, sampler=sampler,
+                model=surrogate_model,
+                sampler=sampler,
                 ref_point=ref_point,  # use known reference point
-                partitioning=partitioning
+                partitioning=partitioning,
             )
 
             acq_result = optimize_acqf_discrete(
-                acq_function=EHVI,
-                choices=test_x,
-                q=batch,
-                unique=True
+                acq_function=EHVI, choices=test_x, q=batch, unique=True
             )
 
-
-        if acquisition_function.lower() == 'noisyehvi':
+        if acquisition_function.lower() == "noisyehvi":
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 acq_fct = None
-                if n_objectives > 1:  # NOTE: NoisyEHVI fails in case of n_objectives = 1 --> added that it uses EI in this case
+                if (
+                    n_objectives > 1
+                ):  # NOTE: NoisyEHVI fails in case of n_objectives = 1 --> added that it uses EI in this case
                     surrogate_model = ModelListGP(*individual_models)
                     train_x = torch.tensor(init_train).to(**tkwargs).double()
                     acq_fct = qNoisyExpectedHypervolumeImprovement(
-                        model=surrogate_model, sampler=sampler,
+                        model=surrogate_model,
+                        sampler=sampler,
                         ref_point=ref_point,
-                        alpha = 0.0,
-                        incremental_nehvi=True, X_baseline=train_x, prune_baseline=True
+                        alpha=0.0,
+                        incremental_nehvi=True,
+                        X_baseline=train_x,
+                        prune_baseline=True,
                     )
                 else:
                     surrogate_model = individual_models[0]
                     best_value = y_torch.max()
                     acq_fct = qExpectedImprovement(
-                        model = surrogate_model,
-                        best_f = best_value,
-                        sampler = sampler
+                        model=surrogate_model, best_f=best_value, sampler=sampler
                     )
 
                 acq_result = optimize_acqf_discrete(
-                    acq_function=acq_fct,
-                    choices=test_x,
-                    q=batch,
-                    unique=True
+                    acq_function=acq_fct, choices=test_x, q=batch, unique=True
                 )
 
         best_samples = scaler_x.inverse_transform(acq_result[0].detach().cpu().numpy())
 
-        print('Acquisition function optimized.')
+        print("Acquisition function optimized.")
 
         # Save rescaled predictions (only for first fantasy).
 
@@ -505,28 +582,32 @@ class EDBOplus:
         observed_raw_values = df_train_y.astype(float).to_numpy()
 
         for i in range(0, len(data.values), n_chunks):
-            vals = data.values[i:i+n_chunks]
+            vals = data.values[i : i + n_chunks]
             data_tensor = torch.tensor(scaler_x.transform(vals)).double().to(**tkwargs)
             preds = surrogate_model.posterior(X=data_tensor)
-            self.predicted_mean[i:i+n_chunks] = scaler_y.inverse_transform(preds.mean.detach().cpu().numpy())
-            self.predicted_variance[i:i+n_chunks] = scaler_y.inverse_transform_var(preds.variance.detach().cpu().numpy())
+            self.predicted_mean[i : i + n_chunks] = scaler_y.inverse_transform(
+                preds.mean.detach().cpu().numpy()
+            )
+            self.predicted_variance[i : i + n_chunks] = scaler_y.inverse_transform_var(
+                preds.variance.detach().cpu().numpy()
+            )
 
             for j in range(0, len(objective_mode)):
                 maximizing = False
-                if objective_mode[j] == 'max':
+                if objective_mode[j] == "max":
                     maximizing = True
-                self.ei[i:i+n_chunks, j] = self.expected_improvement(
+                self.ei[i : i + n_chunks, j] = self.expected_improvement(
                     train_y=observed_raw_values[:, j],
-                    mean=self.predicted_mean[i:i+n_chunks, j],
-                    variance=self.predicted_variance[i:i+n_chunks, j],
-                    maximizing=maximizing
+                    mean=self.predicted_mean[i : i + n_chunks, j],
+                    variance=self.predicted_variance[i : i + n_chunks, j],
+                    maximizing=maximizing,
                 )
 
-        print('Predictions and expected improvement obtained.')
+        print("Predictions and expected improvement obtained.")
 
         # Flip predictions if needed.
         for i in range(0, len(objective_mode)):
-            if objective_mode[i] == 'min':
+            if objective_mode[i] == "min":
                 self.predicted_mean[:, i] = -self.predicted_mean[:, i]
 
         # Rescale samples.
@@ -536,15 +617,14 @@ class EDBOplus:
 
         # Find best samples in data.
         for sample in best_samples:
-            d_i = cdist([sample], all_samples, metric='cityblock')
+            d_i = cdist([sample], all_samples, metric="cityblock")
             a = np.argmin(d_i)
-            priority_list[a] = 1.
+            priority_list[a] = 1.0
 
         return priority_list
 
-    def expected_improvement(self, train_y, mean, variance,
-                             maximizing=False):
-        """ expected_improvement
+    def expected_improvement(self, train_y, mean, variance, maximizing=False):
+        """expected_improvement
         Expected improvement acquisition function.
         Arguments:
         ----------
@@ -568,9 +648,11 @@ class EDBOplus:
         scaling_factor = (-1) ** (not maximizing)
 
         # In case sigma equals zero
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             Z = scaling_factor * (mean - loss_optimum) / sigma
-            expected_improvement = scaling_factor * (mean - loss_optimum) * norm.cdf(Z) + sigma * norm.pdf(Z)
+            expected_improvement = scaling_factor * (mean - loss_optimum) * norm.cdf(
+                Z
+            ) + sigma * norm.pdf(Z)
             expected_improvement[sigma == 0.0] = 0.0
 
         return expected_improvement

@@ -47,19 +47,21 @@ TARGETS = [
 class HTTPDataFlowAnalyzer:
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            }
+        )
         self.api_calls = []
 
     def analyze_page(self, target):
         """Analyze a single page's data flow"""
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"[{target['source']}] {target['section']}")
         print(f"URL: {target['url']}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         result = {
             "source": target["source"],
@@ -93,19 +95,38 @@ class HTTPDataFlowAnalyzer:
             print(f"   Content-Type: {response.headers.get('content-type', 'N/A')}")
 
             # Capture cookies
-            cookies = [{"name": c.name, "value": c.value[:50] + "...", "domain": c.domain}
-                      for c in self.session.cookies]
+            cookies = [
+                {"name": c.name, "value": c.value[:50] + "...", "domain": c.domain}
+                for c in self.session.cookies
+            ]
             result["cookies_set"] = cookies
             print(f"   Cookies: {len(cookies)} 个")
             for c in cookies[:5]:
                 print(f"      - {c['name']} @ {c['domain']}")
 
             # Check for anti-bot cookies
-            rs_cookies = [c for c in cookies if any(x in c["name"].lower()
-                         for x in ["rs", "__rs", "fasd", "fasc", "temp", "dyna", "cma_", "cmac"])]
+            rs_cookies = [
+                c
+                for c in cookies
+                if any(
+                    x in c["name"].lower()
+                    for x in [
+                        "rs",
+                        "__rs",
+                        "fasd",
+                        "fasc",
+                        "temp",
+                        "dyna",
+                        "cma_",
+                        "cmac",
+                    ]
+                )
+            ]
             if rs_cookies:
                 result["anti_bot_detected"] = True
-                result["anti_bot_details"].append(f"反爬Cookie: {[c['name'] for c in rs_cookies]}")
+                result["anti_bot_details"].append(
+                    f"反爬Cookie: {[c['name'] for c in rs_cookies]}"
+                )
                 print(f"   ⚠️ 检测到反爬Cookie: {[c['name'] for c in rs_cookies]}")
 
             # Parse HTML
@@ -154,9 +175,15 @@ class HTTPDataFlowAnalyzer:
             ]
 
             for pattern in common_patterns:
-                test_url = base_url + pattern if not pattern.startswith("?") else target["url"] + pattern
+                test_url = (
+                    base_url + pattern
+                    if not pattern.startswith("?")
+                    else target["url"] + pattern
+                )
                 try:
-                    test_resp = self.session.get(test_url, timeout=10, allow_redirects=False)
+                    test_resp = self.session.get(
+                        test_url, timeout=10, allow_redirects=False
+                    )
                     if test_resp.status_code == 200:
                         content_type = test_resp.headers.get("content-type", "")
                         if "json" in content_type or "application/json" in content_type:
@@ -168,11 +195,21 @@ class HTTPDataFlowAnalyzer:
                                     "method": "GET",
                                     "status": 200,
                                     "is_json": True,
-                                    "json_keys": list(json_data.keys()) if isinstance(json_data, dict) else f"list[{len(json_data)}]",
+                                    "json_keys": list(json_data.keys())
+                                    if isinstance(json_data, dict)
+                                    else f"list[{len(json_data)}]",
                                 }
                                 # Check for pagination
                                 if isinstance(json_data, dict):
-                                    for key in ["total", "records", "data", "list", "rows", "page", "pageSize"]:
+                                    for key in [
+                                        "total",
+                                        "records",
+                                        "data",
+                                        "list",
+                                        "rows",
+                                        "page",
+                                        "pageSize",
+                                    ]:
                                         if key in json_data:
                                             api_info[f"has_{key}"] = True
                                             result["pagination_detected"] = True
@@ -204,7 +241,10 @@ class HTTPDataFlowAnalyzer:
             for script in scripts:
                 if script.string:
                     # Look for data initialization
-                    if "window.__INITIAL_STATE__" in script.string or "window.__DATA__" in script.string:
+                    if (
+                        "window.__INITIAL_STATE__" in script.string
+                        or "window.__DATA__" in script.string
+                    ):
                         print("   ✅ 发现内联数据")
                         result["key_findings"].append("页面包含内联初始化数据")
 
@@ -238,12 +278,21 @@ class HTTPDataFlowAnalyzer:
                                 matches = re.findall(pattern, script_resp.text)
                                 for match in matches[:3]:  # Limit to first 3
                                     if "/api/" in match or "listpage" in match:
-                                        full_url = urljoin(script_url, match) if match.startswith("/") else match
-                                        if full_url not in [a["url"] for a in result["api_endpoints_found"]]:
-                                            result["api_endpoints_found"].append({
-                                                "url": full_url,
-                                                "source": "external_script",
-                                            })
+                                        full_url = (
+                                            urljoin(script_url, match)
+                                            if match.startswith("/")
+                                            else match
+                                        )
+                                        if full_url not in [
+                                            a["url"]
+                                            for a in result["api_endpoints_found"]
+                                        ]:
+                                            result["api_endpoints_found"].append(
+                                                {
+                                                    "url": full_url,
+                                                    "source": "external_script",
+                                                }
+                                            )
                     except:
                         pass
                 elif script.string:
@@ -252,12 +301,20 @@ class HTTPDataFlowAnalyzer:
                         matches = re.findall(pattern, script.string)
                         for match in matches[:3]:
                             if "/api/" in match or "listpage" in match:
-                                full_url = urljoin(target["url"], match) if match.startswith("/") else match
-                                if full_url not in [a["url"] for a in result["api_endpoints_found"]]:
-                                    result["api_endpoints_found"].append({
-                                        "url": full_url,
-                                        "source": "inline_script",
-                                    })
+                                full_url = (
+                                    urljoin(target["url"], match)
+                                    if match.startswith("/")
+                                    else match
+                                )
+                                if full_url not in [
+                                    a["url"] for a in result["api_endpoints_found"]
+                                ]:
+                                    result["api_endpoints_found"].append(
+                                        {
+                                            "url": full_url,
+                                            "source": "inline_script",
+                                        }
+                                    )
 
             if result["api_endpoints_found"]:
                 print(f"   找到 {len(result['api_endpoints_found'])} 个 API 端点:")
@@ -266,10 +323,14 @@ class HTTPDataFlowAnalyzer:
 
             # Step 7: Check for token requirements
             print("\n[7] 检查 Token 要求...")
-            meta_tokens = soup.find_all("meta", attrs={"name": re.compile(r"token|csrf", re.I)})
+            meta_tokens = soup.find_all(
+                "meta", attrs={"name": re.compile(r"token|csrf", re.I)}
+            )
             if meta_tokens:
                 result["token_dependency"] = True
-                result["token_details"].append(f"Meta tokens: {[m.get('name') for m in meta_tokens]}")
+                result["token_details"].append(
+                    f"Meta tokens: {[m.get('name') for m in meta_tokens]}"
+                )
                 print("   ⚠️ 检测到 Token meta 标签")
 
             # Check response headers for tokens
@@ -282,14 +343,18 @@ class HTTPDataFlowAnalyzer:
             # Step 8: Summary
             print("\n[8] 关键发现:")
             if result["json_apis"]:
-                result["key_findings"].append(f"发现 {len(result['json_apis'])} 个 JSON API")
+                result["key_findings"].append(
+                    f"发现 {len(result['json_apis'])} 个 JSON API"
+                )
                 print(f"   ✅ 发现 {len(result['json_apis'])} 个 JSON API")
             else:
                 result["key_findings"].append("未发现直接的 JSON API")
                 print("   ❌ 未发现直接的 JSON API")
 
             if result["api_endpoints_found"]:
-                result["key_findings"].append(f"发现 {len(result['api_endpoints_found'])} 个 API 端点")
+                result["key_findings"].append(
+                    f"发现 {len(result['api_endpoints_found'])} 个 API 端点"
+                )
                 print(f"   ✅ 发现 {len(result['api_endpoints_found'])} 个 API 端点")
 
             if result["pagination_detected"]:
@@ -301,13 +366,16 @@ class HTTPDataFlowAnalyzer:
                 print("   ⚠️ 检测到反爬机制")
 
             if result["browser_required"]:
-                print(f"   ⚠️ 需要浏览器: {'; '.join(result['browser_required_reason'])}")
+                print(
+                    f"   ⚠️ 需要浏览器: {'; '.join(result['browser_required_reason'])}"
+                )
             else:
                 print("   ✅ 可能不需要浏览器")
 
         except Exception as e:
             print(f"❌ 错误: {e}")
             import traceback
+
             traceback.print_exc()
             result["error"] = str(e)
 
@@ -351,13 +419,15 @@ def main():
         json.dump(all_results, f, ensure_ascii=False, indent=2)
 
     # Print summary
-    print(f"\n\n{'='*70}")
+    print(f"\n\n{'=' * 70}")
     print("汇总报告")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for r in all_results:
         print(f"\n[{r['source']}] {r['section']}")
-        print(f"  页面加载: {'✅' if r['page_loaded'] else '❌'} (状态码: {r['response_status']})")
+        print(
+            f"  页面加载: {'✅' if r['page_loaded'] else '❌'} (状态码: {r['response_status']})"
+        )
         print(f"  Cookies: {len(r['cookies_set'])} 个")
         print(f"  JSON API: {len(r['json_apis'])}")
         print(f"  API 端点: {len(r['api_endpoints_found'])}")

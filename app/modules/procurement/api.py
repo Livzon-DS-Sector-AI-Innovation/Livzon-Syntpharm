@@ -106,7 +106,9 @@ async def recognize_invoice(
     )
 
 
-async def _read_upload_file_with_limit(current_user: CurrentUser, file: UploadFile) -> bytes:
+async def _read_upload_file_with_limit(
+    current_user: CurrentUser, file: UploadFile
+) -> bytes:
     chunks: list[bytes] = []
     total_size = 0
     while True:

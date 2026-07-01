@@ -89,8 +89,6 @@ async def get_batches(
     return batches, total
 
 
-
-
 async def count_batches(
     db: AsyncSession,
     product_id: uuid.UUID,
@@ -108,6 +106,7 @@ async def count_batches(
 
     result = await db.execute(query)
     return result.scalar_one()
+
 
 async def delete_batches_by_product(
     db: AsyncSession,

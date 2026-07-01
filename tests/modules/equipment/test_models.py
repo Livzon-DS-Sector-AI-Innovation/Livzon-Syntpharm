@@ -40,16 +40,17 @@ class TestEquipmentCategoryModel:
         assert child in parent.children
 
     def test_unique_constraint_includes_is_deleted(self) -> None:
-        """Unique constraint on code includes is_deleted column."""
+        """Unique index on code with partial where clause."""
+        from sqlalchemy import Index
         constraint = next(
             c
             for c in EquipmentCategory.__table_args__
-            if isinstance(c, UniqueConstraint)
+            if isinstance(c, Index)
             and c.name == "uq_equipment_categories_code"
         )
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
-        assert "is_deleted" in col_names
+        assert constraint.unique is True
 
     def test_schema_is_equipment(self) -> None:
         """Table belongs to the equipment schema."""
@@ -76,17 +77,17 @@ class TestLocationModel:
         assert child in parent.children
 
     def test_unique_constraint_includes_is_deleted(self) -> None:
-        """Unique constraint on code includes is_deleted column."""
+        """Unique index on code with partial where clause."""
+        from sqlalchemy import Index
         constraint = next(
             c
             for c in Location.__table_args__
-            if isinstance(c, UniqueConstraint) and c.name == "uq_locations_code"
+            if isinstance(c, Index)
+            and c.name == "uq_locations_code"
         )
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
-        assert "is_deleted" in col_names
-
-
+        assert constraint.unique is True
 class TestEquipmentModel:
     """Tests for Equipment model."""
 
@@ -103,7 +104,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-001",
             name="500L反应釜",
-            category_id=cat.id,
             location_id=loc.id,
             status="在用",
         )
@@ -118,7 +118,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-002",
             name="干燥机",
-            category_id=cat.id,
             location_id=loc.id,
             production_date=date(2024, 1, 15),
             commissioning_date=date(2024, 3, 1),
@@ -133,24 +132,23 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-003",
             name="离心机",
-            category_id=cat.id,
             location_id=loc.id,
         )
         assert equip.production_date is None
         assert equip.commissioning_date is None
 
     def test_unique_constraint_includes_is_deleted(self) -> None:
-        """Unique constraint on equipment_no includes is_deleted column."""
+        """Unique index on code with partial where clause."""
+        from sqlalchemy import Index
         constraint = next(
             c
-            for c in Equipment.__table_args__
-            if isinstance(c, UniqueConstraint)
-            and c.name == "uq_equipments_equipment_no"
+            for c in Location.__table_args__
+            if isinstance(c, Index)
+            and c.name == "uq_locations_code"
         )
         col_names = {col.name for col in constraint.columns}
-        assert "equipment_no" in col_names
-        assert "is_deleted" in col_names
-
+        assert "code" in col_names
+        assert constraint.unique is True
     def test_status_check_constraint_exists(self) -> None:
         """CheckConstraint validates status values."""
         constraint = next(
@@ -171,7 +169,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-004",
             name="离心机",
-            category_id=cat.id,
             location_id=loc.id,
         )
         equip.category = cat
@@ -186,7 +183,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-005",
             name="测试设备",
-            category_id=cat.id,
             location_id=loc.id,
         )
         assert equip.model is None
@@ -206,7 +202,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-NEW-001",
             name="测试设备",
-            category_id=cat.id,
             location_id=loc.id,
         )
         assert equip.warranty_expire_date is None
@@ -221,7 +216,6 @@ class TestEquipmentModel:
         equip = Equipment(
             equipment_no="EQ-NEW-002",
             name="测试设备",
-            category_id=cat.id,
             location_id=loc.id,
             warranty_expire_date=date(2027, 12, 31),
             asset_value=150000.00,

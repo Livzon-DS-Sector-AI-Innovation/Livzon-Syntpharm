@@ -48,17 +48,69 @@ def build_q3c_prompt(steps: list[dict]) -> str:
     """构建 Q3C 溶剂识别 prompt (skill's version with ICH Q3C database)"""
 
     # ICH Q3C Solvent Database
-    ich_class1 = ["Benzene", "Carbon tetrachloride", "1,2-Dichloroethane", "1,1-Dichloroethene", "1,1,1-Trichloroethane"]
-    ich_class2 = ["Acetonitrile", "Chlorobenzene", "1,1,2-Trichloroethane", "Acetic Acid", "Acetone", "Anisole",
-                  "1-Butanol", "2-Butanol", "Butyl Acetate", "tert-Butylmethyl ether", "Chloroform", "Cumene",
-                  "Cyclohexane", "Cyclohexanol", "Cyclopentane", "1,2-Dichloroethylene", "Dichloromethane",
-                  "1,2-Dimethoxyethane", "N,N-Dimethylacetamide", "N,N-Dimethylformamide", "2-Methoxyethanol",
-                  "Dimethyl sulfoxide", "1,4-Dioxane", "Ethanol", "Ethyl Acetate", "Ethyl ether", "Ethyl formate",
-                  "Ethylene Glycol", "Formamide", "Heptane", "Hexane", "Isobutanol", "Isopropyl Acetate",
-                  "Isopropyl ether", "Isopropanol", "Methanol", "2-Methyl-1-propanol", "Methyl Acetate",
-                  "Methyl ethyl ketone", "Methyl isobutyl ketone", "2-Methyltetrahydrofuran", "N-Methylpyrrolidone",
-                  "Nitromethane", "Pentane", "1-Pentanol", "1-Propanol", "2-Propanol", "Propyl Acetate",
-                  "Pyridine", "Tetrahydrofuran", "Tetralin", "Toluene", "1,1,2-Trichloroethylene", "Xylenes"]
+    ich_class1 = [
+        "Benzene",
+        "Carbon tetrachloride",
+        "1,2-Dichloroethane",
+        "1,1-Dichloroethene",
+        "1,1,1-Trichloroethane",
+    ]
+    ich_class2 = [
+        "Acetonitrile",
+        "Chlorobenzene",
+        "1,1,2-Trichloroethane",
+        "Acetic Acid",
+        "Acetone",
+        "Anisole",
+        "1-Butanol",
+        "2-Butanol",
+        "Butyl Acetate",
+        "tert-Butylmethyl ether",
+        "Chloroform",
+        "Cumene",
+        "Cyclohexane",
+        "Cyclohexanol",
+        "Cyclopentane",
+        "1,2-Dichloroethylene",
+        "Dichloromethane",
+        "1,2-Dimethoxyethane",
+        "N,N-Dimethylacetamide",
+        "N,N-Dimethylformamide",
+        "2-Methoxyethanol",
+        "Dimethyl sulfoxide",
+        "1,4-Dioxane",
+        "Ethanol",
+        "Ethyl Acetate",
+        "Ethyl ether",
+        "Ethyl formate",
+        "Ethylene Glycol",
+        "Formamide",
+        "Heptane",
+        "Hexane",
+        "Isobutanol",
+        "Isopropyl Acetate",
+        "Isopropyl ether",
+        "Isopropanol",
+        "Methanol",
+        "2-Methyl-1-propanol",
+        "Methyl Acetate",
+        "Methyl ethyl ketone",
+        "Methyl isobutyl ketone",
+        "2-Methyltetrahydrofuran",
+        "N-Methylpyrrolidone",
+        "Nitromethane",
+        "Pentane",
+        "1-Pentanol",
+        "1-Propanol",
+        "2-Propanol",
+        "Propyl Acetate",
+        "Pyridine",
+        "Tetrahydrofuran",
+        "Tetralin",
+        "Toluene",
+        "1,1,2-Trichloroethylene",
+        "Xylenes",
+    ]
     ich_class3 = ["1,2,4-Trimethylbenzene", "2-Ethoxyethanol", "Sulfolane"]
 
     # Common solvent synonyms
@@ -98,7 +150,7 @@ def build_q3c_prompt(steps: list[dict]) -> str:
         "sulfuric acid": ["硫酸"],
         "hydrochloric acid": ["HCl", "盐酸"],
         "nitric acid": ["硝酸"],
-        "phosphoric acid": ["磷酸"]
+        "phosphoric acid": ["磷酸"],
     }
 
     prompt = f"""你是一个制药工艺分析专家。请从以下合成工艺步骤中提取所有使用的溶剂，并根据 ICH Q3C(R9) 指南进行分类。
@@ -132,7 +184,7 @@ def build_q3c_prompt(steps: list[dict]) -> str:
 
 **重要**: 当匹配溶剂时:
 1. **忽略浓度前缀**: 95% 乙醇、无水乙醇、Absolute ethanol → 都匹配到 Ethanol
-2. **考虑多语言名称**: 
+2. **考虑多语言名称**:
    - 中文名：乙醇，二氯甲烷，四氢呋喃
    - 英文名：Ethanol, Dichloromethane, Tetrahydrofuran
    - 缩写：DCM, THF, EtOH, MeOH
@@ -223,10 +275,10 @@ async def extract_elements_with_llm(text: str) -> list[dict]:
 
 async def extract_solvents_with_llm(steps: list[dict]) -> dict:
     """使用 LLM 从工艺步骤中提取溶剂并分类 (skill's version)
-    
+
     Args:
         steps: List of parsed process steps from ich_service.parse_process_steps
-        
+
     Returns:
         Full LLM response with steps structure
     """

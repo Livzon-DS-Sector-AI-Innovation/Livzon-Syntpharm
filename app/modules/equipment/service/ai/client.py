@@ -50,7 +50,9 @@ class QwenClient:
                 "https://dashscope.aliyuncs.com/compatible-mode/v1",
             )
         if model is None:
-            model = await get_module_setting("equipment", "EQUIPMENT_AI_MODEL", "qwen3.7-plus")
+            model = await get_module_setting(
+                "equipment", "EQUIPMENT_AI_MODEL", "qwen3.7-plus"
+            )
         if api_key is None:
             api_key = await get_module_setting("equipment", "EQUIPMENT_AI_API_KEY", "")
         return cls(timeout=timeout, base_url=base_url, model=model, api_key=api_key)

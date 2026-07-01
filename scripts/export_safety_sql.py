@@ -3,6 +3,7 @@
 用法: cd dazah-backend && source venv/bin/activate && unset DEBUG && python3 scripts/export_safety_sql.py
 输出: /mnt/c/Users/chenlinxin/Desktop/codex资料/导出数据/隐患排查数据_<时间戳>.sql
 """
+
 import asyncio
 import os
 from datetime import date, datetime
@@ -16,9 +17,11 @@ OUTPUT_DIR = "/mnt/c/Users/chenlinxin/Desktop/codex资料/导出数据"
 
 async def export_safety_sql():
     async with engine.begin() as conn:
-        result = await conn.execute(text(
-            "SELECT * FROM safety.hazard_inspections WHERE is_deleted = false ORDER BY discovery_date"
-        ))
+        result = await conn.execute(
+            text(
+                "SELECT * FROM safety.hazard_inspections WHERE is_deleted = false ORDER BY discovery_date"
+            )
+        )
         rows = result.fetchall()
         columns = result.keys()
 
@@ -46,7 +49,7 @@ async def export_safety_sql():
                 return f"'{v.isoformat()}'"
             if isinstance(v, datetime):
                 return f"'{v.isoformat()}'"
-            if hasattr(v, 'hex'):
+            if hasattr(v, "hex"):
                 return f"'{v}'"
             s = str(v).replace("'", "''")
             return f"'{s}'"
@@ -55,7 +58,9 @@ async def export_safety_sql():
             data = dict(zip(columns, row))
             cols = ", ".join(columns)
             vals = ", ".join(fmt(data[c]) for c in columns)
-            lines.append(f"INSERT INTO safety.hazard_inspections ({cols}) VALUES ({vals});")
+            lines.append(
+                f"INSERT INTO safety.hazard_inspections ({cols}) VALUES ({vals});"
+            )
 
         lines.append("")
         lines.append(f"-- 导出完成，共 {len(rows)} 条 INSERT 语句")

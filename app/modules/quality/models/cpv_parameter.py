@@ -18,15 +18,11 @@ class CpvParameter(BaseModel):
     parameter_type: Mapped[str] = mapped_column(
         String(10), nullable=False, comment="参数类型: CPP/CQA"
     )
-    name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="参数名称"
-    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="参数名称")
     code: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="参数代码(Excel表头匹配键)"
     )
-    unit: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="单位"
-    )
+    unit: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="单位")
     lower_limit: Mapped[float | None] = mapped_column(
         Float, nullable=True, comment="标准下限"
     )

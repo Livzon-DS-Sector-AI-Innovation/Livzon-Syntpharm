@@ -41,7 +41,12 @@ async def run_sync(
         {"created": int, "updated": int, "failed": int, "total": int}
     """
     raw_records = await fetch_records()
-    stats: SyncStats = {"created": 0, "updated": 0, "failed": 0, "total": len(raw_records)}
+    stats: SyncStats = {
+        "created": 0,
+        "updated": 0,
+        "failed": 0,
+        "total": len(raw_records),
+    }
 
     for rec in raw_records:
         try:

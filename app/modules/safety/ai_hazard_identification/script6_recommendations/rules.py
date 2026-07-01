@@ -21,9 +21,17 @@ UNCONFIRMED = "待人工确认"
 
 # 禁止出现的空泛表述
 BANNED_PHRASES = [
-    "加强管理", "注意安全", "加强培训", "提高意识",
-    "严格执行", "认真对待", "高度重视", "切实落实",
-    "进一步完善", "继续加强", "不断改进",
+    "加强管理",
+    "注意安全",
+    "加强培训",
+    "提高意识",
+    "严格执行",
+    "认真对待",
+    "高度重视",
+    "切实落实",
+    "进一步完善",
+    "继续加强",
+    "不断改进",
 ]
 
 VALID_NEEDS = ["是", "否"]
@@ -74,9 +82,7 @@ class RecommendationRuleEngine:
         content = (output.recommendation_content or "").strip()
         if output.needs_recommendation.strip() == "是":
             if len(content) < 20:
-                errors.append(
-                    f"建议措施内容过短（{len(content)}字），最少 20 字"
-                )
+                errors.append(f"建议措施内容过短（{len(content)}字），最少 20 字")
             for phrase in BANNED_PHRASES:
                 if phrase in content:
                     errors.append(
@@ -94,9 +100,7 @@ class RecommendationRuleEngine:
             if existing_val and existing_val.strip() != UNCONFIRMED:
                 # 检查建议内容是否大段重复现有措施
                 if len(existing_val) > 30 and existing_val[:50] in content:
-                    errors.append(
-                        f"建议措施与现有{existing_field[1]}措施内容重复"
-                    )
+                    errors.append(f"建议措施与现有{existing_field[1]}措施内容重复")
 
         return errors
 
@@ -104,12 +108,18 @@ class RecommendationRuleEngine:
 def auto_correct(output: RecommendationOutput) -> RecommendationOutput:
     """自动修正 AI 输出。"""
     for field_name in (
-        "needs_recommendation", "recommendation_type",
-        "recommendation_content", "recommendation_priority",
+        "needs_recommendation",
+        "recommendation_type",
+        "recommendation_content",
+        "recommendation_priority",
     ):
         value = getattr(output, field_name, None)
         if value is None or not value.strip():
-            setattr(output, field_name, "待人工确认" if field_name != "needs_recommendation" else "是")
+            setattr(
+                output,
+                field_name,
+                "待人工确认" if field_name != "needs_recommendation" else "是",
+            )
         else:
             setattr(output, field_name, value.strip())
 

@@ -80,6 +80,7 @@ class SafetyService:
     def hazard(self):
         if self._hazard is None:
             from app.modules.safety.service.hazard import HazardService
+
             self._hazard = HazardService(self.session)
         return self._hazard
 
@@ -87,6 +88,7 @@ class SafetyService:
     def ehs(self):
         if self._ehs is None:
             from app.modules.safety.service.ehs_change import EhsChangeService
+
             self._ehs = EhsChangeService(self.session)
         return self._ehs
 
@@ -94,6 +96,7 @@ class SafetyService:
     def regulation(self):
         if self._regulation is None:
             from app.modules.safety.service.regulation import RegulationService
+
             self._regulation = RegulationService(self.session)
         return self._regulation
 
@@ -103,6 +106,7 @@ class SafetyService:
             from app.modules.safety.service.special_operation import (
                 SpecialOperationService,
             )
+
             self._special_op = SpecialOperationService(self.session)
         return self._special_op
 
@@ -112,6 +116,7 @@ class SafetyService:
             from app.modules.safety.service.special_operation_report import (
                 SpecialOperationReportService,
             )
+
             self._special_op_report = SpecialOperationReportService(self.session)
         return self._special_op_report
 
@@ -121,6 +126,7 @@ class SafetyService:
             from app.modules.safety.service.daily_risk_report import (
                 DailyRiskReportService,
             )
+
             self._daily_risk = DailyRiskReportService(self.session)
         return self._daily_risk
 
@@ -130,6 +136,7 @@ class SafetyService:
             from app.modules.safety.service.oh_hazard_monitor import (
                 OhHazardMonitorService,
             )
+
             self._oh_monitor = OhHazardMonitorService(self.session)
         return self._oh_monitor
 
@@ -137,6 +144,7 @@ class SafetyService:
     def oh_exam(self):
         if self._oh_exam is None:
             from app.modules.safety.service.oh_health_exam import OhHealthExamService
+
             self._oh_exam = OhHealthExamService(self.session)
         return self._oh_exam
 
@@ -144,6 +152,7 @@ class SafetyService:
     def knowledge(self):
         if self._knowledge is None:
             from app.modules.safety.service.knowledge import KnowledgeService
+
             self._knowledge = KnowledgeService(self.session)
         return self._knowledge
 
@@ -151,6 +160,7 @@ class SafetyService:
     def sop(self):
         if self._sop is None:
             from app.modules.safety.service.sop_generator import SopGeneratorService
+
             self._sop = SopGeneratorService(self.session)
         return self._sop
 
@@ -274,17 +284,13 @@ class SafetyService:
             await self._audit("close", "safety_check", resource_id=check_id)
         return item
 
-    async def confirm_check(
-        self, check_id: uuid.UUID, role: str
-    ) -> SafetyCheck | None:
+    async def confirm_check(self, check_id: uuid.UUID, role: str) -> SafetyCheck | None:
         """确认安全检查（检查人员 / 安全办）"""
         check = await self.repo.get_check_by_id(check_id)
         if not check:
             return None
         if role == "inspector":
-            return await self.repo.update_check(
-                check_id, {"inspector_confirmed": True}
-            )
+            return await self.repo.update_check(check_id, {"inspector_confirmed": True})
         elif role == "safety_officer":
             return await self.repo.update_check(
                 check_id, {"safety_officer_confirmed": True}
@@ -352,27 +358,31 @@ class SafetyService:
         records_data: list[dict[str, Any]] = []
         for sn in data.stage_names:
             stage_info = next(s for s in all_stages if s["stage_name"] == sn)
-            records_data.append({
-                "hazard_id_no": f"HI-{today}-{seq:03d}",
-                "department": data.department,
-                "position": data.position,
-                "production_step": sn,
-                "regulation_id": data.regulation_id,
-                "regulation_name": reg.regulation_name,
-                "batch_id": batch_id,
-                "stage_name": sn,
-                "chapter7_context": stage_info["markdown"],
-                "notes": data.notes,
-                "ai_node_progress": "pending_input",
-                "overall_status": "draft",
-            })
+            records_data.append(
+                {
+                    "hazard_id_no": f"HI-{today}-{seq:03d}",
+                    "department": data.department,
+                    "position": data.position,
+                    "production_step": sn,
+                    "regulation_id": data.regulation_id,
+                    "regulation_name": reg.regulation_name,
+                    "batch_id": batch_id,
+                    "stage_name": sn,
+                    "chapter7_context": stage_info["markdown"],
+                    "notes": data.notes,
+                    "ai_node_progress": "pending_input",
+                    "overall_status": "draft",
+                }
+            )
             seq += 1
 
         # 5. 批量 INSERT
         items = await self.repo.create_hazard_identifications_batch(records_data)
         logger.info(
             "批量创建危险源辨识: batch_id=%s, regulation=%s, stages=%d",
-            batch_id, reg.regulation_name, len(items),
+            batch_id,
+            reg.regulation_name,
+            len(items),
         )
         await self._audit("create_batch", "hazard_identification", resource_id=batch_id)
 
@@ -381,12 +391,16 @@ class SafetyService:
             for item in items:
                 await self.repo.update_hazard_identification(
                     item.id,
-                    {"ai_node_progress": "pending_script1", "overall_status": "in_progress"},
+                    {
+                        "ai_node_progress": "pending_script1",
+                        "overall_status": "in_progress",
+                    },
                 )
 
         from app.modules.safety.schemas.hazard_identifications import (
             HazardIdentificationResponse,
         )
+
         return {
             "batch_id": str(batch_id),
             "regulation_id": str(data.regulation_id),
@@ -437,8 +451,15 @@ class SafetyService:
     ) -> tuple[list[Accident], int]:
         """获取事故列表"""
         return await self.repo.get_accidents(
-            skip, limit, status, accident_type, accident_level,
-            department, date_from, date_to, keyword,
+            skip,
+            limit,
+            status,
+            accident_type,
+            accident_level,
+            department,
+            date_from,
+            date_to,
+            keyword,
         )
 
     async def get_accident(self, accident_id: uuid.UUID) -> Accident | None:
@@ -580,7 +601,12 @@ class SafetyService:
     ) -> tuple[list[Contractor], int]:
         """获取承包商列表"""
         return await self.repo.get_contractors(
-            skip, limit, status, qualification_type, training_status, keyword,
+            skip,
+            limit,
+            status,
+            qualification_type,
+            training_status,
+            keyword,
         )
 
     async def get_contractor(self, contractor_id: uuid.UUID) -> Contractor | None:
@@ -668,7 +694,10 @@ class SafetyService:
         return await self.repo.update_work_record(record_id, update_data)
 
     async def evaluate_work_record(
-        self, record_id: uuid.UUID, score: int, comments: str | None = None,
+        self,
+        record_id: uuid.UUID,
+        score: int,
+        comments: str | None = None,
         evaluator: str | None = None,
     ) -> ContractorWorkRecord | None:
         """评价施工记录"""
@@ -703,7 +732,9 @@ class SafetyService:
         department: str | None = None,
     ) -> tuple[list[SafetyTraining], int]:
         """获取安全培训列表"""
-        return await self.repo.get_trainings(skip, limit, status, training_type, department)
+        return await self.repo.get_trainings(
+            skip, limit, status, training_type, department
+        )
 
     async def get_training(self, training_id: uuid.UUID) -> SafetyTraining | None:
         """获取安全培训详情"""
@@ -759,11 +790,15 @@ class SafetyService:
 
     # ==================== TrainingRecord Operations ====================
 
-    async def get_training_records(self, training_id: uuid.UUID) -> list[TrainingRecord]:
+    async def get_training_records(
+        self, training_id: uuid.UUID
+    ) -> list[TrainingRecord]:
         """获取培训记录列表"""
         return await self.repo.get_records_by_training(training_id)
 
-    async def create_training_record(self, data: TrainingRecordCreate) -> TrainingRecord:
+    async def create_training_record(
+        self, data: TrainingRecordCreate
+    ) -> TrainingRecord:
         """创建培训记录"""
         record_data = data.model_dump()
         return await self.repo.create_training_record(record_data)
@@ -802,7 +837,10 @@ class SafetyService:
     ) -> tuple[list[TrainingRecord], int]:
         """获取培训证书列表"""
         return await self.repo.get_training_certificates(
-            skip, limit, certificate_status, keyword,
+            skip,
+            limit,
+            certificate_status,
+            keyword,
         )
 
     async def get_expiring_certificates(self) -> list[TrainingRecord]:
@@ -827,8 +865,17 @@ class SafetyService:
     ) -> tuple[list, int]:
         """获取危险源辨识列表"""
         return await self.repo.get_hazard_identifications(
-            skip, limit, department, overall_status, ai_node_progress, keyword,
-            position, risk_level, date_from, date_to, batch_id,
+            skip,
+            limit,
+            department,
+            overall_status,
+            ai_node_progress,
+            keyword,
+            position,
+            risk_level,
+            date_from,
+            date_to,
+            batch_id,
         )
 
     async def get_hazard_identification_stats(self) -> dict[str, int]:
@@ -845,7 +892,11 @@ class SafetyService:
     ) -> dict[str, int]:
         """获取危险源辨识台账统计"""
         return await self.repo.get_hazard_identification_ledger_stats(
-            department, position, risk_level, date_from, date_to,
+            department,
+            position,
+            risk_level,
+            date_from,
+            date_to,
         )
 
     async def get_hazard_identification(self, hid: uuid.UUID):
@@ -873,8 +924,6 @@ class SafetyService:
         await self._audit("create", "hazard_identification", resource_id=item.id)
         return item
 
-
-
     async def update_hazard_identification(self, hid: uuid.UUID, data) -> Any | None:
         """更新危险源辨识"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
@@ -899,7 +948,8 @@ class SafetyService:
         if not item or item.overall_status not in ("draft",):
             return None
         return await self.repo.update_hazard_identification(
-            hid, {"ai_node_progress": "pending_script1", "overall_status": "in_progress"}
+            hid,
+            {"ai_node_progress": "pending_script1", "overall_status": "in_progress"},
         )
 
     # ── 工作流状态机 ──
@@ -919,11 +969,13 @@ class SafetyService:
     async def _get_ai_service(self) -> AIService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
+
         return await create_ai_service("text")
 
     async def _get_vision_ai_service(self) -> AIService:
         """获取视觉模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
+
         return await create_ai_service("vision")
 
     def _build_context(self, script_number: int, item: Any) -> str:
@@ -1004,9 +1056,7 @@ class SafetyService:
 
         return "\n".join(parts)
 
-    async def _generate_ai_output(
-        self, script_number: int, item: Any
-    ) -> dict:
+    async def _generate_ai_output(self, script_number: int, item: Any) -> dict:
         """[DEPRECATED v2.0] 调用 AI 服务生成工作流输出。
 
         已由 HazardIdentificationOrchestrator + 7 个独立 Plugin 替代。
@@ -1036,12 +1086,15 @@ class SafetyService:
                 context_text += "\n\n### 附件文档内容\n（未上传附件或附件无法解析）"
 
         # 使用 replace 而非 format()，避免 AI 输出示例中的花括号被误解析
-        if '{context}' in prompt_template:
-            prompt = prompt_template.replace('{context}', context_text)
+        if "{context}" in prompt_template:
+            prompt = prompt_template.replace("{context}", context_text)
         else:
             prompt = f"## 上下文信息\n{context_text}\n\n{prompt_template}"
         messages = [
-            {"role": "system", "content": "你是一个专业的危险源辨识与风险评价专家助手，服务于原料药生产企业。"},
+            {
+                "role": "system",
+                "content": "你是一个专业的危险源辨识与风险评价专家助手，服务于原料药生产企业。",
+            },
             {"role": "user", "content": prompt},
         ]
 
@@ -1145,7 +1198,8 @@ class SafetyService:
 
         checks: dict[int, list[tuple[str, str]]] = {
             1: [
-                ("department", "部门"), ("position", "岗位"),
+                ("department", "部门"),
+                ("position", "岗位"),
                 ("production_step", "生产步骤"),
             ],
             2: [
@@ -1204,7 +1258,6 @@ class SafetyService:
         current_node, next_node, review_field = self.SCRIPT_NODE_MAP[script_number]
 
         # Current node must match
-        expected_current = current_node if action == "approved" else current_node
 
         update_data: dict[str, Any] = {
             f"script{script_number}_review_status": action,
@@ -1250,7 +1303,11 @@ class SafetyService:
         - 脚本6：needs_recommendation 为字符串三态（是/否/待人工确认）
         """
         if script_number == 1:
-            for f in ("specific_activity", "equipment_facilities", "raw_auxiliary_materials"):
+            for f in (
+                "specific_activity",
+                "equipment_facilities",
+                "raw_auxiliary_materials",
+            ):
                 if f in ai_output:
                     update_data[f] = ai_output[f]
 
@@ -1270,8 +1327,12 @@ class SafetyService:
                 update_data["inherent_risk_level"] = ai_output["inherent_risk_level"]
 
         elif script_number == 4:
-            for f in ("existing_engineering_controls", "existing_management_controls",
-                      "existing_ppe", "existing_emergency_measures"):
+            for f in (
+                "existing_engineering_controls",
+                "existing_management_controls",
+                "existing_ppe",
+                "existing_emergency_measures",
+            ):
                 if f in ai_output:
                     update_data[f] = ai_output[f]
 
@@ -1285,8 +1346,12 @@ class SafetyService:
                 update_data["residual_risk_level"] = ai_output["residual_risk_level"]
 
         elif script_number == 6:
-            for f in ("needs_recommendation", "recommendation_type",
-                      "recommendation_content", "recommendation_priority"):
+            for f in (
+                "needs_recommendation",
+                "recommendation_type",
+                "recommendation_content",
+                "recommendation_priority",
+            ):
                 if f in ai_output:
                     update_data[f] = ai_output[f]
 
@@ -1453,19 +1518,27 @@ class SafetyService:
         )
 
         filters = {
-            k: v for k, v in {
-                "department": department, "position": position,
-                "risk_level": risk_level, "date_from": date_from,
-                "date_to": date_to, "keyword": keyword,
-            }.items() if v is not None
+            k: v
+            for k, v in {
+                "department": department,
+                "position": position,
+                "risk_level": risk_level,
+                "date_from": date_from,
+                "date_to": date_to,
+                "keyword": keyword,
+            }.items()
+            if v is not None
         }
 
         # ── 策略 1：Excel 标准化输出（最高优先级）──
         try:
             pdf_bytes = self._export_via_template_plugin(items, filters)
             if pdf_bytes and len(pdf_bytes) > 5000:
-                logger.info("Excel标准化输出导出成功: %d records, %d bytes",
-                            len(items), len(pdf_bytes))
+                logger.info(
+                    "Excel标准化输出导出成功: %d records, %d bytes",
+                    len(items),
+                    len(pdf_bytes),
+                )
                 return pdf_bytes
         except Exception as exc:
             logger.warning("Excel标准化输出导出失败: %s，回退到固定模板", exc)
@@ -1547,9 +1620,7 @@ class SafetyService:
 
     # ── 固定模板 PDF 回退（reportlab）──
 
-    async def _export_hazard_ledger_pdf_fallback(
-        self, items, filters: dict
-    ) -> bytes:
+    async def _export_hazard_ledger_pdf_fallback(self, items, filters: dict) -> bytes:
         """固定模板 PDF 生成（reportlab）—— AI 格式化失败时的回退方案"""
         import io
         from datetime import datetime as dt_module
@@ -1606,18 +1677,29 @@ class SafetyService:
 
         styles = getSampleStyleSheet()
         body_style = ParagraphStyle(
-            "BodyCN", parent=styles["Normal"],
-            fontName=_font_name, fontSize=8, leading=12,
+            "BodyCN",
+            parent=styles["Normal"],
+            fontName=_font_name,
+            fontSize=8,
+            leading=12,
         )
         title_style = ParagraphStyle(
-            "TitleCN", parent=styles["Title"],
-            fontName=_font_name_bold, fontSize=16, leading=22,
-            alignment=TA_CENTER, spaceAfter=4,
+            "TitleCN",
+            parent=styles["Title"],
+            fontName=_font_name_bold,
+            fontSize=16,
+            leading=22,
+            alignment=TA_CENTER,
+            spaceAfter=4,
         )
         subtitle_style = ParagraphStyle(
-            "SubtitleCN", parent=styles["Normal"],
-            fontName=_font_name, fontSize=9, leading=14,
-            alignment=TA_CENTER, textColor=colors.grey,
+            "SubtitleCN",
+            parent=styles["Normal"],
+            fontName=_font_name,
+            fontSize=9,
+            leading=14,
+            alignment=TA_CENTER,
+            textColor=colors.grey,
         )
 
         elements: list = []
@@ -1630,8 +1712,10 @@ class SafetyService:
         for k, v in filters.items():
             if k == "risk_level":
                 level_map = {
-                    "level_1": "一级/重大风险", "level_2": "二级/较大风险",
-                    "level_3": "三级/一般风险", "level_4": "四级/低风险",
+                    "level_1": "一级/重大风险",
+                    "level_2": "二级/较大风险",
+                    "level_3": "三级/一般风险",
+                    "level_4": "四级/低风险",
                 }
                 filter_parts.append(f"风险等级：{level_map.get(v, v)}")
             elif k in ("date_from", "date_to"):
@@ -1643,21 +1727,33 @@ class SafetyService:
                 filter_parts.append(f"{k}：{v}")
         filter_text = "；".join(filter_parts) if filter_parts else "全部记录"
         export_time = dt_module.now().strftime("%Y-%m-%d %H:%M")
-        elements.append(Paragraph(
-            f"筛选条件：{filter_text}　|　导出时间：{export_time}　|　共 {len(items)} 条",
-            subtitle_style,
-        ))
+        elements.append(
+            Paragraph(
+                f"筛选条件：{filter_text}　|　导出时间：{export_time}　|　共 {len(items)} 条",
+                subtitle_style,
+            )
+        )
         elements.append(Spacer(1, 6 * mm))
 
         # ── 数据表 ──
         level_label_map = {
-            "level_1": "重大", "level_2": "较大",
-            "level_3": "一般", "level_4": "低",
+            "level_1": "重大",
+            "level_2": "较大",
+            "level_3": "一般",
+            "level_4": "低",
         }
         headers = [
-            "序号", "编号", "部门", "岗位", "作业活动",
-            "危险类型", "固有风险", "残余风险",
-            "管控层级", "责任人", "控制措施摘要",
+            "序号",
+            "编号",
+            "部门",
+            "岗位",
+            "作业活动",
+            "危险类型",
+            "固有风险",
+            "残余风险",
+            "管控层级",
+            "责任人",
+            "控制措施摘要",
         ]
         col_widths = [25, 70, 50, 50, 80, 55, 55, 55, 45, 50, 160]
 
@@ -1682,83 +1778,108 @@ class SafetyService:
 
             controls_parts = []
             if item.existing_engineering_controls:
-                controls_parts.append(f"工程：{item.existing_engineering_controls[:60]}")
+                controls_parts.append(
+                    f"工程：{item.existing_engineering_controls[:60]}"
+                )
             if item.existing_management_controls:
                 controls_parts.append(f"管理：{item.existing_management_controls[:60]}")
             if item.existing_ppe:
                 controls_parts.append(f"PPE：{item.existing_ppe[:40]}")
             controls_summary = "；".join(controls_parts) if controls_parts else "-"
 
-            table_data.append([
-                str(idx),
-                item.hazard_id_no or "",
-                item.department or "",
-                item.position or "",
-                item.specific_activity or item.production_step or "",
-                item.hazard_type or "",
-                inherent_d,
-                residual_d,
-                item.control_level or "",
-                item.responsible_person or "",
-                controls_summary,
-            ])
+            table_data.append(
+                [
+                    str(idx),
+                    item.hazard_id_no or "",
+                    item.department or "",
+                    item.position or "",
+                    item.specific_activity or item.production_step or "",
+                    item.hazard_type or "",
+                    inherent_d,
+                    residual_d,
+                    item.control_level or "",
+                    item.responsible_person or "",
+                    controls_summary,
+                ]
+            )
 
-        table = Table(table_data, colWidths=[w * mm / 4 for w in col_widths], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#5645D4")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), _font_name_bold),
-            ("FONTSIZE", (0, 0), (-1, 0), 8),
-            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("FONTNAME", (0, 1), (-1, -1), _font_name),
-            ("FONTSIZE", (0, 1), (-1, -1), 7.5),
-            ("ALIGN", (0, 0), (0, -1), "CENTER"),
-            ("ALIGN", (1, 1), (1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D9D9D9")),
-            ("LINEBELOW", (0, 0), (-1, 0), 1.5, colors.HexColor("#3D2DA6")),
-            *[
-                ("BACKGROUND", (0, i), (-1, i), colors.HexColor("#F7F6FB"))
-                for i in range(2, len(table_data) + 1, 2)
-            ],
-        ]))
+        table = Table(
+            table_data, colWidths=[w * mm / 4 for w in col_widths], repeatRows=1
+        )
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#5645D4")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), _font_name_bold),
+                    ("FONTSIZE", (0, 0), (-1, 0), 8),
+                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("FONTNAME", (0, 1), (-1, -1), _font_name),
+                    ("FONTSIZE", (0, 1), (-1, -1), 7.5),
+                    ("ALIGN", (0, 0), (0, -1), "CENTER"),
+                    ("ALIGN", (1, 1), (1, -1), "CENTER"),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D9D9D9")),
+                    ("LINEBELOW", (0, 0), (-1, 0), 1.5, colors.HexColor("#3D2DA6")),
+                    *[
+                        ("BACKGROUND", (0, i), (-1, i), colors.HexColor("#F7F6FB"))
+                        for i in range(2, len(table_data) + 1, 2)
+                    ],
+                ]
+            )
+        )
         elements.append(table)
         elements.append(Spacer(1, 10 * mm))
 
         # ── 签发栏 ──
         sign_style = ParagraphStyle(
-            "SignCN", parent=body_style, fontSize=10, leading=16,
+            "SignCN",
+            parent=body_style,
+            fontSize=10,
+            leading=16,
         )
         sign_table = Table(
-            [[
-                Paragraph("编制人：______________", sign_style),
-                Paragraph("审核人：______________", sign_style),
-                Paragraph("批准人：______________", sign_style),
-            ]],
+            [
+                [
+                    Paragraph("编制人：______________", sign_style),
+                    Paragraph("审核人：______________", sign_style),
+                    Paragraph("批准人：______________", sign_style),
+                ]
+            ],
             colWidths=[page_w / 3 - 20, page_w / 3 - 20, page_w / 3 - 20],
         )
-        sign_table.setStyle(TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("FONTNAME", (0, 0), (-1, -1), _font_name),
-            ("LEFTPADDING", (0, 0), (-1, -1), 30),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 30),
-        ]))
+        sign_table.setStyle(
+            TableStyle(
+                [
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("FONTNAME", (0, 0), (-1, -1), _font_name),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 30),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 30),
+                ]
+            )
+        )
         sign_table2 = Table(
-            [[
-                Paragraph("日期：______________", sign_style),
-                Paragraph("日期：______________", sign_style),
-                Paragraph("日期：______________", sign_style),
-            ]],
+            [
+                [
+                    Paragraph("日期：______________", sign_style),
+                    Paragraph("日期：______________", sign_style),
+                    Paragraph("日期：______________", sign_style),
+                ]
+            ],
             colWidths=[page_w / 3 - 20, page_w / 3 - 20, page_w / 3 - 20],
         )
-        sign_table2.setStyle(TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("FONTNAME", (0, 0), (-1, -1), _font_name),
-            ("LEFTPADDING", (0, 0), (-1, -1), 30),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 30),
-        ]))
+        sign_table2.setStyle(
+            TableStyle(
+                [
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("FONTNAME", (0, 0), (-1, -1), _font_name),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 30),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 30),
+                ]
+            )
+        )
         elements.append(sign_table)
         elements.append(Spacer(1, 4 * mm))
         elements.append(sign_table2)
@@ -1767,7 +1888,9 @@ class SafetyService:
             canvas.saveState()
             canvas.setFont(_font_name, 8)
             canvas.drawCentredString(
-                page_w / 2, 10 * mm, f"第 {canvas.getPageNumber()} 页",
+                page_w / 2,
+                10 * mm,
+                f"第 {canvas.getPageNumber()} 页",
             )
             canvas.restoreState()
 
@@ -1775,6 +1898,5 @@ class SafetyService:
         buf.seek(0)
         return buf.getvalue()
 
+
 # ==================== 操规修订 Service ====================
-
-

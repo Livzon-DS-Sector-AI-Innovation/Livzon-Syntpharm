@@ -5,6 +5,7 @@ Revises: f1a2b3c4d5e6
 Create Date: 2026-06-25
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -12,25 +13,35 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'a2b3c4d5e6f7'
-down_revision: str | None = 'f1a2b3c4d5e6'
+revision: str = "a2b3c4d5e6f7"
+down_revision: str | None = "f1a2b3c4d5e6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     op.add_column(
-        'hazard_identifications',
-        sa.Column('regulation_id', sa.Uuid(), nullable=True, comment='引用的安全操作规程 ID（替代附件上传）'),
-        schema='safety',
+        "hazard_identifications",
+        sa.Column(
+            "regulation_id",
+            sa.Uuid(),
+            nullable=True,
+            comment="引用的安全操作规程 ID（替代附件上传）",
+        ),
+        schema="safety",
     )
     op.add_column(
-        'hazard_identifications',
-        sa.Column('regulation_name', sa.String(255), nullable=True, comment='引用的安全操作规程名称'),
-        schema='safety',
+        "hazard_identifications",
+        sa.Column(
+            "regulation_name",
+            sa.String(255),
+            nullable=True,
+            comment="引用的安全操作规程名称",
+        ),
+        schema="safety",
     )
 
 
 def downgrade() -> None:
-    op.drop_column('hazard_identifications', 'regulation_name', schema='safety')
-    op.drop_column('hazard_identifications', 'regulation_id', schema='safety')
+    op.drop_column("hazard_identifications", "regulation_name", schema="safety")
+    op.drop_column("hazard_identifications", "regulation_id", schema="safety")

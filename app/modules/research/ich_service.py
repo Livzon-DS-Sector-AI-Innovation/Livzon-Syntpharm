@@ -66,7 +66,7 @@ def extract_text_from_docx(file_content: bytes) -> str:
 
 def parse_process_steps(text: str) -> list[dict]:
     """解析工艺步骤
-    
+
     支持的格式：
     - 步骤1: ...
     - Step 1: ...
@@ -77,47 +77,51 @@ def parse_process_steps(text: str) -> list[dict]:
 
     # 尝试多种步骤格式
     patterns = [
-        r'(?:步骤|Step)\s*(\d+)[：:]\s*(.+?)(?=(?:步骤|Step)\s*\d+[：:]|$)',
-        r'(\d+)[.、]\s*(.+?)(?=\d+[.、]|$)',
-        r'\((\d+)\)\s*(.+?)(?=\(\d+\)|$)',
+        r"(?:步骤|Step)\s*(\d+)[：:]\s*(.+?)(?=(?:步骤|Step)\s*\d+[：:]|$)",
+        r"(\d+)[.、]\s*(.+?)(?=\d+[.、]|$)",
+        r"\((\d+)\)\s*(.+?)(?=\(\d+\)|$)",
     ]
 
     for pattern in patterns:
         matches = re.findall(pattern, text, re.DOTALL | re.IGNORECASE)
         if matches:
             for step_num, step_content in matches:
-                steps.append({
-                    "step_number": int(step_num),
-                    "content": step_content.strip(),
-                })
+                steps.append(
+                    {
+                        "step_number": int(step_num),
+                        "content": step_content.strip(),
+                    }
+                )
             break
 
     # 如果没有匹配到步骤格式，将整个文本作为一个步骤
     if not steps:
-        steps.append({
-            "step_number": 1,
-            "content": text,
-        })
+        steps.append(
+            {
+                "step_number": 1,
+                "content": text,
+            }
+        )
 
     return steps
 
 
 def remove_concentration_prefix(solvent_name: str) -> str:
     """去除浓度前缀
-    
+
     例如：
     - 95%乙醇 → 乙醇
     - 无水乙醇 → 乙醇
     - Absolute ethanol → ethanol
     """
     # 去除百分比前缀
-    solvent_name = re.sub(r'^\d+%?\s*', '', solvent_name)
+    solvent_name = re.sub(r"^\d+%?\s*", "", solvent_name)
 
     # 去除浓度描述
-    prefixes = ['无水', '绝对', 'Absolute', 'Anhydrous', '干燥']
+    prefixes = ["无水", "绝对", "Absolute", "Anhydrous", "干燥"]
     for prefix in prefixes:
         if solvent_name.startswith(prefix):
-            solvent_name = solvent_name[len(prefix):].strip()
+            solvent_name = solvent_name[len(prefix) :].strip()
 
     return solvent_name.strip()
 
@@ -138,7 +142,9 @@ def get_all_mandatory_elements() -> dict:
         if class_name in ("Class 1", "Class 2A", "Class 3"):
             for symbol, data in class_data.get("elements", {}).items():
                 if class_name in ("Class 1", "Class 2A"):
-                    oral_assess = parenteral_assess = inhalation_assess = cutaneous_assess = True
+                    oral_assess = parenteral_assess = inhalation_assess = (
+                        cutaneous_assess
+                    ) = True
                 else:  # Class 3
                     oral_assess = False
                     parenteral_assess = data.get("parenteral_assess", True)
@@ -172,12 +178,12 @@ def get_option1_concentrations(symbol: str) -> dict:
 
 def identify_elements(llm_response: dict) -> dict:
     """Build element assessment from LLM-identified elements + Q3D rules.
-    
+
     LLM only needs to identify:
     - symbol: Element symbol
     - source: Where it comes from in the process
     - intentionally_added: true if catalyst/reagent, false if equipment/impurity
-    
+
     Script decides everything else based on Q3D rules:
     - Class 1, 2A: Always assess all routes
     - Class 3: Assess based on per-element flags in q3d_elements.json
@@ -268,14 +274,25 @@ def generate_report(process_text: str, elements: dict) -> str:
     report.append("**本报告仅采用选项1：** 日剂量≤10g的药品各组分通用允许浓度")
     report.append("- 公式：Concentration (μg/g) = PDE (μg/day) / 10 (g/day)")
     report.append("")
-    report.append("**注意：** 本报告中所有浓度限度（μg/g）均基于选项1计算得出。选项2a、2b和3不在本评估范围内。")
+    report.append(
+        "**注意：** 本报告中所有浓度限度（μg/g）均基于选项1计算得出。选项2a、2b和3不在本评估范围内。"
+    )
     report.append("")
     report.append("---")
     report.append("")
 
     # Sort by class priority
-    class_priority = {"Class 1": 1, "Class 2A": 2, "Class 2B": 3, "Class 3": 4, "Other": 5}
-    sorted_elements = sorted(elements.items(), key=lambda x: class_priority.get(x[1].get("q3d_class", ""), 99))
+    class_priority = {
+        "Class 1": 1,
+        "Class 2A": 2,
+        "Class 2B": 3,
+        "Class 3": 4,
+        "Other": 5,
+    }
+    sorted_elements = sorted(
+        elements.items(),
+        key=lambda x: class_priority.get(x[1].get("q3d_class", ""), 99),
+    )
 
     # Summary table
     report.append("## 风险评估汇总")
@@ -305,8 +322,12 @@ def generate_report(process_text: str, elements: dict) -> str:
                 inhalation = "不需要" if not data.get("inhalation_assess") else "需要"
                 cutaneous = "不需要" if not data.get("cutaneous_assess") else "需要"
         else:
-            oral = parenteral = inhalation = cutaneous = "需要" if data.get("assessment_required") else "不需要"
-        report.append(f"| {symbol} | {q3d_class} | {intentionally} | {oral} | {parenteral} | {inhalation} | {cutaneous} |")
+            oral = parenteral = inhalation = cutaneous = (
+                "需要" if data.get("assessment_required") else "不需要"
+            )
+        report.append(
+            f"| {symbol} | {q3d_class} | {intentionally} | {oral} | {parenteral} | {inhalation} | {cutaneous} |"
+        )
 
     report.append("")
     report.append("---")
@@ -348,10 +369,18 @@ def generate_report(process_text: str, elements: dict) -> str:
         report.append("")
         report.append("| 途径 | PDE (μg/天) | 选项1限度 (μg/g) |")
         report.append("|------|-------------|------------------|")
-        report.append(f"| 口服 | {oral if oral is not None else '未建立'} | {option1.get('oral', 'N/A') if option1 else 'N/A'} |")
-        report.append(f"| 注射 | {parenteral if parenteral is not None else '未建立'} | {option1.get('parenteral', 'N/A') if option1 else 'N/A'} |")
-        report.append(f"| 吸入 | {inhalation if inhalation is not None else '未建立'} | {option1.get('inhalation', 'N/A') if option1 else 'N/A'} |")
-        report.append(f"| 皮肤 | {cutaneous if cutaneous is not None else '未建立'} | {cutaneous_option1 if cutaneous_option1 is not None else 'N/A'} |")
+        report.append(
+            f"| 口服 | {oral if oral is not None else '未建立'} | {option1.get('oral', 'N/A') if option1 else 'N/A'} |"
+        )
+        report.append(
+            f"| 注射 | {parenteral if parenteral is not None else '未建立'} | {option1.get('parenteral', 'N/A') if option1 else 'N/A'} |"
+        )
+        report.append(
+            f"| 吸入 | {inhalation if inhalation is not None else '未建立'} | {option1.get('inhalation', 'N/A') if option1 else 'N/A'} |"
+        )
+        report.append(
+            f"| 皮肤 | {cutaneous if cutaneous is not None else '未建立'} | {cutaneous_option1 if cutaneous_option1 is not None else 'N/A'} |"
+        )
         report.append("")
 
         # CTCL for Ni and Co
@@ -372,9 +401,13 @@ def generate_report(process_text: str, elements: dict) -> str:
 
         # Assessment logic
         if q3d_class == "Class 1":
-            report.append("**评估：** 1类元素必须在风险评估中评估所有潜在来源和给药途径。")
+            report.append(
+                "**评估：** 1类元素必须在风险评估中评估所有潜在来源和给药途径。"
+            )
         elif q3d_class == "Class 2A":
-            report.append("**评估：** 2A类元素出现概率较高，需要对所有潜在来源进行风险评估。")
+            report.append(
+                "**评估：** 2A类元素出现概率较高，需要对所有潜在来源进行风险评估。"
+            )
         elif q3d_class == "Class 2B":
             if intentionally:
                 report.append("**评估：** 2B类元素有意添加，需要评估。")
@@ -403,7 +436,9 @@ def generate_report(process_text: str, elements: dict) -> str:
                     parts.append("皮肤途径无需评估")
                 report.append("**评估：** " + "；".join(parts) + "。")
         elif q3d_class == "Other":
-            report.append("**评估：** 该元素不在ICH Q3D范围内，未建立PDE。需要逐案进行毒理学论证。")
+            report.append(
+                "**评估：** 该元素不在ICH Q3D范围内，未建立PDE。需要逐案进行毒理学论证。"
+            )
 
         report.append("")
 
@@ -427,7 +462,9 @@ def generate_report(process_text: str, elements: dict) -> str:
     if counts["Class 2B"] > 0:
         report.append(f"4. {counts['Class 2B']} 个2B类元素（仅有意添加时需要评估）")
     if counts["Class 3"] > 0:
-        report.append(f"5. {counts['Class 3']} 个3类元素（口服途径除非有意添加否则无需评估）")
+        report.append(
+            f"5. {counts['Class 3']} 个3类元素（口服途径除非有意添加否则无需评估）"
+        )
     if counts["Other"] > 0:
         report.append(f"6. {counts['Other']} 个元素不在Q3D范围内，需要单独毒理学论证")
 
@@ -473,7 +510,7 @@ def generate_report(process_text: str, elements: dict) -> str:
 
 def _add_frontend_fields(elements: dict, llm_response: dict) -> dict:
     """Add fields needed by frontend table display.
-    
+
     The skill's identify_elements returns dict keyed by symbol,
     but frontend needs:
     - symbol field on each element
@@ -510,10 +547,10 @@ def _add_frontend_fields(elements: dict, llm_response: dict) -> dict:
             else:
                 # At least one route needs assessment
                 data["needs_assessment"] = (
-                    data.get("oral_assess", False) or
-                    data.get("parenteral_assess", False) or
-                    data.get("inhalation_assess", False) or
-                    data.get("cutaneous_assess", False)
+                    data.get("oral_assess", False)
+                    or data.get("parenteral_assess", False)
+                    or data.get("inhalation_assess", False)
+                    or data.get("cutaneous_assess", False)
                 )
         elif q3d_class == "Other":
             # Only if intentionally added
@@ -526,7 +563,7 @@ def _add_frontend_fields(elements: dict, llm_response: dict) -> dict:
 
 async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict:
     """Analyze ICH Q3D elemental impurities using LLM.
-    
+
     LLM only identifies elements (symbol, source, intentionally_added).
     Script applies Q3D rules from q3d_elements.json.
     """
@@ -555,7 +592,13 @@ async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict:
     needs_assessment_count = sum(1 for e in elements_list if e.get("needs_assessment"))
 
     # Count by class
-    class_counts = {"Class 1": 0, "Class 2A": 0, "Class 2B": 0, "Class 3": 0, "Other": 0}
+    class_counts = {
+        "Class 1": 0,
+        "Class 2A": 0,
+        "Class 2B": 0,
+        "Class 3": 0,
+        "Other": 0,
+    }
     for elem in elements_list:
         q3d_class = elem.get("q3d_class", "")
         if q3d_class in class_counts:
@@ -573,17 +616,17 @@ async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict:
             "class_2a": class_counts["Class 2A"],
             "class_2b": class_counts["Class 2B"],
             "class_3": class_counts["Class 3"],
-            "other": class_counts["Other"]
+            "other": class_counts["Other"],
         },
         "report": report,
         "llm_used": True,
-        "llm_elements_count": len(llm_elements)
+        "llm_elements_count": len(llm_elements),
     }
 
 
 async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
     """Analyze ICH Q3C solvent residues using LLM (skill's pipeline).
-    
+
     LLM extracts AND classifies solvents using the full ICH Q3C database.
     Script enriches with PDE/limit values from database and generates report.
     """
@@ -618,39 +661,42 @@ async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
         # Collect solvents for this step
         raw_solvents = []
         for solvent_info in step_data.get("solvents", []):
-            matched_name = solvent_info.get("matched_name") or solvent_info.get("original_name", "")
+            matched_name = solvent_info.get("matched_name") or solvent_info.get(
+                "original_name", ""
+            )
             original_name = solvent_info.get("original_name", matched_name)
             ich_class = solvent_info.get("ich_class", "Unlisted")
 
             if not matched_name:
                 continue
 
-            raw_solvents.append({
-                "solvent": matched_name,
-                "original_name": original_name,
-                "ich_class": ich_class,
-                "purpose": solvent_info.get("purpose", ""),
-                "amount": solvent_info.get("amount")
-            })
+            raw_solvents.append(
+                {
+                    "solvent": matched_name,
+                    "original_name": original_name,
+                    "ich_class": ich_class,
+                    "purpose": solvent_info.get("purpose", ""),
+                    "amount": solvent_info.get("amount"),
+                }
+            )
 
         # Classify and enrich with PDE/limit
         classified = classify_solvents(raw_solvents, solvent_index)
 
-        step_analysis.append({
-            "step_number": step_number,
-            "step_title": step_title,
-            "solvents": classified,
-            "solvent_count": len(classified)
-        })
+        step_analysis.append(
+            {
+                "step_number": step_number,
+                "step_title": step_title,
+                "solvents": classified,
+                "solvent_count": len(classified),
+            }
+        )
 
         # Aggregate all solvents
         for solvent_entry in classified:
             solvent_name = solvent_entry["solvent"]
             if solvent_name not in all_solvents:
-                all_solvents[solvent_name] = {
-                    **solvent_entry,
-                    "steps_used": []
-                }
+                all_solvents[solvent_name] = {**solvent_entry, "steps_used": []}
             all_solvents[solvent_name]["steps_used"].append(step_number)
 
     # 5. Build analysis structure for report generation
@@ -658,25 +704,29 @@ async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
         "step_analysis": step_analysis,
         "all_solvents": all_solvents,
         "total_unique_solvents": len(all_solvents),
-        "extraction_method": "llm"
+        "extraction_method": "llm",
     }
 
     # 6. Generate markdown report
-    report = generate_q3c_report(analysis, flag_class1=True, ich_data_source="ICH Q3C(R9) 数据库")
+    report = generate_q3c_report(
+        analysis, flag_class1=True, ich_data_source="ICH Q3C(R9) 数据库"
+    )
 
     # 7. Convert to frontend format (flat list)
     solvents_list = []
     for solvent_name, data in all_solvents.items():
-        solvents_list.append({
-            "name_en": data.get("solvent", solvent_name),
-            "name_cn": data.get("original_name", solvent_name),
-            "class": data.get("class", "Unknown"),
-            "limit_ppm": data.get("limit"),
-            "pde_mg_day": data.get("pde"),
-            "purpose": data.get("purpose", ""),
-            "found_in_text": True,
-            "steps_used": data.get("steps_used", [])
-        })
+        solvents_list.append(
+            {
+                "name_en": data.get("solvent", solvent_name),
+                "name_cn": data.get("original_name", solvent_name),
+                "class": data.get("class", "Unknown"),
+                "limit_ppm": data.get("limit"),
+                "pde_mg_day": data.get("pde"),
+                "purpose": data.get("purpose", ""),
+                "found_in_text": True,
+                "steps_used": data.get("steps_used", []),
+            }
+        )
 
     # 8. Compute summary
     summary = {"class_1": 0, "class_2": 0, "class_3": 0, "unknown": 0}
@@ -701,6 +751,5 @@ async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
         "report": report,
         "step_analysis": step_analysis,
         "llm_used": True,
-        "llm_solvents_count": len(solvents_list)
+        "llm_solvents_count": len(solvents_list),
     }
-

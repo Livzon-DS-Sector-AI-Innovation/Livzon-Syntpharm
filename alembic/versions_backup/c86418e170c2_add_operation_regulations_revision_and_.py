@@ -4,11 +4,12 @@ Revision ID: c86418e170c2
 Revises: 63e0261d5871
 Create Date: 2026-06-04 14:42:12.069263
 """
+
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = 'c86418e170c2'
-down_revision: str | None = '63e0261d5871'
+revision: str = "c86418e170c2"
+down_revision: str | None = "63e0261d5871"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

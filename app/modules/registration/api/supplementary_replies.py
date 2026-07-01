@@ -50,7 +50,11 @@ async def generate_supplementary_reply(
         company_name_override=company_name,
         remarks=remarks,
     )
-    return success_response(data=reply.model_dump(mode="json"), message="发补回复文档生成成功", status_code=201)
+    return success_response(
+        data=reply.model_dump(mode="json"),
+        message="发补回复文档生成成功",
+        status_code=201,
+    )
 
 
 @router.get("", summary="发补回复记录列表")

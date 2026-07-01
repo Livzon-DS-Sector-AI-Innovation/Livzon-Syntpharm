@@ -98,7 +98,9 @@ class TestSchemas:
     def test_output_invalid_enum_rejected(self):
         """无效枚举值应被 Pydantic 拒绝。"""
         with pytest.raises(ValueError):
-            HazardIdentificationOutput(**{**VALID_OUTPUT_DICT, "hazard_type": "invalid_type"})
+            HazardIdentificationOutput(
+                **{**VALID_OUTPUT_DICT, "hazard_type": "invalid_type"}
+            )
 
     def test_plugin_config_defaults(self):
         """默认配置应合理。"""
@@ -120,7 +122,13 @@ class TestPrompts:
         assert len(SYSTEM_ROLE) > 100
 
     def test_work_rules_contains_all_sections(self):
-        sections = ["隐患分类判定规则", "隐患类别判定规则", "隐患级别判定规则", "整改建议生成规则", "判定依据引用规则"]
+        sections = [
+            "隐患分类判定规则",
+            "隐患类别判定规则",
+            "隐患级别判定规则",
+            "整改建议生成规则",
+            "判定依据引用规则",
+        ]
         for section in sections:
             assert section in WORK_RULES, f"缺少规则节: {section}"
 
@@ -181,11 +189,13 @@ class TestPrompts:
     def test_fewshot_example1_demonstrates_shutdown_priority(self):
         """示例1（防爆电箱堵头）应演示停产整改优先判定：加装堵头无需断电 → general。"""
         ex1 = FEWSHOT_EXAMPLES[0]
-        assert ex1["output"]["hazard_level"] == "general", \
+        assert ex1["output"]["hazard_level"] == "general", (
             "示例1应判定为general（加装堵头无需设备断电，可直接在线操作）"
-        assert "无需设备断电" in ex1["output"]["rectification_suggestion"]["corrective"] or \
-               "无需断电" in ex1["output"]["rectification_suggestion"]["corrective"], \
-            "示例1的整改措施应明确标注加装堵头无需断电"
+        )
+        assert (
+            "无需设备断电" in ex1["output"]["rectification_suggestion"]["corrective"]
+            or "无需断电" in ex1["output"]["rectification_suggestion"]["corrective"]
+        ), "示例1的整改措施应明确标注加装堵头无需断电"
 
     def test_build_context_text(self):
         text = build_context_text(
@@ -200,7 +210,9 @@ class TestPrompts:
         assert "合成车间" in text
 
     def test_build_full_prompt_includes_all_sections(self):
-        prompt = build_full_prompt("测试上下文", vision_mode=False, include_fewshot=True)
+        prompt = build_full_prompt(
+            "测试上下文", vision_mode=False, include_fewshot=True
+        )
         assert "测试上下文" in prompt
         assert "工作规则" in prompt
         assert "输出格式" in prompt
@@ -252,9 +264,11 @@ class TestRuleEngine:
         assert any("过短" in e for e in result.errors)
 
     def test_empty_rectification_detected(self):
-        output = make_output(rectification_suggestion=RectificationSuggestion(
-            corrective="", preventive=""
-        ))
+        output = make_output(
+            rectification_suggestion=RectificationSuggestion(
+                corrective="", preventive=""
+            )
+        )
         result = self.engine.validate(make_input(), output)
         assert not result.is_valid
         assert len([e for e in result.errors if "不能为空" in e]) == 2
@@ -267,10 +281,12 @@ class TestRuleEngine:
         assert any("过短" in e for e in result.errors)
 
     def test_banned_phrase_detected(self):
-        output = make_output(rectification_suggestion=RectificationSuggestion(
-            corrective="加强管理，注意安全",
-            preventive="需加强培训，提高意识",
-        ))
+        output = make_output(
+            rectification_suggestion=RectificationSuggestion(
+                corrective="加强管理，注意安全",
+                preventive="需加强培训，提高意识",
+            )
+        )
         result = self.engine.validate(make_input(), output)
         assert any("加强管理" in w for w in result.warnings)
 
@@ -305,9 +321,11 @@ class TestAutoCorrect:
         assert corrected.key_defect == "多余的空白描述"
 
     def test_fills_empty_rectification(self):
-        output = make_output(rectification_suggestion=RectificationSuggestion(
-            corrective="具体措施", preventive=""
-        ))
+        output = make_output(
+            rectification_suggestion=RectificationSuggestion(
+                corrective="具体措施", preventive=""
+            )
+        )
         corrected = auto_correct(output)
         assert corrected.rectification_suggestion.preventive != ""
         assert "整改方案" in corrected.rectification_suggestion.preventive
@@ -333,7 +351,9 @@ class MockAIService:
             raise Exception("模拟 AI 调用失败")
         return {**VALID_OUTPUT_DICT}
 
-    async def chat_vision_parsed(self, text_prompt, image_urls, expected_keys, temperature=0.1):
+    async def chat_vision_parsed(
+        self, text_prompt, image_urls, expected_keys, temperature=0.1
+    ):
         self.call_count += 1
         self.last_messages = [{"role": "user", "content": text_prompt}]
         if self.fail:
@@ -377,10 +397,12 @@ class TestIntegration:
         mock_ai.chat_vision_parsed = mock_ai.chat_vision_parsed  # ensure available
         plugin = AIHazardIdentifier(mock_ai)
 
-        output = await plugin.identify(make_input(
-            "防爆电箱堵头缺失",
-            defect_photos=["https://example.com/photo.jpg"],
-        ))
+        output = await plugin.identify(
+            make_input(
+                "防爆电箱堵头缺失",
+                defect_photos=["https://example.com/photo.jpg"],
+            )
+        )
         assert output.hazard_type == HazardTypeEnum.UNSAFE_CONDITION
         assert mock_ai.call_count == 1
 
@@ -441,12 +463,14 @@ class TestIntegration:
         mock_ai = MockAIService()
         plugin = AIHazardIdentifier(mock_ai)
 
-        await plugin.identify(make_input(
-            "管道法兰泄漏",
-            hazard_no="HZ-2026-0001",
-            department="生产部",
-            location="合成车间",
-        ))
+        await plugin.identify(
+            make_input(
+                "管道法兰泄漏",
+                hazard_no="HZ-2026-0001",
+                department="生产部",
+                location="合成车间",
+            )
+        )
 
         # 检查 AI 收到的 prompt 包含所有上下文
         user_prompt = mock_ai.last_messages[1]["content"]

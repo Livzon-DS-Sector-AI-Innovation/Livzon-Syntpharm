@@ -65,9 +65,13 @@ class FeishuIM:
         """Return mapping email -> open_id."""
         return await self._batch_get_ids({"emails": emails, "include_resigned": True})
 
-    async def batch_get_open_ids_by_employee_id(self, employee_ids: list[str]) -> dict[str, str]:
+    async def batch_get_open_ids_by_employee_id(
+        self, employee_ids: list[str]
+    ) -> dict[str, str]:
         """Return mapping employee_id -> open_id."""
-        return await self._batch_get_ids({"employee_ids": employee_ids, "include_resigned": True})
+        return await self._batch_get_ids(
+            {"employee_ids": employee_ids, "include_resigned": True}
+        )
 
     async def send_text_message(
         self, receive_id: str, content: str, *, receive_id_type: str = "open_id"

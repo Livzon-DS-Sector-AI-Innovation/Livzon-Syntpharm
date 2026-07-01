@@ -28,15 +28,25 @@ async def _get_ai_config() -> dict:
     return {
         "text": {
             "api_key": _text_key,
-            "base_url": await get_module_setting("safety", "SAFETY_AI_TEXT_BASE_URL", "https://api.deepseek.com"),
-            "model": await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash"),
+            "base_url": await get_module_setting(
+                "safety", "SAFETY_AI_TEXT_BASE_URL", "https://api.deepseek.com"
+            ),
+            "model": await get_module_setting(
+                "safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash"
+            ),
             "temperature": 0.1,
             "timeout": 120,
         },
         "vision": {
             "api_key": _vision_key,
-            "base_url": await get_module_setting("safety", "SAFETY_AI_VISION_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-            "model": await get_module_setting("safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max"),
+            "base_url": await get_module_setting(
+                "safety",
+                "SAFETY_AI_VISION_BASE_URL",
+                "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            ),
+            "model": await get_module_setting(
+                "safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max"
+            ),
             "temperature": 0.1,
             "timeout": 120,
         },

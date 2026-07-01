@@ -33,9 +33,7 @@ def build_event_handler() -> lark.EventDispatcherHandler:
     return (
         lark.EventDispatcherHandler.builder("", "")
         .register_p2_im_message_receive_v1(_on_message_receive)
-        .register_p2_drive_file_bitable_record_changed_v1(
-            _on_bitable_record_changed
-        )
+        .register_p2_drive_file_bitable_record_changed_v1(_on_bitable_record_changed)
         .build()
     )
 
@@ -58,7 +56,10 @@ def _on_message_receive(data: P2ImMessageReceiveV1) -> None:
 
     logger.info(
         "全局飞书收到消息: type=%s, sender=%s, chat_type=%s, message_id=%s",
-        msg_type, sender_id, chat_type, message_id,
+        msg_type,
+        sender_id,
+        chat_type,
+        message_id,
     )
 
     if _main_loop is None:

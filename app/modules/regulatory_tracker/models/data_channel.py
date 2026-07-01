@@ -24,9 +24,7 @@ class DataChannel(BaseModel):
     code: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="栏目编码，如 cde_domestic_guideline"
     )
-    name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="栏目名称"
-    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="栏目名称")
     list_url: Mapped[str | None] = mapped_column(
         String(1000), nullable=True, comment="列表页URL"
     )

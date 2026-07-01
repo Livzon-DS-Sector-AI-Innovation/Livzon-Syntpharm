@@ -14,16 +14,24 @@ class Deviation(BaseModel):
     __tablename__ = "deviations"
     __table_args__ = {"schema": "quality"}
 
-    deviation_code: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    deviation_code: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     department: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    discovery_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    discovery_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     discovery_time: Mapped[str | None] = mapped_column(Text, nullable=True)
     discovery_location: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft", server_default="draft")
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="draft", server_default="draft"
+    )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     immediate_actions: Mapped[str | None] = mapped_column(Text, nullable=True)
-    reporter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True)
+    reporter_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True
+    )
     handler: Mapped[str | None] = mapped_column(String(255), nullable=True)
     discoverer: Mapped[str | None] = mapped_column(String(255), nullable=True)
     level: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -34,10 +42,18 @@ class Deviation(BaseModel):
     attachments: Mapped[list | None] = mapped_column(ARRAY(Text), nullable=True)
     final_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
     returned_step: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    status_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    needs_cross_dept_review: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=True, server_default="true")
-    cross_dept_reviewers: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
+    status_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    needs_cross_dept_review: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, default=True, server_default="true"
+    )
+    cross_dept_reviewers: Mapped[list | None] = mapped_column(
+        JSON, nullable=True, default=list
+    )
     affected_items: Mapped[str | None] = mapped_column(Text, nullable=True)
     batch_number: Mapped[str | None] = mapped_column(Text, nullable=True)
     report_content: Mapped[str | None] = mapped_column(Text, nullable=True)
-    report_versions: Mapped[list | None] = mapped_column(JSON, nullable=True, default=list)
+    report_versions: Mapped[list | None] = mapped_column(
+        JSON, nullable=True, default=list
+    )

@@ -49,8 +49,11 @@ class SafetyBitableClient:
         return await get_safety_tenant_token()
 
     async def get_record(
-        self, record_id: str, table_id: str | None = None,
-        *, field_name_type: str = "name",
+        self,
+        record_id: str,
+        table_id: str | None = None,
+        *,
+        field_name_type: str = "name",
     ) -> dict[str, Any]:
         """获取单条记录。返回 fields dict。
 
@@ -69,13 +72,17 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error(
                     "Bitable get_record 失败: code=%s msg=%s record_id=%s",
-                    data.get("code"), data.get("msg"), record_id,
+                    data.get("code"),
+                    data.get("msg"),
+                    record_id,
                 )
                 return {}
             fields = data.get("data", {}).get("record", {}).get("fields", {})
             logger.debug(
                 "Bitable get_record 成功: record_id=%s fields=%d keys=%s",
-                record_id, len(fields), list(fields.keys())[:10],
+                record_id,
+                len(fields),
+                list(fields.keys())[:10],
             )
             return fields
 
@@ -102,14 +109,22 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error(
                     "Bitable update_record 失败: record_id=%s code=%s msg=%s",
-                    record_id, data.get("code"), data.get("msg"),
+                    record_id,
+                    data.get("code"),
+                    data.get("msg"),
                 )
                 return False
-            logger.info("Bitable update_record 成功: record_id=%s fields=%s", record_id, list(fields.keys()))
+            logger.info(
+                "Bitable update_record 成功: record_id=%s fields=%s",
+                record_id,
+                list(fields.keys()),
+            )
             return True
 
     async def download_attachment(
-        self, file_token: str, extra: str | None = None,
+        self,
+        file_token: str,
+        extra: str | None = None,
     ) -> bytes | None:
         """下载附件内容。返回文件字节，失败返回 None。
 
@@ -120,14 +135,17 @@ class SafetyBitableClient:
         import asyncio
 
         token = await self._token()
-        base_url = f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
+        base_url = (
+            f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
+        )
 
         async def _try_download(url: str) -> bytes | None:
             last_error = None
             for attempt in range(3):
                 try:
                     async with httpx.AsyncClient(
-                        timeout=120, follow_redirects=True,
+                        timeout=120,
+                        follow_redirects=True,
                     ) as http:
                         resp = await http.get(
                             url,
@@ -137,22 +155,28 @@ class SafetyBitableClient:
                             return resp.content
                         logger.warning(
                             "Bitable 下载附件失败: url=%s... status=%s body=%s (attempt %d/3)",
-                            url[:100], resp.status_code, (resp.text or "")[:200], attempt + 1,
+                            url[:100],
+                            resp.status_code,
+                            (resp.text or "")[:200],
+                            attempt + 1,
                         )
                         last_error = f"HTTP {resp.status_code}"
                 except Exception as exc:
                     logger.warning(
                         "Bitable 下载附件异常: url=%s... error=%s (attempt %d/3)",
-                        url[:100], exc, attempt + 1,
+                        url[:100],
+                        exc,
+                        attempt + 1,
                     )
                     last_error = str(exc)
 
                 if attempt < 2:
-                    await asyncio.sleep(2 ** attempt)  # 1s, 2s 退避
+                    await asyncio.sleep(2**attempt)  # 1s, 2s 退避
 
             logger.error(
                 "Bitable 下载附件最终失败(3次重试耗尽): url=%s... last_error=%s",
-                url[:100], last_error,
+                url[:100],
+                last_error,
             )
             return None
 
@@ -190,18 +214,21 @@ class SafetyBitableClient:
             for attempt in range(3):
                 try:
                     async with httpx.AsyncClient(
-                        timeout=120, follow_redirects=True,
+                        timeout=120,
+                        follow_redirects=True,
                     ) as http:
                         resp = await http.get(download_url, headers=h)
                         if resp.status_code != 200:
                             logger.warning(
                                 "Bitable URL 下载附件失败: url=%s... status=%s body=%s (attempt %d/3)",
-                                download_url[:120], resp.status_code,
-                                (resp.text or "")[:200], attempt + 1,
+                                download_url[:120],
+                                resp.status_code,
+                                (resp.text or "")[:200],
+                                attempt + 1,
                             )
                             last_error = f"HTTP {resp.status_code}"
                             if attempt < 2:
-                                await asyncio.sleep(2 ** attempt)
+                                await asyncio.sleep(2**attempt)
                             continue
                         content = resp.content
                         ct = resp.headers.get("content-type", "")
@@ -209,39 +236,50 @@ class SafetyBitableClient:
                         if not content:
                             logger.warning(
                                 "Bitable URL 下载到空内容: url=%s... (attempt %d/3)",
-                                download_url[:120], attempt + 1,
+                                download_url[:120],
+                                attempt + 1,
                             )
                             last_error = "Empty content"
                             if attempt < 2:
-                                await asyncio.sleep(2 ** attempt)
+                                await asyncio.sleep(2**attempt)
                             continue
-                        if ct.startswith("application/json") or ct.startswith("text/html"):
+                        if ct.startswith("application/json") or ct.startswith(
+                            "text/html"
+                        ):
                             text = content[:500].decode(errors="replace")
                             logger.warning(
                                 "Bitable URL 返回非文件内容(ct=%s): url=%s... body=%s (attempt %d/3)",
-                                ct, download_url[:120], text, attempt + 1,
+                                ct,
+                                download_url[:120],
+                                text,
+                                attempt + 1,
                             )
                             last_error = f"Bad content-type: {ct}"
                             if attempt < 2:
-                                await asyncio.sleep(2 ** attempt)
+                                await asyncio.sleep(2**attempt)
                             continue
                         logger.debug(
                             "Bitable URL 下载成功: size=%d ct=%s url=%s...",
-                            len(content), ct, download_url[:120],
+                            len(content),
+                            ct,
+                            download_url[:120],
                         )
                         return content
                 except Exception as exc:
                     logger.warning(
                         "Bitable URL 下载异常: url=%s... error=%s (attempt %d/3)",
-                        download_url[:120], exc, attempt + 1,
+                        download_url[:120],
+                        exc,
+                        attempt + 1,
                     )
                     last_error = str(exc)
                     if attempt < 2:
-                        await asyncio.sleep(2 ** attempt)
+                        await asyncio.sleep(2**attempt)
 
             logger.error(
                 "Bitable URL 下载最终失败(3次重试耗尽): url=%s... last_error=%s",
-                download_url[:120], last_error,
+                download_url[:120],
+                last_error,
             )
             return None
 
@@ -311,8 +349,10 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error("Bitable search_records 失败: %s", data.get("msg"))
                 return {
-                    "items": [], "has_more": False,
-                    "page_token": None, "total": None,
+                    "items": [],
+                    "has_more": False,
+                    "page_token": None,
+                    "total": None,
                 }
             result = data.get("data", {})
             return {
@@ -356,7 +396,10 @@ class SafetyBitableClient:
             all_items.extend(items)
             logger.debug(
                 "Bitable list_all_records page %d: %d items (total=%s, has_more=%s)",
-                page_count, len(items), result.get("total"), result.get("has_more"),
+                page_count,
+                len(items),
+                result.get("total"),
+                result.get("has_more"),
             )
 
             if not result.get("has_more"):
@@ -367,7 +410,8 @@ class SafetyBitableClient:
 
         logger.info(
             "Bitable list_all_records 完成: %d 页 %d 条记录",
-            page_count, len(all_items),
+            page_count,
+            len(all_items),
         )
         return all_items
 
@@ -417,11 +461,17 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error(
                     "Bitable create_field 失败: field=%s code=%s msg=%s",
-                    field_name, data.get("code"), data.get("msg"),
+                    field_name,
+                    data.get("code"),
+                    data.get("msg"),
                 )
                 return {}
             field = data.get("data", {}).get("field", {})
-            logger.info("Bitable create_field 成功: %s (id=%s)", field_name, field.get("field_id"))
+            logger.info(
+                "Bitable create_field 成功: %s (id=%s)",
+                field_name,
+                field.get("field_id"),
+            )
             return field
 
     async def update_field(
@@ -458,7 +508,9 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error(
                     "Bitable update_field 失败: field_id=%s code=%s msg=%s",
-                    field_id, data.get("code"), data.get("msg"),
+                    field_id,
+                    data.get("code"),
+                    data.get("msg"),
                 )
                 return {}
             field = data.get("data", {}).get("field", {})

@@ -32,20 +32,26 @@ from app.modules.safety.service import (
 regulations_router = APIRouter()
 
 
-@regulations_router.get("/regulations", response_model=ApiResponse, summary="获取安全操作规程列表")
+@regulations_router.get(
+    "/regulations", response_model=ApiResponse, summary="获取安全操作规程列表"
+)
 async def get_regulations(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     position: str | None = None,
     keyword: str | None = None,
-    status: str | None = Query(None, description="操规状态，逗号分隔多值: draft,generated,reviewed,exported"),
+    status: str | None = Query(
+        None, description="操规状态，逗号分隔多值: draft,generated,reviewed,exported"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
     """获取安全操作规程列表，支持按岗位、关键词和状态筛选"""
     service = RegulationService(db)
     skip = (page - 1) * page_size
-    items, total = await service.get_regulations(skip, page_size, position, keyword, status)
+    items, total = await service.get_regulations(
+        skip, page_size, position, keyword, status
+    )
     return ApiResponse(
         data=[OperationRegulationResponse.model_validate(r) for r in items],
         meta={"page": page, "page_size": page_size, "total": total},
@@ -70,7 +76,9 @@ async def get_regulation(
     return ApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
-@regulations_router.post("/regulations", response_model=ApiResponse, summary="创建安全操作规程")
+@regulations_router.post(
+    "/regulations", response_model=ApiResponse, summary="创建安全操作规程"
+)
 async def create_regulation(
     data: OperationRegulationCreate,
     db: AsyncSession = Depends(get_db),
@@ -141,7 +149,13 @@ async def upload_regulation_document(
 
     if minio_enabled():
         object_key = f"regulation/{safe_name}"
-        upload_object("safety", object_key, content, len(content), file.content_type or "application/octet-stream")
+        upload_object(
+            "safety",
+            object_key,
+            content,
+            len(content),
+            file.content_type or "application/octet-stream",
+        )
         stored_path = object_key
     else:
         upload_dir = os.path.join("uploads", "safety", "regulations")
@@ -164,7 +178,9 @@ async def upload_regulation_document(
 # ==================== 操规修订记录 Routes ====================
 
 
-@regulations_router.get("/revisions", response_model=ApiResponse, summary="获取修订记录列表")
+@regulations_router.get(
+    "/revisions", response_model=ApiResponse, summary="获取修订记录列表"
+)
 async def get_revisions(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -205,7 +221,9 @@ async def get_revision(
     return ApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
-@regulations_router.post("/revisions", response_model=ApiResponse, summary="创建修订记录")
+@regulations_router.post(
+    "/revisions", response_model=ApiResponse, summary="创建修订记录"
+)
 async def create_revision(
     data: RegulationRevisionCreate,
     db: AsyncSession = Depends(get_db),
@@ -285,7 +303,13 @@ async def manual_revision_complete(
 
     if minio_enabled():
         object_key = f"regulation/{safe_name}"
-        upload_object("safety", object_key, content, len(content), file.content_type or "application/octet-stream")
+        upload_object(
+            "safety",
+            object_key,
+            content,
+            len(content),
+            file.content_type or "application/octet-stream",
+        )
         stored_path = object_key
     else:
         upload_dir = os.path.join("uploads", "safety", "regulations")
@@ -300,7 +324,9 @@ async def manual_revision_complete(
         revision_id, stored_path, file.filename
     )
     if not item:
-        return ApiResponse(code=400, message="无法完成修订，当前状态不允许或修订类型不是人工修订")
+        return ApiResponse(
+            code=400, message="无法完成修订，当前状态不允许或修订类型不是人工修订"
+        )
     await db.commit()
     return ApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
@@ -322,7 +348,9 @@ async def ai_revision_generate(
     service = RegulationService(db)
     result = await service.ai_revision_generate(revision_id)
     if not result:
-        return ApiResponse(code=400, message="无法生成，修订类型不是AI修订或修订记录不存在")
+        return ApiResponse(
+            code=400, message="无法生成，修订类型不是AI修订或修订记录不存在"
+        )
     return ApiResponse(data=result)
 
 
@@ -344,7 +372,9 @@ async def ai_revision_confirm(
         revision_id, generated_content, document_name
     )
     if not item:
-        return ApiResponse(code=400, message="无法确认，修订类型不是AI修订或修订记录不存在")
+        return ApiResponse(
+            code=400, message="无法确认，修订类型不是AI修订或修订记录不存在"
+        )
     await db.commit()
     return ApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
@@ -435,9 +465,7 @@ async def update_sop_content(
 ):
     """保存用户编辑后的标准化 Markdown 内容，可选更新状态。"""
     service = SopGeneratorService(db)
-    item = await service.update_content(
-        regulation_id, data.content, data.status
-    )
+    item = await service.update_content(regulation_id, data.content, data.status)
     if not item:
         return ApiResponse(code=404, message="操规不存在")
     await db.commit()

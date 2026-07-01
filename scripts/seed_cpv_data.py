@@ -20,29 +20,158 @@ PROCESS_VERSION = "V1.0"
 
 CPP_PARAMETERS = [
     {"name": "批量(kg)", "code": "batch_kg_221_260kg", "unit": "kg", "sort_order": 1},
-    {"name": "收率(%)", "code": "yield_percent", "unit": "%", "lower_limit": 85, "upper_limit": 100, "sort_order": 2},
-    {"name": "溶解温度(°C)", "code": "dissolution_temperature", "unit": "°C", "lower_limit": 15, "upper_limit": 20, "sort_order": 3},
-    {"name": "结晶控温最大(°C)", "code": "crystal_temperature_max", "unit": "°C", "lower_limit": 15, "upper_limit": 25, "sort_order": 4},
-    {"name": "结晶控温最小(°C)", "code": "cryo_temp_min", "unit": "°C", "lower_limit": 15, "upper_limit": 25, "sort_order": 5},
-    {"name": "结晶完毕降温至(°C)", "code": "cryo_cool_down", "unit": "°C", "lower_limit": 2, "upper_limit": 10, "sort_order": 6},
-    {"name": "双锥夹套热水温度最大(°C)", "code": "cone_hot_water_max", "unit": "°C", "lower_limit": 53, "upper_limit": 55, "sort_order": 7},
-    {"name": "双锥夹套热水温度最小(°C)", "code": "cone_hot_water_min", "unit": "°C", "lower_limit": 53, "upper_limit": 55, "sort_order": 8},
+    {
+        "name": "收率(%)",
+        "code": "yield_percent",
+        "unit": "%",
+        "lower_limit": 85,
+        "upper_limit": 100,
+        "sort_order": 2,
+    },
+    {
+        "name": "溶解温度(°C)",
+        "code": "dissolution_temperature",
+        "unit": "°C",
+        "lower_limit": 15,
+        "upper_limit": 20,
+        "sort_order": 3,
+    },
+    {
+        "name": "结晶控温最大(°C)",
+        "code": "crystal_temperature_max",
+        "unit": "°C",
+        "lower_limit": 15,
+        "upper_limit": 25,
+        "sort_order": 4,
+    },
+    {
+        "name": "结晶控温最小(°C)",
+        "code": "cryo_temp_min",
+        "unit": "°C",
+        "lower_limit": 15,
+        "upper_limit": 25,
+        "sort_order": 5,
+    },
+    {
+        "name": "结晶完毕降温至(°C)",
+        "code": "cryo_cool_down",
+        "unit": "°C",
+        "lower_limit": 2,
+        "upper_limit": 10,
+        "sort_order": 6,
+    },
+    {
+        "name": "双锥夹套热水温度最大(°C)",
+        "code": "cone_hot_water_max",
+        "unit": "°C",
+        "lower_limit": 53,
+        "upper_limit": 55,
+        "sort_order": 7,
+    },
+    {
+        "name": "双锥夹套热水温度最小(°C)",
+        "code": "cone_hot_water_min",
+        "unit": "°C",
+        "lower_limit": 53,
+        "upper_limit": 55,
+        "sort_order": 8,
+    },
 ]
 
 CQA_PARAMETERS = [
-    {"name": "溶液颜色", "code": "solution_color", "unit": "", "upper_limit": 6, "sort_order": 1},
-    {"name": "pH值", "code": "ph_value", "unit": "", "lower_limit": 6, "upper_limit": 8, "sort_order": 2},
-    {"name": "未知单杂(%)", "code": "other_single_unknown_impurity_pct", "unit": "%", "upper_limit": 0.4, "sort_order": 3},
-    {"name": "总杂(%)", "code": "total_impurity_pct", "unit": "%", "upper_limit": 0.8, "sort_order": 4},
-    {"name": "头孢曲松聚合物(%)", "code": "ceftriaxone_sodium_polymer_pct", "unit": "%", "upper_limit": 0.4, "sort_order": 5},
-    {"name": "含量(%)", "code": "content_percent", "unit": "%", "lower_limit": 90, "sort_order": 6},
-    {"name": "残留甲醇(%)", "code": "residual_methanol_percent", "unit": "%", "upper_limit": 0.3, "sort_order": 7},
-    {"name": "残留乙醇(%)", "code": "residual_ethanol_percent", "unit": "%", "upper_limit": 0.5, "sort_order": 8},
-    {"name": "残留乙腈", "code": "residual_acetonitrile", "unit": "%", "upper_limit": 0.041, "sort_order": 9},
-    {"name": "残留丙酮", "code": "residue_acetone", "unit": "%", "upper_limit": 0.4, "sort_order": 10},
-    {"name": "残留二氯甲烷", "code": "residue_dichloromethane", "unit": "%", "upper_limit": 0.06, "sort_order": 11},
-    {"name": "残留乙酸乙酯", "code": "residue_ethyl_acetate", "unit": "%", "upper_limit": 0.4, "sort_order": 12},
-    {"name": "水分(%)", "code": "moisture", "unit": "%", "lower_limit": 8.5, "upper_limit": 10.5, "sort_order": 13},
+    {
+        "name": "溶液颜色",
+        "code": "solution_color",
+        "unit": "",
+        "upper_limit": 6,
+        "sort_order": 1,
+    },
+    {
+        "name": "pH值",
+        "code": "ph_value",
+        "unit": "",
+        "lower_limit": 6,
+        "upper_limit": 8,
+        "sort_order": 2,
+    },
+    {
+        "name": "未知单杂(%)",
+        "code": "other_single_unknown_impurity_pct",
+        "unit": "%",
+        "upper_limit": 0.4,
+        "sort_order": 3,
+    },
+    {
+        "name": "总杂(%)",
+        "code": "total_impurity_pct",
+        "unit": "%",
+        "upper_limit": 0.8,
+        "sort_order": 4,
+    },
+    {
+        "name": "头孢曲松聚合物(%)",
+        "code": "ceftriaxone_sodium_polymer_pct",
+        "unit": "%",
+        "upper_limit": 0.4,
+        "sort_order": 5,
+    },
+    {
+        "name": "含量(%)",
+        "code": "content_percent",
+        "unit": "%",
+        "lower_limit": 90,
+        "sort_order": 6,
+    },
+    {
+        "name": "残留甲醇(%)",
+        "code": "residual_methanol_percent",
+        "unit": "%",
+        "upper_limit": 0.3,
+        "sort_order": 7,
+    },
+    {
+        "name": "残留乙醇(%)",
+        "code": "residual_ethanol_percent",
+        "unit": "%",
+        "upper_limit": 0.5,
+        "sort_order": 8,
+    },
+    {
+        "name": "残留乙腈",
+        "code": "residual_acetonitrile",
+        "unit": "%",
+        "upper_limit": 0.041,
+        "sort_order": 9,
+    },
+    {
+        "name": "残留丙酮",
+        "code": "residue_acetone",
+        "unit": "%",
+        "upper_limit": 0.4,
+        "sort_order": 10,
+    },
+    {
+        "name": "残留二氯甲烷",
+        "code": "residue_dichloromethane",
+        "unit": "%",
+        "upper_limit": 0.06,
+        "sort_order": 11,
+    },
+    {
+        "name": "残留乙酸乙酯",
+        "code": "residue_ethyl_acetate",
+        "unit": "%",
+        "upper_limit": 0.4,
+        "sort_order": 12,
+    },
+    {
+        "name": "水分(%)",
+        "code": "moisture",
+        "unit": "%",
+        "lower_limit": 8.5,
+        "upper_limit": 10.5,
+        "sort_order": 13,
+    },
 ]
 
 # CQA 字段映射（JSON 中的实际字段名 -> 参数 code）
@@ -99,7 +228,7 @@ async def main():
     try:
         schema_exists = await conn.fetchval(
             "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = $1)",
-            "quality"
+            "quality",
         )
         if not schema_exists:
             print("✗ quality schema 不存在，请先运行 alembic upgrade head")
@@ -115,8 +244,12 @@ async def main():
             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), false)
             ON CONFLICT (id) DO NOTHING
             """,
-            product_id, PRODUCT_NAME, PRODUCT_SPEC, PROCESS_VERSION,
-            "active", "头孢曲松钠原料药持续工艺验证产品"
+            product_id,
+            PRODUCT_NAME,
+            PRODUCT_SPEC,
+            PROCESS_VERSION,
+            "active",
+            "头孢曲松钠原料药持续工艺验证产品",
         )
         print(f"✓ 产品创建成功: {PRODUCT_NAME} (ID: {product_id})")
 
@@ -134,9 +267,15 @@ async def main():
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, NOW(), NOW(), false)
                 ON CONFLICT (id) DO NOTHING
                 """,
-                param_id, product_id, "CPP", param["name"], param["code"],
-                param.get("unit"), param.get("lower_limit"),
-                param.get("upper_limit"), param["sort_order"]
+                param_id,
+                product_id,
+                "CPP",
+                param["name"],
+                param["code"],
+                param.get("unit"),
+                param.get("lower_limit"),
+                param.get("upper_limit"),
+                param["sort_order"],
             )
         print(f"✓ CPP 参数创建成功: {len(CPP_PARAMETERS)} 个")
 
@@ -154,9 +293,15 @@ async def main():
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, NOW(), NOW(), false)
                 ON CONFLICT (id) DO NOTHING
                 """,
-                param_id, product_id, "CQA", param["name"], param["code"],
-                param.get("unit"), param.get("lower_limit"),
-                param.get("upper_limit"), param["sort_order"]
+                param_id,
+                product_id,
+                "CQA",
+                param["name"],
+                param["code"],
+                param.get("unit"),
+                param.get("lower_limit"),
+                param.get("upper_limit"),
+                param["sort_order"],
             )
         print(f"✓ CQA 参数创建成功: {len(CQA_PARAMETERS)} 个")
 
@@ -171,7 +316,9 @@ async def main():
             for record in cpp_data["data"]:
                 batch_id = uuid.uuid4()
                 # CPP JSON 使用 product_batch 字段
-                batch_no = record.get("product_batch", record.get("product_batch_no", "UNKNOWN"))
+                batch_no = record.get(
+                    "product_batch", record.get("product_batch_no", "UNKNOWN")
+                )
                 prod_date_str = record.get("production_date", "2025-01-01T00:00:00Z")
                 prod_date = datetime.fromisoformat(
                     prod_date_str.replace("Z", "+00:00")
@@ -185,7 +332,12 @@ async def main():
                     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), false)
                     ON CONFLICT (id) DO NOTHING
                     """,
-                    batch_id, product_id, batch_no, prod_date, "CPP", "feishu"
+                    batch_id,
+                    product_id,
+                    batch_no,
+                    prod_date,
+                    "CPP",
+                    "feishu",
                 )
                 batch_count += 1
 
@@ -208,8 +360,11 @@ async def main():
                             VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), false)
                             ON CONFLICT (id) DO NOTHING
                             """,
-                            uuid.uuid4(), batch_id, param_id,
-                            str(value), is_abnormal
+                            uuid.uuid4(),
+                            batch_id,
+                            param_id,
+                            str(value),
+                            is_abnormal,
                         )
                         value_count += 1
 
@@ -228,7 +383,9 @@ async def main():
             for record in cqa_data["data"]:
                 batch_id = uuid.uuid4()
                 # CQA JSON 使用 product_batch_no 字段
-                batch_no = record.get("product_batch_no", record.get("product_batch", "UNKNOWN"))
+                batch_no = record.get(
+                    "product_batch_no", record.get("product_batch", "UNKNOWN")
+                )
                 prod_date_str = record.get("production_date", "2025-01-01T00:00:00Z")
                 prod_date = datetime.fromisoformat(
                     prod_date_str.replace("Z", "+00:00")
@@ -242,7 +399,12 @@ async def main():
                     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), false)
                     ON CONFLICT (id) DO NOTHING
                     """,
-                    batch_id, product_id, batch_no, prod_date, "CQA", "feishu"
+                    batch_id,
+                    product_id,
+                    batch_no,
+                    prod_date,
+                    "CQA",
+                    "feishu",
                 )
                 batch_count += 1
 
@@ -272,8 +434,11 @@ async def main():
                         VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), false)
                         ON CONFLICT (id) DO NOTHING
                         """,
-                        uuid.uuid4(), batch_id, param_id,
-                        str(value), is_abnormal
+                        uuid.uuid4(),
+                        batch_id,
+                        param_id,
+                        str(value),
+                        is_abnormal,
                     )
                     value_count += 1
 

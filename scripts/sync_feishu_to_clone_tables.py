@@ -64,6 +64,7 @@ TABLE_CONFIGS = {
 
 # ─── Field value extractors ───
 
+
 def _extract_text(value) -> str | None:
     """Extract text from Feishu text / multi-line-text / formula field."""
     if value is None:
@@ -414,6 +415,7 @@ def _build_insert_sql(table: str, record: dict) -> tuple[str, dict]:
 
 # ─── Sync logic ───
 
+
 async def sync_table(
     client: FeishuClient,
     conn,
@@ -448,14 +450,20 @@ async def sync_table(
         record["feishu_record_id"] = record_id
 
         # Post-process: employees_old has no "入职时间", use "入丽珠时间" as hire_date
-        if db_table == "hr.employees_old" and not record.get("hire_date") and record.get("livo_entry_date"):
+        if (
+            db_table == "hr.employees_old"
+            and not record.get("hire_date")
+            and record.get("livo_entry_date")
+        ):
             record["hire_date"] = record["livo_entry_date"]
 
         # Skip records with empty required fields
         if db_table in ("hr.employees_old", "hr.employees_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning("  Skipping record %s: missing employee_number", record_id)
+                logger.warning(
+                    "  Skipping record %s: missing employee_number", record_id
+                )
                 continue
             if not record.get("hire_date"):
                 errors += 1
@@ -464,7 +472,9 @@ async def sync_table(
         if db_table in ("hr.onboarding_records_old", "hr.onboarding_records_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning("  Skipping record %s: missing employee_number", record_id)
+                logger.warning(
+                    "  Skipping record %s: missing employee_number", record_id
+                )
                 continue
             if not record.get("hire_date"):
                 errors += 1
@@ -484,7 +494,10 @@ async def sync_table(
             errors += 1
             logger.error("  Insert error for record %s: %s", record_id, e)
             if errors <= 3:
-                logger.error("  Record data: %s", json.dumps(record, ensure_ascii=False, default=str))
+                logger.error(
+                    "  Record data: %s",
+                    json.dumps(record, ensure_ascii=False, default=str),
+                )
             raise  # re-raise so the per-table transaction can rollback
 
     logger.info("  Inserted: %d, Errors: %d", inserted, errors)
@@ -497,7 +510,8 @@ async def _sync_one_table(client, config_key, field_map, defaults=None):
     try:
         async with engine.begin() as conn:
             return await sync_table(
-                client, conn,
+                client,
+                conn,
                 cfg["feishu_table_id"],
                 cfg["db_table"],
                 field_map,
@@ -513,11 +527,15 @@ async def main():
 
     # ─── 在职花名册 ───
     await _sync_one_table(
-        client, "employees_old", EMPLOYEE_FIELD_MAP,
+        client,
+        "employees_old",
+        EMPLOYEE_FIELD_MAP,
         defaults={"status": "在职"},
     )
     await _sync_one_table(
-        client, "employees_new", EMPLOYEE_FIELD_MAP,
+        client,
+        "employees_new",
+        EMPLOYEE_FIELD_MAP,
         defaults={"status": "在职"},
     )
 
@@ -527,11 +545,15 @@ async def main():
 
     # ─── 离职 ───
     await _sync_one_table(
-        client, "departure_old", DEPARTURE_FIELD_MAP,
+        client,
+        "departure_old",
+        DEPARTURE_FIELD_MAP,
         defaults={"offboarding_type": "辞职"},
     )
     await _sync_one_table(
-        client, "departure_new", DEPARTURE_NEW_FIELD_MAP,
+        client,
+        "departure_new",
+        DEPARTURE_NEW_FIELD_MAP,
     )
 
     logger.info("Sync completed.")

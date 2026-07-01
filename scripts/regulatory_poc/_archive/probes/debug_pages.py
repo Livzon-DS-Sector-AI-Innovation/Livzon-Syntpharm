@@ -10,18 +10,35 @@ from datetime import datetime
 from browser import create_browser
 
 TARGETS = [
-    {"source": "CDE", "column": "法规政策", "url": "https://www.cde.org.cn/main/policy/listpage/9f9c74c73e0f8f56a8bfbc646055026d"},
-    {"source": "CDE", "column": "指导原则专栏", "url": "https://www.cde.org.cn/zdyz/index"},
-    {"source": "NMPA", "column": "药品法规文件", "url": "https://www.nmpa.gov.cn/yaopin/ypfgwj/index.html"},
-    {"source": "NMPA", "column": "药品政策解读", "url": "https://www.nmpa.gov.cn/yaopin/ypzhcjd/index.html"}
+    {
+        "source": "CDE",
+        "column": "法规政策",
+        "url": "https://www.cde.org.cn/main/policy/listpage/9f9c74c73e0f8f56a8bfbc646055026d",
+    },
+    {
+        "source": "CDE",
+        "column": "指导原则专栏",
+        "url": "https://www.cde.org.cn/zdyz/index",
+    },
+    {
+        "source": "NMPA",
+        "column": "药品法规文件",
+        "url": "https://www.nmpa.gov.cn/yaopin/ypfgwj/index.html",
+    },
+    {
+        "source": "NMPA",
+        "column": "药品政策解读",
+        "url": "https://www.nmpa.gov.cn/yaopin/ypzhcjd/index.html",
+    },
 ]
+
 
 def debug_page(page, target, index):
     """调试单个页面"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"调试: {target['source']} - {target['column']}")
     print(f"URL: {target['url']}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     try:
         # 访问页面
@@ -92,13 +109,15 @@ def debug_page(page, target, index):
     except Exception as e:
         print(f"❌ 调试失败: {e}")
         import traceback
+
         traceback.print_exc()
+
 
 def main():
     """主函数"""
-    print("="*60)
+    print("=" * 60)
     print("页面调试工具")
-    print("="*60)
+    print("=" * 60)
     print(f"时间: {datetime.now().isoformat()}")
     print(f"目标数量: {len(TARGETS)}")
 
@@ -107,7 +126,7 @@ def main():
         pw, browser = create_browser()
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         )
         page = context.new_page()
         print("✅ 浏览器启动成功")
@@ -123,8 +142,10 @@ def main():
     except Exception as e:
         print(f"\n❌ 浏览器启动失败: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

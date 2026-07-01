@@ -31,9 +31,7 @@ def _format_date(d: date_type | datetime | None) -> str:
     return d.strftime("%Y年%m月%d日") if d else "-"
 
 
-async def _collect_equipment_names(
-    db: AsyncSession, task: InspectionTask
-) -> list[str]:
+async def _collect_equipment_names(db: AsyncSession, task: InspectionTask) -> list[str]:
     """收集任务关联的所有设备名称"""
     names: list[str] = []
 
@@ -41,7 +39,7 @@ async def _collect_equipment_names(
     if task.route and task.route.locations_rel:
         eq_ids: list[uuid.UUID] = []
         for loc in task.route.locations_rel:
-            for eq in (loc.equipments or []):
+            for eq in loc.equipments or []:
                 eq_ids.append(eq.equipment_id)
         if eq_ids:
             name_map = await repo.get_equipment_names_by_ids(db, eq_ids)
@@ -66,9 +64,7 @@ async def _collect_equipment_names(
     return names
 
 
-async def _get_template_items(
-    db: AsyncSession, task: InspectionTask
-) -> list[dict]:
+async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[dict]:
     """获取模板检查项列表。
 
     优先使用已加载的 template.items 关系；若未加载则查询数据库。
@@ -125,11 +121,13 @@ async def _get_template_items(
             for item in template.items:
                 if item.item_name not in seen:
                     seen.add(item.item_name)
-                    all_items.append({
-                        "item_name": item.item_name,
-                        "expected_result": item.expected_result,
-                        "sort_order": item.sort_order,
-                    })
+                    all_items.append(
+                        {
+                            "item_name": item.item_name,
+                            "expected_result": item.expected_result,
+                            "sort_order": item.sort_order,
+                        }
+                    )
     return all_items
 
 
@@ -158,10 +156,14 @@ def _build_card_content(
 
         # 按地点展示路线层级
         if locations_info:
-            total_equipment = sum(len(loc.get("equipment", [])) for loc in locations_info)
+            total_equipment = sum(
+                len(loc.get("equipment", [])) for loc in locations_info
+            )
             lines.append("")
             lines.append("---")
-            lines.append(f"**📍 巡检路线（共 {len(locations_info)} 个地点 · {total_equipment} 台设备）**")
+            lines.append(
+                f"**📍 巡检路线（共 {len(locations_info)} 个地点 · {total_equipment} 台设备）**"
+            )
             lines.append("")
             for i, loc in enumerate(locations_info):
                 eq_list = loc.get("equipment", [])
@@ -254,15 +256,21 @@ async def send_inspection_start_notification(
                 eq_list: list[dict] = []
                 for eq in sorted((loc.equipments or []), key=lambda x: x.sort_order):
                     if eq.equipment and not eq.equipment.is_deleted:
-                        eq_list.append({
-                            "name": eq.equipment.name,
-                            "equipment_no": eq.equipment.equipment_no or "",
-                        })
-                locations_info.append({
-                    "location_name": loc.location.name if loc.location else "未知地点",
-                    "sort_order": loc.sort_order,
-                    "equipment": eq_list,
-                })
+                        eq_list.append(
+                            {
+                                "name": eq.equipment.name,
+                                "equipment_no": eq.equipment.equipment_no or "",
+                            }
+                        )
+                locations_info.append(
+                    {
+                        "location_name": loc.location.name
+                        if loc.location
+                        else "未知地点",
+                        "sort_order": loc.sort_order,
+                        "equipment": eq_list,
+                    }
+                )
 
         title = f"🔍 巡检任务已开始 - {task.task_no}"
         content = _build_card_content(task, equipment_names, items, locations_info)
@@ -282,17 +290,18 @@ async def send_inspection_start_notification(
             if dm_ok:
                 logger.info(
                     "  ✅ Inspection start DM sent to %s for task %s",
-                    task.assignee.name, task.task_no,
+                    task.assignee.name,
+                    task.task_no,
                 )
             else:
                 logger.error(
                     "  ❌ Failed to send DM to %s for task %s",
-                    task.assignee.name, task.task_no,
+                    task.assignee.name,
+                    task.task_no,
                 )
         else:
             logger.warning(
-                "  ⚠ Cannot send DM for task %s: "
-                "assignee=%s, feishu_user_id=%s",
+                "  ⚠ Cannot send DM for task %s: assignee=%s, feishu_user_id=%s",
                 task.task_no,
                 task.assignee.name if task.assignee else "None",
                 task.assignee.feishu_user_id if task.assignee else "N/A",
@@ -323,7 +332,9 @@ async def send_inspection_start_notification(
     except Exception as e:
         logger.error(
             "❌ send_inspection_start_notification FAILED for task %s: %s: %s",
-            task.task_no, type(e).__name__, e,
+            task.task_no,
+            type(e).__name__,
+            e,
         )
 
 
@@ -388,4 +399,3 @@ async def send_work_order_notification(
             type(e).__name__,
             e,
         )
-

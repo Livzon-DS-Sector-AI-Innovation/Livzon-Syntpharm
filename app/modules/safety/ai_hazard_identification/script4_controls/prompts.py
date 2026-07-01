@@ -87,8 +87,10 @@ OUTPUT_FORMAT = """## 输出格式
 }"""
 
 EXPECTED_KEYS = [
-    "engineering_controls", "management_controls",
-    "ppe", "emergency_measures",
+    "engineering_controls",
+    "management_controls",
+    "ppe",
+    "emergency_measures",
 ]
 
 FEWSHOT_EXAMPLES = [

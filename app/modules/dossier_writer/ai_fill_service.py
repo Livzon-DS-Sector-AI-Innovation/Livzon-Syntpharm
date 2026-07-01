@@ -1,5 +1,9 @@
 """AI 填充服务 - 编排素材提取、AI 解析、模板填充的完整流程"""
+
 import logging
+
+logger = logging.getLogger(__name__)
+
 import subprocess
 import tempfile
 import uuid
@@ -34,12 +38,16 @@ class AIFillService:
 
     async def get_asset_categories(self, chapter_code: str) -> list[dict]:
         """获取章节的素材分类列表"""
-        stmt = select(AssetCategory).where(
-            and_(
-                AssetCategory.chapter_code == chapter_code,
-                AssetCategory.is_deleted == False,
+        stmt = (
+            select(AssetCategory)
+            .where(
+                and_(
+                    AssetCategory.chapter_code == chapter_code,
+                    not AssetCategory.is_deleted,
+                )
             )
-        ).order_by(AssetCategory.sort_order)
+            .order_by(AssetCategory.sort_order)
+        )
         result = await self.db.execute(stmt)
         categories = list(result.scalars().all())
         return [
@@ -56,12 +64,16 @@ class AIFillService:
 
     async def get_field_mappings(self, chapter_code: str) -> list[FieldMapping]:
         """获取章节的字段映射配置"""
-        stmt = select(FieldMapping).where(
-            and_(
-                FieldMapping.chapter_code == chapter_code,
-                FieldMapping.is_deleted == False,
+        stmt = (
+            select(FieldMapping)
+            .where(
+                and_(
+                    FieldMapping.chapter_code == chapter_code,
+                    not FieldMapping.is_deleted,
+                )
             )
-        ).order_by(FieldMapping.sort_order)
+            .order_by(FieldMapping.sort_order)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -75,7 +87,7 @@ class AIFillService:
             .where(
                 and_(
                     ChapterAsset.chapter_id == chapter_id,
-                    ChapterAsset.is_deleted == False,
+                    not ChapterAsset.is_deleted,
                 )
             )
         )
@@ -99,7 +111,10 @@ class AIFillService:
 
         mappings = await self.get_field_mappings(chapter.chapter_code)
         if not mappings:
-            return {"success": False, "message": f"章节 {chapter.chapter_code} 没有配置字段映射"}
+            return {
+                "success": False,
+                "message": f"章节 {chapter.chapter_code} 没有配置字段映射",
+            }
 
         assets = await self.get_chapter_assets(chapter.id)
         if not assets:
@@ -114,14 +129,16 @@ class AIFillService:
 
         # 处理固定值字段
         for m in fixed_fields:
-            results.append({
-                "field_name": m.field_name,
-                "field_type": m.field_type,
-                "value": m.fixed_value,
-                "confidence": 1.0,
-                "source": "固定值",
-                "field_mapping_id": str(m.id),
-            })
+            results.append(
+                {
+                    "field_name": m.field_name,
+                    "field_type": m.field_type,
+                    "value": m.fixed_value,
+                    "confidence": 1.0,
+                    "source": "固定值",
+                    "field_mapping_id": str(m.id),
+                }
+            )
 
         # 按 source_category 分组提取
         category_groups: dict[str, list[FieldMapping]] = {}
@@ -137,15 +154,17 @@ class AIFillService:
             if not category_assets:
                 # 该分类下没有素材，所有字段标记为未找到
                 for m in group_mappings:
-                    results.append({
-                        "field_name": m.field_name,
-                        "field_type": m.field_type,
-                        "value": None,
-                        "confidence": 0.0,
-                        "source": f"分类 '{category_name}' 下无素材",
-                        "field_mapping_id": str(m.id),
-                        "source_category": m.source_category,
-                    })
+                    results.append(
+                        {
+                            "field_name": m.field_name,
+                            "field_type": m.field_type,
+                            "value": None,
+                            "confidence": 0.0,
+                            "source": f"分类 '{category_name}' 下无素材",
+                            "field_mapping_id": str(m.id),
+                            "source_category": m.source_category,
+                        }
+                    )
                 continue
 
             # 处理 table 类型字段：直接从素材文档中提取表格数据
@@ -157,27 +176,31 @@ class AIFillService:
                 for asset in category_assets:
                     table_data = self._extract_table_from_asset(asset)
                     if table_data:
-                        results.append({
-                            "field_name": m.field_name,
-                            "field_type": m.field_type,
-                            "value": table_data,
-                            "confidence": 1.0,
-                            "source": f"直接提取自: {asset.original_filename}",
-                            "field_mapping_id": str(m.id),
-                            "source_category": m.source_category,
-                        })
+                        results.append(
+                            {
+                                "field_name": m.field_name,
+                                "field_type": m.field_type,
+                                "value": table_data,
+                                "confidence": 1.0,
+                                "source": f"直接提取自: {asset.original_filename}",
+                                "field_mapping_id": str(m.id),
+                                "source_category": m.source_category,
+                            }
+                        )
                         break
 
                 if not table_data:
-                    results.append({
-                        "field_name": m.field_name,
-                        "field_type": m.field_type,
-                        "value": None,
-                        "confidence": 0.0,
-                        "source": "未能从素材中提取表格数据",
-                        "field_mapping_id": str(m.id),
-                        "source_category": m.source_category,
-                    })
+                    results.append(
+                        {
+                            "field_name": m.field_name,
+                            "field_type": m.field_type,
+                            "value": None,
+                            "confidence": 0.0,
+                            "source": "未能从素材中提取表格数据",
+                            "field_mapping_id": str(m.id),
+                            "source_category": m.source_category,
+                        }
+                    )
 
             if not non_table_fields:
                 continue
@@ -192,15 +215,17 @@ class AIFillService:
 
             if not asset_texts:
                 for m in non_table_fields:
-                    results.append({
-                        "field_name": m.field_name,
-                        "field_type": m.field_type,
-                        "value": None,
-                        "confidence": 0.0,
-                        "source": "素材文本提取失败",
-                        "field_mapping_id": str(m.id),
-                        "source_category": m.source_category,
-                    })
+                    results.append(
+                        {
+                            "field_name": m.field_name,
+                            "field_type": m.field_type,
+                            "value": None,
+                            "confidence": 0.0,
+                            "source": "素材文本提取失败",
+                            "field_mapping_id": str(m.id),
+                            "source_category": m.source_category,
+                        }
+                    )
                 continue
 
             # 调用 AI 提取非表格字段
@@ -208,7 +233,8 @@ class AIFillService:
                 {
                     "field_name": m.field_name,
                     "field_type": m.field_type,
-                    "extraction_prompt": m.extraction_prompt or f"提取 {m.field_name} 的值",
+                    "extraction_prompt": m.extraction_prompt
+                    or f"提取 {m.field_name} 的值",
                 }
                 for m in non_table_fields
             ]
@@ -223,46 +249,51 @@ class AIFillService:
                 parsed_result = await self.llm.chat_json(messages)
             except LLMError as e:
                 for m in non_table_fields:
-                    results.append({
-                        "field_name": m.field_name,
-                        "field_type": m.field_type,
-                        "value": None,
-                        "confidence": 0.0,
-                        "source": f"AI 提取失败: {e}",
-                        "field_mapping_id": str(m.id),
-                        "source_category": m.source_category,
-                    })
+                    results.append(
+                        {
+                            "field_name": m.field_name,
+                            "field_type": m.field_type,
+                            "value": None,
+                            "confidence": 0.0,
+                            "source": f"AI 提取失败: {e}",
+                            "field_mapping_id": str(m.id),
+                            "source_category": m.source_category,
+                        }
+                    )
                 continue
 
             # 解析 AI 返回的字段
             parsed_fields = {
-                f["field_name"]: f
-                for f in parsed_result.get("fields", [])
+                f["field_name"]: f for f in parsed_result.get("fields", [])
             }
 
             for m in non_table_fields:
                 extracted = parsed_fields.get(m.field_name, {})
-                results.append({
-                    "field_name": m.field_name,
-                    "field_type": m.field_type,
-                    "value": extracted.get("value"),
-                    "confidence": extracted.get("confidence", 0.5),
-                    "source": extracted.get("source", "未知来源"),
-                    "field_mapping_id": str(m.id),
-                    "source_category": m.source_category,
-                })
+                results.append(
+                    {
+                        "field_name": m.field_name,
+                        "field_type": m.field_type,
+                        "value": extracted.get("value"),
+                        "confidence": extracted.get("confidence", 0.5),
+                        "source": extracted.get("source", "未知来源"),
+                        "field_mapping_id": str(m.id),
+                        "source_category": m.source_category,
+                    }
+                )
 
         # 处理图片类字段
         for m in image_fields:
-            results.append({
-                "field_name": m.field_name,
-                "field_type": m.field_type,
-                "value": m.appendix_slot or "待插入",
-                "confidence": 1.0,
-                "source": "图片类字段，确认后插入",
-                "field_mapping_id": str(m.id),
-                "source_category": m.source_category,
-            })
+            results.append(
+                {
+                    "field_name": m.field_name,
+                    "field_type": m.field_type,
+                    "value": m.appendix_slot or "待插入",
+                    "confidence": 1.0,
+                    "source": "图片类字段，确认后插入",
+                    "field_mapping_id": str(m.id),
+                    "source_category": m.source_category,
+                }
+            )
 
         return {
             "success": True,
@@ -279,7 +310,10 @@ class AIFillService:
         """用户确认后，将字段值写入文档"""
         working_path = Path(dossier.working_path) / chapter.working_file
         if not working_path.exists():
-            return {"success": False, "message": f"工作副本不存在: {chapter.working_file}"}
+            return {
+                "success": False,
+                "message": f"工作副本不存在: {chapter.working_file}",
+            }
 
         doc = Document(str(working_path))
 
@@ -292,27 +326,38 @@ class AIFillService:
         template_tables = []
         for t_idx, table in enumerate(doc.tables):
             rows_data = [
-                [cell.text.strip()[:30] for cell in row.cells]
-                for row in table.rows[:5]
+                [cell.text.strip()[:30] for cell in row.cells] for row in table.rows[:5]
             ]
-            template_tables.append({
-                "index": t_idx,
-                "rows": len(table.rows),
-                "cols": len(table.columns),
-                "preview": rows_data,
-            })
+            template_tables.append(
+                {
+                    "index": t_idx,
+                    "rows": len(table.rows),
+                    "cols": len(table.columns),
+                    "preview": rows_data,
+                }
+            )
 
         # 调用 AI 确定每个字段的填充位置
-        text_fields = [f for f in user_confirmed_fields if f.get("value") is not None and f.get("field_type") != "image_appendix"]
+        text_fields = [
+            f
+            for f in user_confirmed_fields
+            if f.get("value") is not None and f.get("field_type") != "image_appendix"
+        ]
 
         fill_instructions = []
         if text_fields:
-            _logger.info(f"[Fill] Template has {len(template_paragraphs)} paragraphs, {len(template_tables)} tables")
+            _logger.info(
+                f"[Fill] Template has {len(template_paragraphs)} paragraphs, {len(template_tables)} tables"
+            )
             for p in template_paragraphs[:30]:
                 _logger.info(f"  P[{p['index']}]: {p['text'][:80]}")
             for t in template_tables:
-                _logger.info(f"  T[{t['index']}]: {t['rows']}x{t['cols']} preview={t['preview'][:2]}")
-            _logger.info(f"[Fill] Fields to fill: {[f['field_name'] for f in text_fields]}")
+                _logger.info(
+                    f"  T[{t['index']}]: {t['rows']}x{t['cols']} preview={t['preview'][:2]}"
+                )
+            _logger.info(
+                f"[Fill] Fields to fill: {[f['field_name'] for f in text_fields]}"
+            )
 
             messages = build_fill_location_prompt(
                 template_paragraphs=template_paragraphs,
@@ -322,9 +367,13 @@ class AIFillService:
             try:
                 parsed_result = await self.llm.chat_json(messages)
                 fill_instructions = parsed_result.get("fills", [])
-                _logger.info(f"[Fill] AI returned {len(fill_instructions)} fill instructions:")
+                _logger.info(
+                    f"[Fill] AI returned {len(fill_instructions)} fill instructions:"
+                )
                 for inst in fill_instructions:
-                    _logger.info(f"  {inst.get('field_name')}: action={inst.get('fill_action')} target={inst.get('target')}")
+                    _logger.info(
+                        f"  {inst.get('field_name')}: action={inst.get('fill_action')} target={inst.get('target')}"
+                    )
             except LLMError as e:
                 _logger.warning(f"[Fill] AI location prompt failed: {e}")
 
@@ -341,27 +390,37 @@ class AIFillService:
             if field_type == "image_appendix":
                 # 图片类字段：检查是否已手动插入
                 if value and str(value).startswith("已插入"):
-                    fill_results.append({
-                        "field_name": field_name,
-                        "status": "filled",
-                        "message": "已通过选择页手动插入",
-                    })
+                    fill_results.append(
+                        {
+                            "field_name": field_name,
+                            "status": "filled",
+                            "message": "已通过选择页手动插入",
+                        }
+                    )
                 else:
                     # 未手动插入，尝试自动插入
-                    success = await self._auto_insert_image(doc, field_name, field_data, chapter, chapter_assets)
-                    fill_results.append({
-                        "field_name": field_name,
-                        "status": "filled" if success else "skipped",
-                        "message": "图片已自动插入" if success else "未插入（请通过选择页手动插入）",
-                    })
+                    success = await self._auto_insert_image(
+                        doc, field_name, field_data, chapter, chapter_assets
+                    )
+                    fill_results.append(
+                        {
+                            "field_name": field_name,
+                            "status": "filled" if success else "skipped",
+                            "message": "图片已自动插入"
+                            if success
+                            else "未插入（请通过选择页手动插入）",
+                        }
+                    )
                 continue
 
             if value is None:
-                fill_results.append({
-                    "field_name": field_name,
-                    "status": "skipped",
-                    "message": "值为空，跳过",
-                })
+                fill_results.append(
+                    {
+                        "field_name": field_name,
+                        "status": "skipped",
+                        "message": "值为空，跳过",
+                    }
+                )
                 continue
 
             # 找到对应的填充指令
@@ -373,22 +432,32 @@ class AIFillService:
 
             if instruction and instruction.get("fill_action") != "skip":
                 success = self._execute_fill(doc, instruction, value)
-                _logger.info(f"[Fill] {field_name}: action={instruction.get('fill_action')} result={'OK' if success else 'FAIL'}")
-                fill_results.append({
-                    "field_name": field_name,
-                    "status": "filled" if success else "failed",
-                    "message": "填充成功" if success else "填充执行失败",
-                })
+                _logger.info(
+                    f"[Fill] {field_name}: action={instruction.get('fill_action')} result={'OK' if success else 'FAIL'}"
+                )
+                fill_results.append(
+                    {
+                        "field_name": field_name,
+                        "status": "filled" if success else "failed",
+                        "message": "填充成功" if success else "填充执行失败",
+                    }
+                )
             else:
                 # 没有填充指令，尝试 fallback 策略
                 _logger.info(f"[Fill] {field_name}: no instruction, trying fallback")
                 success = self._fallback_fill(doc, field_name, value, field_type)
-                _logger.info(f"[Fill] {field_name}: fallback result={'OK' if success else 'FAIL'}")
-                fill_results.append({
-                    "field_name": field_name,
-                    "status": "filled" if success else "no_match",
-                    "message": "填充成功(fallback)" if success else "模板中未找到匹配位置",
-                })
+                _logger.info(
+                    f"[Fill] {field_name}: fallback result={'OK' if success else 'FAIL'}"
+                )
+                fill_results.append(
+                    {
+                        "field_name": field_name,
+                        "status": "filled" if success else "no_match",
+                        "message": "填充成功(fallback)"
+                        if success
+                        else "模板中未找到匹配位置",
+                    }
+                )
 
         # 保存文档
         doc.save(str(working_path))
@@ -407,7 +476,9 @@ class AIFillService:
                 chapter_id=chapter.id,
                 field_mapping_id=uuid.UUID(mapping_id),
                 field_name=field_data["field_name"],
-                filled_value=str(field_data.get("value", "")) if field_data.get("value") is not None else None,
+                filled_value=str(field_data.get("value", ""))
+                if field_data.get("value") is not None
+                else None,
                 fill_method="ai",
                 confidence=field_data.get("confidence"),
                 status="filled" if field_data.get("value") is not None else "pending",
@@ -438,7 +509,10 @@ class AIFillService:
 
         extracted = self.extractor.extract(file_path)
         if not extracted.get("page_texts"):
-            return {"success": False, "message": f"PDF 提取失败: {extracted.get('error', '')}"}
+            return {
+                "success": False,
+                "message": f"PDF 提取失败: {extracted.get('error', '')}",
+            }
 
         messages = build_split_pages_prompt(
             page_texts=extracted["page_texts"],
@@ -459,7 +533,11 @@ class AIFillService:
                 page_number=page_info.get("page_number", 1),
                 page_type=page_info.get("page_type", "未知"),
                 content_summary=page_info.get("content_summary", ""),
-                ocr_text=extracted["page_texts"][page_info.get("page_number", 1) - 1]["text"] if page_info.get("page_number") else "",
+                ocr_text=extracted["page_texts"][page_info.get("page_number", 1) - 1][
+                    "text"
+                ]
+                if page_info.get("page_number")
+                else "",
                 appendix_slot=page_info.get("appendix_slot"),
                 status="pending",
             )
@@ -548,7 +626,7 @@ class AIFillService:
         matched = []
         uncategorized = []
         for asset in assets:
-            cat_name = getattr(asset, '_category_name', None)
+            cat_name = getattr(asset, "_category_name", None)
             if cat_name == category_name:
                 matched.append(asset)
             elif cat_name is None:
@@ -559,7 +637,7 @@ class AIFillService:
             return matched
 
         # 如果没有任何素材被分类，返回空列表（让用户先分类）
-        if all(getattr(a, '_category_name', None) is None for a in assets):
+        if all(getattr(a, "_category_name", None) is None for a in assets):
             return assets  # 全部未分类时回退到全部（兼容旧数据）
 
         return matched
@@ -579,9 +657,18 @@ class AIFillService:
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     result = subprocess.run(
-                        ["libreoffice", "--headless", "--convert-to", "docx",
-                         "--outdir", tmpdir, str(file_path)],
-                        capture_output=True, text=True, timeout=30,
+                        [
+                            "libreoffice",
+                            "--headless",
+                            "--convert-to",
+                            "docx",
+                            "--outdir",
+                            tmpdir,
+                            str(file_path),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
                     )
                     if result.returncode == 0:
                         converted = Path(tmpdir) / (file_path.stem + ".docx")
@@ -620,12 +707,12 @@ class AIFillService:
 
                 # Found the table - extract data rows after header
                 data_rows = []
-                for row in table.rows[header_row_idx + 1:]:
+                for row in table.rows[header_row_idx + 1 :]:
                     cells = [cell.text.strip() for cell in row.cells]
                     # Deduplicate merged cell values
                     deduped = []
                     for j, cell_val in enumerate(cells):
-                        if j == 0 or cell_val != cells[j-1]:
+                        if j == 0 or cell_val != cells[j - 1]:
                             deduped.append(cell_val)
                     # Skip empty rows and "备注" rows
                     if not deduped or not any(v for v in deduped):
@@ -758,13 +845,19 @@ class AIFillService:
         footer_row = None
         last_row = table.rows[-1]
         last_row_text = last_row.cells[0].text.strip()
-        if "备注" in last_row_text or any(cell._tc.find(qn('w:tcPr')) is not None and
-                                           cell._tc.find(qn('w:tcPr')).find(qn('w:gridSpan')) is not None
-                                           for cell in last_row.cells):
+        if "备注" in last_row_text or any(
+            cell._tc.find(qn("w:tcPr")) is not None
+            and cell._tc.find(qn("w:tcPr")).find(qn("w:gridSpan")) is not None
+            for cell in last_row.cells
+        ):
             footer_row = last_row._tr
 
         # Remove all data rows (between header and footer)
-        rows_to_remove = table.rows[header_rows:-1] if footer_row is not None else table.rows[header_rows:]
+        rows_to_remove = (
+            table.rows[header_rows:-1]
+            if footer_row is not None
+            else table.rows[header_rows:]
+        )
         for row in rows_to_remove:
             tbl_elem.remove(row._tr)
 
@@ -777,11 +870,11 @@ class AIFillService:
             new_tr = deepcopy(template_row)
 
             # Remove vMerge from all cells (each row is independent)
-            cells = new_tr.findall(qn('w:tc'))
+            cells = new_tr.findall(qn("w:tc"))
             for j, cell_elem in enumerate(cells):
-                tcPr = cell_elem.find(qn('w:tcPr'))
+                tcPr = cell_elem.find(qn("w:tcPr"))
                 if tcPr is not None:
-                    vmerge = tcPr.find(qn('w:vMerge'))
+                    vmerge = tcPr.find(qn("w:vMerge"))
                     if vmerge is not None:
                         tcPr.remove(vmerge)
 
@@ -790,13 +883,13 @@ class AIFillService:
                 if j < len(cells):
                     cell_elem = cells[j]
                     # Clear existing paragraphs
-                    for p in cell_elem.findall(qn('w:p')):
+                    for p in cell_elem.findall(qn("w:p")):
                         cell_elem.remove(p)
 
                     # Add new paragraph with text
                     new_p = parse_xml(
                         '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                        f'<w:r><w:t>{cell_value if cell_value else ""}</w:t></w:r></w:p>'
+                        f"<w:r><w:t>{cell_value if cell_value else ''}</w:t></w:r></w:p>"
                     )
                     cell_elem.append(new_p)
 
@@ -808,7 +901,9 @@ class AIFillService:
 
         return True
 
-    def _fallback_fill(self, doc: Document, field_name: str, value: Any, field_type: str) -> bool:
+    def _fallback_fill(
+        self, doc: Document, field_name: str, value: Any, field_type: str
+    ) -> bool:
         """Fallback 填充策略：当 AI 未返回填充指令时，按关键词在文档中查找"""
         str_value = str(value) if not isinstance(value, (list, dict)) else value
 
@@ -852,10 +947,11 @@ class AIFillService:
         chapter_assets: list[ChapterAsset],
     ) -> bool:
         """自动从素材中提取图片并插入到文档的附录位置
-        
+
         使用 FieldMapping.source_category 精确定位素材，不再依赖关键词硬编码匹配。
         """
         import logging
+
         _logger = logging.getLogger(__name__)
         from .field_models import FieldMapping
 
@@ -867,50 +963,71 @@ class AIFillService:
             mapping = await self.db.get(FieldMapping, uuid.UUID(mapping_id))
             if mapping:
                 source_category = mapping.source_category
-                _logger.info(f"[ImageInsert] {field_name}: field_mapping source_category={source_category}")
+                _logger.info(
+                    f"[ImageInsert] {field_name}: field_mapping source_category={source_category}"
+                )
 
         # 2. 使用 _filter_assets_by_category 精确匹配素材
         target_asset = None
         if source_category:
-            matched_assets = self._filter_assets_by_category(chapter_assets, source_category)
+            matched_assets = self._filter_assets_by_category(
+                chapter_assets, source_category
+            )
             if matched_assets:
                 target_asset = matched_assets[0]
-                _logger.info(f"[ImageInsert] {field_name}: matched asset via source_category: {target_asset.original_filename}")
+                _logger.info(
+                    f"[ImageInsert] {field_name}: matched asset via source_category: {target_asset.original_filename}"
+                )
 
         # 3. 如果 FieldMapping 匹配失败，回退到 AssetCategory.category_type 匹配
         if not target_asset:
             from .field_models import AssetCategory
+
             cat_stmt = select(AssetCategory).where(
                 and_(
                     AssetCategory.chapter_code == chapter.chapter_code,
                     AssetCategory.category_type == "image_appendix",
-                    AssetCategory.is_deleted == False,
+                    not AssetCategory.is_deleted,
                 )
             )
             cat_result = await self.db.execute(cat_stmt)
             image_categories = list(cat_result.scalars().all())
 
             for cat in image_categories:
-                matched = self._filter_assets_by_category(chapter_assets, cat.category_name)
+                matched = self._filter_assets_by_category(
+                    chapter_assets, cat.category_name
+                )
                 if matched:
                     # 检查附录编号是否匹配
                     appendix_slot = field_data.get("value", "")
-                    if cat.appendix_slot and appendix_slot and cat.appendix_slot in appendix_slot:
+                    if (
+                        cat.appendix_slot
+                        and appendix_slot
+                        and cat.appendix_slot in appendix_slot
+                    ):
                         target_asset = matched[0]
-                        _logger.info(f"[ImageInsert] {field_name}: matched via appendix_slot: {target_asset.original_filename}")
+                        _logger.info(
+                            f"[ImageInsert] {field_name}: matched via appendix_slot: {target_asset.original_filename}"
+                        )
                         break
 
             # 如果附录编号不匹配，取第一个图片类素材
             if not target_asset:
                 for cat in image_categories:
-                    matched = self._filter_assets_by_category(chapter_assets, cat.category_name)
+                    matched = self._filter_assets_by_category(
+                        chapter_assets, cat.category_name
+                    )
                     if matched:
                         target_asset = matched[0]
-                        _logger.info(f"[ImageInsert] {field_name}: fallback to image category asset: {target_asset.original_filename}")
+                        _logger.info(
+                            f"[ImageInsert] {field_name}: fallback to image category asset: {target_asset.original_filename}"
+                        )
                         break
 
         if not target_asset:
-            _logger.warning(f"[ImageInsert] {field_name}: no matching asset found (source_category={source_category})")
+            _logger.warning(
+                f"[ImageInsert] {field_name}: no matching asset found (source_category={source_category})"
+            )
             return False
 
         # 4. 转换素材的第一页为图片
@@ -921,7 +1038,9 @@ class AIFillService:
 
         img_path = self.extractor.pdf_page_to_image(file_path, 1)
         if not img_path:
-            _logger.warning(f"[ImageInsert] {field_name}: failed to convert to image (only PDF supported)")
+            _logger.warning(
+                f"[ImageInsert] {field_name}: failed to convert to image (only PDF supported)"
+            )
             return False
 
         # 5. 在文档中查找附录位置并插入图片
@@ -936,7 +1055,9 @@ class AIFillService:
         _logger.info(f"[ImageInsert] {field_name}: insert result = {success}")
         return success
 
-    def _insert_image_at_appendix(self, doc: Document, appendix_slot: str, img_path: Path) -> bool:
+    def _insert_image_at_appendix(
+        self, doc: Document, appendix_slot: str, img_path: Path
+    ) -> bool:
         """在模板的附录位置插入图片"""
         from docx.shared import Cm
 
@@ -960,7 +1081,9 @@ class AIFillService:
                     run.add_picture(str(img_path), width=Cm(15))
                     return True
                 # If we hit another non-empty paragraph (next appendix or section), stop
-                if next_para.text.strip() and not next_para.text.strip().startswith(appendix_slot):
+                if next_para.text.strip() and not next_para.text.strip().startswith(
+                    appendix_slot
+                ):
                     # Insert before this paragraph
                     new_para = doc.add_paragraph()
                     run = new_para.add_run()

@@ -21,7 +21,9 @@ from app.core.database import async_session_factory  # noqa: E402
 from app.platform.identity.models import Department, User  # noqa: E402
 
 # 从 .env 读取同步目标（缺省福州福兴）
-_TARGET_ID = os.environ.get("FEISHU_SYNC_MEMBER_DEPT_ID", "od-071212463565ebca263941d217cb6e52")
+_TARGET_ID = os.environ.get(
+    "FEISHU_SYNC_MEMBER_DEPT_ID", "od-071212463565ebca263941d217cb6e52"
+)
 CONCURRENCY = 10
 
 
@@ -38,6 +40,7 @@ async def _get_client_and_token(settings: Settings):
         InternalTenantAccessTokenRequest,
         InternalTenantAccessTokenRequestBody,
     )
+
     req = (
         InternalTenantAccessTokenRequest.builder()
         .request_body(
@@ -56,7 +59,10 @@ async def _get_client_and_token(settings: Settings):
 
 
 async def _fetch_dept_users(
-    client, token: str, dept_id: str, dept_name: str,
+    client,
+    token: str,
+    dept_id: str,
+    dept_name: str,
 ) -> tuple[list[dict], str, int]:
     """获取某部门直属成员，返回 (用户列表, 部门名, 用户数)"""
     from lark_oapi.api.contact.v3 import FindByDepartmentUserRequest
@@ -81,20 +87,24 @@ async def _fetch_dept_users(
         data = json.loads(raw_data.decode("utf-8")).get("data", {})
         for u in data.get("items", []):
             avatar = u.get("avatar", {}) or {}
-            users.append({
-                "user_id": u.get("user_id", ""),
-                "open_id": u.get("open_id", ""),
-                "name": u.get("name", ""),
-                "employee_no": u.get("employee_no", ""),
-                "email": u.get("email", ""),
-                "mobile": u.get("mobile", ""),
-                "job_title": u.get("job_title", ""),
-                "department_ids": u.get("department_ids", []),
-                "avatar_url": (
-                    avatar.get("avatar_240") or avatar.get("avatar_640")
-                    or avatar.get("avatar_72") or ""
-                ),
-            })
+            users.append(
+                {
+                    "user_id": u.get("user_id", ""),
+                    "open_id": u.get("open_id", ""),
+                    "name": u.get("name", ""),
+                    "employee_no": u.get("employee_no", ""),
+                    "email": u.get("email", ""),
+                    "mobile": u.get("mobile", ""),
+                    "job_title": u.get("job_title", ""),
+                    "department_ids": u.get("department_ids", []),
+                    "avatar_url": (
+                        avatar.get("avatar_240")
+                        or avatar.get("avatar_640")
+                        or avatar.get("avatar_72")
+                        or ""
+                    ),
+                }
+            )
         if not data.get("has_more"):
             break
         page_token = data.get("page_token", "")
@@ -113,14 +123,16 @@ async def main():
 
     # 1. 读取部门，筛选目标部门及其子部门
     async with async_session_factory() as db:
-        all_db_depts = list(await db.scalars(
-            select(Department)
-            .where(
-                Department.is_deleted == False,  # noqa: E712
-                Department.status_is_deleted == False,  # noqa: E712
+        all_db_depts = list(
+            await db.scalars(
+                select(Department)
+                .where(
+                    Department.is_deleted == False,  # noqa: E712
+                    Department.status_is_deleted == False,  # noqa: E712
+                )
+                .order_by(Department.order, Department.name),
             )
-            .order_by(Department.order, Department.name),
-        ))
+        )
     if not all_db_depts:
         print("❌ 无部门数据，请先运行 sync_lizhu_departments.py", file=sys.stderr)
         sys.exit(1)
@@ -166,7 +178,10 @@ async def main():
         nonlocal done
         async with sem:
             result = await _fetch_dept_users(
-                client, token, dept.feishu_department_id, dept.name,
+                client,
+                token,
+                dept.feishu_department_id,
+                dept.name,
             )
         async with lock:
             nonlocal done
@@ -179,7 +194,8 @@ async def main():
                 f"\r  [{bar}] {done}/{total} ({pct}%) "
                 f"| {rate:.1f} dept/s | {result[2]} 人 [{result[1]}]"
                 f"\033[K",
-                end="", flush=True,
+                end="",
+                flush=True,
             )
         return result
 
@@ -218,7 +234,8 @@ async def main():
                 )
 
             dept_ids_json = json.dumps(
-                u.get("department_ids", []), ensure_ascii=False,
+                u.get("department_ids", []),
+                ensure_ascii=False,
             )
             if existing:
                 existing.name = u["name"] or existing.name
@@ -237,18 +254,20 @@ async def main():
                 if not existing.feishu_user_id:
                     existing.feishu_user_id = u["user_id"]
             else:
-                db.add(User(
-                    name=u["name"],
-                    feishu_user_id=u["user_id"],
-                    feishu_open_id=oid,
-                    employee_no=u.get("employee_no") or None,
-                    email=u.get("email") or None,
-                    mobile=u.get("mobile") or None,
-                    department=u["dept_name"],
-                    position=u.get("job_title"),
-                    avatar_url=u.get("avatar_url") or None,
-                    feishu_department_ids=dept_ids_json,
-                ))
+                db.add(
+                    User(
+                        name=u["name"],
+                        feishu_user_id=u["user_id"],
+                        feishu_open_id=oid,
+                        employee_no=u.get("employee_no") or None,
+                        email=u.get("email") or None,
+                        mobile=u.get("mobile") or None,
+                        department=u["dept_name"],
+                        position=u.get("job_title"),
+                        avatar_url=u.get("avatar_url") or None,
+                        feishu_department_ids=dept_ids_json,
+                    )
+                )
             if (i + 1) % 50 == 0:
                 print(f"  写入 {i + 1}/{len(all_users)} ...")
         await db.commit()

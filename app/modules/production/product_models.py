@@ -18,9 +18,7 @@ class Product(BaseModel):
     workshop: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True, comment="车间名称"
     )
-    name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="产品名称"
-    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="产品名称")
     description: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="产品描述"
     )

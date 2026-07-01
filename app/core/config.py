@@ -60,7 +60,6 @@ class Settings(BaseSettings):
     AI_BASE_URL: str = "https://api.openai.com/v1"
     AI_VISION_MODEL: str = "gpt-4o"
 
-
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
 

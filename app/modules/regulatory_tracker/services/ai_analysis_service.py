@@ -38,8 +38,16 @@ VALID_RELEVANCE_LEVELS = {"related", "weak_related", "unrelated"}
 
 # 有效的生命周期环节（固定 10 个）
 VALID_LIFECYCLE_AREAS = [
-    "药品研发", "工艺开发", "分析方法", "质量标准", "稳定性研究",
-    "生产管理", "GMP管理", "注册申报", "变更管理", "上市后维护",
+    "药品研发",
+    "工艺开发",
+    "分析方法",
+    "质量标准",
+    "稳定性研究",
+    "生产管理",
+    "GMP管理",
+    "注册申报",
+    "变更管理",
+    "上市后维护",
 ]
 
 # 有效的影响部门（固定候选 7 个）
@@ -47,21 +55,42 @@ VALID_DEPARTMENTS = ["注册", "QA", "QC", "研发", "生产", "验证", "供应
 
 # 有效的 CTD 章节（固定候选 7 个）
 VALID_CTD_SECTIONS = [
-    "3.2.S.1", "3.2.S.2", "3.2.S.3", "3.2.S.4",
-    "3.2.S.5", "3.2.S.6", "3.2.S.7",
+    "3.2.S.1",
+    "3.2.S.2",
+    "3.2.S.3",
+    "3.2.S.4",
+    "3.2.S.5",
+    "3.2.S.6",
+    "3.2.S.7",
 ]
 
 # 评估型表达动词（建议行动必须包含其中之一）
 ASSESSMENT_VERBS = [
-    "评估", "核查", "组织", "关注", "审视", "审查",
-    "梳理", "排查", "确认", "研判",
+    "评估",
+    "核查",
+    "组织",
+    "关注",
+    "审视",
+    "审查",
+    "梳理",
+    "排查",
+    "确认",
+    "研判",
 ]
 
 # 禁止的命令式表达
 FORBIDDEN_PATTERNS = [
-    r"^立即", r"^必须", r"^应当立即", r"^请.*执行",
-    r"^启动", r"^落实", r"^确保", r"^通知.*执行",
-    r"^更新(?!是否需要)", r"^修改(?!是否)", r"^制定(?!是否需要)",
+    r"^立即",
+    r"^必须",
+    r"^应当立即",
+    r"^请.*执行",
+    r"^启动",
+    r"^落实",
+    r"^确保",
+    r"^通知.*执行",
+    r"^更新(?!是否需要)",
+    r"^修改(?!是否)",
+    r"^制定(?!是否需要)",
 ]
 
 # 最大重试次数
@@ -316,7 +345,10 @@ def build_analysis_prompt(document: RegulatoryDocument) -> list[dict]:
 - none 影响的法规：departments=[]、ctd_sections=[]、lifecycle_impacts 全部 affected=false"""
 
     return [
-        {"role": "system", "content": "你是专业的药品注册和 GMP 合规专家，专注于化学原料药领域的法规分析。你的分析必须严谨、准确，基于法规原文内容。你提供的是评估建议，不是最终决策。"},
+        {
+            "role": "system",
+            "content": "你是专业的药品注册和 GMP 合规专家，专注于化学原料药领域的法规分析。你的分析必须严谨、准确，基于法规原文内容。你提供的是评估建议，不是最终决策。",
+        },
         {"role": "user", "content": prompt},
     ]
 
@@ -341,7 +373,9 @@ def validate_impact_result(result: dict) -> dict:
     # 确保 impact_level 与 impact_score 一致
     expected_level = score_to_impact_level(result["impact_score"])
     if result["impact_level"] != expected_level:
-        logger.warning(f"Impact level mismatch: score={result['impact_score']}, level={result['impact_level']}, expected={expected_level}")
+        logger.warning(
+            f"Impact level mismatch: score={result['impact_score']}, level={result['impact_level']}, expected={expected_level}"
+        )
         result["impact_level"] = expected_level
 
     # 验证 relevance_level（带 fallback）
@@ -364,7 +398,13 @@ def validate_impact_result(result: dict) -> dict:
                 item["reason"] = ""
 
     # 过滤数组字段
-    array_fields = ["departments", "ctd_sections", "recommended_actions", "evidence", "evidence_excerpts"]
+    array_fields = [
+        "departments",
+        "ctd_sections",
+        "recommended_actions",
+        "evidence",
+        "evidence_excerpts",
+    ]
     for field in array_fields:
         if not isinstance(result.get(field), list):
             result[field] = []
@@ -373,7 +413,9 @@ def validate_impact_result(result: dict) -> dict:
     result["departments"] = [d for d in result["departments"] if d in VALID_DEPARTMENTS]
 
     # 过滤 ctd_sections 为有效值
-    result["ctd_sections"] = [c for c in result["ctd_sections"] if c in VALID_CTD_SECTIONS]
+    result["ctd_sections"] = [
+        c for c in result["ctd_sections"] if c in VALID_CTD_SECTIONS
+    ]
 
     # 验证 confidence
     try:
@@ -388,7 +430,9 @@ def validate_impact_result(result: dict) -> dict:
             result[field] = ""
 
     # 确保 evidence_excerpts 是字符串数组
-    result["evidence_excerpts"] = [e for e in result["evidence_excerpts"] if isinstance(e, str)]
+    result["evidence_excerpts"] = [
+        e for e in result["evidence_excerpts"] if isinstance(e, str)
+    ]
 
     # ===== 规则兜底逻辑 =====
 
@@ -408,7 +452,9 @@ def validate_impact_result(result: dict) -> dict:
                 item["affected"] = False
                 item["reason"] = ""
         # 只保留 1 条归档建议
-        if not result["recommended_actions"] or not _action_is_assessment_style(result["recommended_actions"][0]):
+        if not result["recommended_actions"] or not _action_is_assessment_style(
+            result["recommended_actions"][0]
+        ):
             result["recommended_actions"] = ["与原料药企业无关，归档留存"]
         else:
             result["recommended_actions"] = result["recommended_actions"][:1]
@@ -461,7 +507,9 @@ def validate_impact_result(result: dict) -> dict:
     if not isinstance(result.get("focus_required"), bool):
         result["focus_required"] = impact_level_to_focus_required(impact_level)
     if not isinstance(result.get("archive_recommended"), bool):
-        result["archive_recommended"] = impact_level_to_archive_recommended(impact_level)
+        result["archive_recommended"] = impact_level_to_archive_recommended(
+            impact_level
+        )
     if not isinstance(result.get("notification_required"), bool):
         result["notification_required"] = impact_level in ("high", "medium")
 
@@ -503,26 +551,44 @@ async def analyze_document(document: RegulatoryDocument) -> dict[str, Any]:
     except LLMError as e:
         logger.error(f"AI 分析文档失败 [{document.document_id}]: {e}")
         return {
-            "executive_summary": None, "regulation_type": None,
-            "impact_score": None, "impact_level": None,
-            "relevance_level": None, "lifecycle_impacts": None,
-            "departments": None, "ctd_sections": None,
-            "recommended_actions": None, "focus_required": None,
-            "archive_recommended": None, "notification_required": None,
-            "confidence": None, "evidence": None,
-            "evidence_excerpts": None, "status": "failed", "error": str(e),
+            "executive_summary": None,
+            "regulation_type": None,
+            "impact_score": None,
+            "impact_level": None,
+            "relevance_level": None,
+            "lifecycle_impacts": None,
+            "departments": None,
+            "ctd_sections": None,
+            "recommended_actions": None,
+            "focus_required": None,
+            "archive_recommended": None,
+            "notification_required": None,
+            "confidence": None,
+            "evidence": None,
+            "evidence_excerpts": None,
+            "status": "failed",
+            "error": str(e),
         }
     except Exception as e:
         logger.error(f"AI 分析文档异常 [{document.document_id}]: {e}")
         return {
-            "executive_summary": None, "regulation_type": None,
-            "impact_score": None, "impact_level": None,
-            "relevance_level": None, "lifecycle_impacts": None,
-            "departments": None, "ctd_sections": None,
-            "recommended_actions": None, "focus_required": None,
-            "archive_recommended": None, "notification_required": None,
-            "confidence": None, "evidence": None,
-            "evidence_excerpts": None, "status": "failed", "error": str(e),
+            "executive_summary": None,
+            "regulation_type": None,
+            "impact_score": None,
+            "impact_level": None,
+            "relevance_level": None,
+            "lifecycle_impacts": None,
+            "departments": None,
+            "ctd_sections": None,
+            "recommended_actions": None,
+            "focus_required": None,
+            "archive_recommended": None,
+            "notification_required": None,
+            "confidence": None,
+            "evidence": None,
+            "evidence_excerpts": None,
+            "status": "failed",
+            "error": str(e),
         }
 
 
@@ -532,12 +598,12 @@ async def analyze_and_update(
     force: bool = False,
 ) -> bool:
     """分析文档并更新数据库（自动工作流）。
-    
+
     Args:
         db: 数据库会话
         document: 待分析的文档
         force: 是否强制重新分析（忽略缓存）
-    
+
     Returns:
         是否成功
     """
@@ -557,9 +623,13 @@ async def analyze_and_update(
 
     # ===== 标记为分析中 =====
     logger.info(f"[{doc_id}] AI 分析开始: {doc_title}")
-    await repo.update_document(db, document.id, {
-        "ai_analysis_status": "pending",
-    })
+    await repo.update_document(
+        db,
+        document.id,
+        {
+            "ai_analysis_status": "pending",
+        },
+    )
     await db.commit()
 
     # ===== 执行 AI 分析（带重试） =====
@@ -574,13 +644,17 @@ async def analyze_and_update(
             else:
                 retry_count += 1
                 if retry_count < MAX_RETRY_ATTEMPTS:
-                    logger.warning(f"[{doc_id}] AI 分析失败，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {result.get('error')}")
-                    await asyncio.sleep(2 ** retry_count)  # 指数退避
+                    logger.warning(
+                        f"[{doc_id}] AI 分析失败，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {result.get('error')}"
+                    )
+                    await asyncio.sleep(2**retry_count)  # 指数退避
         except Exception as e:
             retry_count += 1
             if retry_count < MAX_RETRY_ATTEMPTS:
-                logger.warning(f"[{doc_id}] AI 分析异常，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {e}")
-                await asyncio.sleep(2 ** retry_count)
+                logger.warning(
+                    f"[{doc_id}] AI 分析异常，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {e}"
+                )
+                await asyncio.sleep(2**retry_count)
 
     # ===== 更新分析结果 =====
     elapsed_time = time.time() - start_time
@@ -639,11 +713,15 @@ async def analyze_and_update(
             archive_recommended=None,
         )
 
-        await repo.update_document(db, document.id, {
-            "ai_analysis_status": "failed",
-            "ai_analyzed_at": datetime.now(UTC),
-            "document_category": document_category,
-        })
+        await repo.update_document(
+            db,
+            document.id,
+            {
+                "ai_analysis_status": "failed",
+                "ai_analyzed_at": datetime.now(UTC),
+                "document_category": document_category,
+            },
+        )
         await db.commit()
 
         logger.error(
@@ -664,8 +742,8 @@ async def analyze_new_documents(
 
     stmt = select(RegulatoryDocument).where(
         and_(
-            RegulatoryDocument.is_deleted == False,
-            RegulatoryDocument.ai_analysis_status == None,
+            not RegulatoryDocument.is_deleted,
+            RegulatoryDocument.ai_analysis_status is None,
         )
     )
 

@@ -79,8 +79,12 @@ class SopGeneratorService:
         if minio_enabled() and os.path.exists(pdf_local_path):
             with open(pdf_local_path, "rb") as f:
                 pdf_data = f.read()
-            object_key = f"regulation/{reg.id}_export_{int(datetime.now().timestamp())}.pdf"
-            upload_object("safety", object_key, pdf_data, len(pdf_data), "application/pdf")
+            object_key = (
+                f"regulation/{reg.id}_export_{int(datetime.now().timestamp())}.pdf"
+            )
+            upload_object(
+                "safety", object_key, pdf_data, len(pdf_data), "application/pdf"
+            )
             pdf_stored_path = object_key
 
         # 6. Update regulation record with generated content
@@ -197,7 +201,9 @@ class SopGeneratorService:
             with open(pdf_local_path, "rb") as f:
                 pdf_data = f.read()
             object_key = f"regulation/{regulation_id}_export_{int(datetime.now().timestamp())}.pdf"
-            upload_object("safety", object_key, pdf_data, len(pdf_data), "application/pdf")
+            upload_object(
+                "safety", object_key, pdf_data, len(pdf_data), "application/pdf"
+            )
             stored_path = object_key
         else:
             stored_path = pdf_local_path
@@ -234,7 +240,13 @@ class SopGeneratorService:
 
         if minio_enabled():
             object_key = f"regulation/{safe_name}"
-            upload_object("safety", object_key, content, len(content), file.content_type or "application/octet-stream")
+            upload_object(
+                "safety",
+                object_key,
+                content,
+                len(content),
+                file.content_type or "application/octet-stream",
+            )
             return object_key
 
         file_path = os.path.join(self.UPLOAD_DIR, safe_name)
@@ -243,9 +255,7 @@ class SopGeneratorService:
             f.write(content)
         return file_path
 
-    async def _create_draft_regulation(
-        self, filename: str, draft_path: str
-    ) -> Any:
+    async def _create_draft_regulation(self, filename: str, draft_path: str) -> Any:
         """Create an initial OperationRegulation record with draft status."""
         base_name = os.path.splitext(os.path.basename(filename))[0]
         create_data = {
@@ -271,9 +281,7 @@ class SopGeneratorService:
         )
 
     @staticmethod
-    def _render_markdown_sync(
-        content: str, pdf_path: str, meta: dict
-    ) -> None:
+    def _render_markdown_sync(content: str, pdf_path: str, meta: dict) -> None:
         """Synchronous Markdown → PDF render — runs in asyncio.to_thread."""
         from layer3_render_pdf import render
 

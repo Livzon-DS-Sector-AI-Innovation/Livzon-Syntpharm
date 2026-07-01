@@ -18,10 +18,7 @@ from app.modules.energy.adapters.base import BasePlatformAdapter, CollectResult
 
 logger = logging.getLogger(__name__)
 
-API_URL = (
-    "http://cxc.qhzl.net:8090"
-    "/WebServices/YiChunWebServer.asmx/GetSiteDataByTime"
-)
+API_URL = "http://cxc.qhzl.net:8090/WebServices/YiChunWebServer.asmx/GetSiteDataByTime"
 UNIT_CODE = "lzfxyy"
 PAGE_SIZE = 20000
 MAX_PAGES = 50
@@ -101,9 +98,7 @@ class ZhihengWaterAdapter(BasePlatformAdapter):
                         client, meter_id, beg_date, end_date, target_hour
                     )
                 except Exception:
-                    logger.exception(
-                        "获取水表 %s 数据失败，默认值 0", meter_id
-                    )
+                    logger.exception("获取水表 %s 数据失败，默认值 0", meter_id)
                     meter_values[meter_id] = 0.0
 
         # 4. 按公式求值，生成采集结果

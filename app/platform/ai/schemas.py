@@ -19,9 +19,7 @@ class ChatMessage(BaseModel):
 
 class HrPageContext(BaseModel):
     page: str = Field(..., description="当前页面标识")
-    filters: dict[str, str | None] | None = Field(
-        None, description="当前筛选条件"
-    )
+    filters: dict[str, str | None] | None = Field(None, description="当前筛选条件")
     selected_ids: list[str] | None = Field(None, description="选中的行ID")
     data_summary: dict[str, str | int | None] | None = Field(
         None, description="数据摘要"
@@ -30,12 +28,11 @@ class HrPageContext(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(..., description="对话历史")
-    page_context: HrPageContext | None = Field(
-        None, description="页面上下文"
-    )
+    page_context: HrPageContext | None = Field(None, description="页面上下文")
 
 
 # ─── AI 出题相关 Schema ───
+
 
 class ChoiceOption(BaseModel):
     label: str = Field(..., description="选项标签，如 A/B/C/D")

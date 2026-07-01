@@ -61,9 +61,7 @@ async def create_device_config(
     user: User = Depends(require_permission("energy:device:manage")),
 ) -> JSONResponse:
     obj = await service.create_device_config(db, data)
-    return success_response(
-        EnergyDeviceConfigResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
 
 @device_router.get("", summary="查询设备配置列表")
@@ -99,9 +97,7 @@ async def get_device_config(
     user: User = Depends(require_permission("energy:device:read")),
 ) -> JSONResponse:
     obj = await service.get_device_config(db, config_id)
-    return success_response(
-        EnergyDeviceConfigResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
 
 @device_router.put("/{config_id}", summary="修改设备配置")
@@ -112,9 +108,7 @@ async def update_device_config(
     user: User = Depends(require_permission("energy:device:manage")),
 ) -> JSONResponse:
     obj = await service.update_device_config(db, config_id, data)
-    return success_response(
-        EnergyDeviceConfigResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
 
 @device_router.delete("/{config_id}", summary="删除设备配置")
@@ -250,9 +244,7 @@ async def create_alert_rule(
     user: User = Depends(require_permission("energy:alert:manage")),
 ) -> JSONResponse:
     obj = await service.create_alert_rule(db, data)
-    return success_response(
-        EnergyAlertRuleResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
 
 @alert_router.get("", summary="查询预警规则列表")
@@ -284,9 +276,7 @@ async def get_alert_rule(
     user: User = Depends(require_permission("energy:alert:read")),
 ) -> JSONResponse:
     obj = await service.get_alert_rule(db, rule_id)
-    return success_response(
-        EnergyAlertRuleResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
 
 @alert_router.put("/{rule_id}", summary="修改预警规则")
@@ -297,9 +287,7 @@ async def update_alert_rule(
     user: User = Depends(require_permission("energy:alert:manage")),
 ) -> JSONResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
-    return success_response(
-        EnergyAlertRuleResponse.model_validate(obj).model_dump()
-    )
+    return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
 
 @alert_router.delete("/{rule_id}", summary="删除预警规则")

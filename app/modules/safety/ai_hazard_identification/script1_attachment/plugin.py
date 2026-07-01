@@ -92,7 +92,9 @@ class AttachmentParser(BasePlugin[AttachmentInput, AttachmentOutput]):
         return SYSTEM_ROLE
 
     def _build_prompt(
-        self, input_data: AttachmentInput, context_text: str,
+        self,
+        input_data: AttachmentInput,
+        context_text: str,
     ) -> str:
         return build_prompt(context_text, self.knowledge_context)
 
@@ -105,15 +107,17 @@ class AttachmentParser(BasePlugin[AttachmentInput, AttachmentOutput]):
             return AttachmentOutput(
                 specific_activity=raw.get("specific_activity", "待人工确认"),
                 equipment_facilities=raw.get("equipment_facilities", "待人工确认"),
-                raw_auxiliary_materials=raw.get("raw_auxiliary_materials", "待人工确认"),
+                raw_auxiliary_materials=raw.get(
+                    "raw_auxiliary_materials", "待人工确认"
+                ),
             )
         except (PydanticValidationError, KeyError, TypeError) as e:
-            raise PluginError(
-                f"[AttachmentParser] AI 输出解析失败: {e}"
-            ) from e
+            raise PluginError(f"[AttachmentParser] AI 输出解析失败: {e}") from e
 
     def _validate(
-        self, input_data: AttachmentInput, output: AttachmentOutput,
+        self,
+        input_data: AttachmentInput,
+        output: AttachmentOutput,
     ) -> list[str]:
         """使用 AttachmentRuleEngine 验证输出。"""
         return self.rule_engine.validate(input_data, output)

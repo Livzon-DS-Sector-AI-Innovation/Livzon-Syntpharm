@@ -25,7 +25,9 @@ class RegulatoryDocument(BaseModel):
 
     __tablename__ = "regulatory_documents"
     __table_args__ = (
-        UniqueConstraint("source_id", "channel_id", "document_id", name="uq_reg_docs_src_ch_doc"),
+        UniqueConstraint(
+            "source_id", "channel_id", "document_id", name="uq_reg_docs_src_ch_doc"
+        ),
         {"schema": "regulatory_tracker"},
     )
 
@@ -51,9 +53,7 @@ class RegulatoryDocument(BaseModel):
         String(200), nullable=True, comment="分类，如 生物制品、化学药品"
     )
     original_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
-    is_new: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true"
-    )
+    is_new: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_read: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false"
     )
@@ -81,10 +81,11 @@ class RegulatoryDocument(BaseModel):
     )
     # System-computed document category
     document_category: Mapped[str | None] = mapped_column(
-        String(20), nullable=True,
+        String(20),
+        nullable=True,
         comment="系统分类: attention/general/archive/failed",
         default="general",
-        server_default="general"
+        server_default="general",
     )
     raw_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 

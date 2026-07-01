@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 async def parse_literature(text: str) -> dict[str, Any]:
     """解析文献内容，提取合成路线
-    
+
     Args:
         text: 文献文本内容
-        
+
     Returns:
         包含候选路线、实验方案等的字典
     """
@@ -122,10 +122,10 @@ def build_literature_analysis_prompt(text: str) -> str:
 
 async def analyze_literature_with_ai(text: str) -> dict[str, Any]:
     """使用 AI 分析文献（对外接口）
-    
+
     Args:
         text: 文献文本内容
-        
+
     Returns:
         解析结果，包含 candidate_routes 和 experiment_plans
     """
@@ -142,8 +142,4 @@ async def analyze_literature_with_ai(text: str) -> dict[str, Any]:
     except Exception as e:
         # 如果 AI 解析失败，返回空结果
         logger.warning("AI literature parsing failed: %s", e)
-        return {
-            "candidate_routes": [],
-            "experiment_plans": [],
-            "error": str(e)
-        }
+        return {"candidate_routes": [], "experiment_plans": [], "error": str(e)}

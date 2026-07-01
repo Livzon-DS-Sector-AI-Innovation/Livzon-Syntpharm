@@ -48,13 +48,13 @@ class PostRiskRuleEngine:
         # 1. 全 null 检查
         if lec.is_unconfirmed:
             if lec.d_value is not None or lec.risk_level is not None:
-                errors.append(
-                    "L/E/C 中有 null 值，但 D 或 risk_level 不为 null"
-                )
+                errors.append("L/E/C 中有 null 值，但 D 或 risk_level 不为 null")
             return errors
 
         # 2. D = L×E×C 校验
-        if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)):
+        if all(
+            v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)
+        ):
             expected_d = lec.l_value * lec.e_value * lec.c_value
             if expected_d > 0:
                 deviation = abs(lec.d_value - expected_d) / expected_d
@@ -68,7 +68,11 @@ class PostRiskRuleEngine:
             ranges = RISK_LEVEL_RANGES.get(lec.risk_level)
             if ranges:
                 min_d, max_d = ranges
-                if not (min_d <= lec.d_value < max_d if max_d != float("inf") else lec.d_value >= min_d):
+                if not (
+                    min_d <= lec.d_value < max_d
+                    if max_d != float("inf")
+                    else lec.d_value >= min_d
+                ):
                     errors.append(
                         f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致"
                     )
@@ -98,8 +102,10 @@ class PostRiskRuleEngine:
         # 6. 措施类型对应的合理降幅检查
         if (
             input_data.recommendation_type
-            and input_data.l_residual is not None and lec.l_value is not None
-            and input_data.d_residual is not None and lec.d_value is not None
+            and input_data.l_residual is not None
+            and lec.l_value is not None
+            and input_data.d_residual is not None
+            and lec.d_value is not None
         ):
             limits = MEASURE_TYPE_MAX_REDUCTION.get(
                 input_data.recommendation_type,
@@ -111,7 +117,8 @@ class PostRiskRuleEngine:
                 if l_ratio < max_l_ratio and input_data.l_residual > 1:
                     logger.warning(
                         "措施后 L=%s 较残余 L=%s 下降 %.0f%%，超出 %s 类措施的预期降幅（%.0f%%）",
-                        lec.l_value, input_data.l_residual,
+                        lec.l_value,
+                        input_data.l_residual,
                         (1 - l_ratio) * 100,
                         input_data.recommendation_type,
                         limits["l"] * 100,
@@ -125,6 +132,9 @@ def auto_correct(output: PostRiskOutput) -> PostRiskOutput:
     lec = output.lec
     if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value)):
         calculated_d = lec.l_value * lec.e_value * lec.c_value
-        if lec.d_value is None or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1:
+        if (
+            lec.d_value is None
+            or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1
+        ):
             lec.d_value = calculated_d
     return output

@@ -10,14 +10,14 @@ from app.core.database import async_session_factory
 
 async def get_module_setting(module: str, key: str, default: str = "") -> str:
     """Read a runtime setting from database.
-    
+
     Falls back to default if not found.
-    
+
     Args:
         module: Module name (e.g., "safety", "equipment")
         key: Setting key (e.g., "SAFETY_AI_TEXT_MODEL")
         default: Default value if not found
-    
+
     Returns:
         Setting value as string
     """
@@ -26,7 +26,7 @@ async def get_module_setting(module: str, key: str, default: str = "") -> str:
             select(ModuleSetting).where(
                 ModuleSetting.module == module,
                 ModuleSetting.key == key,
-                ModuleSetting.is_deleted == False,
+                not ModuleSetting.is_deleted,
             )
         )
         setting = result.scalar_one_or_none()
@@ -37,12 +37,12 @@ async def get_module_setting(module: str, key: str, default: str = "") -> str:
 
 async def get_module_setting_bool(module: str, key: str, default: bool = False) -> bool:
     """Read a boolean runtime setting.
-    
+
     Args:
         module: Module name
         key: Setting key
         default: Default value if not found
-    
+
     Returns:
         Setting value as boolean
     """
@@ -52,12 +52,12 @@ async def get_module_setting_bool(module: str, key: str, default: bool = False) 
 
 async def get_module_setting_int(module: str, key: str, default: int = 0) -> int:
     """Read an integer runtime setting.
-    
+
     Args:
         module: Module name
         key: Setting key
         default: Default value if not found
-    
+
     Returns:
         Setting value as integer
     """
@@ -68,14 +68,16 @@ async def get_module_setting_int(module: str, key: str, default: int = 0) -> int
         return default
 
 
-async def get_module_setting_json(module: str, key: str, default: dict | list | None = None):
+async def get_module_setting_json(
+    module: str, key: str, default: dict | list | None = None
+):
     """Read a JSON runtime setting.
-    
+
     Args:
         module: Module name
         key: Setting key
         default: Default value if not found or invalid JSON
-    
+
     Returns:
         Parsed JSON value (dict, list, etc.)
     """

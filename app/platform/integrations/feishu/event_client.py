@@ -28,10 +28,12 @@ WS_ENDPOINT_URL = f"{FEISHU_DOMAIN}/callback/ws/endpoint"
 
 def on_event(event_type: str):
     """装饰器：注册事件处理器。"""
+
     def decorator(func):
         _handlers.setdefault(event_type, []).append(func)
         logger.info("注册飞书事件: type=%s handler=%s", event_type, func.__name__)
         return func
+
     return decorator
 
 
@@ -61,7 +63,11 @@ async def _get_ws_url(app_id: str, app_secret: str) -> str | None:
                 logger.info("获取 WebSocket URL 成功: %s", url[:80] if url else "empty")
                 return url
             else:
-                logger.error("获取 WebSocket URL 失败: code=%s msg=%s", data.get("code"), data.get("msg"))
+                logger.error(
+                    "获取 WebSocket URL 失败: code=%s msg=%s",
+                    data.get("code"),
+                    data.get("msg"),
+                )
         else:
             logger.error("获取 WebSocket URL HTTP 错误: %s", resp.status_code)
     return None
@@ -83,7 +89,9 @@ async def start_ws() -> None:
     while not _stop.is_set():
         try:
             # 1. 获取 WebSocket URL
-            ws_url = await _get_ws_url(settings.FEISHU_APP_ID, settings.FEISHU_APP_SECRET)
+            ws_url = await _get_ws_url(
+                settings.FEISHU_APP_ID, settings.FEISHU_APP_SECRET
+            )
             if not ws_url:
                 logger.error("无法获取 WebSocket URL，10 秒后重试")
                 await asyncio.sleep(10)
@@ -94,7 +102,7 @@ async def start_ws() -> None:
             async with websockets.connect(
                 ws_url,
                 ssl=ssl_context,
-                max_size=2 ** 23,
+                max_size=2**23,
                 ping_interval=60,
                 ping_timeout=10,
                 close_timeout=5,
@@ -133,12 +141,17 @@ async def start_ws() -> None:
                                 # 事件帧 → 解析 JSON payload
                                 event = json.loads(frame.payload.decode("utf-8"))
                                 # 临时完整打印事件用于调试
-                                logger.info("📨 收到飞书事件(完整): %s", json.dumps(event, ensure_ascii=False)[:800])
+                                logger.info(
+                                    "📨 收到飞书事件(完整): %s",
+                                    json.dumps(event, ensure_ascii=False)[:800],
+                                )
                                 await _dispatch_event(event)
                             else:
                                 logger.debug("收到非事件帧: type=%s", msg_type)
                         except Exception as e:
-                            logger.debug("protobuf 解析失败 (%d bytes): %s", len(message), e)
+                            logger.debug(
+                                "protobuf 解析失败 (%d bytes): %s", len(message), e
+                            )
                     else:
                         # 文本消息（ping/pong 等）
                         try:
@@ -181,7 +194,9 @@ async def _dispatch_event(event: dict[str, Any]) -> None:
         event_data = event.get("event", event)
         await _dispatch(event_type, event_data)
     else:
-        logger.debug("无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200])
+        logger.debug(
+            "无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200]
+        )
 
 
 async def stop_ws() -> None:

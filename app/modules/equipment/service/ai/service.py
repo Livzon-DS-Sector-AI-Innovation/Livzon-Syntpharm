@@ -113,14 +113,16 @@ async def analyze_inspection_photo(
         if i >= len(ai_items) and not remark:
             remark = "AI 未返回该检查项结果"
 
-        results.append({
-            "template_item_id": str(item.id),
-            "item_name": item.item_name,
-            "expected_result": item.expected_result,
-            "result": result_value,
-            "actual_value": ai_item.get("actual_value") or None,
-            "remark": remark,
-        })
+        results.append(
+            {
+                "template_item_id": str(item.id),
+                "item_name": item.item_name,
+                "expected_result": item.expected_result,
+                "result": result_value,
+                "actual_value": ai_item.get("actual_value") or None,
+                "remark": remark,
+            }
+        )
 
     return results
 
@@ -201,14 +203,16 @@ async def parse_manual_submission(
         if result_value not in ("正常", "异常", "跳过"):
             result_value = "正常"
 
-        results.append({
-            "template_item_id": tid,
-            "item_name": item_info.get("item_name", ai_item.get("item_name", "")),
-            "expected_result": item_info.get("expected_result", ""),
-            "result": result_value,
-            "actual_value": ai_item.get("actual_value") or None,
-            "remark": ai_item.get("remark") or None,
-        })
+        results.append(
+            {
+                "template_item_id": tid,
+                "item_name": item_info.get("item_name", ai_item.get("item_name", "")),
+                "expected_result": item_info.get("expected_result", ""),
+                "result": result_value,
+                "actual_value": ai_item.get("actual_value") or None,
+                "remark": ai_item.get("remark") or None,
+            }
+        )
 
     return results
 
@@ -219,8 +223,7 @@ async def parse_manual_submission(
 async def _get_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
     """获取巡检任务。"""
     result = await db.execute(
-        select(InspectionTask)
-        .where(
+        select(InspectionTask).where(
             InspectionTask.id == task_id,
             InspectionTask.is_deleted == False,  # noqa: E712
         )

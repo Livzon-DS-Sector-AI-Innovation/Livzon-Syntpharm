@@ -30,7 +30,9 @@ RISK_LEVEL_RANGES = {
 }
 
 
-def _is_close_to_valid(value: float, valid_set: list[float], tolerance: float = 0.2) -> bool:
+def _is_close_to_valid(
+    value: float, valid_set: list[float], tolerance: float = 0.2
+) -> bool:
     """检查 value 是否接近合法值（容忍 ±tolerance 比例偏差）。"""
     for valid in valid_set:
         if valid == 0:
@@ -64,25 +66,33 @@ class InherentRiskRuleEngine:
             return errors
 
         # 2. L 值合法性（容忍 ±20% 偏差）
-        if lec.l_value is not None and not _is_close_to_valid(lec.l_value, VALID_L_VALUES):
+        if lec.l_value is not None and not _is_close_to_valid(
+            lec.l_value, VALID_L_VALUES
+        ):
             errors.append(
                 f"L 值 {lec.l_value} 不在合法范围内 {VALID_L_VALUES}（容忍 ±20%）"
             )
 
         # 3. E 值合法性
-        if lec.e_value is not None and not _is_close_to_valid(lec.e_value, VALID_E_VALUES):
+        if lec.e_value is not None and not _is_close_to_valid(
+            lec.e_value, VALID_E_VALUES
+        ):
             errors.append(
                 f"E 值 {lec.e_value} 不在合法范围内 {VALID_E_VALUES}（容忍 ±20%）"
             )
 
         # 4. C 值合法性
-        if lec.c_value is not None and not _is_close_to_valid(lec.c_value, VALID_C_VALUES):
+        if lec.c_value is not None and not _is_close_to_valid(
+            lec.c_value, VALID_C_VALUES
+        ):
             errors.append(
                 f"C 值 {lec.c_value} 不在合法范围内 {VALID_C_VALUES}（容忍 ±20%）"
             )
 
         # 5. D = L × E × C 校验（±5% 误差）
-        if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)):
+        if all(
+            v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)
+        ):
             expected_d = lec.l_value * lec.e_value * lec.c_value
             if expected_d > 0:
                 deviation = abs(lec.d_value - expected_d) / expected_d
@@ -97,7 +107,11 @@ class InherentRiskRuleEngine:
             ranges = RISK_LEVEL_RANGES.get(lec.risk_level)
             if ranges:
                 min_d, max_d = ranges
-                if not (min_d <= lec.d_value < max_d if max_d != float("inf") else lec.d_value >= min_d):
+                if not (
+                    min_d <= lec.d_value < max_d
+                    if max_d != float("inf")
+                    else lec.d_value >= min_d
+                ):
                     errors.append(
                         f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致，"
                         f"预期区间: [{min_d}, {max_d})"
@@ -118,6 +132,9 @@ def auto_correct(output: InherentRiskOutput) -> InherentRiskOutput:
     if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value)):
         # 自动计算 D 值
         calculated_d = lec.l_value * lec.e_value * lec.c_value
-        if lec.d_value is None or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1:
+        if (
+            lec.d_value is None
+            or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1
+        ):
             lec.d_value = calculated_d
     return output

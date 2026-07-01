@@ -2,7 +2,7 @@
 
 Usage:
     from app.core.llm import llm_client
-    
+
     result = await llm_client.chat([{"role": "user", "content": "Hello"}])
     parsed = await llm_client.chat_json(messages, expected_keys=["key1", "key2"])
 """

@@ -23,6 +23,7 @@ from app.platform.integrations.feishu.auth import FeishuAuth
 _settings = get_settings()
 APP_TOKEN = _settings.FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN
 TABLE_ID = _settings.FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID
+BASE_URL = "https://open.feishu.cn/open-apis"
 
 # 同步最近 N 个月的数据
 SYNC_MONTHS = 2
@@ -44,6 +45,7 @@ def get_cutoff_timestamp() -> int:
         cutoff = datetime(year, month, now.day, tzinfo=UTC)
     except ValueError:
         import calendar
+
         last_day = calendar.monthrange(year, month)[1]
         cutoff = datetime(year, month, last_day, tzinfo=UTC)
     return int(cutoff.timestamp() * 1000)
@@ -58,7 +60,9 @@ def _extract_text(value) -> str:
     if isinstance(value, list):
         # Rich text: [{"text": "...", "type": "text"}]
         if len(value) > 0 and isinstance(value[0], dict) and "text" in value[0]:
-            return "".join(item.get("text", "") for item in value if isinstance(item, dict))
+            return "".join(
+                item.get("text", "") for item in value if isinstance(item, dict)
+            )
         # Person array: [{"name": "...", ...}]
         if len(value) > 0 and isinstance(value[0], dict) and "name" in value[0]:
             names = [item.get("name", "") for item in value if isinstance(item, dict)]
@@ -69,7 +73,9 @@ def _extract_text(value) -> str:
         # Rich text object: {"type": 1, "value": [{"text": "..."}]}
         if "value" in value and isinstance(value["value"], list):
             return "".join(
-                item.get("text", "") for item in value["value"] if isinstance(item, dict)
+                item.get("text", "")
+                for item in value["value"]
+                if isinstance(item, dict)
             )
         return value.get("text", "")
     return str(value)
@@ -207,14 +213,11 @@ async def fetch_and_sync_recent(client: httpx.AsyncClient, token: str) -> dict:
 
                 try:
                     # Check duplicate by applicant_name + purpose + start_time
-                    stmt = (
-                        select(VehicleRequest)
-                        .where(
-                            VehicleRequest.applicant_name == parsed["applicant_name"],
-                            VehicleRequest.purpose == parsed["purpose"],
-                            VehicleRequest.start_time == parsed["start_time"],
-                            VehicleRequest.is_deleted.is_(False),
-                        )
+                    stmt = select(VehicleRequest).where(
+                        VehicleRequest.applicant_name == parsed["applicant_name"],
+                        VehicleRequest.purpose == parsed["purpose"],
+                        VehicleRequest.start_time == parsed["start_time"],
+                        VehicleRequest.is_deleted.is_(False),
                     )
                     result = await session.execute(stmt)
                     existing = result.scalar_one_or_none()
@@ -223,12 +226,12 @@ async def fetch_and_sync_recent(client: httpx.AsyncClient, token: str) -> dict:
                         continue
 
                     # Use Core insert to bypass ORM foreign-key validation
-                    await session.execute(
-                        insert(VehicleRequest).values(**parsed)
-                    )
+                    await session.execute(insert(VehicleRequest).values(**parsed))
                     total_synced += 1
                 except Exception as e:
-                    logger.error("Sync failed for record %s: %s", rec.get("record_id"), e)
+                    logger.error(
+                        "Sync failed for record %s: %s", rec.get("record_id"), e
+                    )
                     total_failed += 1
                     await session.rollback()
 
@@ -236,7 +239,10 @@ async def fetch_and_sync_recent(client: httpx.AsyncClient, token: str) -> dict:
             await session.commit()
             logger.info(
                 "Page committed — fetched=%s synced=%s skipped=%s failed=%s",
-                total_fetched, total_synced, total_skipped, total_failed,
+                total_fetched,
+                total_synced,
+                total_skipped,
+                total_failed,
             )
 
             if not data.get("data", {}).get("has_more"):

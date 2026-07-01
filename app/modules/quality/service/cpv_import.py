@@ -78,14 +78,23 @@ async def preview_import(
     for col_idx, header in enumerate(headers):
         if header and str(header).strip() in param_map:
             matched_params[col_idx] = param_map[str(header).strip()]
-        elif header and str(header).strip() not in ("批号", "batch_no", "生产日期", "production_date"):
+        elif header and str(header).strip() not in (
+            "批号",
+            "batch_no",
+            "生产日期",
+            "production_date",
+        ):
             unmatched_cols.append(str(header))
 
     # 解析数据行
     error_rows = []
     valid_count = 0
-    batch_no_col = next((i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None)
-    date_col = next((i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None)
+    batch_no_col = next(
+        (i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None
+    )
+    date_col = next(
+        (i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None
+    )
 
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         row_data = dict(zip(headers, row))
@@ -116,11 +125,13 @@ async def preview_import(
                         errors.append(f"{param.name} 必须是数字: {value}")
 
         if errors:
-            error_rows.append({
-                "row_number": row_idx,
-                "error_message": "; ".join(errors),
-                "row_data": row_data,
-            })
+            error_rows.append(
+                {
+                    "row_number": row_idx,
+                    "error_message": "; ".join(errors),
+                    "row_data": row_data,
+                }
+            )
         else:
             valid_count += 1
 
@@ -173,8 +184,12 @@ async def confirm_import(
         if header and str(header).strip() in param_map:
             matched_params[col_idx] = param_map[str(header).strip()]
 
-    batch_no_col = next((i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None)
-    date_col = next((i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None)
+    batch_no_col = next(
+        (i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None
+    )
+    date_col = next(
+        (i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None
+    )
 
     # 覆盖模式：删除旧数据
     if request.import_mode == "overwrite":
@@ -211,7 +226,9 @@ async def confirm_import(
         if existing_batch:
             if request.import_mode == "create":
                 failed_rows += 1
-                error_details.append({"row": row_idx, "error": f"批号已存在: {batch_no}"})
+                error_details.append(
+                    {"row": row_idx, "error": f"批号已存在: {batch_no}"}
+                )
                 continue
             batch = existing_batch
         else:
@@ -234,14 +251,18 @@ async def confirm_import(
             value = row[col_idx] if col_idx < len(row) else None
             if value is not None and value != "":
                 str_value = str(value)
-                is_abnormal = _check_abnormal(str_value, param.lower_limit, param.upper_limit)
-                values_data.append({
-                    "batch_id": batch.id,
-                    "parameter_id": param.id,
-                    "actual_value": str_value,
-                    "is_abnormal": is_abnormal,
-                    "created_by": current_user_id,
-                })
+                is_abnormal = _check_abnormal(
+                    str_value, param.lower_limit, param.upper_limit
+                )
+                values_data.append(
+                    {
+                        "batch_id": batch.id,
+                        "parameter_id": param.id,
+                        "actual_value": str_value,
+                        "is_abnormal": is_abnormal,
+                        "created_by": current_user_id,
+                    }
+                )
 
         if values_data:
             await repo.create_values_bulk(db, values_data)

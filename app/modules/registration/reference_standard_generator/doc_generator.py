@@ -75,21 +75,15 @@ def generate_reference_standard_document(
     # ===== 表格1：基本信息 =====
     # R1C2-4: 药品名称
     if len(table1.rows) > 0 and len(table1.rows[0].cells) > 1:
-        _set_cell_format(
-            table1.rows[0].cells[1], coa_data.get("药品名称", "")
-        )
+        _set_cell_format(table1.rows[0].cells[1], coa_data.get("药品名称", ""))
 
     # R2C2: 对照物质名称
     if len(table1.rows) > 1 and len(table1.rows[1].cells) > 1:
-        _set_cell_format(
-            table1.rows[1].cells[1], coa_data.get("对照物质名称", "")
-        )
+        _set_cell_format(table1.rows[1].cells[1], coa_data.get("对照物质名称", ""))
 
     # R2C4: 批号
     if len(table1.rows) > 1 and len(table1.rows[1].cells) > 3:
-        _set_cell_format(
-            table1.rows[1].cells[3], coa_data.get("批号", "")
-        )
+        _set_cell_format(table1.rows[1].cells[3], coa_data.get("批号", ""))
 
     # R3C2-4: 来源（COA生产厂家）
     manufacturer = coa_data.get("生产厂家", "")
@@ -103,15 +97,11 @@ def generate_reference_standard_document(
     # ===== 表格2：详细信息 =====
     # R1C2: 英文名
     if len(table2.rows) > 0 and len(table2.rows[0].cells) > 1:
-        _set_cell_format(
-            table2.rows[0].cells[1], coa_data.get("英文名", "")
-        )
+        _set_cell_format(table2.rows[0].cells[1], coa_data.get("英文名", ""))
 
     # R1C4: 有效期
     if len(table2.rows) > 0 and len(table2.rows[0].cells) > 3:
-        _set_cell_format(
-            table2.rows[0].cells[3], coa_data.get("有效期", "")
-        )
+        _set_cell_format(table2.rows[0].cells[3], coa_data.get("有效期", ""))
 
     # R2C2: 分子式（数字下标）
     if len(table2.rows) > 1 and len(table2.rows[1].cells) > 1:
@@ -123,9 +113,7 @@ def generate_reference_standard_document(
 
     # R2C4: 分子量
     if len(table2.rows) > 1 and len(table2.rows[1].cells) > 3:
-        _set_cell_format(
-            table2.rows[1].cells[3], coa_data.get("分子量", "")
-        )
+        _set_cell_format(table2.rows[1].cells[3], coa_data.get("分子量", ""))
 
     # R5C2-4: 使用范围（勾选含量测定）
     if len(table2.rows) > 4 and len(table2.rows[4].cells) > 1:
@@ -137,18 +125,16 @@ def generate_reference_standard_document(
 
     # R6C2-4: 含量和 RSD
     if len(table2.rows) > 5 and len(table2.rows[5].cells) > 1:
-        content_value = coa_data.get('含量', '')
-        rsd_value = coa_data.get('RSD', '')
-        moisture_value = coa_data.get('水分/干燥失重', '')
+        content_value = coa_data.get("含量", "")
+        rsd_value = coa_data.get("RSD", "")
+        moisture_value = coa_data.get("水分/干燥失重", "")
 
         content_text = f"含量＝ {content_value} ％      RSD％＝ {rsd_value}\n"
         if moisture_value:
             content_text += f"水分/干燥失重＝ {moisture_value} ％\n"
         content_text += "（测定方法——                                     ）"
 
-        _set_cell_format(
-            table2.rows[5].cells[1], content_text, align_center=False
-        )
+        _set_cell_format(table2.rows[5].cells[1], content_text, align_center=False)
 
     # R7C2-4: 贮存条件
     if len(table2.rows) > 6 and len(table2.rows[6].cells) > 1:
@@ -163,9 +149,7 @@ def generate_reference_standard_document(
             storage_text = "□避光   □常温   ☑阴凉   □冷藏   □冷冻   □其他"
         else:
             storage_text = "□避光   □常温   □阴凉   □冷藏   □冷冻   □其他"
-        _set_cell_format(
-            table2.rows[6].cells[1], storage_text, align_center=False
-        )
+        _set_cell_format(table2.rows[6].cells[1], storage_text, align_center=False)
 
     # R8C2-4: 使用方法（勾选直接折算）
     if len(table2.rows) > 7 and len(table2.rows[7].cells) > 1:

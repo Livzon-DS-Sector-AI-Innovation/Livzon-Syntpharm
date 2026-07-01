@@ -84,8 +84,10 @@ OUTPUT_FORMAT = """## 输出格式
 }"""
 
 EXPECTED_KEYS = [
-    "needs_recommendation", "recommendation_type",
-    "recommendation_content", "recommendation_priority",
+    "needs_recommendation",
+    "recommendation_type",
+    "recommendation_content",
+    "recommendation_priority",
 ]
 
 FEWSHOT_EXAMPLES = [
@@ -93,7 +95,10 @@ FEWSHOT_EXAMPLES = [
         "input": {
             "residual_risk_level": "level_3",
             "residual_risk_label": "三级/一般风险",
-            "l_residual": 1, "e_residual": 6, "c_residual": 3, "d_residual": 18,
+            "l_residual": 1,
+            "e_residual": 6,
+            "c_residual": 3,
+            "d_residual": 18,
             "existing_engineering_controls": "压力表、pH计在线监测",
             "existing_management_controls": "操作规程SOP-TL2-FY-001",
             "existing_ppe": "防飞溅面屏、耐酸碱手套",
@@ -124,8 +129,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     if knowledge_context:
         sections.append(
             "## 参考文档（知识库）\n\n"
-            "以下为行业最佳实践和同类企业事故教训，优先参照：\n\n"
-            + knowledge_context
+            "以下为行业最佳实践和同类企业事故教训，优先参照：\n\n" + knowledge_context
         )
 
     sections.append(OUTPUT_FORMAT)

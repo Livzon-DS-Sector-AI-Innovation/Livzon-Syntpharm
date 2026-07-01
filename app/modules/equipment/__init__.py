@@ -6,15 +6,18 @@ __all__ = ["router"]
 
 # ── Background worker registration ────────────────────────────
 
+
 async def _start_equipment_ws():
     """Start equipment module's Feishu WebSocket client."""
     from app.modules.equipment.feishu.ws_client import start_equipment_ws
+
     await start_equipment_ws()
 
 
 async def _stop_equipment_ws():
     """Stop equipment module's Feishu WebSocket client."""
     from app.modules.equipment.feishu.ws_client import stop_equipment_ws
+
     await stop_equipment_ws()
 
 
@@ -33,6 +36,7 @@ async def _start_equipment_scheduler():
         maintenance_plan_loop,
         timeout_scan_loop,
     )
+
     # Run both loops concurrently
     await asyncio.gather(
         maintenance_plan_loop(),
@@ -46,6 +50,7 @@ async def _stop_equipment_scheduler():
         stop_maintenance_plan_flag,
         stop_timeout_flag,
     )
+
     stop_maintenance_plan_flag.set()
     stop_timeout_flag.set()
 

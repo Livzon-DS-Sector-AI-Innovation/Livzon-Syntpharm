@@ -111,7 +111,9 @@ def generate_regulatory_excel(
 
         # 交替行背景色
         if row_idx % 2 == 0:
-            alt_fill = PatternFill(start_color="F2F7FB", end_color="F2F7FB", fill_type="solid")
+            alt_fill = PatternFill(
+                start_color="F2F7FB", end_color="F2F7FB", fill_type="solid"
+            )
             for col_idx in range(1, len(values) + 1):
                 ws.cell(row=row_num, column=col_idx).fill = alt_fill
 

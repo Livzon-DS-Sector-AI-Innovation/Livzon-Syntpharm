@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 
 # ── Domestic Approval ──────────────────────────────────────────────
 
+
 class DomesticApprovalBase(BaseModel):
     product_name: str
     certificate_name: str | None = None
@@ -41,6 +42,7 @@ class DomesticApprovalResponse(DomesticApprovalBase):
 
 # ── Overseas Approval ─────────────────────────────────────────────
 
+
 class OverseasApprovalBase(BaseModel):
     product_name: str
     certificate_name: str | None = None
@@ -74,6 +76,7 @@ class OverseasApprovalResponse(OverseasApprovalBase):
 
 # ── International Review ───────────────────────────────────────────
 
+
 class InternationalReviewBase(BaseModel):
     product_name: str
     approved_countries: str | None = None
@@ -103,6 +106,7 @@ class InternationalReviewResponse(InternationalReviewBase):
 
 
 # ── COPP Certificate ───────────────────────────────────────────────
+
 
 class CoppCertificateBase(BaseModel):
     product_name: str
@@ -134,6 +138,7 @@ class CoppCertificateResponse(CoppCertificateBase):
 
 # ── WC Certificate ─────────────────────────────────────────────────
 
+
 class WcCertificateBase(BaseModel):
     product_name: str
     certificate_name: str | None = None
@@ -162,6 +167,7 @@ class WcCertificateResponse(WcCertificateBase):
 
 
 # ── Ledger Summary (for Dashboard) ─────────────────────────────────
+
 
 class LedgerSummary(BaseModel):
     domestic_count: int

@@ -26,9 +26,7 @@ class WorkOrderCreate(BaseModel):
     maintenance_plan_id: uuid.UUID | None = Field(
         default=None, description="关联维护计划ID"
     )
-    planned_start_date: date | None = Field(
-        default=None, description="计划执行日期"
-    )
+    planned_start_date: date | None = Field(default=None, description="计划执行日期")
     checklist_template_id: uuid.UUID | None = Field(
         default=None, description="关联巡检模板ID"
     )
@@ -141,17 +139,20 @@ class WorkOrderStatistics(BaseModel):
 # ==================== 领料 ====================
 class MaterialConsumeItem(BaseModel):
     """单条领料项"""
+
     spare_part_id: uuid.UUID = Field(..., description="备件ID")
     quantity: int = Field(..., ge=1, description="领用数量")
 
 
 class MaterialConsumeRequest(BaseModel):
     """领料请求"""
+
     items: list[MaterialConsumeItem] = Field(..., min_length=1, description="领料清单")
 
 
 class MaterialConsumeResponse(BaseModel):
     """领料记录响应"""
+
     id: uuid.UUID
     spare_part_id: uuid.UUID
     work_order_id: uuid.UUID

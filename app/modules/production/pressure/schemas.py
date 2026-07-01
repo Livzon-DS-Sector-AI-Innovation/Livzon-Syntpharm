@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 AREA_OPTIONS = ["无菌区", "精洗区", "配液区", "走廊", "更衣室", "其他"]
 
 
-class AreaType(str, Enum):
+class AreaType(StrEnum):
     STERILE = "无菌区"
     WASH = "精洗区"
     PREP = "配液区"
@@ -21,18 +21,18 @@ class AreaType(str, Enum):
     OTHER = "其他"
 
 
-class InputType(str, Enum):
+class InputType(StrEnum):
     MANUAL = "manual"
     OCR = "ocr"
 
 
-class AuditStatus(str, Enum):
+class AuditStatus(StrEnum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
 
-class OcrTaskStatus(str, Enum):
+class OcrTaskStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -41,7 +41,7 @@ class OcrTaskStatus(str, Enum):
     SUBMITTED = "submitted"
 
 
-class DataSource(str, Enum):
+class DataSource(StrEnum):
     MANUAL = "manual"
     OCR = "ocr"
 
