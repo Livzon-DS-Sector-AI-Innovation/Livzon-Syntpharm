@@ -24,7 +24,7 @@ target_metadata = Base.metadata
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
-PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", *BUSINESS_SCHEMAS))
+PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", *BUSINESS_SCHEMAS))
 
 
 def include_name(

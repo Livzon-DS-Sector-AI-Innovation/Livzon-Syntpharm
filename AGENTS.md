@@ -106,6 +106,13 @@ async def list_batches(current_user: CurrentUser, db: AsyncSession = Depends(get
 - 新增 schema 时同步更新 `app/shared/module_registry.py`
 - 新增/修改 env 文件时同步修改 env example
 
+**Schema 管理**：
+- 所有数据库 schema 变更必须通过 Alembic 迁移管理
+- 禁止使用 `Base.metadata.create_all()` 或 `create_all()` 创建表
+- 新增/修改模型后必须运行 `alembic revision --autogenerate` 生成迁移
+- 迁移必须遵守单模块原则（每个迁移只修改一个 schema）
+- CI 通过 `alembic check` 检测模型与数据库的漂移
+
 **外键约束规范**：
 - 允许外键约束（包括跨模块），但必须避免级联删除（CASCADE DELETE）跨模块使用
 - 跨模块关系必须明确记录在设计文档中
@@ -117,15 +124,15 @@ async def list_batches(current_user: CurrentUser, db: AsyncSession = Depends(get
 
 ### 迁移规范
 
-**单模块原则**：一个迁移文件只能修改一个模块的 schema。这样多人并行开发时合并冲突最小。
+**初始基线例外**：`0001_baseline_full_schema` 迁移允许跨所有 schema，因为它建立了完整的数据库基线。这是唯一允许跨模块的迁移。
+
+**单模块原则**：基线之后的每个迁移文件只能修改一个模块的 schema。这样多人并行开发时合并冲突最小。
 
 **例外**：跨模块外键、`platform`/`core`/`shared` 级变更可以跨 schema，但必须由架构负责人审批，并在 migration 注释中说明原因。
 
 示例：
 - `abc123_safety_add_hazard_table.py`
 - `def456_equipment_add_inspection_route.py`
-
-**单模块原则**：一个迁移文件只能修改一个模块的 schema。这样多人并行开发时合并冲突最小。
 
 CI 会自动检查（`scripts/check_migration_scope.py`），违反会导致 PR 无法合并。
 
@@ -268,6 +275,37 @@ if is_enabled():
 ```
 
 所有文件访问通过后端代理，浏览器不直连 MinIO。
+
+## OCR 服务
+
+应用启动时自动初始化 OCR 服务（PaddleOCR），所有模块共享同一实例。**禁止**在模块内自行实现 OCR 逻辑。
+
+```python
+from app.shared.ocr_service import get_ocr_service
+
+ocr = get_ocr_service()
+
+# 简单文本提取（PP-OCR，速度快）
+text = ocr.extract_text(image_path)
+
+# 带位置信息的文本提取
+blocks = ocr.extract_with_positions(image_path)  # [{text, bbox, confidence}, ...]
+
+# 结构化文档分析（PP-StructureV3，支持表格、公式、版面分析）
+markdown = ocr.extract_markdown(pdf_path)
+structure = ocr.extract_structure(image_path)  # {markdown, json, layout, tables}
+
+# 混合接口（自动选择引擎）
+result = ocr.extract(image_path, engine=None, output_format="text")
+# engine: "pp_ocr" | "pp_structurev3" | None (自动检测：PDF 用 structure，图片用 ocr)
+# output_format: "text" | "markdown" | "json" | "positions" | "structure"
+```
+
+**禁止**：
+- 在模块中直接 import `paddleocr` 或自行初始化 OCR 引擎
+- 重复实现 OCR 逻辑（如调用外部 OCR API）
+- 在测试中初始化真实 OCR 服务（必须 mock `get_ocr_service`）
+
 
 ## 跨模块通信
 
