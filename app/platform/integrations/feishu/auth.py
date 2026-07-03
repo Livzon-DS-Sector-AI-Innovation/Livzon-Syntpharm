@@ -27,8 +27,8 @@ class FeishuAuth:
         if cls._token and time.time() < cls._expire_at - 60:
             return cls._token
 
-        app_id = _settings.FEISHU_APP_ID
-        app_secret = _settings.FEISHU_APP_SECRET
+        app_id = _settings.feishu.platform.app_id
+        app_secret = _settings.feishu.platform.app_secret
         if not app_id or not app_secret:
             raise RuntimeError("Feishu app_id or app_secret not configured")
 

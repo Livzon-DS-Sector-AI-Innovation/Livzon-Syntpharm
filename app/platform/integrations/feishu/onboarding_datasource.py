@@ -97,8 +97,8 @@ class OnboardingBitableDataSource:
 
     def __init__(self) -> None:
         self.client = BitableClient()
-        self.client.app_token = _settings.FEISHU_BITABLE_APP_TOKEN
-        self.table_id = _settings.FEISHU_BITABLE_ONBOARDING_TABLE_ID
+        self.client.app_token = _settings.feishu.hr_bitable.app_token
+        self.table_id = _settings.feishu.hr_bitable.onboarding_table_id
 
     def _is_enabled(self) -> bool:
         return bool(self.client.app_token and self.table_id)

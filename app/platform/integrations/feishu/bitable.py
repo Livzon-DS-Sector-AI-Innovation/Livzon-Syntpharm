@@ -38,7 +38,7 @@ class BitableClient:
     ) -> None:
         self.client = FeishuClient(auth=auth)
         self.app_token = (
-            app_token if app_token is not None else _settings.FEISHU_BITABLE_APP_TOKEN
+            app_token if app_token is not None else _settings.feishu.hr_bitable.app_token
         )
 
     def _path(self, table_id: str, suffix: str = "") -> str:
@@ -111,10 +111,10 @@ class FeishuBitableSync:
 
     def __init__(self) -> None:
         self.bitable = BitableClient()
-        self.employee_table = _settings.FEISHU_BITABLE_EMPLOYEE_TABLE_ID
-        self.department_table = _settings.FEISHU_BITABLE_DEPARTMENT_TABLE_ID
-        self.offboarding_table = _settings.FEISHU_BITABLE_OFFBOARDING_TABLE_ID
-        self.approval_table = _settings.FEISHU_BITABLE_APPROVAL_TABLE_ID
+        self.employee_table = _settings.feishu.hr_bitable.employee_table_id
+        self.department_table = _settings.feishu.hr_bitable.department_table_id
+        self.offboarding_table = _settings.feishu.hr_bitable.offboarding_table_id
+        self.approval_table = _settings.feishu.hr_bitable.approval_table_id
 
     def _is_enabled(self) -> bool:
         return bool(self.bitable.app_token)

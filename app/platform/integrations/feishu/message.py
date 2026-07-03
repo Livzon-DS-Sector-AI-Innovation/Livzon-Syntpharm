@@ -14,8 +14,8 @@ async def _get_feishu_client():
 
     return (
         lark.Client.builder()
-        .app_id(settings.FEISHU_APP_ID)
-        .app_secret(settings.FEISHU_APP_SECRET)
+        .app_id(settings.feishu.platform.app_id)
+        .app_secret(settings.feishu.platform.app_secret)
         .domain(lark.FEISHU_DOMAIN)
         .app_type(lark.AppType.SELF)
         .build()
@@ -34,8 +34,8 @@ async def _get_tenant_token(client) -> str:
         InternalTenantAccessTokenRequest.builder()
         .request_body(
             InternalTenantAccessTokenRequestBody.builder()
-            .app_id(settings.FEISHU_APP_ID)
-            .app_secret(settings.FEISHU_APP_SECRET)
+            .app_id(settings.feishu.platform.app_id)
+            .app_secret(settings.feishu.platform.app_secret)
             .build()
         )
         .build()
@@ -114,7 +114,7 @@ async def send_work_order_card(
     claim_url: str,
 ) -> bool:
     """发送工单通知卡片到设备部群聊"""
-    chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID
+    chat_id = settings.feishu.platform.equipment_chat_id
     if not chat_id:
         logger.warning("FEISHU_EQUIPMENT_CHAT_ID not configured, skip push")
         return False
@@ -145,7 +145,7 @@ async def send_work_order_card(
 
 async def send_claim_notification(work_order_no: str, claimer_name: str) -> bool:
     """工单被抢后通知群聊"""
-    chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID
+    chat_id = settings.feishu.platform.equipment_chat_id
     if not chat_id:
         return False
 
@@ -160,7 +160,7 @@ async def send_timeout_notification(
     work_order_no: str, equipment_name: str, leader_name: str
 ) -> bool:
     """超时未接单通知主管"""
-    chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID
+    chat_id = settings.feishu.platform.equipment_chat_id
     if not chat_id:
         return False
 

@@ -23,8 +23,9 @@ if _env_path.exists():
     load_dotenv(_env_path, override=True)
 
 # 安全模块独立的应用凭证（从环境变量读取，不经过全局 config）
-SAFETY_FEISHU_APP_ID = get_settings().SAFETY_FEISHU_APP_ID
-SAFETY_FEISHU_APP_SECRET = get_settings().SAFETY_FEISHU_APP_SECRET
+import os
+SAFETY_FEISHU_APP_ID = os.getenv("SAFETY_FEISHU_APP_ID", "")
+SAFETY_FEISHU_APP_SECRET = os.getenv("SAFETY_FEISHU_APP_SECRET", "")
 
 
 async def get_safety_feishu_client() -> lark.Client:

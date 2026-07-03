@@ -61,8 +61,8 @@ class CandidateBitableDataSource:
     """Candidate datasource backed by Feishu Bitable."""
 
     def __init__(self) -> None:
-        app_token = _settings.FEISHU_BITABLE_CANDIDATE_APP_TOKEN
-        table_id = _settings.FEISHU_BITABLE_CANDIDATE_TABLE_ID
+        app_token = _settings.feishu.hr_bitable.candidate_app_token
+        table_id = _settings.feishu.hr_bitable.candidate_table_id
         self._ds = BitableDataSource(app_token=app_token, table_id=table_id)
         self.client = self._ds.client
         self.table_id = table_id

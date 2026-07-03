@@ -16,8 +16,8 @@ async def _get_feishu_client():
 
     return (
         lark.Client.builder()
-        .app_id(settings.FEISHU_APP_ID)
-        .app_secret(settings.FEISHU_APP_SECRET)
+        .app_id(settings.feishu.platform.app_id)
+        .app_secret(settings.feishu.platform.app_secret)
         .domain(lark.FEISHU_DOMAIN)
         .app_type(lark.AppType.SELF)
         .build()
@@ -36,8 +36,8 @@ async def _get_tenant_token(client) -> str:
         InternalTenantAccessTokenRequest.builder()
         .request_body(
             InternalTenantAccessTokenRequestBody.builder()
-            .app_id(settings.FEISHU_APP_ID)
-            .app_secret(settings.FEISHU_APP_SECRET)
+            .app_id(settings.feishu.platform.app_id)
+            .app_secret(settings.feishu.platform.app_secret)
             .build()
         )
         .build()

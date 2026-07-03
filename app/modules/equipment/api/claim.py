@@ -28,7 +28,7 @@ async def claim_work_order(
     settings=Depends(get_settings),
     user: User = Depends(require_permission("equipment:work_order:update")),
 ) -> JSONResponse:
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
+    dept_id = settings.feishu.platform.equipment_dept_id
     if not dept_id:
         raise AppException(message="设备部未配置")
 

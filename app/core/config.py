@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # dazah-backend/
@@ -19,11 +19,110 @@ def _get_env_file() -> str:
     return env_file
 
 
+# ============================================================================
+# Feishu Configuration Models
+# ============================================================================
+
+class FeishuAppCredentials(BaseModel):
+    """Reusable model for a Feishu app's bot credentials."""
+    app_id: str = ""
+    app_secret: str = ""
+
+
+class FeishuPlatformConfig(BaseModel):
+    """Platform app — SSO, org sync, IM, and shared Bitable access."""
+    app_id: str = ""
+    app_secret: str = ""
+    redirect_uri: str = ""
+    scopes: str = "contact:contact.base:readonly contact:user.base:readonly"
+    ws_enabled: bool = True
+    bot_name: str = ""
+    # Org sync
+    sync_root_dept_id: str = ""
+    sync_member_dept_id: str = ""
+    # Department chat targets
+    equipment_dept_id: str = ""
+    equipment_chat_id: str = "oc_ba1a54a70a0d611315f29581621c50b5"
+    safety_chat_id: str = ""
+
+
+class FeishuHRBitableConfig(BaseModel):
+    """HR module Bitable tables (uses platform app credentials)."""
+    app_token: str = ""
+    employee_table_id: str = ""
+    department_table_id: str = ""
+    offboarding_table_id: str = ""
+    onboarding_table_id: str = ""
+    departure_table_id: str = ""
+    approval_table_id: str = ""
+    candidate_app_token: str = ""
+    candidate_table_id: str = ""
+
+
+class FeishuSafetyConfig(BaseModel):
+    """Safety module — independent Feishu app + hazard Bitable."""
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
+    bitable_app_token: str = ""
+    hazard_table_id: str = ""
+
+
+class FeishuEquipmentConfig(BaseModel):
+    """Equipment module — independent Feishu app for bot interaction."""
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
+    ws_enabled: bool = True
+
+
+class FeishuVehicleConfig(BaseModel):
+    """Vehicle module — independent Feishu app + vehicle request Bitable."""
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
+    bitable_request_app_token: str = ""
+    bitable_request_table_id: str = ""
+
+
+class FeishuTrainingConfig(BaseModel):
+    """Training module — independent Feishu app + training-related Bitables."""
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
+    bitable_material_bom_app_token: str = ""
+    bitable_material_bom_table_id: str = ""
+    bitable_training_notification_app_token: str = ""
+    bitable_training_notification_table_id: str = ""
+
+
+class FeishuProductConfig(BaseModel):
+    """Product module Bitable (uses platform app credentials)."""
+    bitable_app_token: str = ""
+    bitable_table_id: str = ""
+
+
+class FeishuAIQueryConfig(BaseModel):
+    """AI-powered Bitable query settings."""
+    tables: str = ""  # JSON: {"别名": {"app_token": "...", "table_id": "...", "filterable_fields": [...]}}
+    max_rows: int = 200
+
+
+class FeishuSettings(BaseModel):
+    """Top-level Feishu configuration — all modules grouped."""
+    platform: FeishuPlatformConfig = Field(default_factory=FeishuPlatformConfig)
+    hr_bitable: FeishuHRBitableConfig = Field(default_factory=FeishuHRBitableConfig)
+    safety: FeishuSafetyConfig = Field(default_factory=FeishuSafetyConfig)
+    equipment: FeishuEquipmentConfig = Field(default_factory=FeishuEquipmentConfig)
+    vehicle: FeishuVehicleConfig = Field(default_factory=FeishuVehicleConfig)
+    training: FeishuTrainingConfig = Field(default_factory=FeishuTrainingConfig)
+    product: FeishuProductConfig = Field(default_factory=FeishuProductConfig)
+    ai_query: FeishuAIQueryConfig = Field(default_factory=FeishuAIQueryConfig)
+    aily_app_id: str = ""
+
+
+# ============================================================================
+# Main Settings
+# ============================================================================
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_get_env_file(),
         env_file_encoding="utf-8",
         case_sensitive=False,
+        env_nested_delimiter="__",  # Enables nested model env var mapping
         extra="ignore",
     )
 
@@ -55,6 +154,7 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
+    
     # AI
     AI_API_KEY: str = ""
     AI_BASE_URL: str = "https://api.openai.com/v1"
@@ -63,38 +163,12 @@ class Settings(BaseSettings):
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
 
-    # Feishu / Lark — platform app shared by SSO, org sync, IM and common Bitable access.
-    FEISHU_APP_ID: str = ""
-    FEISHU_APP_SECRET: str = ""
-    FEISHU_REDIRECT_URI: str = ""
-    FEISHU_SCOPES: str = "contact:contact.base:readonly contact:user.base:readonly"
+    # Feishu / Lark — all modules grouped
+    feishu: FeishuSettings = Field(default_factory=FeishuSettings)
+
     FRONTEND_URL: str = ""
 
-    # Feishu 设备部
-    FEISHU_EQUIPMENT_DEPT_ID: str = ""
-    FEISHU_EQUIPMENT_CHAT_ID: str = "oc_ba1a54a70a0d611315f29581621c50b5"
-    FEISHU_SAFETY_CHAT_ID: str = ""
-
-    # Feishu 组织架构同步
-    FEISHU_SYNC_ROOT_DEPT_ID: str = ""  # 部门同步的根部门 ID（API 触发）
-    FEISHU_SYNC_MEMBER_DEPT_ID: str = ""  # 成员同步的目标部门 ID（每日 00:00）
-
-    # Feishu WebSocket 长连接（接收消息/事件推送）
-    FEISHU_WS_ENABLED: bool = True
-
-    # Feishu 安全模块机器人（独立应用凭证）
-    SAFETY_FEISHU_APP_ID: str = ""
-    SAFETY_FEISHU_APP_SECRET: str = ""
-    SAFETY_FEISHU_BITABLE_APP_TOKEN: str = ""
-    SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID: str = ""
-
-    # Feishu 设备模块交互机器人（独立应用凭证）
-    EQUIPMENT_FEISHU_APP_ID: str = ""
-    EQUIPMENT_FEISHU_APP_SECRET: str = ""
-    EQUIPMENT_FEISHU_WS_ENABLED: bool = True
-
     # Upload
-    UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE_MB: int = 50
 
     # MinIO / S3-compatible object storage
@@ -105,43 +179,8 @@ class Settings(BaseSettings):
     MINIO_BUCKET_PREFIX: str = "dazah"
     MINIO_SECURE: bool = False
 
-    # Energy
-
-    # Maintenance Plan — 自动生成工单
-
     # JWT
     JWT_EXPIRE_SECONDS: int = 86400  # 24 hours
-
-    # Feishu Bitable — HR 模块多维表格同步
-    FEISHU_BOT_NAME: str = ""
-    FEISHU_BITABLE_APP_TOKEN: str = ""
-    FEISHU_BITABLE_EMPLOYEE_TABLE_ID: str = ""
-    FEISHU_BITABLE_DEPARTMENT_TABLE_ID: str = ""
-    FEISHU_BITABLE_OFFBOARDING_TABLE_ID: str = ""
-    FEISHU_BITABLE_ONBOARDING_TABLE_ID: str = ""
-    FEISHU_BITABLE_DEPARTURE_TABLE_ID: str = ""
-    FEISHU_BITABLE_APPROVAL_TABLE_ID: str = ""
-    FEISHU_BITABLE_CANDIDATE_APP_TOKEN: str = ""
-    FEISHU_BITABLE_CANDIDATE_TABLE_ID: str = ""
-    FEISHU_VEHICLE_APP_ID: str = ""
-    FEISHU_VEHICLE_APP_SECRET: str = ""
-    FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN: str = ""
-    FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID: str = ""
-    FEISHU_TRAINING_APP_ID: str = ""
-    FEISHU_TRAINING_APP_SECRET: str = ""
-    FEISHU_BITABLE_MATERIAL_BOM_APP_TOKEN: str = ""
-    FEISHU_BITABLE_MATERIAL_BOM_TABLE_ID: str = ""
-    FEISHU_AI_QUERY_TABLES: str = ""  # JSON: {"别名": {"app_token": "...", "table_id": "...", "filterable_fields": [...]}}
-    FEISHU_AI_QUERY_MAX_ROWS: int = 200
-    AILY_APP_ID: str = ""
-
-    # Feishu Bitable — 产品模块
-    FEISHU_BITABLE_PRODUCT_APP_TOKEN: str = ""
-    FEISHU_BITABLE_PRODUCT_TABLE_ID: str = ""
-
-    # Training Notification Bitable
-    FEISHU_BITABLE_TRAINING_NOTIFICATION_APP_TOKEN: str = ""
-    FEISHU_BITABLE_TRAINING_NOTIFICATION_TABLE_ID: str = ""
 
     # AI — HR 离职分析
     MOONSHOT_API_KEY: str = ""
@@ -176,12 +215,12 @@ class Settings(BaseSettings):
         missing: list[str] = []
         if not self.SECRET_KEY:
             missing.append("SECRET_KEY")
-        if not self.FEISHU_APP_ID:
-            missing.append("FEISHU_APP_ID")
-        if not self.FEISHU_APP_SECRET:
-            missing.append("FEISHU_APP_SECRET")
-        if not self.FEISHU_REDIRECT_URI:
-            missing.append("FEISHU_REDIRECT_URI")
+        if not self.feishu.platform.app_id:
+            missing.append("FEISHU__PLATFORM__APP_ID")
+        if not self.feishu.platform.app_secret:
+            missing.append("FEISHU__PLATFORM__APP_SECRET")
+        if not self.feishu.platform.redirect_uri:
+            missing.append("FEISHU__PLATFORM__REDIRECT_URI")
         if not self.FRONTEND_URL:
             missing.append("FRONTEND_URL")
         if missing:

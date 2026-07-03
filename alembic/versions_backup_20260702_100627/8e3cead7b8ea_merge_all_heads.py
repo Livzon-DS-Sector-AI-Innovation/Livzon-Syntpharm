@@ -1,0 +1,21 @@
+"""merge all heads
+
+Revision ID: 8e3cead7b8ea
+Revises:
+Create Date: 2026-06-29 10:30:00.000000
+"""
+
+from collections.abc import Sequence
+
+revision: str = "8e3cead7b8ea"
+down_revision: str | None = "7ef205f0db8c"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    pass
+
+
+def downgrade() -> None:
+    pass

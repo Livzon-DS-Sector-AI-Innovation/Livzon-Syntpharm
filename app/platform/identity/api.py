@@ -255,7 +255,7 @@ async def trigger_sync_departments(
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
-    root_id = settings.FEISHU_SYNC_ROOT_DEPT_ID
+    root_id = settings.feishu.platform.sync_root_dept_id
     if not root_id:
         return JSONResponse(
             status_code=400,
@@ -276,7 +276,7 @@ async def trigger_sync_members(
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
-    target_id = settings.FEISHU_SYNC_MEMBER_DEPT_ID
+    target_id = settings.feishu.platform.sync_member_dept_id
     if not target_id:
         return JSONResponse(
             status_code=400,

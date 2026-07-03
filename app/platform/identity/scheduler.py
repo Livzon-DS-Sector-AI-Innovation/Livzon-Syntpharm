@@ -14,7 +14,7 @@ stop_member_sync_flag = asyncio.Event()
 async def member_sync_loop() -> None:
     """每天 00:00 同步 FEISHU_SYNC_MEMBER_DEPT_ID 下的成员"""
     settings = get_settings()
-    target = settings.FEISHU_SYNC_MEMBER_DEPT_ID
+    target = settings.feishu.platform.sync_member_dept_id
     if not target:
         logger.info("飞书成员同步未配置（FEISHU_SYNC_MEMBER_DEPT_ID 为空），跳过启动")
         return

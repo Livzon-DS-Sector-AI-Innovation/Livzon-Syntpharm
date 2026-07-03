@@ -93,8 +93,8 @@ class ProductService:
 
         settings = get_settings()
         self.bitable = BitableDataSource(
-            app_token=settings.FEISHU_BITABLE_PRODUCT_APP_TOKEN,
-            table_id=settings.FEISHU_BITABLE_PRODUCT_TABLE_ID,
+            app_token=settings.feishu.product.bitable_app_token,
+            table_id=settings.feishu.product.bitable_table_id,
         )
 
     async def get_product(self, product_id: UUID) -> Product:

@@ -31,8 +31,8 @@ def start_ws_client(
     from app.core.config import get_settings
 
     settings = get_settings()
-    resolved_app_id = app_id or settings.FEISHU_APP_ID
-    resolved_app_secret = app_secret or settings.FEISHU_APP_SECRET
+    resolved_app_id = app_id or settings.feishu.platform.app_id
+    resolved_app_secret = app_secret or settings.feishu.platform.app_secret
 
     if not resolved_app_id or not resolved_app_secret:
         logger.warning(

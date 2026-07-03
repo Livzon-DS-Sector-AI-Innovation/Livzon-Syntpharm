@@ -263,12 +263,12 @@ class VehicleRequestService:
         FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN 和 FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID.
         """
         vehicle_app_token = (
-            _settings.FEISHU_BITABLE_VEHICLE_REQUEST_APP_TOKEN
-            or _settings.FEISHU_BITABLE_APP_TOKEN
+            _settings.feishu.vehicle.bitable_request_app_token
+            or _settings.feishu.hr_bitable.app_token
         )
         if (
             not vehicle_app_token
-            or not _settings.FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID
+            or not _settings.feishu.vehicle.bitable_request_table_id
         ):
             raise RuntimeError(
                 "飞书多维表格未配置，请在 .env 中设置 "
@@ -285,7 +285,7 @@ class VehicleRequestService:
                 app_token=vehicle_app_token,
             )
             records = await bitable.search_records(
-                _settings.FEISHU_BITABLE_VEHICLE_REQUEST_TABLE_ID,
+                _settings.feishu.vehicle.bitable_request_table_id,
                 page_size=500,
             )
 

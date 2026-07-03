@@ -209,10 +209,10 @@ async def test_recognize_and_store_invoice_pdf_rejects_duplicate_invoice() -> No
 
 @pytest.mark.asyncio
 async def test_recognize_invoice_api_rejects_oversized_pdf(
-    client: AsyncClient,
+    auth_client: AsyncClient,
 ) -> None:
     with patch("app.modules.procurement.api.MAX_INVOICE_PDF_UPLOAD_BYTES", 8):
-        response = await client.post(
+        response = await auth_client.post(
             "/api/v1/procurement/invoices/recognize",
             files={"file": ("invoice.pdf", b"0123456789", "application/pdf")},
         )
@@ -223,7 +223,7 @@ async def test_recognize_invoice_api_rejects_oversized_pdf(
 
 @pytest.mark.asyncio
 async def test_recognize_invoice_api_maps_duplicate_to_409(
-    client: AsyncClient,
+    auth_client: AsyncClient,
 ) -> None:
     existing_record = SimpleNamespace(
         id=uuid.uuid4(),
@@ -237,7 +237,7 @@ async def test_recognize_invoice_api_maps_duplicate_to_409(
         "app.modules.procurement.api.recognize_and_store_invoice_pdf",
         side_effect=_raise_duplicate,
     ):
-        response = await client.post(
+        response = await auth_client.post(
             "/api/v1/procurement/invoices/recognize",
             files={"file": ("invoice.pdf", b"%PDF-1.4", "application/pdf")},
         )

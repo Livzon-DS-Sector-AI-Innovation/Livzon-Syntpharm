@@ -103,7 +103,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     member_task = asyncio.ensure_future(member_sync_loop())
 
     # ── 平台级飞书 WebSocket 长连接 ──
-    if settings.FEISHU_WS_ENABLED:
+    if settings.feishu.platform.ws_enabled:
         from app.platform.integrations.feishu.event_handler import set_main_loop
         from app.platform.integrations.feishu.ws_client import start_ws_client
 
@@ -123,7 +123,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # ── 设备模块飞书 WebSocket 长连接（独立交互机器人，原生 WebSocket） ──
     equipment_ws_task: asyncio.Task | None = None
-    if settings.EQUIPMENT_FEISHU_APP_ID and settings.EQUIPMENT_FEISHU_APP_SECRET:
+    if settings.feishu.equipment.credentials.app_id and settings.feishu.equipment.credentials.app_secret:
         from app.modules.equipment.feishu.ws_client import start_equipment_ws
 
         equipment_ws_task = asyncio.create_task(start_equipment_ws())

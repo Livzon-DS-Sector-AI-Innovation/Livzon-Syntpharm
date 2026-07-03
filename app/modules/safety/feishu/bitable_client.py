@@ -23,8 +23,9 @@ _env_path = _env_dir / f".env.{_app_env}"
 if _env_path.exists():
     load_dotenv(_env_path, override=True)
 
-SAFETY_BITABLE_APP_TOKEN = get_settings().SAFETY_FEISHU_BITABLE_APP_TOKEN
-SAFETY_BITABLE_HAZARD_TABLE_ID = get_settings().SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID
+import os
+SAFETY_BITABLE_APP_TOKEN = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
+SAFETY_BITABLE_HAZARD_TABLE_ID = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
 
 BITABLE_BASE = "https://open.feishu.cn/open-apis/bitable/v1"
 

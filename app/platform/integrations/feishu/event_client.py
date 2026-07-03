@@ -80,17 +80,17 @@ async def start_ws() -> None:
 
     settings = get_settings()
 
-    if not settings.FEISHU_APP_ID or not settings.FEISHU_APP_SECRET:
+    if not settings.feishu.platform.app_id or not settings.feishu.platform.app_secret:
         logger.warning("飞书配置缺失，跳过事件订阅")
         return
 
-    logger.info("启动飞书事件订阅 (app_id=%s)", settings.FEISHU_APP_ID)
+    logger.info("启动飞书事件订阅 (app_id=%s)", settings.feishu.platform.app_id)
 
     while not _stop.is_set():
         try:
             # 1. 获取 WebSocket URL
             ws_url = await _get_ws_url(
-                settings.FEISHU_APP_ID, settings.FEISHU_APP_SECRET
+                settings.feishu.platform.app_id, settings.feishu.platform.app_secret
             )
             if not ws_url:
                 logger.error("无法获取 WebSocket URL，10 秒后重试")

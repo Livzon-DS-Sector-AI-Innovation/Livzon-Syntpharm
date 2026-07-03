@@ -1,0 +1,71 @@
+"""production_sync_20260702
+
+Revision ID: 002_production
+Revises: 001_permission
+Create Date: 2026-07-02 08:41:56.112106
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+
+# revision identifiers, used by Alembic.
+revision: str = '002_production'
+down_revision: Union[str, None] = '001_permission'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    op.execute('CREATE SCHEMA IF NOT EXISTS production')
+    op.drop_index('ix_production_product_outputs_product_id', table_name='product_outputs', schema='production')
+    op.drop_index('ix_production_product_outputs_workshop', table_name='product_outputs', schema='production')
+    op.drop_table('product_outputs', schema='production')
+    op.drop_index('ix_production_products_workshop', table_name='products', schema='production')
+    op.drop_table('products', schema='production')
+
+
+def downgrade() -> None:
+    op.create_table('products',
+    sa.Column('workshop', sa.VARCHAR(length=64), autoincrement=False, nullable=False, comment='车间名称'),
+    sa.Column('name', sa.VARCHAR(length=255), autoincrement=False, nullable=False, comment='产品名称'),
+    sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True, comment='产品描述'),
+    sa.Column('id', sa.UUID(), autoincrement=False, nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('created_by', sa.UUID(), autoincrement=False, nullable=True),
+    sa.Column('updated_by', sa.UUID(), autoincrement=False, nullable=True),
+    sa.Column('is_deleted', sa.BOOLEAN(), server_default=sa.text('false'), autoincrement=False, nullable=False),
+    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], name=op.f('products_created_by_fkey')),
+    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], name=op.f('products_updated_by_fkey')),
+    sa.PrimaryKeyConstraint('id', name=op.f('products_pkey')),
+    sa.UniqueConstraint('workshop', 'name', name=op.f('uq_product_workshop_name'), postgresql_include=[], postgresql_nulls_not_distinct=False),
+    schema='production'
+    )
+    op.create_index('ix_production_products_workshop', 'products', ['workshop'], unique=False, schema='production')
+    op.create_table('product_outputs',
+    sa.Column('product_id', sa.UUID(), autoincrement=False, nullable=False, comment='关联产品ID'),
+    sa.Column('workshop', sa.VARCHAR(length=64), autoincrement=False, nullable=False, comment='车间名称'),
+    sa.Column('product_name', sa.VARCHAR(length=255), autoincrement=False, nullable=False, comment='产品名称（冗余字段）'),
+    sa.Column('batch_no', sa.VARCHAR(length=64), autoincrement=False, nullable=False, comment='批号'),
+    sa.Column('production_date', sa.DATE(), autoincrement=False, nullable=False, comment='生产日期'),
+    sa.Column('end_date', sa.DATE(), autoincrement=False, nullable=True, comment='结束日期'),
+    sa.Column('weight', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False, comment='重量(kg)'),
+    sa.Column('unit', sa.VARCHAR(length=20), autoincrement=False, nullable=False, comment='单位'),
+    sa.Column('notes', sa.TEXT(), autoincrement=False, nullable=True, comment='备注'),
+    sa.Column('id', sa.UUID(), autoincrement=False, nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
+    sa.Column('created_by', sa.UUID(), autoincrement=False, nullable=True),
+    sa.Column('updated_by', sa.UUID(), autoincrement=False, nullable=True),
+    sa.Column('is_deleted', sa.BOOLEAN(), server_default=sa.text('false'), autoincrement=False, nullable=False),
+    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], name=op.f('product_outputs_created_by_fkey')),
+    sa.ForeignKeyConstraint(['product_id'], ['production.products.id'], name=op.f('product_outputs_product_id_fkey')),
+    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], name=op.f('product_outputs_updated_by_fkey')),
+    sa.PrimaryKeyConstraint('id', name=op.f('product_outputs_pkey')),
+    schema='production'
+    )
+    op.create_index('ix_production_product_outputs_workshop', 'product_outputs', ['workshop'], unique=False, schema='production')
+    op.create_index('ix_production_product_outputs_product_id', 'product_outputs', ['product_id'], unique=False, schema='production')
