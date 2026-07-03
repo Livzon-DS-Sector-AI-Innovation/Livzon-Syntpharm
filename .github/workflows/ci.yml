@@ -68,6 +68,11 @@ jobs:
 
   openapi-check:
     runs-on: ubuntu-latest
+    env:
+      FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy_app_secret
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+      FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -113,9 +118,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-      FEISHU_APP_ID: ci_dummy_app_id
-      FEISHU_APP_SECRET: ci_dummy_app_secret
-      FEISHU_REDIRECT_URI: http://localhost:3000/callback
+      FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy_app_secret
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
 
     steps:
@@ -204,9 +209,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-      FEISHU_APP_ID: ci_dummy_app_id
-      FEISHU_APP_SECRET: ci_dummy_app_secret
-      FEISHU_REDIRECT_URI: http://localhost:3000/callback
+      FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy_app_secret
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
 
     steps:

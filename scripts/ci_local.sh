@@ -11,6 +11,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
+# Use CI environment configuration
+export APP_ENV=ci
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -33,7 +36,7 @@ log_warn() {
 
 # Check if PostgreSQL is accessible
 check_postgres() {
-    if ! uv run python -c "import asyncio; from sqlalchemy.ext.asyncio import create_async_engine; asyncio.run(create_async_engine('postgresql+asyncpg://postgres:postgres@localhost:5432/dazah').dispose())" 2>/dev/null; then
+    if ! uv run python -c "import asyncio; from sqlalchemy.ext.asyncio import create_async_engine; asyncio.run(create_async_engine('postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci').dispose())" 2>/dev/null; then
         log_warn "PostgreSQL is not running on localhost:5432"
         log_warn "Some checks will be skipped. Start PostgreSQL with: docker compose up -d db"
         return 1
@@ -97,9 +100,6 @@ run_alembic() {
     echo ""
     echo "=== Running Alembic Check ==="
     
-    # Set environment variables for CI-like behavior
-    export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci}"
-    
     # Apply migrations
     if ! uv run alembic upgrade head; then
         log_error "Failed to apply migrations!"
@@ -158,13 +158,6 @@ run_tests() {
 
     echo ""
     echo "=== Running Tests ==="
-    
-    # Set environment variables
-    export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci}"
-    export FEISHU_APP_ID="${FEISHU_APP_ID:-ci_dummy_app_id}"
-    export FEISHU_APP_SECRET="${FEISHU_APP_SECRET:-ci_dummy_app_secret}"
-    export FEISHU_REDIRECT_URI="${FEISHU_REDIRECT_URI:-http://localhost:3000/callback}"
-    export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
     
     if ! uv run pytest; then
         log_error "Tests failed!"
