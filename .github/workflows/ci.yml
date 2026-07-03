@@ -7,6 +7,9 @@ on:
     branches: [main, dev/livzon-syntpharm]
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: '3.12'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -16,33 +19,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
+        run: uv sync --dev
 
-      - name: Run ruff check
-        run: |
-          if ! uv run ruff check .; then
-            echo "❌ Ruff check failed!"
-            echo "Run 'uv run ruff check --fix .' to fix issues."
-            exit 1
-          fi
-          echo "✓ Ruff check passed"
+      - name: Run lint checks
+        run: bash scripts/ci_local.sh lint
 
-      - name: Run ruff format check
-        run: |
-          if ! uv run ruff format --check .; then
-            echo "❌ Ruff format check failed!"
-            echo "Run 'uv run ruff format .' to format code."
-            exit 1
-          fi
-          echo "✓ Ruff format check passed"
-
-  type-check:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,23 +38,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
+        run: uv sync --dev
 
-      - name: Run mypy
-        run: |
-          if ! uv run mypy app tests; then
-            echo "❌ Mypy type check failed!"
-            exit 1
-          fi
-          echo "✓ Mypy type check passed"
+      - name: Run type check
+        run: bash scripts/ci_local.sh typecheck
 
-  openapi-check:
+  openapi:
     runs-on: ubuntu-latest
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
@@ -79,27 +62,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
+        run: uv sync --dev
 
-      - name: Export OpenAPI spec
-        run: uv run python scripts/export_openapi.py
+      - name: Run OpenAPI check
+        run: bash scripts/ci_local.sh openapi
 
-      - name: Check for drift
-        run: |
-          if ! git diff --exit-code openapi.json; then
-            echo "❌ OpenAPI spec is out of date!"
-            echo "Run 'uv run python scripts/export_openapi.py' and commit the changes."
-            exit 1
-          fi
-          echo "✓ OpenAPI spec is up to date"
-
-  alembic-check:
+  alembic:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -129,31 +103,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
+        run: uv sync --dev
 
-      - name: Apply all migrations to empty database
-        run: uv run alembic upgrade head
-
-      - name: Check for model/migration drift
-        run: |
-          if ! uv run alembic check 2>&1 | tee /tmp/alembic-check.log; then
-            echo ""
-            echo "❌ Model changes detected without corresponding Alembic migration!"
-            echo ""
-            echo "You modified SQLAlchemy models but didn't include a migration."
-            echo "Please run:"
-            echo "  docker compose exec app .venv/bin/alembic revision --autogenerate -m 'describe your changes'"
-            echo ""
-            echo "Then review and commit the generated migration file alongside your model changes."
-            exit 1
-          fi
-          echo "✓ All models are covered by migrations"
+      - name: Run Alembic check
+        run: bash scripts/ci_local.sh alembic
 
   migration-scope:
     runs-on: ubuntu-latest
@@ -163,32 +122,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
+        run: uv sync --dev
 
-      - name: Check migration scope
-        run: |
-          # Find all migration files
-          MIGRATIONS=$(find alembic/versions -name "*.py" -type f)
-          
-          FAILED=0
-          for migration in $MIGRATIONS; do
-            if ! python scripts/check_migration_scope.py "$migration"; then
-              FAILED=1
-            fi
-          done
-          
-          if [ $FAILED -eq 1 ]; then
-            echo "❌ Migration scope check failed!"
-            echo "Each migration should only modify one module's schema."
-            exit 1
-          fi
-          echo "✓ All migrations follow single-module principle"
+      - name: Run migration scope check
+        run: bash scripts/ci_local.sh migration-scope
 
   test:
     runs-on: ubuntu-latest
@@ -220,21 +163,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --dev
-
-      - name: Apply database migrations
-        run: uv run alembic upgrade head
+        run: uv sync --dev
 
       - name: Run tests
-        run: |
-          if ! uv run pytest; then
-            echo "❌ Tests failed!"
-            exit 1
-          fi
-          echo "✓ All tests passed"
+        run: bash scripts/ci_local.sh test
