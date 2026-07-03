@@ -3,11 +3,11 @@
 import logging
 
 from app.core.database import async_session_factory
-from app.modules.regulatory_tracker import repository as repo
-from app.modules.regulatory_tracker.services.ai_analysis_service import (
+from app.modules.registration.regulatory_tracker import repository as repo
+from app.modules.registration.regulatory_tracker.services.ai_analysis_service import (
     analyze_new_documents,
 )
-from app.modules.regulatory_tracker.services.sync_service import run_sync_job
+from app.modules.registration.regulatory_tracker.services.sync_service import run_sync_job
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskDefinition
 from app.shared.config_reader import get_module_setting_bool
 
@@ -116,7 +116,7 @@ def start_scheduler():
     global _scheduler_engine
 
     from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
-    from app.modules.equipment.scheduled import InspectionScheduleGenerator
+    from app.modules.equipment.public_api import get_inspection_schedule_generator
 
     registry = SchedulerRegistry()
 
@@ -125,7 +125,7 @@ def start_scheduler():
     registry.register_task(daily_ai_analysis_task)
 
     # Register equipment generators
-    registry.register_generator(InspectionScheduleGenerator())
+    registry.register_generator(get_inspection_schedule_generator())
 
     # Create and start engine
     _scheduler_engine = SchedulerEngine(registry)

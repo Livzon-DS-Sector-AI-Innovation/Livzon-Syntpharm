@@ -21,7 +21,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.response import error_response
-from app.modules.regulatory_tracker.tasks.sync_tasks import (
+from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
     start_scheduler,
 )
 from app.platform.audit import AuditMiddleware
@@ -63,7 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Import all modules to trigger their __init__.py and register workers
     import app.modules.energy  # noqa: F401
     import app.modules.equipment  # noqa: F401
-    import app.modules.regulatory_tracker  # noqa: F401
+    import app.modules.registration.regulatory_tracker  # noqa: F401
     import app.modules.safety  # noqa: F401
     import app.platform.identity  # noqa: F401
     import app.platform.integrations.feishu  # noqa: F401
@@ -149,7 +149,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     scheduler_registry.register_generator(InspectionScheduleGenerator())
 
     # Register regulatory_tracker scheduled tasks
-    from app.modules.regulatory_tracker.tasks.sync_tasks import (
+    from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
         daily_ai_analysis_task,
         daily_sync_task,
     )

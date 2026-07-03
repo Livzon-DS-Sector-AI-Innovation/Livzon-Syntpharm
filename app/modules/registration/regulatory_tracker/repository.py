@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.regulatory_tracker.models import (
+from app.modules.registration.regulatory_tracker.models import (
     DataChannel,
     DataSource,
     RegulatoryDocument,

@@ -9,13 +9,13 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.tasks import spawn_task
-from app.modules.regulatory_tracker import repository as repo
-from app.modules.regulatory_tracker.crawler.cde_crawler import (
+from app.modules.registration.regulatory_tracker import repository as repo
+from app.modules.registration.regulatory_tracker.crawler.cde_crawler import (
     CdeDomesticGuidelineAdapter,
 )
-from app.modules.regulatory_tracker.crawler.nmpa_crawler import NmpaRecordAdapter
-from app.modules.regulatory_tracker.models import DataChannel, DataSource
-from app.modules.regulatory_tracker.services.ai_workflow import get_ai_workflow
+from app.modules.registration.regulatory_tracker.crawler.nmpa_crawler import NmpaRecordAdapter
+from app.modules.registration.regulatory_tracker.models import DataChannel, DataSource
+from app.modules.registration.regulatory_tracker.services.ai_workflow import get_ai_workflow
 
 logger = logging.getLogger(__name__)
 

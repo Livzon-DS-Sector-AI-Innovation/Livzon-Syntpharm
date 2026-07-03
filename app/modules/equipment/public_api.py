@@ -131,3 +131,12 @@ async def list_roles(
 async def get_role_by_code(db: AsyncSession, code: str) -> RoleResponse | None:
     """按编码查角色（供其他模块调用）"""
     return await service.get_role_by_code(db, code)
+
+
+# ── 调度器公共接口 ──
+
+
+def get_inspection_schedule_generator():
+    """获取巡检计划调度生成器（供其他模块注册调度任务）"""
+    from app.modules.equipment.scheduled import InspectionScheduleGenerator
+    return InspectionScheduleGenerator()

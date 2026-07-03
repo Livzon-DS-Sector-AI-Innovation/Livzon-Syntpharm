@@ -126,22 +126,6 @@ BUSINESS_MODULES: tuple[ModuleDefinition, ...] = (
         owner_hint="QA/QC 负责人",
         description="偏差、CAPA、检验、放行、变更和质量体系数据入口。",
     ),
-    ModuleDefinition(
-        code="product",
-        name="产品信息",
-        path="/product",
-        db_schema="product",
-        owner_hint="生产/研发负责人",
-        description="产品台账、规格、工艺路线、BOM 和状态数据入口。",
-    ),
-    ModuleDefinition(
-        code="product",
-        name="产品管理",
-        path="/product",
-        db_schema="product",
-        owner_hint="产品负责人",
-        description="产品信息管理，包括产品档案、规格、工艺路线等。",
-    ),
 )
 
 MODULES_BY_CODE = {module.code: module for module in BUSINESS_MODULES}

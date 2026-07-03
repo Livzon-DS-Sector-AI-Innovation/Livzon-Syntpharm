@@ -5,10 +5,10 @@ from fastapi.responses import StreamingResponse
 
 from app.core.deps import CurrentUser
 from app.core.response import success_response
-from app.modules.ai_exam.schemas import ExamExportRequest
-from app.modules.ai_exam.service import export_exam, generate_exam
+from app.modules.hr.ai_exam.schemas import ExamExportRequest
+from app.modules.hr.ai_exam.service import export_exam, generate_exam
 
-router = APIRouter(prefix="/exam", tags=["AI 出题"])
+router = APIRouter(tags=["AI 出题"])
 
 
 @router.post("/generate", summary="生成考试题目")

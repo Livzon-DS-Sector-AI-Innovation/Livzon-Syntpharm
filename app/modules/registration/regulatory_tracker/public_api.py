@@ -4,7 +4,7 @@ Other modules should import from this file instead of directly accessing
 internal service/repository/models.
 """
 
-from app.modules.regulatory_tracker import repository
+from app.modules.registration.regulatory_tracker import repository
 
 __all__ = [
     "repository",

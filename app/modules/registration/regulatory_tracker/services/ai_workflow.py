@@ -10,8 +10,8 @@ import logging
 from typing import Protocol
 from uuid import UUID
 
-from app.modules.regulatory_tracker.models.regulatory_document import RegulatoryDocument
-from app.modules.regulatory_tracker.services.ai_analysis_service import (
+from app.modules.registration.regulatory_tracker.models.regulatory_document import RegulatoryDocument
+from app.modules.registration.regulatory_tracker.services.ai_analysis_service import (
     analyze_and_update,
 )
 

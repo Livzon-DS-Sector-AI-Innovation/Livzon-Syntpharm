@@ -24,7 +24,7 @@ class ModuleSetting(BaseModel):
         String(50),
         nullable=False,
         index=True,
-        comment="Module name (safety, equipment, energy, hr, regulatory_tracker)",
+        comment="Module name (safety, equipment, energy, hr, registration)",
     )
     key: Mapped[str] = mapped_column(
         String(100),

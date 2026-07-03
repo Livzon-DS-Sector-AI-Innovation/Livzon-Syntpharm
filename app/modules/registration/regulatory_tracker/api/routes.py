@@ -10,22 +10,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import error_response, success_response
-from app.modules.regulatory_tracker import repository as repo
-from app.modules.regulatory_tracker.schemas import (
+from app.modules.registration.regulatory_tracker import repository as repo
+from app.modules.registration.regulatory_tracker.schemas import (
     BatchReadRequest,
     SyncTriggerRequest,
 )
-from app.modules.regulatory_tracker.services.classification_service import (
+from app.modules.registration.regulatory_tracker.services.classification_service import (
     get_category_display_name,
 )
-from app.modules.regulatory_tracker.utils.excel_export import generate_regulatory_excel
+from app.modules.registration.regulatory_tracker.utils.excel_export import generate_regulatory_excel
 
 router = APIRouter()
 
 
 def _extract_impact_data(doc) -> dict:
     """从文档中提取影响评估数据。"""
-    from app.modules.regulatory_tracker.services.ai_analysis_service import (
+    from app.modules.registration.regulatory_tracker.services.ai_analysis_service import (
         score_to_impact_level,
     )
 
@@ -403,7 +403,7 @@ async def trigger_sync_job(
 
     # 后台执行同步（不阻塞响应）
     # AI 分析现在在 sync_service 中自动执行
-    from app.modules.regulatory_tracker.services.sync_service import run_sync_job
+    from app.modules.registration.regulatory_tracker.services.sync_service import run_sync_job
 
     async def _run_sync(current_user: CurrentUser):
         from app.core.database import async_session_factory

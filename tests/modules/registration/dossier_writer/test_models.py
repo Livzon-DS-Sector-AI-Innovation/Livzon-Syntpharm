@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import select
 
-from app.modules.dossier_writer.models import ProductDossier
+from app.modules.registration.dossier_writer.models import ProductDossier
 
 
 @pytest.mark.asyncio

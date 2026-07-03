@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.modules.regulatory_tracker.tasks.sync_tasks import (
+from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
     daily_ai_analysis_task,
     daily_sync_task,
 )

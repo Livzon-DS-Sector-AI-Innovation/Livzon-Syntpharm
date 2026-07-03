@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
 from app.modules.administration import router as administration_router
-from app.modules.ai_exam import router as ai_exam_router
-from app.modules.dossier_writer import router as dossier_writer_router
+from app.modules.hr.ai_exam import router as ai_exam_router
+from app.modules.registration.dossier_writer import router as dossier_writer_router
 from app.modules.energy import router as energy_router
 from app.modules.environment import router as environment_router
 from app.modules.equipment import router as equipment_router
@@ -15,7 +15,7 @@ from app.modules.production.product_output_api import router as product_output_r
 from app.modules.quality import router as quality_router
 from app.modules.quality.label_verification import router as label_verification_router
 from app.modules.registration import router as registration_router
-from app.modules.regulatory_tracker import router as regulatory_tracker_router
+from app.modules.registration.regulatory_tracker import router as regulatory_tracker_router
 from app.modules.research import router as research_router
 from app.modules.safety import router as safety_router
 from app.modules.warehouse import router as warehouse_router
@@ -54,7 +54,7 @@ api_router.include_router(
     tags=["行政管理"],
 )
 api_router.include_router(hr_router, prefix="/hr", tags=["人事管理"])
-api_router.include_router(ai_exam_router, prefix="/ai", tags=["AI 出题"])
+api_router.include_router(ai_exam_router, prefix="/hr/ai-exam", tags=["AI 出题"])
 api_router.include_router(research_router, prefix="/research", tags=["研发管理"])
 api_router.include_router(
     registration_router,
@@ -75,10 +75,10 @@ api_router.include_router(
     prefix="/production",
     tags=["生产管理 - 产量记录"],
 )
-api_router.include_router(regulatory_tracker_router, tags=["法规追踪"])
+api_router.include_router(regulatory_tracker_router, prefix="/registration", tags=["法规追踪"])
 api_router.include_router(
     dossier_writer_router,
-    prefix="/dossier-writer",
+    prefix="/registration/dossier-writer",
     tags=["申报资料撰写"],
 )
 from app.core.llm.api import router as llm_router
