@@ -35,26 +35,6 @@ services:
       - ./alembic.ini:/app/alembic.ini:ro
     command: .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
 
-  init:
-    profiles:
-      - init
-    build: .
-    env_file: .env.production
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./scripts:/app/scripts:ro
-      - ./assets:/app/assets:ro
-    command: >
-      sh -c "
-        echo '=== 同步部门 ===' &&
-        uv run python -X utf8 scripts/tmp/sync_lizhu_departments.py &&
-        echo '=== 同步人员 ===' &&
-        uv run python -X utf8 scripts/tmp/sync_lizhu_members.py &&
-        echo '=== 初始化完成 ==='
-      "
-
   db:
     image: postgres:17
     restart: unless-stopped
@@ -94,6 +74,7 @@ services:
       - "8001:8000"
     volumes:
       - ./edbo_service:/app
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
