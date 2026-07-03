@@ -228,6 +228,9 @@ jobs:
           pip install uv
           uv sync --dev
 
+      - name: Apply database migrations
+        run: uv run alembic upgrade head
+
       - name: Run tests
         run: |
           if ! uv run pytest; then

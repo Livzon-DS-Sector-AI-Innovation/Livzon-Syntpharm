@@ -159,6 +159,15 @@ run_tests() {
     echo ""
     echo "=== Running Tests ==="
     
+    # Apply migrations before running tests
+    echo "Applying database migrations..."
+    if ! uv run alembic upgrade head; then
+        log_error "Failed to apply migrations!"
+        FAILED=1
+        return
+    fi
+    log_info "Migrations applied"
+    
     if ! uv run pytest; then
         log_error "Tests failed!"
         FAILED=1
