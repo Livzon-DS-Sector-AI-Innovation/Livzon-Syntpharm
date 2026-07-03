@@ -11,9 +11,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Set dummy values for required env vars that aren't needed for spec generation
 # This allows the script to run in CI without a .env file
-os.environ.setdefault("FEISHU_APP_ID", "dummy")
-os.environ.setdefault("FEISHU_APP_SECRET", "dummy")
-os.environ.setdefault("FEISHU_REDIRECT_URI", "http://localhost/callback")
+# Uses nested delimiter format (FEISHU__PLATFORM__*) to match pydantic-settings config
+os.environ.setdefault("FEISHU__PLATFORM__APP_ID", "dummy")
+os.environ.setdefault("FEISHU__PLATFORM__APP_SECRET", "dummy")
+os.environ.setdefault("FEISHU__PLATFORM__REDIRECT_URI", "http://localhost/callback")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:3000")
 
 from app.main import app

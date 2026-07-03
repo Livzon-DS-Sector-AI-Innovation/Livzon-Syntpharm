@@ -36,6 +36,7 @@ docs/superpowers
 uploads/
 backups/
 .env.*
+!.env.ci.example
 
 # 运行时数据和测试产物
 *.tar.gz

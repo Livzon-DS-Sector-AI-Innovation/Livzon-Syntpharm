@@ -2,54 +2,21 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, dev/livzon-syntpharm]
+    branches: ['**']
   pull_request:
-    branches: [main, dev/livzon-syntpharm]
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: '3.12'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install dependencies
-        run: uv sync --dev
-
-      - name: Run lint checks
-        run: bash scripts/ci_local.sh lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install dependencies
-        run: uv sync --dev
-
-      - name: Run type check
-        run: bash scripts/ci_local.sh typecheck
-
-  openapi:
+  quick:
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
@@ -70,10 +37,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run OpenAPI check
-        run: bash scripts/ci_local.sh openapi
+      - name: Run quick CI
+        run: bash scripts/ci.sh quick
 
-  alembic:
+  full:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -111,65 +82,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run Alembic check
-        run: bash scripts/ci_local.sh alembic
-
-  migration-scope:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install dependencies
-        run: uv sync --dev
-
-      - name: Run migration scope check
-        run: bash scripts/ci_local.sh migration-scope
-
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: dazah_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-      FEISHU__PLATFORM__APP_ID: ci_dummy_app_id
-      FEISHU__PLATFORM__APP_SECRET: ci_dummy_app_secret
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-      FRONTEND_URL: http://localhost:3000
-
-    steps:
-      - uses: actions/checkout@v5.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@v6.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install dependencies
-        run: uv sync --dev
-
-      - name: Run tests
-        run: bash scripts/ci_local.sh test
+      - name: Run full CI
+        run: bash scripts/ci.sh full
