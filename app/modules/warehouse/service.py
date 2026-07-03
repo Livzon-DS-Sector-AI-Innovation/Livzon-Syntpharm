@@ -1,4 +1,5 @@
 """Warehouse business workflows live here."""
+import logging
 
 import hashlib
 from datetime import UTC, datetime
@@ -36,6 +37,8 @@ from app.modules.warehouse.schemas import (
     WarehouseFeishuTableSyncResult,
 )
 
+
+logger = logging.getLogger(__name__)
 
 def _safe_number(value: float | int | None) -> float:
     if value is None:
@@ -839,13 +842,13 @@ class WarehouseService:
                 app_tokens=self._config_app_tokens(config),
             )
         except Exception:
-            pass
+            logger.warning("Failed to restart warehouse WebSocket after config save", exc_info=True)
 
     async def _after_feishu_config_saved(self, config: WarehouseFeishuConfig) -> None:
         try:
             await self.refresh_feishu_tables()
         except Exception:
-            pass
+            logger.warning("Failed to refresh Feishu tables", exc_info=True)
         await self._restart_warehouse_ws(config)
 
     @staticmethod

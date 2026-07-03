@@ -1,6 +1,5 @@
 """抢单 API 路由."""
 
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -11,6 +10,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.identity.models import User
@@ -42,7 +42,7 @@ async def claim_work_order(
 
     wo = await service.claim_work_order(db, work_order_id, user.id)
 
-    asyncio.ensure_future(send_claim_notification(wo.work_order_no, user.name))
+    spawn_task(send_claim_notification(wo.work_order_no, user.name))
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

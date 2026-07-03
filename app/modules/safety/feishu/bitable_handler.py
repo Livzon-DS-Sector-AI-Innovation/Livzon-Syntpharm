@@ -42,7 +42,7 @@ def _debug_log(msg: str) -> None:
         with open(_debug_log_path, "a", encoding="utf-8") as f:
             f.write(f"[{ts}] {msg}\n")
     except Exception:
-        pass
+        logger.debug("Failed to write debug log: %s", msg, exc_info=True)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -578,7 +578,7 @@ async def _set_sync_ignore(record_id: str, ttl: int = 30) -> None:
     try:
         await redis_client.set(key, "1", ex=ttl, nx=False)
     except Exception:
-        pass
+        logger.warning("Failed to set sync ignore flag for %s", record_id, exc_info=True)
 
 
 async def _is_sync_ignored(record_id: str) -> bool:
@@ -940,11 +940,11 @@ async def _create_hazard_from_bitable(
             try:
                 await _lock_transaction.rollback()
             except Exception:
-                pass
+                logger.warning("Failed to rollback lock transaction", exc_info=True)
         try:
             await session.close()
         except Exception:
-            pass
+            logger.warning("Failed to close session", exc_info=True)
         session = async_session_factory()
 
     # 1. 字段映射

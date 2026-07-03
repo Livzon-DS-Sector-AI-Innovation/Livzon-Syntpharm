@@ -1,6 +1,5 @@
 """维修工单 API 路由."""
 
-import asyncio
 import logging
 import uuid
 
@@ -10,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import paginated_response, success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     MaterialConsumeRequest,
@@ -176,7 +176,7 @@ async def start_work_order(
 ) -> JSONResponse:
     wo = await service.start_work_order(db, work_order_id)
     # 网页点击开始时飞书通知维修人（非关键路径）
-    asyncio.ensure_future(_notify_start(wo))
+    spawn_task(_notify_start(wo))
     return success_response(data=_to_response(wo))
 
 

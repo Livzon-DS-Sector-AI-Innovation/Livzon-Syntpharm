@@ -1,3 +1,4 @@
+import logging
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -15,7 +16,7 @@ def _get_env_file() -> str:
     if not env_path.exists():
         env_path = _PROJECT_ROOT / ".env"
     env_file = str(env_path)
-    print(f"Loading environment variables from: {env_file}")
+    logging.getLogger(__name__).debug("Loading environment variables from: %s", env_file)
     return env_file
 
 
