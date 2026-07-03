@@ -33,6 +33,7 @@ class FakeAgentRepository:
         )
         self.messages = []
         self.tool_calls = []
+        self.confirmations = {}
 
     async def create_session(self, db, *, user_id, context, title):
         self.session.user_id = user_id
@@ -121,7 +122,11 @@ class FakeAgentRepository:
             request_payload=request_payload,
             expires_at=expires_at,
         )
+        self.confirmations[confirmation.id] = confirmation
         return confirmation
+
+    async def get_confirmation(self, db, confirmation_id):
+        return self.confirmations.get(confirmation_id)
 
 
 class PolicyOnlyAgentService(AgentService):
@@ -284,6 +289,80 @@ async def test_high_risk_tool_execution_returns_policy_refusal() -> None:
     assert response.meta["policy"] == "human_decision_required"
     assert response.data["message"] == HUMAN_DECISION_REQUIRED_MESSAGE
     assert repo.tool_calls[0].status == "rejected_by_policy"
+
+
+@pytest.mark.anyio
+async def test_resolve_pending_confirmation_from_assistant_text_id() -> None:
+    repo = FakeAgentRepository()
+    service = AgentService(settings=SimpleNamespace(), repo=repo)
+    confirmation = await repo.create_confirmation(
+        FakeDb(),
+        session_id=repo.session.id,
+        user_id=uuid.uuid4(),
+        operation="identity.send_feishu_card_message",
+        summary="向但昊发送飞书卡片消息",
+        risk_level="medium",
+        request_payload={"user_ids": [str(uuid.uuid4())]},
+        expires_at=datetime.now(UTC),
+    )
+
+    pending = await service._resolve_pending_confirmations(
+        FakeDb(),
+        {
+            "message": (
+                "已生成确认项，需要你确认后执行。\n"
+                f"发送确认编号：{confirmation.id} 状态：待确认"
+            ),
+            "pending_confirmations": [],
+            "tool_trace": [],
+        },
+    )
+
+    assert pending == [confirmation]
+
+
+@pytest.mark.anyio
+async def test_resolve_multiple_pending_confirmations_from_same_result() -> None:
+    repo = FakeAgentRepository()
+    service = AgentService(settings=SimpleNamespace(), repo=repo)
+    first_confirmation = await repo.create_confirmation(
+        FakeDb(),
+        session_id=repo.session.id,
+        user_id=uuid.uuid4(),
+        operation="identity.send_feishu_text_message",
+        summary="向张三发送飞书文本消息",
+        risk_level="medium",
+        request_payload={"user_ids": [str(uuid.uuid4())]},
+        expires_at=datetime.now(UTC),
+    )
+    second_confirmation = await repo.create_confirmation(
+        FakeDb(),
+        session_id=repo.session.id,
+        user_id=uuid.uuid4(),
+        operation="identity.send_feishu_card_message",
+        summary="向李四发送飞书卡片消息",
+        risk_level="medium",
+        request_payload={"user_ids": [str(uuid.uuid4())]},
+        expires_at=datetime.now(UTC),
+    )
+
+    pending = await service._resolve_pending_confirmations(
+        FakeDb(),
+        {
+            "message": (
+                "已生成两个确认项。\n"
+                f"第一个确认编号：{first_confirmation.id}\n"
+                f"第二个确认编号：{second_confirmation.id}"
+            ),
+            "pending_confirmations": [
+                {"id": str(first_confirmation.id)},
+                {"id": str(second_confirmation.id)},
+            ],
+            "tool_trace": [],
+        },
+    )
+
+    assert pending == [first_confirmation, second_confirmation]
 
 
 def test_contract_generation_sample_request_is_normalized() -> None:

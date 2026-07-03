@@ -187,3 +187,105 @@ class PersonnelListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+
+# ── Livzon Assistant Feishu Config ─────────────────────────────────
+
+
+class FeishuConfigUpsert(BaseModel):
+    config_name: str = Field(
+        default="Livzon 助手飞书设置",
+        min_length=1,
+        max_length=128,
+        description="配置名称，仅用于 Livzon 助手",
+    )
+    app_id: str = Field(..., min_length=1, max_length=128)
+    app_secret: str | None = Field(default=None, max_length=500)
+    card_callback_verification_token: str | None = Field(default=None, max_length=512)
+    card_callback_encrypt_key: str | None = Field(default=None, max_length=500)
+    sync_root_department_id: str | None = Field(default=None, max_length=128)
+    sync_member_department_id: str | None = Field(default=None, max_length=128)
+    is_active: bool = True
+
+    @field_validator(
+        "config_name",
+        "app_id",
+        "app_secret",
+        "card_callback_verification_token",
+        "card_callback_encrypt_key",
+        "sync_root_department_id",
+        "sync_member_department_id",
+        mode="before",
+    )
+    @classmethod
+    def clean_text(cls, value: object) -> object:
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return cleaned or None
+        return value
+
+
+class FeishuConfigResponse(BaseModel):
+    id: UUID | None = None
+    config_name: str = "Livzon 助手飞书设置"
+    app_id: str = ""
+    app_secret_configured: bool = False
+    app_secret_masked: str = ""
+    card_callback_verification_token_configured: bool = False
+    card_callback_verification_token_masked: str = ""
+    card_callback_encrypt_key_configured: bool = False
+    card_callback_encrypt_key_masked: str = ""
+    card_callback_url: str = "/api/v1/identity/feishu/card-callback"
+    sync_root_department_id: str | None = None
+    sync_member_department_id: str | None = None
+    is_active: bool = True
+    last_sync_status: str | None = None
+    last_sync_message: str | None = None
+    last_synced_at: str | None = None
+    last_diagnostic_status: str | None = None
+    last_diagnostic_message: str | None = None
+    last_diagnostic_result: str | None = None
+    last_diagnosed_at: str | None = None
+
+    @field_validator("last_synced_at", "last_diagnosed_at", mode="before")
+    @classmethod
+    def datetime_to_str(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+
+
+class FeishuDiagnosticStep(BaseModel):
+    name: str
+    status: Literal["ok", "warning", "error"]
+    message: str
+    suggestion: str | None = None
+    code: int | None = None
+
+
+class FeishuDiagnosticResult(BaseModel):
+    status: Literal["ok", "warning", "error"]
+    message: str
+    steps: list[FeishuDiagnosticStep]
+    department_count: int = 0
+    sample_user_count: int = 0
+
+
+class FeishuConfigApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: FeishuConfigResponse
+
+
+class FeishuDiagnosticApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: FeishuDiagnosticResult
+
+
+class FeishuCardCallbackResponse(BaseModel):
+    toast: dict | None = None
+    card: dict | None = None
+    challenge: str | None = None

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,10 @@ from app.platform.identity.repository import DepartmentRepository, UserRepositor
 from app.platform.identity.schemas import (
     DepartmentResponse,
     DepartmentTreeNode,
+    FeishuCardCallbackResponse,
+    FeishuConfigApiResponse,
+    FeishuConfigUpsert,
+    FeishuDiagnosticApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
     PasswordResetRequest,
@@ -33,6 +37,8 @@ user_router = APIRouter(tags=["用户信息"])
 dept_router = APIRouter(prefix="/departments", tags=["组织架构"])
 personnel_router = APIRouter(prefix="/personnel", tags=["人员名单"])
 sync_router = APIRouter(prefix="/sync", tags=["飞书同步"])
+feishu_config_router = APIRouter(prefix="/feishu-config", tags=["Livzon 助手飞书设置"])
+feishu_router = APIRouter(prefix="/feishu", tags=["Livzon 助手飞书"])
 
 
 # ── Auth (SSO) ──────────────────────────────────────────────────────
@@ -340,21 +346,138 @@ async def list_personnel(
 # ── Sync ────────────────────────────────────────────────────────────
 
 
+@feishu_config_router.get(
+    "",
+    summary="获取 Livzon 助手飞书设置",
+    response_model=FeishuConfigApiResponse,
+)
+async def get_livzon_feishu_config(
+    db: AsyncSession = Depends(get_db),
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """获取仅用于 Livzon 助手的飞书通讯录配置。"""
+    from app.platform.identity.service import get_livzon_feishu_config_response
+
+    data = await get_livzon_feishu_config_response(db)
+    return success_response(data=data.model_dump(mode="json"))
+
+
+@feishu_config_router.put(
+    "",
+    summary="保存 Livzon 助手飞书设置",
+    response_model=FeishuConfigApiResponse,
+)
+async def save_livzon_feishu_config(
+    payload: FeishuConfigUpsert,
+    db: AsyncSession = Depends(get_db),
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """保存仅用于 Livzon 助手的飞书自建应用凭证。"""
+    from app.platform.identity.service import (
+        save_livzon_feishu_config as save_config,
+    )
+
+    data = await save_config(db, payload)
+    return success_response(data=data.model_dump(mode="json"))
+
+
+@feishu_config_router.post(
+    "/test",
+    summary="诊断 Livzon 助手飞书权限",
+    response_model=FeishuDiagnosticApiResponse,
+)
+async def test_livzon_feishu_config(
+    payload: FeishuConfigUpsert | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """通过实际飞书 API 调用诊断 Livzon 助手通讯录权限。"""
+    from app.platform.identity.service import diagnose_livzon_feishu_config
+
+    data = await diagnose_livzon_feishu_config(db, payload)
+    return success_response(data=data.model_dump(mode="json"))
+
+
+@feishu_router.post(
+    "/card-callback",
+    summary="Livzon 助手飞书交互卡片回调",
+    response_model=FeishuCardCallbackResponse,
+)
+async def livzon_feishu_card_callback(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """处理 Livzon 助手飞书交互卡片回传事件。"""
+    from app.platform.identity.service import handle_livzon_feishu_card_callback
+
+    raw_body = await request.body()
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "无效的飞书回调 JSON") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "无效的飞书回调 JSON")
+    return await handle_livzon_feishu_card_callback(
+        db,
+        payload=payload,
+        raw_body=raw_body,
+        timestamp=request.headers.get("X-Lark-Request-Timestamp"),
+        nonce=request.headers.get("X-Lark-Request-Nonce"),
+        signature=request.headers.get("X-Lark-Signature"),
+    )
+
+
+@feishu_router.get(
+    "/card-callback-ws/status",
+    summary="查询 Livzon 助手飞书卡片长连接状态",
+)
+async def livzon_feishu_card_callback_ws_status(
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """查询 Livzon 助手飞书卡片回调长连接状态。"""
+    from app.platform.identity.feishu_card_ws import get_livzon_card_ws_status
+
+    data = await get_livzon_card_ws_status()
+    return success_response(data=data)
+
+
+@feishu_router.post(
+    "/card-callback-ws/restart",
+    summary="重启 Livzon 助手飞书卡片长连接",
+)
+async def restart_livzon_feishu_card_callback_ws(
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """重启 Livzon 助手飞书卡片回调长连接。"""
+    from app.platform.identity.feishu_card_ws import restart_livzon_card_ws
+
+    data = await restart_livzon_card_ws()
+    return success_response(data=data)
+
+
 @sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
 async def trigger_sync_departments(
+    db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
-    root_id = settings.FEISHU_SYNC_ROOT_DEPT_ID
+    from app.core.secrets import decrypt_secret
+    from app.platform.identity.repository import FeishuConfigRepository
+
+    config = await FeishuConfigRepository().get_active(db)
+    root_id = (
+        config.sync_root_department_id
+        if config and config.sync_root_department_id
+        else settings.FEISHU_SYNC_ROOT_DEPT_ID
+    )
     if not root_id:
-        return JSONResponse(
-            status_code=400,
-            content={"message": "未配置 FEISHU_SYNC_ROOT_DEPT_ID"},
-        )
+        return JSONResponse(status_code=400, content={"message": "未配置同步根部门 ID"})
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    asyncio.create_task(sync_departments(root_id))
+    app_id = config.app_id if config else None
+    app_secret = decrypt_secret(config.encrypted_app_secret) if config else None
+    asyncio.create_task(sync_departments(root_id, app_id=app_id, app_secret=app_secret))
     logger.info("Department sync triggered for root=%s", root_id)
     return success_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id},
@@ -363,20 +486,43 @@ async def trigger_sync_departments(
 
 @sync_router.post("/members", summary="触发飞书成员同步（异步）")
 async def trigger_sync_members(
+    db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
-    target_id = settings.FEISHU_SYNC_MEMBER_DEPT_ID
+    from app.core.secrets import decrypt_secret
+    from app.platform.identity.repository import FeishuConfigRepository
+
+    config = await FeishuConfigRepository().get_active(db)
+    target_id = (
+        config.sync_member_department_id
+        if config and config.sync_member_department_id
+        else settings.FEISHU_SYNC_MEMBER_DEPT_ID
+    )
     if not target_id:
         return JSONResponse(
             status_code=400,
-            content={"message": "未配置 FEISHU_SYNC_MEMBER_DEPT_ID"},
+            content={"message": "未配置成员同步部门 ID"},
         )
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    asyncio.create_task(sync_members(target_id))
+    app_id = config.app_id if config else None
+    app_secret = decrypt_secret(config.encrypted_app_secret) if config else None
+    asyncio.create_task(sync_members(target_id, app_id=app_id, app_secret=app_secret))
     logger.info("Member sync triggered for target=%s", target_id)
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id},
     )
+
+
+@sync_router.post("/all", summary="同步 Livzon 助手飞书通讯录")
+async def trigger_sync_all(
+    db: AsyncSession = Depends(get_db),
+    current_user: AdminUser = None,
+) -> JSONResponse:
+    """同步 Livzon 助手使用的部门、用户、手机号、邮箱和部门关系。"""
+    from app.platform.identity.service import run_livzon_feishu_sync_all
+
+    data = await run_livzon_feishu_sync_all(db)
+    return success_response(data=data)

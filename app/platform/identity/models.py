@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
@@ -96,4 +97,113 @@ class Department(BaseModel):
     )
     order: Mapped[int | None] = mapped_column(
         Integer, nullable=True, comment="同级排序"
+    )
+
+
+class FeishuConfig(BaseModel):
+    """Livzon 助手专用飞书通讯录配置。"""
+
+    __tablename__ = "feishu_configs"
+    __table_args__ = {"schema": "identity"}
+
+    config_name: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        default="Livzon 助手飞书设置",
+        comment="配置名称，仅用于 Livzon 助手",
+    )
+    app_id: Mapped[str] = mapped_column(
+        String(128), nullable=False, comment="飞书自建应用 App ID"
+    )
+    encrypted_app_secret: Mapped[str] = mapped_column(
+        String(1024), nullable=False, comment="加密后的飞书自建应用 App Secret"
+    )
+    sync_root_department_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="组织架构同步根部门 ID"
+    )
+    sync_member_department_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="成员同步部门 ID"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+        comment="是否启用",
+    )
+    last_sync_status: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="最近同步状态"
+    )
+    last_sync_message: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="最近同步信息"
+    )
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近同步时间"
+    )
+    last_diagnostic_status: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="最近诊断状态"
+    )
+    last_diagnostic_message: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="最近诊断信息"
+    )
+    last_diagnostic_result: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="最近诊断结果 JSON"
+    )
+    last_diagnosed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近诊断时间"
+    )
+    card_callback_verification_token: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, comment="飞书卡片回调 Verification Token"
+    )
+    encrypted_card_callback_encrypt_key: Mapped[str | None] = mapped_column(
+        String(1024), nullable=True, comment="加密后的飞书卡片回调 Encrypt Key"
+    )
+
+
+class FeishuCardAction(BaseModel):
+    """Livzon 助手飞书交互卡片动作记录。"""
+
+    __tablename__ = "feishu_card_actions"
+    __table_args__ = {"schema": "identity"}
+
+    message_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True, comment="飞书消息 ID"
+    )
+    card_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True, comment="飞书卡片 ID"
+    )
+    local_user_id: Mapped[UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True, comment="本地收件人用户 ID"
+    )
+    recipient_open_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True, comment="收件人 open_id"
+    )
+    business_ref: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, comment="业务引用摘要"
+    )
+    action_key: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True, comment="动作 key"
+    )
+    action_label: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="动作展示名称"
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="pending",
+        server_default="pending",
+        index=True,
+        comment="pending/processed/expired/rejected",
+    )
+    clicked_open_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="点击人 open_id"
+    )
+    callback_summary: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, comment="回调摘要，不保存完整敏感 payload"
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="动作过期时间"
+    )
+    executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="处理时间"
     )

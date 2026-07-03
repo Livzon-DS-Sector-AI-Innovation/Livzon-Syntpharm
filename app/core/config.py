@@ -179,6 +179,12 @@ class Settings(BaseSettings):
     AGENT_INTERNAL_API_BASE_URL: str = "http://127.0.0.1:8000/api/v1"
     AGENT_INTERNAL_API_TOKEN: str = ""
     AGENT_WRITE_CONFIRM_TTL_SECONDS: int = 300
+    AGENT_HERMES_TIMEOUT_SECONDS: int = 210
+    AGENT_INTERNAL_API_TIMEOUT_SECONDS: int = 120
+
+    # Livzon assistant Feishu card callback. Enable this in development when
+    # Feishu cannot reach a public HTTPS callback URL.
+    LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
 
     # API
     API_V1_PREFIX: str = "/api/v1"
@@ -192,6 +198,8 @@ class Settings(BaseSettings):
         missing: list[str] = []
         if not self.SECRET_KEY:
             missing.append("SECRET_KEY")
+        if self.is_production and not self.ENCRYPTION_KEY:
+            missing.append("ENCRYPTION_KEY")
         if not self.FRONTEND_URL:
             missing.append("FRONTEND_URL")
         if missing:

@@ -734,6 +734,354 @@
         }
       }
     },
+    "/api/v1/identity/sync/all": {
+      "post": {
+        "tags": [
+          "\u98de\u4e66\u540c\u6b65",
+          "\u98de\u4e66\u540c\u6b65"
+        ],
+        "summary": "\u540c\u6b65 Livzon \u52a9\u624b\u98de\u4e66\u901a\u8baf\u5f55",
+        "description": "\u540c\u6b65 Livzon \u52a9\u624b\u4f7f\u7528\u7684\u90e8\u95e8\u3001\u7528\u6237\u3001\u624b\u673a\u53f7\u3001\u90ae\u7bb1\u548c\u90e8\u95e8\u5173\u7cfb\u3002",
+        "operationId": "trigger_sync_all_api_v1_identity_sync_all_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu-config": {
+      "get": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e",
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6 Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e",
+        "description": "\u83b7\u53d6\u4ec5\u7528\u4e8e Livzon \u52a9\u624b\u7684\u98de\u4e66\u901a\u8baf\u5f55\u914d\u7f6e\u3002",
+        "operationId": "get_livzon_feishu_config_api_v1_identity_feishu_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e",
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+        ],
+        "summary": "\u4fdd\u5b58 Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e",
+        "description": "\u4fdd\u5b58\u4ec5\u7528\u4e8e Livzon \u52a9\u624b\u7684\u98de\u4e66\u81ea\u5efa\u5e94\u7528\u51ed\u8bc1\u3002",
+        "operationId": "save_livzon_feishu_config_api_v1_identity_feishu_config_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuConfigUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu-config/test": {
+      "post": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e",
+          "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+        ],
+        "summary": "\u8bca\u65ad Livzon \u52a9\u624b\u98de\u4e66\u6743\u9650",
+        "description": "\u901a\u8fc7\u5b9e\u9645\u98de\u4e66 API \u8c03\u7528\u8bca\u65ad Livzon \u52a9\u624b\u901a\u8baf\u5f55\u6743\u9650\u3002",
+        "operationId": "test_livzon_feishu_config_api_v1_identity_feishu_config_test_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/FeishuConfigUpsert"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuDiagnosticApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu/card-callback": {
+      "post": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66",
+          "Livzon \u52a9\u624b\u98de\u4e66"
+        ],
+        "summary": "Livzon \u52a9\u624b\u98de\u4e66\u4ea4\u4e92\u5361\u7247\u56de\u8c03",
+        "description": "\u5904\u7406 Livzon \u52a9\u624b\u98de\u4e66\u4ea4\u4e92\u5361\u7247\u56de\u4f20\u4e8b\u4ef6\u3002",
+        "operationId": "livzon_feishu_card_callback_api_v1_identity_feishu_card_callback_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuCardCallbackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu/card-callback-ws/status": {
+      "get": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66",
+          "Livzon \u52a9\u624b\u98de\u4e66"
+        ],
+        "summary": "\u67e5\u8be2 Livzon \u52a9\u624b\u98de\u4e66\u5361\u7247\u957f\u8fde\u63a5\u72b6\u6001",
+        "description": "\u67e5\u8be2 Livzon \u52a9\u624b\u98de\u4e66\u5361\u7247\u56de\u8c03\u957f\u8fde\u63a5\u72b6\u6001\u3002",
+        "operationId": "livzon_feishu_card_callback_ws_status_api_v1_identity_feishu_card_callback_ws_status_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu/card-callback-ws/restart": {
+      "post": {
+        "tags": [
+          "Livzon \u52a9\u624b\u98de\u4e66",
+          "Livzon \u52a9\u624b\u98de\u4e66"
+        ],
+        "summary": "\u91cd\u542f Livzon \u52a9\u624b\u98de\u4e66\u5361\u7247\u957f\u8fde\u63a5",
+        "description": "\u91cd\u542f Livzon \u52a9\u624b\u98de\u4e66\u5361\u7247\u56de\u8c03\u957f\u8fde\u63a5\u3002",
+        "operationId": "restart_livzon_feishu_card_callback_ws_api_v1_identity_feishu_card_callback_ws_restart_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/modules": {
       "get": {
         "tags": [
@@ -56856,6 +57204,437 @@
         "type": "object",
         "title": "FailureCodeUpdate",
         "description": "\u66f4\u65b0\u6545\u969c\u4ee3\u7801\u8bf7\u6c42"
+      },
+      "FeishuCardCallbackResponse": {
+        "properties": {
+          "toast": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toast"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card"
+          },
+          "challenge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge"
+          }
+        },
+        "type": "object",
+        "title": "FeishuCardCallbackResponse"
+      },
+      "FeishuConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuConfigResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuConfigApiResponse"
+      },
+      "FeishuConfigResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "config_name": {
+            "type": "string",
+            "title": "Config Name",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "title": "App Id",
+            "default": ""
+          },
+          "app_secret_configured": {
+            "type": "boolean",
+            "title": "App Secret Configured",
+            "default": false
+          },
+          "app_secret_masked": {
+            "type": "string",
+            "title": "App Secret Masked",
+            "default": ""
+          },
+          "card_callback_verification_token_configured": {
+            "type": "boolean",
+            "title": "Card Callback Verification Token Configured",
+            "default": false
+          },
+          "card_callback_verification_token_masked": {
+            "type": "string",
+            "title": "Card Callback Verification Token Masked",
+            "default": ""
+          },
+          "card_callback_encrypt_key_configured": {
+            "type": "boolean",
+            "title": "Card Callback Encrypt Key Configured",
+            "default": false
+          },
+          "card_callback_encrypt_key_masked": {
+            "type": "string",
+            "title": "Card Callback Encrypt Key Masked",
+            "default": ""
+          },
+          "card_callback_url": {
+            "type": "string",
+            "title": "Card Callback Url",
+            "default": "/api/v1/identity/feishu/card-callback"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "last_sync_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Status"
+          },
+          "last_sync_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Message"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "last_diagnostic_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Status"
+          },
+          "last_diagnostic_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Message"
+          },
+          "last_diagnostic_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Result"
+          },
+          "last_diagnosed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnosed At"
+          }
+        },
+        "type": "object",
+        "title": "FeishuConfigResponse"
+      },
+      "FeishuConfigUpsert": {
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Config Name",
+            "description": "\u914d\u7f6e\u540d\u79f0\uff0c\u4ec5\u7528\u4e8e Livzon \u52a9\u624b",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "App Id"
+          },
+          "app_secret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Secret"
+          },
+          "card_callback_verification_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Verification Token"
+          },
+          "card_callback_encrypt_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Encrypt Key"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_id"
+        ],
+        "title": "FeishuConfigUpsert"
+      },
+      "FeishuDiagnosticApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuDiagnosticResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuDiagnosticApiResponse"
+      },
+      "FeishuDiagnosticResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/FeishuDiagnosticStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "department_count": {
+            "type": "integer",
+            "title": "Department Count",
+            "default": 0
+          },
+          "sample_user_count": {
+            "type": "integer",
+            "title": "Sample User Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "steps"
+        ],
+        "title": "FeishuDiagnosticResult"
+      },
+      "FeishuDiagnosticStep": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "message"
+        ],
+        "title": "FeishuDiagnosticStep"
       },
       "HTTPValidationError": {
         "properties": {

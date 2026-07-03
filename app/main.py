@@ -1,3 +1,4 @@
+# ruff: noqa: E402, I001
 import asyncio
 import logging
 import os
@@ -117,6 +118,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     safety_ws_task = asyncio.create_task(start_ws())
 
+    # ── Livzon 助手飞书交互卡片回调（开发环境可用 WebSocket 长连接）──
+    livzon_card_ws_task: asyncio.Task | None = None
+    if settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED:
+        from app.platform.identity.feishu_card_ws import start_livzon_card_ws
+
+        livzon_card_ws_task = asyncio.create_task(start_livzon_card_ws())
+
     # ── 安全模块定时任务调度引擎 ──
     from app.modules.safety.scheduler import (
         scheduled_task_loop,
@@ -151,6 +159,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 停止安全模块 WebSocket
     await stop_ws()
     safety_ws_task.cancel()
+
+    if livzon_card_ws_task:
+        from app.platform.identity.feishu_card_ws import stop_livzon_card_ws
+
+        await stop_livzon_card_ws()
+        livzon_card_ws_task.cancel()
 
     # 停止定时任务调度引擎
     stop_scheduled_task_flag.set()

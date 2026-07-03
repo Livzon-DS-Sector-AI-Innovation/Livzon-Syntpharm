@@ -1,5 +1,7 @@
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
@@ -24,6 +26,37 @@ def _service(context: ToolContext) -> Any:
     if context.agent_service is None:
         raise RuntimeError("Agent workflow tools require AgentService")
     return context.agent_service
+
+
+@agent_tool(
+    name="agent.get_current_time",
+    summary="获取当前精确时间",
+    method="GET",
+    path="/agent/current-time",
+    output_hint=(
+        "返回当前北京时间、UTC 时间、日期、星期、Unix 时间戳和定时任务建议时区。"
+    ),
+)
+async def get_current_time(context: ToolContext, _: BaseModel) -> dict[str, Any]:
+    local_tz_name = "Asia/Shanghai"
+    local_tz = ZoneInfo(local_tz_name)
+    utc_now = datetime.now(UTC)
+    local_now = utc_now.astimezone(local_tz)
+
+    return {
+        "timezone": local_tz_name,
+        "utc_offset": local_now.strftime("%z")[:3] + ":" + local_now.strftime("%z")[3:],
+        "local_iso": local_now.isoformat(),
+        "utc_iso": utc_now.isoformat(),
+        "date": local_now.date().isoformat(),
+        "time": local_now.strftime("%H:%M:%S"),
+        "weekday": local_now.isoweekday(),
+        "weekday_name": local_now.strftime("%A"),
+        "unix_seconds": int(local_now.timestamp()),
+        "unix_milliseconds": int(local_now.timestamp() * 1000),
+        "cron_timezone": local_tz_name,
+        "usage_hint": "设置每天定时任务时，以 cron_timezone 的本地日期和时间为准。",
+    }
 
 
 @agent_tool(

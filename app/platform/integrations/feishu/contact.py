@@ -9,22 +9,34 @@ from app.core.redis import cache_get, cache_set
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
+CONTACT_PAGE_SIZE = 50
 
 
-async def _get_feishu_client():
+async def _get_feishu_client(
+    app_id: str | None = None,
+    app_secret: str | None = None,
+):
     import lark_oapi as lark
 
+    resolved_app_id = app_id or settings.FEISHU_APP_ID
+    resolved_app_secret = app_secret or settings.FEISHU_APP_SECRET
     return (
         lark.Client.builder()
-        .app_id(settings.FEISHU_APP_ID)
-        .app_secret(settings.FEISHU_APP_SECRET)
+        .app_id(resolved_app_id)
+        .app_secret(resolved_app_secret)
         .domain(lark.FEISHU_DOMAIN)
         .app_type(lark.AppType.SELF)
         .build()
     )
 
 
-async def _get_tenant_token(client) -> str:
+async def _get_tenant_token(
+    client,
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> str:
     import json as _json
 
     from lark_oapi.api.auth.v3 import (
@@ -32,12 +44,17 @@ async def _get_tenant_token(client) -> str:
         InternalTenantAccessTokenRequestBody,
     )
 
+    if tenant_access_token:
+        return tenant_access_token
+
+    resolved_app_id = app_id or settings.FEISHU_APP_ID
+    resolved_app_secret = app_secret or settings.FEISHU_APP_SECRET
     req = (
         InternalTenantAccessTokenRequest.builder()
         .request_body(
             InternalTenantAccessTokenRequestBody.builder()
-            .app_id(settings.FEISHU_APP_ID)
-            .app_secret(settings.FEISHU_APP_SECRET)
+            .app_id(resolved_app_id)
+            .app_secret(resolved_app_secret)
             .build()
         )
         .build()
@@ -56,80 +73,166 @@ async def _get_tenant_token(client) -> str:
 # ── Department helpers ──────────────────────────────────────────────
 
 
-async def get_all_departments() -> list[dict]:
+def _department_to_dict(item, parent_department_id: str = "") -> dict:
+    oid = item.open_department_id or item.department_id or ""
+    name = item.name or oid
+    order_val = item.order or 0
+    try:
+        order_val = int(order_val)
+    except (ValueError, TypeError):
+        order_val = 0
+    return {
+        "department_id": oid,
+        "raw_department_id": item.department_id or "",
+        "open_department_id": item.open_department_id or "",
+        "name": name,
+        "parent_department_id": parent_department_id,
+        "leader_user_id": item.leader_user_id or "",
+        "member_count": item.member_count or 0,
+        "status_is_deleted": False,
+        "order": order_val,
+    }
+
+
+async def get_contact_scope(
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> dict:
+    """读取当前应用被授权的通讯录范围，用于诊断授权范围问题。"""
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
+
+    from lark_oapi.api.contact.v3 import ListScopeRequest
+
+    department_ids: list[str] = []
+    user_ids: list[str] = []
+    group_ids: list[str] = []
+    page_token = ""
+    while True:
+        req = (
+            ListScopeRequest.builder()
+            .department_id_type("open_department_id")
+            .user_id_type("user_id")
+            .page_size(CONTACT_PAGE_SIZE)
+            .page_token(page_token)
+            .build()
+        )
+        req.headers["Authorization"] = f"Bearer {token}"
+        resp = await client.contact.v3.scope.alist(req)
+        if not resp.success():
+            raise RuntimeError(
+                f"Failed to list contact scope: code={resp.code}, msg={resp.msg}",
+            )
+        if not resp.data:
+            break
+        department_ids.extend(resp.data.department_ids or [])
+        user_ids.extend(resp.data.user_ids or [])
+        group_ids.extend(resp.data.group_ids or [])
+        if not resp.data.has_more:
+            break
+        page_token = resp.data.page_token or ""
+        if not page_token:
+            break
+
+    return {
+        "department_ids": department_ids,
+        "user_ids": user_ids,
+        "group_ids": group_ids,
+    }
+
+
+async def get_all_departments(
+    *,
+    root_department_id: str = "0",
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> list[dict]:
     """BFS 递归获取全公司所有部门（含名称），包括叶子节点。
 
     返回扁平列表。
     """
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
-    from lark_oapi.api.contact.v3 import ListDepartmentRequest
+    from lark_oapi.api.contact.v3 import ChildrenDepartmentRequest
 
     all_depts: list[dict] = []
-    # BFS: 从根出发，逐层获取子部门
-    queue: list[tuple[str, str]] = [("0", "")]
-    visited: set[str] = {"0"}
-
-    while queue:
-        parent_id, parent_oid = queue.pop(0)
-
-        page_token = ""
-        while True:
-            req = (
-                ListDepartmentRequest.builder()
-                .department_id_type("open_department_id")
-                .parent_department_id(parent_id)
-                .fetch_child(False)
-                .page_size(50)
-                .page_token(page_token)
-                .build()
+    root_id = root_department_id or "0"
+    visited: set[str] = {root_id}
+    page_token = ""
+    while True:
+        req = (
+            ChildrenDepartmentRequest.builder()
+            .department_id_type("open_department_id")
+            .user_id_type("user_id")
+            .department_id(root_id)
+            .fetch_child(True)
+            .page_size(50)
+            .page_token(page_token)
+            .build()
+        )
+        req.headers["Authorization"] = f"Bearer {token}"
+        resp = await client.contact.v3.department.achildren(req)
+        if not resp.success():
+            raise RuntimeError(
+                f"Failed to list child departments: code={resp.code}, msg={resp.msg}",
             )
-            req.headers["Authorization"] = f"Bearer {token}"
-            resp = await client.contact.v3.department.alist(req)
-            raw = resp.raw.content if resp.raw else None
-            if not raw:
-                break
-            data = json.loads(raw.decode("utf-8")).get("data", {})
-            for it in data.get("items", []):
-                oid = it.get("open_department_id", "")
-                if not oid or oid in visited:
-                    continue
-                visited.add(oid)
-                name = it.get("name", "") or oid
-                order_str = it.get("order", "0") or "0"
-                try:
-                    order_val = int(order_str)
-                except (ValueError, TypeError):
-                    order_val = 0
-                all_depts.append({
-                    "department_id": oid,
-                    "name": name,
-                    "parent_department_id": parent_oid if parent_id != "0" else "",
-                    "leader_user_id": it.get("leader_user_id", "") or "",
-                    "member_count": it.get("member_count", 0) or 0,
-                    "status_is_deleted": False,
-                    "order": order_val,
-                })
-                # 继续递归子部门
-                queue.append((oid, oid))
-            if not data.get("has_more"):
-                break
-            page_token = data.get("page_token", "")
+        if not resp.data:
+            break
+
+        for item in resp.data.items or []:
+            oid = item.open_department_id or item.department_id or ""
+            if not oid or oid in visited:
+                continue
+            visited.add(oid)
+            parent_id = item.parent_department_id or ""
+            if parent_id == root_id:
+                parent_id = ""
+            all_depts.append(_department_to_dict(item, parent_id))
+
+        if not resp.data.has_more:
+            break
+        page_token = resp.data.page_token or ""
+        if not page_token:
+            break
 
     logger.info("Fetched %d departments from Feishu (BFS)", len(all_depts))
     return all_depts
 
 
-async def get_department_members(dept_id: str) -> list[dict]:
+async def get_department_members(
+    dept_id: str,
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> list[dict]:
     """获取部门成员列表，优先读 Redis"""
-    cache_key = f"feishu:dept:{dept_id}:members"
+    cache_key = f"feishu:{app_id or 'default'}:dept:{dept_id}:members"
     cached = await cache_get(cache_key)
     if cached:
         return json.loads(cached)
 
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
     from lark_oapi.api.contact.v3 import ListUserRequest
 
@@ -139,7 +242,7 @@ async def get_department_members(dept_id: str) -> list[dict]:
         req = (
             ListUserRequest.builder()
             .department_id(dept_id)
-            .page_size(100)
+            .page_size(CONTACT_PAGE_SIZE)
             .page_token(page_token)
             .user_id_type("user_id")
             .build()
@@ -171,15 +274,26 @@ async def get_department_members(dept_id: str) -> list[dict]:
     return all_members
 
 
-async def get_department_leader(dept_id: str) -> dict | None:
+async def get_department_leader(
+    dept_id: str,
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> dict | None:
     """获取部门主管"""
     cache_key = f"feishu:dept:{dept_id}:leader"
     cached = await cache_get(cache_key)
     if cached:
         return json.loads(cached)
 
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
     from lark_oapi.api.contact.v3 import GetDepartmentRequest
 
@@ -216,14 +330,24 @@ async def is_department_member(user_id: str, dept_id: str) -> bool:
 # ── User helpers ────────────────────────────────────────────────────
 
 
-async def get_all_users() -> list[dict]:
+async def get_all_users(
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> list[dict]:
     """获取所有可见用户（全公司范围，分页）。
 
     每个元素包含 user_id, open_id, name, employee_no, email, mobile,
     department_ids, job_title, positions, department_path 等。
     """
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
     from lark_oapi.api.contact.v3 import ListUserRequest
 
@@ -233,7 +357,7 @@ async def get_all_users() -> list[dict]:
         req = (
             ListUserRequest.builder()
             .user_id_type("user_id")
-            .page_size(100)
+            .page_size(CONTACT_PAGE_SIZE)
             .page_token(page_token)
             .build()
         )
@@ -263,15 +387,26 @@ async def get_all_users() -> list[dict]:
     return all_users
 
 
-async def find_users_by_department(department_id: str) -> list[dict]:
+async def find_users_by_department(
+    department_id: str,
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> list[dict]:
     """按部门获取所有用户详情（含 department_ids、position、job_title 等）。
 
     每个元素包含：
     - user_id, open_id, name, employee_no, email, mobile,
     - department_ids (list[str]), job_title, positions, department_path
     """
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
     from lark_oapi.api.contact.v3 import FindByDepartmentUserRequest
 
@@ -283,18 +418,17 @@ async def find_users_by_department(department_id: str) -> list[dict]:
             .user_id_type("user_id")
             .department_id_type("open_department_id")
             .department_id(department_id)
-            .page_size(100)
+            .page_size(CONTACT_PAGE_SIZE)
             .page_token(page_token)
             .build()
         )
         req.headers["Authorization"] = f"Bearer {token}"
         resp = await client.contact.v3.user.afind_by_department(req)
         if not resp.success():
-            logger.error(
-                "Failed to find users by department %s: code=%s, msg=%s",
-                department_id, resp.code, resp.msg,
+            raise RuntimeError(
+                "Failed to find users by department "
+                f"{department_id}: code={resp.code}, msg={resp.msg}"
             )
-            break
 
         if resp.data and resp.data.items:
             for u in resp.data.items:
@@ -352,13 +486,25 @@ async def find_users_by_department(department_id: str) -> list[dict]:
     return all_users
 
 
-async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict | None:
+async def get_user_detail(
+    user_id: str,
+    user_id_type: str = "user_id",
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> dict | None:
     """获取单个用户详细信息。
 
     返回包含 department_ids, positions, department_path 等完整字段。
     """
-    client = await _get_feishu_client()
-    token = await _get_tenant_token(client)
+    client = await _get_feishu_client(app_id, app_secret)
+    token = await _get_tenant_token(
+        client,
+        app_id=app_id,
+        app_secret=app_secret,
+        tenant_access_token=tenant_access_token,
+    )
 
     from lark_oapi.api.contact.v3 import GetUserRequest
 

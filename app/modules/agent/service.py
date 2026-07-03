@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import re
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -334,6 +335,12 @@ class AgentService:
                 300,
             ),
         )
+
+    def _hermes_timeout_seconds(self) -> int:
+        return int(getattr(self.settings, "AGENT_HERMES_TIMEOUT_SECONDS", 210))
+
+    def _internal_api_timeout_seconds(self) -> int:
+        return int(getattr(self.settings, "AGENT_INTERNAL_API_TIMEOUT_SECONDS", 120))
 
     async def list_skills(self, db: AsyncSession) -> list[AgentSkillOut]:
         return [self._skill_out(skill) for skill in await self.repo.list_skills(db)]
@@ -878,7 +885,9 @@ class AgentService:
             },
         }
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(
+                timeout=self._hermes_timeout_seconds()
+            ) as client:
                 response = await client.post(
                     self.settings.HERMES_AGENT_URL, json=payload, headers=headers
                 )
@@ -941,7 +950,8 @@ class AgentService:
         }
         stream_url = self._hermes_stream_url()
         try:
-            timeout = httpx.Timeout(120, read=120)
+            hermes_timeout = self._hermes_timeout_seconds()
+            timeout = httpx.Timeout(hermes_timeout, read=hermes_timeout)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 async with client.stream(
                     "POST",
@@ -1042,7 +1052,9 @@ class AgentService:
                 f"Bearer {self.settings.AGENT_INTERNAL_API_TOKEN}"
             )
         async with httpx.AsyncClient(
-            base_url=base_url, timeout=120, headers=headers
+            base_url=base_url,
+            timeout=self._internal_api_timeout_seconds(),
+            headers=headers,
         ) as client:
             response = await client.request(
                 spec.method, path, params=query_params, json=body
@@ -1573,15 +1585,61 @@ class AgentService:
         hermes_result: dict[str, Any],
     ) -> list[AgentConfirmation]:
         confirmations: list[AgentConfirmation] = []
-        for item in hermes_result.get("pending_confirmations") or []:
-            confirmation_id = item.get("id") if isinstance(item, dict) else None
+        seen: set[uuid.UUID] = set()
+        for confirmation_id in self._extract_confirmation_ids(hermes_result):
             parsed_id = self._uuid_or_none(confirmation_id)
             if not parsed_id:
                 continue
+            if parsed_id in seen:
+                continue
+            seen.add(parsed_id)
             confirmation = await self.repo.get_confirmation(db, parsed_id)
             if confirmation and confirmation.status == "pending":
                 confirmations.append(confirmation)
         return confirmations
+
+    def _extract_confirmation_ids(self, value: Any) -> list[str]:
+        ids: list[str] = []
+        if isinstance(value, str):
+            ids.extend(
+                match.group(0)
+                for match in re.finditer(
+                    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+                    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                    r"[0-9a-fA-F]{12}\b",
+                    value,
+                )
+            )
+            try:
+                decoded = json.loads(value)
+            except json.JSONDecodeError:
+                return ids
+            ids.extend(self._extract_confirmation_ids(decoded))
+            return ids
+        if isinstance(value, list):
+            for item in value:
+                ids.extend(self._extract_confirmation_ids(item))
+            return ids
+        if not isinstance(value, dict):
+            return ids
+
+        for key in ("id", "confirmation_id"):
+            item = value.get(key)
+            if isinstance(item, str):
+                ids.append(item)
+        confirmation = value.get("confirmation")
+        if isinstance(confirmation, dict):
+            confirmation_id = confirmation.get("id")
+            if isinstance(confirmation_id, str):
+                ids.append(confirmation_id)
+        pending_confirmation = value.get("pending_confirmation")
+        if isinstance(pending_confirmation, dict):
+            confirmation_id = pending_confirmation.get("id")
+            if isinstance(confirmation_id, str):
+                ids.append(confirmation_id)
+        for item in value.values():
+            ids.extend(self._extract_confirmation_ids(item))
+        return ids
 
     def _format_path(self, path: str, params: dict[str, Any]) -> str:
         formatted = path
