@@ -43,3 +43,4 @@ backups/
 storage/
 scripts/regulatory_poc/*.png
 scripts/regulatory_poc/*.json
+.claude/
