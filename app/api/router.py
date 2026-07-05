@@ -8,7 +8,6 @@ from app.modules.environment import router as environment_router
 from app.modules.equipment import router as equipment_router
 from app.modules.hr import router as hr_router
 from app.modules.procurement import router as procurement_router
-from app.modules.product import router as product_router
 from app.modules.production import router as production_router
 from app.modules.production.product_api import router as workshop_product_router
 from app.modules.production.product_output_api import router as product_output_router
@@ -46,7 +45,6 @@ api_router.include_router(safety_router, prefix="/safety", tags=["安全管理"]
 api_router.include_router(environment_router, prefix="/environment", tags=["环保管理"])
 api_router.include_router(energy_router, prefix="/energy", tags=["能源管理"])
 api_router.include_router(warehouse_router, prefix="/warehouse", tags=["仓储管理"])
-api_router.include_router(product_router, prefix="/product", tags=["产品管理"])
 api_router.include_router(procurement_router, prefix="/procurement", tags=["采购管理"])
 api_router.include_router(
     administration_router,

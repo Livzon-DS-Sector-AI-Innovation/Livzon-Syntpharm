@@ -71,14 +71,6 @@ BUSINESS_MODULES: tuple[ModuleDefinition, ...] = (
         description="原辅料、包材、中间体、成品库存和出入库数据入口。",
     ),
     ModuleDefinition(
-        code="product",
-        name="产品管理",
-        path="/product",
-        db_schema="product",
-        owner_hint="产品/生产管理负责人",
-        description="产品基础信息、规格、剂型和飞书产品台账同步入口。",
-    ),
-    ModuleDefinition(
         code="procurement",
         name="采购管理",
         path="/procurement",

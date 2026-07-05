@@ -33,6 +33,7 @@ app/
 - 借需求重构其他模块、移动目录、调整公共抽象或改变架构边界
 - 直接 import 其他模块的 `repository.py`、`service.py` 或 `models.py`（只能通过 `public_api.py`）
 - 循环依赖（A 调用 B，B 又调用 A）
+- 未经用户明确指示，禁止创建新业务模块（`app/modules/<new_module>/`）。新功能必须放入已有模块，只有用户显式要求时才能新建模块
 
 **环境变量**：按模块前缀组织（如 `SAFETY_AI_TEXT_MODEL`、`ENERGY_AUTO_COLLECT_ENABLED`）。
 
