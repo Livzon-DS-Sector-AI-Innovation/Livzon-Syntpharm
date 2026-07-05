@@ -25,7 +25,7 @@ from app.modules.energy.schemas import (
     EnergyDeviceConfigUpdate,
 )
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
 
@@ -42,7 +42,7 @@ alert_record_router = APIRouter()
 
 @router.get("/platforms", summary="获取已登记的平台列表")
 async def list_platforms(
-    user: User = Depends(require_permission("energy:device:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     data = [
         {"code": code, "name": adapter.platform_name}
@@ -58,7 +58,7 @@ async def list_platforms(
 async def create_device_config(
     data: EnergyDeviceConfigCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.create_device_config(db, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -74,7 +74,7 @@ async def list_device_configs(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items, total = await service.list_device_configs(
         db,
@@ -94,7 +94,7 @@ async def list_device_configs(
 async def get_device_config(
     config_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.get_device_config(db, config_id)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -105,7 +105,7 @@ async def update_device_config(
     config_id: UUID,
     data: EnergyDeviceConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.update_device_config(db, config_id, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -115,7 +115,7 @@ async def update_device_config(
 async def delete_device_config(
     config_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_device_config(db, config_id)
     return success_response(None, message="删除成功")
@@ -134,7 +134,7 @@ async def list_energy_data(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:overview:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items, total = await service.list_energy_data(
         db,
@@ -159,7 +159,7 @@ async def get_energy_statistics(
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:overview:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.get_energy_statistics(
         db,
@@ -178,7 +178,7 @@ async def get_energy_statistics(
 async def trigger_collection(
     request: CollectTriggerRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:device:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.trigger_collection(db, request)
     return success_response(result, message="采集任务已执行")
@@ -191,7 +191,7 @@ async def list_collect_logs(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:collect_log:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items, total = await service.list_collect_logs(
         db,
@@ -208,7 +208,7 @@ async def list_collect_logs(
 async def get_collect_log_detail(
     log_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:collect_log:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.get_collect_log_detail(db, log_id)
     return success_response(result)
@@ -223,7 +223,7 @@ async def get_energy_overview(
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:overview:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.get_overview(
         db,
@@ -241,7 +241,7 @@ async def get_energy_overview(
 async def create_alert_rule(
     data: EnergyAlertRuleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.create_alert_rule(db, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -255,7 +255,7 @@ async def list_alert_rules(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items, total = await service.list_alert_rules(
         db,
@@ -273,7 +273,7 @@ async def list_alert_rules(
 async def get_alert_rule(
     rule_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.get_alert_rule(db, rule_id)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -284,7 +284,7 @@ async def update_alert_rule(
     rule_id: UUID,
     data: EnergyAlertRuleUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -294,7 +294,7 @@ async def update_alert_rule(
 async def delete_alert_rule(
     rule_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_alert_rule(db, rule_id)
     return success_response(None, message="删除成功")
@@ -313,7 +313,7 @@ async def list_alert_records(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items, total = await service.list_alert_records(
         db,
@@ -334,7 +334,7 @@ async def process_alert_record(
     record_id: UUID,
     request: AlertRecordProcessRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("energy:alert:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     obj = await service.process_alert_record(db, record_id, request)
     return success_response(

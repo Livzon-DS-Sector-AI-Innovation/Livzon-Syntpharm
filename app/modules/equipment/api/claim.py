@@ -16,7 +16,7 @@ from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.identity.models import User
 from app.platform.integrations.feishu.contact import is_department_member
 from app.platform.integrations.feishu.message import send_claim_notification
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -26,7 +26,7 @@ async def claim_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     settings=Depends(get_settings),
-    user: User = Depends(require_permission("equipment:work_order:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     dept_id = settings.feishu.platform.equipment_dept_id
     if not dept_id:

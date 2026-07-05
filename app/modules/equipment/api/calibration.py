@@ -17,7 +17,7 @@ from app.modules.equipment.schemas import (
     CalibrationRecordResponse,
 )
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ router = APIRouter()
 async def create_calibration_plan(
     data: CalibrationPlanCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     plan = await service.create_calibration_plan(db, data)
     return success_response(data=CalibrationPlanResponse.model_validate(plan))
@@ -40,7 +40,7 @@ async def list_calibration_plans(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     plans, total = await service.get_calibration_plans(
         db,
@@ -61,7 +61,7 @@ async def list_calibration_plans(
 async def get_overdue_plans(
     days: int = Query(30, ge=1, description="提前天数"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     plans = await service.get_overdue_calibration_plans(db, days)
     return success_response(
@@ -73,7 +73,7 @@ async def get_overdue_plans(
 async def get_calibration_plan(
     plan_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     plan = await service.get_calibration_plan_by_id(db, plan_id)
     return success_response(data=CalibrationPlanResponse.model_validate(plan))
@@ -84,7 +84,7 @@ async def update_calibration_plan(
     plan_id: uuid.UUID,
     data: CalibrationPlanUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     plan = await service.update_calibration_plan(db, plan_id, data)
     return success_response(data=CalibrationPlanResponse.model_validate(plan))
@@ -94,7 +94,7 @@ async def update_calibration_plan(
 async def delete_calibration_plan(
     plan_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:delete")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_calibration_plan(db, plan_id)
     return success_response(message="删除成功")
@@ -105,7 +105,7 @@ async def delete_calibration_plan(
 async def create_calibration_record(
     data: CalibrationRecordCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     record = await service.create_calibration_record(db, data)
     return success_response(data=CalibrationRecordResponse.model_validate(record))
@@ -118,7 +118,7 @@ async def list_calibration_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     records, total = await service.get_calibration_records(
         db,
@@ -139,7 +139,7 @@ async def list_calibration_records(
 async def get_calibration_record(
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:maintenance:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     record = await service.get_calibration_record_by_id(db, record_id)
     return success_response(data=CalibrationRecordResponse.model_validate(record))

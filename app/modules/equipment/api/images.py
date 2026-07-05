@@ -15,7 +15,7 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment import service
 from app.modules.equipment.schemas import WorkOrderImageResponse
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ async def upload_work_order_images(
     work_order_id: uuid.UUID,
     files: list[UploadFile] = File(..., description="图片文件"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:work_order:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     images = await service.upload_images(db, work_order_id, files)
     return success_response(
@@ -37,7 +37,7 @@ async def upload_work_order_images(
 async def list_work_order_images(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:work_order:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     images = await service.get_work_order_images(db, work_order_id)
     return success_response(
@@ -50,7 +50,7 @@ async def serve_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:work_order:read")),
+    user: User = Depends(require_login()),
 ):
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
@@ -76,7 +76,7 @@ async def remove_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:work_order:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_work_order_image(db, image_id)
     return success_response(message="图片已删除")

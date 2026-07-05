@@ -37,7 +37,7 @@ from app.modules.equipment.schemas.inspection import (
 )
 from app.modules.equipment.service import inspection as inspection_svc
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -101,7 +101,7 @@ async def _enrich_multi_device_names(
 async def create_route(
     data: InspectionRouteCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     route = await inspection_svc.create_route(db, data.model_dump())
     return success_response(data=InspectionRouteResponse.model_validate(route))
@@ -115,7 +115,7 @@ async def list_routes(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     routes, total = await inspection_svc.get_routes(
         db,
@@ -147,7 +147,7 @@ async def list_routes(
 async def get_route(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     route = await inspection_svc.get_route_by_id(db, route_id)
     resp = InspectionRouteDetailResponse.model_validate(route)
@@ -194,7 +194,7 @@ async def update_route(
     route_id: uuid.UUID,
     data: InspectionRouteUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     update_data = data.model_dump(exclude_unset=True)
     route = await inspection_svc.update_route(db, route_id, update_data)
@@ -205,7 +205,7 @@ async def update_route(
 async def delete_route(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:delete")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await inspection_svc.delete_route(db, route_id)
     return success_response(message="删除成功")
@@ -216,7 +216,7 @@ async def set_route_locations(
     route_id: uuid.UUID,
     data: RouteLocationsBatch,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     items = [item.model_dump() for item in data.locations]
     locations = await inspection_svc.set_route_locations(db, route_id, items)
@@ -255,7 +255,7 @@ async def set_route_locations(
 async def create_task(
     data: InspectionTaskCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.create_task(db, data.model_dump())
     return success_response(data=_task_to_response(task))
@@ -273,7 +273,7 @@ async def list_tasks(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     from datetime import datetime as dt_type
 
@@ -306,7 +306,7 @@ async def list_tasks(
 async def get_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.get_task_by_id(db, task_id)
     resp = _task_to_response(task)
@@ -321,7 +321,7 @@ async def get_task(
 async def start_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.start_task(db, task_id)
     return success_response(data=_task_to_response(task))
@@ -331,7 +331,7 @@ async def start_task(
 async def complete_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.complete_task(db, task_id)
     return success_response(data=_task_to_response(task))
@@ -342,7 +342,7 @@ async def submit_route_check(
     task_id: uuid.UUID,
     data: RouteCheckSubmit,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.submit_route_check(
         db, task_id, data.overall_result, data.route_summary
@@ -355,7 +355,7 @@ async def close_task(
     task_id: uuid.UUID,
     data: InspectionTaskClose | None = None,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     task = await inspection_svc.close_task(
         db, task_id, data.closure_remark if data else None
@@ -373,7 +373,7 @@ async def submit_equipment_check(
     equipment_id: uuid.UUID,
     data: EquipmentCheckResult,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     records = [r.model_dump() for r in data.records]
     result = await inspection_svc.submit_equipment_check(
@@ -393,7 +393,7 @@ async def upload_equipment_photo(
     equipment_id: uuid.UUID,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
@@ -407,7 +407,7 @@ async def upload_task_photo(
     task_id: uuid.UUID,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
@@ -417,7 +417,7 @@ async def upload_task_photo(
 async def get_task_photos(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
     return success_response(
@@ -429,7 +429,7 @@ async def get_task_photos(
 async def serve_photo(
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ):
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
@@ -456,7 +456,7 @@ async def remove_photo(
     task_id: uuid.UUID,
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await inspection_svc.delete_photo(db, photo_id)
     return success_response(message="照片已删除")
@@ -472,7 +472,7 @@ async def ai_analyze_photo(
     equipment_id: uuid.UUID,
     data: InspectionAIAnalyzeRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     from app.modules.equipment.service.ai import analyze_inspection_photo
 
@@ -509,7 +509,7 @@ async def get_history(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     from datetime import date as date_type
 
@@ -540,7 +540,7 @@ async def get_history(
 async def get_history_detail(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     detail = await inspection_svc.get_task_detail(db, task_id)
     resp = _task_to_response(detail["task"])
@@ -594,7 +594,7 @@ async def get_history_detail(
 async def list_schedules(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:read")),
+    user: User = Depends(require_login()),
 ):
     schedules = await inspection_svc.get_schedules_by_route(db, route_id)
     return success_response(schedules)
@@ -608,7 +608,7 @@ async def create_schedule(
     route_id: uuid.UUID,
     body: InspectionScheduleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:create")),
+    user: User = Depends(require_login()),
 ):
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.create_schedule(db, route_id, data)
@@ -624,7 +624,7 @@ async def update_schedule(
     schedule_id: uuid.UUID,
     body: InspectionScheduleUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:update")),
+    user: User = Depends(require_login()),
 ):
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.update_schedule(db, schedule_id, data)
@@ -641,7 +641,7 @@ async def delete_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:inspection:delete")),
+    user: User = Depends(require_login()),
 ):
     schedule = await repo.get_schedule_by_id(db, schedule_id)
     if not schedule or str(schedule.route_id) != str(route_id):

@@ -19,7 +19,7 @@ from app.modules.equipment.schemas import (
     StockWarningResponse,
 )
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -28,7 +28,7 @@ router = APIRouter()
 async def create_spare_part(
     data: SparePartCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:create")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     spare_part = await service.create_spare_part(db, data)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -42,7 +42,7 @@ async def list_spare_parts(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     spare_parts, total = await service.get_spare_parts(
         db,
@@ -63,7 +63,7 @@ async def list_spare_parts(
 @router.get("/stock/warnings", summary="库存预警列表")
 async def get_stock_warnings(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     warnings = await service.get_stock_warnings(db)
     return success_response(
@@ -82,7 +82,7 @@ async def get_stock_warnings(
 async def get_spare_part(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     spare_part = await service.get_spare_part_by_id(db, spare_part_id)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -93,7 +93,7 @@ async def update_spare_part(
     spare_part_id: uuid.UUID,
     data: SparePartUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     spare_part = await service.update_spare_part(db, spare_part_id, data)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -103,7 +103,7 @@ async def update_spare_part(
 async def delete_spare_part(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_spare_part(db, spare_part_id)
     return success_response(message="删除成功")
@@ -113,7 +113,7 @@ async def delete_spare_part(
 async def get_stock(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     stock = await service.get_stock_by_spare_part_id(db, spare_part_id)
     return success_response(data=StockResponse.model_validate(stock))
@@ -124,7 +124,7 @@ async def inbound_stock(
     spare_part_id: uuid.UUID,
     data: StockInboundRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     stock = await service.inbound_stock(db, spare_part_id, data)
     return success_response(data=StockResponse.model_validate(stock))
@@ -135,7 +135,7 @@ async def adjust_stock(
     spare_part_id: uuid.UUID,
     data: StockAdjustRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:spare_part:update")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     stock = await service.adjust_stock(db, spare_part_id, data)
     return success_response(data=StockResponse.model_validate(stock))

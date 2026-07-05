@@ -26,7 +26,6 @@ from app.platform.identity.api import (
     sync_router,
     user_router,
 )
-from app.platform.permission.api import router as permission_router
 from app.platform.system import router as system_router
 
 api_router = APIRouter()
@@ -85,4 +84,3 @@ api_router.include_router(llm_router, tags=["LLM配置"])
 from app.core.config_api import router as module_settings_router
 
 api_router.include_router(module_settings_router, tags=["模块配置"])
-api_router.include_router(permission_router, prefix="/permission", tags=["权限管理"])

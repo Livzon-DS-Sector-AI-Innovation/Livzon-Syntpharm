@@ -18,7 +18,7 @@ from app.modules.equipment.schemas.personnel import (
     RoleUpdate,
 )
 from app.platform.identity.models import User
-from app.platform.permission.deps import require_permission
+from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ router = APIRouter()
 async def create_role(
     data: RoleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     role = await service.create_role(db, data)
     return success_response(data=role.model_dump(mode="json"))
@@ -43,7 +43,7 @@ async def list_roles(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     roles, total = await service.list_roles(
         db,
@@ -62,7 +62,7 @@ async def list_roles(
 async def get_role(
     role_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     role = await service.get_role(db, role_id)
     return success_response(data=role.model_dump(mode="json"))
@@ -73,7 +73,7 @@ async def update_role(
     role_id: uuid.UUID,
     data: RoleUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     role = await service.update_role(db, role_id, data)
     return success_response(data=role.model_dump(mode="json"))
@@ -83,7 +83,7 @@ async def update_role(
 async def delete_role(
     role_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_role(db, role_id)
     return success_response(message="角色已删除")
@@ -96,7 +96,7 @@ async def delete_role(
 async def add_personnel(
     data: PersonnelAddRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.add_personnel(db, data)
     return success_response(data=result.model_dump(mode="json"))
@@ -110,7 +110,7 @@ async def list_personnel(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.list_personnel(
         db,
@@ -138,7 +138,7 @@ async def get_candidates(
     ),
     category_id: uuid.UUID | None = Query(None, description="设备分类ID（可选）"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     candidates = await service.get_candidates(
         db,
@@ -152,7 +152,7 @@ async def get_candidates(
 async def get_personnel(
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:read")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.get_personnel(db, personnel_id)
     return success_response(data=person.model_dump(mode="json"))
@@ -163,7 +163,7 @@ async def update_personnel(
     personnel_id: uuid.UUID,
     data: PersonnelUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.update_personnel(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
@@ -173,7 +173,7 @@ async def update_personnel(
 async def delete_personnel(
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     await service.delete_personnel(db, personnel_id)
     return success_response(message="人员已移除")
@@ -184,7 +184,7 @@ async def assign_roles(
     personnel_id: uuid.UUID,
     data: PersonnelRoleAssign,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.assign_roles(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
@@ -195,7 +195,7 @@ async def update_roles(
     personnel_id: uuid.UUID,
     data: PersonnelRoleAssign,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.assign_roles(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
@@ -206,7 +206,7 @@ async def assign_categories(
     personnel_id: uuid.UUID,
     data: PersonnelCategoryAssign,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.update_categories(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
@@ -217,7 +217,7 @@ async def update_categories(
     personnel_id: uuid.UUID,
     data: PersonnelCategoryAssign,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     person = await service.update_categories(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
@@ -226,7 +226,7 @@ async def update_categories(
 @router.post("/refresh-feishu", summary="手动刷新飞书信息")
 async def refresh_feishu(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("equipment:personnel:manage")),
+    user: User = Depends(require_login()),
 ) -> JSONResponse:
     result = await service.refresh_feishu(db)
     return success_response(data=result.model_dump(mode="json"))
