@@ -11,6 +11,7 @@
 #   alembic           Apply migrations + drift check (requires PostgreSQL)
 #   migration-scope   Check each migration touches only one module
 #   test              Run pytest (requires PostgreSQL, runs migrations first)
+#   quick             Run quick CI checks (lint, typecheck, openapi, migration-scope)
 #   all               Run every check above
 #
 # Options:
@@ -191,6 +192,15 @@ run_openapi() {
     fi
 }
 
+run_quick() {
+    echo ""
+    echo "=== Quick CI (no DB required) ==="
+    run_lint
+    run_typecheck
+    run_openapi
+    run_migration_scope
+}
+
 run_alembic() {
     echo ""
     echo "=== Alembic Check ==="
@@ -273,6 +283,7 @@ for cmd in "${SUBCOMMANDS[@]}"; do
         openapi)         run_openapi ;;
         alembic)         run_alembic ;;
         migration-scope) run_migration_scope ;;
+        quick)           run_quick ;;
         test)            run_tests ;;
         all)
             run_lint
