@@ -43,10 +43,10 @@ class FeishuOAuthClient:
     def from_settings(cls) -> FeishuOAuthClient:
         s = get_settings()
         return cls(
-            app_id=s.FEISHU_APP_ID,
-            app_secret=s.FEISHU_APP_SECRET,
-            redirect_uri=s.FEISHU_REDIRECT_URI,
-            scopes=s.FEISHU_SCOPES,
+            app_id=s.feishu.platform.app_id,
+            app_secret=s.feishu.platform.app_secret,
+            redirect_uri=s.feishu.platform.redirect_uri,
+            scopes=s.feishu.platform.scopes,
         )
 
     # ── URL builders ────────────────────────────────────────────────

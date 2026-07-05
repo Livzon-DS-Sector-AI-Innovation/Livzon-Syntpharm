@@ -30718,559 +30718,6 @@
         }
       }
     },
-    "/api/v1/product/": {
-      "get": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u4ea7\u54c1\u7ba1\u7406\u6a21\u5757\u4fe1\u606f",
-        "operationId": "read_module_api_v1_product__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Read Module Api V1 Product  Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/product/products": {
-      "get": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u4ea7\u54c1\u5217\u8868",
-        "operationId": "list_products_api_v1_product_products_get",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u4ea7\u54c1\u540d\u79f0\u7b5b\u9009",
-              "title": "Name"
-            },
-            "description": "\u4ea7\u54c1\u540d\u79f0\u7b5b\u9009"
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u4ea7\u54c1\u5927\u7c7b\u7b5b\u9009",
-              "title": "Category"
-            },
-            "description": "\u4ea7\u54c1\u5927\u7c7b\u7b5b\u9009"
-          },
-          {
-            "name": "product_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u4ea7\u54c1\u7c7b\u522b\u7b5b\u9009",
-              "title": "Product Type"
-            },
-            "description": "\u4ea7\u54c1\u7c7b\u522b\u7b5b\u9009"
-          },
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u540d\u79f0\u6216\u6599\u4ef6\u7f16\u53f7\u5173\u952e\u8bcd",
-              "title": "Keyword"
-            },
-            "description": "\u540d\u79f0\u6216\u6599\u4ef6\u7f16\u53f7\u5173\u952e\u8bcd"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 20,
-              "title": "Page Size"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u521b\u5efa\u4ea7\u54c1",
-        "operationId": "create_product_api_v1_product_products_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/app__modules__product__schemas__ProductCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/product/products/{product_id}": {
-      "get": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u4ea7\u54c1\u8be6\u60c5",
-        "operationId": "get_product_api_v1_product_products__product_id__get",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Product Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u66f4\u65b0\u4ea7\u54c1",
-        "operationId": "update_product_api_v1_product_products__product_id__put",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Product Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/app__modules__product__schemas__ProductUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u5220\u9664\u4ea7\u54c1",
-        "operationId": "delete_product_api_v1_product_products__product_id__delete",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Product Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/product/products/sync-from-feishu": {
-      "post": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u4ea7\u54c1\u6570\u636e",
-        "description": "\u624b\u52a8\u89e6\u53d1\uff1a\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u62c9\u53d6\u5168\u90e8\u4ea7\u54c1\u6570\u636e\u5e76 upsert \u5230\u672c\u5730 PG\u3002",
-        "operationId": "sync_products_from_feishu_api_v1_product_products_sync_from_feishu_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/product/products/sync-status": {
-      "get": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u98de\u4e66\u540c\u6b65\u72b6\u6001",
-        "description": "\u67e5\u770b\u672c\u5730\u4e0e\u98de\u4e66\u7684\u6570\u636e\u540c\u6b65\u7edf\u8ba1\u3002",
-        "operationId": "get_product_sync_status_api_v1_product_products_sync_status_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/product/products/{product_id}/sync-to-feishu": {
-      "post": {
-        "tags": [
-          "\u4ea7\u54c1\u7ba1\u7406"
-        ],
-        "summary": "\u540c\u6b65\u5355\u4e2a\u4ea7\u54c1\u5230\u98de\u4e66",
-        "description": "\u5c06\u672c\u5730\u5355\u4e2a\u4ea7\u54c1\u5f3a\u5236\u540c\u6b65\u5230\u98de\u4e66\u591a\u7ef4\u8868\u683c\u3002",
-        "operationId": "sync_product_to_feishu_api_v1_product_products__product_id__sync_to_feishu_post",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Product Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/procurement/": {
       "get": {
         "tags": [
@@ -37296,7 +36743,7 @@
         }
       }
     },
-    "/api/v1/ai/exam/generate": {
+    "/api/v1/hr/ai-exam/generate": {
       "post": {
         "tags": [
           "AI \u51fa\u9898",
@@ -37304,7 +36751,7 @@
         ],
         "summary": "\u751f\u6210\u8003\u8bd5\u9898\u76ee",
         "description": "\u4e0a\u4f20\u57f9\u8bad\u6750\u6599\uff08docx/txt\uff09\uff0cAI \u81ea\u52a8\u8bc6\u522b\u5185\u5bb9\u5e76\u6309\u6307\u5b9a\u9898\u578b/\u9898\u91cf\u751f\u6210\u8bd5\u5377\u3002",
-        "operationId": "api_generate_exam_api_v1_ai_exam_generate_post",
+        "operationId": "api_generate_exam_api_v1_hr_ai_exam_generate_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -37328,7 +36775,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_api_generate_exam_api_v1_ai_exam_generate_post"
+                "$ref": "#/components/schemas/Body_api_generate_exam_api_v1_hr_ai_exam_generate_post"
               }
             }
           }
@@ -37355,7 +36802,7 @@
         }
       }
     },
-    "/api/v1/ai/exam/export": {
+    "/api/v1/hr/ai-exam/export": {
       "post": {
         "tags": [
           "AI \u51fa\u9898",
@@ -37363,7 +36810,7 @@
         ],
         "summary": "\u5bfc\u51fa\u8003\u8bd5\u8bd5\u5377",
         "description": "\u5c06\u8bd5\u5377\u5bfc\u51fa\u4e3a Word \u6587\u6863\u3002",
-        "operationId": "api_export_exam_api_v1_ai_exam_export_post",
+        "operationId": "api_export_exam_api_v1_hr_ai_exam_export_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -52798,7 +52245,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/app__modules__production__product_schemas__ProductCreate"
+                "$ref": "#/components/schemas/ProductCreate"
               }
             }
           }
@@ -52979,7 +52426,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/app__modules__production__product_schemas__ProductUpdate"
+                "$ref": "#/components/schemas/ProductUpdate"
               }
             }
           }
@@ -53843,14 +53290,14 @@
         }
       }
     },
-    "/api/v1/regulatory-tracker/dashboard": {
+    "/api/v1/registration/regulatory-tracker/dashboard": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "Dashboard \u5de5\u4f5c\u53f0\u6570\u636e",
         "description": "\u8fd4\u56de Dashboard \u5de5\u4f5c\u53f0\u6570\u636e\uff1a\n- \u4eca\u65e5\u65b0\u589e\u7edf\u8ba1\uff08\u603b\u6570\u3001\u9ad8\u5f71\u54cd\u6570\u3001\u4e00\u822c\u6cd5\u89c4\u6570\uff09\n- \u91cd\u70b9\u5173\u6ce8\u6570\u91cf\n- \u8fd1 7 \u5929\u52a8\u6001\uff08\u603b\u6570\u3001\u9ad8\u5f71\u54cd\u6570\uff09\n- \u6570\u636e\u6e90\u72b6\u6001\n- \u4eca\u65e5\u503c\u5f97\u5173\u6ce8\uff08\u6700\u591a 5 \u6761 attention \u6cd5\u89c4\uff09\n- \u8fd1 7 \u5929\u8d8b\u52bf\uff08\u4e8c\u7ea7\u4fe1\u606f\uff09\n- \u5206\u7c7b\u7edf\u8ba1\uff08\u4e8c\u7ea7\u4fe1\u606f\uff09",
-        "operationId": "get_dashboard_api_v1_regulatory_tracker_dashboard_get",
+        "operationId": "get_dashboard_api_v1_registration_regulatory_tracker_dashboard_get",
         "parameters": [
           {
             "name": "auth_token",
@@ -53891,13 +53338,13 @@
         }
       }
     },
-    "/api/v1/regulatory-tracker/summary": {
+    "/api/v1/registration/regulatory-tracker/summary": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u6cd5\u89c4\u8ffd\u8e2a\u7edf\u8ba1\u6458\u8981",
-        "operationId": "get_summary_api_v1_regulatory_tracker_summary_get",
+        "operationId": "get_summary_api_v1_registration_regulatory_tracker_summary_get",
         "parameters": [
           {
             "name": "auth_token",
@@ -53938,14 +53385,14 @@
         }
       }
     },
-    "/api/v1/regulatory-documents": {
+    "/api/v1/registration/regulatory-documents": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u6cd5\u89c4\u6587\u6863\u5217\u8868",
         "description": "\u83b7\u53d6\u6cd5\u89c4\u6587\u6863\u5217\u8868\uff0c\u652f\u6301\u591a\u79cd\u7b5b\u9009\u6761\u4ef6\u3001\u6392\u5e8f\u548c\u5206\u9875\u3002",
-        "operationId": "list_documents_api_v1_regulatory_documents_get",
+        "operationId": "list_documents_api_v1_registration_regulatory_documents_get",
         "parameters": [
           {
             "name": "keyword",
@@ -54295,14 +53742,14 @@
         }
       }
     },
-    "/api/v1/regulatory-documents/{doc_id}/detail": {
+    "/api/v1/registration/regulatory-documents/{doc_id}/detail": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u6cd5\u89c4\u6587\u6863\u8be6\u60c5",
         "description": "\u83b7\u53d6\u6cd5\u89c4\u6587\u6863\u8be6\u60c5\uff0c\u5305\u542b\u6765\u6e90\u548c\u680f\u76ee\u540d\u79f0\u3002",
-        "operationId": "get_document_detail_api_v1_regulatory_documents__doc_id__detail_get",
+        "operationId": "get_document_detail_api_v1_registration_regulatory_documents__doc_id__detail_get",
         "parameters": [
           {
             "name": "doc_id",
@@ -54353,14 +53800,14 @@
         }
       }
     },
-    "/api/v1/regulatory-documents/export": {
+    "/api/v1/registration/regulatory-documents/export": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u5bfc\u51fa\u6cd5\u89c4\u6587\u6863\u4e3a Excel",
         "description": "\u5bfc\u51fa\u6cd5\u89c4\u6587\u6863\u4e3a Excel \u6587\u4ef6\u3002",
-        "operationId": "export_documents_api_v1_regulatory_documents_export_get",
+        "operationId": "export_documents_api_v1_registration_regulatory_documents_export_get",
         "parameters": [
           {
             "name": "format",
@@ -54511,14 +53958,14 @@
         }
       }
     },
-    "/api/v1/regulatory-documents/{doc_id}/read": {
+    "/api/v1/registration/regulatory-documents/{doc_id}/read": {
       "patch": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u6807\u8bb0\u6587\u6863\u4e3a\u5df2\u8bfb",
         "description": "\u6807\u8bb0\u5355\u4e2a\u6587\u6863\u4e3a\u5df2\u8bfb",
-        "operationId": "mark_document_read_api_v1_regulatory_documents__doc_id__read_patch",
+        "operationId": "mark_document_read_api_v1_registration_regulatory_documents__doc_id__read_patch",
         "parameters": [
           {
             "name": "doc_id",
@@ -54569,14 +54016,14 @@
         }
       }
     },
-    "/api/v1/regulatory-documents/batch-read": {
+    "/api/v1/registration/regulatory-documents/batch-read": {
       "post": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u6279\u91cf\u6807\u8bb0\u6587\u6863\u5df2\u8bfb",
         "description": "\u6279\u91cf\u6807\u8bb0\u6587\u6863\u4e3a\u5df2\u8bfb",
-        "operationId": "batch_mark_read_api_v1_regulatory_documents_batch_read_post",
+        "operationId": "batch_mark_read_api_v1_registration_regulatory_documents_batch_read_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -54627,14 +54074,14 @@
         }
       }
     },
-    "/api/v1/sync-jobs/trigger": {
+    "/api/v1/registration/sync-jobs/trigger": {
       "post": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u624b\u52a8\u89e6\u53d1\u540c\u6b65\u4efb\u52a1",
         "description": "\u624b\u52a8\u89e6\u53d1\u6570\u636e\u6e90\u540c\u6b65\u4efb\u52a1\uff08\u540e\u53f0\u5f02\u6b65\u6267\u884c\uff0c\u542b\u81ea\u52a8 AI \u5206\u6790\uff09",
-        "operationId": "trigger_sync_job_api_v1_sync_jobs_trigger_post",
+        "operationId": "trigger_sync_job_api_v1_registration_sync_jobs_trigger_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -54685,14 +54132,14 @@
         }
       }
     },
-    "/api/v1/sync-jobs": {
+    "/api/v1/registration/sync-jobs": {
       "get": {
         "tags": [
           "\u6cd5\u89c4\u8ffd\u8e2a"
         ],
         "summary": "\u540c\u6b65\u4efb\u52a1\u5217\u8868",
         "description": "\u83b7\u53d6\u540c\u6b65\u4efb\u52a1\u65e5\u5fd7\u5217\u8868",
-        "operationId": "list_sync_jobs_api_v1_sync_jobs_get",
+        "operationId": "list_sync_jobs_api_v1_registration_sync_jobs_get",
         "parameters": [
           {
             "name": "page",
@@ -54756,14 +54203,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products": {
+    "/api/v1/registration/dossier-writer/products": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Create Product Dossier",
         "description": "\u521b\u5efa\u54c1\u79cd\u8d44\u6599",
-        "operationId": "create_product_dossier_api_v1_dossier_writer_products_post",
+        "operationId": "create_product_dossier_api_v1_registration_dossier_writer_products_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -54800,7 +54247,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Create Product Dossier Api V1 Dossier Writer Products Post"
+                  "title": "Response Create Product Dossier Api V1 Registration Dossier Writer Products Post"
                 }
               }
             }
@@ -54823,7 +54270,7 @@
         ],
         "summary": "List Product Dossiers",
         "description": "\u83b7\u53d6\u54c1\u79cd\u8d44\u6599\u5217\u8868",
-        "operationId": "list_product_dossiers_api_v1_dossier_writer_products_get",
+        "operationId": "list_product_dossiers_api_v1_registration_dossier_writer_products_get",
         "parameters": [
           {
             "name": "skip",
@@ -54873,7 +54320,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response List Product Dossiers Api V1 Dossier Writer Products Get"
+                  "title": "Response List Product Dossiers Api V1 Registration Dossier Writer Products Get"
                 }
               }
             }
@@ -54891,14 +54338,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Product Dossier",
         "description": "\u83b7\u53d6\u54c1\u79cd\u8d44\u6599\u8be6\u60c5",
-        "operationId": "get_product_dossier_api_v1_dossier_writer_products__dossier_id__get",
+        "operationId": "get_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -54935,7 +54382,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Product Dossier Api V1 Dossier Writer Products  Dossier Id  Get"
+                  "title": "Response Get Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Get"
                 }
               }
             }
@@ -54958,7 +54405,7 @@
         ],
         "summary": "Update Product Dossier",
         "description": "\u66f4\u65b0\u54c1\u79cd\u8d44\u6599",
-        "operationId": "update_product_dossier_api_v1_dossier_writer_products__dossier_id__put",
+        "operationId": "update_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__put",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55005,7 +54452,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Update Product Dossier Api V1 Dossier Writer Products  Dossier Id  Put"
+                  "title": "Response Update Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Put"
                 }
               }
             }
@@ -55028,7 +54475,7 @@
         ],
         "summary": "Delete Product Dossier",
         "description": "\u5220\u9664\u54c1\u79cd\u8d44\u6599",
-        "operationId": "delete_product_dossier_api_v1_dossier_writer_products__dossier_id__delete",
+        "operationId": "delete_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__delete",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55065,7 +54512,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Delete Product Dossier Api V1 Dossier Writer Products  Dossier Id  Delete"
+                  "title": "Response Delete Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Delete"
                 }
               }
             }
@@ -55083,14 +54530,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/templates": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/templates": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Upload Templates",
         "description": "\u6279\u91cf\u4e0a\u4f20\u6a21\u677f\u6587\u4ef6",
-        "operationId": "upload_templates_api_v1_dossier_writer_products__dossier_id__templates_post",
+        "operationId": "upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55124,7 +54571,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_templates_api_v1_dossier_writer_products__dossier_id__templates_post"
+                "$ref": "#/components/schemas/Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
               }
             }
           }
@@ -55137,7 +54584,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Upload Templates Api V1 Dossier Writer Products  Dossier Id  Templates Post"
+                  "title": "Response Upload Templates Api V1 Registration Dossier Writer Products  Dossier Id  Templates Post"
                 }
               }
             }
@@ -55155,14 +54602,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/parse": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/parse": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Parse Templates",
         "description": "\u89e3\u6790\u6a21\u677f\u751f\u6210\u7ae0\u8282\u6811",
-        "operationId": "parse_templates_api_v1_dossier_writer_products__dossier_id__parse_post",
+        "operationId": "parse_templates_api_v1_registration_dossier_writer_products__dossier_id__parse_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55199,7 +54646,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Parse Templates Api V1 Dossier Writer Products  Dossier Id  Parse Post"
+                  "title": "Response Parse Templates Api V1 Registration Dossier Writer Products  Dossier Id  Parse Post"
                 }
               }
             }
@@ -55217,14 +54664,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/chapters": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/chapters": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Chapter Tree",
         "description": "\u83b7\u53d6\u7ae0\u8282\u6811",
-        "operationId": "get_chapter_tree_api_v1_dossier_writer_products__dossier_id__chapters_get",
+        "operationId": "get_chapter_tree_api_v1_registration_dossier_writer_products__dossier_id__chapters_get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55261,7 +54708,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Chapter Tree Api V1 Dossier Writer Products  Dossier Id  Chapters Get"
+                  "title": "Response Get Chapter Tree Api V1 Registration Dossier Writer Products  Dossier Id  Chapters Get"
                 }
               }
             }
@@ -55279,14 +54726,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Chapter Detail",
         "description": "\u83b7\u53d6\u7ae0\u8282\u8be6\u60c5",
-        "operationId": "get_chapter_detail_api_v1_dossier_writer_chapters__chapter_id__get",
+        "operationId": "get_chapter_detail_api_v1_registration_dossier_writer_chapters__chapter_id__get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55323,7 +54770,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Chapter Detail Api V1 Dossier Writer Chapters  Chapter Id  Get"
+                  "title": "Response Get Chapter Detail Api V1 Registration Dossier Writer Chapters  Chapter Id  Get"
                 }
               }
             }
@@ -55341,14 +54788,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/assets": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/assets": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Upload Asset",
         "description": "\u6279\u91cf\u4e0a\u4f20\u7ae0\u8282\u7d20\u6750",
-        "operationId": "upload_asset_api_v1_dossier_writer_chapters__chapter_id__assets_post",
+        "operationId": "upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55382,7 +54829,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_asset_api_v1_dossier_writer_chapters__chapter_id__assets_post"
+                "$ref": "#/components/schemas/Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
               }
             }
           }
@@ -55395,7 +54842,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Upload Asset Api V1 Dossier Writer Chapters  Chapter Id  Assets Post"
+                  "title": "Response Upload Asset Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Post"
                 }
               }
             }
@@ -55418,7 +54865,7 @@
         ],
         "summary": "List Assets",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7d20\u6750\u5217\u8868",
-        "operationId": "list_assets_api_v1_dossier_writer_chapters__chapter_id__assets_get",
+        "operationId": "list_assets_api_v1_registration_dossier_writer_chapters__chapter_id__assets_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55455,7 +54902,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response List Assets Api V1 Dossier Writer Chapters  Chapter Id  Assets Get"
+                  "title": "Response List Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Get"
                 }
               }
             }
@@ -55473,14 +54920,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/assets/{asset_id}": {
+    "/api/v1/registration/dossier-writer/assets/{asset_id}": {
       "delete": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Delete Asset",
         "description": "\u5220\u9664\u7d20\u6750",
-        "operationId": "delete_asset_api_v1_dossier_writer_assets__asset_id__delete",
+        "operationId": "delete_asset_api_v1_registration_dossier_writer_assets__asset_id__delete",
         "parameters": [
           {
             "name": "asset_id",
@@ -55517,7 +54964,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Delete Asset Api V1 Dossier Writer Assets  Asset Id  Delete"
+                  "title": "Response Delete Asset Api V1 Registration Dossier Writer Assets  Asset Id  Delete"
                 }
               }
             }
@@ -55540,7 +54987,7 @@
         ],
         "summary": "Update Asset Category",
         "description": "\u66f4\u65b0\u7d20\u6750\u7684\u5206\u7c7b",
-        "operationId": "update_asset_category_api_v1_dossier_writer_assets__asset_id__patch",
+        "operationId": "update_asset_category_api_v1_registration_dossier_writer_assets__asset_id__patch",
         "parameters": [
           {
             "name": "asset_id",
@@ -55589,7 +55036,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Update Asset Category Api V1 Dossier Writer Assets  Asset Id  Patch"
+                  "title": "Response Update Asset Category Api V1 Registration Dossier Writer Assets  Asset Id  Patch"
                 }
               }
             }
@@ -55607,14 +55054,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/export": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/export": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Export Dossier",
         "description": "\u5bfc\u51fa\u54c1\u79cd\u8d44\u6599",
-        "operationId": "export_dossier_api_v1_dossier_writer_products__dossier_id__export_post",
+        "operationId": "export_dossier_api_v1_registration_dossier_writer_products__dossier_id__export_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55661,7 +55108,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Export Dossier Api V1 Dossier Writer Products  Dossier Id  Export Post"
+                  "title": "Response Export Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Export Post"
                 }
               }
             }
@@ -55679,14 +55126,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/download": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/download": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Download Exported File",
         "description": "\u4e0b\u8f7d\u5bfc\u51fa\u7684\u6587\u4ef6",
-        "operationId": "download_exported_file_api_v1_dossier_writer_products__dossier_id__download_get",
+        "operationId": "download_exported_file_api_v1_registration_dossier_writer_products__dossier_id__download_get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55748,14 +55195,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/preview": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/preview": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Chapter Preview",
         "description": "\u83b7\u53d6\u7ae0\u8282\u9884\u89c8\u5185\u5bb9",
-        "operationId": "get_chapter_preview_api_v1_dossier_writer_chapters__chapter_id__preview_get",
+        "operationId": "get_chapter_preview_api_v1_registration_dossier_writer_chapters__chapter_id__preview_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55792,7 +55239,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Chapter Preview Api V1 Dossier Writer Chapters  Chapter Id  Preview Get"
+                  "title": "Response Get Chapter Preview Api V1 Registration Dossier Writer Chapters  Chapter Id  Preview Get"
                 }
               }
             }
@@ -55810,14 +55257,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/docx-file": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/docx-file": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Chapter Docx File",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684 docx \u5de5\u4f5c\u526f\u672c\u6587\u4ef6\uff0c\u7528\u4e8e\u524d\u7aef docx-preview \u6e32\u67d3",
-        "operationId": "get_chapter_docx_file_api_v1_dossier_writer_chapters__chapter_id__docx_file_get",
+        "operationId": "get_chapter_docx_file_api_v1_registration_dossier_writer_chapters__chapter_id__docx_file_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55868,14 +55315,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/products/{dossier_id}/match-assets": {
+    "/api/v1/registration/dossier-writer/products/{dossier_id}/match-assets": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Match Assets To Chapters",
         "description": "\u667a\u80fd\u5339\u914d\u7d20\u6750\u5230\u7ae0\u8282",
-        "operationId": "match_assets_to_chapters_api_v1_dossier_writer_products__dossier_id__match_assets_post",
+        "operationId": "match_assets_to_chapters_api_v1_registration_dossier_writer_products__dossier_id__match_assets_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -55912,7 +55359,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Match Assets To Chapters Api V1 Dossier Writer Products  Dossier Id  Match Assets Post"
+                  "title": "Response Match Assets To Chapters Api V1 Registration Dossier Writer Products  Dossier Id  Match Assets Post"
                 }
               }
             }
@@ -55930,14 +55377,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/fill-fields": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/fill-fields": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Fill Chapter Fields",
         "description": "\u6267\u884c\u5b57\u6bb5\u586b\u5145 - \u4ece\u7d20\u6750\u63d0\u53d6\u5185\u5bb9\u5e76\u586b\u5145\u5230\u7ae0\u8282",
-        "operationId": "fill_chapter_fields_api_v1_dossier_writer_chapters__chapter_id__fill_fields_post",
+        "operationId": "fill_chapter_fields_api_v1_registration_dossier_writer_chapters__chapter_id__fill_fields_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -55974,7 +55421,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Fill Chapter Fields Api V1 Dossier Writer Chapters  Chapter Id  Fill Fields Post"
+                  "title": "Response Fill Chapter Fields Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Fields Post"
                 }
               }
             }
@@ -55992,14 +55439,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_code}/field-mappings": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_code}/field-mappings": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Field Mappings",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e",
-        "operationId": "get_field_mappings_api_v1_dossier_writer_chapters__chapter_code__field_mappings_get",
+        "operationId": "get_field_mappings_api_v1_registration_dossier_writer_chapters__chapter_code__field_mappings_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -56035,7 +55482,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Field Mappings Api V1 Dossier Writer Chapters  Chapter Code  Field Mappings Get"
+                  "title": "Response Get Field Mappings Api V1 Registration Dossier Writer Chapters  Chapter Code  Field Mappings Get"
                 }
               }
             }
@@ -56053,14 +55500,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/field-mappings/init-s6": {
+    "/api/v1/registration/dossier-writer/field-mappings/init-s6": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Init S6 Field Mappings",
         "description": "\u521d\u59cb\u5316 S.6 \u5305\u88c5\u7cfb\u7edf\u7684\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e\uff08\u4ece\u6570\u636e\u5e93 seed \u6570\u636e\uff09",
-        "operationId": "init_s6_field_mappings_api_v1_dossier_writer_field_mappings_init_s6_post",
+        "operationId": "init_s6_field_mappings_api_v1_registration_dossier_writer_field_mappings_init_s6_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -56087,7 +55534,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Init S6 Field Mappings Api V1 Dossier Writer Field Mappings Init S6 Post"
+                  "title": "Response Init S6 Field Mappings Api V1 Registration Dossier Writer Field Mappings Init S6 Post"
                 }
               }
             }
@@ -56105,14 +55552,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/fill-results": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/fill-results": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Fill Results",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u586b\u5145\u7ed3\u679c",
-        "operationId": "get_fill_results_api_v1_dossier_writer_chapters__chapter_id__fill_results_get",
+        "operationId": "get_fill_results_api_v1_registration_dossier_writer_chapters__chapter_id__fill_results_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -56149,7 +55596,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Fill Results Api V1 Dossier Writer Chapters  Chapter Id  Fill Results Get"
+                  "title": "Response Get Fill Results Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Results Get"
                 }
               }
             }
@@ -56167,14 +55614,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/ai-preview": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/ai-preview": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Ai Preview Extraction",
         "description": "AI \u667a\u80fd\u89e3\u6790\u9884\u89c8\uff1a\u63d0\u53d6\u7d20\u6750\u4e2d\u7684\u5b57\u6bb5\u503c\uff08\u4e0d\u5199\u5165\u6587\u6863\uff09",
-        "operationId": "ai_preview_extraction_api_v1_dossier_writer_chapters__chapter_id__ai_preview_post",
+        "operationId": "ai_preview_extraction_api_v1_registration_dossier_writer_chapters__chapter_id__ai_preview_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -56211,7 +55658,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Ai Preview Extraction Api V1 Dossier Writer Chapters  Chapter Id  Ai Preview Post"
+                  "title": "Response Ai Preview Extraction Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Preview Post"
                 }
               }
             }
@@ -56229,14 +55676,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/ai-confirm": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/ai-confirm": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Ai Confirm And Fill",
         "description": "AI \u586b\u5145\u786e\u8ba4\uff1a\u7528\u6237\u786e\u8ba4\u540e\u5199\u5165\u6587\u6863",
-        "operationId": "ai_confirm_and_fill_api_v1_dossier_writer_chapters__chapter_id__ai_confirm_post",
+        "operationId": "ai_confirm_and_fill_api_v1_registration_dossier_writer_chapters__chapter_id__ai_confirm_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -56285,7 +55732,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Ai Confirm And Fill Api V1 Dossier Writer Chapters  Chapter Id  Ai Confirm Post"
+                  "title": "Response Ai Confirm And Fill Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Confirm Post"
                 }
               }
             }
@@ -56303,14 +55750,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_code}/asset-categories": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_code}/asset-categories": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Asset Categories",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u7d20\u6750\u5206\u7c7b\u5217\u8868",
-        "operationId": "get_asset_categories_api_v1_dossier_writer_chapters__chapter_code__asset_categories_get",
+        "operationId": "get_asset_categories_api_v1_registration_dossier_writer_chapters__chapter_code__asset_categories_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -56346,7 +55793,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Asset Categories Api V1 Dossier Writer Chapters  Chapter Code  Asset Categories Get"
+                  "title": "Response Get Asset Categories Api V1 Registration Dossier Writer Chapters  Chapter Code  Asset Categories Get"
                 }
               }
             }
@@ -56364,14 +55811,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/assets/{asset_id}/split-preview": {
+    "/api/v1/registration/dossier-writer/assets/{asset_id}/split-preview": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Split Preview",
         "description": "AI \u62c6\u5206\u9884\u89c8\uff1a\u8bc6\u522b\u591a\u9875 PDF \u6bcf\u9875\u7684\u7c7b\u578b",
-        "operationId": "split_preview_api_v1_dossier_writer_assets__asset_id__split_preview_post",
+        "operationId": "split_preview_api_v1_registration_dossier_writer_assets__asset_id__split_preview_post",
         "parameters": [
           {
             "name": "asset_id",
@@ -56420,7 +55867,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Split Preview Api V1 Dossier Writer Assets  Asset Id  Split Preview Post"
+                  "title": "Response Split Preview Api V1 Registration Dossier Writer Assets  Asset Id  Split Preview Post"
                 }
               }
             }
@@ -56438,14 +55885,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_id}/split-confirm": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/split-confirm": {
       "post": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Split Confirm And Insert",
         "description": "AI \u62c6\u5206\u786e\u8ba4\uff1a\u5c06\u5404\u9875\u8f6c\u4e3a\u56fe\u7247\u63d2\u5165\u6a21\u677f",
-        "operationId": "split_confirm_and_insert_api_v1_dossier_writer_chapters__chapter_id__split_confirm_post",
+        "operationId": "split_confirm_and_insert_api_v1_registration_dossier_writer_chapters__chapter_id__split_confirm_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -56494,7 +55941,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Split Confirm And Insert Api V1 Dossier Writer Chapters  Chapter Id  Split Confirm Post"
+                  "title": "Response Split Confirm And Insert Api V1 Registration Dossier Writer Chapters  Chapter Id  Split Confirm Post"
                 }
               }
             }
@@ -56512,14 +55959,14 @@
         }
       }
     },
-    "/api/v1/dossier-writer/chapters/{chapter_code}/appendix-slots": {
+    "/api/v1/registration/dossier-writer/chapters/{chapter_code}/appendix-slots": {
       "get": {
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
         "summary": "Get Appendix Slots",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u6240\u6709\u9644\u5f55\u4f4d\u7f6e\uff08\u4ece FieldMapping \u6c47\u603b\uff09",
-        "operationId": "get_appendix_slots_api_v1_dossier_writer_chapters__chapter_code__appendix_slots_get",
+        "operationId": "get_appendix_slots_api_v1_registration_dossier_writer_chapters__chapter_code__appendix_slots_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -56555,7 +56002,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Appendix Slots Api V1 Dossier Writer Chapters  Chapter Code  Appendix Slots Get"
+                  "title": "Response Get Appendix Slots Api V1 Registration Dossier Writer Chapters  Chapter Code  Appendix Slots Get"
                 }
               }
             }
@@ -59777,7 +59224,7 @@
         ],
         "title": "Body_analyze_literature_api_v1_research_literature_analyze_post"
       },
-      "Body_api_generate_exam_api_v1_ai_exam_generate_post": {
+      "Body_api_generate_exam_api_v1_hr_ai_exam_generate_post": {
         "properties": {
           "file": {
             "type": "string",
@@ -59804,7 +59251,7 @@
         "required": [
           "file"
         ],
-        "title": "Body_api_generate_exam_api_v1_ai_exam_generate_post"
+        "title": "Body_api_generate_exam_api_v1_hr_ai_exam_generate_post"
       },
       "Body_confirm_import_api_v1_quality_cpv_import_confirm_post": {
         "properties": {
@@ -60429,7 +59876,7 @@
         ],
         "title": "Body_upload_annual_training_plan_api_v1_hr_annual_training_plans_upload_post"
       },
-      "Body_upload_asset_api_v1_dossier_writer_chapters__chapter_id__assets_post": {
+      "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post": {
         "properties": {
           "files": {
             "items": {
@@ -60444,7 +59891,7 @@
         "required": [
           "files"
         ],
-        "title": "Body_upload_asset_api_v1_dossier_writer_chapters__chapter_id__assets_post"
+        "title": "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
       },
       "Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post": {
         "properties": {
@@ -60638,7 +60085,7 @@
         ],
         "title": "Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post"
       },
-      "Body_upload_templates_api_v1_dossier_writer_products__dossier_id__templates_post": {
+      "Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post": {
         "properties": {
           "files": {
             "items": {
@@ -60653,7 +60100,7 @@
         "required": [
           "files"
         ],
-        "title": "Body_upload_templates_api_v1_dossier_writer_products__dossier_id__templates_post"
+        "title": "Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
       },
       "Body_upload_trainers_api_v1_hr_trainers_upload_post": {
         "properties": {
@@ -76743,6 +76190,35 @@
         "title": "ProcessStepUpdate",
         "description": "\u66f4\u65b0\u5de5\u827a\u6b65\u9aa4"
       },
+      "ProductCreate": {
+        "properties": {
+          "workshop": {
+            "type": "string",
+            "title": "Workshop"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workshop",
+          "name"
+        ],
+        "title": "ProductCreate"
+      },
       "ProductDossierCreate": {
         "properties": {
           "product_name": {
@@ -77251,6 +76727,34 @@
         "type": "object",
         "title": "ProductOutputUpdate",
         "description": "\u66f4\u65b0\u4ea7\u91cf\u8bb0\u5f55"
+      },
+      "ProductUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "ProductUpdate"
       },
       "ProductionPlanCreate": {
         "properties": {
@@ -91003,272 +90507,6 @@
         ],
         "title": "InspectionRecordItem",
         "description": "\u5de1\u68c0\u8bb0\u5f55\u9879"
-      },
-      "app__modules__product__schemas__ProductCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 128,
-            "title": "Name",
-            "description": "\u4ea7\u54c1\u540d\u79f0"
-          },
-          "major_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Major Category",
-            "description": "\u4ea7\u54c1\u4ee3\u7801"
-          },
-          "formulation_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Formulation Code",
-            "description": "\u5236\u5242\u4ee3\u7801"
-          },
-          "product_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Product Type",
-            "description": "\u4ea7\u54c1\u5242\u578b"
-          },
-          "spec": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Spec",
-            "description": "\u751f\u4ea7\u89c4\u683c"
-          },
-          "capacity_range": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 256
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Capacity Range",
-            "description": "\u751f\u4ea7\u6279\u91cf"
-          },
-          "unit": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit",
-            "description": "\u5355\u4f4d"
-          },
-          "indication": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Indication",
-            "description": "\u9002\u5e94\u75c7"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "title": "ProductCreate"
-      },
-      "app__modules__product__schemas__ProductUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "major_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Major Category"
-          },
-          "formulation_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Formulation Code"
-          },
-          "product_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Product Type"
-          },
-          "spec": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Spec"
-          },
-          "capacity_range": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 256
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Capacity Range"
-          },
-          "unit": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit"
-          },
-          "indication": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Indication"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "title": "ProductUpdate"
-      },
-      "app__modules__production__product_schemas__ProductCreate": {
-        "properties": {
-          "workshop": {
-            "type": "string",
-            "title": "Workshop"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "workshop",
-          "name"
-        ],
-        "title": "ProductCreate"
-      },
-      "app__modules__production__product_schemas__ProductUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "title": "ProductUpdate"
       },
       "app__modules__production__schemas__OperationType": {
         "type": "string",

@@ -12,12 +12,13 @@ RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager
 RUN pip install --no-cache-dir uv
 
-ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV UV_PYTHON=/usr/local/bin/python3
 
