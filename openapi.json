@@ -46415,13 +46415,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DomesticApprovalResponse"
-                  },
-                  "title": "Response List Domestic Approvals Api V1 Registration Ledger Domestic Approvals Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -46573,13 +46567,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OverseasApprovalResponse"
-                  },
-                  "title": "Response List Overseas Approvals Api V1 Registration Ledger Overseas Approvals Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -46731,13 +46719,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/InternationalReviewResponse"
-                  },
-                  "title": "Response List International Reviews Api V1 Registration Ledger International Reviews Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -46889,13 +46871,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CoppCertificateResponse"
-                  },
-                  "title": "Response List Copp Certificates Api V1 Registration Ledger Copp Certificates Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -47047,13 +47023,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WcCertificateResponse"
-                  },
-                  "title": "Response List Wc Certificates Api V1 Registration Ledger Wc Certificates Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -47183,9 +47153,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LedgerSummary"
-                }
+                "schema": {}
               }
             }
           }
@@ -72058,54 +72026,6 @@
         "type": "object",
         "title": "LedgerExportRequest",
         "description": "\u53f0\u8d26\u5bfc\u51fa\u8bf7\u6c42 \u2014 AI\u81ea\u7136\u8bed\u8a00\u7b5b\u9009"
-      },
-      "LedgerSummary": {
-        "properties": {
-          "domestic_count": {
-            "type": "integer",
-            "title": "Domestic Count"
-          },
-          "overseas_count": {
-            "type": "integer",
-            "title": "Overseas Count"
-          },
-          "overseas_countries": {
-            "type": "integer",
-            "title": "Overseas Countries"
-          },
-          "international_review_count": {
-            "type": "integer",
-            "title": "International Review Count"
-          },
-          "copp_count": {
-            "type": "integer",
-            "title": "Copp Count"
-          },
-          "wc_count": {
-            "type": "integer",
-            "title": "Wc Count"
-          },
-          "reviewing_count": {
-            "type": "integer",
-            "title": "Reviewing Count"
-          },
-          "planned_count": {
-            "type": "integer",
-            "title": "Planned Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "domestic_count",
-          "overseas_count",
-          "overseas_countries",
-          "international_review_count",
-          "copp_count",
-          "wc_count",
-          "reviewing_count",
-          "planned_count"
-        ],
-        "title": "LedgerSummary"
       },
       "LinkDeviationRequest": {
         "properties": {
