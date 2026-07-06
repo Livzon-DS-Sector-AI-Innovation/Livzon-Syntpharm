@@ -22,14 +22,14 @@ class ProductRepository:
 
     async def get_by_id(self, product_id: uuid.UUID) -> Product | None:
         result = await self.db.execute(
-            select(Product).where(Product.id == product_id, not Product.is_deleted)
+            select(Product).where(Product.id == product_id, ~Product.is_deleted)
         )
         return result.scalar_one_or_none()
 
     async def get_by_workshop(self, workshop: str) -> list[Product]:
         result = await self.db.execute(
             select(Product)
-            .where(Product.workshop == workshop, not Product.is_deleted)
+            .where(Product.workshop == workshop, ~Product.is_deleted)
             .order_by(Product.name)
         )
         return list(result.scalars().all())
@@ -69,7 +69,7 @@ class ProductRepository:
                 and_(
                     Product.workshop == workshop,
                     Product.name == name,
-                    not Product.is_deleted,
+                    ~Product.is_deleted,
                 )
             )
         )

@@ -28,14 +28,14 @@ router = APIRouter()
 # ── Domestic Approvals ─────────────────────────────────────────────
 
 
-@router.get("/domestic-approvals", response_model=list[DomesticApprovalResponse])
+@router.get("/domestic-approvals")
 async def list_domestic_approvals(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_domestic_approvals(db, skip, limit)
-    return items
+    return {"data": items}
 
 
 @router.post("/domestic-approvals", response_model=DomesticApprovalResponse)
@@ -145,14 +145,14 @@ async def export_domestic_approvals(
 # ── Overseas Approvals ─────────────────────────────────────────────
 
 
-@router.get("/overseas-approvals", response_model=list[OverseasApprovalResponse])
+@router.get("/overseas-approvals")
 async def list_overseas_approvals(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_overseas_approvals(db, skip, limit)
-    return items
+    return {"data": items}
 
 
 @router.post("/overseas-approvals", response_model=OverseasApprovalResponse)
@@ -256,14 +256,14 @@ async def export_overseas_approvals(
 # ── International Reviews ──────────────────────────────────────────
 
 
-@router.get("/international-reviews", response_model=list[InternationalReviewResponse])
+@router.get("/international-reviews")
 async def list_international_reviews(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_international_reviews(db, skip, limit)
-    return items
+    return {"data": items}
 
 
 @router.post("/international-reviews", response_model=InternationalReviewResponse)
@@ -354,14 +354,14 @@ async def export_international_reviews(
 # ── COPP Certificates ──────────────────────────────────────────────
 
 
-@router.get("/copp-certificates", response_model=list[CoppCertificateResponse])
+@router.get("/copp-certificates")
 async def list_copp_certificates(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_copp_certificates(db, skip, limit)
-    return items
+    return {"data": items}
 
 
 @router.post("/copp-certificates", response_model=CoppCertificateResponse)
@@ -450,14 +450,14 @@ async def export_copp_certificates(
 # ── WC Certificates ────────────────────────────────────────────────
 
 
-@router.get("/wc-certificates", response_model=list[WcCertificateResponse])
+@router.get("/wc-certificates")
 async def list_wc_certificates(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_wc_certificates(db, skip, limit)
-    return items
+    return {"data": items}
 
 
 @router.post("/wc-certificates", response_model=WcCertificateResponse)
@@ -546,12 +546,12 @@ async def export_wc_certificates(
 # ── Dashboard Summary ──────────────────────────────────────────────
 
 
-@router.get("/summary", response_model=LedgerSummary)
+@router.get("/summary")
 async def get_ledger_summary(
     db: AsyncSession = Depends(get_db),
 ):
     summary = await ledger_service.get_ledger_summary(db)
-    return summary
+    return {"data": summary}
 
 
 # ── Reviewing (from drugs table) ───────────────────────────────────
@@ -602,4 +602,4 @@ async def list_reviewing_drugs(
             }
         )
 
-    return items
+    return {"data": items}
