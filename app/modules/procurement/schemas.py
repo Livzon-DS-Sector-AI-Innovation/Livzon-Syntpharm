@@ -323,6 +323,7 @@ class ContractItemInput(BaseModel):
 
 
 class ContractGenerateRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255, description="合同标题")
     category: ContractCategory = Field(..., description="合同分类")
     contract_number: str = Field(..., description="合同编号")
     contract_date: date = Field(..., description="签订日期")
@@ -386,3 +387,34 @@ class ContractTemplateMetadata(BaseModel):
     category: ContractCategory
     label: str
     fields: list[ContractTemplateField]
+
+
+class ContractRecordResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID = Field(..., description="合同记录 ID")
+    title: str = Field(..., description="合同标题")
+    category: ContractCategory = Field(..., description="合同分类")
+    contract_number: str = Field(..., description="合同编号")
+    contract_date: date = Field(..., description="签订日期")
+    seller_name: str = Field("", description="卖方名称")
+    filename: str = Field(..., description="合同文件名")
+    content_type: str = Field(..., description="文件 MIME 类型")
+    file_size: int = Field(..., description="文件大小（字节）")
+    payload: dict[str, Any] = Field(default_factory=dict, description="合同生成请求快照")
+    created_at: datetime | None = Field(None, description="生成时间")
+    updated_at: datetime | None = Field(None, description="更新时间")
+
+
+class ContractRecordListResponse(BaseModel):
+    code: int = Field(200, description="响应状态码")
+    message: str = Field("success", description="响应消息")
+    data: list[ContractRecordResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ContractRecordApiResponse(BaseModel):
+    code: int = Field(200, description="响应状态码")
+    message: str = Field("success", description="响应消息")
+    data: ContractRecordResponse
+    meta: dict[str, Any] | None = None

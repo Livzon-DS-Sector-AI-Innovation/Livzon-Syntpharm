@@ -31183,6 +31183,85 @@
         }
       }
     },
+    "/api/v1/procurement/contracts": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u91c7\u8d2d\u5408\u540c\u751f\u6210\u8bb0\u5f55",
+        "description": "\u67e5\u8be2\u5408\u540c\u751f\u6210\u4ea7\u751f\u7684\u5408\u540c\u8bb0\u5f55\uff0c\u652f\u6301\u6309\u6807\u9898\u3001\u5408\u540c\u7f16\u53f7\u548c\u5356\u65b9\u540d\u79f0\u68c0\u7d22\u3002",
+        "operationId": "list_contract_generation_records_api_v1_procurement_contracts_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5408\u540c\u6807\u9898\u3001\u7f16\u53f7\u6216\u5356\u65b9\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u5408\u540c\u6807\u9898\u3001\u7f16\u53f7\u6216\u5356\u65b9\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractRecordListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/procurement/contracts/templates/{category}": {
       "get": {
         "tags": [
@@ -31243,6 +31322,90 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/procurement/contracts/{contract_id}": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u91c7\u8d2d\u5408\u540c\u8be6\u60c5",
+        "operationId": "get_contract_generation_record_api_v1_procurement_contracts__contract_id__get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/procurement/contracts/{contract_id}/file": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u770b\u91c7\u8d2d\u5408\u540c\u6587\u4ef6",
+        "operationId": "get_contract_file_api_v1_procurement_contracts__contract_id__file_get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -49655,6 +49818,13 @@
       },
       "ContractGenerateRequest": {
         "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "description": "\u5408\u540c\u6807\u9898"
+          },
           "category": {
             "$ref": "#/components/schemas/ContractCategory",
             "description": "\u5408\u540c\u5206\u7c7b"
@@ -49932,6 +50102,7 @@
         },
         "type": "object",
         "required": [
+          "title",
           "category",
           "contract_number",
           "contract_date",
@@ -50131,6 +50302,177 @@
         },
         "type": "object",
         "title": "ContractPartyInfo"
+      },
+      "ContractRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContractRecordResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractRecordApiResponse"
+      },
+      "ContractRecordListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContractRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractRecordListResponse"
+      },
+      "ContractRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "\u5408\u540c\u8bb0\u5f55 ID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "\u5408\u540c\u6807\u9898"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ContractCategory",
+            "description": "\u5408\u540c\u5206\u7c7b"
+          },
+          "contract_number": {
+            "type": "string",
+            "title": "Contract Number",
+            "description": "\u5408\u540c\u7f16\u53f7"
+          },
+          "contract_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Contract Date",
+            "description": "\u7b7e\u8ba2\u65e5\u671f"
+          },
+          "seller_name": {
+            "type": "string",
+            "title": "Seller Name",
+            "description": "\u5356\u65b9\u540d\u79f0",
+            "default": ""
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "\u5408\u540c\u6587\u4ef6\u540d"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "\u6587\u4ef6 MIME \u7c7b\u578b"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size",
+            "description": "\u6587\u4ef6\u5927\u5c0f\uff08\u5b57\u8282\uff09"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "\u5408\u540c\u751f\u6210\u8bf7\u6c42\u5feb\u7167"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u751f\u6210\u65f6\u95f4"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "\u66f4\u65b0\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "category",
+          "contract_number",
+          "contract_date",
+          "filename",
+          "content_type",
+          "file_size"
+        ],
+        "title": "ContractRecordResponse"
       },
       "ContractTemplateField": {
         "properties": {

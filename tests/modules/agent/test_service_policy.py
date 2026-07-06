@@ -378,6 +378,7 @@ def test_contract_generation_sample_request_is_normalized() -> None:
 
     assert request.params == {}
     assert request.body["category"] == "consumables"
+    assert request.body["title"] == "办公用品耗材采购合同"
     assert request.body["contract_number"].startswith("AI-CONSUMABLES-")
     assert request.body["items"][0]["name"] == "办公用品耗材"
     assert request.body["items"][0]["department"] == "行政部"

@@ -1831,6 +1831,12 @@ class AgentService:
 
         return {
             **source,
+            "title": (
+                source.get("title")
+                or source.get("contract_title")
+                or source.get("name")
+                or self._default_contract_title(category, source_text)
+            ),
             "category": category,
             "contract_number": (
                 source.get("contract_number")
@@ -1928,6 +1934,18 @@ class AgentService:
         category_text = str(category or "contract").replace("-", "").upper()
         today = datetime.now(UTC).strftime("%Y%m%d")
         return f"AI-{category_text}-{today}-001"
+
+    @staticmethod
+    def _default_contract_title(category: Any, text: str) -> str:
+        if "办公" in text or category == "consumables":
+            return "办公用品耗材采购合同"
+        if category == "hardware":
+            return "五金备件采购合同"
+        if category == "raw-materials":
+            return "原材料采购合同"
+        if category == "fixed-assets":
+            return "固定资产采购合同"
+        return "采购合同"
 
     @staticmethod
     def _default_contract_unit(category: Any) -> str:

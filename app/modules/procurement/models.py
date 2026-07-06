@@ -10,6 +10,7 @@ from sqlalchemy import Boolean, Date, DateTime, Index, Integer, Numeric, String,
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.platform.identity.models import User  # noqa: F401
 from app.shared.base_model import BaseModel
 
 
@@ -211,6 +212,75 @@ class Supplier(BaseModel):
         default=dict,
         server_default="{}",
         comment="导入原始行数据",
+    )
+
+
+class ContractRecord(BaseModel):
+    """采购合同生成记录。"""
+
+    __tablename__ = "contract_records"
+    __table_args__ = (
+        Index("ix_procurement_contract_record_title", "title"),
+        Index("ix_procurement_contract_record_category", "category"),
+        Index("ix_procurement_contract_record_contract_number", "contract_number"),
+        Index("ix_procurement_contract_record_seller_name", "seller_name"),
+        Index("ix_procurement_contract_record_created_at", "created_at"),
+        {"schema": "procurement"},
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="合同标题",
+    )
+    category: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        comment="合同分类",
+    )
+    contract_number: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        comment="合同编号",
+    )
+    contract_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        comment="签订日期",
+    )
+    seller_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="卖方名称",
+    )
+    filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="合同文件名",
+    )
+    file_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        comment="合同文件路径或对象存储 key",
+    )
+    content_type: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="文件 MIME 类型",
+    )
+    file_size: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        comment="文件大小（字节）",
+    )
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default="{}",
+        comment="合同生成请求快照",
     )
 
 

@@ -7,6 +7,7 @@ from sqlalchemy import String, cast, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.procurement.models import (
+    ContractRecord,
     InvoiceRecognitionRecord,
     PurchaseRequest,
     PurchaseRequestApproval,
@@ -213,6 +214,59 @@ class SupplierRepository:
         )
         columns = result.scalar_one_or_none()
         return list(columns or [])
+
+
+class ContractRecordRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(self, record: ContractRecord) -> ContractRecord:
+        self.session.add(record)
+        await self.session.flush()
+        return record
+
+    async def get(self, record_id: UUID) -> ContractRecord | None:
+        result = await self.session.execute(
+            select(ContractRecord).where(
+                ContractRecord.id == record_id,
+                ContractRecord.is_deleted.is_(False),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_records(
+        self,
+        *,
+        keyword: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[ContractRecord], int]:
+        base_query = select(ContractRecord).where(
+            ContractRecord.is_deleted.is_(False)
+        )
+        count_query = select(func.count(ContractRecord.id)).where(
+            ContractRecord.is_deleted.is_(False)
+        )
+
+        if keyword:
+            like_pattern = f"%{keyword}%"
+            keyword_filter = or_(
+                ContractRecord.title.ilike(like_pattern),
+                ContractRecord.contract_number.ilike(like_pattern),
+                ContractRecord.seller_name.ilike(like_pattern),
+            )
+            base_query = base_query.where(keyword_filter)
+            count_query = count_query.where(keyword_filter)
+
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar() or 0
+
+        result = await self.session.execute(
+            base_query.order_by(ContractRecord.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return list(result.scalars().all()), total
 
 
 class PurchaseRequestRepository:

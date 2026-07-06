@@ -6,7 +6,8 @@ from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from hashlib import sha256
 from io import BytesIO, StringIO
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -15,7 +16,12 @@ from openpyxl.worksheet.properties import PageSetupProperties
 from pypdf import PdfReader
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
+from app.core.storage import get_object, upload_object
+from app.core.storage import is_enabled as minio_enabled
+from app.modules.procurement.contract_generator import generate_contract
 from app.modules.procurement.models import (
+    ContractRecord,
     InvoiceRecognitionRecord,
     PurchaseRequest,
     PurchaseRequestApproval,
@@ -23,11 +29,13 @@ from app.modules.procurement.models import (
     Supplier,
 )
 from app.modules.procurement.repository import (
+    ContractRecordRepository,
     InvoiceRecognitionRepository,
     PurchaseRequestRepository,
     SupplierRepository,
 )
 from app.modules.procurement.schemas import (
+    ContractGenerateRequest,
     InvoiceLineItem,
     InvoiceRecognitionResult,
     PurchaseApprovalRequest,
@@ -104,6 +112,8 @@ SUPPLIER_FIELD_ALIASES = {
     "last_updated_by": {"最后更新人", "更新人"},
     "last_updated_date": {"最后更新日期", "更新日期", "最后更新时间"},
 }
+
+CONTRACT_STORAGE_DIR = "contracts"
 
 
 class DuplicateInvoiceError(ValueError):
@@ -405,6 +415,104 @@ async def export_purchase_order_lines_xlsx(
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
+
+
+async def generate_and_store_contract(
+    db: AsyncSession,
+    payload: ContractGenerateRequest,
+) -> tuple[BytesIO, str, str, ContractRecord]:
+    buffer, filename, content_type = generate_contract(payload)
+    file_bytes = buffer.getvalue()
+    record_id = uuid4()
+    stored_path = _store_contract_file(
+        record_id=record_id,
+        filename=filename,
+        content=file_bytes,
+        content_type=content_type,
+    )
+    record = ContractRecord(
+        id=record_id,
+        title=payload.title.strip(),
+        category=payload.category.value,
+        contract_number=payload.contract_number,
+        contract_date=payload.contract_date,
+        seller_name=payload.seller.name,
+        filename=filename,
+        file_path=stored_path,
+        content_type=content_type,
+        file_size=len(file_bytes),
+        payload=payload.model_dump(mode="json"),
+    )
+    created = await ContractRecordRepository(db).create(record)
+    return BytesIO(file_bytes), filename, content_type, created
+
+
+async def list_contract_records(
+    db: AsyncSession,
+    *,
+    keyword: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[ContractRecord], int]:
+    return await ContractRecordRepository(db).list_records(
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def get_contract_record(
+    db: AsyncSession,
+    record_id: UUID,
+) -> ContractRecord:
+    record = await ContractRecordRepository(db).get(record_id)
+    if not record:
+        raise ValueError("合同记录不存在")
+    return record
+
+
+async def get_contract_record_file(
+    db: AsyncSession,
+    record_id: UUID,
+) -> tuple[bytes, str, str]:
+    record = await get_contract_record(db, record_id)
+    if minio_enabled():
+        result = get_object("procurement", record.file_path)
+        if result is None:
+            raise ValueError("合同文件不存在")
+        data, content_type = result
+        return data, content_type or record.content_type, record.filename
+
+    file_path = Path(record.file_path)
+    if not file_path.exists():
+        raise ValueError("合同文件不存在")
+    return file_path.read_bytes(), record.content_type, record.filename
+
+
+def _store_contract_file(
+    *,
+    record_id: UUID,
+    filename: str,
+    content: bytes,
+    content_type: str,
+) -> str:
+    safe_filename = Path(filename).name
+    if minio_enabled():
+        object_key = f"{CONTRACT_STORAGE_DIR}/{record_id}/{safe_filename}"
+        return upload_object(
+            module="procurement",
+            object_key=object_key,
+            data=content,
+            length=len(content),
+            content_type=content_type,
+        )
+
+    storage_root = Path(get_settings().STORAGE_ROOT)
+    directory = storage_root / "procurement" / CONTRACT_STORAGE_DIR / str(record_id)
+    directory.mkdir(parents=True, exist_ok=True)
+    file_path = directory / safe_filename
+    file_path.write_bytes(content)
+    return str(file_path)
 
 
 

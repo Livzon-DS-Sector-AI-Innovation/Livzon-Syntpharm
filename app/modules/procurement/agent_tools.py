@@ -152,13 +152,14 @@ def _contract_template_info(category: ContractCategory) -> dict[str, Any]:
         "required_fields": required_fields,
         "item_required_fields": ["name", "quantity", "unit_price"],
         "generate_required_fields": [
+            "title",
             "category",
             "contract_number",
             "contract_date",
             "items",
         ],
         "notes": (
-            "生成合同时必须至少提供一条 items 明细；items 每条至少需要 "
+            "生成合同时必须提供 title 合同标题并至少提供一条 items 明细；items 每条至少需要 "
             "name、quantity、unit_price。seller 字段可逐项补充，未提供时为空。"
         ),
     }

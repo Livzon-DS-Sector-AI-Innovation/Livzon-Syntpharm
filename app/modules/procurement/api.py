@@ -9,10 +9,12 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.response import paginated_response, success_response
 from app.modules.procurement.contract_generator import (
-    generate_contract,
     get_contract_template_metadata,
 )
 from app.modules.procurement.schemas import (
+    ContractRecordApiResponse,
+    ContractRecordListResponse,
+    ContractRecordResponse,
     ContractCategory,
     ContractGenerateRequest,
     ContractTemplateMetadata,
@@ -43,9 +45,13 @@ from app.modules.procurement.service import (
     create_purchase_request,
     delete_invoice_recognition_record,
     export_purchase_order_lines_xlsx,
+    generate_and_store_contract,
+    get_contract_record,
+    get_contract_record_file,
     get_purchase_request,
     import_supplier_table_file,
     list_invoice_recognition_records,
+    list_contract_records,
     list_purchase_order_lines,
     list_purchase_requests,
     list_suppliers,
@@ -484,6 +490,31 @@ async def reject_purchase_request_record(
 
 
 @router.get(
+    "/contracts",
+    summary="查询采购合同生成记录",
+    description="查询合同生成产生的合同记录，支持按标题、合同编号和卖方名称检索。",
+    response_model=ContractRecordListResponse,
+)
+async def list_contract_generation_records(
+    keyword: str | None = Query(None, description="合同标题、编号或卖方关键词"),
+    page: int = Query(default=1, ge=1, description="页码"),
+    page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
+    db: AsyncSession = Depends(get_db),
+):
+    records, total = await list_contract_records(
+        db,
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+    data = [
+        ContractRecordResponse.model_validate(record).model_dump(mode="json")
+        for record in records
+    ]
+    return paginated_response(data, page, page_size, total)
+
+
+@router.get(
     "/contracts/templates/{category}",
     summary="获取采购合同模板字段",
     description="返回指定合同分类的可填写字段，用于前端动态展示合同生成表单。",
@@ -499,18 +530,66 @@ async def get_contract_template(category: ContractCategory):
     summary="生成采购合同",
     description="根据合同分类、基础信息、供应商信息和明细行生成 Word 合同。",
 )
-async def create_contract(payload: ContractGenerateRequest):
+async def create_contract(
+    payload: ContractGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+):
     try:
-        buffer, filename, media_type = generate_contract(payload)
+        buffer, filename, media_type, record = await generate_and_store_contract(
+            db,
+            payload,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     encoded_filename = quote(filename, safe="")
     return StreamingResponse(
         iter([buffer.getvalue()]),
         media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}",
+            "X-Contract-Record-Id": str(record.id),
+        },
+    )
+
+
+@router.get(
+    "/contracts/{contract_id}",
+    summary="获取采购合同详情",
+    response_model=ContractRecordApiResponse,
+)
+async def get_contract_generation_record(
+    contract_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        record = await get_contract_record(db, contract_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return success_response(
+        data=ContractRecordResponse.model_validate(record).model_dump(mode="json")
+    )
+
+
+@router.get(
+    "/contracts/{contract_id}/file",
+    summary="查看采购合同文件",
+)
+async def get_contract_file(
+    contract_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        data, content_type, filename = await get_contract_record_file(db, contract_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    encoded_filename = quote(filename, safe="")
+    return StreamingResponse(
+        iter([data]),
+        media_type=content_type,
         headers={
             "Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}"
         },

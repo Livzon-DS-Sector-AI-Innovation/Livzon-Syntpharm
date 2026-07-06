@@ -92,6 +92,7 @@ EXPECTED_FIRST_TABLE_ROWS = {
 
 def _payload(category: ContractCategory) -> ContractGenerateRequest:
     common = dict(
+        title="自动化测试采购合同",
         contract_date=date(2026, 6, 27),
         delivery_date=date(2026, 7, 15),
         delivery_terms="2026年07月15日前一次性交付至买方仓库",
