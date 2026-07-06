@@ -546,7 +546,7 @@ async def get_source_status(db: AsyncSession) -> list[dict[str, Any]]:
 
     # 获取所有数据源
     sources_result = await db.execute(
-        select(DataSource).where(not DataSource.is_deleted).order_by(DataSource.code)  # noqa: E712
+        select(DataSource).where(~DataSource.is_deleted).order_by(DataSource.code)  # noqa: E712
     )
     sources = sources_result.scalars().all()
 

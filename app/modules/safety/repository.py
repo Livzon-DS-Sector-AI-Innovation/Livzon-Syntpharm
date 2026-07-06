@@ -47,7 +47,7 @@ class SafetyRepository:
         department: str | None = None,
     ) -> tuple[list[SafetyCheck], int]:
         """获取安全检查列表"""
-        query = select(SafetyCheck).where(not SafetyCheck.is_deleted)
+        query = select(SafetyCheck).where(~SafetyCheck.is_deleted)
 
         if status:
             query = query.where(SafetyCheck.status == status)
@@ -130,7 +130,7 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[HazardReport], int]:
         """获取隐患列表"""
-        query = select(HazardReport).where(not HazardReport.is_deleted)
+        query = select(HazardReport).where(~HazardReport.is_deleted)
 
         if status:
             query = query.where(HazardReport.status == status)
@@ -244,7 +244,7 @@ class SafetyRepository:
                     )
                 )
             ).label("overdue"),
-        ).where(not HazardReport.is_deleted)
+        ).where(~HazardReport.is_deleted)
 
         result = await self.session.execute(base)
         row = result.one()
@@ -356,8 +356,8 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[Accident], int]:
         """获取事故列表"""
-        query = select(Accident).where(not Accident.is_deleted)
-        count_query = select(func.count(Accident.id)).where(not Accident.is_deleted)
+        query = select(Accident).where(~Accident.is_deleted)
+        count_query = select(func.count(Accident.id)).where(~Accident.is_deleted)
 
         if status:
             query = query.where(Accident.status == status)
@@ -455,7 +455,7 @@ class SafetyRepository:
         department: str | None = None,
     ) -> tuple[list[SafetyTraining], int]:
         """获取安全培训列表"""
-        query = select(SafetyTraining).where(not SafetyTraining.is_deleted)
+        query = select(SafetyTraining).where(~SafetyTraining.is_deleted)
 
         if status:
             query = query.where(SafetyTraining.status == status)
@@ -669,7 +669,7 @@ class SafetyRepository:
         """获取危险源辨识列表"""
         from datetime import datetime as dt_module
 
-        query = select(HazardIdentification).where(not HazardIdentification.is_deleted)
+        query = select(HazardIdentification).where(~HazardIdentification.is_deleted)
         count_query = select(func.count(HazardIdentification.id)).where(
             not HazardIdentification.is_deleted
         )
@@ -751,7 +751,7 @@ class SafetyRepository:
     async def get_hazard_identification_stats(self) -> dict[str, int]:
         """获取危险源辨识工作流统计（按 overall_status 分组）"""
 
-        base = select(HazardIdentification).where(not HazardIdentification.is_deleted)
+        base = select(HazardIdentification).where(~HazardIdentification.is_deleted)
         results = {
             "total_draft": 0,
             "total_in_progress": 0,
@@ -975,7 +975,7 @@ class SafetyRepository:
         status: str | None = None,
     ) -> tuple[list[OperationRegulation], int]:
         """获取安全操作规程列表"""
-        query = select(OperationRegulation).where(not OperationRegulation.is_deleted)
+        query = select(OperationRegulation).where(~OperationRegulation.is_deleted)
         count_query = select(func.count(OperationRegulation.id)).where(
             not OperationRegulation.is_deleted
         )
@@ -1087,7 +1087,7 @@ class SafetyRepository:
         revision_scope: str | None = None,
     ) -> tuple[list[RegulationRevision], int]:
         """获取修订记录列表"""
-        query = select(RegulationRevision).where(not RegulationRevision.is_deleted)
+        query = select(RegulationRevision).where(~RegulationRevision.is_deleted)
         count_query = select(func.count(RegulationRevision.id)).where(
             not RegulationRevision.is_deleted
         )
@@ -1766,7 +1766,7 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[DailyRiskReport], int]:
         """获取每日风险作业报备列表"""
-        query = select(DailyRiskReport).where(not DailyRiskReport.is_deleted)
+        query = select(DailyRiskReport).where(~DailyRiskReport.is_deleted)
 
         if status:
             query = query.where(DailyRiskReport.status == status)
@@ -1878,8 +1878,8 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[EhsChange], int]:
         """获取EHS变更列表"""
-        query = select(EhsChange).where(not EhsChange.is_deleted)
-        count_query = select(func.count(EhsChange.id)).where(not EhsChange.is_deleted)
+        query = select(EhsChange).where(~EhsChange.is_deleted)
+        count_query = select(func.count(EhsChange.id)).where(~EhsChange.is_deleted)
 
         if status:
             query = query.where(EhsChange.status == status)
@@ -1986,7 +1986,7 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[OhHazardMonitor], int]:
         """获取职业危害因素监测列表"""
-        query = select(OhHazardMonitor).where(not OhHazardMonitor.is_deleted)
+        query = select(OhHazardMonitor).where(~OhHazardMonitor.is_deleted)
 
         if status:
             query = query.where(OhHazardMonitor.status == status)
@@ -2094,7 +2094,7 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[OhHealthExam], int]:
         """获取职业健康体检列表"""
-        query = select(OhHealthExam).where(not OhHealthExam.is_deleted)
+        query = select(OhHealthExam).where(~OhHealthExam.is_deleted)
 
         if status:
             query = query.where(OhHealthExam.status == status)
@@ -2195,8 +2195,8 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[Contractor], int]:
         """获取承包商列表"""
-        query = select(Contractor).where(not Contractor.is_deleted)
-        count_query = select(func.count(Contractor.id)).where(not Contractor.is_deleted)
+        query = select(Contractor).where(~Contractor.is_deleted)
+        count_query = select(func.count(Contractor.id)).where(~Contractor.is_deleted)
 
         if status:
             query = query.where(Contractor.status == status)

@@ -12,7 +12,7 @@ from app.modules.registration.schemas.project import ProjectCreate, ProjectUpdat
 async def get_projects(db: AsyncSession) -> list[RegistrationProject]:
     stmt = (
         select(RegistrationProject)
-        .where(not RegistrationProject.is_deleted)
+        .where(~RegistrationProject.is_deleted)
         .order_by(RegistrationProject.updated_at.desc())
     )
     result = await db.execute(stmt)

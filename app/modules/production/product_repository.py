@@ -37,7 +37,7 @@ class ProductRepository:
     async def get_all(self) -> list[Product]:
         result = await self.db.execute(
             select(Product)
-            .where(not Product.is_deleted)
+            .where(~Product.is_deleted)
             .order_by(Product.workshop, Product.name)
         )
         return list(result.scalars().all())

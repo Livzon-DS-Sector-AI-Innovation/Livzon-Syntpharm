@@ -566,7 +566,7 @@ async def list_reviewing_drugs(
 
     from app.modules.registration.models.drug import Drug, DrugNode
 
-    stmt = select(Drug).where(not Drug.is_deleted).order_by(Drug.acceptance_date.desc())
+    stmt = select(Drug).where(~Drug.is_deleted).order_by(Drug.acceptance_date.desc())
     result = await db.execute(stmt)
     drugs = result.scalars().all()
 

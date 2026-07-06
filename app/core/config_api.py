@@ -55,7 +55,7 @@ async def list_settings(
     current_user=Depends(get_current_user),
 ):
     """List all module settings, optionally filtered by module."""
-    query = select(ModuleSetting).where(not ModuleSetting.is_deleted)
+    query = select(ModuleSetting).where(~ModuleSetting.is_deleted)
 
     if module:
         query = query.where(ModuleSetting.module == module)

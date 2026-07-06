@@ -133,7 +133,7 @@ async def list_domestic_approvals(
 ) -> list[DomesticApproval]:
     stmt = (
         select(DomesticApproval)
-        .where(not DomesticApproval.is_deleted)
+        .where(~DomesticApproval.is_deleted)
         .offset(skip)
         .limit(limit)
     )
@@ -156,7 +156,7 @@ async def list_overseas_approvals(
 ) -> list[OverseasApproval]:
     stmt = (
         select(OverseasApproval)
-        .where(not OverseasApproval.is_deleted)
+        .where(~OverseasApproval.is_deleted)
         .offset(skip)
         .limit(limit)
     )
@@ -179,7 +179,7 @@ async def list_international_reviews(
 ) -> list[InternationalReview]:
     stmt = (
         select(InternationalReview)
-        .where(not InternationalReview.is_deleted)
+        .where(~InternationalReview.is_deleted)
         .offset(skip)
         .limit(limit)
     )
@@ -202,7 +202,7 @@ async def list_copp_certificates(
 ) -> list[CoppCertificate]:
     stmt = (
         select(CoppCertificate)
-        .where(not CoppCertificate.is_deleted)
+        .where(~CoppCertificate.is_deleted)
         .offset(skip)
         .limit(limit)
     )
@@ -225,7 +225,7 @@ async def list_wc_certificates(
 ) -> list[WcCertificate]:
     stmt = (
         select(WcCertificate)
-        .where(not WcCertificate.is_deleted)
+        .where(~WcCertificate.is_deleted)
         .offset(skip)
         .limit(limit)
     )
@@ -251,7 +251,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     stmt = (
         select(func.count())
         .select_from(DomesticApproval)
-        .where(not DomesticApproval.is_deleted)
+        .where(~DomesticApproval.is_deleted)
     )
     domestic_count = (await db.execute(stmt)).scalar() or 0
 
@@ -259,7 +259,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     stmt = (
         select(func.count())
         .select_from(OverseasApproval)
-        .where(not OverseasApproval.is_deleted)
+        .where(~OverseasApproval.is_deleted)
     )
     overseas_count = (await db.execute(stmt)).scalar() or 0
 
@@ -278,7 +278,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     stmt = (
         select(func.count())
         .select_from(InternationalReview)
-        .where(not InternationalReview.is_deleted)
+        .where(~InternationalReview.is_deleted)
     )
     international_review_count = (await db.execute(stmt)).scalar() or 0
 
@@ -286,7 +286,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     stmt = (
         select(func.count())
         .select_from(CoppCertificate)
-        .where(not CoppCertificate.is_deleted)
+        .where(~CoppCertificate.is_deleted)
     )
     copp_count = (await db.execute(stmt)).scalar() or 0
 
@@ -294,14 +294,14 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     stmt = (
         select(func.count())
         .select_from(WcCertificate)
-        .where(not WcCertificate.is_deleted)
+        .where(~WcCertificate.is_deleted)
     )
     wc_count = (await db.execute(stmt)).scalar() or 0
 
     # 审评中（从drugs表统计）
     from app.modules.registration.models.drug import Drug
 
-    stmt = select(func.count()).select_from(Drug).where(not Drug.is_deleted)
+    stmt = select(func.count()).select_from(Drug).where(~Drug.is_deleted)
     reviewing_count = (await db.execute(stmt)).scalar() or 0
 
     # 计划申报（暂时为0）

@@ -973,7 +973,7 @@ class AnnualTrainingPlanItemRepository:
         await self.session.execute(
             update(AnnualTrainingPlanItem)
             .where(AnnualTrainingPlanItem.plan_id == plan_id)
-            .where(not AnnualTrainingPlanItem.is_deleted)
+            .where(~AnnualTrainingPlanItem.is_deleted)
             .values(is_deleted=True)
         )
         await self.session.flush()

@@ -45,7 +45,7 @@ class ProductionRepository:
         Args:
             exclude_cancelled: 是否排除已取消的批次，用于生产记录下拉框等场景
         """
-        query = select(Batch).where(not Batch.is_deleted)
+        query = select(Batch).where(~Batch.is_deleted)
 
         if exclude_cancelled:
             query = query.where(Batch.status != "cancelled")
@@ -60,7 +60,7 @@ class ProductionRepository:
         if end_date:
             query = query.where(Batch.end_time <= end_date)
 
-        count_query = select(func.count(Batch.id)).where(not Batch.is_deleted)
+        count_query = select(func.count(Batch.id)).where(~Batch.is_deleted)
         if exclude_cancelled:
             count_query = count_query.where(Batch.status != "cancelled")
         if status:
@@ -164,7 +164,7 @@ class ProductionRepository:
         plan_month: str | None = None,
     ) -> tuple[list[ProductionPlan], int]:
         """获取生产计划列表"""
-        query = select(ProductionPlan).where(not ProductionPlan.is_deleted)
+        query = select(ProductionPlan).where(~ProductionPlan.is_deleted)
 
         if status:
             query = query.where(ProductionPlan.status == status)
@@ -279,7 +279,7 @@ class ProductionRepository:
         product_code: str | None = None,
     ) -> tuple[list[ProcessSpec], int]:
         """获取工艺规程列表"""
-        query = select(ProcessSpec).where(not ProcessSpec.is_deleted)
+        query = select(ProcessSpec).where(~ProcessSpec.is_deleted)
 
         if status:
             query = query.where(ProcessSpec.status == status)

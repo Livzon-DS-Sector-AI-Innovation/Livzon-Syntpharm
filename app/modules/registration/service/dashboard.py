@@ -63,7 +63,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
     # 最近项目（10条）
     stmt_recent = (
         select(RegistrationProject)
-        .where(not RegistrationProject.is_deleted)
+        .where(~RegistrationProject.is_deleted)
         .order_by(RegistrationProject.updated_at.desc())
         .limit(10)
     )
@@ -75,7 +75,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
     # 海外获批记录（10条）
     stmt_certs = (
         select(RegistrationCertificate)
-        .where(not RegistrationCertificate.is_deleted)
+        .where(~RegistrationCertificate.is_deleted)
         .order_by(RegistrationCertificate.approved_at.desc().nullslast())
         .limit(10)
     )

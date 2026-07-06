@@ -68,7 +68,7 @@ async def list_configs(
     current_user=Depends(get_current_user),
 ):
     """List all LLM configurations."""
-    query = select(LLMConfigModel).where(not LLMConfigModel.is_deleted)
+    query = select(LLMConfigModel).where(~LLMConfigModel.is_deleted)
 
     if config_type:
         query = query.where(LLMConfigModel.config_type == config_type)

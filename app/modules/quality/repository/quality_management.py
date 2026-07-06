@@ -62,9 +62,9 @@ async def get_deviations(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Deviation], int]:
-    query = select(Deviation).where(not Deviation.is_deleted)
+    query = select(Deviation).where(~Deviation.is_deleted)
     count_query = (
-        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
+        select(func.count()).select_from(Deviation).where(~Deviation.is_deleted)
     )
 
     filters = []
@@ -152,8 +152,8 @@ async def get_capas(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[CAPA], int]:
-    query = select(CAPA).where(not CAPA.is_deleted)
-    count_query = select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
+    query = select(CAPA).where(~CAPA.is_deleted)
+    count_query = select(func.count()).select_from(CAPA).where(~CAPA.is_deleted)
 
     filters = []
     if status:
@@ -223,11 +223,11 @@ async def get_department_contact_by_department(
 async def get_department_contacts(
     db: AsyncSession, page: int = 1, page_size: int = 20
 ) -> tuple[list[DepartmentContact], int]:
-    query = select(DepartmentContact).where(not DepartmentContact.is_deleted)
+    query = select(DepartmentContact).where(~DepartmentContact.is_deleted)
     count_query = (
         select(func.count())
         .select_from(DepartmentContact)
-        .where(not DepartmentContact.is_deleted)
+        .where(~DepartmentContact.is_deleted)
     )
 
     total = (await db.execute(count_query)).scalar_one()
@@ -305,7 +305,7 @@ async def get_weekly_confirmations(
     count_query = (
         select(func.count())
         .select_from(DepartmentWeeklyConfirmation)
-        .where(not DepartmentWeeklyConfirmation.is_deleted)
+        .where(~DepartmentWeeklyConfirmation.is_deleted)
     )
 
     if department:
@@ -378,11 +378,11 @@ async def get_attachment_reviews(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[AttachmentReview], int]:
-    query = select(AttachmentReview).where(not AttachmentReview.is_deleted)
+    query = select(AttachmentReview).where(~AttachmentReview.is_deleted)
     count_query = (
         select(func.count())
         .select_from(AttachmentReview)
-        .where(not AttachmentReview.is_deleted)
+        .where(~AttachmentReview.is_deleted)
     )
 
     if deviation_id:

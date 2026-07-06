@@ -107,9 +107,9 @@ async def get_deviation_list(
     page: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    query = select(Deviation).where(not Deviation.is_deleted)
+    query = select(Deviation).where(~Deviation.is_deleted)
     count_query = (
-        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
+        select(func.count()).select_from(Deviation).where(~Deviation.is_deleted)
     )
 
     if status:
@@ -428,8 +428,8 @@ async def get_capa_list(
     page: int = 1,
     page_size: int = 20,
 ) -> dict[str, Any]:
-    query = select(CAPA).where(not CAPA.is_deleted)
-    count_query = select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
+    query = select(CAPA).where(~CAPA.is_deleted)
+    count_query = select(func.count()).select_from(CAPA).where(~CAPA.is_deleted)
 
     if status:
         query = query.where(CAPA.status == status)
@@ -582,11 +582,11 @@ async def delete_capa(db: AsyncSession, capa_id: uuid.UUID) -> dict[str, bool]:
 async def get_department_contact_list(
     db: AsyncSession, page: int = 1, page_size: int = 20
 ) -> dict[str, Any]:
-    query = select(DepartmentContact).where(not DepartmentContact.is_deleted)
+    query = select(DepartmentContact).where(~DepartmentContact.is_deleted)
     count_query = (
         select(func.count())
         .select_from(DepartmentContact)
-        .where(not DepartmentContact.is_deleted)
+        .where(~DepartmentContact.is_deleted)
     )
 
     total_result = await db.execute(count_query)
@@ -687,20 +687,20 @@ async def delete_department_contact(
 # ============ Statistics ============
 async def get_deviation_statistics(db: AsyncSession) -> DeviationStatistics:
     total_result = await db.execute(
-        select(func.count()).select_from(Deviation).where(not Deviation.is_deleted)
+        select(func.count()).select_from(Deviation).where(~Deviation.is_deleted)
     )
     total = total_result.scalar_one()
 
     pending_result = await db.execute(
         select(func.count())
         .select_from(Deviation)
-        .where(not Deviation.is_deleted, Deviation.status.like("pending_%"))
+        .where(~Deviation.is_deleted, Deviation.status.like("pending_%"))
     )
     pending = pending_result.scalar_one()
 
     dept_result = await db.execute(
         select(Deviation.department, func.count())
-        .where(not Deviation.is_deleted)
+        .where(~Deviation.is_deleted)
         .group_by(Deviation.department)
     )
     department_distribution = [
@@ -709,7 +709,7 @@ async def get_deviation_statistics(db: AsyncSession) -> DeviationStatistics:
 
     status_result = await db.execute(
         select(Deviation.status, func.count())
-        .where(not Deviation.is_deleted)
+        .where(~Deviation.is_deleted)
         .group_by(Deviation.status)
     )
     status_distribution = [
@@ -742,13 +742,13 @@ async def get_deviation_statistics(db: AsyncSession) -> DeviationStatistics:
 
 async def get_capa_statistics(db: AsyncSession) -> CapaStatistics:
     total_result = await db.execute(
-        select(func.count()).select_from(CAPA).where(not CAPA.is_deleted)
+        select(func.count()).select_from(CAPA).where(~CAPA.is_deleted)
     )
     total = total_result.scalar_one()
 
     status_result = await db.execute(
         select(CAPA.status, func.count())
-        .where(not CAPA.is_deleted)
+        .where(~CAPA.is_deleted)
         .group_by(CAPA.status)
     )
     status_distribution = [
@@ -757,7 +757,7 @@ async def get_capa_statistics(db: AsyncSession) -> CapaStatistics:
 
     source_result = await db.execute(
         select(CAPA.source, func.count())
-        .where(not CAPA.is_deleted)
+        .where(~CAPA.is_deleted)
         .group_by(CAPA.source)
     )
     source_distribution = [
@@ -779,7 +779,7 @@ async def list_attachment_reviews(
     attachment_url: str | None = None,
 ) -> list[dict]:
     """List attachment reviews with optional filters."""
-    query = select(AttachmentReview).where(not AttachmentReview.is_deleted)
+    query = select(AttachmentReview).where(~AttachmentReview.is_deleted)
     if deviation_id:
         query = query.where(AttachmentReview.deviation_id == deviation_id)
     if capa_id:
@@ -1002,7 +1002,7 @@ async def get_stopped_departments(db: AsyncSession, week_key: str) -> list[str]:
 
 async def get_capa_departments(db: AsyncSession) -> list[str]:
     """Get all departments from department contacts."""
-    query = select(DepartmentContact.department).where(not DepartmentContact.is_deleted)
+    query = select(DepartmentContact.department).where(~DepartmentContact.is_deleted)
     result = await db.execute(query)
     return [row[0] for row in result.all()]
 

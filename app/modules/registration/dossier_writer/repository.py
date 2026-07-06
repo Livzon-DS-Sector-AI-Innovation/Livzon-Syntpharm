@@ -56,7 +56,7 @@ class DossierRepository:
         count_stmt = (
             select(func.count())
             .select_from(ProductDossier)
-            .where(not ProductDossier.is_deleted)
+            .where(~ProductDossier.is_deleted)
         )
         total_result = await self.db.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -64,7 +64,7 @@ class DossierRepository:
         # 查询列表
         stmt = (
             select(ProductDossier)
-            .where(not ProductDossier.is_deleted)
+            .where(~ProductDossier.is_deleted)
             .order_by(ProductDossier.created_at.desc())
             .offset(skip)
             .limit(limit)

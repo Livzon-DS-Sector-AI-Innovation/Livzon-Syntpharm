@@ -235,7 +235,7 @@ async def get_rd_projects(
     page_size: int = 20,
 ) -> tuple[list[RdProject], int]:
     """获取 RdProject 列表"""
-    query = select(RdProject).where(not RdProject.is_deleted)
+    query = select(RdProject).where(~RdProject.is_deleted)
 
     if stage:
         query = query.where(RdProject.current_stage == stage)

@@ -1032,12 +1032,12 @@ async def get_routes(
 
     from app.modules.research.models import RouteDevelopment
 
-    query = select(RouteDevelopment).where(not RouteDevelopment.is_deleted)
+    query = select(RouteDevelopment).where(~RouteDevelopment.is_deleted)
 
     count_query = (
         select(func.count())
         .select_from(RouteDevelopment)
-        .where(not RouteDevelopment.is_deleted)
+        .where(~RouteDevelopment.is_deleted)
     )
 
     if project_id:
@@ -1835,8 +1835,8 @@ async def get_all_research_tracks(
     stmt = (
         select(RdResearchTrack, RdProject.name.label("project_name"))
         .outerjoin(RdProject, RdResearchTrack.project_id == RdProject.id)
-        .where(not RdResearchTrack.is_deleted)
-        .where((not RdProject.is_deleted) | (RdProject.id.is_(None)))
+        .where(~RdResearchTrack.is_deleted)
+        .where((~RdProject.is_deleted) | (RdProject.id.is_(None)))
     )
 
     if project_id and project_id.strip():
@@ -3042,7 +3042,7 @@ async def export_projects_csv(
 
     from app.modules.research.models import RdProject
 
-    result = await db.execute(select(RdProject).where(not RdProject.is_deleted))
+    result = await db.execute(select(RdProject).where(~RdProject.is_deleted))
 
     projects = result.scalars().all()
 
@@ -3276,7 +3276,7 @@ async def get_stats_overview(
     # 项目统计
 
     total_projects = await db.execute(
-        select(func.count(RdProject.id)).where(not RdProject.is_deleted)
+        select(func.count(RdProject.id)).where(~RdProject.is_deleted)
     )
 
     total_projects = total_projects.scalar() or 0
@@ -3285,7 +3285,7 @@ async def get_stats_overview(
 
     stage_stats = await db.execute(
         select(RdProject.current_stage, func.count(RdProject.id))
-        .where(not RdProject.is_deleted)
+        .where(~RdProject.is_deleted)
         .group_by(RdProject.current_stage)
     )
 
@@ -3297,7 +3297,7 @@ async def get_stats_overview(
 
     status_stats = await db.execute(
         select(RdProject.status, func.count(RdProject.id))
-        .where(not RdProject.is_deleted)
+        .where(~RdProject.is_deleted)
         .group_by(RdProject.status)
     )
 
@@ -3311,10 +3311,10 @@ async def get_stats_overview(
 
     total_tracks = await db.execute(
         select(func.count(RdResearchTrack.id))
-        .where(not RdResearchTrack.is_deleted)
+        .where(~RdResearchTrack.is_deleted)
         .where(
             RdResearchTrack.project_id.in_(
-                select(RdProject.id).where(not RdProject.is_deleted)
+                select(RdProject.id).where(~RdProject.is_deleted)
             )
         )
     )
@@ -3325,10 +3325,10 @@ async def get_stats_overview(
 
     track_type_stats = await db.execute(
         select(RdResearchTrack.type, func.count(RdResearchTrack.id))
-        .where(not RdResearchTrack.is_deleted)
+        .where(~RdResearchTrack.is_deleted)
         .where(
             RdResearchTrack.project_id.in_(
-                select(RdProject.id).where(not RdProject.is_deleted)
+                select(RdProject.id).where(~RdProject.is_deleted)
             )
         )
         .group_by(RdResearchTrack.type)
@@ -3339,7 +3339,7 @@ async def get_stats_overview(
     # 实验记录统计
 
     total_experiments = await db.execute(
-        select(func.count(RdExperimentLog.id)).where(not RdExperimentLog.is_deleted)
+        select(func.count(RdExperimentLog.id)).where(~RdExperimentLog.is_deleted)
     )
 
     total_experiments = total_experiments.scalar() or 0
@@ -3358,7 +3358,7 @@ async def get_stats_overview(
 
     deliverable_status_stats = await db.execute(
         select(RdStageDeliverable.status, func.count(RdStageDeliverable.id))
-        .where(not RdStageDeliverable.is_deleted)
+        .where(~RdStageDeliverable.is_deleted)
         .group_by(RdStageDeliverable.status)
     )
 
@@ -3408,7 +3408,7 @@ async def get_project_progress(
             RdProject.overall_progress,
             RdProject.start_date,
             RdProject.target_filing_date,
-        ).where(not RdProject.is_deleted)
+        ).where(~RdProject.is_deleted)
     )
 
     # Stage-to-progress mapping: each stage maps to a base progress percentage

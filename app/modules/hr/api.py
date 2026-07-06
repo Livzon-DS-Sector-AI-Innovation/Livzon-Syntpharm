@@ -1675,9 +1675,9 @@ async def list_trainers(
     from app.core.response import paginated_response
     from app.modules.hr.models import HrTrainer
 
-    query = select(HrTrainer).where(not HrTrainer.is_deleted)
+    query = select(HrTrainer).where(~HrTrainer.is_deleted)
     count_q = (
-        select(func.count()).select_from(HrTrainer).where(not HrTrainer.is_deleted)
+        select(func.count()).select_from(HrTrainer).where(~HrTrainer.is_deleted)
     )
     if department:
         query = query.where(HrTrainer.department == department)
@@ -1754,9 +1754,9 @@ async def list_sop_catalog(
     from app.core.response import paginated_response
     from app.modules.hr.models import SopCatalog
 
-    query = select(SopCatalog).where(not SopCatalog.is_deleted)
+    query = select(SopCatalog).where(~SopCatalog.is_deleted)
     count_q = (
-        select(func.count()).select_from(SopCatalog).where(not SopCatalog.is_deleted)
+        select(func.count()).select_from(SopCatalog).where(~SopCatalog.is_deleted)
     )
     if department:
         query = query.where(SopCatalog.department == department)
