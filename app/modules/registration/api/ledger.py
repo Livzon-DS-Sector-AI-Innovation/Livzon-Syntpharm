@@ -21,6 +21,7 @@ from app.modules.registration.schemas.ledger import (
     WcCertificateResponse,
 )
 from app.modules.registration.service import ledger as ledger_service
+from pydantic import TypeAdapter
 
 router = APIRouter()
 
@@ -35,7 +36,8 @@ async def list_domestic_approvals(
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_domestic_approvals(db, skip, limit)
-    return {"data": items}
+    adapter = TypeAdapter(list[DomesticApprovalResponse])
+    return success_response(data=adapter.dump_python(items, mode="json"))
 
 
 @router.post("/domestic-approvals", response_model=DomesticApprovalResponse)
@@ -152,7 +154,8 @@ async def list_overseas_approvals(
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_overseas_approvals(db, skip, limit)
-    return {"data": items}
+    adapter = TypeAdapter(list[OverseasApprovalResponse])
+    return success_response(data=adapter.dump_python(items, mode="json"))
 
 
 @router.post("/overseas-approvals", response_model=OverseasApprovalResponse)
@@ -263,7 +266,8 @@ async def list_international_reviews(
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_international_reviews(db, skip, limit)
-    return {"data": items}
+    adapter = TypeAdapter(list[InternationalReviewResponse])
+    return success_response(data=adapter.dump_python(items, mode="json"))
 
 
 @router.post("/international-reviews", response_model=InternationalReviewResponse)
@@ -361,7 +365,8 @@ async def list_copp_certificates(
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_copp_certificates(db, skip, limit)
-    return {"data": items}
+    adapter = TypeAdapter(list[CoppCertificateResponse])
+    return success_response(data=adapter.dump_python(items, mode="json"))
 
 
 @router.post("/copp-certificates", response_model=CoppCertificateResponse)
@@ -457,7 +462,8 @@ async def list_wc_certificates(
     db: AsyncSession = Depends(get_db),
 ):
     items = await ledger_service.list_wc_certificates(db, skip, limit)
-    return {"data": items}
+    adapter = TypeAdapter(list[WcCertificateResponse])
+    return success_response(data=adapter.dump_python(items, mode="json"))
 
 
 @router.post("/wc-certificates", response_model=WcCertificateResponse)
@@ -551,7 +557,8 @@ async def get_ledger_summary(
     db: AsyncSession = Depends(get_db),
 ):
     summary = await ledger_service.get_ledger_summary(db)
-    return {"data": summary}
+    adapter = TypeAdapter(LedgerSummary)
+    return success_response(data=adapter.dump_python(summary, mode="json"))
 
 
 # ── Reviewing (from drugs table) ───────────────────────────────────
@@ -602,4 +609,4 @@ async def list_reviewing_drugs(
             }
         )
 
-    return {"data": items}
+    return success_response(data=items)
