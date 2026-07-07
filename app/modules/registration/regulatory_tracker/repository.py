@@ -824,7 +824,7 @@ async def get_attention_count(db: AsyncSession) -> int:
 async def get_priority_documents_v2(
     db: AsyncSession, limit: int = 5
 ) -> list[RegulatoryDocument]:
-    """Get top priority documents: attention category, sorted by relevance score."""
+    """Get top priority documents: attention category, sorted by publish date."""
     result = await db.execute(
         select(RegulatoryDocument)
         .where(
@@ -833,8 +833,7 @@ async def get_priority_documents_v2(
             RegulatoryDocument.ai_analysis_status == "completed",
         )
         .order_by(
-            RegulatoryDocument.ai_relevance_score.desc().nullslast(),
-            RegulatoryDocument.first_found_at.desc(),
+            RegulatoryDocument.publish_date.desc().nullslast(),
         )
         .limit(limit)
     )
