@@ -50,6 +50,7 @@ class AmountSummary:
 
 
 COMMON_FIELDS = [
+    ContractTemplateField(name="title", label="合同标题", required=True),
     ContractTemplateField(name="contract_number", label="合同编号", required=True),
     ContractTemplateField(
         name="contract_date",

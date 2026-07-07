@@ -2,7 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "dazah-backend",
-    "description": "\u539f\u6599\u836f\u4e8b\u4e1a\u90e8\u5de5\u5382\u57fa\u5ea7\u7cfb\u7edf",
+    "✓ OpenAPI spec exported to /home/ruanjiaheng/projects/dazah-backend/openapi.json
+7edf",
     "version": "0.1.0"
   },
   "paths": {
@@ -30427,6 +30428,42 @@
             }
           },
           {
+            "name": "field_operator",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5b57\u6bb5\u7b5b\u9009\u6761\u4ef6\uff1acontains/eq/ne/gt/gte/lt/lte",
+              "title": "Field Operator"
+            },
+            "description": "\u5b57\u6bb5\u7b5b\u9009\u6761\u4ef6\uff1acontains/eq/ne/gt/gte/lt/lte"
+          },
+          {
+            "name": "field_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5b57\u6bb5\u7b5b\u9009\u503c",
+              "title": "Field Value"
+            },
+            "description": "\u5b57\u6bb5\u7b5b\u9009\u503c"
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -30555,6 +30592,42 @@
               ],
               "title": "Field"
             }
+          },
+          {
+            "name": "field_operator",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5b57\u6bb5\u7b5b\u9009\u6761\u4ef6\uff1acontains/eq/ne/gt/gte/lt/lte",
+              "title": "Field Operator"
+            },
+            "description": "\u5b57\u6bb5\u7b5b\u9009\u6761\u4ef6\uff1acontains/eq/ne/gt/gte/lt/lte"
+          },
+          {
+            "name": "field_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5b57\u6bb5\u7b5b\u9009\u503c",
+              "title": "Field Value"
+            },
+            "description": "\u5b57\u6bb5\u7b5b\u9009\u503c"
           },
           {
             "name": "page",
@@ -30751,10 +30824,52 @@
         "summary": "\u8bc6\u522b\u91c7\u8d2d\u53d1\u7968 PDF",
         "description": "\u4ece\u7535\u5b50\u53d1\u7968 PDF \u4e2d\u8bc6\u522b\u53d1\u7968\u53f7\u7801\u3001\u5f00\u7968\u65e5\u671f\u3001\u9500\u552e\u65b9\u540d\u79f0\u3001\u7a0e\u989d\u5408\u8ba1\u548c\u4ef7\u7a0e\u5408\u8ba1\uff08\u5c0f\u5199\uff09\u3002\u5f00\u542f\u660e\u7ec6\u8bc6\u522b\u65f6\u989d\u5916\u8bc6\u522b\u9879\u76ee\u540d\u79f0\u3001\u5355\u4f4d\u548c\u6570\u91cf\u3002",
         "operationId": "recognize_invoice_api_v1_procurement_invoices_recognize_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceRecognitionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/procurement/suppliers": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u4f9b\u5e94\u5546\u6e05\u5355",
+        "description": "\u67e5\u8be2\u5bfc\u5165\u7684\u4f9b\u5e94\u5546\u6e05\u5355\uff0c\u652f\u6301\u6309\u4f9b\u5e94\u5546\u3001\u7269\u6599\u3001\u5382\u5bb6\u3001\u54c1\u7c7b\u548c\u539f\u59cb\u5b57\u6bb5\u5173\u952e\u8bcd\u68c0\u7d22\u3002",
+        "operationId": "list_supplier_records_api_v1_procurement_suppliers_get",
         "parameters": [
           {
-            "name": "auth_token",
-            "in": "cookie",
+            "name": "keyword",
+            "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
@@ -30765,19 +30880,134 @@
                   "type": "null"
                 }
               ],
-              "title": "Auth Token"
-            }
+              "description": "\u8de8\u5b57\u6bb5\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u8de8\u5b57\u6bb5\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "supplier_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4f9b\u5e94\u5546\u540d\u79f0",
+              "title": "Supplier Name"
+            },
+            "description": "\u4f9b\u5e94\u5546\u540d\u79f0"
+          },
+          {
+            "name": "material_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7269\u6599\u540d\u79f0",
+              "title": "Material Name"
+            },
+            "description": "\u7269\u6599\u540d\u79f0"
+          },
+          {
+            "name": "purchase_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u91c7\u8d2d\u54c1\u7c7b\u540d\u79f0",
+              "title": "Purchase Category"
+            },
+            "description": "\u91c7\u8d2d\u54c1\u7c7b\u540d\u79f0"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
+        }
+      }
+    },
+    "/api/v1/procurement/suppliers/import": {
+      "post": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u5bfc\u5165\u4f9b\u5e94\u5546\u6e05\u5355\u8868\u683c",
+        "description": "\u4e0a\u4f20 xlsx\u3001xlsm\u3001csv \u6216 tsv \u8868\u683c\u6587\u4ef6\uff0c\u6309\u6587\u4ef6\u8868\u5934\u8bfb\u53d6\u5b57\u6bb5\u5e76\u66ff\u6362\u5f53\u524d\u4f9b\u5e94\u5546\u6e05\u5355\u3002",
+        "operationId": "import_supplier_records_api_v1_procurement_suppliers_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_supplier_records_api_v1_procurement_suppliers_import_post"
+              }
+            }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -30785,7 +31015,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvoiceRecognitionResponse"
+                  "$ref": "#/components/schemas/SupplierImportResponse"
                 }
               }
             }
@@ -30892,22 +31122,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -30952,22 +31166,6 @@
               "format": "uuid",
               "title": "Record Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31002,33 +31200,15 @@
         "summary": "\u6279\u91cf\u5220\u9664\u91c7\u8d2d\u53d1\u7968\u8bc6\u522b\u8bb0\u5f55",
         "description": "\u8f6f\u5220\u9664\u591a\u6761\u91c7\u8d2d\u53d1\u7968\u8bc6\u522b\u5386\u53f2\u8bb0\u5f55\u3002",
         "operationId": "batch_delete_invoice_records_api_v1_procurement_invoices_recognition_records_batch_delete_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InvoiceRecognitionRecordDeleteRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -31133,22 +31313,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31227,22 +31391,6 @@
               "title": "Month"
             },
             "description": "\u6708\u4efd"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31385,22 +31533,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31433,24 +31565,6 @@
         "summary": "\u521b\u5efa\u91c7\u8d2d\u7533\u8bf7",
         "description": "\u4fdd\u5b58\u91c7\u8d2d\u7533\u8bf7\u8349\u7a3f\uff0c\u5e76\u6309\u6570\u91cf\u548c\u5355\u4ef7\u81ea\u52a8\u8ba1\u7b97\u660e\u7ec6\u603b\u989d\u4e0e\u5408\u8ba1\u3002",
         "operationId": "create_purchase_request_record_api_v1_procurement_purchase_requests_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -31502,22 +31616,6 @@
               "format": "uuid",
               "title": "Request Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31559,22 +31657,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Request Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -31630,22 +31712,6 @@
               "format": "uuid",
               "title": "Request Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -31688,22 +31754,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Request Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -31758,22 +31808,6 @@
               "format": "uuid",
               "title": "Request Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "requestBody": {
@@ -31810,6 +31844,85 @@
         }
       }
     },
+    "/api/v1/procurement/contracts": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u91c7\u8d2d\u5408\u540c\u751f\u6210\u8bb0\u5f55",
+        "description": "\u67e5\u8be2\u5408\u540c\u751f\u6210\u4ea7\u751f\u7684\u5408\u540c\u8bb0\u5f55\uff0c\u652f\u6301\u6309\u6807\u9898\u3001\u5408\u540c\u7f16\u53f7\u548c\u5356\u65b9\u540d\u79f0\u68c0\u7d22\u3002",
+        "operationId": "list_contract_generation_records_api_v1_procurement_contracts_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5408\u540c\u6807\u9898\u3001\u7f16\u53f7\u6216\u5356\u65b9\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u5408\u540c\u6807\u9898\u3001\u7f16\u53f7\u6216\u5356\u65b9\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractRecordListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/procurement/contracts/templates/{category}": {
       "get": {
         "tags": [
@@ -31825,22 +31938,6 @@
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/ContractCategory"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -31876,34 +31973,100 @@
         "summary": "\u751f\u6210\u91c7\u8d2d\u5408\u540c",
         "description": "\u6839\u636e\u5408\u540c\u5206\u7c7b\u3001\u57fa\u7840\u4fe1\u606f\u3001\u4f9b\u5e94\u5546\u4fe1\u606f\u548c\u660e\u7ec6\u884c\u751f\u6210 Word \u5408\u540c\u3002",
         "operationId": "create_contract_api_v1_procurement_contracts_generate_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ContractGenerateRequest"
               }
             }
-          }
+          },
+          "required": true
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/procurement/contracts/{contract_id}": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u91c7\u8d2d\u5408\u540c\u8be6\u60c5",
+        "operationId": "get_contract_generation_record_api_v1_procurement_contracts__contract_id__get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/procurement/contracts/{contract_id}/file": {
+      "get": {
+        "tags": [
+          "\u91c7\u8d2d\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u770b\u91c7\u8d2d\u5408\u540c\u6587\u4ef6",
+        "operationId": "get_contract_file_api_v1_procurement_contracts__contract_id__file_get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -52485,40 +52648,12 @@
         "summary": "\u83b7\u53d6\u8f66\u95f4\u5217\u8868",
         "description": "\u83b7\u53d6\u6240\u6709\u8f66\u95f4\u5217\u8868",
         "operationId": "get_workshops_api_v1_production_product_output_workshops_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -52835,6 +52970,351 @@
             "description": "\u4ea7\u54c1ID"
           },
           {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5f00\u59cb\u65e5\u671f",
+              "title": "Start Date"
+            },
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ed3\u675f\u65e5\u671f",
+              "title": "End Date"
+            },
+            "description": "\u7ed3\u675f\u65e5\u671f"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-output/batch-count": {
+      "get": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
+        ],
+        "summary": "\u83b7\u53d6\u6279\u6b21\u7edf\u8ba1",
+        "description": "\u83b7\u53d6\u6279\u6b21\u7edf\u8ba1",
+        "operationId": "get_batch_count_api_v1_production_product_output_batch_count_get",
+        "parameters": [
+          {
+            "name": "target_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u67e5\u8be2\u65e5\u671f",
+              "title": "Target Date"
+            },
+            "description": "\u67e5\u8be2\u65e5\u671f"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u67e5\u8be2\u6708\u4efd YYYY-MM",
+              "title": "Month"
+            },
+            "description": "\u67e5\u8be2\u6708\u4efd YYYY-MM"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u67e5\u8be2\u5e74\u4efd",
+              "title": "Year"
+            },
+            "description": "\u67e5\u8be2\u5e74\u4efd"
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4ea7\u54c1ID",
+              "title": "Product Id"
+            },
+            "description": "\u4ea7\u54c1ID"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5f00\u59cb\u65e5\u671f",
+              "title": "Start Date"
+            },
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ed3\u675f\u65e5\u671f",
+              "title": "End Date"
+            },
+            "description": "\u7ed3\u675f\u65e5\u671f"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-output/export": {
+      "get": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
+        ],
+        "summary": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55",
+        "description": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55\u4e3a CSV",
+        "operationId": "export_product_outputs_api_v1_production_product_output_export_get",
+        "parameters": [
+          {
+            "name": "workshop",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workshop"
+            }
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Name"
+            }
+          },
+          {
+            "name": "batch_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Batch No"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -53089,153 +53569,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/production/product-output/export": {
-      "get": {
-        "tags": [
-          "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
-        ],
-        "summary": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55",
-        "description": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55\u4e3a CSV",
-        "operationId": "export_product_outputs_api_v1_production_product_output_export_get",
-        "parameters": [
-          {
-            "name": "workshop",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Workshop"
-            }
-          },
-          {
-            "name": "product_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Product Id"
-            }
-          },
-          {
-            "name": "product_name",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Product Name"
-            }
-          },
-          {
-            "name": "batch_no",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Batch No"
-            }
-          },
-          {
-            "name": "start_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Start Date"
-            }
-          },
-          {
-            "name": "end_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "End Date"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -56688,6 +57021,882 @@
         }
       }
     },
+    "/api/v1/agent/chat": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Chat",
+        "operationId": "chat_api_v1_agent_chat_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/chat/stream": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Chat Stream",
+        "operationId": "chat_stream_api_v1_agent_chat_stream_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/tools/execute": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Execute Tool",
+        "operationId": "execute_tool_api_v1_agent_tools_execute_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentToolExecuteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/tools": {
+      "get": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "List Tools",
+        "operationId": "list_tools_api_v1_agent_tools_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/skills/resolve": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Resolve Skills",
+        "operationId": "resolve_skills_api_v1_agent_skills_resolve_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentSkillResolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/skills": {
+      "get": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "List Skills",
+        "operationId": "list_skills_api_v1_agent_skills_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Create Skill",
+        "operationId": "create_skill_api_v1_agent_skills_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentSkillCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/skills/{skill_id}": {
+      "get": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Get Skill",
+        "operationId": "get_skill_api_v1_agent_skills__skill_id__get",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Update Skill",
+        "operationId": "update_skill_api_v1_agent_skills__skill_id__put",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentSkillUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Delete Skill",
+        "operationId": "delete_skill_api_v1_agent_skills__skill_id__delete",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/skills/{skill_id}/enable": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Enable Skill",
+        "operationId": "enable_skill_api_v1_agent_skills__skill_id__enable_post",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/skills/{skill_id}/disable": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Disable Skill",
+        "operationId": "disable_skill_api_v1_agent_skills__skill_id__disable_post",
+        "parameters": [
+          {
+            "name": "skill_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Skill Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/confirmations/{confirmation_id}/execute": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Execute Confirmation",
+        "operationId": "execute_confirmation_api_v1_agent_confirmations__confirmation_id__execute_post",
+        "parameters": [
+          {
+            "name": "confirmation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Confirmation Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/confirmations/{confirmation_id}/cancel": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Cancel Confirmation",
+        "operationId": "cancel_confirmation_api_v1_agent_confirmations__confirmation_id__cancel_post",
+        "parameters": [
+          {
+            "name": "confirmation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Confirmation Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/llm/models": {
+      "get": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Agent Llm Models",
+        "operationId": "agent_llm_models_api_v1_agent_llm_models_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/llm/chat/completions": {
+      "post": {
+        "tags": [
+          "\u4e2d\u67a2 Agent"
+        ],
+        "summary": "Agent Llm Chat Completions",
+        "operationId": "agent_llm_chat_completions_api_v1_agent_llm_chat_completions_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -57413,6 +58622,259 @@
         "type": "object",
         "title": "AccidentUpdate",
         "description": "\u66f4\u65b0\u4e8b\u6545"
+      },
+      "AgentChatRequest": {
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AgentChatRequest"
+      },
+      "AgentSkillCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "trigger_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trigger Keywords"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Content"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status",
+            "default": "active"
+          },
+          "is_builtin": {
+            "type": "boolean",
+            "title": "Is Builtin",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "title",
+          "description",
+          "content"
+        ],
+        "title": "AgentSkillCreate"
+      },
+      "AgentSkillResolveRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "enabled_toolsets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Enabled Toolsets"
+          },
+          "business_scope": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Business Scope"
+          },
+          "available_tools": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Tools"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AgentSkillResolveRequest"
+      },
+      "AgentSkillUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "trigger_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Keywords"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "disabled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "AgentSkillUpdate"
+      },
+      "AgentToolExecuteRequest": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Operation"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "operation"
+        ],
+        "title": "AgentToolExecuteRequest"
       },
       "AlertRecordProcessRequest": {
         "properties": {
@@ -59210,6 +60672,21 @@
         ],
         "title": "Body_import_product_outputs_api_v1_production_product_output_import_post"
       },
+      "Body_import_supplier_records_api_v1_procurement_suppliers_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u4f9b\u5e94\u5546\u6e05\u5355\u8868\u683c\u6587\u4ef6"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_supplier_records_api_v1_procurement_suppliers_import_post"
+      },
       "Body_import_wc_certificates_api_v1_registration_ledger_wc_certificates_import_post": {
         "properties": {
           "file": {
@@ -60452,6 +61929,13 @@
       },
       "ContractGenerateRequest": {
         "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "description": "\u5408\u540c\u6807\u9898"
+          },
           "category": {
             "$ref": "#/components/schemas/ContractCategory",
             "description": "\u5408\u540c\u5206\u7c7b"
@@ -60729,6 +62213,7 @@
         },
         "type": "object",
         "required": [
+          "title",
           "category",
           "contract_number",
           "contract_date",
@@ -60928,6 +62413,177 @@
         },
         "type": "object",
         "title": "ContractPartyInfo"
+      },
+      "ContractRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContractRecordResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractRecordApiResponse"
+      },
+      "ContractRecordListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContractRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractRecordListResponse"
+      },
+      "ContractRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "\u5408\u540c\u8bb0\u5f55 ID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "\u5408\u540c\u6807\u9898"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ContractCategory",
+            "description": "\u5408\u540c\u5206\u7c7b"
+          },
+          "contract_number": {
+            "type": "string",
+            "title": "Contract Number",
+            "description": "\u5408\u540c\u7f16\u53f7"
+          },
+          "contract_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Contract Date",
+            "description": "\u7b7e\u8ba2\u65e5\u671f"
+          },
+          "seller_name": {
+            "type": "string",
+            "title": "Seller Name",
+            "description": "\u5356\u65b9\u540d\u79f0",
+            "default": ""
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "\u5408\u540c\u6587\u4ef6\u540d"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "\u6587\u4ef6 MIME \u7c7b\u578b"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size",
+            "description": "\u6587\u4ef6\u5927\u5c0f\uff08\u5b57\u8282\uff09"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "\u5408\u540c\u751f\u6210\u8bf7\u6c42\u5feb\u7167"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u751f\u6210\u65f6\u95f4"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "\u66f4\u65b0\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "category",
+          "contract_number",
+          "contract_date",
+          "filename",
+          "content_type",
+          "file_size"
+        ],
+        "title": "ContractRecordResponse"
       },
       "ContractTemplateField": {
         "properties": {
@@ -85687,6 +87343,248 @@
           "step"
         ],
         "title": "SubmitReviewRequest"
+      },
+      "SupplierImportResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SupplierImportResult"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SupplierImportResponse"
+      },
+      "SupplierImportResult": {
+        "properties": {
+          "imported_count": {
+            "type": "integer",
+            "title": "Imported Count",
+            "description": "\u5bfc\u5165\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns",
+            "description": "\u5bfc\u5165\u5b57\u6bb5"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name",
+            "description": "\u5bfc\u5165\u6587\u4ef6\u540d",
+            "default": ""
+          },
+          "sheet_name": {
+            "type": "string",
+            "title": "Sheet Name",
+            "description": "\u5bfc\u5165\u5de5\u4f5c\u8868",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SupplierImportResult"
+      },
+      "SupplierListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SupplierListResponse"
+      },
+      "SupplierResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "\u4f9b\u5e94\u5546\u6e05\u5355\u8bb0\u5f55 ID"
+          },
+          "supplier_code": {
+            "type": "string",
+            "title": "Supplier Code",
+            "description": "\u4f9b\u5e94\u5546\u4ee3\u7801",
+            "default": ""
+          },
+          "supplier_name": {
+            "type": "string",
+            "title": "Supplier Name",
+            "description": "\u4f9b\u5e94\u5546\u540d\u79f0",
+            "default": ""
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code",
+            "description": "\u7269\u6599\u7f16\u7801",
+            "default": ""
+          },
+          "material_name": {
+            "type": "string",
+            "title": "Material Name",
+            "description": "\u7269\u6599\u540d\u79f0",
+            "default": ""
+          },
+          "manufacturer_code": {
+            "type": "string",
+            "title": "Manufacturer Code",
+            "description": "\u751f\u4ea7\u5382\u5bb6\u7f16\u7801",
+            "default": ""
+          },
+          "manufacturer_name": {
+            "type": "string",
+            "title": "Manufacturer Name",
+            "description": "\u751f\u4ea7\u5382\u5bb6\u540d\u79f0",
+            "default": ""
+          },
+          "purchase_category": {
+            "type": "string",
+            "title": "Purchase Category",
+            "description": "\u91c7\u8d2d\u54c1\u7c7b\u540d\u79f0",
+            "default": ""
+          },
+          "last_updated_by": {
+            "type": "string",
+            "title": "Last Updated By",
+            "description": "\u6700\u540e\u66f4\u65b0\u4eba",
+            "default": ""
+          },
+          "last_updated_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Updated Date",
+            "description": "\u6700\u540e\u66f4\u65b0\u65e5\u671f"
+          },
+          "import_file_name": {
+            "type": "string",
+            "title": "Import File Name",
+            "description": "\u5bfc\u5165\u6587\u4ef6\u540d",
+            "default": ""
+          },
+          "import_sheet_name": {
+            "type": "string",
+            "title": "Import Sheet Name",
+            "description": "\u5bfc\u5165\u5de5\u4f5c\u8868",
+            "default": ""
+          },
+          "import_row_number": {
+            "type": "integer",
+            "title": "Import Row Number",
+            "description": "\u5bfc\u5165\u6587\u4ef6\u884c\u53f7"
+          },
+          "import_columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Import Columns",
+            "description": "\u5bfc\u5165\u5b57\u6bb5"
+          },
+          "raw_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Raw Data",
+            "description": "\u539f\u59cb\u884c\u6570\u636e"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u5bfc\u5165\u65f6\u95f4"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "\u66f4\u65b0\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "import_row_number"
+        ],
+        "title": "SupplierResponse"
       },
       "SyncTriggerRequest": {
         "properties": {

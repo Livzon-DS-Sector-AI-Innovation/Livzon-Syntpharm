@@ -1,9 +1,14 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.identity.models import Department, User
+from app.platform.identity.models import (
+    Department,
+    FeishuCardAction,
+    FeishuConfig,
+    User,
+)
 
 
 class UserRepository:
@@ -19,6 +24,45 @@ class UserRepository:
             ),
         )
         return result.scalar_one_or_none()
+
+    async def get_by_username(
+        self, session: AsyncSession, username: str,
+    ) -> User | None:
+        result = await session.execute(
+            select(User).where(
+                func.lower(User.username) == username.lower(),
+                User.is_deleted == False,  # noqa: E712
+            ),
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_username_including_deleted(
+        self, session: AsyncSession, username: str,
+    ) -> User | None:
+        result = await session.execute(
+            select(User).where(
+                func.lower(User.username) == username.lower(),
+            ),
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_login_identifier(
+        self, session: AsyncSession, identifier: str,
+    ) -> User | None:
+        normalized = identifier.strip().lower()
+        result = await session.execute(
+            select(User).where(
+                User.is_deleted == False,  # noqa: E712
+                or_(
+                    func.lower(User.username) == normalized,
+                    func.lower(User.email) == normalized,
+                    User.mobile == identifier,
+                    User.employee_no == identifier,
+                ),
+            ),
+        )
+        return result.scalar_one_or_none()
+
 
     async def get_by_feishu_open_id(
         self,
@@ -51,8 +95,8 @@ class UserRepository:
         session: AsyncSession,
         *,
         name: str,
-        feishu_user_id: str | None,
-        feishu_open_id: str,
+        feishu_user_id: str | None = None,
+        feishu_open_id: str | None = None,
         feishu_union_id: str | None = None,
         en_name: str | None = None,
         employee_no: str | None = None,
@@ -67,9 +111,19 @@ class UserRepository:
         department: str | None = None,
         position: str | None = None,
         feishu_department_ids: str | None = None,
+        username: str | None = None,
+        password_hash: str | None = None,
+        role: str = "user",
+        status: str = "active",
+        auth_source: str = "feishu",
     ) -> User:
         user = User(
             name=name,
+            username=username,
+            password_hash=password_hash,
+            role=role,
+            status=status,
+            auth_source=auth_source,
             feishu_user_id=feishu_user_id,
             feishu_open_id=feishu_open_id,
             feishu_union_id=feishu_union_id,
@@ -90,6 +144,45 @@ class UserRepository:
         session.add(user)
         await session.flush()
         return user
+
+    async def list_users(
+        self,
+        session: AsyncSession,
+        *,
+        keyword: str | None = None,
+        role: str | None = None,
+        status: str | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[User], int]:
+        base = select(User).where(User.is_deleted == False)  # noqa: E712
+        count_stmt = select(func.count()).select_from(User).where(
+            User.is_deleted == False  # noqa: E712
+        )
+
+        if keyword:
+            pattern = f"%{keyword}%"
+            filter_expr = or_(
+                User.name.ilike(pattern),
+                User.username.ilike(pattern),
+                User.email.ilike(pattern),
+                User.mobile.ilike(pattern),
+                User.employee_no.ilike(pattern),
+            )
+            base = base.where(filter_expr)
+            count_stmt = count_stmt.where(filter_expr)
+        if role:
+            base = base.where(User.role == role)
+            count_stmt = count_stmt.where(User.role == role)
+        if status:
+            base = base.where(User.status == status)
+            count_stmt = count_stmt.where(User.status == status)
+
+        total = int((await session.execute(count_stmt)).scalar_one())
+        result = await session.execute(
+            base.order_by(User.created_at.desc()).offset(offset).limit(limit)
+        )
+        return list(result.scalars().all()), total
 
     async def list_all(
         self,
@@ -237,4 +330,103 @@ class LoginLogRepository:
         )
         result = await session.execute(stmt)
         logs = list(result.scalars().all())
-        return logs, total
+
+
+class FeishuConfigRepository:
+    async def get_active(self, session: AsyncSession) -> FeishuConfig | None:
+        result = await session.execute(
+            select(FeishuConfig)
+            .where(
+                FeishuConfig.is_deleted == False,  # noqa: E712
+                FeishuConfig.is_active.is_(True),
+            )
+            .order_by(FeishuConfig.updated_at.desc())
+        )
+        return result.scalar_one_or_none()
+
+    async def get_latest(self, session: AsyncSession) -> FeishuConfig | None:
+        result = await session.execute(
+            select(FeishuConfig)
+            .where(FeishuConfig.is_deleted == False)  # noqa: E712
+            .order_by(FeishuConfig.updated_at.desc())
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_name_including_deleted(
+        self, session: AsyncSession, config_name: str
+    ) -> FeishuConfig | None:
+        result = await session.execute(
+            select(FeishuConfig)
+            .where(FeishuConfig.config_name == config_name)
+            .order_by(FeishuConfig.updated_at.desc())
+        )
+        return result.scalar_one_or_none()
+
+    async def save(self, session: AsyncSession, config: FeishuConfig) -> FeishuConfig:
+        session.add(config)
+        await session.flush()
+        return config
+
+
+class FeishuCardActionRepository:
+    async def create(
+        self,
+        session: AsyncSession,
+        *,
+        message_id: str | None,
+        card_id: str | None,
+        local_user_id: UUID | None,
+        recipient_open_id: str | None,
+        business_ref: dict | None,
+        action_key: str,
+        action_label: str,
+        expires_at,
+    ) -> FeishuCardAction:
+        action = FeishuCardAction(
+            message_id=message_id,
+            card_id=card_id,
+            local_user_id=local_user_id,
+            recipient_open_id=recipient_open_id,
+            business_ref=business_ref,
+            action_key=action_key,
+            action_label=action_label,
+            expires_at=expires_at,
+        )
+        session.add(action)
+        await session.flush()
+        return action
+
+    async def get_pending_by_id(
+        self, session: AsyncSession, action_id: UUID | str
+    ) -> FeishuCardAction | None:
+        if isinstance(action_id, str):
+            try:
+                action_id = UUID(action_id)
+            except ValueError:
+                return None
+        result = await session.execute(
+            select(FeishuCardAction).where(
+                FeishuCardAction.id == action_id,
+                FeishuCardAction.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def set_message_id_for_card(
+        self,
+        session: AsyncSession,
+        *,
+        card_id: str,
+        message_id: str | None,
+    ) -> None:
+        if not message_id:
+            return
+        result = await session.execute(
+            select(FeishuCardAction).where(
+                FeishuCardAction.card_id == card_id,
+                FeishuCardAction.is_deleted == False,  # noqa: E712
+            )
+        )
+        for action in result.scalars().all():
+            action.message_id = message_id
+        await session.flush()

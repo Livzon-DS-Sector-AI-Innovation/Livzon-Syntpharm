@@ -1,8 +1,11 @@
+import asyncio
 from typing import Any
 from uuid import uuid4
 
 import pytest
 
+from app.core.exceptions import AppException
+from app.modules.warehouse import service as warehouse_service
 from app.modules.warehouse.models import WarehouseFeishuConfig, WarehouseFeishuTable
 from app.modules.warehouse.service import WarehouseService
 
@@ -83,9 +86,13 @@ async def test_read_all_records_reads_all_pages() -> None:
 class FakeSession:
     def __init__(self) -> None:
         self.commits = 0
+        self.rollbacks = 0
 
     async def commit(self) -> None:
         self.commits += 1
+
+    async def rollback(self) -> None:
+        self.rollbacks += 1
 
 
 class FakeRepo:
@@ -120,3 +127,48 @@ async def test_set_feishu_tables_enabled_updates_unique_tables_without_sync() ->
     assert tables[table_b_id].is_enabled is True
     assert tables[table_b_id].sync_status == "pending"
     assert service.repo.session.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_sync_feishu_table_marks_failed_when_sync_timeout(monkeypatch) -> None:
+    service = WarehouseService.__new__(WarehouseService)
+    table_id = uuid4()
+    table = WarehouseFeishuTable(
+        id=table_id,
+        business_domain="hardware",
+        app_token="base",
+        table_id="tbl",
+        name="五金",
+        is_enabled=True,
+    )
+    config = WarehouseFeishuConfig(
+        config_name="仓储飞书配置",
+        app_id="cli_123",
+        encrypted_app_secret="encrypted",
+        hardware_app_token="base",
+        is_active=True,
+    )
+    service.repo = FakeRepo()
+
+    async def fake_get_table(table_pk):
+        assert table_pk == table_id
+        return table
+
+    async def slow_snapshot(_config, _table):
+        await asyncio.sleep(0.05)
+
+    service._get_table_by_id_or_raise = fake_get_table  # type: ignore[method-assign]
+    service._sync_feishu_table_snapshot = slow_snapshot  # type: ignore[method-assign]
+    monkeypatch.setattr(
+        warehouse_service,
+        "WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS",
+        0.01,
+    )
+
+    with pytest.raises(AppException):
+        await service._sync_feishu_table(config, table)
+
+    assert table.sync_status == "failed"
+    assert table.sync_error == "同步超过 0.01 秒未完成，已自动标记失败"
+    assert service.repo.session.commits == 2
+    assert service.repo.session.rollbacks == 1

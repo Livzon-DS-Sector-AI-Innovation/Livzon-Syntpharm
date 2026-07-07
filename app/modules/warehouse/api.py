@@ -263,6 +263,11 @@ async def get_feishu_table_records(
     table_id: UUID,
     keyword: str | None = None,
     field: str | None = None,
+    field_operator: str | None = Query(
+        default=None,
+        description="字段筛选条件：contains/eq/ne/gt/gte/lt/lte",
+    ),
+    field_value: str | None = Query(default=None, description="字段筛选值"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
@@ -272,6 +277,8 @@ async def get_feishu_table_records(
         table_id,
         keyword=keyword,
         field=field,
+        field_operator=field_operator,
+        field_value=field_value,
         page=page,
         page_size=page_size,
     )
@@ -290,6 +297,11 @@ async def get_feishu_domain_records(
     table_id: UUID | None = None,
     keyword: str | None = None,
     field: str | None = None,
+    field_operator: str | None = Query(
+        default=None,
+        description="字段筛选条件：contains/eq/ne/gt/gte/lt/lte",
+    ),
+    field_value: str | None = Query(default=None, description="字段筛选值"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
@@ -300,6 +312,8 @@ async def get_feishu_domain_records(
         table_id=table_id,
         keyword=keyword,
         field=field,
+        field_operator=field_operator,
+        field_value=field_value,
         page=page,
         page_size=page_size,
     )

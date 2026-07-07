@@ -139,13 +139,14 @@ class WarehouseFeishuClient:
         page_size: int = 100,
         page_token: str | None = None,
     ) -> dict[str, Any]:
-        payload: dict[str, Any] = {"page_size": page_size}
+        params: dict[str, Any] = {"page_size": page_size}
         if page_token:
-            payload["page_token"] = page_token
+            params["page_token"] = page_token
         data = await self.request(
             "POST",
             f"/bitable/v1/apps/{self.app_token}/tables/{table_id}/records/search",
-            json_body=payload,
+            params=params,
+            json_body={},
             timeout=30.0,
         )
         items = data.get("items") or []

@@ -38,6 +38,7 @@ class FakeResponse:
 class FakeAsyncClient:
     token_calls = 0
     request_calls: list[tuple[str, str, dict[str, Any] | None]] = []
+    request_bodies: list[dict[str, Any] | None] = []
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         return None
@@ -62,6 +63,7 @@ class FakeAsyncClient:
         headers: dict[str, str] | None = None,
     ) -> FakeResponse:
         FakeAsyncClient.request_calls.append((method, path, params or json))
+        FakeAsyncClient.request_bodies.append(json)
         if path.endswith("/tables") and not params.get("page_token"):
             return FakeResponse(
                 {
@@ -102,6 +104,7 @@ def patch_dependencies(monkeypatch: pytest.MonkeyPatch) -> FakeRedis:
     fake_redis = FakeRedis()
     FakeAsyncClient.token_calls = 0
     FakeAsyncClient.request_calls = []
+    FakeAsyncClient.request_bodies = []
     monkeypatch.setattr(module, "redis_client", fake_redis)
     monkeypatch.setattr(module.httpx, "AsyncClient", FakeAsyncClient)
     return fake_redis
@@ -165,3 +168,20 @@ async def test_search_records_returns_raw_items() -> None:
 
     assert result["items"] == [{"record_id": "rec1", "fields": {"名称": "A"}}]
     assert result["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_search_records_sends_pagination_in_query_params() -> None:
+    client = WarehouseFeishuClient(
+        app_id="cli_123",
+        app_secret="secret",
+        app_token="base_token",
+    )
+
+    await client.search_records("tbl1", page_size=500, page_token="next-page")
+
+    method, path, params = FakeAsyncClient.request_calls[-1]
+    assert method == "POST"
+    assert path.endswith("/records/search")
+    assert params == {"page_size": 500, "page_token": "next-page"}
+    assert FakeAsyncClient.request_bodies[-1] == {}

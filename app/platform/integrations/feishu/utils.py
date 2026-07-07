@@ -6,6 +6,8 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 
+from app.core.redis import cache_get, cache_set
+
 OPEN_API_BASE_URL = "https://open.feishu.cn/open-apis"
 FEISHU_BITABLE_RECORD_CHANGED_EVENT = "feishu.bitable_record_changed"
 
@@ -96,10 +98,23 @@ def normalize_table_id(value: str | None) -> str | None:
     return table_match.group(1) if table_match else text
 
 
-async def get_tenant_access_token(app_id: str, app_secret: str) -> str:
+async def get_tenant_access_token(
+    app_id: str,
+    app_secret: str,
+    *,
+    cache_key: str | None = None,
+) -> str:
     """Get tenant_access_token from explicit app credentials."""
     if not app_id or not app_secret:
         raise RuntimeError("App ID 或 App Secret 未配置")
+
+    if cache_key:
+        try:
+            cached = await cache_get(f"feishu:tenant_access_token:{cache_key}")
+            if cached:
+                return cached
+        except Exception:
+            pass
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -115,6 +130,12 @@ async def get_tenant_access_token(app_id: str, app_secret: str) -> str:
     token = body.get("tenant_access_token")
     if not token:
         raise RuntimeError("tenant_access_token 响应为空")
+
+    if cache_key:
+        try:
+            await cache_set(f"feishu:tenant_access_token:{cache_key}", token, ex=6600)
+        except Exception:
+            pass
 
     return token
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.modules.agent import router as agent_router
 from app.modules.administration import router as administration_router
 from app.modules.hr.ai_exam import router as ai_exam_router
 from app.modules.registration.dossier_writer import router as dossier_writer_router
@@ -36,7 +37,6 @@ api_router.include_router(personnel_router, prefix="/identity", tags=["人员名
 api_router.include_router(auth_router, prefix="/identity", tags=["认证"])
 api_router.include_router(sync_router, prefix="/identity", tags=["飞书同步"])
 api_router.include_router(login_log_router, prefix="/identity", tags=["登录记录"])
-
 api_router.include_router(system_router, prefix="/system", tags=["系统"])
 api_router.include_router(production_router, prefix="/production", tags=["生产管理"])
 api_router.include_router(equipment_router, prefix="/equipment", tags=["设备管理"])
@@ -84,3 +84,4 @@ api_router.include_router(llm_router, tags=["LLM配置"])
 from app.core.config_api import router as module_settings_router
 
 api_router.include_router(module_settings_router, tags=["模块配置"])
+api_router.include_router(agent_router, prefix="/agent", tags=["中枢 Agent"])

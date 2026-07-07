@@ -7,6 +7,15 @@ from app.platform.integrations.feishu.employee_datasource import (
     EmployeeBitableDataSource,
     EmployeeRecord,
 )
+from app.platform.integrations.feishu.im import (
+    FeishuMessageSendResult,
+    build_callback_card_content,
+    build_callback_status_card_content,
+    build_simple_card_content,
+    build_text_message_content,
+    send_feishu_message,
+    update_feishu_message,
+)
 from app.platform.integrations.feishu.notification import (
     build_card,
     send_user_card,
@@ -33,6 +42,13 @@ __all__ = [
     "BitableDataSource",
     "EmployeeBitableDataSource",
     "EmployeeRecord",
+    "FeishuMessageSendResult",
+    "build_callback_card_content",
+    "build_callback_status_card_content",
+    "build_simple_card_content",
+    "build_text_message_content",
+    "send_feishu_message",
+    "update_feishu_message",
     "build_card",
     "send_user_card",
     "BitableReference",
