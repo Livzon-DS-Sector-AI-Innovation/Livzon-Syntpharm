@@ -5,8 +5,8 @@ import uuid
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.production.product_models import Product
-from app.modules.production.product_schemas import ProductCreate, ProductUpdate
+from app.modules.production.product.models import Product
+from app.modules.production.product.schemas import ProductCreate, ProductUpdate
 
 
 class ProductRepository:

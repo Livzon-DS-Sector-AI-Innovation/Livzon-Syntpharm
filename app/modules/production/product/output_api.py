@@ -12,13 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
-from app.modules.production.product_output_models import WORKSHOP_CHOICES
-from app.modules.production.product_output_schemas import (
+from app.modules.production.product.output_models import WORKSHOP_CHOICES
+from app.modules.production.product.output_schemas import (
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
 )
-from app.modules.production.product_output_service import ProductOutputService
+from app.modules.production.product.output_service import ProductOutputService
 
 router = APIRouter()
 

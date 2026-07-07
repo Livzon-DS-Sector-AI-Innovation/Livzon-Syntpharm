@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.production.product_output_models import ProductOutput
+from app.modules.production.product.output_models import ProductOutput
 
 
 class ProductOutputRepository:

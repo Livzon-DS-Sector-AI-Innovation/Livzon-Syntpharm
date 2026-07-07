@@ -4,8 +4,8 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.production.product_repository import ProductRepository
-from app.modules.production.product_schemas import ProductCreate, ProductUpdate
+from app.modules.production.product.repository import ProductRepository
+from app.modules.production.product.schemas import ProductCreate, ProductUpdate
 
 
 class ProductService:

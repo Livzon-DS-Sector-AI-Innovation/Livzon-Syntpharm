@@ -6,9 +6,9 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.production.product_output_models import WORKSHOP_CHOICES
-from app.modules.production.product_output_repository import ProductOutputRepository
-from app.modules.production.product_output_schemas import (
+from app.modules.production.product.output_models import WORKSHOP_CHOICES
+from app.modules.production.product.output_repository import ProductOutputRepository
+from app.modules.production.product.output_schemas import (
     ProductOutputCreate,
     ProductOutputUpdate,
     SummaryResponse,
