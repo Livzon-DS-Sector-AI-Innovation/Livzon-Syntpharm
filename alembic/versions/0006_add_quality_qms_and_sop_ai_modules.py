@@ -1,6 +1,6 @@
 """add quality qms and sop_ai modules
 
-Revision ID: 3cb28d1e1ac7
+Revision ID: 0006_quality_qms_sop_ai
 Revises: f1a2b3c4d5e6
 Create Date: 2026-07-07 12:00:05.406780
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '3cb28d1e1ac7'
+revision: str = '0006_quality_qms_sop_ai'
 down_revision: Union[str, None] = 'f1a2b3c4d5e6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
