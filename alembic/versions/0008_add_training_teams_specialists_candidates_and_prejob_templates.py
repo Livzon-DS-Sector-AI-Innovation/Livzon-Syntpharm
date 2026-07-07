@@ -1,8 +1,8 @@
 """add training teams, specialists, candidates, and prejob templates
 
-Revision ID: f2d6868f73f4
+Revision ID: bfad4744f743
 Revises: 0007_equipment_safety
-Create Date: 2026-07-07 15:38:03.979396
+Create Date: 2026-07-07 15:42:19.023112
 """
 from typing import Sequence, Union
 
@@ -24,29 +24,6 @@ def upgrade() -> None:
     op.execute('CREATE SCHEMA IF NOT EXISTS permission')
     op.execute('CREATE SCHEMA IF NOT EXISTS quality')
     op.execute('CREATE SCHEMA IF NOT EXISTS safety')
-    op.create_table('sop_ai_check_main',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('created_by', sa.String(length=36), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.Column('file_code', sa.String(length=100), nullable=True),
-    sa.Column('file_name', sa.String(length=500), nullable=True),
-    sa.Column('file_type', sa.String(length=50), nullable=True),
-    sa.Column('check_type', sa.String(length=50), nullable=True),
-    sa.Column('status', sa.String(length=20), nullable=False),
-    sa.Column('result_summary', sa.Text(), nullable=True),
-    sa.Column('total_problems', sa.Integer(), nullable=False),
-    sa.Column('risk_high', sa.Integer(), nullable=False),
-    sa.Column('risk_medium', sa.Integer(), nullable=False),
-    sa.Column('risk_low', sa.Integer(), nullable=False),
-    sa.Column('operator', sa.String(length=100), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_sop_ai_check_main_created_at', 'sop_ai_check_main', ['created_at'], unique=False)
-    op.create_index('ix_sop_ai_check_main_file_code', 'sop_ai_check_main', ['file_code'], unique=False)
-    op.create_index('ix_sop_ai_check_main_status', 'sop_ai_check_main', ['status'], unique=False)
     op.create_table('candidates',
     sa.Column('name', sa.String(length=64), nullable=False, comment='候选人姓名'),
     sa.Column('position', sa.String(length=64), nullable=False, comment='应聘职位名称'),
@@ -164,49 +141,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     schema='hr'
     )
-    op.create_table('sop_ai_check_problem',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('main_id', sa.String(length=36), nullable=False),
-    sa.Column('problem_type', sa.Enum('DUPLICATE', 'CONFLICT', 'COMPLIANCE', 'FORMAT', 'CONTENT', name='problemtype'), nullable=True),
-    sa.Column('risk_level', sa.Enum('HIGH', 'MEDIUM', 'LOW', name='risklevel'), nullable=True),
-    sa.Column('location', sa.String(length=500), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('source_file', sa.String(length=500), nullable=True),
-    sa.Column('suggestion', sa.Text(), nullable=True),
-    sa.Column('handle_status', sa.Enum('PENDING', 'CONFIRMED', 'IGNORED', 'FIXED', name='handlestatus'), nullable=False),
-    sa.Column('ignore_reason', sa.Text(), nullable=True),
-    sa.Column('operator', sa.String(length=100), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by', sa.Uuid(), nullable=True),
-    sa.Column('updated_by', sa.Uuid(), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=False),
-    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], ),
-    sa.ForeignKeyConstraint(['main_id'], ['sop_ai_check_main.id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_sop_ai_check_problem_handle_status', 'sop_ai_check_problem', ['handle_status'], unique=False)
-    op.create_index('ix_sop_ai_check_problem_main_id', 'sop_ai_check_problem', ['main_id'], unique=False)
-    op.create_index('ix_sop_ai_check_problem_risk_level', 'sop_ai_check_problem', ['risk_level'], unique=False)
-    op.create_table('sop_ai_config',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('config_key', sa.String(length=100), nullable=False),
-    sa.Column('config_value', sa.Text(), nullable=False),
-    sa.Column('description', sa.String(length=500), nullable=True),
-    sa.Column('operator', sa.String(length=100), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.Column('is_enabled', sa.Boolean(), nullable=False),
-    sa.Column('sort_order', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by', sa.Uuid(), nullable=True),
-    sa.Column('updated_by', sa.Uuid(), nullable=True),
-    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('config_key')
-    )
     op.drop_index(op.f('ix_trainers_department'), table_name='trainers', schema='hr')
     op.drop_index(op.f('ix_trainers_name'), table_name='trainers', schema='hr')
     op.drop_table('trainers', schema='hr')
@@ -251,8 +185,8 @@ def upgrade() -> None:
     op.add_column('departments', sa.Column('production_start_time', sa.String(length=8), nullable=True, comment='生产班次开始时间(HH:MM)'), schema='hr')
     op.add_column('departments', sa.Column('production_end_time', sa.String(length=8), nullable=True, comment='生产班次结束时间(HH:MM)'), schema='hr')
     op.add_column('employees', sa.Column('position_level', sa.String(length=16), nullable=True, comment='职位级别(自动判定): 普通员工/工程师级/主管级'), schema='hr')
-    op.drop_column('employees', 'sort_order', schema='hr')
     op.drop_column('employees', 'concurrent_departments', schema='hr')
+    op.drop_column('employees', 'sort_order', schema='hr')
     op.add_column('training_ledger_pages', sa.Column('ledger_type', sa.String(length=16), server_default='event', nullable=False, comment='台账类型: event=事件台账, sop=SOP培训台账'), schema='hr')
     op.drop_index(op.f('ix_training_ledger_pages_employee_number'), table_name='training_ledger_pages', schema='hr')
     op.create_index('ix_training_ledger_pages_employee_type', 'training_ledger_pages', ['employee_number', 'ledger_type'], unique=True, schema='hr')
@@ -282,12 +216,12 @@ def upgrade() -> None:
                existing_nullable=False,
                existing_server_default=sa.text('false'),
                schema='permission')
-    op.create_foreign_key(None, 'permissions', 'users', ['updated_by'], ['id'], source_schema='permission', referent_schema='identity')
     op.create_foreign_key(None, 'permissions', 'users', ['created_by'], ['id'], source_schema='permission', referent_schema='identity')
+    op.create_foreign_key(None, 'permissions', 'users', ['updated_by'], ['id'], source_schema='permission', referent_schema='identity')
     op.create_foreign_key(None, 'role_data_scope_overrides', 'users', ['created_by'], ['id'], source_schema='permission', referent_schema='identity')
     op.create_foreign_key(None, 'role_data_scope_overrides', 'users', ['updated_by'], ['id'], source_schema='permission', referent_schema='identity')
-    op.create_foreign_key(None, 'role_permissions', 'users', ['updated_by'], ['id'], source_schema='permission', referent_schema='identity')
     op.create_foreign_key(None, 'role_permissions', 'users', ['created_by'], ['id'], source_schema='permission', referent_schema='identity')
+    op.create_foreign_key(None, 'role_permissions', 'users', ['updated_by'], ['id'], source_schema='permission', referent_schema='identity')
     op.alter_column('roles', 'code',
                existing_type=sa.VARCHAR(length=50),
                comment='角色编码，如 equipment_inspector',
@@ -784,8 +718,8 @@ def downgrade() -> None:
     op.drop_index('ix_training_ledger_pages_employee_type', table_name='training_ledger_pages', schema='hr')
     op.create_index(op.f('ix_training_ledger_pages_employee_number'), 'training_ledger_pages', ['employee_number'], unique=True, schema='hr')
     op.drop_column('training_ledger_pages', 'ledger_type', schema='hr')
-    op.add_column('employees', sa.Column('concurrent_departments', sa.VARCHAR(length=256), autoincrement=False, nullable=True, comment='兼任部门'), schema='hr')
     op.add_column('employees', sa.Column('sort_order', sa.INTEGER(), autoincrement=False, nullable=True, comment='Excel行序号'), schema='hr')
+    op.add_column('employees', sa.Column('concurrent_departments', sa.VARCHAR(length=256), autoincrement=False, nullable=True, comment='兼任部门'), schema='hr')
     op.drop_column('employees', 'position_level', schema='hr')
     op.drop_column('departments', 'production_end_time', schema='hr')
     op.drop_column('departments', 'production_start_time', schema='hr')
@@ -868,11 +802,6 @@ def downgrade() -> None:
     )
     op.create_index(op.f('ix_trainers_name'), 'trainers', ['name'], unique=False, schema='hr')
     op.create_index(op.f('ix_trainers_department'), 'trainers', ['department'], unique=False, schema='hr')
-    op.drop_table('sop_ai_config')
-    op.drop_index('ix_sop_ai_check_problem_risk_level', table_name='sop_ai_check_problem')
-    op.drop_index('ix_sop_ai_check_problem_main_id', table_name='sop_ai_check_problem')
-    op.drop_index('ix_sop_ai_check_problem_handle_status', table_name='sop_ai_check_problem')
-    op.drop_table('sop_ai_check_problem')
     op.drop_table('training_teams', schema='hr')
     op.drop_index('ix_training_specialists_department_factory', table_name='training_specialists', schema='hr')
     op.drop_table('training_specialists', schema='hr')
@@ -887,8 +816,4 @@ def downgrade() -> None:
     op.drop_index('ix_candidates_name', table_name='candidates', schema='hr')
     op.drop_index('ix_candidates_feishu_record_id', table_name='candidates', schema='hr')
     op.drop_table('candidates', schema='hr')
-    op.drop_index('ix_sop_ai_check_main_status', table_name='sop_ai_check_main')
-    op.drop_index('ix_sop_ai_check_main_file_code', table_name='sop_ai_check_main')
-    op.drop_index('ix_sop_ai_check_main_created_at', table_name='sop_ai_check_main')
-    op.drop_table('sop_ai_check_main')
     # ### end Alembic commands ###
