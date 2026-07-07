@@ -26,7 +26,7 @@ class DossierRepository:
                 ProductDossier.product_name == product_name,
                 ProductDossier.manufacturer == manufacturer,
                 ProductDossier.sterile_type == sterile_type,
-                not ProductDossier.is_deleted,
+                ProductDossier.is_deleted == False,
             )
         )
         result = await self.db.execute(stmt)
@@ -42,7 +42,7 @@ class DossierRepository:
         """获取品种资料详情"""
         stmt = (
             select(ProductDossier)
-            .where(and_(ProductDossier.id == dossier_id, not ProductDossier.is_deleted))
+            .where(and_(ProductDossier.id == dossier_id, ProductDossier.is_deleted == False))
             .options(selectinload(ProductDossier.templates))
         )
         result = await self.db.execute(stmt)
