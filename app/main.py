@@ -109,6 +109,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
 
+    # Start reagent reminder scheduler
+    try:
+        from app.modules.quality.qms.reagent_reminder_scheduler import start_reagent_reminder_scheduler
+        start_reagent_reminder_scheduler()
+        logger.info("Reagent reminder scheduler started")
+    except Exception as e:
+        logger.warning(f"Failed to start reagent reminder scheduler: {e}")
+
+    # Start deviation reporter reminder scheduler
+    try:
+        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import start_deviation_reporter_reminder_scheduler
+        start_deviation_reporter_reminder_scheduler()
+        logger.info("Deviation reporter reminder scheduler started")
+    except Exception as e:
+        logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
+
     # ── 平台级飞书 WebSocket 长连接 ──
     if settings.feishu.platform.ws_enabled:
         from app.platform.integrations.feishu.event_handler import set_main_loop

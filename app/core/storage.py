@@ -127,3 +127,54 @@ def delete_object(module: str, object_key: str) -> None:
 def is_enabled() -> bool:
     _init()
     return _enabled or False
+
+
+async def save_upload_files(files: list[UploadFile], sub_dir: str = "reagent-labels") -> list[str]:
+    """保存多个上传的文件
+
+    Args:
+        files: 上传的文件列表
+        sub_dir: 子目录名称
+
+    Returns:
+        文件访问 URL 路径列表
+    """
+    urls = []
+    for file in files:
+        try:
+            url = await save_upload_file(file, sub_dir)
+            urls.append(url)
+        except Exception as e:
+            # 继续处理其他文件，记录错误
+            print(f"保存文件 {file.filename} 失败: {e}")
+            continue
+
+    return urls
+
+
+def delete_upload_file(file_url: str) -> bool:
+    """删除上传的文件
+
+    Args:
+        file_url: 文件访问 URL 路径
+
+    Returns:
+        是否删除成功
+    """
+    try:
+        # 将 URL 路径转换为实际文件路径
+        if file_url.startswith("/uploads/"):
+            file_path = file_url[9:]  # 去掉 "/uploads/"
+        else:
+            file_path = file_url
+
+        # 删除文件
+        import os
+        full_path = os.path.join("uploads", file_path)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+            return True
+        return False
+    except Exception as e:
+        print(f"删除文件失败: {e}")
+        return False

@@ -1,7 +1,7 @@
 """add agent gateway tables
 
 Revision ID: d4a1c9b7e6f3
-Revises: b9c3d8e1f4a2
+Revises: 0005_product_output
 Create Date: 2026-07-01 00:00:00.000000
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "d4a1c9b7e6f3"
-down_revision: str | None = "b9c3d8e1f4a2"
+down_revision: str | None = "0005_product_output"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

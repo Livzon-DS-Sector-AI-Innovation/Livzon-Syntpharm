@@ -12,8 +12,9 @@ from app.modules.procurement import router as procurement_router
 from app.modules.production import router as production_router
 from app.modules.production.product import product_router as workshop_product_router
 from app.modules.production.product import output_router as product_output_router
-from app.modules.quality import router as quality_router
+from app.modules.quality import cpv_router, deviation_router, doc_check_router, fqc_router, iqc_router, ipqc_router, quality_reagent_router, quality_router, reagent_reminder_router, sampling_router, stability_router, static_data_router
 from app.modules.quality.label_verification import router as label_verification_router
+from app.modules.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
 from app.modules.registration.regulatory_tracker import router as regulatory_tracker_router
 from app.modules.research import router as research_router
@@ -58,7 +59,21 @@ api_router.include_router(
     prefix="/registration",
     tags=["注册管理"],
 )
+# QMS routers
 api_router.include_router(quality_router, prefix="/quality", tags=["质量管理"])
+api_router.include_router(sampling_router, prefix="/quality", tags=["质量管理 - 取样"])
+api_router.include_router(iqc_router, prefix="/quality", tags=["质量管理 - IQC"])
+api_router.include_router(ipqc_router, prefix="/quality", tags=["质量管理 - IPQC"])
+api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - FQC"])
+api_router.include_router(stability_router, prefix="/quality", tags=["质量管理 - 稳定性"])
+api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
+api_router.include_router(quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"])
+api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"])
+api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])
+api_router.include_router(reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"])
+# CPV router
+api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
+api_router.include_router(sop_ai_router, prefix="/sop-ai", tags=["SOP AI"])
 api_router.include_router(
     label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"]
 )

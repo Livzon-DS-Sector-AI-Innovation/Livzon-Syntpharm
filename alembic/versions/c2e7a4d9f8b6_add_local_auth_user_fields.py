@@ -18,54 +18,69 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "users",
-        sa.Column("username", sa.String(length=64), nullable=True),
-        schema="identity",
-    )
-    op.add_column(
-        "users",
-        sa.Column("password_hash", sa.Text(), nullable=True),
-        schema="identity",
-    )
-    op.add_column(
-        "users",
-        sa.Column(
-            "role",
-            sa.String(length=20),
-            server_default="user",
-            nullable=False,
-        ),
-        schema="identity",
-    )
-    op.add_column(
-        "users",
-        sa.Column(
-            "status",
-            sa.String(length=20),
-            server_default="active",
-            nullable=False,
-        ),
-        schema="identity",
-    )
-    op.add_column(
-        "users",
-        sa.Column(
-            "auth_source",
-            sa.String(length=20),
-            server_default="feishu",
-            nullable=False,
-        ),
-        schema="identity",
-    )
-    op.add_column(
-        "users",
-        sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
-        schema="identity",
-    )
-    op.create_unique_constraint(
-        "uq_identity_users_username", "users", ["username"], schema="identity"
-    )
+    # Check if columns already exist before adding
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users', schema='identity')]
+    
+    if 'username' not in columns:
+        op.add_column(
+            "users",
+            sa.Column("username", sa.String(length=64), nullable=True),
+            schema="identity",
+        )
+    if 'password_hash' not in columns:
+        op.add_column(
+            "users",
+            sa.Column("password_hash", sa.Text(), nullable=True),
+            schema="identity",
+        )
+    if 'role' not in columns:
+        op.add_column(
+            "users",
+            sa.Column(
+                "role",
+                sa.String(length=20),
+                server_default="user",
+                nullable=False,
+            ),
+            schema="identity",
+        )
+    if 'status' not in columns:
+        op.add_column(
+            "users",
+            sa.Column(
+                "status",
+                sa.String(length=20),
+                server_default="active",
+                nullable=False,
+            ),
+            schema="identity",
+        )
+    if 'auth_source' not in columns:
+        op.add_column(
+            "users",
+            sa.Column(
+                "auth_source",
+                sa.String(length=20),
+                server_default="feishu",
+                nullable=False,
+            ),
+            schema="identity",
+        )
+    if 'last_login_at' not in columns:
+        op.add_column(
+            "users",
+            sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
+            schema="identity",
+        )
+    
+    # Create unique constraint if it doesn't exist
+    constraints = [c['name'] for c in inspector.get_unique_constraints('users', schema='identity')]
+    if 'uq_identity_users_username' not in constraints:
+        op.create_unique_constraint(
+            "uq_identity_users_username", "users", ["username"], schema="identity"
+        )
 
 
 def downgrade() -> None:
