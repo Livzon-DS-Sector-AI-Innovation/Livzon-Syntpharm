@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.exceptions import AppException, ForbiddenException
 from app.main import app
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User
 from app.platform.permission.deps import require_admin, require_user
@@ -103,6 +104,21 @@ async def test_assignee(_equipment_session: AsyncSession) -> User:
     return user
 
 
+async def _mock_equipment_access(*codes: str):
+    """Mock dependency that returns EquipmentAccessContext."""
+    async def _dependency(
+        user: User,
+        db: AsyncSession,
+    ) -> EquipmentAccessContext:
+        return EquipmentAccessContext(
+            user=user,
+            data_scope="all",  # Full access for testing
+            department_user_ids=[],
+            visible_department_ids=[],
+        )
+    return _dependency
+
+
 @pytest.fixture
 async def auth_client(
     _equipment_session: AsyncSession,
@@ -137,11 +153,19 @@ async def auth_client(
     perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
     patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
     patcher.start()
+    
+    # Mock the require_equipment_access to return our mock dependency
+    access_patcher = patch(
+        "app.modules.equipment.deps.require_equipment_access",
+        _mock_equipment_access
+    )
+    access_patcher.start()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
+    access_patcher.stop()
     patcher.stop()
     app.dependency_overrides.clear()
 
@@ -177,11 +201,19 @@ async def admin_client(
     perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
     patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
     patcher.start()
+    
+    # Mock the require_equipment_access to return our mock dependency
+    access_patcher = patch(
+        "app.modules.equipment.deps.require_equipment_access",
+        _mock_equipment_access
+    )
+    access_patcher.start()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
+    access_patcher.stop()
     patcher.stop()
     app.dependency_overrides.clear()
 
@@ -225,3 +257,14 @@ async def anonymous_client(
 async def client(auth_client: AsyncClient) -> AsyncIterator[AsyncClient]:
     """Alias for ``auth_client`` (backward compatibility)."""
     yield auth_client
+
+
+@pytest.fixture
+def mock_equipment_context(test_reporter: User) -> EquipmentAccessContext:
+    """Create a mock EquipmentAccessContext for service tests."""
+    return EquipmentAccessContext(
+        user=test_reporter,
+        data_scope="all",
+        department_user_ids=[],
+        visible_department_ids=[],
+    )
