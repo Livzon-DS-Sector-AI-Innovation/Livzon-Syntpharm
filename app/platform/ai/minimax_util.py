@@ -4,9 +4,8 @@
 配置通过环境变量或AI配置获取。
 """
 
-import os
 import json
-from typing import Optional
+import os
 
 import httpx
 
@@ -20,6 +19,7 @@ def _get_api_key() -> str:
     """获取API Key，优先从AI配置获取，其次从环境变量"""
     try:
         from app.core.ai_config import get_minimax_api_key
+
         return get_minimax_api_key()
     except Exception:
         pass
@@ -30,6 +30,7 @@ def _get_base_url() -> str:
     """获取Base URL"""
     try:
         from app.core.ai_config import get_minimax_base_url
+
         return get_minimax_base_url()
     except Exception:
         pass
@@ -40,6 +41,7 @@ def _get_vision_model() -> str:
     """获取视觉模型"""
     try:
         from app.core.ai_config import get_vision_model
+
         return get_vision_model()
     except Exception:
         return VISION_MODEL
@@ -49,6 +51,7 @@ def _get_text_model() -> str:
     """获取文本模型"""
     try:
         from app.core.ai_config import get_text_model
+
         return get_text_model()
     except Exception:
         return "MiniMax-Text-01"
@@ -68,8 +71,8 @@ class MinimaxAiUtil:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
         timeout: float = 30.0,
     ):
         """初始化 MiniMax AI 工具
@@ -87,7 +90,7 @@ class MinimaxAiUtil:
         self,
         system_prompt: str,
         user_message: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ) -> str:
@@ -152,8 +155,8 @@ class MinimaxVisionUtil(MinimaxAiUtil):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
         timeout: float = 60.0,
     ):
         """初始化 MiniMax 视觉工具
@@ -176,7 +179,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
         self,
         image_urls: list[str],
         prompt: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         max_tokens: int = 1024,
     ) -> str:
         """调用 MiniMax VL 模型识别图片
@@ -201,7 +204,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
 
         # MiniMax 使用 OpenAI 兼容格式
         # base_url 格式: https://api.minimaxi.com/v1
-        base = base_url.rstrip('/')
+        base = base_url.rstrip("/")
         url = f"{base}/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -213,9 +216,8 @@ class MinimaxVisionUtil(MinimaxAiUtil):
 
         # 添加图片（支持多张）- 本地文件转为base64
         for image_url in image_urls:
-            if image_url.startswith('/'):
+            if image_url.startswith("/"):
                 # 本地文件路径，读取并转为base64
-                import os
                 from pathlib import Path
 
                 # 获取后端根目录（使用resolve确保绝对路径）
@@ -226,59 +228,49 @@ class MinimaxVisionUtil(MinimaxAiUtil):
                 self._safe_print(f"[DEBUG] Image URL: {image_url}")
 
                 # 去掉 /uploads/ 前缀
-                relative_path = image_url.lstrip('/')
-                if relative_path.startswith('uploads/'):
+                relative_path = image_url.lstrip("/")
+                if relative_path.startswith("uploads/"):
                     relative_path = relative_path[8:]
                 file_path = uploads_dir / relative_path
                 self._safe_print(f"[DEBUG] File path: {file_path}")
 
                 if file_path.exists():
                     import base64
+
                     with open(file_path, "rb") as f:
                         img_data = f.read()
-                        img_base64 = base64.b64encode(img_data).decode('utf-8')
+                        img_base64 = base64.b64encode(img_data).decode("utf-8")
                         # 根据文件扩展名确定media_type
                         ext = file_path.suffix.lower()
-                        if ext in ['.png']:
+                        if ext in [".png"]:
                             media_type = "image/png"
-                        elif ext in ['.gif']:
+                        elif ext in [".gif"]:
                             media_type = "image/gif"
-                        elif ext in ['.webp']:
+                        elif ext in [".webp"]:
                             media_type = "image/webp"
                         else:
                             media_type = "image/jpeg"
-                        content.append({
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{media_type};base64,{img_base64}"
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{media_type};base64,{img_base64}"
+                                },
                             }
-                        })
+                        )
                 else:
                     # 文件不存在，使用URL
                     self._safe_print(f"File not found: {file_path}")
-                    content.append({
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_url
-                        }
-                    })
+                    content.append(
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    )
             else:
                 # 外部URL
-                content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_url
-                    }
-                })
+                content.append({"type": "image_url", "image_url": {"url": image_url}})
 
         payload = {
             "model": vision_model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": content
-                }
-            ],
+            "messages": [{"role": "user", "content": content}],
             "max_tokens": max_tokens,
         }
 
@@ -290,7 +282,9 @@ class MinimaxVisionUtil(MinimaxAiUtil):
                 error_text = response.text
                 self._safe_print(f"MiniMax API Error: {response.status_code}")
                 self._safe_print(f"Response: {error_text[:500]}")
-                self._safe_print(f"Payload: {json.dumps(payload, ensure_ascii=False, indent=2)[:1000]}")
+                self._safe_print(
+                    f"Payload: {json.dumps(payload, ensure_ascii=False, indent=2)[:1000]}"
+                )
 
             response.raise_for_status()
 
@@ -304,7 +298,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
     async def recognize_text(
         self,
         prompt: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         max_tokens: int = 4096,
     ) -> str:
         """调用 MiniMax 文本模型处理纯文本
@@ -328,7 +322,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
         text_model = model or _get_text_model()
 
         # MiniMax 使用 OpenAI 兼容格式
-        base = base_url.rstrip('/')
+        base = base_url.rstrip("/")
         url = f"{base}/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -337,12 +331,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
 
         payload = {
             "model": text_model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
         }
 
@@ -364,8 +353,8 @@ class MinimaxVisionUtil(MinimaxAiUtil):
 
 
 # 全局单例实例（延迟初始化）
-_ai_util_instance: Optional[MinimaxAiUtil] = None
-_vision_util_instance: Optional[MinimaxVisionUtil] = None
+_ai_util_instance: MinimaxAiUtil | None = None
+_vision_util_instance: MinimaxVisionUtil | None = None
 
 
 def get_ai_util() -> MinimaxAiUtil:

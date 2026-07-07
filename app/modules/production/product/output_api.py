@@ -75,8 +75,12 @@ async def get_summary(
     """获取每日/月/年汇总统计"""
     service = ProductOutputService(db)
     summary = await service.get_summary(
-        target_date=target_date, month=month, year=year, product_id=product_id,
-        start_date=start_date, end_date=end_date
+        target_date=target_date,
+        month=month,
+        year=year,
+        product_id=product_id,
+        start_date=start_date,
+        end_date=end_date,
     )
     return ApiResponse(data=summary)
 
@@ -95,8 +99,12 @@ async def get_batch_count(
     """获取批次统计"""
     service = ProductOutputService(db)
     batch_counts = await service.get_batch_count(
-        target_date=target_date, month=month, year=year, product_id=product_id,
-        start_date=start_date, end_date=end_date
+        target_date=target_date,
+        month=month,
+        year=year,
+        product_id=product_id,
+        start_date=start_date,
+        end_date=end_date,
     )
     return ApiResponse(data=batch_counts)
 
@@ -127,22 +135,32 @@ async def export_product_outputs(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-            "车间", "产品名称", "批号", "生产日期",
-            "结束日期", "重量", "单位", "备注",
-        ])
+    writer.writerow(
+        [
+            "车间",
+            "产品名称",
+            "批号",
+            "生产日期",
+            "结束日期",
+            "重量",
+            "单位",
+            "备注",
+        ]
+    )
 
     for r in records:
-        writer.writerow([
-            r.workshop,
-            r.product_name,
-            r.batch_no,
-            r.production_date.isoformat(),
-            r.end_date.isoformat() if r.end_date else "",
-            r.weight,
-            r.unit,
-            r.notes or "",
-        ])
+        writer.writerow(
+            [
+                r.workshop,
+                r.product_name,
+                r.batch_no,
+                r.production_date.isoformat(),
+                r.end_date.isoformat() if r.end_date else "",
+                r.weight,
+                r.unit,
+                r.notes or "",
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(

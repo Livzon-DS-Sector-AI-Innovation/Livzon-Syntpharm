@@ -5,11 +5,10 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.jobstores.memory import MemoryJobStore
 
 from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
 
@@ -49,7 +48,7 @@ class SopAiScheduler:
         file_pattern: str,
         callback,
         enabled: bool = True,
-    ) -> Optional[ScheduledJob]:
+    ) -> ScheduledJob | None:
         """添加定时任务
 
         Args:
@@ -168,7 +167,7 @@ class SopAiScheduler:
             logger.error(f"恢复定时任务失败: {e}")
             return False
 
-    def get_job(self, job_id: str) -> Optional[ScheduledJob]:
+    def get_job(self, job_id: str) -> ScheduledJob | None:
         """获取任务信息
 
         Args:
@@ -183,7 +182,7 @@ class SopAiScheduler:
         """获取所有任务"""
         return list(self._jobs.values())
 
-    def get_next_run_time(self, job_id: str) -> Optional[datetime]:
+    def get_next_run_time(self, job_id: str) -> datetime | None:
         """获取下次运行时间
 
         Args:
@@ -199,7 +198,7 @@ class SopAiScheduler:
 
 
 # 全局调度器实例
-_scheduler: Optional[SopAiScheduler] = None
+_scheduler: SopAiScheduler | None = None
 
 
 def get_sop_ai_scheduler() -> SopAiScheduler:

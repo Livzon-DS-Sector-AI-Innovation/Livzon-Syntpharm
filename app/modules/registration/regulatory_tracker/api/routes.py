@@ -18,7 +18,9 @@ from app.modules.registration.regulatory_tracker.schemas import (
 from app.modules.registration.regulatory_tracker.services.classification_service import (
     get_category_display_name,
 )
-from app.modules.registration.regulatory_tracker.utils.excel_export import generate_regulatory_excel
+from app.modules.registration.regulatory_tracker.utils.excel_export import (
+    generate_regulatory_excel,
+)
 
 router = APIRouter()
 
@@ -403,7 +405,9 @@ async def trigger_sync_job(
 
     # 后台执行同步（不阻塞响应）
     # AI 分析现在在 sync_service 中自动执行
-    from app.modules.registration.regulatory_tracker.services.sync_service import run_sync_job
+    from app.modules.registration.regulatory_tracker.services.sync_service import (
+        run_sync_job,
+    )
 
     async def _run_sync(current_user: CurrentUser):
         from app.core.database import async_session_factory

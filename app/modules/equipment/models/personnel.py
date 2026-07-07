@@ -84,7 +84,8 @@ class EquipmentPersonnelRole(BaseModel):
         # 部分唯一索引：仅对未删除的记录做人员+角色唯一性检查
         Index(
             "uq_equipment_personnel_role",
-            "personnel_id", "role_id",
+            "personnel_id",
+            "role_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -107,7 +108,9 @@ class EquipmentPersonnelCategory(BaseModel):
         # 部分唯一索引：仅对未删除的记录做人员+角色+分类唯一性检查
         Index(
             "uq_equipment_personnel_category",
-            "personnel_id", "role_id", "category_id",
+            "personnel_id",
+            "role_id",
+            "category_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),

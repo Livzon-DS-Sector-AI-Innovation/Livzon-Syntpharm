@@ -85,7 +85,9 @@ async def query_user(keyword: str) -> ToolResult:
         )
     lines = [f"找到 {len(user_list)} 个匹配「{keyword}」的用户："]
     for u in user_list:
-        lines.append(f"- {u['name']}（工号{u['employee_no']}）· {u['department']} · {u['position']}")
+        lines.append(
+            f"- {u['name']}（工号{u['employee_no']}）· {u['department']} · {u['position']}"
+        )
     return ToolResult(content="\n".join(lines), structured_content={"users": user_list})
 
 
@@ -113,7 +115,9 @@ async def list_work_orders(
     try:
         user = await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
+        return ToolResult(
+            content=str(e), structured_content={"error": str(e)}, is_error=True
+        )
 
     work_orders = await get_user_work_orders(db, user.id)
 
@@ -135,7 +139,9 @@ async def list_work_orders(
         )
     lines = [f"{user.name} 共有 {len(result)} 个工单："]
     for wo in result:
-        lines.append(f"  [{wo['status']}] {wo['work_order_no']}（{wo['order_type']} · {wo['equipment_name']}）")
+        lines.append(
+            f"  [{wo['status']}] {wo['work_order_no']}（{wo['order_type']} · {wo['equipment_name']}）"
+        )
     return ToolResult(
         content="\n".join(lines),
         structured_content={"result": result, "total": len(result)},
@@ -167,7 +173,9 @@ async def operate_work_order(
     try:
         user = await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
+        return ToolResult(
+            content=str(e), structured_content={"error": str(e)}, is_error=True
+        )
 
     if action not in ("start", "complete"):
         return ToolResult(
@@ -179,7 +187,9 @@ async def operate_work_order(
     try:
         wo = await _resolve_work_order(db, work_order)
     except ValueError as e:
-        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
+        return ToolResult(
+            content=str(e), structured_content={"error": str(e)}, is_error=True
+        )
 
     from app.modules.equipment.deps import EquipmentAccessContext
 

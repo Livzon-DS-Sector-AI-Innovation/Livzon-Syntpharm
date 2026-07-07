@@ -75,7 +75,9 @@ class InspectionStandardItemBase(BaseModel):
     item_name: str = Field(..., max_length=255, description="项目名称")
     test_method: str | None = Field(None, description="检测方法")
     instrument_code: str | None = Field(None, max_length=64, description="关联仪器编号")
-    reference_materials: str | None = Field(None, max_length=500, description="所需对照品/试液")
+    reference_materials: str | None = Field(
+        None, max_length=500, description="所需对照品/试液"
+    )
     limit_type: LimitType = Field(..., description="限度类型")
     limit_value: str | None = Field(None, max_length=255, description="合格限值")
     item_category: ItemCategory | None = Field(None, description="项目分类")
@@ -96,7 +98,9 @@ class InspectionStandardItemUpdate(BaseModel):
     item_name: str | None = Field(None, max_length=255, description="项目名称")
     test_method: str | None = Field(None, description="检测方法")
     instrument_code: str | None = Field(None, max_length=64, description="关联仪器编号")
-    reference_materials: str | None = Field(None, max_length=500, description="所需对照品/试液")
+    reference_materials: str | None = Field(
+        None, max_length=500, description="所需对照品/试液"
+    )
     limit_type: LimitType | None = Field(None, description="限度类型")
     limit_value: str | None = Field(None, max_length=255, description="合格限值")
     item_category: ItemCategory | None = Field(None, description="项目分类")
@@ -135,7 +139,9 @@ class InspectionStandardBase(BaseModel):
 class InspectionStandardCreate(InspectionStandardBase):
     """创建检验标准"""
 
-    items: list[InspectionStandardItemCreate] = Field(default_factory=list, description="检验项目列表")
+    items: list[InspectionStandardItemCreate] = Field(
+        default_factory=list, description="检验项目列表"
+    )
 
 
 class InspectionStandardUpdate(BaseModel):
@@ -154,7 +160,9 @@ class InspectionStandardUpdate(BaseModel):
     sop_no: str | None = Field(None, max_length=64, description="SOP编号")
     attachment_urls: str | None = Field(None, description="附件URLs(JSON)")
     notes: str | None = Field(None, description="备注")
-    items: list[InspectionStandardItemCreate] | None = Field(None, description="检验项目列表")
+    items: list[InspectionStandardItemCreate] | None = Field(
+        None, description="检验项目列表"
+    )
 
 
 class InspectionStandardCopy(BaseModel):

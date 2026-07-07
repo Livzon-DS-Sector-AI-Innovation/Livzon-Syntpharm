@@ -31,13 +31,13 @@ sys.path.insert(0, _project_root)
 
 import argparse
 
-from sqlalchemy import and_, func, select
-
-from app.core.database import async_session_factory
 from app.modules.regulatory_tracker.models.regulatory_document import RegulatoryDocument
 from app.modules.regulatory_tracker.services.ai_analysis_service import (
     analyze_and_update,
 )
+from sqlalchemy import and_, func, select
+
+from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 logging.basicConfig(

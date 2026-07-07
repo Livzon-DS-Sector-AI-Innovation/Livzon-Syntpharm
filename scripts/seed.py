@@ -17,7 +17,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_raw_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/dazah")
+_raw_url = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/dazah"
+)
 DATABASE_URL = _raw_url.replace("postgresql+asyncpg://", "postgresql://")
 
 SCRIPTS_DIR = Path(__file__).parent
@@ -33,7 +35,7 @@ async def seed_departments(conn: asyncpg.Connection) -> dict[str, uuid.UUID]:
         print(f"[SKIP] {DEPARTMENTS_JSON} not found")
         return {}
 
-    with open(DEPARTMENTS_JSON, "r", encoding="utf-8") as f:
+    with open(DEPARTMENTS_JSON, encoding="utf-8") as f:
         departments = json.load(f)
 
     name_to_id: dict[str, uuid.UUID] = {}
@@ -59,13 +61,15 @@ async def seed_departments(conn: asyncpg.Connection) -> dict[str, uuid.UUID]:
     return name_to_id
 
 
-async def seed_teams(conn: asyncpg.Connection, name_to_id: dict[str, uuid.UUID]) -> None:
+async def seed_teams(
+    conn: asyncpg.Connection, name_to_id: dict[str, uuid.UUID]
+) -> None:
     """Insert teams linked to departments."""
     if not TEAMS_JSON.exists():
         print(f"[SKIP] {TEAMS_JSON} not found")
         return
 
-    with open(TEAMS_JSON, "r", encoding="utf-8") as f:
+    with open(TEAMS_JSON, encoding="utf-8") as f:
         teams = json.load(f)
 
     inserted = 0
@@ -81,13 +85,17 @@ async def seed_teams(conn: asyncpg.Connection, name_to_id: dict[str, uuid.UUID])
                 "SELECT id FROM hr.departments WHERE name = $1", dept_name
             )
             if row is None:
-                print(f"[WARN] Department '{dept_name}' not found, skipping team '{team['team']}'")
+                print(
+                    f"[WARN] Department '{dept_name}' not found, skipping team '{team['team']}'"
+                )
                 skipped += 1
                 continue
             dept_id = row["id"]
 
         # Generate a deterministic code from team name
-        team_code = team["team"].strip().replace(" ", "_").lower()[:32] or str(uuid.uuid4())[:8]
+        team_code = (
+            team["team"].strip().replace(" ", "_").lower()[:32] or str(uuid.uuid4())[:8]
+        )
 
         # Check if team already exists for this department
         existing = await conn.fetchrow(
@@ -116,7 +124,7 @@ async def seed_teams(conn: asyncpg.Connection, name_to_id: dict[str, uuid.UUID])
 
 
 async def main() -> None:
-    print(f"Connecting to database...")
+    print("Connecting to database...")
     conn = await asyncpg.connect(DATABASE_URL)
     try:
         print("Seeding departments...")

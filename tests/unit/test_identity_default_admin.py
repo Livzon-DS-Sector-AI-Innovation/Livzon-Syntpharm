@@ -74,7 +74,9 @@ async def test_me_endpoint_returns_system_admin_without_token(monkeypatch) -> No
 
 
 @pytest.mark.anyio
-async def test_current_user_defaults_to_system_admin_for_invalid_token(monkeypatch) -> None:
+async def test_current_user_defaults_to_system_admin_for_invalid_token(
+    monkeypatch,
+) -> None:
     default_admin = SimpleNamespace(id="admin-id", name="系统管理员", role="admin")
 
     async def fake_get_or_create_system_admin(db):

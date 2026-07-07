@@ -19,12 +19,10 @@ from app.modules.quality.qms.doc_check.models import (
 )
 from app.modules.quality.qms.doc_check.repository import DocCheckRepository
 from app.modules.quality.qms.doc_check.schemas import (
-    CheckResult,
-    DocCheckCreate,
-    DocCheckUpdate,
-    ProblemItem,
     DocCheckConfigCreate,
     DocCheckConfigUpdate,
+    DocCheckCreate,
+    DocCheckUpdate,
 )
 from app.platform.ai.minimax_util import MinimaxAiUtil
 
@@ -76,9 +74,7 @@ class DocCheckService:
         """根据键获取配置"""
         return await self.repo.get_config_by_key(config_key)
 
-    async def create_config(
-        self, data: DocCheckConfigCreate
-    ) -> Any:
+    async def create_config(self, data: DocCheckConfigCreate) -> Any:
         """创建配置"""
         config_data = {
             "config_key": data.config_key,
@@ -118,9 +114,7 @@ class DocCheckService:
             operator=operator,
         )
 
-    async def get_check(
-        self, check_id: uuid.UUID
-    ) -> Any | None:
+    async def get_check(self, check_id: uuid.UUID) -> Any | None:
         """获取校验详情"""
         return await self.repo.get_check_by_id(check_id)
 
@@ -137,6 +131,7 @@ class DocCheckService:
         doc_content = data.doc_content
         if data.file_id and not doc_content:
             from app.modules.quality.qms.doc_check.api import _upload_store
+
             upload_data = _upload_store.get(data.file_id)
             if upload_data:
                 doc_content = upload_data.get("content", "")
@@ -156,9 +151,14 @@ class DocCheckService:
 
         # 如果有文档内容，保存到result_summary
         if doc_content:
-            await self.repo.update_check(check.id, {
-                "result_summary": doc_content[:10000] if doc_content else None,  # 限制长度
-            })
+            await self.repo.update_check(
+                check.id,
+                {
+                    "result_summary": doc_content[:10000]
+                    if doc_content
+                    else None,  # 限制长度
+                },
+            )
 
         # 返回完整数据
         return await self.repo.get_check_by_id(check.id)
@@ -175,9 +175,12 @@ class DocCheckService:
             return None
 
         # 更新状态为处理中
-        await self.repo.update_check(check_id, {
-            "status": CheckStatus.PROCESSING.value,
-        })
+        await self.repo.update_check(
+            check_id,
+            {
+                "status": CheckStatus.PROCESSING.value,
+            },
+        )
 
         try:
             # 获取系统提示词配置
@@ -207,7 +210,9 @@ class DocCheckService:
             # 更新主表
             update_data = {
                 "status": result.get("status", CheckStatus.COMPLETED.value),
-                "check_result": json.dumps(result.get("check_result", {}), ensure_ascii=False),
+                "check_result": json.dumps(
+                    result.get("check_result", {}), ensure_ascii=False
+                ),
                 "ai_suggestion": result.get("ai_suggestion"),
             }
 
@@ -226,12 +231,14 @@ class DocCheckService:
             error_count = sum(1 for p in problems if p.get("severity") == "error")
             warning_count = sum(1 for p in problems if p.get("severity") == "warning")
 
-            update_data.update({
-                "problem_count": problem_count,
-                "critical_count": critical_count,
-                "error_count": error_count,
-                "warning_count": warning_count,
-            })
+            update_data.update(
+                {
+                    "problem_count": problem_count,
+                    "critical_count": critical_count,
+                    "error_count": error_count,
+                    "warning_count": warning_count,
+                }
+            )
 
             await self.repo.update_check(check_id, update_data)
 
@@ -240,16 +247,22 @@ class DocCheckService:
                 await self.repo.delete_problems_by_check(check_id)
                 problems_data = []
                 for i, prob in enumerate(problems, 1):
-                    problems_data.append({
-                        "problem_no": prob.get("problem_no", i),
-                        "category": prob.get("category", ProblemCategory.CONTENT.value),
-                        "severity": prob.get("severity", ProblemSeverity.WARNING.value),
-                        "title": prob.get("title", ""),
-                        "description": prob.get("description", ""),
-                        "location": prob.get("location"),
-                        "suggestion": prob.get("suggestion"),
-                        "reference": prob.get("reference"),
-                    })
+                    problems_data.append(
+                        {
+                            "problem_no": prob.get("problem_no", i),
+                            "category": prob.get(
+                                "category", ProblemCategory.CONTENT.value
+                            ),
+                            "severity": prob.get(
+                                "severity", ProblemSeverity.WARNING.value
+                            ),
+                            "title": prob.get("title", ""),
+                            "description": prob.get("description", ""),
+                            "location": prob.get("location"),
+                            "suggestion": prob.get("suggestion"),
+                            "reference": prob.get("reference"),
+                        }
+                    )
                 await self.repo.create_problems_bulk(check_id, problems_data)
 
             logger.info(
@@ -263,10 +276,13 @@ class DocCheckService:
         except Exception as e:
             logger.error(f"文档校验失败: {e}")
             # 更新状态为失败
-            await self.repo.update_check(check_id, {
-                "status": CheckStatus.FAILED.value,
-                "check_result": json.dumps({"error": str(e)}, ensure_ascii=False),
-            })
+            await self.repo.update_check(
+                check_id,
+                {
+                    "status": CheckStatus.FAILED.value,
+                    "check_result": json.dumps({"error": str(e)}, ensure_ascii=False),
+                },
+            )
             raise
 
     async def update_check(
@@ -286,7 +302,10 @@ class DocCheckService:
             ]:
                 return await self.repo.update_check(check_id, {"status": data.status})
             # 确认通过：completed -> confirmed
-            if data.status == "confirmed" and check.status == CheckStatus.COMPLETED.value:
+            if (
+                data.status == "confirmed"
+                and check.status == CheckStatus.COMPLETED.value
+            ):
                 return await self.repo.update_check(check_id, {"status": data.status})
             # 其他状态更新需要验证
             if check.status != CheckStatus.PENDING.value:
@@ -353,7 +372,9 @@ class DocCheckService:
         config = await self.repo.get_config_by_key("system_prompt")
         if config and config.config_value:
             try:
-                return json.loads(config.config_value).get("prompt", self.DEFAULT_SYSTEM_PROMPT)
+                return json.loads(config.config_value).get(
+                    "prompt", self.DEFAULT_SYSTEM_PROMPT
+                )
             except Exception:
                 pass
         return self.DEFAULT_SYSTEM_PROMPT
@@ -383,7 +404,8 @@ class DocCheckService:
         try:
             # 尝试从文本中提取 JSON
             import re
-            json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", ai_response, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
                 return result

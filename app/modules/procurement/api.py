@@ -12,11 +12,11 @@ from app.modules.procurement.contract_generator import (
     get_contract_template_metadata,
 )
 from app.modules.procurement.schemas import (
+    ContractCategory,
+    ContractGenerateRequest,
     ContractRecordApiResponse,
     ContractRecordListResponse,
     ContractRecordResponse,
-    ContractCategory,
-    ContractGenerateRequest,
     ContractTemplateMetadata,
     InvoiceRecognitionRecordDeleteRequest,
     InvoiceRecognitionRecordDeleteResponse,
@@ -50,8 +50,8 @@ from app.modules.procurement.service import (
     get_contract_record_file,
     get_purchase_request,
     import_supplier_table_file,
-    list_invoice_recognition_records,
     list_contract_records,
+    list_invoice_recognition_records,
     list_purchase_order_lines,
     list_purchase_requests,
     list_suppliers,
@@ -176,8 +176,7 @@ async def list_supplier_records(
     "/suppliers/import",
     summary="导入供应商清单表格",
     description=(
-        "上传 xlsx、xlsm、csv 或 tsv 表格文件，"
-        "按文件表头读取字段并替换当前供应商清单。"
+        "上传 xlsx、xlsm、csv 或 tsv 表格文件，按文件表头读取字段并替换当前供应商清单。"
     ),
     response_model=SupplierImportResponse,
 )

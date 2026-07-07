@@ -8,12 +8,10 @@ Adapts Feishu Bitable API for the candidate table:
 """
 
 import logging
-from datetime import date
 from typing import Any
 
-from app.platform.integrations.feishu.bitable import BitableClient
-from app.platform.integrations.feishu.datasource import BitableDataSource
 from app.core.config import get_settings
+from app.platform.integrations.feishu.datasource import BitableDataSource
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
@@ -28,7 +26,11 @@ def _extract_text(value: Any) -> str:
     if isinstance(value, dict):
         if "text" in value:
             return value.get("text", "")
-        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
+        if (
+            "value" in value
+            and isinstance(value["value"], list)
+            and len(value["value"]) > 0
+        ):
             inner = value["value"][0]
             if isinstance(inner, dict) and "text" in inner:
                 return inner.get("text", "")
@@ -77,15 +79,15 @@ class CandidateBitableDataSource:
         items = await self._query(page_size=page_size)
         return [CandidateRecord.from_api(item) for item in items]
 
-    async def update_recommendation_level(
-        self, record_id: str, level: str
-    ) -> None:
+    async def update_recommendation_level(self, record_id: str, level: str) -> None:
         """Update recommendation level in Feishu Bitable."""
         await self._ds.update(
             record_id=record_id,
             fields={"推荐等级": level},
         )
-        logger.info("Updated recommendation level in Feishu: %s -> %s", record_id, level)
+        logger.info(
+            "Updated recommendation level in Feishu: %s -> %s", record_id, level
+        )
 
     async def update(self, record_id: str, fields: dict[str, Any]) -> None:
         """Update candidate fields in Feishu Bitable."""
@@ -152,13 +154,17 @@ class CandidateRecord:
         self.major: str = _extract_text(fields.get("专业"))
 
         # AI report
-        self.match_report: str = _extract_text(fields.get("候选人匹配度报告-AI.输出结果"))
+        self.match_report: str = _extract_text(
+            fields.get("候选人匹配度报告-AI.输出结果")
+        )
 
         # Recommendation level
         self.recommendation_level: str = _extract_single_select(fields.get("推荐等级"))
 
         # Resume attachments
-        self.resume_attachments: list[dict] = _extract_attachments(fields.get("简历 PDF"))
+        self.resume_attachments: list[dict] = _extract_attachments(
+            fields.get("简历 PDF")
+        )
 
     @classmethod
     def from_api(cls, raw: dict[str, Any]) -> "CandidateRecord":

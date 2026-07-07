@@ -61,7 +61,9 @@ async def test_equipment_lifecycle(auth_client: AsyncClient):
     assert update_response.json()["data"]["status"] == "维修中"
 
     # 5. 获取设备详情
-    detail_response = await auth_client.get(f"/api/v1/equipment/equipments/{equipment_id}")
+    detail_response = await auth_client.get(
+        f"/api/v1/equipment/equipments/{equipment_id}"
+    )
     assert detail_response.status_code == 200
     assert detail_response.json()["data"]["status"] == "维修中"
 
@@ -228,5 +230,7 @@ async def test_create_duplicate_category_code(auth_client: AsyncClient):
 async def test_get_nonexistent_equipment(auth_client: AsyncClient):
     """测试获取不存在的设备（应返回404）"""
     fake_equipment_id = "00000000-0000-0000-0000-000000000000"
-    response = await auth_client.get(f"/api/v1/equipment/equipments/{fake_equipment_id}")
+    response = await auth_client.get(
+        f"/api/v1/equipment/equipments/{fake_equipment_id}"
+    )
     assert response.status_code == 404

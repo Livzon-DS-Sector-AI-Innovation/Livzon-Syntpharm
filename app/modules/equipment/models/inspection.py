@@ -73,7 +73,8 @@ class InspectionRouteSchedule(BaseModel):
         # 部分唯一索引：仅对未删除的记录做路线+cron唯一性检查
         Index(
             "uq_route_schedules_route_cron_deleted",
-            "route_id", "cron_expression",
+            "route_id",
+            "cron_expression",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -81,26 +82,34 @@ class InspectionRouteSchedule(BaseModel):
     )
 
     route_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("equipment.inspection_routes.id"), comment="路线ID",
+        ForeignKey("equipment.inspection_routes.id"),
+        comment="路线ID",
     )
-    cron_expression: Mapped[str] = mapped_column(
-        String(50), comment="cron 表达式"
-    )
+    cron_expression: Mapped[str] = mapped_column(String(50), comment="cron 表达式")
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("identity.users.id"), nullable=True, comment="巡检人员ID",
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="巡检人员ID",
     )
     is_active: Mapped[bool] = mapped_column(
-        default=True, server_default="true", comment="是否启用",
+        default=True,
+        server_default="true",
+        comment="是否启用",
     )
     last_triggered_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="上次触发时间",
+        DateTime(timezone=True),
+        nullable=True,
+        comment="上次触发时间",
     )
     next_trigger_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="下次触发时间",
+        DateTime(timezone=True),
+        nullable=True,
+        comment="下次触发时间",
     )
 
     route: Mapped[InspectionRoute] = relationship(
-        "InspectionRoute", foreign_keys=[route_id],
+        "InspectionRoute",
+        foreign_keys=[route_id],
     )
 
 
@@ -113,7 +122,8 @@ class InspectionRouteEquipment(BaseModel):
         # 部分唯一索引：仅对未删除的记录做路线+设备唯一性检查
         Index(
             "uq_route_equipments_route_equipment",
-            "route_id", "equipment_id",
+            "route_id",
+            "equipment_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -128,9 +138,7 @@ class InspectionRouteEquipment(BaseModel):
         ForeignKey("equipment.equipments.id"),
         comment="设备ID",
     )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, default=0, comment="巡检顺序"
-    )
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, comment="巡检顺序")
 
     # 关系（已废弃：equipments_rel 已改为 locations_rel）
     route: Mapped[InspectionRoute] = relationship(
@@ -234,9 +242,7 @@ class InspectionTask(BaseModel):
     equipment: Mapped[Equipment | None] = relationship(
         "Equipment", foreign_keys=[equipment_id]
     )
-    assignee: Mapped[User | None] = relationship(
-        "User", foreign_keys=[assigned_to]
-    )
+    assignee: Mapped[User | None] = relationship("User", foreign_keys=[assigned_to])
 
 
 class InspectionPhoto(BaseModel):
@@ -254,15 +260,9 @@ class InspectionPhoto(BaseModel):
         nullable=True,
         comment="设备ID（线路巡检时可为空）",
     )
-    file_name: Mapped[str] = mapped_column(
-        String(255), comment="原始文件名"
-    )
-    file_path: Mapped[str] = mapped_column(
-        String(500), comment="服务器文件路径"
-    )
-    file_size: Mapped[int | None] = mapped_column(
-        comment="文件大小（字节）"
-    )
+    file_name: Mapped[str] = mapped_column(String(255), comment="原始文件名")
+    file_path: Mapped[str] = mapped_column(String(500), comment="服务器文件路径")
+    file_size: Mapped[int | None] = mapped_column(comment="文件大小（字节）")
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

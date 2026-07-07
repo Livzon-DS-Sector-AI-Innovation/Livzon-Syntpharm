@@ -3,8 +3,8 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import desc, func, or_, select
 from fastapi import HTTPException
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.research.models import (

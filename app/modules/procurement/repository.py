@@ -241,9 +241,7 @@ class ContractRecordRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[ContractRecord], int]:
-        base_query = select(ContractRecord).where(
-            ContractRecord.is_deleted.is_(False)
-        )
+        base_query = select(ContractRecord).where(ContractRecord.is_deleted.is_(False))
         count_query = select(func.count(ContractRecord.id)).where(
             ContractRecord.is_deleted.is_(False)
         )

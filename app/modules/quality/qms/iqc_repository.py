@@ -1,6 +1,6 @@
 """IQC (Incoming Quality Control) inspection repository"""
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -22,20 +22,25 @@ class IQCInspectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, inspection_id: UUID) -> Optional[IQCInspection]:
+    async def get_by_id(self, inspection_id: UUID) -> IQCInspection | None:
         """根据ID获取IQC检验单"""
         result = await self.session.execute(
             select(IQCInspection).where(
-                and_(IQCInspection.id == inspection_id, IQCInspection.is_deleted == False)
+                and_(
+                    IQCInspection.id == inspection_id, IQCInspection.is_deleted == False
+                )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_no(self, inspection_no: str) -> Optional[IQCInspection]:
+    async def get_by_inspection_no(self, inspection_no: str) -> IQCInspection | None:
         """根据单号查询"""
         result = await self.session.execute(
             select(IQCInspection).where(
-                and_(IQCInspection.inspection_no == inspection_no, IQCInspection.is_deleted == False)
+                and_(
+                    IQCInspection.inspection_no == inspection_no,
+                    IQCInspection.is_deleted == False,
+                )
             )
         )
         return result.scalar_one_or_none()
@@ -50,19 +55,32 @@ class IQCInspectionRepository:
         query = select(IQCInspection).where(IQCInspection.is_deleted == False)
 
         if filters.material_code:
-            query = query.where(IQCInspection.material_code.ilike(f"%{filters.material_code}%"))
+            query = query.where(
+                IQCInspection.material_code.ilike(f"%{filters.material_code}%")
+            )
         if filters.material_name:
-            query = query.where(IQCInspection.material_name.ilike(f"%{filters.material_name}%"))
+            query = query.where(
+                IQCInspection.material_name.ilike(f"%{filters.material_name}%")
+            )
         if filters.material_category:
-            query = query.where(IQCInspection.material_category == filters.material_category.value)
+            query = query.where(
+                IQCInspection.material_category == filters.material_category.value
+            )
         if filters.supplier_name:
-            query = query.where(IQCInspection.supplier_name.ilike(f"%{filters.supplier_name}%"))
+            query = query.where(
+                IQCInspection.supplier_name.ilike(f"%{filters.supplier_name}%")
+            )
         if filters.status:
             query = query.where(IQCInspection.status == filters.status.value)
         if filters.inspection_conclusion:
-            query = query.where(IQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
+            query = query.where(
+                IQCInspection.inspection_conclusion
+                == filters.inspection_conclusion.value
+            )
         if filters.inspection_no:
-            query = query.where(IQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
+            query = query.where(
+                IQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
+            )
         if filters.start_date:
             query = query.where(IQCInspection.inspection_date >= filters.start_date)
         if filters.end_date:
@@ -71,29 +89,50 @@ class IQCInspectionRepository:
         # Count query
         count_query = select(IQCInspection.id).where(IQCInspection.is_deleted == False)
         if filters.material_code:
-            count_query = count_query.where(IQCInspection.material_code.ilike(f"%{filters.material_code}%"))
+            count_query = count_query.where(
+                IQCInspection.material_code.ilike(f"%{filters.material_code}%")
+            )
         if filters.material_name:
-            count_query = count_query.where(IQCInspection.material_name.ilike(f"%{filters.material_name}%"))
+            count_query = count_query.where(
+                IQCInspection.material_name.ilike(f"%{filters.material_name}%")
+            )
         if filters.material_category:
-            count_query = count_query.where(IQCInspection.material_category == filters.material_category.value)
+            count_query = count_query.where(
+                IQCInspection.material_category == filters.material_category.value
+            )
         if filters.supplier_name:
-            count_query = count_query.where(IQCInspection.supplier_name.ilike(f"%{filters.supplier_name}%"))
+            count_query = count_query.where(
+                IQCInspection.supplier_name.ilike(f"%{filters.supplier_name}%")
+            )
         if filters.status:
-            count_query = count_query.where(IQCInspection.status == filters.status.value)
+            count_query = count_query.where(
+                IQCInspection.status == filters.status.value
+            )
         if filters.inspection_conclusion:
-            count_query = count_query.where(IQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
+            count_query = count_query.where(
+                IQCInspection.inspection_conclusion
+                == filters.inspection_conclusion.value
+            )
         if filters.inspection_no:
-            count_query = count_query.where(IQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
+            count_query = count_query.where(
+                IQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
+            )
         if filters.start_date:
-            count_query = count_query.where(IQCInspection.inspection_date >= filters.start_date)
+            count_query = count_query.where(
+                IQCInspection.inspection_date >= filters.start_date
+            )
         if filters.end_date:
-            count_query = count_query.where(IQCInspection.inspection_date <= filters.end_date)
+            count_query = count_query.where(
+                IQCInspection.inspection_date <= filters.end_date
+            )
 
         count_result = await self.session.execute(count_query)
         total = len(count_result.all())
 
         # Order and paginate
-        query = query.order_by(IQCInspection.created_at.desc()).offset(skip).limit(limit)
+        query = (
+            query.order_by(IQCInspection.created_at.desc()).offset(skip).limit(limit)
+        )
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
@@ -105,12 +144,15 @@ class IQCInspectionRepository:
         prefix = f"IQC{today.strftime('%Y%m%d')}"
         # 查找今天最大的序号
         result = await self.session.execute(
-            select(IQCInspection.inspection_no).where(
+            select(IQCInspection.inspection_no)
+            .where(
                 and_(
                     IQCInspection.inspection_no.like(f"{prefix}%"),
                     IQCInspection.is_deleted == False,
                 )
-            ).order_by(IQCInspection.inspection_no.desc()).limit(1)
+            )
+            .order_by(IQCInspection.inspection_no.desc())
+            .limit(1)
         )
         last_no = result.scalar_one_or_none()
         if last_no:
@@ -129,28 +171,40 @@ class IQCInspectionItemRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, item_id: UUID) -> Optional[IQCInspectionItem]:
+    async def get_by_id(self, item_id: UUID) -> IQCInspectionItem | None:
         """根据ID获取明细"""
         result = await self.session.execute(
             select(IQCInspectionItem).where(
-                and_(IQCInspectionItem.id == item_id, IQCInspectionItem.is_deleted == False)
+                and_(
+                    IQCInspectionItem.id == item_id,
+                    IQCInspectionItem.is_deleted == False,
+                )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_id(self, inspection_id: UUID) -> list[IQCInspectionItem]:
+    async def get_by_inspection_id(
+        self, inspection_id: UUID
+    ) -> list[IQCInspectionItem]:
         """根据检验单ID获取明细"""
         result = await self.session.execute(
-            select(IQCInspectionItem).where(
+            select(IQCInspectionItem)
+            .where(
                 and_(
                     IQCInspectionItem.iqc_inspection_id == inspection_id,
                     IQCInspectionItem.is_deleted == False,
                 )
-            ).order_by(IQCInspectionItem.item_no)
+            )
+            .order_by(IQCInspectionItem.item_no)
         )
         return list(result.scalars().all())
 
-    async def create_bulk(self, inspection_id: UUID, items_data: list[dict], created_by: UUID | None = None) -> list[IQCInspectionItem]:
+    async def create_bulk(
+        self,
+        inspection_id: UUID,
+        items_data: list[dict],
+        created_by: UUID | None = None,
+    ) -> list[IQCInspectionItem]:
         """批量创建明细"""
         items = []
         for item_data in items_data:
@@ -179,15 +233,19 @@ class IQCApprovalRecordRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_inspection_id(self, inspection_id: UUID) -> list[IQCApprovalRecord]:
+    async def get_by_inspection_id(
+        self, inspection_id: UUID
+    ) -> list[IQCApprovalRecord]:
         """根据检验单ID获取审批记录"""
         result = await self.session.execute(
-            select(IQCApprovalRecord).where(
+            select(IQCApprovalRecord)
+            .where(
                 and_(
                     IQCApprovalRecord.iqc_inspection_id == inspection_id,
                     IQCApprovalRecord.is_deleted == False,
                 )
-            ).order_by(IQCApprovalRecord.approval_level)
+            )
+            .order_by(IQCApprovalRecord.approval_level)
         )
         return list(result.scalars().all())
 

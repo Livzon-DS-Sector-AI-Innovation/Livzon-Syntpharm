@@ -1,14 +1,12 @@
 """Stability Study (稳定性试验) service"""
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.qms.stability_models import (
-    StabilityApprovalRecord,
     StabilityInspection,
-    StabilityInspectionItem,
     StabilitySampleNode,
     StabilityStudy,
 )
@@ -82,7 +80,9 @@ class StabilityStudyService:
             start_date=data.start_date,
             end_date=data.end_date,
             expiry_date=data.expiry_date,
-            sample_intervals=",".join(map(str, data.sample_intervals)) if data.sample_intervals else None,
+            sample_intervals=",".join(map(str, data.sample_intervals))
+            if data.sample_intervals
+            else None,
             standard_id=data.standard_id,
             standard_name=data.standard_name,
             standard_version=data.standard_version,
@@ -96,7 +96,9 @@ class StabilityStudyService:
         await self.session.flush()
 
         # 创建取样节点
-        intervals = data.sample_intervals if isinstance(data.sample_intervals, list) else []
+        intervals = (
+            data.sample_intervals if isinstance(data.sample_intervals, list) else []
+        )
         if data.sample_nodes:
             nodes_data = [
                 {
@@ -115,13 +117,16 @@ class StabilityStudyService:
                 planned_date = data.start_date
                 if month > 0:
                     from datetime import timedelta
+
                     planned_date = data.start_date + timedelta(days=month * 30)
-                nodes_data.append({
-                    "node_no": i + 1,
-                    "node_month": month,
-                    "node_name": f"{month}月",
-                    "planned_date": planned_date,
-                })
+                nodes_data.append(
+                    {
+                        "node_no": i + 1,
+                        "node_month": month,
+                        "node_name": f"{month}月",
+                        "planned_date": planned_date,
+                    }
+                )
             await self.node_repo.create_bulk(study.id, nodes_data, user_id)
 
         await self.session.commit()
@@ -174,7 +179,9 @@ class StabilityStudyService:
 
         await self.session.commit()
 
-    async def submit_study(self, study_id: UUID, user_id: UUID | None = None) -> StabilityStudy:
+    async def submit_study(
+        self, study_id: UUID, user_id: UUID | None = None
+    ) -> StabilityStudy:
         """提交稳定性试验"""
         study = await self.get_study(study_id)
 
@@ -345,7 +352,9 @@ class StabilityStudyService:
             sample_condition=data.sample_condition,
             standard_id=data.standard_id or study.standard_id,
             standard_name=data.standard_name or study.standard_name,
-            inspection_conclusion=data.inspection_conclusion.value if data.inspection_conclusion else None,
+            inspection_conclusion=data.inspection_conclusion.value
+            if data.inspection_conclusion
+            else None,
             conclusion_reason=data.conclusion_reason,
             remark=data.remark,
             oos_report_no=data.oos_report_no,
@@ -442,7 +451,9 @@ class StabilityStudyService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def submit_inspection(self, inspection_id: UUID, user_id: UUID | None = None) -> StabilityInspection:
+    async def submit_inspection(
+        self, inspection_id: UUID, user_id: UUID | None = None
+    ) -> StabilityInspection:
         """提交检验记录"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -478,12 +489,14 @@ class StabilityStudyService:
             for item in items:
                 if item.inspection_item not in trend_data:
                     trend_data[item.inspection_item] = []
-                trend_data[item.inspection_item].append({
-                    "node_month": inspection.node_month,
-                    "measured_value": item.measured_value,
-                    "result": item.result,
-                    "inspection_date": inspection.inspection_date,
-                })
+                trend_data[item.inspection_item].append(
+                    {
+                        "node_month": inspection.node_month,
+                        "measured_value": item.measured_value,
+                        "result": item.result,
+                        "inspection_date": inspection.inspection_date,
+                    }
+                )
 
         # 排序
         for item_name in trend_data:

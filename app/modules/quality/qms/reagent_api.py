@@ -3,27 +3,25 @@
 提供质量检验模块试剂/标准品台账的增删改查和AI标签识别功能。
 """
 
-import uuid
 from datetime import date, timedelta
-from typing import Optional, Any
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Query, UploadFile, File
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.database import get_db_session
+from app.core.storage import save_upload_files
 from app.modules.quality.qms.reagent_schemas import (
     CreateReagentRequest,
-    UpdateReagentRequest,
     ReagentResponse,
+    UpdateReagentRequest,
 )
 from app.modules.quality.qms.reagent_service import ReagentService
-from app.core.storage import save_upload_files
+from app.platform.database import get_db_session
 
 router = APIRouter(prefix="/reagent", tags=["质量检验-试剂管理"])
 
@@ -54,6 +52,7 @@ def dict_to_response(data: dict[str, Any]) -> ReagentResponse:
 
 
 # ============ API Endpoints ============
+
 
 @router.post("/recognize", response_model=dict, summary="AI识别试剂标签图片")
 async def recognize_reagent_label(
@@ -108,7 +107,7 @@ async def recognize_reagent_label(
 
 @router.get("/next-lot-no", response_model=dict, summary="获取下一个入场批号")
 async def get_next_incoming_lot_no(
-    date_str: Optional[str] = Query(None, description="日期(YYYY-MM-DD)，默认今天"),
+    date_str: str | None = Query(None, description="日期(YYYY-MM-DD)，默认今天"),
     session: AsyncSession = Depends(get_db_session),
 ):
     """获取当天的下一个入场批号
@@ -119,8 +118,9 @@ async def get_next_incoming_lot_no(
     target_date = None
     if date_str:
         from datetime import datetime
+
         try:
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
             pass
 
@@ -143,9 +143,9 @@ async def get_next_incoming_lot_no(
 
 @router.get("/list", response_model=dict, summary="获取试剂台账列表")
 async def get_reagent_list(
-    keyword: Optional[str] = Query(None, description="关键词搜索"),
-    category: Optional[str] = Query(None, description="分类（试剂/标准品）"),
-    status: Optional[str] = Query(None, description="状态"),
+    keyword: str | None = Query(None, description="关键词搜索"),
+    category: str | None = Query(None, description="分类（试剂/标准品）"),
+    status: str | None = Query(None, description="状态"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     session: AsyncSession = Depends(get_db_session),
@@ -177,9 +177,9 @@ async def get_reagent_list(
 
 @router.get("/export", summary="导出试剂台账Excel")
 async def export_reagents_excel(
-    keyword: Optional[str] = Query(None, description="关键词搜索"),
-    category: Optional[str] = Query(None, description="分类"),
-    status: Optional[str] = Query(None, description="状态"),
+    keyword: str | None = Query(None, description="关键词搜索"),
+    category: str | None = Query(None, description="分类"),
+    status: str | None = Query(None, description="状态"),
     session: AsyncSession = Depends(get_db_session),
 ):
     """导出试剂/标准品台账为Excel文件"""
@@ -201,20 +201,35 @@ async def export_reagents_excel(
 
     # 定义样式
     header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="4472C4", end_color="4472C4", fill_type="solid"
+    )
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
 
     # 表头
     headers = [
-        "试剂名称", "到货日期", "生产日期", "批号", "入场批号",
-        "有效期", "规格", "分类", "编号", "含量", "生产厂家",
-        "数量", "单位", "状态", "创建人", "创建时间"
+        "试剂名称",
+        "到货日期",
+        "生产日期",
+        "批号",
+        "入场批号",
+        "有效期",
+        "规格",
+        "分类",
+        "编号",
+        "含量",
+        "生产厂家",
+        "数量",
+        "单位",
+        "状态",
+        "创建人",
+        "创建时间",
     ]
 
     for col, header in enumerate(headers, 1):
@@ -245,21 +260,33 @@ async def export_reagents_excel(
 
         row_data = [
             reagent_dict.get("reagent_name", ""),
-            str(reagent_dict.get("arrival_date", "")) if reagent_dict.get("arrival_date") else "",
-            str(reagent_dict.get("production_date", "")) if reagent_dict.get("production_date") else "",
+            str(reagent_dict.get("arrival_date", ""))
+            if reagent_dict.get("arrival_date")
+            else "",
+            str(reagent_dict.get("production_date", ""))
+            if reagent_dict.get("production_date")
+            else "",
             reagent_dict.get("lot_no", ""),
             reagent_dict.get("incoming_lot_no", ""),
-            str(reagent_dict.get("expiration_date", "")) if reagent_dict.get("expiration_date") else "",
+            str(reagent_dict.get("expiration_date", ""))
+            if reagent_dict.get("expiration_date")
+            else "",
             reagent_dict.get("specification", ""),
-            category_labels.get(reagent_dict.get("category", ""), reagent_dict.get("category", "")),
+            category_labels.get(
+                reagent_dict.get("category", ""), reagent_dict.get("category", "")
+            ),
             reagent_dict.get("reagent_no", ""),
             reagent_dict.get("content", ""),
             reagent_dict.get("manufacturer", ""),
             str(reagent_dict.get("quantity", "")),
             reagent_dict.get("unit", ""),
-            status_labels.get(reagent_dict.get("status", ""), reagent_dict.get("status", "")),
+            status_labels.get(
+                reagent_dict.get("status", ""), reagent_dict.get("status", "")
+            ),
             reagent_dict.get("created_by", ""),
-            str(reagent_dict.get("created_at", "")) if reagent_dict.get("created_at") else "",
+            str(reagent_dict.get("created_at", ""))
+            if reagent_dict.get("created_at")
+            else "",
         ]
 
         for col, value in enumerate(row_data, 1):
@@ -293,7 +320,9 @@ async def export_reagents_excel(
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+        },
     )
 
 

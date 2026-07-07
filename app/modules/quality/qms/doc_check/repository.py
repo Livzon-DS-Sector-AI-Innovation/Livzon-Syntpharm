@@ -6,16 +6,17 @@
 import hashlib
 import random
 import uuid
-from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.modules.quality.sop_ai.models import (
     SopAiCheckMain,
     SopAiCheckProblem,
+)
+from app.modules.quality.sop_ai.models import (
     SopAiConfig as DocCheckConfig,
 )
 
@@ -98,14 +99,14 @@ class DocCheckRepository:
             count_query = count_query.where(SopAiCheckMain.operator == operator)
 
         total = await self.session.scalar(count_query)
-        query = query.offset(skip).limit(limit).order_by(SopAiCheckMain.created_at.desc())
+        query = (
+            query.offset(skip).limit(limit).order_by(SopAiCheckMain.created_at.desc())
+        )
         result = await self.session.execute(query)
         checks = list(result.scalars().all())
         return checks, total or 0
 
-    async def get_check_by_id(
-        self, check_id: uuid.UUID
-    ) -> SopAiCheckMain | None:
+    async def get_check_by_id(self, check_id: uuid.UUID) -> SopAiCheckMain | None:
         """获取校验详情"""
         query = (
             select(SopAiCheckMain)
@@ -131,11 +132,10 @@ class DocCheckRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_check(
-        self, data: dict[str, Any]
-    ) -> SopAiCheckMain:
+    async def create_check(self, data: dict[str, Any]) -> SopAiCheckMain:
         """创建校验"""
         import uuid
+
         # 确保 id 字段是有效的 UUID
         if "id" not in data:
             data["id"] = str(uuid.uuid4())
@@ -191,9 +191,7 @@ class DocCheckRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def create_problem(
-        self, data: dict[str, Any]
-    ) -> SopAiCheckProblem:
+    async def create_problem(self, data: dict[str, Any]) -> SopAiCheckProblem:
         """创建问题"""
         problem = SopAiCheckProblem(**data)
         self.session.add(problem)
@@ -273,20 +271,17 @@ class DocCheckRepository:
     @staticmethod
     def compute_doc_hash(doc_content: str) -> str:
         """计算文档哈希"""
-        import hashlib
+
         return hashlib.sha256(doc_content.encode("utf-8")).hexdigest()
 
     @staticmethod
-    def compute_simple_vector(
-        doc_content: str, dimension: int = 1536
-    ) -> list[int]:
+    def compute_simple_vector(doc_content: str, dimension: int = 1536) -> list[int]:
         """计算简易向量（仅用于占位，实际应使用embedding模型）
 
         当 pgvector 扩展未启用时，使用此方法生成占位向量。
         实际生产环境应调用 AI 服务获取真实 embedding。
         """
-        import hashlib
-        import random
+
         # 简单的基于内容的哈希分布生成伪向量
         hash_bytes = hashlib.md5(doc_content.encode("utf-8")).digest()
         hash_val = int.from_bytes(hash_bytes[:4], "big")

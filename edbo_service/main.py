@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 from edbo.plus import EDBOplus
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from typing import Optional
 from pydantic import BaseModel
 
 app = FastAPI(title="EDBO+ Optimization Service")
@@ -15,8 +14,8 @@ app = FastAPI(title="EDBO+ Optimization Service")
 class OptimizeResponse(BaseModel):
     csv_data: str
     row_count: int
-    prediction_data: Optional[str] = None
-    prediction_filename: Optional[str] = None
+    prediction_data: str | None = None
+    prediction_filename: str | None = None
 
 
 @app.post("/optimize", response_model=OptimizeResponse)

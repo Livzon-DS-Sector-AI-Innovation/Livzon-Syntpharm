@@ -26,7 +26,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_username(
-        self, session: AsyncSession, username: str,
+        self,
+        session: AsyncSession,
+        username: str,
     ) -> User | None:
         result = await session.execute(
             select(User).where(
@@ -37,7 +39,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_username_including_deleted(
-        self, session: AsyncSession, username: str,
+        self,
+        session: AsyncSession,
+        username: str,
     ) -> User | None:
         result = await session.execute(
             select(User).where(
@@ -47,7 +51,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_login_identifier(
-        self, session: AsyncSession, identifier: str,
+        self,
+        session: AsyncSession,
+        identifier: str,
     ) -> User | None:
         normalized = identifier.strip().lower()
         result = await session.execute(
@@ -62,7 +68,6 @@ class UserRepository:
             ),
         )
         return result.scalar_one_or_none()
-
 
     async def get_by_feishu_open_id(
         self,
@@ -156,8 +161,12 @@ class UserRepository:
         limit: int = 100,
     ) -> tuple[list[User], int]:
         base = select(User).where(User.is_deleted == False)  # noqa: E712
-        count_stmt = select(func.count()).select_from(User).where(
-            User.is_deleted == False  # noqa: E712
+        count_stmt = (
+            select(func.count())
+            .select_from(User)
+            .where(
+                User.is_deleted == False  # noqa: E712
+            )
         )
 
         if keyword:

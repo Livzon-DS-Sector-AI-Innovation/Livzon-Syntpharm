@@ -4,78 +4,68 @@
 """
 
 import logging
-from typing import Optional
+from datetime import UTC
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
-from fastapi import UploadFile, File
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.modules.quality.qms.instrument_service import (
-    InstrumentService,
-    CalibrationRuleService,
-    CalibrationRecordService,
-    ReminderConfigService,
-)
+from app.core.deps import get_current_user
 from app.modules.quality.qms.instrument_schemas import (
-    # Instrument
-    InstrumentCreate,
-    InstrumentUpdate,
-    InstrumentResponse,
-    InstrumentListResponse,
-    InstrumentListItem,
-    InstrumentFilter,
+    # Approval
+    CalibrationRecordCreate,
+    CalibrationRecordResponse,
+    CalibrationRecordUpdate,
     # CalibrationRule
     CalibrationRuleCreate,
-    CalibrationRuleUpdate,
     CalibrationRuleResponse,
-    # CalibrationRecord
-    CalibrationRecordCreate,
-    CalibrationRecordUpdate,
-    CalibrationRecordResponse,
-    CalibrationRecordListResponse,
-    CalibrationRecordListItem,
-    CalibrationRecordFilter,
-    # Approval
-    ApprovalCreate,
-    ApprovalResponse,
+    CalibrationRuleUpdate,
+    # Instrument
+    InstrumentCreate,
+    InstrumentResponse,
+    InstrumentUpdate,
     # ReminderConfig
     ReminderConfigCreate,
     ReminderConfigUpdate,
-    ReminderConfigResponse,
-    ReminderConfigListResponse,
+)
+from app.modules.quality.qms.instrument_service import (
+    CalibrationRecordService,
+    CalibrationRuleService,
+    InstrumentService,
+    ReminderConfigService,
 )
 
 
 class ApiResponse(BaseModel):
     """统一响应格式"""
+
     code: int = 200
     message: str = "Success"
-    data: Optional[dict | list] = None
+    data: dict | list | None = None
 
 
 router = APIRouter(prefix="/instrument", tags=["仪器校准管理"])
 
 
-def get_instrument_service(session = Depends(get_db)) -> InstrumentService:
+def get_instrument_service(session=Depends(get_db)) -> InstrumentService:
     return InstrumentService(session)
 
 
-def get_rule_service(session = Depends(get_db)) -> CalibrationRuleService:
+def get_rule_service(session=Depends(get_db)) -> CalibrationRuleService:
     return CalibrationRuleService(session)
 
 
-def get_record_service(session = Depends(get_db)) -> CalibrationRecordService:
+def get_record_service(session=Depends(get_db)) -> CalibrationRecordService:
     return CalibrationRecordService(session)
 
 
-def get_reminder_config_service(session = Depends(get_db)) -> ReminderConfigService:
+def get_reminder_config_service(session=Depends(get_db)) -> ReminderConfigService:
     return ReminderConfigService(session)
 
 
 # ========== 飞书通讯录 API ==========
+
 
 @router.post("/feishu-contacts/resolve-user", response_model=ApiResponse)
 async def resolve_feishu_user(
@@ -85,6 +75,7 @@ async def resolve_feishu_user(
 ):
     """通过手机号或邮箱获取飞书用户的 open_id"""
     import logging
+
     logger = logging.getLogger(__name__)
 
     if not mobile and not email:
@@ -101,6 +92,7 @@ async def resolve_feishu_user(
 
     try:
         from app.platform.notification.feishu_client_config import FeishuClient
+
         client = FeishuClient(config.feishu_app_id, config.feishu_app_secret)
         open_id = await client.get_user_by_mobile_or_email(mobile=mobile, email=email)
         if open_id:
@@ -114,36 +106,45 @@ async def resolve_feishu_user(
 
 # ========== 提醒配置管理 API ==========
 
+
 @router.get("/reminder-config", response_model=ApiResponse)
 async def list_reminder_configs(
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ):
     """获取所有提醒配置"""
     configs = await service.list_configs()
-    items = [{
-        "id": str(config.id),
-        "name": config.name,
-        "feishu_app_id": config.feishu_app_id,
-        "feishu_app_secret": config.feishu_app_secret,
-        "chat_id": config.chat_id,
-        "receive_id_type": config.receive_id_type,
-        "remind_30_days": config.remind_30_days,
-        "remind_14_days": config.remind_14_days,
-        "remind_7_days": config.remind_7_days,
-        "remind_overdue": config.remind_overdue,
-        "is_active": config.is_active,
-        "last_remind_30_days": config.last_remind_30_days.isoformat() if config.last_remind_30_days else None,
-        "last_remind_14_days": config.last_remind_14_days.isoformat() if config.last_remind_14_days else None,
-        "last_remind_7_days": config.last_remind_7_days.isoformat() if config.last_remind_7_days else None,
-        "last_remind_overdue": config.last_remind_overdue.isoformat() if config.last_remind_overdue else None,
-        "created_at": config.created_at.isoformat(),
-        "updated_at": config.updated_at.isoformat(),
-    } for config in configs]
+    items = [
+        {
+            "id": str(config.id),
+            "name": config.name,
+            "feishu_app_id": config.feishu_app_id,
+            "feishu_app_secret": config.feishu_app_secret,
+            "chat_id": config.chat_id,
+            "receive_id_type": config.receive_id_type,
+            "remind_30_days": config.remind_30_days,
+            "remind_14_days": config.remind_14_days,
+            "remind_7_days": config.remind_7_days,
+            "remind_overdue": config.remind_overdue,
+            "is_active": config.is_active,
+            "last_remind_30_days": config.last_remind_30_days.isoformat()
+            if config.last_remind_30_days
+            else None,
+            "last_remind_14_days": config.last_remind_14_days.isoformat()
+            if config.last_remind_14_days
+            else None,
+            "last_remind_7_days": config.last_remind_7_days.isoformat()
+            if config.last_remind_7_days
+            else None,
+            "last_remind_overdue": config.last_remind_overdue.isoformat()
+            if config.last_remind_overdue
+            else None,
+            "created_at": config.created_at.isoformat(),
+            "updated_at": config.updated_at.isoformat(),
+        }
+        for config in configs
+    ]
 
-    return ApiResponse(
-        message="获取成功",
-        data={"items": items, "total": len(items)}
-    )
+    return ApiResponse(message="获取成功", data={"items": items, "total": len(items)})
 
 
 @router.post("/reminder-config", response_model=ApiResponse)
@@ -168,7 +169,7 @@ async def create_reminder_config(
             "remind_7_days": config.remind_7_days,
             "remind_overdue": config.remind_overdue,
             "is_active": config.is_active,
-        }
+        },
     )
 
 
@@ -195,7 +196,7 @@ async def update_reminder_config(
             "remind_7_days": config.remind_7_days,
             "remind_overdue": config.remind_overdue,
             "is_active": config.is_active,
-        }
+        },
     )
 
 
@@ -212,14 +213,15 @@ async def delete_reminder_config(
 
 # ========== 仪器设备台账 API ==========
 
+
 @router.get("", response_model=ApiResponse)
 async def list_instruments(
-    instrument_no: Optional[str] = Query(None, description="仪器编号"),
-    instrument_name: Optional[str] = Query(None, description="仪器名称"),
-    category: Optional[str] = Query(None, description="仪器分类"),
-    is_active: Optional[bool] = Query(None, description="是否启用"),
-    status: Optional[str] = Query(None, description="状态"),
-    is_overdue: Optional[bool] = Query(None, description="是否超期"),
+    instrument_no: str | None = Query(None, description="仪器编号"),
+    instrument_name: str | None = Query(None, description="仪器名称"),
+    category: str | None = Query(None, description="仪器分类"),
+    is_active: bool | None = Query(None, description="是否启用"),
+    status: str | None = Query(None, description="状态"),
+    is_overdue: bool | None = Query(None, description="是否超期"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: InstrumentService = Depends(get_instrument_service),
@@ -233,7 +235,7 @@ async def list_instruments(
         status=status,
         is_overdue=is_overdue,
         page=page,
-        page_size=page_size
+        page_size=page_size,
     )
 
     # list_instruments 已经返回包含 valid_until 和 is_overdue 的字典列表
@@ -242,7 +244,7 @@ async def list_instruments(
             "items": instruments,  # service.list_instruments 返回的字典已包含 valid_until 和 is_overdue
             "total": total,
             "page": page,
-            "page_size": page_size
+            "page_size": page_size,
         }
     )
 
@@ -251,7 +253,7 @@ async def list_instruments(
 async def create_instrument(
     data: InstrumentCreate,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """创建仪器设备"""
     try:
@@ -259,7 +261,7 @@ async def create_instrument(
         instrument = await service.create_instrument(data, user_id)
         return ApiResponse(
             message="创建成功",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -269,7 +271,7 @@ async def create_instrument(
 async def submit_instrument(
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """提交仪器审核"""
     try:
@@ -277,7 +279,7 @@ async def submit_instrument(
         instrument = await service.submit_instrument(instrument_id, user_id)
         return ApiResponse(
             message="提交成功",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -287,10 +289,10 @@ async def submit_instrument(
 async def approve_instrument(
     instrument_id: UUID,
     approved: bool = Query(..., description="是否批准"),
-    comments: Optional[str] = Query(None, description="审批意见"),
+    comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型：admin/qa"),
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """审批仪器"""
     try:
@@ -301,7 +303,7 @@ async def approve_instrument(
         )
         return ApiResponse(
             message="审批完成",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -311,7 +313,7 @@ async def approve_instrument(
 async def activate_instrument(
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """启用仪器"""
     try:
@@ -319,7 +321,7 @@ async def activate_instrument(
         instrument = await service.activate_instrument(instrument_id, user_id)
         return ApiResponse(
             message="启用成功",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -330,7 +332,7 @@ async def deactivate_instrument(
     instrument_id: UUID,
     reason: str = Query(..., description="停用原因"),
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """停用仪器"""
     try:
@@ -338,7 +340,7 @@ async def deactivate_instrument(
         instrument = await service.deactivate_instrument(instrument_id, reason, user_id)
         return ApiResponse(
             message="停用成功",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -346,17 +348,20 @@ async def deactivate_instrument(
 
 # ========== 校准规则 API ==========
 
+
 @router.get("/rules", response_model=ApiResponse)
 async def list_calibration_rules(
-    instrument_id: Optional[str] = Query(None, description="仪器ID"),
+    instrument_id: str | None = Query(None, description="仪器ID"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ):
     """获取校准规则列表"""
     rules = await service.list_rules(instrument_id)
-    return ApiResponse(data=[
-        CalibrationRuleResponse.model_validate(rule).model_dump()
-        for rule in rules
-    ])
+    return ApiResponse(
+        data=[
+            CalibrationRuleResponse.model_validate(rule).model_dump() for rule in rules
+        ]
+    )
+
 
 @router.get("/rules/{instrument_id}", response_model=ApiResponse)
 async def get_calibration_rule(
@@ -366,7 +371,9 @@ async def get_calibration_rule(
     """获取仪器校准规则"""
     rule = await service.repository.get_by_instrument_id(instrument_id)
     if rule:
-        return ApiResponse(data=CalibrationRuleResponse.model_validate(rule).model_dump())
+        return ApiResponse(
+            data=CalibrationRuleResponse.model_validate(rule).model_dump()
+        )
     return ApiResponse(data=None)
 
 
@@ -374,7 +381,7 @@ async def get_calibration_rule(
 async def create_calibration_rule(
     data: CalibrationRuleCreate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """创建校准规则"""
     try:
@@ -382,7 +389,7 @@ async def create_calibration_rule(
         rule = await service.create_rule(data, user_id)
         return ApiResponse(
             message="创建成功",
-            data=CalibrationRuleResponse.model_validate(rule).model_dump()
+            data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -393,7 +400,7 @@ async def update_calibration_rule(
     rule_id: UUID,
     data: CalibrationRuleUpdate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """更新校准规则"""
     try:
@@ -401,7 +408,7 @@ async def update_calibration_rule(
         rule = await service.update_rule(rule_id, data, user_id)
         return ApiResponse(
             message="更新成功",
-            data=CalibrationRuleResponse.model_validate(rule).model_dump()
+            data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -427,31 +434,38 @@ async def get_upcoming_calibrations(
 ):
     """获取即将到期的校准计划"""
     rules = await service.get_upcoming_calibrations(days)
-    return ApiResponse(data=[
-        {
-            "id": str(rule.id),
-            "instrument_id": str(rule.instrument_id),
-            "instrument_name": rule.instrument.instrument_name if rule.instrument else None,
-            "calibration_method": rule.calibration_method,
-            "next_calibration_date": rule.next_calibration_date.isoformat() if rule.next_calibration_date else None,
-            "warning_days": rule.warning_days,
-        }
-        for rule in rules
-    ])
+    return ApiResponse(
+        data=[
+            {
+                "id": str(rule.id),
+                "instrument_id": str(rule.instrument_id),
+                "instrument_name": rule.instrument.instrument_name
+                if rule.instrument
+                else None,
+                "calibration_method": rule.calibration_method,
+                "next_calibration_date": rule.next_calibration_date.isoformat()
+                if rule.next_calibration_date
+                else None,
+                "warning_days": rule.warning_days,
+            }
+            for rule in rules
+        ]
+    )
 
 
 # ========== 校准记录 API ==========
 
+
 @router.get("/records", response_model=ApiResponse)
 async def list_calibration_records(
-    instrument_id: Optional[str] = Query(None, description="仪器ID"),
-    rule_id: Optional[str] = Query(None, description="校准规则ID"),
-    calibration_no: Optional[str] = Query(None, description="校准单据编号"),
-    calibration_result: Optional[str] = Query(None, description="校准结论"),
-    status: Optional[str] = Query(None, description="状态"),
-    calibration_method: Optional[str] = Query(None, description="校准方式"),
-    start_date: Optional[str] = Query(None, description="开始日期"),
-    end_date: Optional[str] = Query(None, description="结束日期"),
+    instrument_id: str | None = Query(None, description="仪器ID"),
+    rule_id: str | None = Query(None, description="校准规则ID"),
+    calibration_no: str | None = Query(None, description="校准单据编号"),
+    calibration_result: str | None = Query(None, description="校准结论"),
+    status: str | None = Query(None, description="状态"),
+    calibration_method: str | None = Query(None, description="校准方式"),
+    start_date: str | None = Query(None, description="开始日期"),
+    end_date: str | None = Query(None, description="结束日期"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: CalibrationRecordService = Depends(get_record_service),
@@ -473,7 +487,7 @@ async def list_calibration_records(
         start_date=start_dt,
         end_date=end_dt,
         page=page,
-        page_size=page_size
+        page_size=page_size,
     )
 
     # 获取仪器信息
@@ -481,29 +495,34 @@ async def list_calibration_records(
     items = []
     for record in records:
         instrument = await instrument_service.repository.get_by_id(record.instrument_id)
-        items.append({
-            "id": str(record.id),
-            "calibration_no": record.calibration_no,
-            "instrument_id": str(record.instrument_id),
-            "rule_id": str(record.rule_id) if record.rule_id else None,
-            "instrument_no": instrument.instrument_no if instrument else None,
-            "instrument_name": instrument.instrument_name if instrument else None,
-            "calibration_date": record.calibration_date.isoformat() if record.calibration_date else None,
-            "valid_until": record.valid_until.isoformat() if record.valid_until else None,
-            "calibration_method": record.calibration_method,
-            "calibration_result": record.calibration_result,
-            "status": record.status,
-            "calibrator_name": record.calibrator_name,
-            "certificate_no": record.certificate_no,
-            "created_at": record.created_at.isoformat() if record.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(record.id),
+                "calibration_no": record.calibration_no,
+                "instrument_id": str(record.instrument_id),
+                "rule_id": str(record.rule_id) if record.rule_id else None,
+                "instrument_no": instrument.instrument_no if instrument else None,
+                "instrument_name": instrument.instrument_name if instrument else None,
+                "calibration_date": record.calibration_date.isoformat()
+                if record.calibration_date
+                else None,
+                "valid_until": record.valid_until.isoformat()
+                if record.valid_until
+                else None,
+                "calibration_method": record.calibration_method,
+                "calibration_result": record.calibration_result,
+                "status": record.status,
+                "calibrator_name": record.calibrator_name,
+                "certificate_no": record.certificate_no,
+                "created_at": record.created_at.isoformat()
+                if record.created_at
+                else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size
-    })
+    return ApiResponse(
+        data={"items": items, "total": total, "page": page, "page_size": page_size}
+    )
 
 
 @router.get("/records/{record_id}", response_model=ApiResponse)
@@ -514,7 +533,9 @@ async def get_calibration_record(
     """获取校准记录详情"""
     try:
         record = await service.get_record(record_id)
-        return ApiResponse(data=CalibrationRecordResponse.model_validate(record).model_dump())
+        return ApiResponse(
+            data=CalibrationRecordResponse.model_validate(record).model_dump()
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -523,7 +544,7 @@ async def get_calibration_record(
 async def create_calibration_record(
     data: CalibrationRecordCreate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """创建校准记录"""
     try:
@@ -531,7 +552,7 @@ async def create_calibration_record(
         record = await service.create_record(data, user_id)
         return ApiResponse(
             message="创建成功",
-            data=CalibrationRecordResponse.model_validate(record).model_dump()
+            data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -542,7 +563,7 @@ async def update_calibration_record(
     record_id: UUID,
     data: CalibrationRecordUpdate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """更新校准记录"""
     try:
@@ -550,7 +571,7 @@ async def update_calibration_record(
         record = await service.update_record(record_id, data, user_id)
         return ApiResponse(
             message="更新成功",
-            data=CalibrationRecordResponse.model_validate(record).model_dump()
+            data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -573,7 +594,7 @@ async def delete_calibration_record(
 async def submit_calibration_record(
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """提交校准记录"""
     try:
@@ -581,7 +602,7 @@ async def submit_calibration_record(
         record = await service.submit_record(record_id, user_id)
         return ApiResponse(
             message="提交成功",
-            data=CalibrationRecordResponse.model_validate(record).model_dump()
+            data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -591,10 +612,10 @@ async def submit_calibration_record(
 async def approve_calibration_record(
     record_id: UUID,
     approved: bool = Query(..., description="是否批准"),
-    comments: Optional[str] = Query(None, description="审批意见"),
+    comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型：admin/qa"),
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """审批校准记录"""
     try:
@@ -605,13 +626,14 @@ async def approve_calibration_record(
         )
         return ApiResponse(
             message="审批完成",
-            data=CalibrationRecordResponse.model_validate(record).model_dump()
+            data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 # ========== 仪器设备详情/更新/删除 API (必须在/records之后) ==========
+
 
 @router.get("/{instrument_id}", response_model=ApiResponse)
 async def get_instrument(
@@ -621,7 +643,9 @@ async def get_instrument(
     """获取仪器详情"""
     try:
         instrument = await service.get_instrument(instrument_id)
-        return ApiResponse(data=InstrumentResponse.model_validate(instrument).model_dump())
+        return ApiResponse(
+            data=InstrumentResponse.model_validate(instrument).model_dump()
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -631,7 +655,7 @@ async def update_instrument(
     instrument_id: UUID,
     data: InstrumentUpdate,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """更新仪器设备"""
     try:
@@ -639,7 +663,7 @@ async def update_instrument(
         instrument = await service.update_instrument(instrument_id, data, user_id)
         return ApiResponse(
             message="更新成功",
-            data=InstrumentResponse.model_validate(instrument).model_dump()
+            data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -660,18 +684,18 @@ async def delete_instrument(
 
 # ========== AI 识别 API ==========
 
+
 @router.post("/recognize", response_model=ApiResponse)
 async def recognize_instrument_label(
     file: UploadFile = File(..., description="仪器标签图片"),
 ):
     """AI识别仪器标签图片，提取设备信息"""
     import json
-    import tempfile
     import os
     from pathlib import Path
 
     # 检查文件类型
-    if not file.content_type or not file.content_type.startswith('image/'):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="请上传图片文件")
 
     # 保存上传的文件到临时目录
@@ -680,7 +704,7 @@ async def recognize_instrument_label(
     uploads_dir.mkdir(parents=True, exist_ok=True)
 
     # 生成唯一文件名
-    suffix = Path(file.filename).suffix if file.filename else '.jpg'
+    suffix = Path(file.filename).suffix if file.filename else ".jpg"
     temp_path = uploads_dir / f"temp_{os.urandom(8).hex()}{suffix}"
 
     try:
@@ -720,11 +744,11 @@ async def recognize_instrument_label(
         try:
             # 尝试提取JSON部分
             json_str = result.strip()
-            if json_str.startswith('```json'):
+            if json_str.startswith("```json"):
                 json_str = json_str[7:]
-            if json_str.startswith('```'):
+            if json_str.startswith("```"):
                 json_str = json_str[3:]
-            if json_str.endswith('```'):
+            if json_str.endswith("```"):
                 json_str = json_str[:-3]
 
             recognized_data = json.loads(json_str.strip())
@@ -737,10 +761,14 @@ async def recognize_instrument_label(
                     "model": recognized_data.get("model", ""),
                     "serial_no": recognized_data.get("serial_no", ""),
                     "manufacturer": recognized_data.get("manufacturer", ""),
-                    "last_calibration_date": recognized_data.get("last_calibration_date", ""),
-                    "next_calibration_date": recognized_data.get("next_calibration_date", ""),
+                    "last_calibration_date": recognized_data.get(
+                        "last_calibration_date", ""
+                    ),
+                    "next_calibration_date": recognized_data.get(
+                        "next_calibration_date", ""
+                    ),
                     "calibration_agency": recognized_data.get("calibration_agency", ""),
-                }
+                },
             )
         except json.JSONDecodeError:
             # AI返回的不是有效JSON，直接返回原始结果
@@ -755,7 +783,7 @@ async def recognize_instrument_label(
                     "last_calibration_date": "",
                     "next_calibration_date": "",
                     "calibration_agency": "",
-                }
+                },
             )
 
     except ValueError as e:
@@ -773,6 +801,7 @@ async def recognize_instrument_label(
 
 # ========== 校准记录到期提醒 API ==========
 
+
 @router.get("/record/upcoming", response_model=ApiResponse)
 async def get_upcoming_calibration_records(
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
@@ -788,19 +817,30 @@ async def get_upcoming_calibration_records(
         days_until_expiry = None
         if record.valid_until:
             from datetime import datetime
-            days_until_expiry = (record.valid_until.replace(tzinfo=None) - datetime.now()).days
 
-        items.append({
-            "id": str(record.id),
-            "calibration_no": record.calibration_no,
-            "instrument_id": str(record.instrument_id) if record.instrument_id else None,
-            "instrument_no": instrument.instrument_no if instrument else None,
-            "instrument_name": instrument.instrument_name if instrument else None,
-            "calibration_date": record.calibration_date.isoformat() if record.calibration_date else None,
-            "valid_until": record.valid_until.isoformat() if record.valid_until else None,
-            "calibration_result": record.calibration_result,
-            "days_until_expiry": days_until_expiry,
-        })
+            days_until_expiry = (
+                record.valid_until.replace(tzinfo=None) - datetime.now()
+            ).days
+
+        items.append(
+            {
+                "id": str(record.id),
+                "calibration_no": record.calibration_no,
+                "instrument_id": str(record.instrument_id)
+                if record.instrument_id
+                else None,
+                "instrument_no": instrument.instrument_no if instrument else None,
+                "instrument_name": instrument.instrument_name if instrument else None,
+                "calibration_date": record.calibration_date.isoformat()
+                if record.calibration_date
+                else None,
+                "valid_until": record.valid_until.isoformat()
+                if record.valid_until
+                else None,
+                "calibration_result": record.calibration_result,
+                "days_until_expiry": days_until_expiry,
+            }
+        )
 
     return ApiResponse(
         message="获取成功",
@@ -808,7 +848,7 @@ async def get_upcoming_calibration_records(
             "items": items,
             "total": len(items),
             "days": days,
-        }
+        },
     )
 
 
@@ -819,27 +859,30 @@ async def get_records_for_reminder(
 ):
     """获取需要提醒的记录（超期 + 即将到期）"""
     result = await service.get_records_for_reminder(days=days)
-    return ApiResponse(
-        message="获取成功",
-        data=result
-    )
+    return ApiResponse(message="获取成功", data=result)
 
 
 @router.post("/record/remind", response_model=ApiResponse)
 async def send_calibration_reminder(
     chat_id: str = Query(..., description="飞书群ID或用户ID或open_id"),
-    receive_id_type: str = Query("chat_id", description="接收者类型: chat_id/user_id/open_id"),
+    receive_id_type: str = Query(
+        "chat_id", description="接收者类型: chat_id/user_id/open_id"
+    ),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     include_overdue: bool = Query(True, description="是否包含超期记录"),
-    feishu_app_id: Optional[str] = Query(None, description="飞书应用AppID"),
-    feishu_app_secret: Optional[str] = Query(None, description="飞书应用AppSecret"),
+    feishu_app_id: str | None = Query(None, description="飞书应用AppID"),
+    feishu_app_secret: str | None = Query(None, description="飞书应用AppSecret"),
     service: CalibrationRecordService = Depends(get_record_service),
 ):
     """发送校准记录到期提醒到飞书"""
-    from app.platform.notification.feishu_client_config import send_feishu_card_from_config
     import logging
+
+    from app.platform.notification.feishu_client_config import (
+        send_feishu_card_from_config,
+    )
+
     logger = logging.getLogger(__name__)
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     try:
         # 获取即将到期的记录
@@ -855,12 +898,11 @@ async def send_calibration_reminder(
 
     if not records and not overdue_records:
         return ApiResponse(
-            message="没有需要提醒的校准记录",
-            data={"sent": False, "count": 0}
+            message="没有需要提醒的校准记录", data={"sent": False, "count": 0}
         )
 
     # 构建消息内容
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     content_lines = []
     overdue_count = 0
     upcoming_count = 0
@@ -930,7 +972,9 @@ async def send_calibration_reminder(
                 title=title,
                 content=content,
             )
-            logger.info(f"成功发送校准提醒到 {receive_id_type}: {chat_id}，共 {total_count} 条记录（超期{overdue_count}条，即将到期{upcoming_count}条）")
+            logger.info(
+                f"成功发送校准提醒到 {receive_id_type}: {chat_id}，共 {total_count} 条记录（超期{overdue_count}条，即将到期{upcoming_count}条）"
+            )
 
             return ApiResponse(
                 message="发送成功",
@@ -941,7 +985,7 @@ async def send_calibration_reminder(
                     "upcoming_count": upcoming_count,
                     "chat_id": chat_id,
                     "receive_id_type": receive_id_type,
-                }
+                },
             )
         except Exception as e:
             logger.error(f"发送飞书提醒失败: {str(e)}")
@@ -950,13 +994,14 @@ async def send_calibration_reminder(
 
 # ========== 自动提醒触发 API ==========
 
+
 @router.post("/reminder/auto-trigger", response_model=ApiResponse)
 async def auto_trigger_reminders(
     service: ReminderConfigService = Depends(get_reminder_config_service),
     record_service: CalibrationRecordService = Depends(get_record_service),
 ):
     """触发自动提醒（可由定时任务调用）"""
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     logger = logging.getLogger(__name__)
 
@@ -970,57 +1015,89 @@ async def auto_trigger_reminders(
         if not config.chat_id:
             continue
 
-        config_results = {
-            "config_name": config.name,
-            "sent": [],
-            "errors": []
-        }
+        config_results = {"config_name": config.name, "sent": [], "errors": []}
 
         # 30天提醒
         if config.remind_30_days:
-            if not config.last_remind_30_days or (now - config.last_remind_30_days).days >= 1:
+            if (
+                not config.last_remind_30_days
+                or (now - config.last_remind_30_days).days >= 1
+            ):
                 try:
                     records = await record_service.get_upcoming_records(days=30)
                     # 只取刚好30天左右的记录
-                    records_30 = [r for r in records if r.valid_until and 28 <= (r.valid_until.replace(tzinfo=None) - now).days <= 32]
+                    records_30 = [
+                        r
+                        for r in records
+                        if r.valid_until
+                        and 28 <= (r.valid_until.replace(tzinfo=None) - now).days <= 32
+                    ]
                     if records_30:
                         await _send_reminder(records_30, config, "30天")
-                        await service.repository.update(config.id, {"last_remind_30_days": now})
+                        await service.repository.update(
+                            config.id, {"last_remind_30_days": now}
+                        )
                         config_results["sent"].append(f"30天提醒: {len(records_30)}条")
                 except Exception as e:
                     config_results["errors"].append(f"30天提醒失败: {str(e)}")
 
         # 14天提醒
         if config.remind_14_days:
-            if not config.last_remind_14_days or (now - config.last_remind_14_days).days >= 1:
+            if (
+                not config.last_remind_14_days
+                or (now - config.last_remind_14_days).days >= 1
+            ):
                 try:
                     records = await record_service.get_upcoming_records(days=14)
-                    records_14 = [r for r in records if r.valid_until and 12 <= (r.valid_until.replace(tzinfo=None) - now).days <= 16]
+                    records_14 = [
+                        r
+                        for r in records
+                        if r.valid_until
+                        and 12 <= (r.valid_until.replace(tzinfo=None) - now).days <= 16
+                    ]
                     if records_14:
                         await _send_reminder(records_14, config, "14天")
-                        await service.repository.update(config.id, {"last_remind_14_days": now})
+                        await service.repository.update(
+                            config.id, {"last_remind_14_days": now}
+                        )
                         config_results["sent"].append(f"14天提醒: {len(records_14)}条")
                 except Exception as e:
                     config_results["errors"].append(f"14天提醒失败: {str(e)}")
 
         # 7天提醒
         if config.remind_7_days:
-            if not config.last_remind_7_days or (now - config.last_remind_7_days).days >= 1:
+            if (
+                not config.last_remind_7_days
+                or (now - config.last_remind_7_days).days >= 1
+            ):
                 try:
                     records = await record_service.get_upcoming_records(days=7)
-                    records_7 = [r for r in records if r.valid_until and 5 <= (r.valid_until.replace(tzinfo=None) - now).days <= 9]
+                    records_7 = [
+                        r
+                        for r in records
+                        if r.valid_until
+                        and 5 <= (r.valid_until.replace(tzinfo=None) - now).days <= 9
+                    ]
                     if records_7:
                         await _send_reminder(records_7, config, "7天")
-                        await service.repository.update(config.id, {"last_remind_7_days": now})
+                        await service.repository.update(
+                            config.id, {"last_remind_7_days": now}
+                        )
                         config_results["sent"].append(f"7天提醒: {len(records_7)}条")
                 except Exception as e:
                     config_results["errors"].append(f"7天提醒失败: {str(e)}")
 
         # 超期提醒
         if config.remind_overdue:
-            if not config.last_remind_overdue or (now - config.last_remind_overdue).days >= 1:
+            if (
+                not config.last_remind_overdue
+                or (now - config.last_remind_overdue).days >= 1
+            ):
                 try:
-                    from app.modules.quality.qms.instrument_repository import CalibrationRecordRepository
+                    from app.modules.quality.qms.instrument_repository import (
+                        CalibrationRecordRepository,
+                    )
+
                     repo = CalibrationRecordRepository(record_service.session)
                     # 查询已超期的记录
                     overdue_records = []
@@ -1030,33 +1107,39 @@ async def auto_trigger_reminders(
                         .where(
                             and_(
                                 InstrumentCalibrationRecord.is_deleted == False,
-                                InstrumentCalibrationRecord.status == 'active',
+                                InstrumentCalibrationRecord.status == "active",
                                 InstrumentCalibrationRecord.valid_until.isnot(None),
-                                InstrumentCalibrationRecord.valid_until < now
+                                InstrumentCalibrationRecord.valid_until < now,
                             )
                         )
                         .order_by(InstrumentCalibrationRecord.valid_until)
                     )
                     overdue_records = list(result.scalars().all())
                     if overdue_records:
-                        await _send_reminder(overdue_records, config, "已超期", is_overdue=True)
-                        await service.repository.update(config.id, {"last_remind_overdue": now})
-                        config_results["sent"].append(f"超期提醒: {len(overdue_records)}条")
+                        await _send_reminder(
+                            overdue_records, config, "已超期", is_overdue=True
+                        )
+                        await service.repository.update(
+                            config.id, {"last_remind_overdue": now}
+                        )
+                        config_results["sent"].append(
+                            f"超期提醒: {len(overdue_records)}条"
+                        )
                 except Exception as e:
                     config_results["errors"].append(f"超期提醒失败: {str(e)}")
 
         results.append(config_results)
 
-    return ApiResponse(
-        message="自动提醒执行完成",
-        data={"results": results}
-    )
+    return ApiResponse(message="自动提醒执行完成", data={"results": results})
 
 
 async def _send_reminder(records, config, reminder_type, is_overdue=False):
     """发送提醒的内部函数"""
     from datetime import datetime
-    from app.platform.notification.feishu_client_config import send_feishu_card_from_config
+
+    from app.platform.notification.feishu_client_config import (
+        send_feishu_card_from_config,
+    )
 
     content_lines = []
     for record in records:
@@ -1067,10 +1150,14 @@ async def _send_reminder(records, config, reminder_type, is_overdue=False):
         if record.valid_until:
             valid_until_str = record.valid_until.strftime("%Y-%m-%d")
             if is_overdue:
-                days_ago = (datetime.now() - record.valid_until.replace(tzinfo=None)).days
+                days_ago = (
+                    datetime.now() - record.valid_until.replace(tzinfo=None)
+                ).days
                 days_str = f"已超期 {days_ago} 天"
             else:
-                days_left = (record.valid_until.replace(tzinfo=None) - datetime.now()).days
+                days_left = (
+                    record.valid_until.replace(tzinfo=None) - datetime.now()
+                ).days
                 days_str = f"剩余 {days_left} 天"
         else:
             valid_until_str = "未设置"

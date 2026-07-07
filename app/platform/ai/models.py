@@ -13,6 +13,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     """AI 模块独立的 Base 类"""
+
     pass
 
 
@@ -21,6 +22,7 @@ class QmsAiLog(Base):
 
     记录系统内所有 AI 能力调用日志，支持审计追溯和调用分析。
     """
+
     __tablename__ = "qms_ai_log"
     __table_args__ = {"schema": "qms"}
 

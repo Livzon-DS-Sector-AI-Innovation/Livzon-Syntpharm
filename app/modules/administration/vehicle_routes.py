@@ -1,4 +1,3 @@
-import asyncio
 import os
 from urllib.parse import quote
 
@@ -8,7 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import success_response
-from app.modules.administration.schemas import VehicleCreate, VehicleResponse, VehicleUpdate
+from app.modules.administration.schemas import (
+    VehicleCreate,
+    VehicleResponse,
+    VehicleUpdate,
+)
 from app.modules.administration.service import VehicleService
 from app.shared.schemas import PageParams
 
@@ -95,41 +98,69 @@ async def delete_vehicle(
 async def download_vehicle_template():
     """提供车辆批量导入模板下载."""
     template_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "..", "scripts", "车辆信息批量导入模板.xlsx"
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "..",
+        "..",
+        "scripts",
+        "车辆信息批量导入模板.xlsx",
     )
 
     if not os.path.exists(template_path):
         # 如果模板不存在，使用内存中的模板
         from io import BytesIO
+
         import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = '车辆导入模板'
+        ws.title = "车辆导入模板"
 
         # 样式定义
-        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
-        header_font = Font(color='FFFFFF', bold=True, size=11)
-        header_align = Alignment(horizontal='center', vertical='center')
-        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        header_fill = PatternFill(
+            start_color="4472C4", end_color="4472C4", fill_type="solid"
+        )
+        header_font = Font(color="FFFFFF", bold=True, size=11)
+        header_align = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
 
         # 标题行
-        ws.merge_cells('A1:I1')
-        ws['A1'] = '车辆信息批量导入模板'
-        ws['A1'].font = Font(size=16, bold=True)
-        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells("A1:I1")
+        ws["A1"] = "车辆信息批量导入模板"
+        ws["A1"].font = Font(size=16, bold=True)
+        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
         ws.row_dimensions[1].height = 30
 
         # 说明行
-        ws.merge_cells('A2:I2')
-        ws['A2'] = '说明：请按以下格式填写数据，带 * 的为必填项。图片列支持填写图片URL或留空（导入后可在页面单独上传）。'
-        ws['A2'].font = Font(size=10, color='666666')
-        ws['A2'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        ws.merge_cells("A2:I2")
+        ws["A2"] = (
+            "说明：请按以下格式填写数据，带 * 的为必填项。图片列支持填写图片URL或留空（导入后可在页面单独上传）。"
+        )
+        ws["A2"].font = Font(size=10, color="666666")
+        ws["A2"].alignment = Alignment(
+            horizontal="left", vertical="center", wrap_text=True
+        )
         ws.row_dimensions[2].height = 35
 
         # 列标题
-        headers = ['*车牌号', '品牌', '型号', '颜色', '行驶里程', '状态', '所属部门', '图片', '备注']
+        headers = [
+            "*车牌号",
+            "品牌",
+            "型号",
+            "颜色",
+            "行驶里程",
+            "状态",
+            "所属部门",
+            "图片",
+            "备注",
+        ]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=3, column=col, value=header)
             cell.fill = header_fill
@@ -141,9 +172,19 @@ async def download_vehicle_template():
 
         # 示例数据
         sample_data = [
-            ['粤B12345', '丰田', '凯美瑞', '黑色', 50000, '可用', '生产技术部', '', ''],
-            ['粤B67890', '本田', '雅阁', '白色', 35000, '可用', '质量管理部', '', ''],
-            ['粤B11111', '大众', '帕萨特', '银色', 80000, '维修中', '设备工程部', '', '待大修'],
+            ["粤B12345", "丰田", "凯美瑞", "黑色", 50000, "可用", "生产技术部", "", ""],
+            ["粤B67890", "本田", "雅阁", "白色", 35000, "可用", "质量管理部", "", ""],
+            [
+                "粤B11111",
+                "大众",
+                "帕萨特",
+                "银色",
+                80000,
+                "维修中",
+                "设备工程部",
+                "",
+                "待大修",
+            ],
         ]
 
         for row_idx, row_data in enumerate(sample_data, 4):
@@ -156,7 +197,7 @@ async def download_vehicle_template():
         for i, width in enumerate(col_widths, 1):
             ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
 
-        ws.freeze_panes = 'A4'
+        ws.freeze_panes = "A4"
 
         output = BytesIO()
         wb.save(output)
@@ -164,14 +205,14 @@ async def download_vehicle_template():
 
         return StreamingResponse(
             output,
-            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                'Content-Disposition': f"attachment; filename*=UTF-8''{quote('车辆信息批量导入模板.xlsx', safe='')}"
-            }
+                "Content-Disposition": f"attachment; filename*=UTF-8''{quote('车辆信息批量导入模板.xlsx', safe='')}"
+            },
         )
 
     return FileResponse(
         template_path,
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        filename='车辆信息批量导入模板.xlsx'
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="车辆信息批量导入模板.xlsx",
     )

@@ -85,9 +85,7 @@ async def _enrich_multi_device_names(
     if not need_enrich:
         return
 
-    name_map = await repo.get_equipment_names_by_ids(
-        db, list(all_eq_ids)
-    )
+    name_map = await repo.get_equipment_names_by_ids(db, list(all_eq_ids))
     for resp in need_enrich:
         names = [
             name_map.get(eid, str(eid)[:8] + "…")
@@ -110,9 +108,7 @@ async def create_route(
     ),
 ) -> JSONResponse:
     route = await inspection_svc.create_route(db, data.model_dump(), ctx)
-    return success_response(
-        data=InspectionRouteResponse.model_validate(route)
-    )
+    return success_response(data=InspectionRouteResponse.model_validate(route))
 
 
 @router.get("/routes", summary="巡检路线列表")
@@ -141,7 +137,7 @@ async def list_routes(
         resp = InspectionRouteResponse.model_validate(r)
         # 统计未删除的地点下的未删除设备
         count = 0
-        for loc in (r.locations_rel or []):
+        for loc in r.locations_rel or []:
             count += len([e for e in (loc.equipments or []) if not e.is_deleted])
         resp.equipment_count = count
         resp.location_count = len(r.locations_rel or [])
@@ -213,9 +209,7 @@ async def update_route(
 ) -> JSONResponse:
     update_data = data.model_dump(exclude_unset=True)
     route = await inspection_svc.update_route(db, route_id, update_data, ctx)
-    return success_response(
-        data=InspectionRouteResponse.model_validate(route)
-    )
+    return success_response(data=InspectionRouteResponse.model_validate(route))
 
 
 @router.delete("/routes/{route_id}", summary="删除巡检路线")
@@ -230,9 +224,7 @@ async def delete_route(
     return success_response(message="删除成功")
 
 
-@router.post(
-    "/routes/{route_id}/locations", summary="配置路线地点设备模板"
-)
+@router.post("/routes/{route_id}/locations", summary="配置路线地点设备模板")
 async def set_route_locations(
     route_id: uuid.UUID,
     data: RouteLocationsBatch,
@@ -293,12 +285,8 @@ async def list_tasks(
     route_id: uuid.UUID | None = Query(None, description="路线ID"),
     assigned_to: uuid.UUID | None = Query(None, description="巡检人员ID"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
-    planned_time_from: str | None = Query(
-        None, description="计划时间起始"
-    ),
-    planned_time_to: str | None = Query(
-        None, description="计划时间截止"
-    ),
+    planned_time_from: str | None = Query(None, description="计划时间起始"),
+    planned_time_to: str | None = Query(None, description="计划时间截止"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
@@ -308,16 +296,8 @@ async def list_tasks(
 ) -> JSONResponse:
     from datetime import datetime as dt_type
 
-    pt_from = (
-        dt_type.fromisoformat(planned_time_from)
-        if planned_time_from
-        else None
-    )
-    pt_to = (
-        dt_type.fromisoformat(planned_time_to)
-        if planned_time_to
-        else None
-    )
+    pt_from = dt_type.fromisoformat(planned_time_from) if planned_time_from else None
+    pt_to = dt_type.fromisoformat(planned_time_to) if planned_time_to else None
 
     tasks, total = await inspection_svc.get_tasks(
         db,
@@ -432,9 +412,7 @@ async def submit_equipment_check(
         db, task_id, equipment_id, records, ctx
     )
     return success_response(
-        data=[
-            InspectionRecordResponse.model_validate(r) for r in result
-        ]
+        data=[InspectionRecordResponse.model_validate(r) for r in result]
     )
 
 
@@ -451,12 +429,8 @@ async def upload_equipment_photo(
         require_equipment_access("equipment:inspection:create"),
     ),
 ) -> JSONResponse:
-    photo = await inspection_svc.upload_photo(
-        db, task_id, equipment_id, file
-    )
-    return success_response(
-        data=InspectionPhotoResponse.model_validate(photo)
-    )
+    photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
+    return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
 
 @router.post(
@@ -471,12 +445,8 @@ async def upload_task_photo(
         require_equipment_access("equipment:inspection:create"),
     ),
 ) -> JSONResponse:
-    photo = await inspection_svc.upload_photo(
-        db, task_id, equipment_id=None, file=file
-    )
-    return success_response(
-        data=InspectionPhotoResponse.model_validate(photo)
-    )
+    photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
+    return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
 
 @router.get("/tasks/{task_id}/photos", summary="获取任务所有照片")
@@ -489,9 +459,7 @@ async def get_task_photos(
 ) -> JSONResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
     return success_response(
-        data=[
-            InspectionPhotoResponse.model_validate(p) for p in photos
-        ]
+        data=[InspectionPhotoResponse.model_validate(p) for p in photos]
     )
 
 
@@ -523,9 +491,7 @@ async def serve_photo(
     return FileResponse(photo.file_path)
 
 
-@router.delete(
-    "/tasks/{task_id}/photos/{photo_id}", summary="删除照片"
-)
+@router.delete("/tasks/{task_id}/photos/{photo_id}", summary="删除照片")
 async def remove_photo(
     task_id: uuid.UUID,
     photo_id: uuid.UUID,
@@ -634,9 +600,11 @@ async def get_history_detail(
     for r in detail["records"]:
         if r.equipment_id:
             record_eq_ids.add(r.equipment_id)
-    eq_name_map = await repo.get_equipment_names_by_ids(
-        db, list(record_eq_ids)
-    ) if record_eq_ids else {}
+    eq_name_map = (
+        await repo.get_equipment_names_by_ids(db, list(record_eq_ids))
+        if record_eq_ids
+        else {}
+    )
 
     model = InspectionTaskDetailResponse(
         **resp.model_dump(),
@@ -652,29 +620,21 @@ async def get_history_detail(
                 result=r.result,
                 actual_value=r.actual_value,
                 remark=r.remark,
-                item_name=(
-                    r.template_item.item_name
-                    if r.template_item
-                    else None
-                ),
+                item_name=(r.template_item.item_name if r.template_item else None),
                 expected_result=(
-                    r.template_item.expected_result
-                    if r.template_item
-                    else None
+                    r.template_item.expected_result if r.template_item else None
                 ),
                 created_at=r.created_at,
             )
             for r in detail["records"]
         ],
-        photos=[
-            InspectionPhotoResponse.model_validate(p)
-            for p in detail["photos"]
-        ],
+        photos=[InspectionPhotoResponse.model_validate(p) for p in detail["photos"]],
     )
     return success_response(data=model)
 
 
 # ═══════════ 路线定时任务 ═══════════
+
 
 @router.get(
     "/routes/{route_id}/schedules",

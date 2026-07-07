@@ -134,8 +134,7 @@ async def search_personnel(
     )
     return {
         "items": [
-            PersonnelItem.model_validate(user).model_dump(mode="json")
-            for user in users
+            PersonnelItem.model_validate(user).model_dump(mode="json") for user in users
         ],
         "total": total,
         "offset": data.offset,
@@ -189,7 +188,8 @@ async def send_feishu_message(
         actions=[
             item.model_dump(mode="json", exclude_none=True)
             for item in data.actions or []
-        ] or None,
+        ]
+        or None,
         business_ref=data.business_ref,
     )
 

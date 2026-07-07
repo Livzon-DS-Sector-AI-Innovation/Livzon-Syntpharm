@@ -1,8 +1,8 @@
 """Warehouse business workflows live here."""
-import logging
 
 import asyncio
 import hashlib
+import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -44,6 +44,7 @@ NUMERIC_FIELD_FILTER_OPERATORS = {"gt", "gte", "lt", "lte"}
 
 
 logger = logging.getLogger(__name__)
+
 
 def _safe_number(value: float | int | None) -> float:
     if value is None:
@@ -921,7 +922,9 @@ class WarehouseService:
                 app_tokens=self._config_app_tokens(config),
             )
         except Exception:
-            logger.warning("Failed to restart warehouse WebSocket after config save", exc_info=True)
+            logger.warning(
+                "Failed to restart warehouse WebSocket after config save", exc_info=True
+            )
 
     async def _after_feishu_config_saved(self, config: WarehouseFeishuConfig) -> None:
         try:

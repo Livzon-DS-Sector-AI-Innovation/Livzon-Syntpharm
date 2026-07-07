@@ -38,7 +38,9 @@ class BitableClient:
     ) -> None:
         self.client = FeishuClient(auth=auth)
         self.app_token = (
-            app_token if app_token is not None else _settings.feishu.hr_bitable.app_token
+            app_token
+            if app_token is not None
+            else _settings.feishu.hr_bitable.app_token
         )
 
     def _path(self, table_id: str, suffix: str = "") -> str:

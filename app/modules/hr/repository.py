@@ -31,7 +31,9 @@ class EmployeeRepository:
 
     async def get_by_id(self, employee_id: UUID) -> Employee | None:
         result = await self.session.execute(
-            select(Employee).where(Employee.id == employee_id, Employee.is_deleted.is_(False))
+            select(Employee).where(
+                Employee.id == employee_id, Employee.is_deleted.is_(False)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -280,9 +282,7 @@ class EmployeeRepository:
         result = await self.session.execute(stmt)
         rows = result.all()
         return [
-            {"value": row[0], "count": row[1]}
-            for row in rows
-            if row[0] is not None
+            {"value": row[0], "count": row[1]} for row in rows if row[0] is not None
         ]
 
     async def get_distinct_values(self, field_name: str, **filters) -> list[str]:
@@ -321,7 +321,9 @@ class DepartmentRepository:
 
     async def get_by_id(self, department_id: UUID) -> Department | None:
         result = await self.session.execute(
-            select(Department).where(Department.id == department_id, Department.is_deleted.is_(False))
+            select(Department).where(
+                Department.id == department_id, Department.is_deleted.is_(False)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -393,16 +395,17 @@ class TeamRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Team], int]:
-        stmt = select(Team).where(Team.is_deleted.is_(False)).options(
-            selectinload(Team.department)
+        stmt = (
+            select(Team)
+            .where(Team.is_deleted.is_(False))
+            .options(selectinload(Team.department))
         )
 
         if department_id:
             stmt = stmt.where(Team.department_id == department_id)
         if keyword:
             stmt = stmt.where(
-                Team.name.ilike(f"%{keyword}%")
-                | Team.code.ilike(f"%{keyword}%")
+                Team.name.ilike(f"%{keyword}%") | Team.code.ilike(f"%{keyword}%")
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
@@ -438,7 +441,10 @@ class OffboardingRecordRepository:
     async def get_by_id(self, record_id: UUID) -> OffboardingRecord | None:
         result = await self.session.execute(
             select(OffboardingRecord)
-            .where(OffboardingRecord.id == record_id, OffboardingRecord.is_deleted.is_(False))
+            .where(
+                OffboardingRecord.id == record_id,
+                OffboardingRecord.is_deleted.is_(False),
+            )
             .options(selectinload(OffboardingRecord.employee))
         )
         return result.scalar_one_or_none()
@@ -504,7 +510,9 @@ class OnboardingRecordRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> OnboardingRecord | None:
+    async def get_by_feishu_record_id(
+        self, feishu_record_id: str
+    ) -> OnboardingRecord | None:
         result = await self.session.execute(
             select(OnboardingRecord).where(
                 OnboardingRecord.feishu_record_id == feishu_record_id,
@@ -580,7 +588,9 @@ class OnboardingRecordRepository:
             await self.session.refresh(record)
             return record
         else:
-            new_record = OnboardingRecord(**{k: v for k, v in data.items() if v is not None})
+            new_record = OnboardingRecord(
+                **{k: v for k, v in data.items() if v is not None}
+            )
             self.session.add(new_record)
             await self.session.flush()
             await self.session.refresh(new_record)
@@ -619,7 +629,9 @@ class DepartureRecordRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> DepartureRecord | None:
+    async def get_by_feishu_record_id(
+        self, feishu_record_id: str
+    ) -> DepartureRecord | None:
         result = await self.session.execute(
             select(DepartureRecord).where(
                 DepartureRecord.feishu_record_id == feishu_record_id,
@@ -653,7 +665,9 @@ class DepartureRecordRepository:
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(DepartureRecord, sort_by, DepartureRecord.offboarding_date)
+        sort_column = getattr(
+            DepartureRecord, sort_by, DepartureRecord.offboarding_date
+        )
         order_func = desc if sort_order == "desc" else asc
         data_stmt = (
             stmt.order_by(order_func(sort_column))
@@ -693,7 +707,9 @@ class DepartureRecordRepository:
             await self.session.refresh(record)
             return record
         else:
-            new_record = DepartureRecord(**{k: v for k, v in data.items() if v is not None})
+            new_record = DepartureRecord(
+                **{k: v for k, v in data.items() if v is not None}
+            )
             self.session.add(new_record)
             await self.session.flush()
             await self.session.refresh(new_record)
@@ -785,7 +801,9 @@ class TrainingLedgerRepository:
         record.is_deleted = True
         await self.session.flush()
 
-    async def get_by_source(self, source_type: str, source_id: str) -> TrainingLedger | None:
+    async def get_by_source(
+        self, source_type: str, source_id: str
+    ) -> TrainingLedger | None:
         result = await self.session.execute(
             select(TrainingLedger).where(
                 TrainingLedger.source_type == source_type,
@@ -863,12 +881,17 @@ class TrainingSessionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_select_tasks_json_token(self, token: str) -> TrainingSession | None:
+    async def get_by_select_tasks_json_token(
+        self, token: str
+    ) -> TrainingSession | None:
         """Search for a session where the token exists inside the select_tasks JSON array."""
-        from sqlalchemy import cast, String
+        from sqlalchemy import String, cast
+
         result = await self.session.execute(
             select(TrainingSession).where(
-                cast(TrainingSession.select_tasks, String).like(f'%"token": "{token}"%'),
+                cast(TrainingSession.select_tasks, String).like(
+                    f'%"token": "{token}"%'
+                ),
                 TrainingSession.is_deleted.is_(False),
             )
         )
@@ -900,7 +923,9 @@ class TrainingLedgerPageRepository:
         )
         return list(result.scalars().all())
 
-    async def get_by_employee_number(self, employee_number: str, ledger_type: str = "event") -> TrainingLedgerPage | None:
+    async def get_by_employee_number(
+        self, employee_number: str, ledger_type: str = "event"
+    ) -> TrainingLedgerPage | None:
         result = await self.session.execute(
             select(TrainingLedgerPage).where(
                 TrainingLedgerPage.employee_number == employee_number,
@@ -910,7 +935,9 @@ class TrainingLedgerPageRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_pages_with_department(self) -> list[tuple[TrainingLedgerPage, str | None, str | None]]:
+    async def list_pages_with_department(
+        self,
+    ) -> list[tuple[TrainingLedgerPage, str | None, str | None]]:
         """List all training ledger pages joined with employee department and factory.
 
         Tries old factory (employees) first, then new factory (employees_new).
@@ -937,7 +964,9 @@ class TrainingLedgerPageRepository:
         new_map: dict[str, str] = {}
         if remaining:
             new_result = await self.session.execute(
-                text("SELECT employee_number, department FROM hr.employees_new WHERE employee_number = ANY(:nums) AND is_deleted = false"),
+                text(
+                    "SELECT employee_number, department FROM hr.employees_new WHERE employee_number = ANY(:nums) AND is_deleted = false"
+                ),
                 {"nums": remaining},
             )
             new_map = {row[0]: row[1] for row in new_result.all()}
@@ -967,12 +996,17 @@ class AnnualTrainingPlanRepository:
     async def get_by_id(self, plan_id: UUID) -> AnnualTrainingPlan | None:
         result = await self.session.execute(
             select(AnnualTrainingPlan)
-            .where(AnnualTrainingPlan.id == plan_id, AnnualTrainingPlan.is_deleted.is_(False))
+            .where(
+                AnnualTrainingPlan.id == plan_id,
+                AnnualTrainingPlan.is_deleted.is_(False),
+            )
             .options(selectinload(AnnualTrainingPlan.items))
         )
         return result.scalar_one_or_none()
 
-    async def get_by_year_and_department(self, year: int, department: str) -> AnnualTrainingPlan | None:
+    async def get_by_year_and_department(
+        self, year: int, department: str
+    ) -> AnnualTrainingPlan | None:
         result = await self.session.execute(
             select(AnnualTrainingPlan).where(
                 AnnualTrainingPlan.year == year,
@@ -990,7 +1024,9 @@ class AnnualTrainingPlanRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[AnnualTrainingPlan], int]:
-        stmt = select(AnnualTrainingPlan).where(AnnualTrainingPlan.is_deleted.is_(False))
+        stmt = select(AnnualTrainingPlan).where(
+            AnnualTrainingPlan.is_deleted.is_(False)
+        )
 
         if year is not None:
             stmt = stmt.where(AnnualTrainingPlan.year == year)
@@ -1001,7 +1037,9 @@ class AnnualTrainingPlanRepository:
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
 
-        stmt = stmt.order_by(desc(AnnualTrainingPlan.year), asc(AnnualTrainingPlan.department))
+        stmt = stmt.order_by(
+            desc(AnnualTrainingPlan.year), asc(AnnualTrainingPlan.department)
+        )
         stmt = stmt.offset((page - 1) * page_size).limit(page_size)
 
         result = await self.session.execute(stmt)
@@ -1034,7 +1072,10 @@ class AnnualTrainingPlanItemRepository:
                 AnnualTrainingPlanItem.plan_id == plan_id,
                 AnnualTrainingPlanItem.is_deleted.is_(False),
             )
-            .order_by(asc(AnnualTrainingPlanItem.sort_order), asc(AnnualTrainingPlanItem.created_at))
+            .order_by(
+                asc(AnnualTrainingPlanItem.sort_order),
+                asc(AnnualTrainingPlanItem.created_at),
+            )
         )
         return list(result.scalars().all())
 
@@ -1064,7 +1105,9 @@ class AnnualTrainingPlanItemRepository:
 
     async def delete_by_plan_id(self, plan_id: UUID) -> None:
         await self.session.execute(
-            delete(AnnualTrainingPlanItem).where(AnnualTrainingPlanItem.plan_id == plan_id)
+            delete(AnnualTrainingPlanItem).where(
+                AnnualTrainingPlanItem.plan_id == plan_id
+            )
         )
         await self.session.flush()
 
@@ -1075,6 +1118,7 @@ class TrainingSpecialistRepository:
 
     async def list_all(self) -> list:
         from app.modules.hr.models import TrainingSpecialist
+
         result = await self.session.execute(
             select(TrainingSpecialist).where(TrainingSpecialist.is_deleted.is_(False))
         )
@@ -1082,6 +1126,7 @@ class TrainingSpecialistRepository:
 
     async def get_by_dept_factory(self, department: str, factory: str):
         from app.modules.hr.models import TrainingSpecialist
+
         result = await self.session.execute(
             select(TrainingSpecialist).where(
                 TrainingSpecialist.department == department,
@@ -1091,8 +1136,11 @@ class TrainingSpecialistRepository:
         )
         return result.scalar_one_or_none()
 
-    async def upsert(self, department: str, employee_number: str, employee_name: str, factory: str):
+    async def upsert(
+        self, department: str, employee_number: str, employee_name: str, factory: str
+    ):
         from app.modules.hr.models import TrainingSpecialist
+
         existing = await self.get_by_dept_factory(department, factory)
         if existing:
             existing.employee_number = employee_number
@@ -1111,6 +1159,7 @@ class TrainingSpecialistRepository:
 
     async def delete(self, specialist_id: UUID) -> None:
         from app.modules.hr.models import TrainingSpecialist
+
         obj = await self.session.get(TrainingSpecialist, specialist_id)
         if obj:
             await self.session.delete(obj)
@@ -1123,6 +1172,7 @@ class TrainingTeamRepository:
 
     async def list_by_factory(self, factory: str) -> list:
         from app.modules.hr.models import TrainingTeam
+
         result = await self.session.execute(
             select(TrainingTeam).where(
                 TrainingTeam.factory == factory,
@@ -1133,6 +1183,7 @@ class TrainingTeamRepository:
 
     async def get_by_id(self, team_id: UUID):
         from app.modules.hr.models import TrainingTeam
+
         result = await self.session.execute(
             select(TrainingTeam).where(
                 TrainingTeam.id == team_id,
@@ -1143,6 +1194,7 @@ class TrainingTeamRepository:
 
     async def create(self, data) -> "TrainingTeam":
         from app.modules.hr.models import TrainingTeam
+
         obj = TrainingTeam(
             name=data.name,
             factory=data.factory,
@@ -1179,7 +1231,9 @@ class CandidateRepository:
 
     async def get_by_id(self, candidate_id: UUID) -> Candidate | None:
         result = await self.session.execute(
-            select(Candidate).where(Candidate.id == candidate_id, Candidate.is_deleted.is_(False))
+            select(Candidate).where(
+                Candidate.id == candidate_id, Candidate.is_deleted.is_(False)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -1206,6 +1260,7 @@ class CandidateRepository:
         sort_order: str = "desc",
     ) -> tuple[list[Candidate], int]:
         import logging
+
         _logger = logging.getLogger(__name__)
         stmt = select(Candidate).where(Candidate.is_deleted.is_(False))
 
@@ -1219,7 +1274,11 @@ class CandidateRepository:
                 | Candidate.position.ilike(f"%{keyword}%")
             )
         if recommendation_level:
-            levels = [level.strip() for level in recommendation_level.split(",") if level.strip()]
+            levels = [
+                level.strip()
+                for level in recommendation_level.split(",")
+                if level.strip()
+            ]
             _logger.debug("REPO levels=%s", levels)
             if levels:
                 stmt = stmt.where(Candidate.recommendation_level.in_(levels))
@@ -1272,7 +1331,9 @@ class CandidateRepository:
             await self.session.refresh(candidate)
             return candidate
         else:
-            new_candidate = Candidate(**{k: v for k, v in data.items() if v is not None})
+            new_candidate = Candidate(
+                **{k: v for k, v in data.items() if v is not None}
+            )
             self.session.add(new_candidate)
             await self.session.flush()
             await self.session.refresh(new_candidate)

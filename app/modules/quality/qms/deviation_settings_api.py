@@ -2,15 +2,14 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.database import get_db_session
 from app.modules.quality.qms.feishu_service import get_feishu_service
+from app.platform.database import get_db_session
 
 router = APIRouter(prefix="/deviation-settings", tags=["偏差提醒设置"])
 
@@ -39,15 +38,18 @@ URGENCY_LEVELS = [
 
 # ============ 请求模型 ============
 
+
 class QAUserRequest(BaseModel):
     """QA人员请求"""
+
     open_id: str = Field(..., description="飞书OpenID")
     name: str = Field(..., description="姓名")
-    department: Optional[str] = Field(None, description="部门")
+    department: str | None = Field(None, description="部门")
 
 
 class LeaderRequest(BaseModel):
     """部门负责人请求"""
+
     open_id: str = Field(..., description="飞书OpenID")
     name: str = Field(..., description="姓名")
     department: str = Field(..., description="负责部门")
@@ -55,26 +57,29 @@ class LeaderRequest(BaseModel):
 
 class ReminderRuleRequest(BaseModel):
     """提醒规则请求"""
-    deviation_type: Optional[str] = Field(None, description="偏差类型")
-    urgency_level: Optional[str] = Field(None, description="紧急等级")
+
+    deviation_type: str | None = Field(None, description="偏差类型")
+    urgency_level: str | None = Field(None, description="紧急等级")
     auto_reminder: bool = Field(True, description="是否自动提醒")
     reminder_time: str = Field("08:30", description="提醒时间")
-    message_template: Optional[str] = Field(None, description="消息模板")
+    message_template: str | None = Field(None, description="消息模板")
 
 
 class AutoTriggerRequest(BaseModel):
     """自动提醒触发请求"""
+
     trigger_type: str = Field(..., description="触发类型")
-    trigger_condition: Optional[str] = Field(None, description="触发条件")
+    trigger_condition: str | None = Field(None, description="触发条件")
     is_enabled: bool = Field(True, description="是否启用")
     notify_qa: bool = Field(True, description="通知QA")
     notify_leader: bool = Field(True, description="通知部门负责人")
     notify_reporter: bool = Field(False, description="通知填报人")
-    custom_message: Optional[str] = Field(None, description="自定义消息")
+    custom_message: str | None = Field(None, description="自定义消息")
 
 
 class MessageTemplateRequest(BaseModel):
     """消息模板请求"""
+
     template_type: str = Field(..., description="模板类型")
     template_name: str = Field(..., description="模板名称")
     title_template: str = Field(..., description="标题模板")
@@ -84,17 +89,19 @@ class MessageTemplateRequest(BaseModel):
 
 class FeishuBotConfigRequest(BaseModel):
     """飞书机器人配置请求"""
-    bot_name: Optional[str] = Field(None, description="机器人名称")
+
+    bot_name: str | None = Field(None, description="机器人名称")
     app_id: str = Field(..., description="App ID")
     app_secret: str = Field(..., description="App Secret")
-    bot_token: Optional[str] = Field(None, description="Bot Token")
-    encrypt_key: Optional[str] = Field(None, description="加密密钥")
-    verification_token: Optional[str] = Field(None, description="验证Token")
+    bot_token: str | None = Field(None, description="Bot Token")
+    encrypt_key: str | None = Field(None, description="加密密钥")
+    verification_token: str | None = Field(None, description="验证Token")
 
 
 # ============ API 接口 ============
 
 # ----- QA人员管理 -----
+
 
 @router.get("/qa-users", summary="获取QA人员列表")
 async def get_qa_users(session: AsyncSession = Depends(get_db_session)):
@@ -109,19 +116,15 @@ async def get_qa_users(session: AsyncSession = Depends(get_db_session)):
     )
     rows = result.fetchall()
     columns = result.keys()
-    
+
     items = []
     for row in rows:
         item = dict(zip(columns, row))
-        item['created_at'] = str(item['created_at']) if item['created_at'] else None
-        item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+        item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+        item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
         items.append(item)
-    
-    return {
-        "code": 200,
-        "message": "success",
-        "data": items
-    }
+
+    return {"code": 200, "message": "success", "data": items}
 
 
 @router.post("/qa-users", summary="添加QA人员")
@@ -132,12 +135,14 @@ async def add_qa_user(
     """添加QA人员配置"""
     # 检查是否已存在
     check = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_qa_config WHERE open_id = :open_id AND is_deleted = FALSE"),
-        {"open_id": request.open_id}
+        text(
+            "SELECT id FROM qms.qms_deviation_qa_config WHERE open_id = :open_id AND is_deleted = FALSE"
+        ),
+        {"open_id": request.open_id},
     )
     if check.fetchone():
         return {"code": 400, "message": "该QA人员已存在", "data": None}
-    
+
     id = str(uuid.uuid4())
     await session.execute(
         text("""
@@ -149,11 +154,11 @@ async def add_qa_user(
             "open_id": request.open_id,
             "name": request.name,
             "department": request.department,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "添加成功", "data": {"id": id}}
 
 
@@ -175,11 +180,11 @@ async def update_qa_user(
             "open_id": request.open_id,
             "name": request.name,
             "department": request.department,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -191,10 +196,10 @@ async def delete_qa_user(
     """删除QA人员（软删除）"""
     await session.execute(
         text("UPDATE qms.qms_deviation_qa_config SET is_deleted = TRUE WHERE id = :id"),
-        {"id": id}
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
@@ -205,15 +210,18 @@ async def toggle_qa_user(
 ):
     """切换QA人员启用状态"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_qa_config SET is_active = NOT is_active WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_qa_config SET is_active = NOT is_active WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
 # ----- 部门负责人管理 -----
+
 
 @router.get("/leaders", summary="获取部门负责人列表")
 async def get_leaders(session: AsyncSession = Depends(get_db_session)):
@@ -228,19 +236,15 @@ async def get_leaders(session: AsyncSession = Depends(get_db_session)):
     )
     rows = result.fetchall()
     columns = result.keys()
-    
+
     items = []
     for row in rows:
         item = dict(zip(columns, row))
-        item['created_at'] = str(item['created_at']) if item['created_at'] else None
-        item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+        item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+        item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
         items.append(item)
-    
-    return {
-        "code": 200,
-        "message": "success",
-        "data": items
-    }
+
+    return {"code": 200, "message": "success", "data": items}
 
 
 @router.post("/leaders", summary="添加部门负责人")
@@ -251,12 +255,14 @@ async def add_leader(
     """添加部门负责人配置"""
     # 检查是否已存在
     check = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_leader_config WHERE open_id = :open_id AND is_deleted = FALSE"),
-        {"open_id": request.open_id}
+        text(
+            "SELECT id FROM qms.qms_deviation_leader_config WHERE open_id = :open_id AND is_deleted = FALSE"
+        ),
+        {"open_id": request.open_id},
     )
     if check.fetchone():
         return {"code": 400, "message": "该部门负责人已存在", "data": None}
-    
+
     id = str(uuid.uuid4())
     await session.execute(
         text("""
@@ -268,11 +274,11 @@ async def add_leader(
             "open_id": request.open_id,
             "name": request.name,
             "department": request.department,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "添加成功", "data": {"id": id}}
 
 
@@ -294,11 +300,11 @@ async def update_leader(
             "open_id": request.open_id,
             "name": request.name,
             "department": request.department,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -309,11 +315,13 @@ async def delete_leader(
 ):
     """删除部门负责人（软删除）"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_leader_config SET is_deleted = TRUE WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_leader_config SET is_deleted = TRUE WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
@@ -324,15 +332,18 @@ async def toggle_leader(
 ):
     """切换部门负责人启用状态"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_leader_config SET is_active = NOT is_active WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_leader_config SET is_active = NOT is_active WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
 # ----- 提醒规则管理 -----
+
 
 @router.get("/rules", summary="获取提醒规则列表")
 async def get_rules(session: AsyncSession = Depends(get_db_session)):
@@ -348,19 +359,15 @@ async def get_rules(session: AsyncSession = Depends(get_db_session)):
     )
     rows = result.fetchall()
     columns = result.keys()
-    
+
     items = []
     for row in rows:
         item = dict(zip(columns, row))
-        item['created_at'] = str(item['created_at']) if item['created_at'] else None
-        item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+        item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+        item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
         items.append(item)
-    
-    return {
-        "code": 200,
-        "message": "success",
-        "data": items
-    }
+
+    return {"code": 200, "message": "success", "data": items}
 
 
 @router.post("/rules", summary="添加提醒规则")
@@ -383,11 +390,11 @@ async def add_rule(
             "auto_reminder": request.auto_reminder,
             "reminder_time": request.reminder_time,
             "message_template": request.message_template,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "添加成功", "data": {"id": id}}
 
 
@@ -413,11 +420,11 @@ async def update_rule(
             "auto_reminder": request.auto_reminder,
             "reminder_time": request.reminder_time,
             "message_template": request.message_template,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -428,11 +435,13 @@ async def delete_rule(
 ):
     """删除提醒规则（软删除）"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_reminder_rules SET is_deleted = TRUE WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_reminder_rules SET is_deleted = TRUE WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
@@ -443,11 +452,13 @@ async def toggle_rule(
 ):
     """切换提醒规则启用状态"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_reminder_rules SET is_active = NOT is_active WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_reminder_rules SET is_active = NOT is_active WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
@@ -478,19 +489,15 @@ async def get_auto_triggers(session: AsyncSession = Depends(get_db_session)):
     )
     rows = result.fetchall()
     columns = result.keys()
-    
+
     items = []
     for row in rows:
         item = dict(zip(columns, row))
-        item['created_at'] = str(item['created_at']) if item['created_at'] else None
-        item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+        item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+        item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
         items.append(item)
-    
-    return {
-        "code": 200,
-        "message": "success",
-        "data": items
-    }
+
+    return {"code": 200, "message": "success", "data": items}
 
 
 @router.post("/auto-triggers", summary="添加自动提醒触发")
@@ -501,12 +508,14 @@ async def add_auto_trigger(
     """添加自动提醒触发配置"""
     # 检查是否已存在相同触发类型
     check = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_auto_trigger WHERE trigger_type = :trigger_type AND is_deleted = FALSE"),
-        {"trigger_type": request.trigger_type}
+        text(
+            "SELECT id FROM qms.qms_deviation_auto_trigger WHERE trigger_type = :trigger_type AND is_deleted = FALSE"
+        ),
+        {"trigger_type": request.trigger_type},
     )
     if check.fetchone():
         return {"code": 400, "message": "该触发类型已存在", "data": None}
-    
+
     id = str(uuid.uuid4())
     await session.execute(
         text("""
@@ -523,11 +532,11 @@ async def add_auto_trigger(
             "notify_leader": request.notify_leader,
             "notify_reporter": request.notify_reporter,
             "custom_message": request.custom_message,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "添加成功", "data": {"id": id}}
 
 
@@ -555,11 +564,11 @@ async def update_auto_trigger(
             "notify_leader": request.notify_leader,
             "notify_reporter": request.notify_reporter,
             "custom_message": request.custom_message,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -570,11 +579,13 @@ async def delete_auto_trigger(
 ):
     """删除自动提醒触发（软删除）"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_auto_trigger SET is_deleted = TRUE WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_auto_trigger SET is_deleted = TRUE WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
@@ -585,11 +596,13 @@ async def toggle_auto_trigger(
 ):
     """切换自动提醒触发启用状态"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_auto_trigger SET is_enabled = NOT is_enabled WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_auto_trigger SET is_enabled = NOT is_enabled WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
@@ -619,19 +632,15 @@ async def get_message_templates(session: AsyncSession = Depends(get_db_session))
     )
     rows = result.fetchall()
     columns = result.keys()
-    
+
     items = []
     for row in rows:
         item = dict(zip(columns, row))
-        item['created_at'] = str(item['created_at']) if item['created_at'] else None
-        item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+        item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+        item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
         items.append(item)
-    
-    return {
-        "code": 200,
-        "message": "success",
-        "data": items
-    }
+
+    return {"code": 200, "message": "success", "data": items}
 
 
 @router.post("/message-templates", summary="添加消息模板")
@@ -643,10 +652,12 @@ async def add_message_template(
     # 如果设为默认模板，先取消其他默认
     if request.is_default:
         await session.execute(
-            text("UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type"),
-            {"template_type": request.template_type}
+            text(
+                "UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type"
+            ),
+            {"template_type": request.template_type},
         )
-    
+
     id = str(uuid.uuid4())
     await session.execute(
         text("""
@@ -661,11 +672,11 @@ async def add_message_template(
             "title_template": request.title_template,
             "content_template": request.content_template,
             "is_default": request.is_default,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "添加成功", "data": {"id": id}}
 
 
@@ -679,10 +690,12 @@ async def update_message_template(
     # 如果设为默认模板，先取消其他默认
     if request.is_default:
         await session.execute(
-            text("UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type AND id != :id"),
-            {"template_type": request.template_type, "id": id}
+            text(
+                "UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type AND id != :id"
+            ),
+            {"template_type": request.template_type, "id": id},
         )
-    
+
     await session.execute(
         text("""
             UPDATE qms.qms_deviation_message_template 
@@ -698,11 +711,11 @@ async def update_message_template(
             "title_template": request.title_template,
             "content_template": request.content_template,
             "is_default": request.is_default,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -713,11 +726,13 @@ async def delete_message_template(
 ):
     """删除消息模板（软删除）"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_message_template SET is_deleted = TRUE WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_message_template SET is_deleted = TRUE WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
@@ -728,11 +743,13 @@ async def toggle_message_template(
 ):
     """切换消息模板启用状态"""
     await session.execute(
-        text("UPDATE qms.qms_deviation_message_template SET is_active = NOT is_active WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_message_template SET is_active = NOT is_active WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
@@ -744,32 +761,39 @@ async def set_default_template(
     """将模板设为默认"""
     # 先获取当前模板的template_type
     result = await session.execute(
-        text("SELECT template_type FROM qms.qms_deviation_message_template WHERE id = :id"),
-        {"id": id}
+        text(
+            "SELECT template_type FROM qms.qms_deviation_message_template WHERE id = :id"
+        ),
+        {"id": id},
     )
     row = result.fetchone()
     if not row:
         return {"code": 404, "message": "模板不存在", "data": None}
-    
+
     template_type = row[0]
-    
+
     # 取消同类型的其他默认
     await session.execute(
-        text("UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type"),
-        {"template_type": template_type}
+        text(
+            "UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type"
+        ),
+        {"template_type": template_type},
     )
-    
+
     # 设置当前为默认
     await session.execute(
-        text("UPDATE qms.qms_deviation_message_template SET is_default = TRUE WHERE id = :id"),
-        {"id": id}
+        text(
+            "UPDATE qms.qms_deviation_message_template SET is_default = TRUE WHERE id = :id"
+        ),
+        {"id": id},
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "设置成功", "data": None}
 
 
 # ----- 飞书机器人配置 -----
+
 
 @router.get("/feishu-bot", summary="获取飞书机器人配置")
 async def get_feishu_bot_config(session: AsyncSession = Depends(get_db_session)):
@@ -786,17 +810,17 @@ async def get_feishu_bot_config(session: AsyncSession = Depends(get_db_session))
     )
     row = result.fetchone()
     columns = result.keys()
-    
+
     if not row:
         return {"code": 200, "message": "success", "data": None}
-    
+
     item = dict(zip(columns, row))
-    item['created_at'] = str(item['created_at']) if item['created_at'] else None
-    item['updated_at'] = str(item['updated_at']) if item['updated_at'] else None
+    item["created_at"] = str(item["created_at"]) if item["created_at"] else None
+    item["updated_at"] = str(item["updated_at"]) if item["updated_at"] else None
     # 隐藏app_secret
-    if item.get('app_secret'):
-        item['app_secret'] = '**********'
-    
+    if item.get("app_secret"):
+        item["app_secret"] = "**********"
+
     return {"code": 200, "message": "success", "data": item}
 
 
@@ -808,11 +832,17 @@ async def create_feishu_bot_config(
     """创建飞书机器人配置（只允许一条）"""
     # 检查是否已存在
     check = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1")
+        text(
+            "SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1"
+        )
     )
     if check.fetchone():
-        return {"code": 400, "message": "已存在机器人配置，如需修改请使用更新接口", "data": None}
-    
+        return {
+            "code": 400,
+            "message": "已存在机器人配置，如需修改请使用更新接口",
+            "data": None,
+        }
+
     id = str(uuid.uuid4())
     await session.execute(
         text("""
@@ -828,11 +858,11 @@ async def create_feishu_bot_config(
             "bot_token": request.bot_token,
             "encrypt_key": request.encrypt_key,
             "verification_token": request.verification_token,
-            "created_at": datetime.now()
-        }
+            "created_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "创建成功", "data": {"id": id}}
 
 
@@ -844,20 +874,22 @@ async def update_feishu_bot_config(
     """更新飞书机器人配置"""
     # 获取当前配置
     result = await session.execute(
-        text("SELECT id, app_secret FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1")
+        text(
+            "SELECT id, app_secret FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1"
+        )
     )
     row = result.fetchone()
     if not row:
         return {"code": 404, "message": "机器人配置不存在", "data": None}
-    
+
     current_id = row[0]
     current_secret = row[1]
-    
+
     # 如果新密码是**********，保持原密码
     app_secret = request.app_secret
-    if app_secret == '**********' or not app_secret:
+    if app_secret == "**********" or not app_secret:
         app_secret = current_secret
-    
+
     await session.execute(
         text("""
             UPDATE qms.qms_deviation_feishu_bot_config 
@@ -874,11 +906,11 @@ async def update_feishu_bot_config(
             "bot_token": request.bot_token,
             "encrypt_key": request.encrypt_key,
             "verification_token": request.verification_token,
-            "updated_at": datetime.now()
-        }
+            "updated_at": datetime.now(),
+        },
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "更新成功", "data": None}
 
 
@@ -888,17 +920,21 @@ async def toggle_feishu_bot(
 ):
     """切换机器人启用状态"""
     result = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1")
+        text(
+            "SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1"
+        )
     )
     row = result.fetchone()
     if not row:
         return {"code": 404, "message": "机器人配置不存在", "data": None}
-    
+
     await session.execute(
-        text("UPDATE qms.qms_deviation_feishu_bot_config SET is_enabled = NOT is_enabled WHERE is_deleted = FALSE"),
+        text(
+            "UPDATE qms.qms_deviation_feishu_bot_config SET is_enabled = NOT is_enabled WHERE is_deleted = FALSE"
+        ),
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "状态切换成功", "data": None}
 
 
@@ -908,21 +944,26 @@ async def delete_feishu_bot_config(
 ):
     """删除飞书机器人配置（软删除）"""
     result = await session.execute(
-        text("SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1")
+        text(
+            "SELECT id FROM qms.qms_deviation_feishu_bot_config WHERE is_deleted = FALSE LIMIT 1"
+        )
     )
     row = result.fetchone()
     if not row:
         return {"code": 404, "message": "机器人配置不存在", "data": None}
-    
+
     await session.execute(
-        text("UPDATE qms.qms_deviation_feishu_bot_config SET is_deleted = TRUE WHERE is_deleted = FALSE"),
+        text(
+            "UPDATE qms.qms_deviation_feishu_bot_config SET is_deleted = TRUE WHERE is_deleted = FALSE"
+        ),
     )
     await session.commit()
-    
+
     return {"code": 200, "message": "删除成功", "data": None}
 
 
 # ----- 选项列表 -----
+
 
 @router.get("/options", summary="获取选项列表")
 async def get_options():
@@ -942,15 +983,17 @@ async def get_options():
                 {"value": "仓储部", "label": "仓储部"},
                 {"value": "采购部", "label": "采购部"},
                 {"value": "研发部", "label": "研发部"},
-            ]
-        }
+            ],
+        },
     }
 
 
 # ----- 飞书用户查询 -----
 
+
 class FeishuUserRequest(BaseModel):
     """飞书用户查询请求"""
+
     mobile: str = Field(..., description="手机号")
     country_code: str = Field("86", description="国家码")
 
@@ -963,25 +1006,24 @@ async def get_feishu_user_by_mobile(
     """根据手机号查询飞书用户信息，返回open_id和姓名"""
     feishu_service = get_feishu_service()
     user_info = await feishu_service.get_user_by_mobile(mobile, country_code)
-    
+
     if user_info:
-        return {
-            "code": 200,
-            "message": "success",
-            "data": user_info
-        }
+        return {"code": 200, "message": "success", "data": user_info}
     else:
         return {
             "code": 404,
             "message": "未找到对应用户，请确认手机号是否正确或用户是否在飞书通讯录中",
-            "data": None
+            "data": None,
         }
 
 
 @router.post("/reminder/trigger", summary="手动触发偏差提醒")
 async def trigger_deviation_reminder(session: AsyncSession = Depends(get_db_session)):
     """手动触发偏差填报人提醒检查并发送飞书消息"""
-    from app.modules.quality.qms.deviation_reporter_reminder_service import DeviationReporterReminderService
+    from app.modules.quality.qms.deviation_reporter_reminder_service import (
+        DeviationReporterReminderService,
+    )
+
     service = DeviationReporterReminderService(session)
     result = await service.check_and_remind()
     return {

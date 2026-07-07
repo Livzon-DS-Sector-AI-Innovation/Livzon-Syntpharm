@@ -7,24 +7,22 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.sop_ai.algorithm import DuplicateChecker
 from app.modules.quality.sop_ai.models import (
-    SopAiCheckMain,
-    SopAiCheckProblem,
     CheckStatus,
-    CheckType,
+    HandleStatus,
     ProblemType,
     RiskLevel,
-    HandleStatus,
+    SopAiCheckMain,
+    SopAiCheckProblem,
 )
 from app.modules.quality.sop_ai.repository import (
-    SopAiConfigRepository,
     SopAiCheckMainRepository,
     SopAiCheckProblemRepository,
+    SopAiConfigRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -105,7 +103,7 @@ class SopAiCheckService:
         file_path: str,
         file_name: str,
         check_type: str = "single",
-        operator: Optional[str] = None,
+        operator: str | None = None,
     ) -> dict:
         """单文件预审
 
@@ -201,7 +199,7 @@ class SopAiCheckService:
         self,
         file_paths: list[str],
         check_type: str = "batch",
-        operator: Optional[str] = None,
+        operator: str | None = None,
     ) -> dict:
         """批量巡检
 
@@ -241,11 +239,13 @@ class SopAiCheckService:
                     CheckStatus.FAILED,
                     f"文件解析失败: {str(e)}",
                 )
-                file_results.append({
-                    "file_path": file_path,
-                    "status": "failed",
-                    "message": str(e),
-                })
+                file_results.append(
+                    {
+                        "file_path": file_path,
+                        "status": "failed",
+                        "message": str(e),
+                    }
+                )
                 continue
 
             # 执行校验
@@ -279,15 +279,17 @@ class SopAiCheckService:
                 result_summary,
             )
 
-            file_results.append({
-                "file_path": file_path,
-                "status": "completed",
-                "task_id": main_record.id,
-                "total_problems": len(problems),
-                "risk_high": risk_counts["high"],
-                "risk_medium": risk_counts["medium"],
-                "risk_low": risk_counts["low"],
-            })
+            file_results.append(
+                {
+                    "file_path": file_path,
+                    "status": "completed",
+                    "task_id": main_record.id,
+                    "total_problems": len(problems),
+                    "risk_high": risk_counts["high"],
+                    "risk_medium": risk_counts["medium"],
+                    "risk_low": risk_counts["low"],
+                }
+            )
 
             all_problems.extend(problems)
 
@@ -305,7 +307,7 @@ class SopAiCheckService:
         self,
         main_id: str,
         text: str,
-        operator: Optional[str] = None,
+        operator: str | None = None,
     ) -> list[dict]:
         """检查文件内容
 
@@ -322,11 +324,14 @@ class SopAiCheckService:
         # 获取配置
         threshold = int(await self._get_config("simhash_threshold", "3"))
         ai_enabled = await self._get_config("ai_enabled", "true") == "true"
-        conflict_enabled = await self._get_config("conflict_check_enabled", "true") == "true"
-        compliance_enabled = await self._get_config("compliance_check_enabled", "true") == "true"
+        conflict_enabled = (
+            await self._get_config("conflict_check_enabled", "true") == "true"
+        )
+        compliance_enabled = (
+            await self._get_config("compliance_check_enabled", "true") == "true"
+        )
 
         # 1. SimHash 查重（与数据库已有记录比对）
-        from app.modules.quality.sop_ai.algorithm import DuplicateChecker
 
         checker = DuplicateChecker(threshold)
         existing_records = await self._get_existing_fingerprints()
@@ -339,7 +344,7 @@ class SopAiCheckService:
                     "problem_type": ProblemType.DUPLICATE,
                     "risk_level": RiskLevel.HIGH,
                     "location": "全文",
-                    "description": f"与已有文件重复度高: {dup.get('similarity', 0)*100:.1f}%",
+                    "description": f"与已有文件重复度高: {dup.get('similarity', 0) * 100:.1f}%",
                     "source_file": dup.get("identifier"),
                     "suggestion": "请确认是否为同一文件的更新版本",
                     "operator": operator,
@@ -453,17 +458,17 @@ class SopAiCheckService:
         params = {}
 
         # 提取温度
-        temps = re.findall(r'(\d+(?:\.\d+)?)\s*[°℃C]', text)
+        temps = re.findall(r"(\d+(?:\.\d+)?)\s*[°℃C]", text)
         if temps:
             params["temperatures"] = temps[:10]
 
         # ��取��间
-        times = re.findall(r'(\d+(?:\.\d+)?)\s*(?:分钟|小时|h|min)', text)
+        times = re.findall(r"(\d+(?:\.\d+)?)\s*(?:分钟|小时|h|min)", text)
         if times:
             params["times"] = times[:10]
 
         # 提取压力
-        pressures = re.findall(r'(\d+(?:\.\d+)?)\s*(?:MPa|帕|kPa)', text)
+        pressures = re.findall(r"(\d+(?:\.\d+)?)\s*(?:MPa|帕|kPa)", text)
         if pressures:
             params["pressures"] = pressures[:10]
 
@@ -483,7 +488,7 @@ class SopAiCheckService:
 
         try:
             # 尝试提取 JSON
-            json_match = re.search(r'\{[\s\S]*\}', result)
+            json_match = re.search(r"\{[\s\S]*\}", result)
             if json_match:
                 data = json.loads(json_match.group())
 
@@ -494,19 +499,21 @@ class SopAiCheckService:
 
                 for item in items:
                     risk = item.get("risk_level", "low")
-                    problems.append({
-                        "problem_type": problem_type,
-                        "risk_level": (
-                            RiskLevel.HIGH
-                            if risk == "high"
-                            else RiskLevel.MEDIUM
-                            if risk == "medium"
-                            else RiskLevel.LOW
-                        ),
-                        "location": item.get("location", ""),
-                        "description": item.get("description", ""),
-                        "suggestion": item.get("suggestion", ""),
-                    })
+                    problems.append(
+                        {
+                            "problem_type": problem_type,
+                            "risk_level": (
+                                RiskLevel.HIGH
+                                if risk == "high"
+                                else RiskLevel.MEDIUM
+                                if risk == "medium"
+                                else RiskLevel.LOW
+                            ),
+                            "location": item.get("location", ""),
+                            "description": item.get("description", ""),
+                            "suggestion": item.get("suggestion", ""),
+                        }
+                    )
         except Exception as e:
             logger.error(f"解析 AI 结果失败: {e}")
 
@@ -524,14 +531,14 @@ class SopAiCheckService:
     async def get_record(
         self,
         id: str,
-    ) -> Optional[SopAiCheckMain]:
+    ) -> SopAiCheckMain | None:
         """获取校验记录"""
         return await self.main_repo.get_by_id(id)
 
     async def get_record_detail(
         self,
         id: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """获取校验记录详情"""
         main_record = await self.main_repo.get_by_id(id)
         if not main_record:
@@ -575,10 +582,10 @@ class SopAiCheckService:
 
     async def list_records(
         self,
-        status: Optional[str] = None,
-        file_code: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        status: str | None = None,
+        file_code: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[SopAiCheckMain], int]:
@@ -596,9 +603,9 @@ class SopAiCheckService:
         self,
         problem_id: str,
         handle_status: str,
-        ignore_reason: Optional[str] = None,
-        operator: Optional[str] = None,
-    ) -> Optional[SopAiCheckProblem]:
+        ignore_reason: str | None = None,
+        operator: str | None = None,
+    ) -> SopAiCheckProblem | None:
         """处理问题"""
         status = HandleStatus(handle_status)
         return await self.problem_repo.update_handle_status(
@@ -617,8 +624,8 @@ class SopAiCheckService:
         self,
         config_key: str,
         config_value: str,
-        description: Optional[str] = None,
-        operator: Optional[str] = None,
+        description: str | None = None,
+        operator: str | None = None,
     ) -> dict:
         """设置配置"""
         config = await self.config_repo.upsert(

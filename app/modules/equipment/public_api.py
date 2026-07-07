@@ -139,4 +139,5 @@ async def get_role_by_code(db: AsyncSession, code: str) -> RoleResponse | None:
 def get_inspection_schedule_generator():
     """获取巡检计划调度生成器（供其他模块注册调度任务）"""
     from app.modules.equipment.scheduled import InspectionScheduleGenerator
+
     return InspectionScheduleGenerator()

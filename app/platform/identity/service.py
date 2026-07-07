@@ -64,13 +64,8 @@ def _secret_runtime_error(exc: RuntimeError) -> HTTPException:
 def hash_password(password: str) -> str:
     """Hash a local-account password using PBKDF2-SHA256."""
     salt = secrets.token_bytes(16)
-    digest = pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, _PASSWORD_ITERATIONS
-    )
-    return (
-        f"pbkdf2_sha256${_PASSWORD_ITERATIONS}$"
-        f"{salt.hex()}${digest.hex()}"
-    )
+    digest = pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PASSWORD_ITERATIONS)
+    return f"pbkdf2_sha256${_PASSWORD_ITERATIONS}${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, stored_hash: str | None) -> bool:
@@ -245,9 +240,11 @@ async def _effective_feishu_credentials(
     settings = get_settings()
     stored = await _feishu_config_repo.get_active(db)
 
-    app_id = (payload.app_id if payload else None) or (
-        stored.app_id if stored else None
-    ) or settings.FEISHU_APP_ID
+    app_id = (
+        (payload.app_id if payload else None)
+        or (stored.app_id if stored else None)
+        or settings.FEISHU_APP_ID
+    )
     encrypted_secret = stored.encrypted_app_secret if stored else ""
     try:
         app_secret = (
@@ -664,9 +661,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
     direct_user_count = direct_user_result.get("user_count", 0)
     total_user_count = member_count + direct_user_count
     nested_member_errors = [
-        str(error)
-        for result in member_results
-        for error in result.get("errors", [])
+        str(error) for result in member_results for error in result.get("errors", [])
     ]
     all_errors = dept_errors + member_errors + nested_member_errors
 
@@ -690,10 +685,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
         f"部门用户 {member_count} 名，直接授权用户 {direct_user_count} 名。"
     )
     if sync_status == "warning":
-        sync_message = (
-            f"{sync_message} 部分部门同步失败："
-            f"{'; '.join(all_errors)}"
-        )
+        sync_message = f"{sync_message} 部分部门同步失败：{'; '.join(all_errors)}"
     if config is not None:
         config.last_sync_status = sync_status
         config.last_sync_message = sync_message

@@ -1,8 +1,6 @@
 """Quality API routes."""
 
 import uuid
-from datetime import datetime
-from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +10,6 @@ from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
 from app.modules.quality.qms.schemas import (
     ApprovalRecordResponse,
-    ApprovalSubmit,
     InspectionStandardCopy,
     InspectionStandardCreate,
     InspectionStandardItemResponse,
@@ -62,7 +59,9 @@ async def get_standards(
     )
 
 
-@router.get("/standards/effective", response_model=ApiResponse, summary="获取已生效的标准列表")
+@router.get(
+    "/standards/effective", response_model=ApiResponse, summary="获取已生效的标准列表"
+)
 async def get_effective_standards(
     material_code: str | None = None,
     material_category: str | None = None,
@@ -80,7 +79,9 @@ async def get_effective_standards(
     )
 
 
-@router.get("/standards/{standard_id}", response_model=ApiResponse, summary="获取检验标准详情")
+@router.get(
+    "/standards/{standard_id}", response_model=ApiResponse, summary="获取检验标准详情"
+)
 async def get_standard(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -107,7 +108,9 @@ async def create_standard(
     return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
 
 
-@router.put("/standards/{standard_id}", response_model=ApiResponse, summary="更新检验标准")
+@router.put(
+    "/standards/{standard_id}", response_model=ApiResponse, summary="更新检验标准"
+)
 async def update_standard(
     standard_id: uuid.UUID,
     data: InspectionStandardUpdate,
@@ -126,7 +129,9 @@ async def update_standard(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/standards/{standard_id}", response_model=ApiResponse, summary="删除检验标准")
+@router.delete(
+    "/standards/{standard_id}", response_model=ApiResponse, summary="删除检验标准"
+)
 async def delete_standard(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -144,7 +149,9 @@ async def delete_standard(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/standards/{standard_id}/submit", response_model=ApiResponse, summary="提交审批")
+@router.post(
+    "/standards/{standard_id}/submit", response_model=ApiResponse, summary="提交审批"
+)
 async def submit_for_approval(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -162,7 +169,9 @@ async def submit_for_approval(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/standards/{standard_id}/approve", response_model=ApiResponse, summary="审批通过")
+@router.post(
+    "/standards/{standard_id}/approve", response_model=ApiResponse, summary="审批通过"
+)
 async def approve_standard(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -182,7 +191,9 @@ async def approve_standard(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/standards/{standard_id}/reject", response_model=ApiResponse, summary="驳回标准")
+@router.post(
+    "/standards/{standard_id}/reject", response_model=ApiResponse, summary="驳回标准"
+)
 async def reject_standard(
     standard_id: uuid.UUID,
     comments: str = Query(..., description="驳回原因"),
@@ -202,7 +213,9 @@ async def reject_standard(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/standards/{standard_id}/obsolete", response_model=ApiResponse, summary="提交作废")
+@router.post(
+    "/standards/{standard_id}/obsolete", response_model=ApiResponse, summary="提交作废"
+)
 async def obsolete_standard(
     standard_id: uuid.UUID,
     data: ObsoleteSubmit,
@@ -239,7 +252,11 @@ async def copy_standard(
 # ============ InspectionStandardItem Routes ============
 
 
-@router.get("/standards/{standard_id}/items", response_model=ApiResponse, summary="获取检验项目列表")
+@router.get(
+    "/standards/{standard_id}/items",
+    response_model=ApiResponse,
+    summary="获取检验项目列表",
+)
 async def get_standard_items(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -247,15 +264,22 @@ async def get_standard_items(
 ):
     """获取检验项目列表"""
     from app.modules.quality.qms.repository import QualityRepository
+
     repo = QualityRepository(db)
     items = await repo.get_items_by_standard(standard_id)
-    return ApiResponse(data=[InspectionStandardItemResponse.model_validate(i) for i in items])
+    return ApiResponse(
+        data=[InspectionStandardItemResponse.model_validate(i) for i in items]
+    )
 
 
 # ============ ApprovalRecord Routes ============
 
 
-@router.get("/standards/{standard_id}/approvals", response_model=ApiResponse, summary="获取审批记录")
+@router.get(
+    "/standards/{standard_id}/approvals",
+    response_model=ApiResponse,
+    summary="获取审批记录",
+)
 async def get_approval_records(
     standard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -263,6 +287,7 @@ async def get_approval_records(
 ):
     """获取审批记录"""
     from app.modules.quality.qms.repository import QualityRepository
+
     repo = QualityRepository(db)
     records = await repo.get_approval_records(standard_id)
     return ApiResponse(data=[ApprovalRecordResponse.model_validate(r) for r in records])

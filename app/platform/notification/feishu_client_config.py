@@ -1,7 +1,6 @@
 """飞书机器人客户端 - 支持从数据库配置获取凭证"""
 
 import logging
-from typing import Optional
 
 import httpx
 
@@ -16,7 +15,7 @@ class FeishuClient:
     def __init__(self, app_id: str, app_secret: str):
         self.app_id = app_id
         self.app_secret = app_secret
-        self._tenant_access_token: Optional[str] = None
+        self._tenant_access_token: str | None = None
 
     async def get_tenant_access_token(self) -> str:
         """获取 tenant_access_token"""
@@ -48,7 +47,7 @@ class FeishuClient:
         content: str,
     ) -> dict:
         """发送消息"""
-        import json
+
         token = await self.get_tenant_access_token()
         url = f"{self.BASE_URL}/im/v1/messages"
         params = {
@@ -77,7 +76,9 @@ class FeishuClient:
 
             return data
 
-    async def send_text_message(self, receive_id_type: str, receive_id: str, text: str) -> dict:
+    async def send_text_message(
+        self, receive_id_type: str, receive_id: str, text: str
+    ) -> dict:
         """发送文本消息"""
         return await self.send_message(
             receive_id_type=receive_id_type,
@@ -91,6 +92,7 @@ class FeishuClient:
     ) -> dict:
         """发送卡片消息"""
         import json
+
         # 飞书API要求content是JSON字符串
         content_str = json.dumps(card_content, ensure_ascii=False)
         return await self.send_message(
@@ -100,7 +102,9 @@ class FeishuClient:
             content=content_str,
         )
 
-    async def get_user_by_mobile_or_email(self, mobile: str = None, email: str = None) -> Optional[str]:
+    async def get_user_by_mobile_or_email(
+        self, mobile: str = None, email: str = None
+    ) -> str | None:
         """通过手机号或邮箱获取用户的 open_id
 
         Args:
@@ -151,7 +155,9 @@ class FeishuClient:
 
         return None
 
-    async def get_contact_users(self, department_id: str = "0", page_size: int = 100) -> list:
+    async def get_contact_users(
+        self, department_id: str = "0", page_size: int = 100
+    ) -> list:
         """获取通讯录用户列表
 
         Args:
@@ -191,15 +197,19 @@ class FeishuClient:
 
                 items = data.get("data", {}).get("items", [])
                 for user in items:
-                    users.append({
-                        "open_id": user.get("open_id"),
-                        "name": user.get("name"),
-                        "en_name": user.get("en_name"),
-                        "email": user.get("email"),
-                        "mobile": user.get("mobile"),
-                        "avatar": user.get("avatar", {}).get("avatar_72") if user.get("avatar") else None,
-                        "department_ids": user.get("department_ids"),
-                    })
+                    users.append(
+                        {
+                            "open_id": user.get("open_id"),
+                            "name": user.get("name"),
+                            "en_name": user.get("en_name"),
+                            "email": user.get("email"),
+                            "mobile": user.get("mobile"),
+                            "avatar": user.get("avatar", {}).get("avatar_72")
+                            if user.get("avatar")
+                            else None,
+                            "department_ids": user.get("department_ids"),
+                        }
+                    )
 
                 # 检查是否还有下一页
                 page_token = data.get("data", {}).get("page_token")
@@ -241,11 +251,13 @@ class FeishuClient:
 
                 items = data.get("data", {}).get("items", [])
                 for dept in items:
-                    departments.append({
-                        "open_department_id": dept.get("open_department_id"),
-                        "name": dept.get("name"),
-                        "parent_department_id": dept.get("parent_department_id"),
-                    })
+                    departments.append(
+                        {
+                            "open_department_id": dept.get("open_department_id"),
+                            "name": dept.get("name"),
+                            "parent_department_id": dept.get("parent_department_id"),
+                        }
+                    )
 
                 page_token = data.get("data", {}).get("page_token")
                 has_more = data.get("data", {}).get("has_more", False)
@@ -260,8 +272,8 @@ class FeishuClient:
 
 
 async def send_feishu_card_from_config(
-    app_id: Optional[str],
-    app_secret: Optional[str],
+    app_id: str | None,
+    app_secret: str | None,
     receive_id: str,
     receive_id_type: str = "chat_id",
     title: str = "",
@@ -307,7 +319,10 @@ async def send_feishu_card_from_config(
                     "actions": [
                         {
                             "tag": "a",
-                            "text": {"tag": "lark_md", "content": action.get("text", "")},
+                            "text": {
+                                "tag": "lark_md",
+                                "content": action.get("text", ""),
+                            },
                             "href": {"url": action.get("url", "")},
                         }
                     ],

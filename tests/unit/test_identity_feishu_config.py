@@ -56,7 +56,7 @@ async def test_save_livzon_feishu_config_preserves_existing_secret(monkeypatch) 
             sync_root_department_id="0",
             sync_member_department_id="od-test",
             is_active=True,
-        )
+        ),
     )
 
     assert response.app_id == "new-app"

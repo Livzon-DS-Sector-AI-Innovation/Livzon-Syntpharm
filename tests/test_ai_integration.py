@@ -9,11 +9,9 @@ to verify data flow correctness.
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 import traceback
 from datetime import date
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # Ensure project root is on path
 sys.path.insert(0, "e:\\czl\\xbj2\\dazah-backend")
@@ -22,12 +20,10 @@ import openai
 
 from app.platform.ai.executor import (
     StepResult,
-    _execute_single_query,
     format_step_results,
 )
 from app.platform.ai.planner import generate_plan
-from app.platform.ai.schemas import PlanStep, SubQuery
-
+from app.platform.ai.schemas import PlanStep
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -77,6 +73,7 @@ async def run_async_test(name: str, test_fn):
 # Round 1 — Basic single-step queries (Planner with real LLM)
 # ---------------------------------------------------------------------------
 
+
 async def round1_tests(client: openai.AsyncOpenAI):
     print("\n=== Round 1: Basic single-step queries ===")
 
@@ -114,7 +111,9 @@ async def round1_tests(client: openai.AsyncOpenAI):
         assert_true(plan is not None, "plan should not be None")
         q = plan.steps[0].parallel_queries[0]
         assert_true(q.action == "query", f"expected query, got {q.action}")
-        assert_true("生产部" in str(q.filters.get("department", "")), "should filter by 生产部")
+        assert_true(
+            "生产部" in str(q.filters.get("department", "")), "should filter by 生产部"
+        )
         print(f"    -> Plan: {q.action}, filters={q.filters}")
 
     await run_async_test("03 生产部有哪些工程师 → query", test_03)
@@ -124,8 +123,12 @@ async def round1_tests(client: openai.AsyncOpenAI):
         plan = await generate_plan(client, "有哪些部门")
         assert_true(plan is not None, "plan should not be None")
         q = plan.steps[0].parallel_queries[0]
-        assert_true(q.action == "get_distinct", f"expected get_distinct, got {q.action}")
-        assert_true(q.group_by == "department", f"expected department, got {q.group_by}")
+        assert_true(
+            q.action == "get_distinct", f"expected get_distinct, got {q.action}"
+        )
+        assert_true(
+            q.group_by == "department", f"expected department, got {q.group_by}"
+        )
         print(f"    -> Plan: {q.action} {q.group_by}")
 
     await run_async_test("04 有哪些部门 → get_distinct", test_04)
@@ -137,7 +140,9 @@ async def round1_tests(client: openai.AsyncOpenAI):
         q = plan.steps[0].parallel_queries[0]
         assert_true(q.action == "count", f"expected count, got {q.action}")
         f = q.filters
-        assert_true(f.get("age_min") == 30 or f.get("age_max") == 30, "should have age filter")
+        assert_true(
+            f.get("age_min") == 30 or f.get("age_max") == 30, "should have age filter"
+        )
         assert_true("本科" in str(f.get("education", "")), "should filter by 本科")
         assert_true("在职" in str(f.get("status", "")), "should filter by 在职")
         print(f"    -> Plan: {q.action}, filters={f}")
@@ -148,6 +153,7 @@ async def round1_tests(client: openai.AsyncOpenAI):
 # ---------------------------------------------------------------------------
 # Round 2 — Multi-step / parallel / dynamic queries
 # ---------------------------------------------------------------------------
+
 
 async def round2_tests(client: openai.AsyncOpenAI):
     print("\n=== Round 2: Multi-step / parallel / dynamic queries ===")
@@ -161,7 +167,9 @@ async def round2_tests(client: openai.AsyncOpenAI):
         # Could be 1-step group_count or 2-step dynamic
         if len(plan.steps) == 1:
             q = plan.steps[0].parallel_queries[0]
-            assert_true(q.action == "group_count", f"expected group_count, got {q.action}")
+            assert_true(
+                q.action == "group_count", f"expected group_count, got {q.action}"
+            )
             print(f"    -> Plan: 1-step {q.action} by {q.group_by}")
         else:
             assert_true(plan.steps[0].mode == "static", "step 1 should be static")
@@ -178,11 +186,13 @@ async def round2_tests(client: openai.AsyncOpenAI):
         assert_true(len(queries) >= 1, "should have at least 1 query")
 
         if len(queries) == 1 and queries[0].action == "group_count":
-            print(f"    -> Plan: 1-step group_count by department")
+            print("    -> Plan: 1-step group_count by department")
         else:
             assert_true(len(queries) == 2, "expected 2 parallel queries")
-            assert_true(all(q.action == "count" for q in queries), "both should be count")
-            print(f"    -> Plan: 2 parallel count queries")
+            assert_true(
+                all(q.action == "count" for q in queries), "both should be count"
+            )
+            print("    -> Plan: 2 parallel count queries")
 
     await run_async_test("07 生产部和研发部各有多少人 → parallel", test_07)
 
@@ -192,7 +202,9 @@ async def round2_tests(client: openai.AsyncOpenAI):
         assert_true(plan is not None, "plan should not be None")
         queries = plan.steps[0].parallel_queries
         assert_true(len(queries) >= 1, "should have at least 1 query")
-        print(f"    -> Plan: {len(queries)} parallel queries: {[q.action for q in queries]}")
+        print(
+            f"    -> Plan: {len(queries)} parallel queries: {[q.action for q in queries]}"
+        )
 
     await run_async_test("08 各部门人数及性别分布 → mixed parallel", test_08)
 
@@ -200,6 +212,7 @@ async def round2_tests(client: openai.AsyncOpenAI):
 # ---------------------------------------------------------------------------
 # Round 3 — Edge cases
 # ---------------------------------------------------------------------------
+
 
 async def round3_tests(client: openai.AsyncOpenAI):
     print("\n=== Round 3: Edge cases ===")
@@ -209,7 +222,7 @@ async def round3_tests(client: openai.AsyncOpenAI):
         plan = await generate_plan(client, "你好")
         assert_true(plan is not None, "plan should not be None")
         assert_true(plan.needs_data is False, "needs_data should be False")
-        print(f"    -> Plan: needs_data=False")
+        print("    -> Plan: needs_data=False")
 
     await run_async_test("09 你好 → no data needed", test_09)
 
@@ -240,7 +253,7 @@ async def round3_tests(client: openai.AsyncOpenAI):
         assert_true("本科：25人" in formatted, "should contain 本科 count")
         assert_true("硕士：10人" in formatted, "should contain 硕士 count")
         assert_true("共计：35人" in formatted, "should contain total")
-        print(f"    -> Formatted output contains correct data")
+        print("    -> Formatted output contains correct data")
 
     run_test("10 Executor formatting → correct data flow", test_10)
 
@@ -248,6 +261,7 @@ async def round3_tests(client: openai.AsyncOpenAI):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 async def main():
     from app.core.config import get_settings
@@ -258,7 +272,7 @@ async def main():
         base_url="https://api.moonshot.cn/v1",
     )
 
-    print(f"Testing with model: kimi-k2.5")
+    print("Testing with model: kimi-k2.5")
     print(f"Date: {date.today().isoformat()}")
 
     await round1_tests(client)

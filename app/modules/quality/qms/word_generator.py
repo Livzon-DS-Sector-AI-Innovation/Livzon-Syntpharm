@@ -3,14 +3,14 @@
 import re
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import TypedDict
+
 from docx import Document
-from docx.shared import Pt
-from docx.oxml.ns import qn
 
 
 class TableColumnConfig(TypedDict):
     """表格列配置"""
+
     key: str
     label: str
     type: str
@@ -18,6 +18,7 @@ class TableColumnConfig(TypedDict):
 
 class TemplateFields(TypedDict):
     """模板字段配置"""
+
     static: dict
     table_fields: dict
 
@@ -32,7 +33,7 @@ class WordGenerator:
 
     def __init__(self, template_path: str):
         self.template_path = template_path
-        self.document: Optional[Document] = None
+        self.document: Document | None = None
 
     def load_template(self) -> Document:
         """加载模板文件"""
@@ -46,7 +47,7 @@ class WordGenerator:
 
         result: TemplateFields = {
             "static": {},
-            "table_fields": {"columns": [], "rows": 10}
+            "table_fields": {"columns": [], "rows": 10},
         }
 
         # 扫描所有表格
@@ -69,16 +70,14 @@ class WordGenerator:
                 # 生成字段key（将中文转为拼音首字母或英文）
                 key = self._text_to_key(header_text)
 
-                columns.append({
-                    "key": key,
-                    "label": header_text,
-                    "type": "text"
-                })
+                columns.append({"key": key, "label": header_text, "type": "text"})
 
             # 如果找到多个列，认为是数据表格
             if len(columns) >= 2:
                 result["table_fields"]["columns"] = columns
-                result["table_fields"]["rows"] = max(len(table.rows) - 1, 10)  # 至少10行
+                result["table_fields"]["rows"] = max(
+                    len(table.rows) - 1, 10
+                )  # 至少10行
 
         # 扫描段落中的静态字段占位符
         for paragraph in self.document.paragraphs:
@@ -97,7 +96,8 @@ class WordGenerator:
         """将文本转换为字段key"""
         # 移除特殊字符，只保留字母、数字、下划线
         import re
-        key = re.sub(r'[^\w]', '', text)
+
+        key = re.sub(r"[^\w]", "", text)
         if not key:
             # 如果为空，使用序号
             return "field"
@@ -131,9 +131,7 @@ class WordGenerator:
 
         return fields
 
-    def generate_report(
-        self, static_data: dict, table_data: list[dict]
-    ) -> bytes:
+    def generate_report(self, static_data: dict, table_data: list[dict]) -> bytes:
         """生成报告单Word文档"""
         if not self.document:
             self.load_template()

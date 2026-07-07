@@ -18,9 +18,12 @@ from app.platform.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
 
+
 def _get_model() -> str:
     from app.core.config import get_settings
+
     return get_settings().AI_MODEL or "kimi-k2.5"
+
 
 _PLANNER_SYSTEM_PROMPT = """你是工厂人事管理系统的「查询规划助手」。
 

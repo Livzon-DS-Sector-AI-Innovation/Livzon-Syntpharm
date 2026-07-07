@@ -138,7 +138,12 @@ async def test_generate_and_store_contract_persists_record_and_local_file(
         ),
     )
 
-    buffer, filename, content_type, record = await procurement_service.generate_and_store_contract(
+    (
+        buffer,
+        filename,
+        content_type,
+        record,
+    ) = await procurement_service.generate_and_store_contract(
         FakeDb(),
         _payload(),
     )
@@ -151,7 +156,9 @@ async def test_generate_and_store_contract_persists_record_and_local_file(
     assert record.seller_name == "测试供应商有限公司"
     assert record.payload["title"] == "测试耗材采购合同"
     assert record.file_size == len(b"contract-bytes")
-    assert (tmp_path / "procurement" / "contracts" / str(record.id) / filename).read_bytes() == b"contract-bytes"
+    assert (
+        tmp_path / "procurement" / "contracts" / str(record.id) / filename
+    ).read_bytes() == b"contract-bytes"
 
 
 @pytest.mark.anyio

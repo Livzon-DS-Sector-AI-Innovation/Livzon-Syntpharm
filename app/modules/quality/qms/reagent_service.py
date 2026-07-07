@@ -3,11 +3,11 @@
 提供质量检验模块试剂/标准品管理的业务逻辑。
 """
 
-import uuid
 import json
 import re
-from datetime import date, datetime
-from typing import Optional, Any
+import uuid
+from datetime import date
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,9 +68,9 @@ confidence 表示识别置信度（0-1之间）。
 
     async def list_reagents(
         self,
-        keyword: Optional[str] = None,
-        category: Optional[str] = None,
-        status: Optional[str] = None,
+        keyword: str | None = None,
+        category: str | None = None,
+        status: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
@@ -86,15 +86,15 @@ confidence 表示识别置信度（0-1之间）。
                 OR reagent_no ILIKE :keyword
                 OR manufacturer ILIKE :keyword)
             """)
-            params['keyword'] = f"%{keyword}%"
+            params["keyword"] = f"%{keyword}%"
 
         if category:
             conditions.append("category = :category")
-            params['category'] = category
+            params["category"] = category
 
         if status:
             conditions.append("status = :status")
-            params['status'] = status
+            params["status"] = status
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -109,8 +109,8 @@ confidence 表示识别置信度（0-1之间）。
 
         # 分页查询
         offset = (page - 1) * page_size
-        params['offset'] = offset
-        params['limit'] = page_size
+        params["offset"] = offset
+        params["limit"] = page_size
 
         query_sql = text(f"""
             SELECT *
@@ -129,7 +129,7 @@ confidence 表示识别置信度（0-1之间）。
 
         return reagents, total
 
-    async def get_reagent_by_id(self, reagent_id: str) -> Optional[dict[str, Any]]:
+    async def get_reagent_by_id(self, reagent_id: str) -> dict[str, Any] | None:
         """根据ID获取试剂详情"""
         query_sql = text("""
             SELECT *
@@ -154,7 +154,7 @@ confidence 表示识别置信度（0-1之间）。
             target_date = date.today()
 
         # 格式化日期部分：YYMMDD (例如 260609)
-        date_str = target_date.strftime('%y%m%d')
+        date_str = target_date.strftime("%y%m%d")
 
         # 查询当天最大的入场批号
         query_sql = text("""
@@ -165,7 +165,7 @@ confidence 表示识别置信度（0-1之间）。
             LIMIT 1
         """)
         prefix = f"{date_str}9%"
-        
+
         result = await self.session.execute(query_sql, {"prefix": prefix})
         row = result.fetchone()
 
@@ -238,7 +238,7 @@ confidence 表示识别置信度（0-1之间）。
         self,
         reagent_id: str,
         data: dict,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """更新试剂记录"""
         # 构建更新字段
         update_fields = []
@@ -256,7 +256,7 @@ confidence 表示识别置信度（0-1之间）。
 
         update_sql = text(f"""
             UPDATE qms.qms_reagent_quality
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = :id
             RETURNING *
         """)
@@ -302,7 +302,6 @@ confidence 表示识别置信度（0-1之间）。
 
             # 解析AI响应
             # MiniMax-M3 可能返回包含 思考过程，需要提取JSON部分
-            import sys
 
             def safe_print(msg):
                 """安全打印，避免GBK编码问题"""
@@ -323,18 +322,20 @@ confidence 表示识别置信度（0-1之间）。
                 # 清理思考过程标签（包括嵌套情况）
                 clean_response = ai_response
                 # 循环清理所有 思考标签
-                while '<think>' in clean_response and '' in clean_response:
-                    clean_response = re.sub(r'<think>[\s\S]*?', '', clean_response)
+                while "<think>" in clean_response and "" in clean_response:
+                    clean_response = re.sub(r"<think>[\s\S]*?", "", clean_response)
                 clean_response = clean_response.strip()
                 safe_print(f"[DEBUG] 清理后前100字符: {repr(clean_response[:100])}")
 
                 # 查找JSON代码块（可能用```json包裹）
-                json_match = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', clean_response, re.DOTALL)
+                json_match = re.search(
+                    r"```json\s*(\{[\s\S]*?\})\s*```", clean_response, re.DOTALL
+                )
                 if json_match:
                     json_str = json_match.group(1)
                 else:
                     # 尝试直接在清理后的文本中找JSON对象
-                    json_match = re.search(r'\{[\s\S]*\}', clean_response, re.DOTALL)
+                    json_match = re.search(r"\{[\s\S]*\}", clean_response, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
                     else:
@@ -343,7 +344,7 @@ confidence 表示识别置信度（0-1之间）。
                 safe_print(f"[DEBUG] 提取的JSON前100字符: {repr(json_str[:100])}")
                 try:
                     result = json.loads(json_str)
-                    safe_print(f"[DEBUG] JSON提取解析成功")
+                    safe_print("[DEBUG] JSON提取解析成功")
                 except json.JSONDecodeError as e2:
                     safe_print(f"[DEBUG] JSON提取解析失败: {e2}")
                     result = {
@@ -365,10 +366,12 @@ confidence 表示识别置信度（0-1之间）。
                     operator=operator,
                     system_prompt=self.SYSTEM_PROMPT_REAGENT_LABEL,
                     user_input=f"图片URLs: {image_urls}",
-                    ai_response=ai_response[:1000] if ai_response else None,  # 截断避免过长
+                    ai_response=ai_response[:1000]
+                    if ai_response
+                    else None,  # 截断避免过长
                 )
-            except Exception as log_err:
-                safe_print(f"[DEBUG] 保存AI日志失败（不影响结果）")
+            except Exception:
+                safe_print("[DEBUG] 保存AI日志失败（不影响结果）")
 
             return result
 

@@ -197,7 +197,9 @@ class SafetyService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
+                    logger.warning(
+                        "Failed to delete file from MinIO: %s", file_path, exc_info=True
+                    )
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
@@ -1654,13 +1656,14 @@ class SafetyService:
         )
 
         # 字体注册 - 跨平台支持
+        import os
+
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
-        import os
 
         _font_name = "Helvetica"
         _font_name_bold = "Helvetica-Bold"
-        
+
         # 字体查找路径列表（Linux 优先，Windows 备选）
         _font_candidates = [
             # Linux paths
@@ -1673,7 +1676,7 @@ class SafetyService:
             ("C:/Windows/Fonts/simhei.ttf", "SimHei"),
             ("C:/Windows/Fonts/msyh.ttc", "MicrosoftYaHei"),
         ]
-        
+
         for font_path, font_alias in _font_candidates:
             if os.path.exists(font_path):
                 try:
@@ -1682,12 +1685,21 @@ class SafetyService:
                     if _font_name == "Helvetica":
                         _font_name = font_alias
                         _font_name_bold = font_alias
-                        logger.info("Loaded CJK font: %s from %s", font_alias, font_path)
+                        logger.info(
+                            "Loaded CJK font: %s from %s", font_alias, font_path
+                        )
                 except Exception as e:
-                    logger.warning("Failed to register font %s from %s: %s", font_alias, font_path, e)
-        
+                    logger.warning(
+                        "Failed to register font %s from %s: %s",
+                        font_alias,
+                        font_path,
+                        e,
+                    )
+
         if _font_name == "Helvetica":
-            logger.warning("No CJK fonts found, PDF will use Helvetica (Chinese characters may not display)")
+            logger.warning(
+                "No CJK fonts found, PDF will use Helvetica (Chinese characters may not display)"
+            )
         logger.debug("PDF fonts: body=%s, bold=%s", _font_name, _font_name_bold)
 
         styles = getSampleStyleSheet()

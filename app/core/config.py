@@ -16,7 +16,9 @@ def _get_env_file() -> str:
     if not env_path.exists():
         env_path = _PROJECT_ROOT / ".env"
     env_file = str(env_path)
-    logging.getLogger(__name__).debug("Loading environment variables from: %s", env_file)
+    logging.getLogger(__name__).debug(
+        "Loading environment variables from: %s", env_file
+    )
     return env_file
 
 
@@ -24,14 +26,17 @@ def _get_env_file() -> str:
 # Feishu Configuration Models
 # ============================================================================
 
+
 class FeishuAppCredentials(BaseModel):
     """Reusable model for a Feishu app's bot credentials."""
+
     app_id: str = ""
     app_secret: str = ""
 
 
 class FeishuPlatformConfig(BaseModel):
     """Platform app — SSO, org sync, IM, and shared Bitable access."""
+
     app_id: str = ""
     app_secret: str = ""
     redirect_uri: str = ""
@@ -49,6 +54,7 @@ class FeishuPlatformConfig(BaseModel):
 
 class FeishuHRBitableConfig(BaseModel):
     """HR module Bitable tables (uses platform app credentials)."""
+
     app_token: str = ""
     employee_table_id: str = ""
     department_table_id: str = ""
@@ -62,6 +68,7 @@ class FeishuHRBitableConfig(BaseModel):
 
 class FeishuSafetyConfig(BaseModel):
     """Safety module — independent Feishu app + hazard Bitable."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_app_token: str = ""
     hazard_table_id: str = ""
@@ -69,12 +76,14 @@ class FeishuSafetyConfig(BaseModel):
 
 class FeishuEquipmentConfig(BaseModel):
     """Equipment module — independent Feishu app for bot interaction."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     ws_enabled: bool = True
 
 
 class FeishuVehicleConfig(BaseModel):
     """Vehicle module — independent Feishu app + vehicle request Bitable."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_request_app_token: str = ""
     bitable_request_table_id: str = ""
@@ -82,6 +91,7 @@ class FeishuVehicleConfig(BaseModel):
 
 class FeishuTrainingConfig(BaseModel):
     """Training module — independent Feishu app + training-related Bitables."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_material_bom_app_token: str = ""
     bitable_material_bom_table_id: str = ""
@@ -91,18 +101,21 @@ class FeishuTrainingConfig(BaseModel):
 
 class FeishuProductConfig(BaseModel):
     """Product module Bitable (uses platform app credentials)."""
+
     bitable_app_token: str = ""
     bitable_table_id: str = ""
 
 
 class FeishuAIQueryConfig(BaseModel):
     """AI-powered Bitable query settings."""
+
     tables: str = ""  # JSON: {"别名": {"app_token": "...", "table_id": "...", "filterable_fields": [...]}}
     max_rows: int = 200
 
 
 class FeishuSettings(BaseModel):
     """Top-level Feishu configuration — all modules grouped."""
+
     platform: FeishuPlatformConfig = Field(default_factory=FeishuPlatformConfig)
     hr_bitable: FeishuHRBitableConfig = Field(default_factory=FeishuHRBitableConfig)
     safety: FeishuSafetyConfig = Field(default_factory=FeishuSafetyConfig)
@@ -117,6 +130,7 @@ class FeishuSettings(BaseModel):
 # ============================================================================
 # Main Settings
 # ============================================================================
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -155,7 +169,7 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
-    
+
     # AI
     AI_API_KEY: str = ""
     AI_BASE_URL: str = "https://api.openai.com/v1"

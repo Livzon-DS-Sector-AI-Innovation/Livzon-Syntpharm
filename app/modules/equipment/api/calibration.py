@@ -46,12 +46,18 @@ async def list_calibration_plans(
     ),
 ) -> JSONResponse:
     plans, total = await service.get_calibration_plans(
-        db, ctx=ctx, equipment_id=equipment_id, status=status,
-        page=page, page_size=page_size,
+        db,
+        ctx=ctx,
+        equipment_id=equipment_id,
+        status=status,
+        page=page,
+        page_size=page_size,
     )
     return paginated_response(
         data=[CalibrationPlanResponse.model_validate(p) for p in plans],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
@@ -131,12 +137,18 @@ async def list_calibration_records(
     ),
 ) -> JSONResponse:
     records, total = await service.get_calibration_records(
-        db, ctx=ctx, equipment_id=equipment_id, plan_id=plan_id,
-        page=page, page_size=page_size,
+        db,
+        ctx=ctx,
+        equipment_id=equipment_id,
+        plan_id=plan_id,
+        page=page,
+        page_size=page_size,
     )
     return paginated_response(
         data=[CalibrationRecordResponse.model_validate(r) for r in records],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 

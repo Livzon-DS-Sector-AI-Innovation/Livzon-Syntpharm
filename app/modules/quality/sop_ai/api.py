@@ -5,13 +5,11 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.service import SopAiCheckService
 
@@ -68,7 +66,7 @@ async def update_config(
 async def single_check(
     request: schemas.SingleCheckRequest,
     db: AsyncSession = Depends(get_db),
-) ->dict:
+) -> dict:
     """对单个文件进行预审校验"""
     service = SopAiCheckService(db)
     result = await service.single_check(
@@ -87,7 +85,7 @@ async def single_check(
 async def batch_check(
     request: schemas.BatchCheckRequest,
     db: AsyncSession = Depends(get_db),
-) ->dict:
+) -> dict:
     """对多个文件进行批量巡检"""
     service = SopAiCheckService(db)
     result = await service.batch_check(
@@ -103,14 +101,14 @@ async def batch_check(
 
 @router.get("/records", summary="获取校验记录列表")
 async def list_records(
-    status: Optional[str] = Query(None, description="状态过滤"),
-    file_code: Optional[str] = Query(None, description="文件编号过滤"),
-    start_date: Optional[datetime] = Query(None, description="开始时间"),
-    end_date: Optional[datetime] = Query(None, description="结束时间"),
+    status: str | None = Query(None, description="状态过滤"),
+    file_code: str | None = Query(None, description="文件编号过滤"),
+    start_date: datetime | None = Query(None, description="开始时间"),
+    end_date: datetime | None = Query(None, description="结束时间"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) ->dict:
+) -> dict:
     """获取校验记录列表"""
     service = SopAiCheckService(db)
     records, total = await service.list_records(

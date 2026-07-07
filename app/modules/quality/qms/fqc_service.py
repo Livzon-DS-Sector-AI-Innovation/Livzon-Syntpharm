@@ -1,6 +1,6 @@
 """FQC (Finished Product Quality Control) inspection service"""
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.quality.qms.fqc_models import (
     FQCApprovalRecord,
     FQCInspection,
-    FQCInspectionItem,
 )
 from app.modules.quality.qms.fqc_repository import (
     FQCApprovalRecordRepository,
@@ -80,7 +79,9 @@ class FQCInspectionService:
             standard_id=data.standard_id,
             standard_name=data.standard_name,
             standard_version=data.standard_version,
-            inspection_conclusion=data.inspection_conclusion.value if data.inspection_conclusion else None,
+            inspection_conclusion=data.inspection_conclusion.value
+            if data.inspection_conclusion
+            else None,
             conclusion_reason=data.conclusion_reason,
             remark=data.remark,
             oos_report_no=data.oos_report_no,
@@ -97,7 +98,9 @@ class FQCInspectionService:
             items_data = [
                 {
                     "item_no": item.item_no,
-                    "inspection_category": item.inspection_category.value if item.inspection_category else None,
+                    "inspection_category": item.inspection_category.value
+                    if item.inspection_category
+                    else None,
                     "inspection_item": item.inspection_item,
                     "inspection_method": item.inspection_method,
                     "standard_value": item.standard_value,
@@ -155,7 +158,9 @@ class FQCInspectionService:
             items_data = [
                 {
                     "item_no": item.item_no,
-                    "inspection_category": item.inspection_category.value if item.inspection_category else None,
+                    "inspection_category": item.inspection_category.value
+                    if item.inspection_category
+                    else None,
                     "inspection_item": item.inspection_item,
                     "inspection_method": item.inspection_method,
                     "standard_value": item.standard_value,
@@ -178,7 +183,9 @@ class FQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def delete_inspection(self, inspection_id: UUID, user_id: UUID | None = None) -> None:
+    async def delete_inspection(
+        self, inspection_id: UUID, user_id: UUID | None = None
+    ) -> None:
         """删除FQC检验单"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -197,7 +204,9 @@ class FQCInspectionService:
 
         await self.session.commit()
 
-    async def submit_for_approval(self, inspection_id: UUID, user_id: UUID | None = None) -> FQCInspection:
+    async def submit_for_approval(
+        self, inspection_id: UUID, user_id: UUID | None = None
+    ) -> FQCInspection:
         """提交FQC检验单审批"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -306,7 +315,9 @@ class FQCInspectionService:
                 # 如果检验结论为不合格，锁定批次
                 elif inspection.inspection_conclusion == "unqualified":
                     inspection.batch_locked = True
-                    inspection.batch_lock_reason = f"FQC检验不合格，检验单号: {inspection.inspection_no}"
+                    inspection.batch_lock_reason = (
+                        f"FQC检验不合格，检验单号: {inspection.inspection_no}"
+                    )
                     inspection.warehouse_isolation = True
 
             inspection.updated_by = user_id
@@ -316,7 +327,9 @@ class FQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def get_approval_records(self, inspection_id: UUID) -> list[FQCApprovalRecord]:
+    async def get_approval_records(
+        self, inspection_id: UUID
+    ) -> list[FQCApprovalRecord]:
         """获取审批记录"""
         return await self.approval_repo.get_by_inspection_id(inspection_id)
 

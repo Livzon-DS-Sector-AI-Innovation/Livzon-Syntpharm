@@ -69,7 +69,9 @@ class SpecialOperationService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
+                    logger.warning(
+                        "Failed to delete file from MinIO: %s", file_path, exc_info=True
+                    )
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):

@@ -1,23 +1,21 @@
 """原料报告单 Service"""
 
-import uuid
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.qms.material_report_models import ReportStatus
 from app.modules.quality.qms.material_report_repository import (
-    MaterialReportRepository,
     MaterialReportItemRepository,
-    ReportTemplateRepository,
+    MaterialReportRepository,
     ReportImageRepository,
+    ReportTemplateRepository,
 )
 from app.modules.quality.qms.material_report_schemas import (
     ReportCreate,
-    ReportUpdate,
     ReportItemsBatchSave,
+    ReportUpdate,
     TemplateCreate,
     TemplateUpdate,
 )
@@ -71,7 +69,7 @@ class MaterialReportService:
         report = await self.report_repo.create(report_data)
         return report
 
-    async def get_report(self, report_id: UUID) -> Optional[dict]:
+    async def get_report(self, report_id: UUID) -> dict | None:
         """获取报告单详情"""
         report = await self.report_repo.get_by_id(report_id)
         if not report:
@@ -83,7 +81,9 @@ class MaterialReportService:
             "report_no": report.report_no,
             "template_id": str(report.template_id) if report.template_id else None,
             "report_title": report.report_title,
-            "report_date": report.report_date.isoformat() if report.report_date else None,
+            "report_date": report.report_date.isoformat()
+            if report.report_date
+            else None,
             "static_data": report.static_data or {},
             "status": report.status,
             "generated_file_url": report.generated_file_url,
@@ -116,7 +116,9 @@ class MaterialReportService:
 
         return result
 
-    async def update_report(self, report_id: UUID, data: ReportUpdate) -> Optional[dict]:
+    async def update_report(
+        self, report_id: UUID, data: ReportUpdate
+    ) -> dict | None:
         """更新报告单"""
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -134,11 +136,11 @@ class MaterialReportService:
 
     async def list_reports(
         self,
-        template_id: Optional[UUID] = None,
-        status: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        keyword: Optional[str] = None,
+        template_id: UUID | None = None,
+        status: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
@@ -167,9 +169,13 @@ class MaterialReportService:
                 "id": str(report.id),
                 "report_no": report.report_no,
                 "template_id": str(report.template_id) if report.template_id else None,
-                "template_name": report.template.template_name if report.template else None,
+                "template_name": report.template.template_name
+                if report.template
+                else None,
                 "report_title": report.report_title,
-                "report_date": report.report_date.isoformat() if report.report_date else None,
+                "report_date": report.report_date.isoformat()
+                if report.report_date
+                else None,
                 "status": report.status,
                 "created_at": report.created_at.isoformat(),
             }
@@ -233,9 +239,7 @@ class MaterialReportService:
 
         # 更新生成文件路径
         output_path = f"reports/{report.report_no}.docx"
-        await self.report_repo.update(
-            report_id, {"generated_file_url": output_path}
-        )
+        await self.report_repo.update(report_id, {"generated_file_url": output_path})
 
         return content
 
@@ -257,8 +261,8 @@ class MaterialReportService:
         self,
         report_id: UUID,
         file,
-        field_key: Optional[str] = None,
-        row_index: Optional[int] = None,
+        field_key: str | None = None,
+        row_index: int | None = None,
     ) -> dict:
         """上传图片并进行AI识别"""
         import json
@@ -299,17 +303,19 @@ class MaterialReportService:
                 # 如果直接解析失败，清理思考过程标签后提取JSON
                 safe_print("[DEBUG] 直接解析失败，尝试清理思考标签...")
                 clean_response = ai_response
-                while '<think>' in clean_response and '' in clean_response:
-                    clean_response = re.sub(r'<think>[\s\S]*?', '', clean_response)
+                while "<think>" in clean_response and "" in clean_response:
+                    clean_response = re.sub(r"<think>[\s\S]*?", "", clean_response)
                 clean_response = clean_response.strip()
 
                 # 查找JSON代码块
-                json_match = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', clean_response, re.DOTALL)
+                json_match = re.search(
+                    r"```json\s*(\{[\s\S]*?\})\s*```", clean_response, re.DOTALL
+                )
                 if json_match:
                     json_str = json_match.group(1)
                 else:
                     # 尝试直接在清理后的文本中找JSON对象
-                    json_match = re.search(r'\{[\s\S]*\}', clean_response, re.DOTALL)
+                    json_match = re.search(r"\{[\s\S]*\}", clean_response, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
                     else:
@@ -335,18 +341,25 @@ class MaterialReportService:
         image_record = await self.image_repo.create(image_data)
 
         # 4. 如果提供了field_key，自动填充到明细
-        if field_key and row_index is not None and parsed_result and "items" in parsed_result:
+        if (
+            field_key
+            and row_index is not None
+            and parsed_result
+            and "items" in parsed_result
+        ):
             items = parsed_result["items"]
             if items:
                 # 取第一个识别的项目作为值
                 first_item = items[0]
                 field_value = first_item.get("value", "") or first_item.get("name", "")
                 if field_value:
-                    await self.item_repo.create({
-                        "row_index": row_index,
-                        "field_key": field_key,
-                        "field_value": field_value,
-                    })
+                    await self.item_repo.create(
+                        {
+                            "row_index": row_index,
+                            "field_key": field_key,
+                            "field_value": field_value,
+                        }
+                    )
 
         return {
             "id": image_record.id,
@@ -368,7 +381,9 @@ class MaterialReportService:
                 "field_key": image.field_key,
                 "image_url": image.image_url,
                 "ai_result": image.ai_result,
-                "created_at": image.created_at.isoformat() if image.created_at else None,
+                "created_at": image.created_at.isoformat()
+                if image.created_at
+                else None,
             }
             for image in images
         ]
@@ -381,9 +396,7 @@ class ReportTemplateService:
         self.session = session
         self.template_repo = ReportTemplateRepository(session)
 
-    async def create_template(
-        self, data: TemplateCreate, file_url: str
-    ) -> dict:
+    async def create_template(self, data: TemplateCreate, file_url: str) -> dict:
         """创建模板"""
         template_data = data.model_dump()
         template_data["template_file_url"] = file_url
@@ -401,7 +414,7 @@ class ReportTemplateService:
             "created_at": template.created_at.isoformat(),
         }
 
-    async def get_template(self, template_id: UUID) -> Optional[dict]:
+    async def get_template(self, template_id: UUID) -> dict | None:
         """获取模板详情"""
         template = await self.template_repo.get_by_id(template_id)
         if not template:
@@ -416,12 +429,14 @@ class ReportTemplateService:
             "table_fields": template.table_fields or {},
             "is_active": template.is_active,
             "created_at": template.created_at.isoformat(),
-            "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+            "updated_at": template.updated_at.isoformat()
+            if template.updated_at
+            else None,
         }
 
     async def update_template(
         self, template_id: UUID, data: TemplateUpdate
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """更新模板"""
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -439,7 +454,7 @@ class ReportTemplateService:
 
     async def list_templates(
         self,
-        is_active: Optional[bool] = None,
+        is_active: bool | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
@@ -463,7 +478,7 @@ class ReportTemplateService:
 
         return result, total
 
-    async def parse_template(self, template_id: UUID) -> Optional[dict]:
+    async def parse_template(self, template_id: UUID) -> dict | None:
         """解析模板获取字段配置"""
         from app.modules.quality.word_generator import get_template_fields
 

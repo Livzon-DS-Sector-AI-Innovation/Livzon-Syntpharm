@@ -24,6 +24,7 @@ if _env_path.exists():
 
 # 安全模块独立的应用凭证（从环境变量读取，不经过全局 config）
 import os
+
 SAFETY_FEISHU_APP_ID = os.getenv("SAFETY_FEISHU_APP_ID", "")
 SAFETY_FEISHU_APP_SECRET = os.getenv("SAFETY_FEISHU_APP_SECRET", "")
 

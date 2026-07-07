@@ -1,33 +1,32 @@
 """偏差管理 Service"""
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.qms.deviation_models import (
+    CorrectionStatus,
     DeviationStatus,
     InvestigationStatus,
-    CorrectionStatus,
 )
 from app.modules.quality.qms.deviation_repository import (
+    ApprovalRepository,
+    ClosingRepository,
+    CorrectionRepository,
     DeviationRepository,
     InvestigationRepository,
-    CorrectionRepository,
-    ClosingRepository,
-    ApprovalRepository,
 )
 from app.modules.quality.qms.deviation_schemas import (
+    ClosingCreate,
+    ClosingUpdate,
+    CorrectionCreate,
+    CorrectionUpdate,
     DeviationCreate,
+    DeviationStatistics,
     DeviationUpdate,
     InvestigationCreate,
     InvestigationUpdate,
-    CorrectionCreate,
-    CorrectionUpdate,
-    ClosingCreate,
-    ClosingUpdate,
-    DeviationStatistics,
 )
 
 
@@ -47,20 +46,22 @@ class DeviationService:
     async def create_deviation(
         self,
         data: DeviationCreate,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> dict:
         """创建偏差"""
         deviation_data = data.model_dump()
-        
+
         # 处理偏差描述字段映射
         # 前端可能发送 description 或 abnormal_description，需要统一存储到 abnormal_description
-        desc = deviation_data.get('abnormal_description') or deviation_data.get('description')
-        deviation_data['abnormal_description'] = desc
+        desc = deviation_data.get("abnormal_description") or deviation_data.get(
+            "description"
+        )
+        deviation_data["abnormal_description"] = desc
         # 清理不需要的字段
-        deviation_data.pop('description', None)
-        
-        deviation_data['deviation_no'] = self._generate_deviation_no()
-        deviation_data['status'] = DeviationStatus.DRAFT
+        deviation_data.pop("description", None)
+
+        deviation_data["deviation_no"] = self._generate_deviation_no()
+        deviation_data["status"] = DeviationStatus.DRAFT
 
         deviation = await self.repository.create(deviation_data)
 
@@ -69,7 +70,7 @@ class DeviationService:
             "deviation_no": deviation.deviation_no,
         }
 
-    async def get_deviation(self, deviation_id: UUID) -> Optional[dict]:
+    async def get_deviation(self, deviation_id: UUID) -> dict | None:
         """获取偏差详情"""
         deviation = await self.repository.get_by_id(deviation_id)
         if not deviation:
@@ -87,22 +88,27 @@ class DeviationService:
         self,
         deviation_id: UUID,
         data: DeviationUpdate,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """更新偏差"""
         try:
             update_data = data.model_dump(exclude_unset=True)
 
             # 处理偏差描述字段映射
-            desc = update_data.get('abnormal_description') or update_data.get('description')
+            desc = update_data.get("abnormal_description") or update_data.get(
+                "description"
+            )
             if desc:
-                update_data['abnormal_description'] = desc
-            update_data.pop('description', None)
+                update_data["abnormal_description"] = desc
+            update_data.pop("description", None)
 
             # 处理调查信息
-            investigation_data = update_data.pop('investigation', None)
+            investigation_data = update_data.pop("investigation", None)
             if investigation_data:
                 # 创建或更新调查记录
-                from app.modules.quality.qms.deviation_repository import InvestigationRepository
+                from app.modules.quality.qms.deviation_repository import (
+                    InvestigationRepository,
+                )
+
                 investigation_repo = InvestigationRepository(self.session)
                 existing = await investigation_repo.get_by_deviation_id(deviation_id)
                 if existing:
@@ -110,39 +116,53 @@ class DeviationService:
                     await investigation_repo.update(deviation_id, investigation_data)
                 else:
                     # 创建新调查 - 从数据中移除deviation_id避免重复
-                    data_to_create = {k: v for k, v in investigation_data.items() if k != 'deviation_id'}
-                    data_to_create['status'] = 'in_progress'
+                    data_to_create = {
+                        k: v
+                        for k, v in investigation_data.items()
+                        if k != "deviation_id"
+                    }
+                    data_to_create["status"] = "in_progress"
                     await investigation_repo.create(deviation_id, data_to_create)
 
             # 处理整改信息
-            correction_data = update_data.pop('correction', None)
+            correction_data = update_data.pop("correction", None)
             if correction_data:
-                from app.modules.quality.qms.deviation_repository import CorrectionRepository
+                from app.modules.quality.qms.deviation_repository import (
+                    CorrectionRepository,
+                )
+
                 correction_repo = CorrectionRepository(self.session)
                 existing = await correction_repo.get_by_deviation_id(deviation_id)
                 if existing:
                     # 更新现有整改 - 解析日期字段
-                    if 'plan_completion_date' in correction_data:
-                        correction_data['plan_completion_date'] = correction_repo._parse_date(correction_data['plan_completion_date'])
+                    if "plan_completion_date" in correction_data:
+                        correction_data["plan_completion_date"] = (
+                            correction_repo._parse_date(
+                                correction_data["plan_completion_date"]
+                            )
+                        )
                     await correction_repo.update(deviation_id, correction_data)
                 else:
                     # 创建新整改 - 从数据中移除deviation_id避免重复
-                    data_to_create = {k: v for k, v in correction_data.items() if k != 'deviation_id'}
-                    data_to_create['status'] = 'pending'
-                    data_to_create['progress'] = 0
+                    data_to_create = {
+                        k: v for k, v in correction_data.items() if k != "deviation_id"
+                    }
+                    data_to_create["status"] = "pending"
+                    data_to_create["progress"] = 0
                     await correction_repo.create(deviation_id, data_to_create)
 
                 # 更新偏差状态为待整改
-                await self.repository.update(deviation_id, {
-                    "status": DeviationStatus.CORRECTION_PENDING
-                })
+                await self.repository.update(
+                    deviation_id, {"status": DeviationStatus.CORRECTION_PENDING}
+                )
 
             deviation = await self.repository.update(deviation_id, update_data)
             if not deviation:
                 return None
             return deviation
-        except Exception as e:
+        except Exception:
             import traceback
+
             traceback.print_exc()
             raise
 
@@ -152,14 +172,14 @@ class DeviationService:
 
     async def list_deviations(
         self,
-        deviation_no: Optional[str] = None,
-        deviation_type: Optional[str] = None,
-        deviation_level: Optional[str] = None,
-        status: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        product_batch: Optional[str] = None,
-        department: Optional[str] = None,
+        deviation_no: str | None = None,
+        deviation_type: str | None = None,
+        deviation_level: str | None = None,
+        status: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        product_batch: str | None = None,
+        department: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list, int]:
@@ -180,7 +200,7 @@ class DeviationService:
     async def submit_deviation(
         self,
         deviation_id: UUID,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> dict:
         """提交偏差"""
         deviation = await self.repository.get_by_id(deviation_id)
@@ -191,17 +211,19 @@ class DeviationService:
             raise ValueError("只有草稿状态可以提交")
 
         # 更新状态
-        await self.repository.update(deviation_id, {
-            "status": DeviationStatus.SUBMITTED
-        })
+        await self.repository.update(
+            deviation_id, {"status": DeviationStatus.SUBMITTED}
+        )
 
         # 创建提交审批记录
-        await self.approval_repo.create({
-            "deviation_id": deviation_id,
-            "approval_type": "submit",
-            "approved": True,
-            "approval_comments": "提交偏差",
-        })
+        await self.approval_repo.create(
+            {
+                "deviation_id": deviation_id,
+                "approval_type": "submit",
+                "approved": True,
+                "approval_comments": "提交偏差",
+            }
+        )
 
         return await self.get_deviation(deviation_id)
 
@@ -209,10 +231,10 @@ class DeviationService:
         self,
         deviation_id: UUID,
         approved: bool,
-        comments: Optional[str] = None,
+        comments: str | None = None,
         approval_type: str = "admin",
-        user_id: Optional[str] = None,
-        user_name: Optional[str] = None,
+        user_id: str | None = None,
+        user_name: str | None = None,
     ) -> dict:
         """审批偏差"""
         deviation = await self.repository.get_by_id(deviation_id)
@@ -220,34 +242,36 @@ class DeviationService:
             raise ValueError("偏差不存在")
 
         # 创建审批记录
-        await self.approval_repo.create({
-            "deviation_id": deviation_id,
-            "approval_type": approval_type,
-            "approver_name": user_name,
-            "approved": approved,
-            "approval_comments": comments,
-            "approved_at": datetime.now(),
-        })
+        await self.approval_repo.create(
+            {
+                "deviation_id": deviation_id,
+                "approval_type": approval_type,
+                "approver_name": user_name,
+                "approved": approved,
+                "approval_comments": comments,
+                "approved_at": datetime.now(),
+            }
+        )
 
         if not approved:
             # 驳回
-            await self.repository.update(deviation_id, {
-                "status": DeviationStatus.REJECTED
-            })
+            await self.repository.update(
+                deviation_id, {"status": DeviationStatus.REJECTED}
+            )
         else:
             # 根据当前状态更新
             if deviation.status == DeviationStatus.SUBMITTED:
-                await self.repository.update(deviation_id, {
-                    "status": DeviationStatus.ADMIN_APPROVED
-                })
+                await self.repository.update(
+                    deviation_id, {"status": DeviationStatus.ADMIN_APPROVED}
+                )
             elif deviation.status == DeviationStatus.ADMIN_APPROVED:
-                await self.repository.update(deviation_id, {
-                    "status": DeviationStatus.QA_APPROVED
-                })
+                await self.repository.update(
+                    deviation_id, {"status": DeviationStatus.QA_APPROVED}
+                )
             elif deviation.status == DeviationStatus.QA_APPROVED:
-                await self.repository.update(deviation_id, {
-                    "status": DeviationStatus.ACTIVE
-                })
+                await self.repository.update(
+                    deviation_id, {"status": DeviationStatus.ACTIVE}
+                )
 
         return await self.get_deviation(deviation_id)
 
@@ -261,11 +285,14 @@ class DeviationService:
         if not deviation:
             raise ValueError("偏差不存在")
 
-        await self.repository.update(deviation_id, {
-            "batch_locked": True,
-            "batch_lock_reason": reason,
-            "batch_locked_at": datetime.now(),
-        })
+        await self.repository.update(
+            deviation_id,
+            {
+                "batch_locked": True,
+                "batch_lock_reason": reason,
+                "batch_locked_at": datetime.now(),
+            },
+        )
 
         return await self.get_deviation(deviation_id)
 
@@ -275,9 +302,12 @@ class DeviationService:
         if not deviation:
             raise ValueError("偏差不存在")
 
-        await self.repository.update(deviation_id, {
-            "batch_locked": False,
-        })
+        await self.repository.update(
+            deviation_id,
+            {
+                "batch_locked": False,
+            },
+        )
 
         return await self.get_deviation(deviation_id)
 
@@ -312,14 +342,14 @@ class InvestigationService:
             raise ValueError("该偏差已存在调查记录")
 
         investigation_data = data.model_dump()
-        investigation_data['status'] = InvestigationStatus.PENDING
+        investigation_data["status"] = InvestigationStatus.PENDING
 
         investigation = await self.repository.create(deviation_id, investigation_data)
 
         # 更新偏差状态
-        await self.deviation_repo.update(deviation_id, {
-            "status": DeviationStatus.INVESTIGATING
-        })
+        await self.deviation_repo.update(
+            deviation_id, {"status": DeviationStatus.INVESTIGATING}
+        )
 
         return investigation
 
@@ -327,7 +357,7 @@ class InvestigationService:
         self,
         deviation_id: UUID,
         data: InvestigationUpdate,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """更新调查"""
         update_data = data.model_dump(exclude_unset=True)
         investigation = await self.repository.update(deviation_id, update_data)
@@ -344,14 +374,14 @@ class InvestigationService:
         if not investigation:
             raise ValueError("调查记录不存在")
 
-        await self.repository.update(deviation_id, {
-            "status": InvestigationStatus.COMPLETED
-        })
+        await self.repository.update(
+            deviation_id, {"status": InvestigationStatus.COMPLETED}
+        )
 
         # 更新偏差状态
-        await self.deviation_repo.update(deviation_id, {
-            "status": DeviationStatus.INVESTIGATION_COMPLETED
-        })
+        await self.deviation_repo.update(
+            deviation_id, {"status": DeviationStatus.INVESTIGATION_COMPLETED}
+        )
 
         return investigation
 
@@ -389,15 +419,15 @@ class CorrectionService:
             raise ValueError("该偏差已存在整改记录")
 
         correction_data = data.model_dump()
-        correction_data['status'] = CorrectionStatus.PENDING
-        correction_data['progress'] = 0
+        correction_data["status"] = CorrectionStatus.PENDING
+        correction_data["progress"] = 0
 
         correction = await self.repository.create(deviation_id, correction_data)
 
         # 更新偏差状态
-        await self.deviation_repo.update(deviation_id, {
-            "status": DeviationStatus.CORRECTION_PENDING
-        })
+        await self.deviation_repo.update(
+            deviation_id, {"status": DeviationStatus.CORRECTION_PENDING}
+        )
 
         return correction
 
@@ -405,7 +435,7 @@ class CorrectionService:
         self,
         deviation_id: UUID,
         data: CorrectionUpdate,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """更新整改"""
         update_data = data.model_dump(exclude_unset=True)
         correction = await self.repository.update(deviation_id, update_data)
@@ -414,13 +444,13 @@ class CorrectionService:
 
         # 更新偏差状态
         if correction.status == CorrectionStatus.IN_PROGRESS:
-            await self.deviation_repo.update(deviation_id, {
-                "status": DeviationStatus.CORRECTION_IN_PROGRESS
-            })
+            await self.deviation_repo.update(
+                deviation_id, {"status": DeviationStatus.CORRECTION_IN_PROGRESS}
+            )
         elif correction.status == CorrectionStatus.COMPLETED:
-            await self.deviation_repo.update(deviation_id, {
-                "status": DeviationStatus.CORRECTION_COMPLETED
-            })
+            await self.deviation_repo.update(
+                deviation_id, {"status": DeviationStatus.CORRECTION_COMPLETED}
+            )
 
         return correction
 
@@ -482,9 +512,9 @@ class ClosingService:
         closing = await self.repository.create(deviation_id, closing_data)
 
         # 更新偏差状态
-        await self.deviation_repo.update(deviation_id, {
-            "status": DeviationStatus.CLOSING_PENDING
-        })
+        await self.deviation_repo.update(
+            deviation_id, {"status": DeviationStatus.CLOSING_PENDING}
+        )
 
         return closing
 
@@ -492,7 +522,7 @@ class ClosingService:
         self,
         deviation_id: UUID,
         data: ClosingUpdate,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """更新关闭记录"""
         update_data = data.model_dump(exclude_unset=True)
         closing = await self.repository.update(deviation_id, update_data)
@@ -510,22 +540,31 @@ class ClosingService:
             raise ValueError("关闭记录不存在")
 
         # 解锁批次
-        await self.deviation_repo.update(deviation_id, {
-            "batch_locked": False,
-        })
+        await self.deviation_repo.update(
+            deviation_id,
+            {
+                "batch_locked": False,
+            },
+        )
 
         # 归档并关闭
-        await self.repository.update(deviation_id, {
-            "batch_unlocked": True,
-            "archived": True,
-            "archived_at": datetime.now(),
-        })
+        await self.repository.update(
+            deviation_id,
+            {
+                "batch_unlocked": True,
+                "archived": True,
+                "archived_at": datetime.now(),
+            },
+        )
 
         # 更新偏差状态
-        await self.deviation_repo.update(deviation_id, {
-            "status": DeviationStatus.CLOSED,
-            "batch_locked": False,
-        })
+        await self.deviation_repo.update(
+            deviation_id,
+            {
+                "status": DeviationStatus.CLOSED,
+                "batch_locked": False,
+            },
+        )
 
         return closing
 

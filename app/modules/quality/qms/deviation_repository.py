@@ -1,10 +1,9 @@
 """偏差管理 Repository"""
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import func, select, and_, or_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -31,7 +30,7 @@ class DeviationRepository:
         await self.session.refresh(deviation)
         return deviation
 
-    async def get_by_id(self, deviation_id: UUID) -> Optional[Deviation]:
+    async def get_by_id(self, deviation_id: UUID) -> Deviation | None:
         """获取偏差详情"""
         result = await self.session.execute(
             select(Deviation)
@@ -45,14 +44,14 @@ class DeviationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_no(self, deviation_no: str) -> Optional[Deviation]:
+    async def get_by_no(self, deviation_no: str) -> Deviation | None:
         """通过编号获取偏差"""
         result = await self.session.execute(
             select(Deviation).where(Deviation.deviation_no == deviation_no)
         )
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> Optional[Deviation]:
+    async def update(self, deviation_id: UUID, data: dict) -> Deviation | None:
         """更新偏差"""
         deviation = await self.get_by_id(deviation_id)
         if not deviation:
@@ -76,14 +75,14 @@ class DeviationRepository:
 
     async def list_with_filter(
         self,
-        deviation_no: Optional[str] = None,
-        deviation_type: Optional[str] = None,
-        deviation_level: Optional[str] = None,
-        status: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        product_batch: Optional[str] = None,
-        department: Optional[str] = None,
+        deviation_no: str | None = None,
+        deviation_type: str | None = None,
+        deviation_level: str | None = None,
+        status: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        product_batch: str | None = None,
+        department: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Deviation], int]:
@@ -139,22 +138,23 @@ class DeviationRepository:
 
         # 按类型统计
         type_result = await self.session.execute(
-            select(Deviation.deviation_type, func.count())
-            .group_by(Deviation.deviation_type)
+            select(Deviation.deviation_type, func.count()).group_by(
+                Deviation.deviation_type
+            )
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
 
         # 按等级统计
         level_result = await self.session.execute(
-            select(Deviation.deviation_level, func.count())
-            .group_by(Deviation.deviation_level)
+            select(Deviation.deviation_level, func.count()).group_by(
+                Deviation.deviation_level
+            )
         )
         by_level = {row[0]: row[1] for row in level_result.all()}
 
         # 按状态统计
         status_result = await self.session.execute(
-            select(Deviation.status, func.count())
-            .group_by(Deviation.status)
+            select(Deviation.status, func.count()).group_by(Deviation.status)
         )
         by_status = {row[0]: row[1] for row in status_result.all()}
 
@@ -175,24 +175,26 @@ class InvestigationRepository:
 
     async def create(self, deviation_id: UUID, data: dict) -> DeviationInvestigation:
         """创建调查"""
-        investigation = DeviationInvestigation(
-            deviation_id=deviation_id,
-            **data
-        )
+        investigation = DeviationInvestigation(deviation_id=deviation_id, **data)
         self.session.add(investigation)
         await self.session.flush()
         await self.session.refresh(investigation)
         return investigation
 
-    async def get_by_deviation_id(self, deviation_id: UUID) -> Optional[DeviationInvestigation]:
+    async def get_by_deviation_id(
+        self, deviation_id: UUID
+    ) -> DeviationInvestigation | None:
         """通过偏差ID获取调查"""
         result = await self.session.execute(
-            select(DeviationInvestigation)
-            .where(DeviationInvestigation.deviation_id == deviation_id)
+            select(DeviationInvestigation).where(
+                DeviationInvestigation.deviation_id == deviation_id
+            )
         )
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> Optional[DeviationInvestigation]:
+    async def update(
+        self, deviation_id: UUID, data: dict
+    ) -> DeviationInvestigation | None:
         """更新调查"""
         investigation = await self.get_by_deviation_id(deviation_id)
         if not investigation:
@@ -212,10 +214,10 @@ class InvestigationRepository:
         page_size: int = 20,
     ) -> tuple[list[DeviationInvestigation], int]:
         """待调查列表"""
-        query = select(DeviationInvestigation).options(
-            selectinload(DeviationInvestigation.deviation)
-        ).where(
-            DeviationInvestigation.status.in_(['pending', 'in_progress'])
+        query = (
+            select(DeviationInvestigation)
+            .options(selectinload(DeviationInvestigation.deviation))
+            .where(DeviationInvestigation.status.in_(["pending", "in_progress"]))
         )
 
         count_query = select(func.count()).select_from(query.subquery())
@@ -241,17 +243,19 @@ class CorrectionRepository:
         """解析日期，支持字符串和date格式"""
         if value is None:
             return None
-        if hasattr(value, 'isoformat'):
+        if hasattr(value, "isoformat"):
             # datetime.date 或 datetime.datetime 对象，转换为 datetime
             from datetime import datetime
+
             if isinstance(value, datetime):
                 return value
             return datetime.combine(value, datetime.min.time())
         if isinstance(value, str):
             # 字符串格式转换为 datetime
             from datetime import datetime
+
             try:
-                return datetime.fromisoformat(value.replace('Z', '+00:00'))
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
             except ValueError:
                 return None
         return value
@@ -259,35 +263,41 @@ class CorrectionRepository:
     async def create(self, deviation_id: UUID, data: dict) -> DeviationCorrection:
         """创建整改"""
         # 处理日期字段
-        if 'plan_completion_date' in data:
-            data['plan_completion_date'] = self._parse_date(data['plan_completion_date'])
+        if "plan_completion_date" in data:
+            data["plan_completion_date"] = self._parse_date(
+                data["plan_completion_date"]
+            )
 
-        correction = DeviationCorrection(
-            deviation_id=deviation_id,
-            **data
-        )
+        correction = DeviationCorrection(deviation_id=deviation_id, **data)
         self.session.add(correction)
         await self.session.flush()
         await self.session.refresh(correction)
         return correction
 
-    async def get_by_deviation_id(self, deviation_id: UUID) -> Optional[DeviationCorrection]:
+    async def get_by_deviation_id(
+        self, deviation_id: UUID
+    ) -> DeviationCorrection | None:
         """通过偏差ID获取整改"""
         result = await self.session.execute(
-            select(DeviationCorrection)
-            .where(DeviationCorrection.deviation_id == deviation_id)
+            select(DeviationCorrection).where(
+                DeviationCorrection.deviation_id == deviation_id
+            )
         )
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> Optional[DeviationCorrection]:
+    async def update(
+        self, deviation_id: UUID, data: dict
+    ) -> DeviationCorrection | None:
         """更新整改"""
         correction = await self.get_by_deviation_id(deviation_id)
         if not correction:
             return None
 
         # 处理日期字段
-        if 'plan_completion_date' in data:
-            data['plan_completion_date'] = self._parse_date(data['plan_completion_date'])
+        if "plan_completion_date" in data:
+            data["plan_completion_date"] = self._parse_date(
+                data["plan_completion_date"]
+            )
 
         for key, value in data.items():
             if hasattr(correction, key):
@@ -303,10 +313,10 @@ class CorrectionRepository:
         page_size: int = 20,
     ) -> tuple[list[DeviationCorrection], int]:
         """待整改列表"""
-        query = select(DeviationCorrection).options(
-            selectinload(DeviationCorrection.deviation)
-        ).where(
-            DeviationCorrection.status.in_(['pending', 'in_progress'])
+        query = (
+            select(DeviationCorrection)
+            .options(selectinload(DeviationCorrection.deviation))
+            .where(DeviationCorrection.status.in_(["pending", "in_progress"]))
         )
 
         count_query = select(func.count()).select_from(query.subquery())
@@ -330,24 +340,26 @@ class ClosingRepository:
 
     async def create(self, deviation_id: UUID, data: dict) -> DeviationClosing:
         """创建关闭"""
-        closing = DeviationClosing(
-            deviation_id=deviation_id,
-            **data
-        )
+        closing = DeviationClosing(deviation_id=deviation_id, **data)
         self.session.add(closing)
         await self.session.flush()
         await self.session.refresh(closing)
         return closing
 
-    async def get_by_deviation_id(self, deviation_id: UUID) -> Optional[DeviationClosing]:
+    async def get_by_deviation_id(
+        self, deviation_id: UUID
+    ) -> DeviationClosing | None:
         """通过偏差ID获取关闭"""
         result = await self.session.execute(
-            select(DeviationClosing)
-            .where(DeviationClosing.deviation_id == deviation_id)
+            select(DeviationClosing).where(
+                DeviationClosing.deviation_id == deviation_id
+            )
         )
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> Optional[DeviationClosing]:
+    async def update(
+        self, deviation_id: UUID, data: dict
+    ) -> DeviationClosing | None:
         """更新关闭"""
         closing = await self.get_by_deviation_id(deviation_id)
         if not closing:

@@ -111,7 +111,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Start reagent reminder scheduler
     try:
-        from app.modules.quality.qms.reagent_reminder_scheduler import start_reagent_reminder_scheduler
+        from app.modules.quality.qms.reagent_reminder_scheduler import (
+            start_reagent_reminder_scheduler,
+        )
+
         start_reagent_reminder_scheduler()
         logger.info("Reagent reminder scheduler started")
     except Exception as e:
@@ -119,7 +122,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Start deviation reporter reminder scheduler
     try:
-        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import start_deviation_reporter_reminder_scheduler
+        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import (
+            start_deviation_reporter_reminder_scheduler,
+        )
+
         start_deviation_reporter_reminder_scheduler()
         logger.info("Deviation reporter reminder scheduler started")
     except Exception as e:
@@ -146,7 +152,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # ── 设备模块飞书 WebSocket 长连接（独立交互机器人，原生 WebSocket） ──
     equipment_ws_task: asyncio.Task | None = None
-    if settings.feishu.equipment.credentials.app_id and settings.feishu.equipment.credentials.app_secret:
+    if (
+        settings.feishu.equipment.credentials.app_id
+        and settings.feishu.equipment.credentials.app_secret
+    ):
         from app.modules.equipment.feishu.ws_client import start_equipment_ws
 
         equipment_ws_task = asyncio.create_task(start_equipment_ws())
@@ -161,12 +170,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED:
         from app.platform.identity.feishu_card_ws import start_livzon_card_ws
 
-        livzon_card_ws_task = asyncio.create_task(start_livzon_card_ws())
+        asyncio.create_task(start_livzon_card_ws())
 
     # ── 安全模块启动时 Bitable 漏单恢复（后台执行，不阻塞启动）──
     from app.modules.safety.feishu.catch_up import recover_unprocessed_records
 
-    recovery_task = asyncio.create_task(recover_unprocessed_records())
+    asyncio.create_task(recover_unprocessed_records())
 
     # ── 安全模块定时任务调度引擎 ──
     from app.modules.safety.scheduler import (
@@ -206,9 +215,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown: stop all workers in reverse order
     logger.info("Shutting down %s", settings.APP_NAME)
 
-    # 停止安全模块 WebSocket
-    await stop_ws()
-    safety_ws_task.cancel()
 
     # 停止定时任务调度引擎
     stop_scheduled_task_flag.set()
@@ -298,7 +304,10 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     if exc.status_code >= 500:
         logger.exception(
             "HTTP %d on %s %s: %s",
-            exc.status_code, request.method, request.url.path, exc.message,
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.message,
         )
     return error_response(
         message=exc.message,
@@ -314,7 +323,10 @@ async def http_exception_handler(
     if exc.status_code >= 500:
         logger.exception(
             "HTTP %d on %s %s: %s",
-            exc.status_code, request.method, request.url.path, exc.detail,
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.detail,
         )
     return error_response(
         message=str(exc.detail),
@@ -357,7 +369,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     request_id = getattr(request.state, "request_id", None)
     logger.exception(
         "Unhandled exception on %s %s [request_id=%s]: %s",
-        request.method, request.url.path, request_id, exc,
+        request.method,
+        request.url.path,
+        request_id,
+        exc,
     )
     return error_response(
         message="服务内部错误",

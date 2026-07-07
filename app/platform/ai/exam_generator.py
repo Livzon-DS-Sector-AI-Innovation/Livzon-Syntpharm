@@ -7,8 +7,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
-from app.platform.ai.schemas import ChoiceQuestion, ExamExportRequest, TrueFalseQuestion
-
+from app.platform.ai.schemas import ExamExportRequest
 
 _PROMPT_TEMPLATE = """你是一位专业的培训考核出题专家。请根据以下文件内容，生成一份新员工入职培训考核试卷。
 
@@ -56,12 +55,14 @@ def build_generate_prompt(file_content: str) -> str:
 
 
 # ─── 字号常量 ───
-SIZE_S4 = Pt(12)   # 小四
-SIZE_4 = Pt(14)    # 四号
-SIZE_X3 = Pt(15)   # 小三号
+SIZE_S4 = Pt(12)  # 小四
+SIZE_4 = Pt(14)  # 四号
+SIZE_X3 = Pt(15)  # 小三号
 
 
-def _set_run_font(run, western: str, east_asian: str, size: Pt, bold: bool = False) -> None:
+def _set_run_font(
+    run, western: str, east_asian: str, size: Pt, bold: bool = False
+) -> None:
     """设置 run 的字体：西文字体 + 中文字体 + 字号 + 加粗."""
     run.font.name = western
     run.font.size = size

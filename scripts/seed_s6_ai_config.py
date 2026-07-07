@@ -9,7 +9,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
-from app.modules.registration.dossier_writer.field_models import AssetCategory, FieldMapping
+from app.modules.registration.dossier_writer.field_models import (
+    AssetCategory,
+    FieldMapping,
+)
 
 S6_ASSET_CATEGORIES = [
     {

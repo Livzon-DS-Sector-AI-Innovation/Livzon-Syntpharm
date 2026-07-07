@@ -18,6 +18,11 @@ from __future__ import annotations
 
 import logging
 from io import BytesIO
+from fastapi import UploadFile
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from minio import Minio
 
 from app.core.config import get_settings
 
@@ -129,7 +134,9 @@ def is_enabled() -> bool:
     return _enabled or False
 
 
-async def save_upload_files(files: list[UploadFile], sub_dir: str = "reagent-labels") -> list[str]:
+async def save_upload_files(
+    files: list[UploadFile], sub_dir: str = "reagent-labels"
+) -> list[str]:
     """保存多个上传的文件
 
     Args:
@@ -170,6 +177,7 @@ def delete_upload_file(file_url: str) -> bool:
 
         # 删除文件
         import os
+
         full_path = os.path.join("uploads", file_path)
         if os.path.exists(full_path):
             os.remove(full_path)

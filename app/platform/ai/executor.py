@@ -26,9 +26,12 @@ from app.platform.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
 
+
 def _get_model() -> str:
     from app.core.config import get_settings
+
     return get_settings().AI_MODEL or "kimi-k2.5"
+
 
 _DYNAMIC_SYSTEM_PROMPT = """你是工厂人事系统的「动态查询生成助手」。
 
@@ -245,9 +248,7 @@ async def _generate_dynamic_queries(
 
         raw = response.choices[0].message.content
         if not raw:
-            logger.warning(
-                "Dynamic query generation empty (attempt %d)", attempt + 1
-            )
+            logger.warning("Dynamic query generation empty (attempt %d)", attempt + 1)
             if attempt < 2:
                 continue
             return []

@@ -13,9 +13,13 @@ from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.crawler.cde_crawler import (
     CdeDomesticGuidelineAdapter,
 )
-from app.modules.registration.regulatory_tracker.crawler.nmpa_crawler import NmpaRecordAdapter
+from app.modules.registration.regulatory_tracker.crawler.nmpa_crawler import (
+    NmpaRecordAdapter,
+)
 from app.modules.registration.regulatory_tracker.models import DataChannel, DataSource
-from app.modules.registration.regulatory_tracker.services.ai_workflow import get_ai_workflow
+from app.modules.registration.regulatory_tracker.services.ai_workflow import (
+    get_ai_workflow,
+)
 
 logger = logging.getLogger(__name__)
 

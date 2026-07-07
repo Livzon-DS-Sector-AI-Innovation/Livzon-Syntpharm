@@ -5,27 +5,23 @@
 """
 
 import uuid
-from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
 from app.modules.quality.qms.doc_check.schemas import (
-    CheckResult,
+    DocCheckConfigCreate,
+    DocCheckConfigResponse,
+    DocCheckConfigUpdate,
     DocCheckCreate,
     DocCheckDetailResponse,
     DocCheckResponse,
     DocCheckUpdate,
-    ProblemItem,
     ProblemResponse,
-    DocCheckConfigCreate,
-    DocCheckConfigResponse,
-    DocCheckConfigUpdate,
     ProblemUpdate,
 )
 from app.modules.quality.qms.doc_check.service import DocCheckService
@@ -54,6 +50,7 @@ async def get_configs(
         )
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return ApiResponse(code=500, message=f"Error: {type(e).__name__}: {str(e)}")
 
@@ -117,19 +114,26 @@ async def create_check(
         check = await service.create_check(data, operator=operator)
         await db.commit()
         # 返回前端需要的格式
-        return ApiResponse(data={
-            "task_id": str(check.id),
-            "check_no": check.file_code,
-            "file_name": check.file_name,
-            "status": check.status.value if hasattr(check.status, 'value') else check.status,
-        })
+        return ApiResponse(
+            data={
+                "task_id": str(check.id),
+                "check_no": check.file_code,
+                "file_name": check.file_name,
+                "status": check.status.value
+                if hasattr(check.status, "value")
+                else check.status,
+            }
+        )
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return ApiResponse(code=500, message=f"{type(e).__name__}: {str(e)}")
 
 
-@router.post("/check/{check_id}/execute", response_model=ApiResponse, summary="执行校验")
+@router.post(
+    "/check/{check_id}/execute", response_model=ApiResponse, summary="执行校验"
+)
 async def execute_check(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -282,10 +286,15 @@ async def upload_file(
     # 保存到存储（生产环境应使用对象存储）
     # Word文档使用docx库读取文本内容
     content_text = ""
-    if file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    if (
+        file.content_type
+        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ):
         try:
             from io import BytesIO
+
             from docx import Document
+
             doc = Document(BytesIO(content))
             content_text = "\n".join([p.text for p in doc.paragraphs])
         except Exception as e:
@@ -296,7 +305,7 @@ async def upload_file(
             content_text = content.decode("utf-8")
         except Exception:
             content_text = ""
-            
+
     _upload_store[file_id] = {
         "file_id": file_id,
         "file_name": file_name,
@@ -311,16 +320,20 @@ async def upload_file(
         "status": "uploaded",
     }
 
-    return ApiResponse(data={
-        "file_id": file_id,
-        "file_name": file_name,
-        "file_path": f"/uploads/{file_id}",
-        "file_size": file_size,
-        "file_ext": file.filename.split(".")[-1] if "." in file.filename else "",
-    })
+    return ApiResponse(
+        data={
+            "file_id": file_id,
+            "file_name": file_name,
+            "file_path": f"/uploads/{file_id}",
+            "file_size": file_size,
+            "file_ext": file.filename.split(".")[-1] if "." in file.filename else "",
+        }
+    )
 
 
-@router.get("/upload/{upload_id}/progress", response_model=ApiResponse, summary="获取上传进度")
+@router.get(
+    "/upload/{upload_id}/progress", response_model=ApiResponse, summary="获取上传进度"
+)
 async def get_upload_progress(
     upload_id: str,
     db: AsyncSession = Depends(get_db),
@@ -333,16 +346,20 @@ async def get_upload_progress(
     upload_data = _upload_store[upload_id]
     progress = 100 if upload_data.get("status") == "uploaded" else 0
 
-    return ApiResponse(data={
-        "progress": progress,
-        "file_id": upload_id if progress == 100 else None,
-    })
+    return ApiResponse(
+        data={
+            "progress": progress,
+            "file_id": upload_id if progress == 100 else None,
+        }
+    )
 
 
 # ============ 校验进度接口 ============
 
 
-@router.get("/check/{check_id}/progress", response_model=ApiResponse, summary="获取校验进度")
+@router.get(
+    "/check/{check_id}/progress", response_model=ApiResponse, summary="获取校验进度"
+)
 async def get_check_progress(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -374,13 +391,15 @@ async def get_check_progress(
         "cancelled": "已取消",
     }
 
-    return ApiResponse(data={
-        "task_id": str(check.id),
-        "status": check.status,
-        "progress": progress,
-        "current_step": step_map.get(check.status, "未知"),
-        "message": check.check_result if check.check_result else None,
-    })
+    return ApiResponse(
+        data={
+            "task_id": str(check.id),
+            "status": check.status,
+            "progress": progress,
+            "current_step": step_map.get(check.status, "未知"),
+            "message": check.check_result if check.check_result else None,
+        }
+    )
 
 
 @router.post("/check/{check_id}/cancel", response_model=ApiResponse, summary="取消校验")
@@ -441,15 +460,19 @@ async def batch_check(
         )
         await db.commit()
 
-        results.append({
-            "task_id": str(check.id),
-            "status": check.status,
-        })
+        results.append(
+            {
+                "task_id": str(check.id),
+                "status": check.status,
+            }
+        )
 
-    return ApiResponse(data={
-        "task_id": str(results[0]["task_id"]) if results else None,
-        "status": "batch_created",
-    })
+    return ApiResponse(
+        data={
+            "task_id": str(results[0]["task_id"]) if results else None,
+            "status": "batch_created",
+        }
+    )
 
 
 # ============ 记录列表接口 ============
@@ -481,23 +504,31 @@ async def get_records(
     # 转换格式
     items = []
     for check in checks:
-        items.append({
-            "id": str(check.id),
-            "file_name": check.file_name or "",
-            "file_no": check.file_code,
-            "file_version": check.file_version,
-            "file_type": check.file_type,
-            "preparer": check.operator,
-            "prepare_date": check.created_at.isoformat() if check.created_at else None,
-            "status": check.status,
-            "total_problems": check.total_problems or 0,
-            "risk_high": check.high_risk_count or 0,
-            "risk_medium": check.medium_risk_count or 0,
-            "risk_low": check.low_risk_count or 0,
-            "operator": check.operator,
-            "created_at": check.created_at.isoformat() if check.created_at else None,
-            "updated_at": check.updated_at.isoformat() if check.updated_at else None,
-        })
+        items.append(
+            {
+                "id": str(check.id),
+                "file_name": check.file_name or "",
+                "file_no": check.file_code,
+                "file_version": check.file_version,
+                "file_type": check.file_type,
+                "preparer": check.operator,
+                "prepare_date": check.created_at.isoformat()
+                if check.created_at
+                else None,
+                "status": check.status,
+                "total_problems": check.total_problems or 0,
+                "risk_high": check.high_risk_count or 0,
+                "risk_medium": check.medium_risk_count or 0,
+                "risk_low": check.low_risk_count or 0,
+                "operator": check.operator,
+                "created_at": check.created_at.isoformat()
+                if check.created_at
+                else None,
+                "updated_at": check.updated_at.isoformat()
+                if check.updated_at
+                else None,
+            }
+        )
 
     return ApiResponse(
         data={
@@ -509,7 +540,9 @@ async def get_records(
     )
 
 
-@router.get("/records/{record_id}", response_model=ApiResponse, summary="获取校验记录详情")
+@router.get(
+    "/records/{record_id}", response_model=ApiResponse, summary="获取校验记录详情"
+)
 async def get_record_detail(
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -526,40 +559,46 @@ async def get_record_detail(
     problems = await service.get_problems(record_id)
     problems_data = []
     for prob in problems:
-        problems_data.append({
-            "id": str(prob.id),
-            "main_id": str(prob.check_main_id),
-            "problem_type": prob.category,
-            "risk_level": prob.severity,
-            "location": prob.location,
-            "description": prob.description,
-            "suggestion": prob.suggestion,
-            "handle_status": "pending",
-            "created_at": prob.created_at.isoformat() if prob.created_at else None,
-            "updated_at": prob.updated_at.isoformat() if prob.updated_at else None,
-        })
+        problems_data.append(
+            {
+                "id": str(prob.id),
+                "main_id": str(prob.check_main_id),
+                "problem_type": prob.category,
+                "risk_level": prob.severity,
+                "location": prob.location,
+                "description": prob.description,
+                "suggestion": prob.suggestion,
+                "handle_status": "pending",
+                "created_at": prob.created_at.isoformat() if prob.created_at else None,
+                "updated_at": prob.updated_at.isoformat() if prob.updated_at else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "id": str(check.id),
-        "file_name": check.file_name or "",
-        "file_no": check.file_code,
-        "file_version": check.file_version,
-        "file_type": check.file_type,
-        "preparer": check.operator,
-        "prepare_date": check.created_at.isoformat() if check.created_at else None,
-        "status": check.status,
-        "total_problems": check.total_problems or 0,
-        "risk_high": check.high_risk_count or 0,
-        "risk_medium": check.medium_risk_count or 0,
-        "risk_low": check.low_risk_count or 0,
-        "operator": check.operator,
-        "created_at": check.created_at.isoformat() if check.created_at else None,
-        "updated_at": check.updated_at.isoformat() if check.updated_at else None,
-        "problems": problems_data,
-    })
+    return ApiResponse(
+        data={
+            "id": str(check.id),
+            "file_name": check.file_name or "",
+            "file_no": check.file_code,
+            "file_version": check.file_version,
+            "file_type": check.file_type,
+            "preparer": check.operator,
+            "prepare_date": check.created_at.isoformat() if check.created_at else None,
+            "status": check.status,
+            "total_problems": check.total_problems or 0,
+            "risk_high": check.high_risk_count or 0,
+            "risk_medium": check.medium_risk_count or 0,
+            "risk_low": check.low_risk_count or 0,
+            "operator": check.operator,
+            "created_at": check.created_at.isoformat() if check.created_at else None,
+            "updated_at": check.updated_at.isoformat() if check.updated_at else None,
+            "problems": problems_data,
+        }
+    )
 
 
-@router.post("/records/{record_id}/confirm", response_model=ApiResponse, summary="确认通过")
+@router.post(
+    "/records/{record_id}/confirm", response_model=ApiResponse, summary="确认通过"
+)
 async def confirm_check(
     record_id: uuid.UUID,
     operator: str | None = None,
@@ -599,11 +638,14 @@ async def update_problem(
 
     # 获取问题（需要添加此方法）
     from app.modules.quality.qms.doc_check.repository import DocCheckRepository
+
     repo = DocCheckRepository(db)
 
     # 查找问题
     from sqlalchemy import select
+
     from app.modules.quality.qms.doc_check.models import DocCheckProblem
+
     result = await db.execute(
         select(DocCheckProblem).where(
             DocCheckProblem.id == problem_id,
@@ -626,11 +668,13 @@ async def update_problem(
     await db.commit()
     await db.refresh(problem)
 
-    return ApiResponse(data={
-        "id": str(problem.id),
-        "handle_status": problem.handle_status,
-        "ignore_reason": problem.ignore_reason,
-    })
+    return ApiResponse(
+        data={
+            "id": str(problem.id),
+            "handle_status": problem.handle_status,
+            "ignore_reason": problem.ignore_reason,
+        }
+    )
 
 
 @router.put("/problems/batch", response_model=ApiResponse, summary="批量更新问题")
@@ -645,8 +689,9 @@ async def batch_update_problems(
     """批量更新问题"""
     operator = operator or (current_user.username if current_user else None)
 
-    from app.modules.quality.qms.doc_check.models import DocCheckProblem
     from sqlalchemy import update
+
+    from app.modules.quality.qms.doc_check.models import DocCheckProblem
 
     count = 0
     for problem_id in problem_ids:
@@ -690,7 +735,9 @@ async def export_report(
     # 生成报告（简化实现）
     file_name = f"{check.file_code or 'report'}_校验报告.{format}"
 
-    return ApiResponse(data={
-        "download_url": f"/api/v1/doc-check/download/{record_id}",
-        "file_name": file_name,
-    })
+    return ApiResponse(
+        data={
+            "download_url": f"/api/v1/doc-check/download/{record_id}",
+            "file_name": file_name,
+        }
+    )

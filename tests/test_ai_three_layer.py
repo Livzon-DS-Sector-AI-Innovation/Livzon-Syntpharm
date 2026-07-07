@@ -12,7 +12,6 @@ If a round fails, adjust prompts and restart from Round 1.
 from __future__ import annotations
 
 import json
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -20,16 +19,15 @@ import pytest
 from app.platform.ai.executor import (
     StepResult,
     _execute_single_query,
-    execute_plan,
     format_step_results,
 )
-from app.platform.ai.planner import _parse_plan, generate_plan
-from app.platform.ai.schemas import PlanStep, QueryPlan, SubQuery
-
+from app.platform.ai.planner import generate_plan
+from app.platform.ai.schemas import PlanStep, SubQuery
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_llm_response(content: dict) -> MagicMock:
     """Build a mocked OpenAI chat completion response."""
@@ -55,6 +53,7 @@ def mock_openai_client():
 # ---------------------------------------------------------------------------
 # Round 1 — Basic single-step queries (5 cases)
 # ---------------------------------------------------------------------------
+
 
 class TestRound1BasicQueries:
     """Round 1: Planner should generate correct single-step static plans."""
@@ -141,7 +140,10 @@ class TestRound1BasicQueries:
                             {
                                 "action": "query",
                                 "description": "生产部工程师名单",
-                                "filters": {"department": "生产部", "position": "工程师"},
+                                "filters": {
+                                    "department": "生产部",
+                                    "position": "工程师",
+                                },
                                 "limit": 50,
                             }
                         ],
@@ -229,6 +231,7 @@ class TestRound1BasicQueries:
 # ---------------------------------------------------------------------------
 # Round 2 — Multi-step / parallel / dynamic queries (3 cases)
 # ---------------------------------------------------------------------------
+
 
 class TestRound2AdvancedQueries:
     """Round 2: Planner should generate multi-step plans with parallel/dynamic steps."""
@@ -353,6 +356,7 @@ class TestRound2AdvancedQueries:
 # Round 3 — Edge cases and fallbacks (2 cases)
 # ---------------------------------------------------------------------------
 
+
 class TestRound3EdgeCases:
     """Round 3: Edge cases — no data needed, fallback parsing, etc."""
 
@@ -411,6 +415,7 @@ class TestRound3EdgeCases:
 # ---------------------------------------------------------------------------
 # Executor tests (data flow verification)
 # ---------------------------------------------------------------------------
+
 
 class TestExecutorDataFlow:
     """Verify that the executor correctly formats data for the main AI."""

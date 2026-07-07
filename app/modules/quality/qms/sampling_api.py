@@ -1,6 +1,6 @@
 """Sampling management API routes"""
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,15 +10,15 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import ApiResponse
 from app.modules.quality.qms.sampling_schemas import (
-    SamplingOrderCreate,
-    SamplingOrderUpdate,
-    SamplingOrderResponse,
-    SamplingOrderListResponse,
+    RetentionLedgerFilter,
+    SampleRetentionLedgerResponse,
     SamplingApprovalCreate,
     SamplingApprovalRecordResponse,
-    SampleRetentionLedgerResponse,
+    SamplingOrderCreate,
     SamplingOrderFilter,
-    RetentionLedgerFilter,
+    SamplingOrderListResponse,
+    SamplingOrderResponse,
+    SamplingOrderUpdate,
 )
 from app.modules.quality.qms.sampling_service import SamplingService
 
@@ -49,14 +49,14 @@ async def create_sampling_order(
 
 @router.get("/orders", response_model=dict)
 async def get_sampling_orders(
-    material_code: Optional[str] = Query(None, description="物料编码"),
-    material_name: Optional[str] = Query(None, description="物料名称"),
-    sampling_source: Optional[str] = Query(None, description="取样来源"),
-    status: Optional[str] = Query(None, description="状态"),
-    sampling_result: Optional[str] = Query(None, description="取样判定"),
-    order_no: Optional[str] = Query(None, description="单号"),
-    start_date: Optional[str] = Query(None, description="开始日期"),
-    end_date: Optional[str] = Query(None, description="结束日期"),
+    material_code: str | None = Query(None, description="物料编码"),
+    material_name: str | None = Query(None, description="物料名称"),
+    sampling_source: str | None = Query(None, description="取样来源"),
+    status: str | None = Query(None, description="状态"),
+    sampling_result: str | None = Query(None, description="取样判定"),
+    order_no: str | None = Query(None, description="单号"),
+    start_date: str | None = Query(None, description="开始日期"),
+    end_date: str | None = Query(None, description="结束日期"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: SamplingService = Depends(get_sampling_service),
@@ -73,7 +73,9 @@ async def get_sampling_orders(
         start_date=datetime.fromisoformat(start_date) if start_date else None,
         end_date=datetime.fromisoformat(end_date) if end_date else None,
     )
-    items, total = await service.get_order_list(filters, (page - 1) * page_size, page_size)
+    items, total = await service.get_order_list(
+        filters, (page - 1) * page_size, page_size
+    )
     return {
         "items": [SamplingOrderListResponse.model_validate(item) for item in items],
         "total": total,
@@ -160,7 +162,9 @@ async def approve_sampling_order(
         user_id = current_user.id if current_user else None
         user_name = current_user.name if current_user else ""
         approver_role = "qa"
-        order = await service.approve_order(order_id, data, user_id, user_name, approver_role)
+        order = await service.approve_order(
+            order_id, data, user_id, user_name, approver_role
+        )
         return ApiResponse(
             message="审批完成",
             data=SamplingOrderResponse.model_validate(order),
@@ -169,7 +173,9 @@ async def approve_sampling_order(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/orders/{order_id}/approvals", response_model=list[SamplingApprovalRecordResponse])
+@router.get(
+    "/orders/{order_id}/approvals", response_model=list[SamplingApprovalRecordResponse]
+)
 async def get_sampling_approvals(
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),
@@ -182,11 +188,11 @@ async def get_sampling_approvals(
 
 @router.get("/retention-ledger", response_model=dict)
 async def get_retention_ledger(
-    material_code: Optional[str] = Query(None, description="物料编码"),
-    material_name: Optional[str] = Query(None, description="物料名称"),
-    retention_status: Optional[str] = Query(None, description="留样状态"),
-    order_no: Optional[str] = Query(None, description="取样单号"),
-    sample_no: Optional[str] = Query(None, description="样品编号"),
+    material_code: str | None = Query(None, description="物料编码"),
+    material_name: str | None = Query(None, description="物料名称"),
+    retention_status: str | None = Query(None, description="留样状态"),
+    order_no: str | None = Query(None, description="取样单号"),
+    sample_no: str | None = Query(None, description="样品编号"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: SamplingService = Depends(get_sampling_service),
@@ -200,7 +206,9 @@ async def get_retention_ledger(
         order_no=order_no,
         sample_no=sample_no,
     )
-    items, total = await service.get_retention_ledger(filters, (page - 1) * page_size, page_size)
+    items, total = await service.get_retention_ledger(
+        filters, (page - 1) * page_size, page_size
+    )
     return {
         "items": [SampleRetentionLedgerResponse.model_validate(item) for item in items],
         "total": total,
@@ -209,7 +217,10 @@ async def get_retention_ledger(
     }
 
 
-@router.get("/retention-ledger/order/{order_id}", response_model=list[SampleRetentionLedgerResponse])
+@router.get(
+    "/retention-ledger/order/{order_id}",
+    response_model=list[SampleRetentionLedgerResponse],
+)
 async def get_retention_by_order(
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),

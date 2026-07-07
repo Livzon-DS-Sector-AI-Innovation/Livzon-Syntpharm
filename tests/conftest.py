@@ -103,6 +103,7 @@ def _build_client(
     bypass_permissions: bool = True,
 ) -> tuple:
     """Wire up dependency overrides and return ``(AsyncClient ctx, cleanup)``."""
+
     # DB override
     async def _override_get_db() -> AsyncIterator[AsyncSession]:
         try:
@@ -136,7 +137,7 @@ def _build_client(
     # By returning all codes, we ensure all permission checks pass.
     perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
     patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
-    
+
     if bypass_permissions:
         patcher.start()
 
@@ -175,7 +176,10 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     business-logic API tests can run without setting up real RBAC data.
     """
     test_user = _make_user(
-        "Test User", "TEST-001", role="member", feishu_open_id="test_open_id",
+        "Test User",
+        "TEST-001",
+        role="member",
+        feishu_open_id="test_open_id",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -195,13 +199,19 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     checks — use this for endpoints that demand administrator privileges.
     """
     test_user = _make_user(
-        "Admin User", "ADMIN-001", role="admin", feishu_open_id="admin_open_id",
+        "Admin User",
+        "ADMIN-001",
+        role="admin",
+        feishu_open_id="admin_open_id",
     )
     db_session.add(test_user)
     await db_session.flush()
 
     client, cleanup = _build_client(
-        db_session, test_user, is_admin=True, bypass_permissions=True,
+        db_session,
+        test_user,
+        is_admin=True,
+        bypass_permissions=True,
     )
     async with client:
         yield client

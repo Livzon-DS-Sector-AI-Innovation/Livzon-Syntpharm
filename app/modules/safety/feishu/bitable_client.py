@@ -24,6 +24,7 @@ if _env_path.exists():
     load_dotenv(_env_path, override=True)
 
 import os
+
 SAFETY_BITABLE_APP_TOKEN = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
 SAFETY_BITABLE_HAZARD_TABLE_ID = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
 

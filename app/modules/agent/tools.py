@@ -512,8 +512,7 @@ class ToolExecutor:
         for key, item in value.items():
             key_lower = str(key).lower()
             if any(
-                token in key_lower
-                for token in ("secret", "token", "password", "key")
+                token in key_lower for token in ("secret", "token", "password", "key")
             ):
                 masked[key] = "***"
             elif isinstance(item, dict):

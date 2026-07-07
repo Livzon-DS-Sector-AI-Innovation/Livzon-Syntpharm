@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import select
-
 from app.modules.quality.models.capa import CAPA
 from app.modules.quality.models.deviations import Deviation
+from sqlalchemy import select
 
 
 @pytest.mark.asyncio

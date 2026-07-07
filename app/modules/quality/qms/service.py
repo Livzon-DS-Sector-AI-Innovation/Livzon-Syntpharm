@@ -103,18 +103,22 @@ class QualityService:
         if data.items:
             items_data = []
             for item in data.items:
-                items_data.append({
-                    "item_no": item.item_no,
-                    "item_name": item.item_name,
-                    "test_method": item.test_method,
-                    "instrument_code": item.instrument_code,
-                    "reference_materials": item.reference_materials,
-                    "limit_type": item.limit_type.value,
-                    "limit_value": item.limit_value,
-                    "item_category": item.item_category.value if item.item_category else None,
-                    "is_critical": item.is_critical,
-                    "notes": item.notes,
-                })
+                items_data.append(
+                    {
+                        "item_no": item.item_no,
+                        "item_name": item.item_name,
+                        "test_method": item.test_method,
+                        "instrument_code": item.instrument_code,
+                        "reference_materials": item.reference_materials,
+                        "limit_type": item.limit_type.value,
+                        "limit_value": item.limit_value,
+                        "item_category": item.item_category.value
+                        if item.item_category
+                        else None,
+                        "is_critical": item.is_critical,
+                        "notes": item.notes,
+                    }
+                )
             await self.repo.create_items_bulk(standard.id, items_data)
 
         # 重新获取完整数据
@@ -129,7 +133,10 @@ class QualityService:
         if not standard:
             return None
 
-        if standard.status not in [StandardStatus.DRAFT.value, StandardStatus.REJECTED.value]:
+        if standard.status not in [
+            StandardStatus.DRAFT.value,
+            StandardStatus.REJECTED.value,
+        ]:
             raise ValueError("只有草稿或驳回状态的标准才能编辑")
 
         # 构建更新数据
@@ -164,18 +171,22 @@ class QualityService:
         if data.items is not None:
             items_data = []
             for item in data.items:
-                items_data.append({
-                    "item_no": item.item_no,
-                    "item_name": item.item_name,
-                    "test_method": item.test_method,
-                    "instrument_code": item.instrument_code,
-                    "reference_materials": item.reference_materials,
-                    "limit_type": item.limit_type.value,
-                    "limit_value": item.limit_value,
-                    "item_category": item.item_category.value if item.item_category else None,
-                    "is_critical": item.is_critical,
-                    "notes": item.notes,
-                })
+                items_data.append(
+                    {
+                        "item_no": item.item_no,
+                        "item_name": item.item_name,
+                        "test_method": item.test_method,
+                        "instrument_code": item.instrument_code,
+                        "reference_materials": item.reference_materials,
+                        "limit_type": item.limit_type.value,
+                        "limit_value": item.limit_value,
+                        "item_category": item.item_category.value
+                        if item.item_category
+                        else None,
+                        "is_critical": item.is_critical,
+                        "notes": item.notes,
+                    }
+                )
             await self.repo.update_standard_items(standard_id, items_data)
 
         return await self.repo.get_standard_by_id(standard_id)
@@ -203,12 +214,14 @@ class QualityService:
 
         # 创建审批记录
         for step in self.APPROVAL_FLOW:
-            await self.repo.create_approval_record({
-                "standard_id": standard_id,
-                "approval_level": step["level"],
-                "approval_status": "pending",
-                "approver_role": step["role"],
-            })
+            await self.repo.create_approval_record(
+                {
+                    "standard_id": standard_id,
+                    "approval_level": step["level"],
+                    "approval_status": "pending",
+                    "approver_role": step["role"],
+                }
+            )
 
         return await self.repo.submit_for_approval(standard_id)
 
@@ -229,12 +242,15 @@ class QualityService:
         pending_records = await self.repo.get_pending_approvers(standard_id)
         if pending_records:
             current_record = pending_records[0]
-            await self.repo.update_approval_record(current_record.id, {
-                "approval_status": "approved",
-                "approver_id": approver_id,
-                "approver_name": approver_name,
-                "approved_at": datetime.now(),
-            })
+            await self.repo.update_approval_record(
+                current_record.id,
+                {
+                    "approval_status": "approved",
+                    "approver_id": approver_id,
+                    "approver_name": approver_name,
+                    "approved_at": datetime.now(),
+                },
+            )
 
         # 获取下一状态
         next_status = self._get_next_status(current_level)
@@ -244,7 +260,9 @@ class QualityService:
         # 最终状态，设置生效日期
         standard = await self.repo.approve_standard(standard_id, "effective")
         if standard:
-            await self.repo.update_standard(standard_id, {"effective_date": datetime.now()})
+            await self.repo.update_standard(
+                standard_id, {"effective_date": datetime.now()}
+            )
         return await self.repo.get_standard_by_id(standard_id)
 
     async def reject_standard(
@@ -263,12 +281,15 @@ class QualityService:
         pending_records = await self.repo.get_pending_approvers(standard_id)
         if pending_records:
             current_record = pending_records[0]
-            await self.repo.update_approval_record(current_record.id, {
-                "approval_status": "rejected",
-                "approver_id": approver_id,
-                "approved_at": datetime.now(),
-                "comments": comments,
-            })
+            await self.repo.update_approval_record(
+                current_record.id,
+                {
+                    "approval_status": "rejected",
+                    "approver_id": approver_id,
+                    "approved_at": datetime.now(),
+                    "comments": comments,
+                },
+            )
 
         return await self.repo.reject_standard(standard_id, comments)
 
@@ -280,7 +301,10 @@ class QualityService:
         if not standard:
             return None
 
-        if standard.status not in [StandardStatus.EFFECTIVE.value, StandardStatus.APPROVED.value]:
+        if standard.status not in [
+            StandardStatus.EFFECTIVE.value,
+            StandardStatus.APPROVED.value,
+        ]:
             raise ValueError("只有已生效或已批准的标准才能作废")
 
         return await self.repo.obsolete_standard(standard_id, data.obsolete_reason)
@@ -292,7 +316,9 @@ class QualityService:
             return None
 
         # 生成新的标准编号
-        standard_no = await self._generate_standard_no(source.material_code, data.new_version)
+        standard_no = await self._generate_standard_no(
+            source.material_code, data.new_version
+        )
 
         # 复制主表数据
         new_data = {
@@ -318,18 +344,20 @@ class QualityService:
         if source.items:
             items_data = []
             for item in source.items:
-                items_data.append({
-                    "item_no": item.item_no,
-                    "item_name": item.item_name,
-                    "test_method": item.test_method,
-                    "instrument_code": item.instrument_code,
-                    "reference_materials": item.reference_materials,
-                    "limit_type": item.limit_type,
-                    "limit_value": item.limit_value,
-                    "item_category": item.item_category,
-                    "is_critical": item.is_critical,
-                    "notes": item.notes,
-                })
+                items_data.append(
+                    {
+                        "item_no": item.item_no,
+                        "item_name": item.item_name,
+                        "test_method": item.test_method,
+                        "instrument_code": item.instrument_code,
+                        "reference_materials": item.reference_materials,
+                        "limit_type": item.limit_type,
+                        "limit_value": item.limit_value,
+                        "item_category": item.item_category,
+                        "is_critical": item.is_critical,
+                        "notes": item.notes,
+                    }
+                )
             await self.repo.create_items_bulk(new_standard.id, items_data)
 
         return await self.repo.get_standard_by_id(new_standard.id)

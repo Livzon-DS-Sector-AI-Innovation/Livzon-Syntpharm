@@ -106,6 +106,7 @@ async def test_assignee(_equipment_session: AsyncSession) -> User:
 
 async def _mock_equipment_access(*codes: str):
     """Mock dependency that returns EquipmentAccessContext."""
+
     async def _dependency(
         user: User,
         db: AsyncSession,
@@ -116,6 +117,7 @@ async def _mock_equipment_access(*codes: str):
             department_user_ids=[],
             visible_department_ids=[],
         )
+
     return _dependency
 
 
@@ -153,11 +155,10 @@ async def auth_client(
     perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
     patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
     patcher.start()
-    
+
     # Mock the require_equipment_access to return our mock dependency
     access_patcher = patch(
-        "app.modules.equipment.deps.require_equipment_access",
-        _mock_equipment_access
+        "app.modules.equipment.deps.require_equipment_access", _mock_equipment_access
     )
     access_patcher.start()
 
@@ -201,11 +202,10 @@ async def admin_client(
     perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
     patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
     patcher.start()
-    
+
     # Mock the require_equipment_access to return our mock dependency
     access_patcher = patch(
-        "app.modules.equipment.deps.require_equipment_access",
-        _mock_equipment_access
+        "app.modules.equipment.deps.require_equipment_access", _mock_equipment_access
     )
     access_patcher.start()
 

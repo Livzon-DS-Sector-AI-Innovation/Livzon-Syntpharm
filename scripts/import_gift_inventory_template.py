@@ -10,7 +10,7 @@ Expected columns: 物品名称, 规格, 计量单位, 月初库存, 本期入库
 import asyncio
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import asyncpg
@@ -22,6 +22,7 @@ DB_URL = "postgresql://postgres:postgres@localhost:5432/dazah"
 def parse_value(value, dtype=int, default=0):
     """Parse a cell value into int/float, handling NaN/empty."""
     import math
+
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return default
     try:
@@ -35,6 +36,7 @@ def parse_value(value, dtype=int, default=0):
 def parse_string(value) -> str | None:
     """Parse a string value, returning None for empty/NaN."""
     import math
+
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return None
     s = str(value).strip()
@@ -54,7 +56,7 @@ async def import_from_excel(excel_path: Path, sheet_name: str = "库存导入模
     # Drop empty rows
     df = df[df["物品名称"].notna() & (df["物品名称"] != "")]
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = []
     for _, row in df.iterrows():
         name = parse_string(row.get("物品名称"))

@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import AppException, DuplicateException, NotFoundException
 from app.modules.equipment.models import (
     Equipment,
-    EquipmentCategory,
     FailureSymptom,
     Location,
 )
@@ -292,7 +291,7 @@ async def test_work_order_invalid_transition(
     """测试非法状态转换：已关闭的工单不能再开始"""
     data = WorkOrderCreate(equipment_id=sample_equipment.id)
     wo = await create_work_order(db_session, data, sample_user.id)
-    
+
     # Close the work order first
     wo.status = "已关闭"
     await db_session.flush()

@@ -103,13 +103,10 @@ async def get_calibration_plans_due(
     threshold: date_type,
 ) -> list[CalibrationPlan]:
     """查询到期/逾期的校准计划"""
-    query = (
-        select(CalibrationPlan)
-        .where(
-            CalibrationPlan.is_deleted == False,  # noqa: E712
-            CalibrationPlan.status == "启用",
-            CalibrationPlan.next_calibration_date <= threshold,
-        )
+    query = select(CalibrationPlan).where(
+        CalibrationPlan.is_deleted == False,  # noqa: E712
+        CalibrationPlan.status == "启用",
+        CalibrationPlan.next_calibration_date <= threshold,
     )
     query = apply_equipment_scope(query, ctx, CalibrationPlan.created_by, "user_id")
     query = query.order_by(CalibrationPlan.next_calibration_date)

@@ -85,7 +85,6 @@ async def run_sync(
 
 def _is_newly_created(existing: Any) -> bool:
     """Heuristic: record created within last 60 seconds -> treat as 'created'."""
-    from datetime import datetime
 
     created_at = existing.created_at
     if not created_at:
@@ -138,19 +137,21 @@ async def _upsert_user(parsed: dict) -> None:
             if not existing.feishu_user_id:
                 existing.feishu_user_id = parsed["user_id"]
         else:
-            db.add(User(
-                name=parsed["name"],
-                en_name=parsed["en_name"],
-                feishu_user_id=parsed["user_id"],
-                feishu_open_id=parsed["open_id"],
-                employee_no=parsed["employee_no"],
-                email=parsed["email"],
-                mobile=parsed["mobile"],
-                department=parsed["department"],
-                position=parsed["position"],
-                avatar_url=parsed["avatar_url"],
-                feishu_department_ids=parsed["feishu_department_ids"],
-            ))
+            db.add(
+                User(
+                    name=parsed["name"],
+                    en_name=parsed["en_name"],
+                    feishu_user_id=parsed["user_id"],
+                    feishu_open_id=parsed["open_id"],
+                    employee_no=parsed["employee_no"],
+                    email=parsed["email"],
+                    mobile=parsed["mobile"],
+                    department=parsed["department"],
+                    position=parsed["position"],
+                    avatar_url=parsed["avatar_url"],
+                    feishu_department_ids=parsed["feishu_department_ids"],
+                )
+            )
         await db.commit()
 
 
@@ -158,9 +159,7 @@ async def _get_existing_user(open_id: str):
     from app.platform.identity.models import User
 
     async with async_session_factory() as db:
-        result = await db.execute(
-            select(User).where(User.feishu_open_id == open_id)
-        )
+        result = await db.execute(select(User).where(User.feishu_open_id == open_id))
         return result.scalar_one_or_none()
 
 
@@ -223,23 +222,23 @@ async def sync_departments(
                 existing.status_is_deleted = parsed["status_is_deleted"]
                 existing.order = parsed["order"]
             else:
-                db.add(Department(
-                    feishu_department_id=parsed["department_id"],
-                    name=parsed["name"],
-                    parent_feishu_department_id=parsed["parent_department_id"],
-                    leader_user_id=parsed["leader_user_id"],
-                    member_count=parsed["member_count"],
-                    status_is_deleted=parsed["status_is_deleted"],
-                    order=parsed["order"],
-                ))
+                db.add(
+                    Department(
+                        feishu_department_id=parsed["department_id"],
+                        name=parsed["name"],
+                        parent_feishu_department_id=parsed["parent_department_id"],
+                        leader_user_id=parsed["leader_user_id"],
+                        member_count=parsed["member_count"],
+                        status_is_deleted=parsed["status_is_deleted"],
+                        order=parsed["order"],
+                    )
+                )
             await db.commit()
 
     async def get_existing(dept_id: str):
         async with async_session_factory() as db:
             result = await db.execute(
-                select(Department).where(
-                    Department.feishu_department_id == dept_id
-                )
+                select(Department).where(Department.feishu_department_id == dept_id)
             )
             return result.scalar_one_or_none()
 
@@ -254,7 +253,10 @@ async def sync_departments(
     elapsed = time.time() - t0
     logger.info(
         "sync_departments done: %d depts (%d created, %d updated) in %.1fs",
-        stats["total"], stats["created"], stats["updated"], elapsed,
+        stats["total"],
+        stats["created"],
+        stats["updated"],
+        elapsed,
     )
     return {"dept_count": stats["total"], "elapsed": round(elapsed, 1)}
 
@@ -335,7 +337,11 @@ async def sync_members(
     elapsed = time.time() - t0
     logger.info(
         "sync_members done: %d users from %d depts (%d created, %d updated) in %.1fs",
-        stats["total"], len(dept_ids), stats["created"], stats["updated"], elapsed,
+        stats["total"],
+        len(dept_ids),
+        stats["created"],
+        stats["updated"],
+        elapsed,
     )
     return {
         "user_count": stats["total"],
@@ -386,6 +392,9 @@ async def sync_users_by_ids(
     elapsed = time.time() - t0
     logger.info(
         "sync_users_by_ids done: %d users (%d created, %d updated) in %.1fs",
-        stats["total"], stats["created"], stats["updated"], elapsed,
+        stats["total"],
+        stats["created"],
+        stats["updated"],
+        elapsed,
     )
     return {"user_count": stats["total"], "elapsed": round(elapsed, 1)}

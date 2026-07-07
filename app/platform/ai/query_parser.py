@@ -164,9 +164,7 @@ _DEPARTMENT_RE = re.compile(
 _TEAM_RE = re.compile(r"([一-龥甲乙丙丁戊]{1,3}班)(?:组)?")
 
 # Position with prefix
-_POSITION_WITH_PREFIX_RE = re.compile(
-    r"(?:职位|岗位)[是为:：\s]+([^，。；\n\s]{2,10})"
-)
+_POSITION_WITH_PREFIX_RE = re.compile(r"(?:职位|岗位)[是为:：\s]+([^，。；\n\s]{2,10})")
 
 # Age range patterns
 _AGE_RANGE_RE = re.compile(r"(\d+)\s*[-~至到]\s*(\d+)\s*(?:岁|周岁)?")
@@ -179,8 +177,12 @@ _YEAR_BEFORE_RE = re.compile(r"(\d{4})\s*年?\s*(?:之前|以前|前|小于|低�
 _YEAR_EXACT_RE = re.compile(r"(\d{4})\s*年(?:出生|入职|进厂)?")
 
 # Relative date patterns (supports Arabic numerals and Chinese numerals)
-_RECENT_MONTH_RE = re.compile(r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*个月(?:以来|之内|内)?")
-_RECENT_YEAR_RE = re.compile(r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*年(?:以来|之内|内)?")
+_RECENT_MONTH_RE = re.compile(
+    r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*个月(?:以来|之内|内)?"
+)
+_RECENT_YEAR_RE = re.compile(
+    r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*年(?:以来|之内|内)?"
+)
 
 # Query type detection
 _COUNT_RE = re.compile(r"(?:有多少|共多少|人数|几人|多少个|共计|总共|一共|统计|计数)")
@@ -387,8 +389,16 @@ def _extract_age_range(text: str) -> tuple[int | None, int | None]:
 def _chinese_to_number(text: str) -> int | None:
     """Convert simple Chinese numerals to Arabic numbers."""
     mapping = {
-        "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
-        "六": 6, "七": 7, "八": 8, "九": 9, "十": 10,
+        "一": 1,
+        "二": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
     }
     if text.isdigit():
         return int(text)
@@ -429,7 +439,10 @@ def _extract_date_conditions(text: str) -> dict[str, date]:
         conditions[f"{date_field}_before"] = date(year, 12, 31)
 
     # Exact year: "2020年入职"
-    if f"{date_field}_after" not in conditions and f"{date_field}_before" not in conditions:
+    if (
+        f"{date_field}_after" not in conditions
+        and f"{date_field}_before" not in conditions
+    ):
         m = _YEAR_EXACT_RE.search(text)
         if m:
             year = int(m.group(1))
@@ -496,12 +509,40 @@ def _extract_names(text: str) -> list[str]:
 def _has_employee_query_keywords(text: str) -> bool:
     """Check if text contains any employee-related query keywords."""
     keywords = [
-        "员工", "人员", "人事", "名单", "人", "职工", "同事",
-        "部门", "班组", "职位", "岗位", "状态", "性别", "学历",
-        "年龄", "入职", "进厂", "工龄", "司龄", "厂龄",
-        "党员", "群众", "已婚", "未婚",
-        "工程师", "经理", "主管", "专员", "操作员", "文员",
-        "统计", "查询", "查找", "搜索",
+        "员工",
+        "人员",
+        "人事",
+        "名单",
+        "人",
+        "职工",
+        "同事",
+        "部门",
+        "班组",
+        "职位",
+        "岗位",
+        "状态",
+        "性别",
+        "学历",
+        "年龄",
+        "入职",
+        "进厂",
+        "工龄",
+        "司龄",
+        "厂龄",
+        "党员",
+        "群众",
+        "已婚",
+        "未婚",
+        "工程师",
+        "经理",
+        "主管",
+        "专员",
+        "操作员",
+        "文员",
+        "统计",
+        "查询",
+        "查找",
+        "搜索",
     ]
     return any(kw in text for kw in keywords)
 

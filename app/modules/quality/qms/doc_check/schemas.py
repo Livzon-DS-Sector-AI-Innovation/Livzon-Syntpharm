@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class CheckStatus(str, Enum):
@@ -51,6 +51,7 @@ class DocCheckConfigBase(BaseModel):
 
 class DocCheckConfigCreate(DocCheckConfigBase):
     """创建配置"""
+
     pass
 
 

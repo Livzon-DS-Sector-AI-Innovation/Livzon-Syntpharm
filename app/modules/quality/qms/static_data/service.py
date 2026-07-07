@@ -3,10 +3,10 @@
 Business logic layer for static data operations.
 """
 
-from typing import Optional, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.modules.quality.qms.static_data.repository import StaticDataRepository
+
 from app.modules.quality.qms.static_data import schemas as s
+from app.modules.quality.qms.static_data.repository import StaticDataRepository
 
 
 class StaticDataService:
@@ -30,20 +30,24 @@ class StaticDataService:
         existing = await self.repo.get_hplc_reference_by_code(data.ref_code)
         if existing:
             raise ValueError(f"Reference code {data.ref_code} already exists")
-        
-        obj = await self.repo.create_hplc_reference({**data.model_dump(), 'create_by': user_id})
+
+        obj = await self.repo.create_hplc_reference(
+            {**data.model_dump(), "create_by": user_id}
+        )
         return obj
 
-    async def update_hplc_reference(self, id: int, data: s.HplcReferenceUpdate, user_id: int):
+    async def update_hplc_reference(
+        self, id: int, data: s.HplcReferenceUpdate, user_id: int
+    ):
         """Update HPLC reference substance"""
         existing = await self.repo.get_hplc_reference(id)
         if not existing:
             raise ValueError(f"HPLC reference substance {id} not found")
-        
+
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data['update_by'] = user_id
-        
+            update_data["update_by"] = user_id
+
         obj = await self.repo.update_hplc_reference(id, update_data)
         return obj
 
@@ -51,7 +55,9 @@ class StaticDataService:
         """Delete HPLC reference substance"""
         return await self.repo.delete_hplc_reference(id)
 
-    async def adjust_hplc_reference_quantity(self, id: int, quantity_change: int, user_id: int):
+    async def adjust_hplc_reference_quantity(
+        self, id: int, quantity_change: int, user_id: int
+    ):
         """Adjust HPLC reference quantity"""
         try:
             obj = await self.repo.adjust_hplc_reference_quantity(id, quantity_change)
@@ -63,21 +69,33 @@ class StaticDataService:
             raise e
 
     async def use_hplc_reference(
-        self, id: int, usage_amount: float, usage_unit: str,
-        usage_person: Optional[str], usage_purpose: Optional[str],
-        remark: Optional[str], user_id: int,
+        self,
+        id: int,
+        usage_amount: float,
+        usage_unit: str,
+        usage_person: str | None,
+        usage_purpose: str | None,
+        remark: str | None,
+        user_id: int,
     ):
         """Use HPLC reference substance"""
         try:
             obj, usage_log = await self.repo.use_hplc_reference(
-                id, usage_amount, usage_unit,
-                usage_person, usage_purpose, remark, user_id,
+                id,
+                usage_amount,
+                usage_unit,
+                usage_person,
+                usage_purpose,
+                remark,
+                user_id,
             )
             return obj, usage_log
         except ValueError as e:
             raise e
 
-    async def list_hplc_reference_usage(self, ref_id: Optional[int] = None, skip: int = 0, limit: int = 20):
+    async def list_hplc_reference_usage(
+        self, ref_id: int | None = None, skip: int = 0, limit: int = 20
+    ):
         """查询领用记录"""
         return await self.repo.list_hplc_reference_usage(ref_id, skip, limit)
 
@@ -100,20 +118,24 @@ class StaticDataService:
         existing = await self.repo.get_chrom_column_by_code(data.col_code)
         if existing:
             raise ValueError(f"Column code {data.col_code} already exists")
-        
-        obj = await self.repo.create_chrom_column({**data.model_dump(), 'create_by': user_id})
+
+        obj = await self.repo.create_chrom_column(
+            {**data.model_dump(), "create_by": user_id}
+        )
         return obj
 
-    async def update_chrom_column(self, id: int, data: s.ChromColumnUpdate, user_id: int):
+    async def update_chrom_column(
+        self, id: int, data: s.ChromColumnUpdate, user_id: int
+    ):
         """Update chromatography column"""
         existing = await self.repo.get_chrom_column(id)
         if not existing:
             raise ValueError(f"Chromatography column {id} not found")
-        
+
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data['update_by'] = user_id
-        
+            update_data["update_by"] = user_id
+
         obj = await self.repo.update_chrom_column(id, update_data)
         return obj
 
@@ -143,8 +165,8 @@ class StaticDataService:
         existing = await self.repo.get_medium_by_code(data.medium_code)
         if existing:
             raise ValueError(f"Medium code {data.medium_code} already exists")
-        
-        obj = await self.repo.create_medium({**data.model_dump(), 'create_by': user_id})
+
+        obj = await self.repo.create_medium({**data.model_dump(), "create_by": user_id})
         return obj
 
     async def update_medium(self, id: int, data: s.MediumUpdate, user_id: int):
@@ -152,11 +174,11 @@ class StaticDataService:
         existing = await self.repo.get_medium(id)
         if not existing:
             raise ValueError(f"Medium {id} not found")
-        
+
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data['update_by'] = user_id
-        
+            update_data["update_by"] = user_id
+
         obj = await self.repo.update_medium(id, update_data)
         return obj
 
@@ -187,7 +209,9 @@ class StaticDataService:
         existing = await self.repo.get_standard_by_code(data.std_code)
         if existing:
             raise ValueError(f"Standard code {data.std_code} already exists")
-        obj = await self.repo.create_standard({**data.model_dump(), 'create_by': user_id})
+        obj = await self.repo.create_standard(
+            {**data.model_dump(), "create_by": user_id}
+        )
         return obj
 
     async def update_standard(self, id: int, data: s.StandardUpdate, user_id: int):
@@ -197,7 +221,7 @@ class StaticDataService:
             raise ValueError(f"Standard {id} not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data['update_by'] = user_id
+            update_data["update_by"] = user_id
         obj = await self.repo.update_standard(id, update_data)
         return obj
 
@@ -223,22 +247,28 @@ class StaticDataService:
         """Get single storage condition"""
         return await self.repo.get_storage_condition(id)
 
-    async def create_storage_condition(self, data: s.StorageConditionCreate, user_id: int):
+    async def create_storage_condition(
+        self, data: s.StorageConditionCreate, user_id: int
+    ):
         """Create storage condition"""
         existing = await self.repo.get_storage_condition_by_code(data.cond_code)
         if existing:
             raise ValueError(f"Storage condition code {data.cond_code} already exists")
-        obj = await self.repo.create_storage_condition({**data.model_dump(), 'create_by': user_id})
+        obj = await self.repo.create_storage_condition(
+            {**data.model_dump(), "create_by": user_id}
+        )
         return obj
 
-    async def update_storage_condition(self, id: int, data: s.StorageConditionUpdate, user_id: int):
+    async def update_storage_condition(
+        self, id: int, data: s.StorageConditionUpdate, user_id: int
+    ):
         """Update storage condition"""
         existing = await self.repo.get_storage_condition(id)
         if not existing:
             raise ValueError(f"Storage condition {id} not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data['update_by'] = user_id
+            update_data["update_by"] = user_id
         obj = await self.repo.update_storage_condition(id, update_data)
         return obj
 

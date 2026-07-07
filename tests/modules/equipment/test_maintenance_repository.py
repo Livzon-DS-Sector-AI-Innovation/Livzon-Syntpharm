@@ -194,10 +194,13 @@ async def test_create_work_order(db_session: AsyncSession) -> None:
 
     # 创建多分类关联
     from app.modules.equipment.models import EquipmentCategoryLink
-    db_session.add(EquipmentCategoryLink(
-        equipment_id=equipment.id,
-        category_id=category.id,
-    ))
+
+    db_session.add(
+        EquipmentCategoryLink(
+            equipment_id=equipment.id,
+            category_id=category.id,
+        )
+    )
     await db_session.flush()
 
     wo = await repo_create_work_order(

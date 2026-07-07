@@ -24,7 +24,10 @@ async def api_generate_exam(
     if not file.filename:
         raise HTTPException(400, "文件名不能为空")
     import logging
-    logging.getLogger(__name__).info(f"Exam config: choice={choice_count} tf={true_false_count} multi={multi_choice_count} fill={fill_blank_count}")
+
+    logging.getLogger(__name__).info(
+        f"Exam config: choice={choice_count} tf={true_false_count} multi={multi_choice_count} fill={fill_blank_count}"
+    )
     config = {
         "choice_count": choice_count,
         "true_false_count": true_false_count,
@@ -50,6 +53,7 @@ async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser):
         raise HTTPException(500, f"导出失败: {e}")
 
     from urllib.parse import quote
+
     safe_name = quote(f"考试试卷_{data.title}.docx")
     return StreamingResponse(
         buffer,

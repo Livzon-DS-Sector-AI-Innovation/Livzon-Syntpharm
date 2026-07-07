@@ -224,10 +224,7 @@ async def list_wc_certificates(
     db: AsyncSession, skip: int = 0, limit: int = 100
 ) -> list[WcCertificate]:
     stmt = (
-        select(WcCertificate)
-        .where(~WcCertificate.is_deleted)
-        .offset(skip)
-        .limit(limit)
+        select(WcCertificate).where(~WcCertificate.is_deleted).offset(skip).limit(limit)
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
@@ -292,9 +289,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
 
     # WC证书
     stmt = (
-        select(func.count())
-        .select_from(WcCertificate)
-        .where(~WcCertificate.is_deleted)
+        select(func.count()).select_from(WcCertificate).where(~WcCertificate.is_deleted)
     )
     wc_count = (await db.execute(stmt)).scalar() or 0
 

@@ -34,12 +34,8 @@ class EquipmentCategory(BaseModel):
         {"schema": "equipment"},
     )
 
-    name: Mapped[str] = mapped_column(
-        String(100), comment="分类名称"
-    )
-    code: Mapped[str] = mapped_column(
-        String(50), comment="分类代码"
-    )
+    name: Mapped[str] = mapped_column(String(100), comment="分类名称")
+    code: Mapped[str] = mapped_column(String(50), comment="分类代码")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )
@@ -80,12 +76,8 @@ class Location(BaseModel):
         {"schema": "equipment"},
     )
 
-    name: Mapped[str] = mapped_column(
-        String(100), comment="位置名称"
-    )
-    code: Mapped[str] = mapped_column(
-        String(50), comment="位置代码"
-    )
+    name: Mapped[str] = mapped_column(String(100), comment="位置名称")
+    code: Mapped[str] = mapped_column(String(50), comment="位置代码")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )
@@ -118,7 +110,8 @@ class EquipmentCategoryLink(BaseModel):
         # 部分唯一索引：仅对未删除的记录做设备+分类唯一性检查
         Index(
             "uq_equipment_category_links",
-            "equipment_id", "category_id",
+            "equipment_id",
+            "category_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -164,12 +157,8 @@ class Equipment(BaseModel):
         {"schema": "equipment"},
     )
 
-    equipment_no: Mapped[str] = mapped_column(
-        String(50), comment="设备编号"
-    )
-    name: Mapped[str] = mapped_column(
-        String(200), comment="设备名称"
-    )
+    equipment_no: Mapped[str] = mapped_column(String(50), comment="设备编号")
+    name: Mapped[str] = mapped_column(String(200), comment="设备名称")
     location_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("equipment.locations.id"),
         comment="设备位置",
@@ -221,7 +210,8 @@ class Equipment(BaseModel):
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )
     responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True, comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
+        nullable=True,
+        comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
     )
 
     # 关系

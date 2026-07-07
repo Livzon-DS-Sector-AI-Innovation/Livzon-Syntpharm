@@ -259,9 +259,11 @@ async def list_suppliers(
         page=page,
         page_size=page_size,
     )
-    return [
-        SupplierResponse.model_validate(supplier) for supplier in suppliers
-    ], total, columns
+    return (
+        [SupplierResponse.model_validate(supplier) for supplier in suppliers],
+        total,
+        columns,
+    )
 
 
 async def create_purchase_request(
@@ -515,7 +517,6 @@ def _store_contract_file(
     return str(file_path)
 
 
-
 async def submit_purchase_request(
     db: AsyncSession,
     request_id: UUID,
@@ -717,9 +718,7 @@ def _build_purchase_order_workbook(
         row_index += 1
 
     total_formula = (
-        f"=SUM({','.join(f'J{row}' for row in total_rows)})"
-        if total_rows
-        else "0"
+        f"=SUM({','.join(f'J{row}' for row in total_rows)})" if total_rows else "0"
     )
     _write_purchase_order_total_row(worksheet, row_index, "总计", total_formula)
     row_index += 1

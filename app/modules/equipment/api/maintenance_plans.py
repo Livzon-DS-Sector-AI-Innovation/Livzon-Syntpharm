@@ -78,8 +78,14 @@ async def list_maintenance_plans(
     ),
 ) -> JSONResponse:
     plans, total = await service.get_maintenance_plans(
-        db, ctx=ctx, equipment_id=equipment_id, category_id=category_id,
-        status=status, keyword=keyword, page=page, page_size=page_size,
+        db,
+        ctx=ctx,
+        equipment_id=equipment_id,
+        category_id=category_id,
+        status=status,
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
     )
     # 批量查询分类名称
     cat_ids = [p.category_id for p in plans if p.category_id]
@@ -87,7 +93,9 @@ async def list_maintenance_plans(
 
     return paginated_response(
         data=[_enrich_plan(p, category_names) for p in plans],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
@@ -102,9 +110,7 @@ async def get_overdue_plans(
     plans = await service.get_overdue_maintenance_plans(db, ctx, days)
     cat_ids = [p.category_id for p in plans if p.category_id]
     category_names = await _fetch_category_names(db, cat_ids)
-    return success_response(
-        data=[_enrich_plan(p, category_names) for p in plans]
-    )
+    return success_response(data=[_enrich_plan(p, category_names) for p in plans])
 
 
 @router.get("/{plan_id}", summary="维护计划详情")

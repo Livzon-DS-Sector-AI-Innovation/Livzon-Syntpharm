@@ -45,7 +45,7 @@ def create_pr(title: str, body: str, head: str) -> str:
     data = resp.json()
 
     if resp.status_code == 201:
-        print(f"✅ Pull request created successfully!")
+        print("✅ Pull request created successfully!")
         print(f"   URL: {data['html_url']}")
         print(f"   Number: #{data['number']}")
         return data["html_url"]

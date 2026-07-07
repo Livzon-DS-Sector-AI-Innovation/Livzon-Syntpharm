@@ -1,4 +1,5 @@
 """Smoke tests for safety module API endpoints."""
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 

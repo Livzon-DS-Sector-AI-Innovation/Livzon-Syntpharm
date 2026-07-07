@@ -6,6 +6,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.hr.models import (
     AnnualTrainingPlan,
@@ -25,33 +26,30 @@ from app.modules.hr.repository import (
     AnnualTrainingPlanItemRepository,
     AnnualTrainingPlanRepository,
     CandidateRepository,
-    DepartureRecordRepository,
     DepartmentRepository,
+    DepartureRecordRepository,
     EmployeeRepository,
     OffboardingRecordRepository,
     OnboardingRecordRepository,
     TeamRepository,
-    TrainingLedgerRepository,
     TrainingLedgerPageRepository,
+    TrainingLedgerRepository,
     TrainingSessionRepository,
 )
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
     AnnualTrainingPlanItemBatchUpdate,
-    AnnualTrainingPlanItemCreate,
     AnnualTrainingPlanUpdate,
     CandidateCreate,
     CandidateUpdate,
-    DepartureRecordCreate,
-    DepartureRecordUpdate,
     DepartmentCreate,
     DepartmentUpdate,
+    DepartureRecordCreate,
+    DepartureRecordUpdate,
     EmployeeCreate,
     EmployeeUpdate,
     OffboardingRecordCreate,
     OffboardingRecordUpdate,
-    OnboardingRecordCreate,
-    OnboardingRecordUpdate,
     SyncStatusResponse,
     TeamCreate,
     TeamUpdate,
@@ -60,25 +58,25 @@ from app.modules.hr.schemas import (
     TrainingSessionCreate,
     TrainingSessionUpdate,
 )
+from app.platform.ai.service import AiChatService
 from app.platform.integrations.feishu import FeishuBitableSync
+from app.platform.integrations.feishu.candidate_datasource import (
+    CandidateBitableDataSource,
+)
+from app.platform.integrations.feishu.departure_datasource import (
+    DepartureBitableDataSource,
+)
 from app.platform.integrations.feishu.employee_datasource import (
     EmployeeBitableDataSource,
 )
 from app.platform.integrations.feishu.onboarding_datasource import (
     OnboardingBitableDataSource,
 )
-from app.platform.integrations.feishu.departure_datasource import (
-    DepartureBitableDataSource,
-)
-from app.platform.integrations.feishu.candidate_datasource import (
-    CandidateBitableDataSource,
-)
-from app.core.config import get_settings
-from app.platform.ai.service import AiChatService
 
 logger = logging.getLogger(__name__)
 
 # ─── Feishu field mapping helpers ───
+
 
 def _extract_text(value) -> str:
     """Extract text from Feishu array format or plain string."""
@@ -101,7 +99,11 @@ def _extract_number(value) -> int | None:
     if isinstance(value, (int, float)):
         return int(value)
     if isinstance(value, dict):
-        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
+        if (
+            "value" in value
+            and isinstance(value["value"], list)
+            and len(value["value"]) > 0
+        ):
             return int(value["value"][0])
     return None
 
@@ -132,7 +134,9 @@ def _parse_feishu_record(record: dict) -> dict:
         "position": _extract_text(gt("职位")),
         "job_category": gt("职类") or "",
         "level": gt("级别") or "",
-        "qualifications": gt("职称／职业资格") if isinstance(gt("职称／职业资格"), list) else None,
+        "qualifications": gt("职称／职业资格")
+        if isinstance(gt("职称／职业资格"), list)
+        else None,
         "qualification_type": gt("职称类型") or "",
         "gender": gt("性别") or "",
         "native_place": _extract_text(gt("籍贯")),
@@ -192,11 +196,17 @@ def _parse_feishu_record(record: dict) -> dict:
         data["feishu_synced_at"] = date.today()
 
     # Remove empty strings for optional text fields to avoid overwriting existing data
-    cleaned = {k: v for k, v in data.items() if v != "" or k in ("department", "name", "employee_number", "status", "position")}
+    cleaned = {
+        k: v
+        for k, v in data.items()
+        if v != ""
+        or k in ("department", "name", "employee_number", "status", "position")
+    }
     return cleaned
 
 
 # ─── Services ───
+
 
 class EmployeeService:
     def __init__(self, session: AsyncSession) -> None:
@@ -235,7 +245,9 @@ class EmployeeService:
 
                 im = FeishuIM()
                 # 飞书接口要求手机号带 +86 区号
-                mobile = data.phone if data.phone.startswith("+") else f"+86{data.phone}"
+                mobile = (
+                    data.phone if data.phone.startswith("+") else f"+86{data.phone}"
+                )
                 mapping = await im.batch_get_open_ids_by_mobile([mobile])
                 open_id = mapping.get(mobile) or mapping.get(data.phone)
                 if open_id:
@@ -280,12 +292,16 @@ class EmployeeService:
 
         return result
 
-    async def update_employee(self, employee_id: UUID, data: EmployeeUpdate) -> Employee:
+    async def update_employee(
+        self, employee_id: UUID, data: EmployeeUpdate
+    ) -> Employee:
         employee = await self.get_employee(employee_id)
         update_data = data.model_dump(exclude_unset=True)
 
         if "employee_number" in update_data:
-            existing = await self.repo.get_by_employee_number(update_data["employee_number"])
+            existing = await self.repo.get_by_employee_number(
+                update_data["employee_number"]
+            )
             if existing and existing.id != employee_id:
                 raise DuplicateException("工号", update_data["employee_number"])
 
@@ -344,8 +360,9 @@ class EmployeeService:
         Args:
             payload: TrainingNotifyInput instance.
         """
-        from app.platform.integrations.feishu.im import FeishuIM
         from sqlalchemy import text
+
+        from app.platform.integrations.feishu.im import FeishuIM
 
         im = FeishuIM()
         is_new_factory = getattr(payload, "factory", None) == "new"
@@ -393,7 +410,9 @@ class EmployeeService:
                         emp.feishu_open_id = open_id
                         logger.info(
                             "Fetched feishu_open_id for %s (%s): %s",
-                            emp.name, emp.employee_number, open_id,
+                            emp.name,
+                            emp.employee_number,
+                            open_id,
                         )
                         # 把获取到的 openid 持久化到数据库
                         try:
@@ -517,12 +536,21 @@ class EmployeeService:
 
                 await self.repo.upsert_by_employee_number(parsed)
                 existing = await self.repo.get_by_employee_number(emp_no)
-                if existing and existing.created_at and (datetime.utcnow() - existing.created_at.replace(tzinfo=None)).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception as e:
-                logger.error("Failed to sync Feishu record %s: %s", rec.get("record_id"), e)
+                logger.error(
+                    "Failed to sync Feishu record %s: %s", rec.get("record_id"), e
+                )
                 stats["failed"] += 1
 
         return stats
@@ -628,7 +656,9 @@ class EmployeeService:
         if employee.graduation_date:
             fields["毕业时间"] = _to_ms_timestamp(employee.graduation_date)
         if employee.contract_start_date:
-            fields["第一次合同起点时间"] = _to_ms_timestamp(employee.contract_start_date)
+            fields["第一次合同起点时间"] = _to_ms_timestamp(
+                employee.contract_start_date
+            )
         if employee.contract_end_date:
             fields["第一次合同终止时间"] = _to_ms_timestamp(employee.contract_end_date)
         if employee.contract_start_2:
@@ -681,7 +711,9 @@ class DepartmentService:
 
         return result
 
-    async def update_department(self, department_id: UUID, data: DepartmentUpdate) -> Department:
+    async def update_department(
+        self, department_id: UUID, data: DepartmentUpdate
+    ) -> Department:
         department = await self.get_department(department_id)
         update_data = data.model_dump(exclude_unset=True)
 
@@ -751,7 +783,9 @@ class TeamService:
         update_data = data.model_dump(exclude_unset=True)
 
         if "department_id" in update_data:
-            department = await self.department_repo.get_by_id(update_data["department_id"])
+            department = await self.department_repo.get_by_id(
+                update_data["department_id"]
+            )
             if not department:
                 raise NotFoundException("部门", str(update_data["department_id"]))
 
@@ -820,7 +854,9 @@ class OffboardingRecordService:
 
         return record
 
-    async def update_record(self, record_id: UUID, data: OffboardingRecordUpdate) -> OffboardingRecord:
+    async def update_record(
+        self, record_id: UUID, data: OffboardingRecordUpdate
+    ) -> OffboardingRecord:
         record = await self.get_record(record_id)
         update_data = data.model_dump(exclude_unset=True)
 
@@ -917,20 +953,31 @@ class OnboardingRecordService:
                     continue
 
                 # Skip records with empty critical fields (blank rows in Bitable)
-                if not data.get("name") or not data.get("department") or not data.get("hire_date"):
+                if (
+                    not data.get("name")
+                    or not data.get("department")
+                    or not data.get("hire_date")
+                ):
                     logger.debug("Skipping blank onboarding record: %s", rid)
                     continue
 
                 await self.repo.upsert_by_feishu_record_id(data)
                 existing = await self.repo.get_by_feishu_record_id(rid)
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception as e:
-                logger.error("Failed to sync onboarding record %s: %s", rec.get("record_id"), e)
+                logger.error(
+                    "Failed to sync onboarding record %s: %s", rec.get("record_id"), e
+                )
                 stats["failed"] += 1
 
         return stats
@@ -987,7 +1034,9 @@ class DepartureRecordService:
         record = DepartureRecord(**data.model_dump())
         return await self.repo.create(record)
 
-    async def update_record(self, record_id: UUID, data: DepartureRecordUpdate) -> DepartureRecord:
+    async def update_record(
+        self, record_id: UUID, data: DepartureRecordUpdate
+    ) -> DepartureRecord:
         record = await self.get_record(record_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -1026,14 +1075,21 @@ class DepartureRecordService:
 
                 await self.repo.upsert_by_feishu_record_id(data)
                 existing = await self.repo.get_by_feishu_record_id(rid)
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
             except Exception:
-                logger.exception("Failed to sync departure record %s", rec.get("record_id"))
+                logger.exception(
+                    "Failed to sync departure record %s", rec.get("record_id")
+                )
                 stats["failed"] += 1
 
         return stats
@@ -1139,13 +1195,19 @@ class TrainingLedgerPageService:
     async def list_pages(self) -> list[TrainingLedgerPage]:
         return await self.repo.list_pages()
 
-    async def list_pages_with_department(self) -> list[tuple[TrainingLedgerPage, str | None, str | None]]:
+    async def list_pages_with_department(
+        self,
+    ) -> list[tuple[TrainingLedgerPage, str | None, str | None]]:
         return await self.repo.list_pages_with_department()
 
     async def create_page(self, data) -> TrainingLedgerPage:
-        existing = await self.repo.get_by_employee_number(data.employee_number, data.ledger_type)
+        existing = await self.repo.get_by_employee_number(
+            data.employee_number, data.ledger_type
+        )
         if existing:
-            raise DuplicateException("培训台账页面", f"{data.employee_number}({data.ledger_type})")
+            raise DuplicateException(
+                "培训台账页面", f"{data.employee_number}({data.ledger_type})"
+            )
         page = TrainingLedgerPage(**data.model_dump())
         return await self.repo.create(page)
 
@@ -1240,13 +1302,17 @@ class AnnualTrainingPlanService:
         return plan
 
     async def create_plan(self, data: AnnualTrainingPlanCreate) -> AnnualTrainingPlan:
-        existing = await self.repo.get_by_year_and_department(data.year, data.department)
+        existing = await self.repo.get_by_year_and_department(
+            data.year, data.department
+        )
         if existing:
             raise DuplicateException("年度培训计划", f"{data.year}年-{data.department}")
         plan = AnnualTrainingPlan(**data.model_dump())
         return await self.repo.create(plan)
 
-    async def update_plan(self, plan_id: UUID, data: AnnualTrainingPlanUpdate) -> AnnualTrainingPlan:
+    async def update_plan(
+        self, plan_id: UUID, data: AnnualTrainingPlanUpdate
+    ) -> AnnualTrainingPlan:
         plan = await self.get_plan(plan_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -1488,9 +1554,7 @@ class CandidateService:
                 fields["简历 PDF"] = [
                     {
                         "file_token": feishu_file["file_token"],
-                        "name": feishu_file.get(
-                            "name", filename or f"{name}.pdf"
-                        ),
+                        "name": feishu_file.get("name", filename or f"{name}.pdf"),
                         "size": feishu_file.get("size", len(resume_bytes)),
                         "type": "application/pdf",
                     }
@@ -1505,12 +1569,16 @@ class CandidateService:
             logger.exception("Failed to create candidate record in Feishu")
             sync_error_parts.append(f"Bitable create failed: {exc}")
             created.feishu_sync_status = "failed"
-            created.feishu_sync_error = "; ".join(sync_error_parts) if sync_error_parts else str(exc)
+            created.feishu_sync_error = (
+                "; ".join(sync_error_parts) if sync_error_parts else str(exc)
+            )
             await self.repo.update(created)
 
         return created
 
-    async def update_candidate(self, candidate_id: UUID, data: CandidateUpdate) -> Candidate:
+    async def update_candidate(
+        self, candidate_id: UUID, data: CandidateUpdate
+    ) -> Candidate:
         candidate = await self.get_candidate(candidate_id)
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -1543,7 +1611,9 @@ class CandidateService:
 
         return updated
 
-    async def update_recommendation_level(self, candidate_id: UUID, level: str) -> Candidate:
+    async def update_recommendation_level(
+        self, candidate_id: UUID, level: str
+    ) -> Candidate:
         candidate = await self.get_candidate(candidate_id)
         candidate.recommendation_level = level
         updated = await self.repo.update(candidate)
@@ -1571,7 +1641,9 @@ class CandidateService:
 
         candidate = await self.get_candidate(candidate_id)
 
-        if not candidate.resume_storage_path or not os.path.exists(candidate.resume_storage_path):
+        if not candidate.resume_storage_path or not os.path.exists(
+            candidate.resume_storage_path
+        ):
             raise RuntimeError("Local resume file not found, cannot sync to Feishu")
 
         with open(candidate.resume_storage_path, "rb") as f:
@@ -1604,7 +1676,9 @@ class CandidateService:
                 fields["简历 PDF"] = [
                     {
                         "file_token": feishu_file["file_token"],
-                        "name": feishu_file.get("name", filename or f"{candidate.name}.pdf"),
+                        "name": feishu_file.get(
+                            "name", filename or f"{candidate.name}.pdf"
+                        ),
                         "size": feishu_file.get("size", len(resume_bytes)),
                         "type": "application/pdf",
                     }
@@ -1624,7 +1698,9 @@ class CandidateService:
             logger.exception("Failed to sync candidate record to Feishu during retry")
             sync_error_parts.append(f"Bitable write failed: {exc}")
             candidate.feishu_sync_status = "failed"
-            candidate.feishu_sync_error = "; ".join(sync_error_parts) if sync_error_parts else str(exc)
+            candidate.feishu_sync_error = (
+                "; ".join(sync_error_parts) if sync_error_parts else str(exc)
+            )
             await self.repo.update(candidate)
             raise RuntimeError(candidate.feishu_sync_error) from exc
 
@@ -1638,7 +1714,9 @@ class CandidateService:
             try:
                 await self.bitable.delete(candidate.feishu_record_id)
             except Exception:
-                logger.exception("Failed to delete candidate from Feishu %s", candidate_id)
+                logger.exception(
+                    "Failed to delete candidate from Feishu %s", candidate_id
+                )
 
     async def sync_from_feishu(self) -> dict:
         """Pull all candidate records from Feishu Bitable and upsert into local PG."""
@@ -1656,18 +1734,23 @@ class CandidateService:
 
                 await self.repo.upsert_by_feishu_record_id(data)
                 existing = await self.repo.get_by_feishu_record_id(rid)
-                if existing and existing.created_at and (
-                    datetime.utcnow() - existing.created_at.replace(tzinfo=None)
-                ).total_seconds() < 60:
+                if (
+                    existing
+                    and existing.created_at
+                    and (
+                        datetime.utcnow() - existing.created_at.replace(tzinfo=None)
+                    ).total_seconds()
+                    < 60
+                ):
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
 
                 if existing and rec.resume_attachments:
                     import os
-                    has_local = (
+
+                    has_local = existing.resume_storage_path and os.path.exists(
                         existing.resume_storage_path
-                        and os.path.exists(existing.resume_storage_path)
                     )
                     if not has_local:
                         await self._download_resume(existing, rec.resume_attachments[0])
@@ -1679,6 +1762,7 @@ class CandidateService:
 
     async def _download_resume(self, candidate: Candidate, attachment: dict) -> None:
         import os
+
         file_token = attachment.get("file_token")
         if not file_token:
             logger.warning("No file_token in attachment for candidate %s", candidate.id)
@@ -1688,11 +1772,14 @@ class CandidateService:
             tmp_download_url = await self.bitable.get_resume_download_url(file_token)
 
             import httpx
+
             async with httpx.AsyncClient(follow_redirects=True) as client:
                 response = await client.get(tmp_download_url)
                 response.raise_for_status()
 
-            upload_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads", "resumes")
+            upload_dir = os.path.join(
+                os.path.dirname(__file__), "..", "..", "..", "uploads", "resumes"
+            )
             upload_dir = os.path.abspath(upload_dir)
             os.makedirs(upload_dir, exist_ok=True)
 
@@ -1706,7 +1793,9 @@ class CandidateService:
 
             candidate.resume_storage_path = file_path
             await self.repo.update(candidate)
-            logger.info("Downloaded resume for candidate %s to %s", candidate.id, file_path)
+            logger.info(
+                "Downloaded resume for candidate %s to %s", candidate.id, file_path
+            )
         except Exception:
             logger.exception("Failed to download resume for candidate %s", candidate.id)
 

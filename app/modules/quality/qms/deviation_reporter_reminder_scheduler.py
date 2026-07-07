@@ -5,16 +5,15 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.jobstores.memory import MemoryJobStore
 
 logger = logging.getLogger(__name__)
 
 # 全局调度器实例
-_scheduler: Optional[AsyncIOScheduler] = None
+_scheduler: AsyncIOScheduler | None = None
 
 
 class DeviationReporterReminderScheduler:
@@ -47,7 +46,7 @@ class DeviationReporterReminderScheduler:
         # 检查是否已存在该任务
         existing_job = self.scheduler.get_job(self._job_id)
         if existing_job:
-            logger.info(f"偏差填报人提醒任务已存在，跳过添加")
+            logger.info("偏差填报人提醒任务已存在，跳过添加")
             return
 
         self.scheduler.add_job(
@@ -68,7 +67,9 @@ class DeviationReporterReminderScheduler:
         """执行提醒检查"""
         logger.info(f"[{datetime.now()}] 开始执行偏差填报人提醒检查...")
         try:
-            from app.modules.quality.qms.deviation_reporter_reminder_service import DeviationReporterReminderService
+            from app.modules.quality.qms.deviation_reporter_reminder_service import (
+                DeviationReporterReminderService,
+            )
             from app.platform.database import get_db_session
 
             async for session in get_db_session():
@@ -83,7 +84,7 @@ class DeviationReporterReminderScheduler:
         except Exception as e:
             logger.error(f"定时任务执行失败: {e}")
 
-    def get_next_run_time(self) -> Optional[datetime]:
+    def get_next_run_time(self) -> datetime | None:
         """获取下次执行时间"""
         job = self.scheduler.get_job(self._job_id)
         if job:

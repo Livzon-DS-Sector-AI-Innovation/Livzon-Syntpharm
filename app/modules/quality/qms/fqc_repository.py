@@ -1,6 +1,6 @@
 """FQC (Finished Product Quality Control) inspection repository"""
+
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -22,20 +22,25 @@ class FQCInspectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, inspection_id: UUID) -> Optional[FQCInspection]:
+    async def get_by_id(self, inspection_id: UUID) -> FQCInspection | None:
         """根据ID获取FQC检验单"""
         result = await self.session.execute(
             select(FQCInspection).where(
-                and_(FQCInspection.id == inspection_id, FQCInspection.is_deleted == False)
+                and_(
+                    FQCInspection.id == inspection_id, FQCInspection.is_deleted == False
+                )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_no(self, inspection_no: str) -> Optional[FQCInspection]:
+    async def get_by_inspection_no(self, inspection_no: str) -> FQCInspection | None:
         """根据单号查询"""
         result = await self.session.execute(
             select(FQCInspection).where(
-                and_(FQCInspection.inspection_no == inspection_no, FQCInspection.is_deleted == False)
+                and_(
+                    FQCInspection.inspection_no == inspection_no,
+                    FQCInspection.is_deleted == False,
+                )
             )
         )
         return result.scalar_one_or_none()
@@ -50,21 +55,36 @@ class FQCInspectionRepository:
         query = select(FQCInspection).where(FQCInspection.is_deleted == False)
 
         if filters.inspection_no:
-            query = query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
+            query = query.where(
+                FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
+            )
         if filters.batch_no:
             query = query.where(FQCInspection.batch_no.ilike(f"%{filters.batch_no}%"))
         if filters.product_code:
-            query = query.where(FQCInspection.product_code.ilike(f"%{filters.product_code}%"))
+            query = query.where(
+                FQCInspection.product_code.ilike(f"%{filters.product_code}%")
+            )
         if filters.product_name:
-            query = query.where(FQCInspection.product_name.ilike(f"%{filters.product_name}%"))
+            query = query.where(
+                FQCInspection.product_name.ilike(f"%{filters.product_name}%")
+            )
         if filters.production_workshop:
-            query = query.where(FQCInspection.production_workshop.ilike(f"%{filters.production_workshop}%"))
+            query = query.where(
+                FQCInspection.production_workshop.ilike(
+                    f"%{filters.production_workshop}%"
+                )
+            )
         if filters.status:
             query = query.where(FQCInspection.status == filters.status.value)
         if filters.inspection_conclusion:
-            query = query.where(FQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
+            query = query.where(
+                FQCInspection.inspection_conclusion
+                == filters.inspection_conclusion.value
+            )
         if filters.release_status:
-            query = query.where(FQCInspection.release_status == filters.release_status.value)
+            query = query.where(
+                FQCInspection.release_status == filters.release_status.value
+            )
         if filters.batch_locked is not None:
             query = query.where(FQCInspection.batch_locked == filters.batch_locked)
         if filters.start_date:
@@ -75,33 +95,60 @@ class FQCInspectionRepository:
         # Count query
         count_query = select(FQCInspection.id).where(FQCInspection.is_deleted == False)
         if filters.inspection_no:
-            count_query = count_query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
+            count_query = count_query.where(
+                FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
+            )
         if filters.batch_no:
-            count_query = count_query.where(FQCInspection.batch_no.ilike(f"%{filters.batch_no}%"))
+            count_query = count_query.where(
+                FQCInspection.batch_no.ilike(f"%{filters.batch_no}%")
+            )
         if filters.product_code:
-            count_query = count_query.where(FQCInspection.product_code.ilike(f"%{filters.product_code}%"))
+            count_query = count_query.where(
+                FQCInspection.product_code.ilike(f"%{filters.product_code}%")
+            )
         if filters.product_name:
-            count_query = count_query.where(FQCInspection.product_name.ilike(f"%{filters.product_name}%"))
+            count_query = count_query.where(
+                FQCInspection.product_name.ilike(f"%{filters.product_name}%")
+            )
         if filters.production_workshop:
-            count_query = count_query.where(FQCInspection.production_workshop.ilike(f"%{filters.production_workshop}%"))
+            count_query = count_query.where(
+                FQCInspection.production_workshop.ilike(
+                    f"%{filters.production_workshop}%"
+                )
+            )
         if filters.status:
-            count_query = count_query.where(FQCInspection.status == filters.status.value)
+            count_query = count_query.where(
+                FQCInspection.status == filters.status.value
+            )
         if filters.inspection_conclusion:
-            count_query = count_query.where(FQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
+            count_query = count_query.where(
+                FQCInspection.inspection_conclusion
+                == filters.inspection_conclusion.value
+            )
         if filters.release_status:
-            count_query = count_query.where(FQCInspection.release_status == filters.release_status.value)
+            count_query = count_query.where(
+                FQCInspection.release_status == filters.release_status.value
+            )
         if filters.batch_locked is not None:
-            count_query = count_query.where(FQCInspection.batch_locked == filters.batch_locked)
+            count_query = count_query.where(
+                FQCInspection.batch_locked == filters.batch_locked
+            )
         if filters.start_date:
-            count_query = count_query.where(FQCInspection.inspection_date >= filters.start_date)
+            count_query = count_query.where(
+                FQCInspection.inspection_date >= filters.start_date
+            )
         if filters.end_date:
-            count_query = count_query.where(FQCInspection.inspection_date <= filters.end_date)
+            count_query = count_query.where(
+                FQCInspection.inspection_date <= filters.end_date
+            )
 
         count_result = await self.session.execute(count_query)
         total = len(count_result.all())
 
         # Order and paginate
-        query = query.order_by(FQCInspection.created_at.desc()).offset(skip).limit(limit)
+        query = (
+            query.order_by(FQCInspection.created_at.desc()).offset(skip).limit(limit)
+        )
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
@@ -113,12 +160,15 @@ class FQCInspectionRepository:
         prefix = f"FQC{today.strftime('%Y%m%d')}"
         # 查找今天最大的序号
         result = await self.session.execute(
-            select(FQCInspection.inspection_no).where(
+            select(FQCInspection.inspection_no)
+            .where(
                 and_(
                     FQCInspection.inspection_no.like(f"{prefix}%"),
                     FQCInspection.is_deleted == False,
                 )
-            ).order_by(FQCInspection.inspection_no.desc()).limit(1)
+            )
+            .order_by(FQCInspection.inspection_no.desc())
+            .limit(1)
         )
         last_no = result.scalar_one_or_none()
         if last_no:
@@ -135,13 +185,16 @@ class FQCInspectionRepository:
         today = datetime.now()
         prefix = f"COA{today.strftime('%Y%m%d')}"
         result = await self.session.execute(
-            select(FQCInspection.report_no).where(
+            select(FQCInspection.report_no)
+            .where(
                 and_(
                     FQCInspection.report_no.like(f"{prefix}%"),
                     FQCInspection.is_deleted == False,
                     FQCInspection.report_no.isnot(None),
                 )
-            ).order_by(FQCInspection.report_no.desc()).limit(1)
+            )
+            .order_by(FQCInspection.report_no.desc())
+            .limit(1)
         )
         last_no = result.scalar_one_or_none()
         if last_no:
@@ -160,28 +213,40 @@ class FQCInspectionItemRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, item_id: UUID) -> Optional[FQCInspectionItem]:
+    async def get_by_id(self, item_id: UUID) -> FQCInspectionItem | None:
         """根据ID获取明细"""
         result = await self.session.execute(
             select(FQCInspectionItem).where(
-                and_(FQCInspectionItem.id == item_id, FQCInspectionItem.is_deleted == False)
+                and_(
+                    FQCInspectionItem.id == item_id,
+                    FQCInspectionItem.is_deleted == False,
+                )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_id(self, inspection_id: UUID) -> list[FQCInspectionItem]:
+    async def get_by_inspection_id(
+        self, inspection_id: UUID
+    ) -> list[FQCInspectionItem]:
         """根据检验单ID获取明细"""
         result = await self.session.execute(
-            select(FQCInspectionItem).where(
+            select(FQCInspectionItem)
+            .where(
                 and_(
                     FQCInspectionItem.fqc_inspection_id == inspection_id,
                     FQCInspectionItem.is_deleted == False,
                 )
-            ).order_by(FQCInspectionItem.item_no)
+            )
+            .order_by(FQCInspectionItem.item_no)
         )
         return list(result.scalars().all())
 
-    async def create_bulk(self, inspection_id: UUID, items_data: list[dict], created_by: UUID | None = None) -> list[FQCInspectionItem]:
+    async def create_bulk(
+        self,
+        inspection_id: UUID,
+        items_data: list[dict],
+        created_by: UUID | None = None,
+    ) -> list[FQCInspectionItem]:
         """批量创建明细"""
         items = []
         for item_data in items_data:
@@ -215,15 +280,19 @@ class FQCApprovalRecordRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_inspection_id(self, inspection_id: UUID) -> list[FQCApprovalRecord]:
+    async def get_by_inspection_id(
+        self, inspection_id: UUID
+    ) -> list[FQCApprovalRecord]:
         """根据检验单ID获取审批记录"""
         result = await self.session.execute(
-            select(FQCApprovalRecord).where(
+            select(FQCApprovalRecord)
+            .where(
                 and_(
                     FQCApprovalRecord.fqc_inspection_id == inspection_id,
                     FQCApprovalRecord.is_deleted == False,
                 )
-            ).order_by(FQCApprovalRecord.approval_level)
+            )
+            .order_by(FQCApprovalRecord.approval_level)
         )
         return list(result.scalars().all())
 

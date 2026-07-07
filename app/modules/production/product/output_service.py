@@ -81,8 +81,12 @@ class ProductOutputService:
     ) -> SummaryResponse:
         """获取汇总统计"""
         rows = await self.repo.get_summary(
-            target_date=target_date, month=month, year=year, product_id=product_id,
-            start_date=start_date, end_date=end_date
+            target_date=target_date,
+            month=month,
+            year=year,
+            product_id=product_id,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         # Build summary for all workshops, filling missing ones with 0
@@ -161,6 +165,10 @@ class ProductOutputService:
     ) -> list[dict[str, Any]]:
         """获取批次统计"""
         return await self.repo.get_batch_count(
-            target_date=target_date, month=month, year=year, product_id=product_id,
-            start_date=start_date, end_date=end_date
+            target_date=target_date,
+            month=month,
+            year=year,
+            product_id=product_id,
+            start_date=start_date,
+            end_date=end_date,
         )

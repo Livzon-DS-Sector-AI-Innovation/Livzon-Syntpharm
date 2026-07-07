@@ -1,9 +1,10 @@
-from datetime import date, datetime
-from io import BytesIO
-from uuid import UUID
 import logging
 import os
 import re
+from datetime import date, datetime
+from io import BytesIO
+from urllib.parse import quote
+from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
@@ -12,28 +13,25 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
-from urllib.parse import quote
 
 from app.core.database import get_db
-from app.core.redis import cache_set, cache_get, cache_delete
-from app.core.response import paginated_response, success_response, error_response
+from app.core.redis import cache_get, cache_set
+from app.core.response import paginated_response, success_response
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
     AnnualTrainingPlanItemBatchUpdate,
     AnnualTrainingPlanItemResponse,
     AnnualTrainingPlanResponse,
     AnnualTrainingPlanUpdate,
-    CandidateCreate,
-    CandidateListResponse,
     CandidateResponse,
     CandidateUpdate,
     CandidateUpdateRecommendationLevel,
-    DepartureRecordCreate,
-    DepartureRecordResponse,
-    DepartureRecordUpdate,
     DepartmentCreate,
     DepartmentResponse,
     DepartmentUpdate,
+    DepartureRecordCreate,
+    DepartureRecordResponse,
+    DepartureRecordUpdate,
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
@@ -42,64 +40,71 @@ from app.modules.hr.schemas import (
     OffboardingRecordUpdate,
     OnboardingEvaluationInput,
     OnboardingRecordResponse,
+    PrejobTemplateCreate,
+    PrejobTemplateItem,
+    PrejobTemplateResponse,
     TeamCreate,
     TeamResponse,
     TeamUpdate,
     TrainingEvaluationInput,
     TrainingLedgerCreate,
-    TrainingLedgerResponse,
-    TrainingLedgerUpdate,
     TrainingLedgerPageCreate,
     TrainingLedgerPageResponse,
-    TrainingSessionCreate,
-    TrainingSessionResponse,
-    TrainingSessionUpdate,
-    TrainingSessionStatusUpdate,
+    TrainingLedgerResponse,
+    TrainingLedgerUpdate,
     TrainingNotificationInput,
     TrainingNotifyInput,
     TrainingSelectTaskCreate,
     TrainingSelectTaskSubmit,
+    TrainingSessionCreate,
+    TrainingSessionResponse,
+    TrainingSessionStatusUpdate,
+    TrainingSessionUpdate,
     TrainingSignInSheetInput,
     TrainingSpecialistCreate,
-    TrainingSpecialistUpdate,
-    TrainingSpecialistResponse,
     TrainingTeamCreate,
     TrainingTeamUpdate,
-    TrainingTeamResponse,
-    PrejobTemplateCreate,
-    PrejobTemplateItem,
-    PrejobTemplateResponse,
 )
+
 try:
     from app.modules.hr.attendance_schemas import DepartmentProductionSettings
 except ImportError:
     DepartmentProductionSettings = None  # type: ignore
-from app.modules.hr.models import Department, Employee
+from app.modules.hr.analysis_api import router as analysis_router
 from app.modules.hr.document_generator import generate_onboarding_training_record
 from app.modules.hr.evaluation_document_generator import generate_training_evaluation
-from app.modules.hr.notification_document_generator import generate_training_notification
-from app.modules.hr.onboarding_evaluation_document_generator import generate_onboarding_evaluation
+from app.modules.hr.ledger_export_generator import generate_ledger_export
+from app.modules.hr.models import Employee
+from app.modules.hr.notification_document_generator import (
+    generate_training_notification,
+)
+from app.modules.hr.onboarding_evaluation_document_generator import (
+    generate_onboarding_evaluation,
+)
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
 from app.modules.hr.signin_document_generator import generate_training_sign_in_sheet
-from app.modules.hr.ledger_export_generator import generate_ledger_export
-from app.modules.hr.analysis_api import router as analysis_router
+
 try:
     from app.modules.hr.attendance_api import router as attendance_router
 except ImportError:
     attendance_router = None  # type: ignore
-from app.modules.hr.repository import PrejobTemplateRepository, TrainingSpecialistRepository, TrainingTeamRepository
+from app.modules.hr.repository import (
+    PrejobTemplateRepository,
+    TrainingSpecialistRepository,
+    TrainingTeamRepository,
+)
 from app.modules.hr.service import (
     AnnualTrainingPlanItemService,
     AnnualTrainingPlanService,
     CandidateService,
-    DepartureRecordService,
     DepartmentService,
+    DepartureRecordService,
     EmployeeService,
     OffboardingRecordService,
     OnboardingRecordService,
     TeamService,
-    TrainingLedgerService,
     TrainingLedgerPageService,
+    TrainingLedgerService,
     TrainingSessionService,
 )
 from app.shared.module_api import create_module_router
@@ -113,9 +118,7 @@ logger = logging.getLogger(__name__)
 
 async def _get_new_employee(employee_id: UUID, session: AsyncSession) -> Employee:
     """Query employees_new clone table and construct an Employee instance."""
-    sql = text(
-        "SELECT * FROM hr.employees_new WHERE id = :id AND is_deleted = false"
-    )
+    sql = text("SELECT * FROM hr.employees_new WHERE id = :id AND is_deleted = false")
     result = await session.execute(sql, {"id": str(employee_id)})
     row = result.mappings().first()
     if not row:
@@ -195,6 +198,7 @@ def get_candidate_service(
 
 # ─── Employee Routes ───
 
+
 @router.get("/employees", summary="员工列表")
 async def list_employees(
     department: str | None = Query(None, description="部门筛选"),
@@ -211,8 +215,7 @@ async def list_employees(
         page_size=page_params.page_size,
     )
     data = [
-        EmployeeResponse.model_validate(e).model_dump(mode="json")
-        for e in employees
+        EmployeeResponse.model_validate(e).model_dump(mode="json") for e in employees
     ]
     return paginated_response(
         data=data,
@@ -350,7 +353,11 @@ async def export_onboarding_training_record(
     session: AsyncSession = Depends(get_db),
 ):
     """根据员工数据自动生成并下载入职培训记录 Word 文档。"""
-    employee = await service.get_employee(employee_id) if factory == "old" else await _get_new_employee(employee_id, session)
+    employee = (
+        await service.get_employee(employee_id)
+        if factory == "old"
+        else await _get_new_employee(employee_id, session)
+    )
     try:
         buffer: BytesIO = generate_onboarding_training_record(employee, factory)
     except FileNotFoundError as e:
@@ -379,7 +386,11 @@ async def export_prejob_training_plan(
     session: AsyncSession = Depends(get_db),
 ):
     """根据员工数据自动生成并下载岗前培训计划文档。"""
-    employee = await service.get_employee(employee_id) if factory == "old" else await _get_new_employee(employee_id, session)
+    employee = (
+        await service.get_employee(employee_id)
+        if factory == "old"
+        else await _get_new_employee(employee_id, session)
+    )
     try:
         buffer: BytesIO = generate_prejob_training_plan(employee, factory)
     except FileNotFoundError as e:
@@ -457,7 +468,11 @@ async def export_onboarding_evaluation_by_employee(
     session: AsyncSession = Depends(get_db),
 ):
     """根据员工档案预填基本信息并导出上岗评估表文档。"""
-    employee = await service.get_employee(employee_id) if factory == "old" else await _get_new_employee(employee_id, session)
+    employee = (
+        await service.get_employee(employee_id)
+        if factory == "old"
+        else await _get_new_employee(employee_id, session)
+    )
 
     try:
         buffer: BytesIO = generate_onboarding_evaluation(employee, factory)
@@ -465,6 +480,7 @@ async def export_onboarding_evaluation_by_employee(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
+
         detail = traceback.format_exc()
         raise HTTPException(status_code=500, detail=f"生成文档失败: {str(e)}\n{detail}")
 
@@ -472,7 +488,9 @@ async def export_onboarding_evaluation_by_employee(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(employee.hire_date).replace("-", "") if employee.hire_date else "nodate"
+    safe_date = (
+        str(employee.hire_date).replace("-", "") if employee.hire_date else "nodate"
+    )
     ext = "xlsx" if factory == "old" else "docx"
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -488,6 +506,7 @@ async def export_onboarding_evaluation_by_employee(
 
 
 import zipfile
+
 
 @router.post("/training-sign-in-sheet", summary="生成培训签到表")
 async def export_training_sign_in_sheet(
@@ -526,11 +545,16 @@ async def export_training_sign_in_sheet(
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for page in range(pages):
             try:
-                page_buffer = generate_training_sign_in_sheet(payload, factory, page=page)
+                page_buffer = generate_training_sign_in_sheet(
+                    payload, factory, page=page
+                )
             except FileNotFoundError as e:
                 raise HTTPException(status_code=400, detail=str(e))
             page_buffer.seek(0)
-            zf.writestr(f"training_sign_in_sheet_{safe_date}_page{page + 1}.{ext}", page_buffer.read())
+            zf.writestr(
+                f"training_sign_in_sheet_{safe_date}_page{page + 1}.{ext}",
+                page_buffer.read(),
+            )
     zip_buffer.seek(0)
 
     def _iter_zip():
@@ -540,7 +564,9 @@ async def export_training_sign_in_sheet(
     return StreamingResponse(
         _iter_zip(),
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="training_sign_in_sheet_{safe_date}.zip"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="training_sign_in_sheet_{safe_date}.zip"'
+        },
     )
 
 
@@ -557,11 +583,10 @@ async def send_training_notification(
 
 # ─── Training Select Task APIs ───
 
-import uuid
 import json
+import uuid
 
 from app.core.config import get_settings
-from app.platform.integrations.feishu.auth import FeishuAuth
 from app.platform.integrations.feishu.im import FeishuIM
 
 
@@ -584,15 +609,19 @@ async def send_training_select_task(
     list_key = "training_select_list"
     existing = await cache_get(list_key)
     task_list = json.loads(existing) if existing else []
-    task_list.append({
-        "token": token,
-        "department": payload.department,
-        "training_date": payload.training_date,
-        "subject": payload.subject,
-        "factory": payload.factory,
-        "created_at": datetime.now().isoformat(),
-    })
-    await cache_set(list_key, json.dumps(task_list, ensure_ascii=False), ex=604800)  # 7 天
+    task_list.append(
+        {
+            "token": token,
+            "department": payload.department,
+            "training_date": payload.training_date,
+            "subject": payload.subject,
+            "factory": payload.factory,
+            "created_at": datetime.now().isoformat(),
+        }
+    )
+    await cache_set(
+        list_key, json.dumps(task_list, ensure_ascii=False), ex=604800
+    )  # 7 天
 
     settings = get_settings()
     select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}"
@@ -618,7 +647,11 @@ async def send_training_select_task(
     if not open_id and li_employee.phone:
         try:
             im = FeishuIM()
-            mobile = li_employee.phone if li_employee.phone.startswith("+") else f"+86{li_employee.phone}"
+            mobile = (
+                li_employee.phone
+                if li_employee.phone.startswith("+")
+                else f"+86{li_employee.phone}"
+            )
             mapping = await im.batch_get_open_ids_by_mobile([mobile])
             open_id = mapping.get(mobile) or mapping.get(li_employee.phone)
             if open_id:
@@ -626,13 +659,17 @@ async def send_training_select_task(
                 update_sql = text(
                     f"UPDATE {li_table} SET feishu_open_id = :oid WHERE employee_number = :eno"
                 )
-                await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
+                await service.repo.session.execute(
+                    update_sql, {"oid": open_id, "eno": li_employee.employee_number}
+                )
                 await service.repo.session.flush()
         except Exception:
             pass
 
     if not open_id:
-        raise HTTPException(status_code=400, detail="李文兆缺少飞书 open_id 且无法实时获取")
+        raise HTTPException(
+            status_code=400, detail="李文兆缺少飞书 open_id 且无法实时获取"
+        )
 
     msg_content = (
         f"【培训人员选择通知】\n"
@@ -717,19 +754,21 @@ async def list_training_select_tasks():
         data = await cache_get(f"training_select:{token}")
         if data:
             task = json.loads(data)
-            results.append({
-                "token": token,
-                "department": task.get("department"),
-                "training_date": task.get("training_date"),
-                "subject": task.get("subject"),
-                "factory": task.get("factory"),
-                "location": task.get("location"),
-                "trainer": task.get("trainer"),
-                "training_method": task.get("training_method"),
-                "has_result": bool(task.get("employee_numbers")),
-                "selected_count": len(task.get("employee_numbers", [])),
-                "created_at": meta.get("created_at"),
-            })
+            results.append(
+                {
+                    "token": token,
+                    "department": task.get("department"),
+                    "training_date": task.get("training_date"),
+                    "subject": task.get("subject"),
+                    "factory": task.get("factory"),
+                    "location": task.get("location"),
+                    "trainer": task.get("trainer"),
+                    "training_method": task.get("training_method"),
+                    "has_result": bool(task.get("employee_numbers")),
+                    "selected_count": len(task.get("employee_numbers", [])),
+                    "created_at": meta.get("created_at"),
+                }
+            )
 
     # 按时间倒序
     results.sort(key=lambda x: x.get("created_at", ""), reverse=True)
@@ -809,7 +848,11 @@ async def export_training_evaluation(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(payload.training_date).replace("-", "") if payload.training_date else "nodate"
+    safe_date = (
+        str(payload.training_date).replace("-", "")
+        if payload.training_date
+        else "nodate"
+    )
     ext = "xlsx" if factory == "old" else "docx"
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -836,7 +879,11 @@ async def export_onboarding_evaluation(
         buffer.seek(0)
         yield buffer.read()
 
-    safe_date = str(payload.approval_date).replace("-", "") if payload.approval_date else "nodate"
+    safe_date = (
+        str(payload.approval_date).replace("-", "")
+        if payload.approval_date
+        else "nodate"
+    )
     ext = "xlsx" if factory == "old" else "docx"
     media_type = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -852,6 +899,7 @@ async def export_onboarding_evaluation(
 
 
 # ─── Department Routes ───
+
 
 @router.get("/departments", summary="部门列表")
 async def list_departments(
@@ -924,7 +972,9 @@ async def delete_department(
 
 if DepartmentProductionSettings is not None:
 
-    @router.put("/departments/{department_id}/production-settings", summary="设置部门生产属性")
+    @router.put(
+        "/departments/{department_id}/production-settings", summary="设置部门生产属性"
+    )
     async def set_department_production(
         department_id: UUID,
         payload: DepartmentProductionSettings,
@@ -944,6 +994,7 @@ if DepartmentProductionSettings is not None:
 
 # ─── Team Routes ───
 
+
 @router.get("/teams", summary="班组列表")
 async def list_teams(
     department_id: UUID | None = Query(None, description="部门筛选"),
@@ -957,10 +1008,7 @@ async def list_teams(
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [
-        TeamResponse.model_validate(t).model_dump(mode="json")
-        for t in teams
-    ]
+    data = [TeamResponse.model_validate(t).model_dump(mode="json") for t in teams]
     return paginated_response(
         data=data,
         page=page_params.page,
@@ -1017,6 +1065,7 @@ async def delete_team(
 
 # ─── OffboardingRecord Routes ───
 
+
 @router.get("/offboarding-records", summary="离职记录列表")
 async def list_offboarding_records(
     employee_id: UUID | None = Query(None, description="员工ID筛选"),
@@ -1053,8 +1102,7 @@ async def create_offboarding_record(
         "id": str(record.id),
         "employee_id": str(record.employee_id),
         "offboarding_date": (
-            record.offboarding_date.isoformat()
-            if record.offboarding_date else None
+            record.offboarding_date.isoformat() if record.offboarding_date else None
         ),
         "offboarding_type": record.offboarding_type,
         "reason": record.reason,
@@ -1104,6 +1152,7 @@ async def delete_offboarding_record(
 
 
 # ─── OnboardingRecord Routes ───
+
 
 @router.get("/onboarding-records", summary="老厂入职台账列表")
 async def list_onboarding_records(
@@ -1177,6 +1226,7 @@ async def get_onboarding_record(
 
 
 # ─── DepartureRecord Routes ───
+
 
 @router.get("/departure-records", summary="老厂离职台账列表")
 async def list_departure_records(
@@ -1284,6 +1334,7 @@ async def get_departure_sync_status(
 
 # ─── TrainingLedger Routes ───
 
+
 @router.get("/training-ledgers", summary="培训台账列表")
 async def list_training_ledgers(
     employee_number: str | None = Query(None, description="工号筛选"),
@@ -1327,6 +1378,7 @@ async def create_training_ledger(
 
 
 # ─── TrainingLedgerPage Routes (must be before /{record_id}) ───
+
 
 @router.get("/training-ledgers/pages", summary="已创建的培训台账页面列表")
 async def list_training_ledger_pages(
@@ -1376,8 +1428,10 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
     ws.title = "员工培训台账"
 
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -1466,7 +1520,15 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
     for c in range(3, 8):
         ws.cell(row=6, column=c).border = thin_border
 
-    headers = ["年月日", "培训课程", "培训方式", "课时", "培训单位/培训师", "考核成绩", "备注"]
+    headers = [
+        "年月日",
+        "培训课程",
+        "培训方式",
+        "课时",
+        "培训单位/培训师",
+        "考核成绩",
+        "备注",
+    ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=7, column=col, value=header)
         cell.font = bold_font
@@ -1497,7 +1559,11 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
 
     footer_row = 8 + len(records)
     ws.merge_cells(f"A{footer_row}:G{footer_row}")
-    ws.cell(row=footer_row, column=1, value="备注：笔试考核设置为满分100分，考试合格线为80分。")
+    ws.cell(
+        row=footer_row,
+        column=1,
+        value="备注：笔试考核设置为满分100分，考试合格线为80分。",
+    )
     ws.cell(row=footer_row, column=1).alignment = left_align
     ws.cell(row=footer_row, column=1).border = thin_border
     for c in range(2, 8):
@@ -1512,7 +1578,9 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
 @router.get("/training-ledgers/export", summary="导出培训台账")
 async def export_training_ledger(
     employee_number: str = Query(..., description="员工工号"),
-    ledger_type: str = Query("event", description="台账类型: event=事件台账, sop=SOP培训台账"),
+    ledger_type: str = Query(
+        "event", description="台账类型: event=事件台账, sop=SOP培训台账"
+    ),
     factory: str = Query("old", description="厂区: old=旧厂, new=新厂"),
     ledger_service: TrainingLedgerService = Depends(get_training_ledger_service),
     employee_service: EmployeeService = Depends(get_employee_service),
@@ -1553,7 +1621,9 @@ async def export_training_ledger(
     return StreamingResponse(
         iter([buffer.read()]),
         media_type=media_type,
-        headers={"Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}"},
+        headers={
+            "Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}"
+        },
     )
 
 
@@ -1591,6 +1661,7 @@ async def delete_training_ledger(
 
 
 # ─── AnnualTrainingPlan Routes ───
+
 
 @router.get("/annual-training-plans", summary="年度培训计划列表")
 async def list_annual_training_plans(
@@ -1666,7 +1737,9 @@ async def delete_annual_training_plan(
 @router.get("/annual-training-plans/{plan_id}/items", summary="年度计划明细列表")
 async def list_annual_training_plan_items(
     plan_id: UUID,
-    service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     items = await service.list_items(plan_id)
     data = [
@@ -1676,11 +1749,15 @@ async def list_annual_training_plan_items(
     return success_response(data=data)
 
 
-@router.put("/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细")
+@router.put(
+    "/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细"
+)
 async def batch_update_annual_training_plan_items(
     plan_id: UUID,
     payload: AnnualTrainingPlanItemBatchUpdate,
-    service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     items = await service.batch_update_items(plan_id, payload)
     data = [
@@ -1701,12 +1778,16 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:
 
     # Styles
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="D9E1F2", end_color="D9E1F2", fill_type="solid"
+    )
     bold_font = Font(bold=True, size=11)
     title_font = Font(bold=True, size=16)
 
@@ -1736,8 +1817,17 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:
     ws.row_dimensions[2].height = 22
 
     # Header row
-    headers = ["序号", "培训季度及课时", "培训内容及使用教材", "培训对象",
-               "授课单位及授课人", "考核方式", "培训跟踪", "确认人/日期", "备注"]
+    headers = [
+        "序号",
+        "培训季度及课时",
+        "培训内容及使用教材",
+        "培训对象",
+        "授课单位及授课人",
+        "考核方式",
+        "培训跟踪",
+        "确认人/日期",
+        "备注",
+    ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=3, column=col, value=header)
         cell.font = bold_font
@@ -1805,7 +1895,9 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:
 async def export_annual_training_plan(
     plan_id: UUID,
     plan_service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
-    item_service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
+    item_service: AnnualTrainingPlanItemService = Depends(
+        get_annual_training_plan_item_service
+    ),
 ):
     """根据年度计划数据生成并导出Excel文件（7.7年度培训计划格式）。"""
     plan = await plan_service.get_plan(plan_id)
@@ -1917,12 +2009,19 @@ async def list_new_employees(
         params["team"] = team_filter
 
     data, total = await _query_clone_table(
-        session, "hr.employees_new", EmployeeResponse,
-        where, params, page_params.page, page_params.page_size,
+        session,
+        "hr.employees_new",
+        EmployeeResponse,
+        where,
+        params,
+        page_params.page,
+        page_params.page_size,
     )
     return paginated_response(
-        data=data, page=page_params.page,
-        page_size=page_params.page_size, total=total,
+        data=data,
+        page=page_params.page,
+        page_size=page_params.page_size,
+        total=total,
     )
 
 
@@ -1941,13 +2040,21 @@ async def list_new_onboarding_records(
         keyword=keyword,
     )
     data, total = await _query_clone_table(
-        session, "hr.onboarding_records_new", OnboardingRecordResponse,
-        where, params, page_params.page, page_params.page_size,
-        sort_by="hire_date", sort_order="desc",
+        session,
+        "hr.onboarding_records_new",
+        OnboardingRecordResponse,
+        where,
+        params,
+        page_params.page,
+        page_params.page_size,
+        sort_by="hire_date",
+        sort_order="desc",
     )
     return paginated_response(
-        data=data, page=page_params.page,
-        page_size=page_params.page_size, total=total,
+        data=data,
+        page=page_params.page,
+        page_size=page_params.page_size,
+        total=total,
     )
 
 
@@ -1966,13 +2073,21 @@ async def list_new_departure_records(
         keyword=keyword,
     )
     data, total = await _query_clone_table(
-        session, "hr.departure_records_new", DepartureRecordResponse,
-        where, params, page_params.page, page_params.page_size,
-        sort_by="offboarding_date", sort_order="desc",
+        session,
+        "hr.departure_records_new",
+        DepartureRecordResponse,
+        where,
+        params,
+        page_params.page,
+        page_params.page_size,
+        sort_by="offboarding_date",
+        sort_order="desc",
     )
     return paginated_response(
-        data=data, page=page_params.page,
-        page_size=page_params.page_size, total=total,
+        data=data,
+        page=page_params.page,
+        page_size=page_params.page_size,
+        total=total,
     )
 
 
@@ -1992,13 +2107,21 @@ async def list_new_offboarding_records(
         keyword=keyword,
     )
     data, total = await _query_clone_table(
-        session, "hr.departure_records_new", DepartureRecordResponse,
-        where, params, page_params.page, page_params.page_size,
-        sort_by="offboarding_date", sort_order="desc",
+        session,
+        "hr.departure_records_new",
+        DepartureRecordResponse,
+        where,
+        params,
+        page_params.page,
+        page_params.page_size,
+        sort_by="offboarding_date",
+        sort_order="desc",
     )
     return paginated_response(
-        data=data, page=page_params.page,
-        page_size=page_params.page_size, total=total,
+        data=data,
+        page=page_params.page,
+        page_size=page_params.page_size,
+        total=total,
     )
 
 
@@ -2040,7 +2163,9 @@ async def list_new_departments(
     result = await session.execute(sql, params)
     rows = result.mappings().all()
     data = [
-        DepartmentResponse.model_validate(SimpleNamespace(**dict(row))).model_dump(mode="json")
+        DepartmentResponse.model_validate(SimpleNamespace(**dict(row))).model_dump(
+            mode="json"
+        )
         for row in rows
     ]
 
@@ -2060,19 +2185,23 @@ async def list_new_departments(
             if team_rows:
                 for row in team_rows:
                     team_name = row["team"]
-                    expanded.append({
-                        **dept,
-                        "name": f"多肽车间-{team_name}",
-                        "code": f"多肽车间-{team_name}",
-                    })
+                    expanded.append(
+                        {
+                            **dept,
+                            "name": f"多肽车间-{team_name}",
+                            "code": f"多肽车间-{team_name}",
+                        }
+                    )
             else:
                 expanded.append(dept)
         else:
             expanded.append(dept)
 
     return paginated_response(
-        data=expanded, page=page_params.page,
-        page_size=page_params.page_size, total=total,
+        data=expanded,
+        page=page_params.page,
+        page_size=page_params.page_size,
+        total=total,
     )
 
 
@@ -2083,12 +2212,17 @@ if attendance_router is not None:
 
 # ─── Candidate Routes ───
 
+
 @router.get("/candidates", summary="候选人列表")
 async def list_candidates(
     position: str | None = Query(None, description="职位筛选"),
     education: str | None = Query(None, description="学历筛选"),
-    recommendation_level: str | None = Query(None, description="推荐等级筛选（支持逗号分隔多个值）"),
-    sync_status: str | None = Query(None, description="飞书同步状态筛选: synced/failed/unsynced"),
+    recommendation_level: str | None = Query(
+        None, description="推荐等级筛选（支持逗号分隔多个值）"
+    ),
+    sync_status: str | None = Query(
+        None, description="飞书同步状态筛选: synced/failed/unsynced"
+    ),
     keyword: str | None = Query(None, description="姓名/职位关键词"),
     page_params: PageParams = Depends(),
     service: CandidateService = Depends(get_candidate_service),
@@ -2104,8 +2238,7 @@ async def list_candidates(
     )
     logger.debug("API recommendation_level=%s, total=%s", recommendation_level, total)
     data = [
-        CandidateResponse.model_validate(c).model_dump(mode="json")
-        for c in candidates
+        CandidateResponse.model_validate(c).model_dump(mode="json") for c in candidates
     ]
     return paginated_response(
         data=data,
@@ -2235,7 +2368,9 @@ async def delete_candidate(
     return success_response(message="候选人删除成功")
 
 
-@router.put("/candidates/{candidate_id}/recommendation-level", summary="更新候选人推荐等级")
+@router.put(
+    "/candidates/{candidate_id}/recommendation-level", summary="更新候选人推荐等级"
+)
 async def update_candidate_recommendation_level(
     candidate_id: UUID,
     payload: CandidateUpdateRecommendationLevel,
@@ -2264,6 +2399,7 @@ async def preview_candidate_resume(
 
     # 优先读取本地文件
     if candidate.resume_storage_path and os.path.exists(candidate.resume_storage_path):
+
         def iter_file():
             with open(candidate.resume_storage_path, "rb") as f:
                 while chunk := f.read(64 * 1024):
@@ -2272,7 +2408,7 @@ async def preview_candidate_resume(
         return StreamingResponse(
             content=iter_file(),
             media_type="application/pdf",
-            headers={"Content-Disposition": f'inline; filename="resume.pdf"'},
+            headers={"Content-Disposition": 'inline; filename="resume.pdf"'},
         )
 
     # 回退：从飞书实时下载
@@ -2287,10 +2423,13 @@ async def preview_candidate_resume(
     try:
         tmp_download_url = await service.bitable.get_resume_download_url(file_token)
     except Exception as exc:
-        logger.warning("Failed to get feishu download url for candidate %s: %s", candidate_id, exc)
+        logger.warning(
+            "Failed to get feishu download url for candidate %s: %s", candidate_id, exc
+        )
         raise NotFoundException("简历附件", str(candidate_id)) from exc
 
     import httpx
+
     async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.get(tmp_download_url)
         response.raise_for_status()
@@ -2298,11 +2437,12 @@ async def preview_candidate_resume(
     return StreamingResponse(
         content=response.iter_bytes(),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="resume.pdf"'},
+        headers={"Content-Disposition": 'inline; filename="resume.pdf"'},
     )
 
 
 # ─── TrainingSession Routes ───
+
 
 @router.get("/training-sessions", summary="培训记录列表")
 async def list_training_sessions(
@@ -2340,7 +2480,9 @@ async def create_training_session(
 ):
     session_obj = await service.create_session(payload)
     return success_response(
-        data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
+        data=TrainingSessionResponse.model_validate(session_obj).model_dump(
+            mode="json"
+        ),
         message="培训记录创建成功",
         status_code=201,
     )
@@ -2354,7 +2496,9 @@ async def update_training_session_status(
 ):
     session_obj = await service.update_status(session_id, payload.status)
     return success_response(
-        data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
+        data=TrainingSessionResponse.model_validate(session_obj).model_dump(
+            mode="json"
+        ),
         message="状态更新成功",
     )
 
@@ -2366,7 +2510,9 @@ async def get_training_session(
 ):
     session_obj = await service.get_session(session_id)
     return success_response(
-        data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
+        data=TrainingSessionResponse.model_validate(session_obj).model_dump(
+            mode="json"
+        ),
     )
 
 
@@ -2378,7 +2524,9 @@ async def update_training_session(
 ):
     session_obj = await service.update_session(session_id, payload)
     return success_response(
-        data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
+        data=TrainingSessionResponse.model_validate(session_obj).model_dump(
+            mode="json"
+        ),
         message="培训记录更新成功",
     )
 
@@ -2392,7 +2540,10 @@ async def delete_training_session(
     return success_response(message="培训记录删除成功")
 
 
-@router.post("/training-sessions/{session_id}/send-select-tasks", summary="发送多部门选择受训人员任务")
+@router.post(
+    "/training-sessions/{session_id}/send-select-tasks",
+    summary="发送多部门选择受训人员任务",
+)
 async def send_training_session_select_tasks(
     session_id: UUID,
     service: TrainingSessionService = Depends(get_training_session_service),
@@ -2428,28 +2579,38 @@ async def send_training_session_select_tasks(
             "content": session_obj.content,
             "factory": session_obj.factory,
             "issuer_department": session_obj.issuer_department,
-            "issue_date": str(session_obj.issue_date) if session_obj.issue_date else None,
+            "issue_date": str(session_obj.issue_date)
+            if session_obj.issue_date
+            else None,
         }
         await cache_set(cache_key, json.dumps(task_data, ensure_ascii=False), ex=86400)
-        await cache_set(f"training_select_list:{token}", json.dumps(task_data, ensure_ascii=False), ex=86400)
+        await cache_set(
+            f"training_select_list:{token}",
+            json.dumps(task_data, ensure_ascii=False),
+            ex=86400,
+        )
 
         # 同步更新共享任务列表
         list_key = "training_select_list"
         existing = await cache_get(list_key)
         task_list = json.loads(existing) if existing else []
-        task_list.append({
-            "token": token,
-            "department": dept,
-            "training_date": str(session_obj.training_date),
-            "subject": session_obj.subject,
-            "factory": session_obj.factory,
-            "created_at": datetime.now().isoformat(),
-        })
+        task_list.append(
+            {
+                "token": token,
+                "department": dept,
+                "training_date": str(session_obj.training_date),
+                "subject": session_obj.subject,
+                "factory": session_obj.factory,
+                "created_at": datetime.now().isoformat(),
+            }
+        )
         await cache_set(list_key, json.dumps(task_list, ensure_ascii=False), ex=604800)
 
         # 查找培训专员 — 从 training_specialists 表查询
         specialist_repo = TrainingSpecialistRepository(employee_service.repo.session)
-        specialist_config = await specialist_repo.get_by_dept_factory(dept, session_obj.factory or "old")
+        specialist_config = await specialist_repo.get_by_dept_factory(
+            dept, session_obj.factory or "old"
+        )
         specialist = None
         specialist_table = None
 
@@ -2460,7 +2621,9 @@ async def send_training_session_select_tasks(
                     f"SELECT * FROM {table} "
                     f"WHERE employee_number = :num AND is_deleted = false LIMIT 1"
                 )
-                result = await employee_service.repo.session.execute(sql, {"num": specialist_config.employee_number})
+                result = await employee_service.repo.session.execute(
+                    sql, {"num": specialist_config.employee_number}
+                )
                 row = result.mappings().first()
                 if row:
                     specialist = Employee(**dict(row))
@@ -2468,15 +2631,21 @@ async def send_training_session_select_tasks(
                     break
 
         if not specialist:
-            logger.warning("部门 %s（%s厂）未配置培训专员，跳过发送飞书消息", dept, session_obj.factory or "old")
-            select_tasks.append({
-                "department": dept,
-                "token": token,
-                "status": "pending",
-                "employee_names": [],
-                "employee_numbers": [],
-                "specialist_found": False,
-            })
+            logger.warning(
+                "部门 %s（%s厂）未配置培训专员，跳过发送飞书消息",
+                dept,
+                session_obj.factory or "old",
+            )
+            select_tasks.append(
+                {
+                    "department": dept,
+                    "token": token,
+                    "status": "pending",
+                    "employee_names": [],
+                    "employee_numbers": [],
+                    "specialist_found": False,
+                }
+            )
             continue
 
         # 解析飞书 open_id
@@ -2484,14 +2653,20 @@ async def send_training_session_select_tasks(
         if not open_id and specialist.phone:
             try:
                 im = FeishuIM()
-                mobile = specialist.phone if specialist.phone.startswith("+") else f"+86{specialist.phone}"
+                mobile = (
+                    specialist.phone
+                    if specialist.phone.startswith("+")
+                    else f"+86{specialist.phone}"
+                )
                 mapping = await im.batch_get_open_ids_by_mobile([mobile])
                 open_id = mapping.get(mobile) or mapping.get(specialist.phone)
                 if open_id:
                     update_sql = text(
                         f"UPDATE {specialist_table} SET feishu_open_id = :oid WHERE employee_number = :eno"
                     )
-                    await employee_service.repo.session.execute(update_sql, {"oid": open_id, "eno": specialist.employee_number})
+                    await employee_service.repo.session.execute(
+                        update_sql, {"oid": open_id, "eno": specialist.employee_number}
+                    )
                     await employee_service.repo.session.flush()
             except Exception:
                 pass
@@ -2510,15 +2685,17 @@ async def send_training_session_select_tasks(
             except Exception as e:
                 logger.warning("发送飞书消息给 %s 失败: %s", specialist.name, e)
 
-        select_tasks.append({
-            "department": dept,
-            "token": token,
-            "status": "pending",
-            "employee_names": [],
-            "employee_numbers": [],
-            "specialist_found": True,
-            "specialist_name": specialist.name,
-        })
+        select_tasks.append(
+            {
+                "department": dept,
+                "token": token,
+                "status": "pending",
+                "employee_names": [],
+                "employee_numbers": [],
+                "specialist_found": True,
+                "specialist_name": specialist.name,
+            }
+        )
 
     session_obj.select_tasks = select_tasks
     session_obj.status = "selecting"
@@ -2530,7 +2707,9 @@ async def send_training_session_select_tasks(
     )
 
 
-@router.get("/training-sessions/{session_id}/select-tasks", summary="获取培训记录的选择任务列表")
+@router.get(
+    "/training-sessions/{session_id}/select-tasks", summary="获取培训记录的选择任务列表"
+)
 async def get_training_session_select_tasks(
     session_id: UUID,
     service: TrainingSessionService = Depends(get_training_session_service),
@@ -2543,7 +2722,9 @@ async def get_training_session_select_tasks(
 # ─── Training Specialists ───
 
 
-def get_specialist_repo(session: AsyncSession = Depends(get_db)) -> TrainingSpecialistRepository:
+def get_specialist_repo(
+    session: AsyncSession = Depends(get_db),
+) -> TrainingSpecialistRepository:
     return TrainingSpecialistRepository(session)
 
 
@@ -2571,9 +2752,20 @@ async def upsert_training_specialist(
     payload: TrainingSpecialistCreate,
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
 ):
-    s = await repo.upsert(payload.department, payload.employee_number, payload.employee_name, payload.factory)
+    s = await repo.upsert(
+        payload.department,
+        payload.employee_number,
+        payload.employee_name,
+        payload.factory,
+    )
     return success_response(
-        data={"id": str(s.id), "department": s.department, "employee_number": s.employee_number, "employee_name": s.employee_name, "factory": s.factory},
+        data={
+            "id": str(s.id),
+            "department": s.department,
+            "employee_number": s.employee_number,
+            "employee_name": s.employee_name,
+            "factory": s.factory,
+        },
         message="培训专员已保存",
     )
 
@@ -2587,7 +2779,9 @@ async def delete_training_specialist(
     return success_response(message="培训专员已删除")
 
 
-@router.post("/training-specialists/sync-feishu-openids", summary="同步培训专员飞书 open_id")
+@router.post(
+    "/training-specialists/sync-feishu-openids", summary="同步培训专员飞书 open_id"
+)
 async def sync_specialist_feishu_openids(
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
     employee_service: EmployeeService = Depends(get_employee_service),
@@ -2611,7 +2805,9 @@ async def sync_specialist_feishu_openids(
                 source = "employees"
         else:
             # 2) Try employees_new table
-            emp = await employee_service.repo.get_new_employee_by_number(s.employee_number)
+            emp = await employee_service.repo.get_new_employee_by_number(
+                s.employee_number
+            )
             if emp and emp.feishu_open_id:
                 open_id = emp.feishu_open_id
                 source = "employees_new"
@@ -2620,13 +2816,18 @@ async def sync_specialist_feishu_openids(
         if not open_id:
             try:
                 from app.platform.integrations.feishu_im import FeishuIM
+
                 # Get phone from employees tables
                 phone = None
-                emp = await employee_service.repo.get_by_employee_number(s.employee_number)
+                emp = await employee_service.repo.get_by_employee_number(
+                    s.employee_number
+                )
                 if emp and emp.phone:
                     phone = emp.phone
                 if not phone:
-                    emp = await employee_service.repo.get_new_employee_by_number(s.employee_number)
+                    emp = await employee_service.repo.get_new_employee_by_number(
+                        s.employee_number
+                    )
                     if emp and emp.phone:
                         phone = emp.phone
                 if phone:
@@ -2636,16 +2837,40 @@ async def sync_specialist_feishu_openids(
                     if open_id:
                         source = "feishu_api"
             except Exception as e:
-                logger.warning("Feishu API lookup failed for %s: %s", s.employee_name, e)
+                logger.warning(
+                    "Feishu API lookup failed for %s: %s", s.employee_name, e
+                )
 
         if open_id:
             s.feishu_open_id = open_id
             await repo.session.flush()
-            results.append({"employee_number": s.employee_number, "employee_name": s.employee_name, "open_id": open_id, "source": source, "status": "updated"})
+            results.append(
+                {
+                    "employee_number": s.employee_number,
+                    "employee_name": s.employee_name,
+                    "open_id": open_id,
+                    "source": source,
+                    "status": "updated",
+                }
+            )
         else:
-            results.append({"employee_number": s.employee_number, "employee_name": s.employee_name, "open_id": "", "source": "", "status": "not_found"})
+            results.append(
+                {
+                    "employee_number": s.employee_number,
+                    "employee_name": s.employee_name,
+                    "open_id": "",
+                    "source": "",
+                    "status": "not_found",
+                }
+            )
 
-    return success_response(data={"synced": len([r for r in results if r["status"] == "updated"]), "failed": len([r for r in results if r["status"] == "not_found"]), "details": results})
+    return success_response(
+        data={
+            "synced": len([r for r in results if r["status"] == "updated"]),
+            "failed": len([r for r in results if r["status"] == "not_found"]),
+            "details": results,
+        }
+    )
 
 
 # ─── Training Teams ───
@@ -2759,10 +2984,15 @@ async def save_prejob_template(
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
 SETTING_KEYS = [
-    "FEISHU_APP_ID", "FEISHU_APP_SECRET",
-    "FEISHU_VEHICLE_APP_ID", "FEISHU_VEHICLE_APP_SECRET",
-    "FEISHU_TRAINING_APP_ID", "FEISHU_TRAINING_APP_SECRET",
-    "AI_BASE_URL", "AI_API_KEY", "AI_MODEL",
+    "FEISHU_APP_ID",
+    "FEISHU_APP_SECRET",
+    "FEISHU_VEHICLE_APP_ID",
+    "FEISHU_VEHICLE_APP_SECRET",
+    "FEISHU_TRAINING_APP_ID",
+    "FEISHU_TRAINING_APP_SECRET",
+    "AI_BASE_URL",
+    "AI_API_KEY",
+    "AI_MODEL",
     "AILY_APP_ID",
 ]
 
@@ -2775,11 +3005,16 @@ async def get_system_settings(
     result = {}
     _settings = get_settings()
     from sqlalchemy import text as sql_text
+
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = db_settings.get(key) or os.environ.get(key, "") or getattr(_settings, key, "")
+        val = (
+            db_settings.get(key)
+            or os.environ.get(key, "")
+            or getattr(_settings, key, "")
+        )
         result[key] = val
 
     return success_response(data=result)
@@ -2810,7 +3045,7 @@ async def save_system_settings(
     # Write to .env file
     try:
         if os.path.exists(ENV_PATH):
-            with open(ENV_PATH, "r", encoding="utf-8") as f:
+            with open(ENV_PATH, encoding="utf-8") as f:
                 lines = f.readlines()
         else:
             lines = []
@@ -2834,4 +3069,6 @@ async def save_system_settings(
     except Exception as e:
         logger.warning("Failed to write .env: %s", e)
 
-    return success_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")
+    return success_response(
+        data={"updated": updated}, message=f"已保存 {len(updated)} 项设置"
+    )

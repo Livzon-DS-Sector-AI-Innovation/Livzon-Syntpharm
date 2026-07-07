@@ -72,9 +72,7 @@ def _build_status_condition(text: str) -> str | None:
 
 def _build_department_condition(text: str) -> str | None:
     """Extract department filter condition."""
-    m = re.search(
-        r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))", text
-    )
+    m = re.search(r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))", text)
     if m:
         return f'CurrentValue.[部门] = "{m.group(1)}"'
     return None
@@ -105,9 +103,7 @@ def _build_numeric_conditions(text: str, filterable_fields: list[str]) -> list[s
             # Look for a number after the keyword
             num_m = re.search(r"[大于超过多于≥>=<≤]+\s*(\d+(?:\.\d+)?)", text)
             if num_m:
-                conditions.append(
-                    f'CurrentValue.[{field}] > "{num_m.group(1)}"'
-                )
+                conditions.append(f'CurrentValue.[{field}] > "{num_m.group(1)}"')
                 continue
 
         # Less than
@@ -118,9 +114,7 @@ def _build_numeric_conditions(text: str, filterable_fields: list[str]) -> list[s
         if m:
             num_m = re.search(r"[小于少于低于≤<=]+\s*(\d+(?:\.\d+)?)", text)
             if num_m:
-                conditions.append(
-                    f'CurrentValue.[{field}] < "{num_m.group(1)}"'
-                )
+                conditions.append(f'CurrentValue.[{field}] < "{num_m.group(1)}"')
                 continue
 
         # Equal to
@@ -135,9 +129,7 @@ def _build_numeric_conditions(text: str, filterable_fields: list[str]) -> list[s
     return conditions
 
 
-def extract_filter_conditions(
-    text: str, filterable_fields: list[str]
-) -> str | None:
+def extract_filter_conditions(text: str, filterable_fields: list[str]) -> str | None:
     """Extract filter conditions from natural language and build Feishu filter_str.
 
     Args:
@@ -175,9 +167,7 @@ def extract_filter_conditions(
         if field in ("状态", "部门", "职位"):
             continue
         # If the field name itself appears followed by a value
-        m = re.search(
-            rf"{re.escape(field)}[是为:]\s*([^，。；\n]+)", text
-        )
+        m = re.search(rf"{re.escape(field)}[是为:]\s*([^，。；\n]+)", text)
         if m:
             value = m.group(1).strip()
             if value:
@@ -251,9 +241,7 @@ def _format_field_value(value: Any) -> str:
     return str(value)
 
 
-def format_feishu_records(
-    records: list[dict[str, Any]], table_alias: str
-) -> str:
+def format_feishu_records(records: list[dict[str, Any]], table_alias: str) -> str:
     """Format Feishu records as context text for AI prompt.
 
     Args:

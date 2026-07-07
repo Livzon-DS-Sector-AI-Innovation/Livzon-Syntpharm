@@ -99,7 +99,9 @@ def _it_to_dict(task: Any) -> dict[str, Any]:
         "route_name": task.route.name if task.route else "",
         "route_id": str(task.route.id) if task.route else "",
         "equipment_name": task.equipment.name if task.equipment else "",
-        "equipment_ids": [str(eid) for eid in task.equipment_ids] if task.equipment_ids else [],
+        "equipment_ids": [str(eid) for eid in task.equipment_ids]
+        if task.equipment_ids
+        else [],
         "equipment_count": eq_count,
         "planned_time": task.planned_time.isoformat() if task.planned_time else "",
         "overall_result": task.overall_result or "",
@@ -226,7 +228,9 @@ async def _resolve_work_order(db: AsyncSession, identifier: str) -> Any:
             return wo
     except ValueError:
         pass
-    raise ValueError(f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。")
+    raise ValueError(
+        f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。"
+    )
 
 
 async def _resolve_template(db: AsyncSession, identifier: str) -> Any:

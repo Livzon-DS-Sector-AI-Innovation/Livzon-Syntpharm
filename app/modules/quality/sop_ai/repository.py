@@ -4,18 +4,17 @@
 """
 
 import logging
-from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.sop_ai.models import (
-    SopAiConfig,
-    SopAiCheckMain,
-    SopAiCheckProblem,
     CheckStatus,
     HandleStatus,
+    SopAiCheckMain,
+    SopAiCheckProblem,
+    SopAiConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ class SopAiConfigRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_key(self, config_key: str) -> Optional[SopAiConfig]:
+    async def get_by_key(self, config_key: str) -> SopAiConfig | None:
         """根据键获取配置"""
         result = await self.session.execute(
             select(SopAiConfig).where(SopAiConfig.config_key == config_key)
@@ -45,8 +44,8 @@ class SopAiConfigRepository:
         self,
         config_key: str,
         config_value: str,
-        description: Optional[str] = None,
-        operator: Optional[str] = None,
+        description: str | None = None,
+        operator: str | None = None,
     ) -> SopAiConfig:
         """创建配置"""
         config = SopAiConfig(
@@ -63,9 +62,9 @@ class SopAiConfigRepository:
         self,
         config_key: str,
         config_value: str,
-        description: Optional[str] = None,
-        operator: Optional[str] = None,
-    ) -> Optional[SopAiConfig]:
+        description: str | None = None,
+        operator: str | None = None,
+    ) -> SopAiConfig | None:
         """更新配置"""
         config = await self.get_by_key(config_key)
         if config:
@@ -82,8 +81,8 @@ class SopAiConfigRepository:
         self,
         config_key: str,
         config_value: str,
-        description: Optional[str] = None,
-        operator: Optional[str] = None,
+        description: str | None = None,
+        operator: str | None = None,
     ) -> SopAiConfig:
         """创建或更新配置"""
         config = await self.get_by_key(config_key)
@@ -98,14 +97,14 @@ class SopAiCheckMainRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, id: str) -> Optional[SopAiCheckMain]:
+    async def get_by_id(self, id: str) -> SopAiCheckMain | None:
         """根据ID获取记录"""
         result = await self.session.execute(
             select(SopAiCheckMain).where(SopAiCheckMain.id == id)
         )
         return result.scalars().first()
 
-    async def get_by_file_code(self, file_code: str) -> Optional[SopAiCheckMain]:
+    async def get_by_file_code(self, file_code: str) -> SopAiCheckMain | None:
         """根据文件编号获取记录"""
         result = await self.session.execute(
             select(SopAiCheckMain).where(SopAiCheckMain.file_code == file_code)
@@ -114,10 +113,10 @@ class SopAiCheckMainRepository:
 
     async def list(
         self,
-        status: Optional[str] = None,
-        file_code: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        status: str | None = None,
+        file_code: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[SopAiCheckMain], int]:
@@ -145,7 +144,9 @@ class SopAiCheckMainRepository:
         )
 
         # 统计语句
-        count_query = select(func.count()).select_from(SopAiCheckMain).where(where_clause)
+        count_query = (
+            select(func.count()).select_from(SopAiCheckMain).where(where_clause)
+        )
 
         result = await self.session.execute(query)
         total_result = await self.session.execute(count_query)
@@ -157,11 +158,11 @@ class SopAiCheckMainRepository:
 
     async def create(
         self,
-        file_code: Optional[str] = None,
-        file_name: Optional[str] = None,
-        file_type: Optional[str] = None,
-        check_type: Optional[str] = None,
-        operator: Optional[str] = None,
+        file_code: str | None = None,
+        file_name: str | None = None,
+        file_type: str | None = None,
+        check_type: str | None = None,
+        operator: str | None = None,
     ) -> SopAiCheckMain:
         """创建记录"""
         record = SopAiCheckMain(
@@ -180,8 +181,8 @@ class SopAiCheckMainRepository:
         self,
         id: str,
         status: CheckStatus,
-        result_summary: Optional[str] = None,
-    ) -> Optional[SopAiCheckMain]:
+        result_summary: str | None = None,
+    ) -> SopAiCheckMain | None:
         """更新状态"""
         record = await self.get_by_id(id)
         if record:
@@ -195,12 +196,12 @@ class SopAiCheckMainRepository:
     async def update_result(
         self,
         id: str,
-        result_summary: Optional[str] = None,
+        result_summary: str | None = None,
         total_problems: int = 0,
         risk_high: int = 0,
         risk_medium: int = 0,
         risk_low: int = 0,
-    ) -> Optional[SopAiCheckMain]:
+    ) -> SopAiCheckMain | None:
         """更新结果汇总"""
         record = await self.get_by_id(id)
         if record:
@@ -221,7 +222,7 @@ class SopAiCheckProblemRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, id: str) -> Optional[SopAiCheckProblem]:
+    async def get_by_id(self, id: str) -> SopAiCheckProblem | None:
         """根据ID获取问题"""
         result = await self.session.execute(
             select(SopAiCheckProblem).where(SopAiCheckProblem.id == id)
@@ -244,13 +245,13 @@ class SopAiCheckProblemRepository:
     async def create(
         self,
         main_id: str,
-        problem_type: Optional[str] = None,
-        risk_level: Optional[str] = None,
-        location: Optional[str] = None,
-        description: Optional[str] = None,
-        source_file: Optional[str] = None,
-        suggestion: Optional[str] = None,
-        operator: Optional[str] = None,
+        problem_type: str | None = None,
+        risk_level: str | None = None,
+        location: str | None = None,
+        description: str | None = None,
+        source_file: str | None = None,
+        suggestion: str | None = None,
+        operator: str | None = None,
     ) -> SopAiCheckProblem:
         """创建问题记录"""
         problem = SopAiCheckProblem(
@@ -296,9 +297,9 @@ class SopAiCheckProblemRepository:
         self,
         id: str,
         handle_status: HandleStatus,
-        ignore_reason: Optional[str] = None,
-        operator: Optional[str] = None,
-    ) -> Optional[SopAiCheckProblem]:
+        ignore_reason: str | None = None,
+        operator: str | None = None,
+    ) -> SopAiCheckProblem | None:
         """更新处理状态"""
         problem = await self.get_by_id(id)
         if problem:
@@ -317,22 +318,15 @@ class SopAiCheckProblemRepository:
             select(
                 func.count().label("total"),
                 func.sum(
-                    func.case(
-                        (SopAiCheckProblem.risk_level == "high", 1), else_=0
-                    )
+                    func.case((SopAiCheckProblem.risk_level == "high", 1), else_=0)
                 ).label("high"),
                 func.sum(
-                    func.case(
-                        (SopAiCheckProblem.risk_level == "medium", 1), else_=0
-                    )
+                    func.case((SopAiCheckProblem.risk_level == "medium", 1), else_=0)
                 ).label("medium"),
                 func.sum(
-                    func.case(
-                        (SopAiCheckProblem.risk_level == "low", 1), else_=0
-                    )
+                    func.case((SopAiCheckProblem.risk_level == "low", 1), else_=0)
                 ).label("low"),
-            )
-            .where(SopAiCheckProblem.main_id == main_id)
+            ).where(SopAiCheckProblem.main_id == main_id)
         )
         row = result.first()
         return {

@@ -139,11 +139,14 @@ class StreamingAgentService(AgentService):
         yield "delta", {"text": "你好，"}
         yield "ping", {"ts": 1}
         yield "delta", {"text": "我正在查询。"}
-        yield "done", {
-            "message": "你好，我正在查询。",
-            "pending_confirmations": [],
-            "tool_trace": [{"tool": "search"}],
-        }
+        yield (
+            "done",
+            {
+                "message": "你好，我正在查询。",
+                "pending_confirmations": [],
+                "tool_trace": [{"tool": "search"}],
+            },
+        )
 
 
 class ErrorStreamingAgentService(AgentService):

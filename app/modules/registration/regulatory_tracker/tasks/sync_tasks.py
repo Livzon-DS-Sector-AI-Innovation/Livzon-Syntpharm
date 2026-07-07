@@ -7,7 +7,9 @@ from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.services.ai_analysis_service import (
     analyze_new_documents,
 )
-from app.modules.registration.regulatory_tracker.services.sync_service import run_sync_job
+from app.modules.registration.regulatory_tracker.services.sync_service import (
+    run_sync_job,
+)
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskDefinition
 from app.shared.config_reader import get_module_setting_bool
 
@@ -115,8 +117,8 @@ def start_scheduler():
     """Initialize and start the scheduler engine with all registered tasks."""
     global _scheduler_engine
 
-    from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
     from app.modules.equipment.public_api import get_inspection_schedule_generator
+    from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
 
     registry = SchedulerRegistry()
 
@@ -130,5 +132,6 @@ def start_scheduler():
     # Create and start engine
     _scheduler_engine = SchedulerEngine(registry)
     import asyncio
+
     asyncio.create_task(_scheduler_engine.run())
     logger.info("Scheduler engine started with %d tasks", len(registry.tasks))

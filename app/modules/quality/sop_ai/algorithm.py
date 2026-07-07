@@ -4,9 +4,8 @@
 """
 
 import hashlib
-import re
 import logging
-from typing import Optional
+import re
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class SimHash:
         将文本分成词语列表。
         """
         # 简单中文分词：按标点和空格分割
-        tokens = re.split(r'[,，。.！!？?；;：:\s\n\r\t]+', text)
+        tokens = re.split(r"[,，。.！!？?；;：:\s\n\r\t]+", text)
         # 过滤空字符串
         tokens = [t for t in tokens if t and len(t) > 1]
         return tokens
@@ -84,7 +83,7 @@ class SimHash:
         fingerprint = 0
         for i in range(self.FINGERPRINT_BITS):
             if v[i] > 0:
-                fingerprint |= (1 << i)
+                fingerprint |= 1 << i
 
         return fingerprint
 
@@ -208,7 +207,7 @@ class FileParser:
         path = Path(file_path)
 
         if not path.exists():
-            raise IOError(f"文件不存在: {file_path}")
+            raise OSError(f"文件不存在: {file_path}")
 
         ext = path.suffix.lower()
 
@@ -227,7 +226,7 @@ class FileParser:
 
     def _parse_txt(self, file_path: str) -> str:
         """解析纯文本文件"""
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        with open(file_path, encoding="utf-8", errors="ignore") as f:
             text = f.read()
         return self._clean_text(text)
 
@@ -293,12 +292,12 @@ class FileParser:
         去除页眉页脚、特殊字符等。
         """
         # 去除多余空白
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
         # 去除常见页眉页脚标记
-        text = re.sub(r'第\s*\d+\s*页', '', text)
-        text = re.sub(r'页眉|页脚', '', text, flags=re.IGNORECASE)
+        text = re.sub(r"第\s*\d+\s*页", "", text)
+        text = re.sub(r"页眉|页脚", "", text, flags=re.IGNORECASE)
         # 去除特殊控制字符
-        text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f]', '', text)
+        text = re.sub(r"[\x00-\x08\x0b-\x0c\x0e-\x1f]", "", text)
         # 去除首尾空白
         text = text.strip()
         return text
@@ -373,17 +372,19 @@ class DuplicateChecker:
             ref_hash = self.simhash.compute(ref_text)
             if self.simhash.is_similar(target_hash, ref_hash):
                 similarity = self.simhash.compute_text_similarity(target_text, ref_text)
-                duplicates.append({
-                    "identifier": identifier,
-                    "hamming_distance": similarity["hamming_distance"],
-                    "similarity": similarity["similarity"],
-                })
+                duplicates.append(
+                    {
+                        "identifier": identifier,
+                        "hamming_distance": similarity["hamming_distance"],
+                        "similarity": similarity["similarity"],
+                    }
+                )
 
         return duplicates
 
 
 # 全局单例
-_default_checker: Optional[DuplicateChecker] = None
+_default_checker: DuplicateChecker | None = None
 
 
 def get_duplicate_checker(threshold: int = 3) -> DuplicateChecker:

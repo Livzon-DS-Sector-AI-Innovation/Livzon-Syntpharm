@@ -51,12 +51,19 @@ async def list_spare_parts(
     ),
 ) -> JSONResponse:
     spare_parts, total = await service.get_spare_parts(
-        db, ctx, category=category, keyword=keyword,
-        is_active=is_active, page=page, page_size=page_size,
+        db,
+        ctx,
+        category=category,
+        keyword=keyword,
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
     )
     return paginated_response(
         data=[SparePartResponse.model_validate(sp) for sp in spare_parts],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
@@ -102,7 +109,10 @@ async def update_spare_part(
     ),
 ) -> JSONResponse:
     spare_part = await service.update_spare_part(
-        db, spare_part_id, data, ctx,
+        db,
+        spare_part_id,
+        data,
+        ctx,
     )
     return success_response(data=SparePartResponse.model_validate(spare_part))
 

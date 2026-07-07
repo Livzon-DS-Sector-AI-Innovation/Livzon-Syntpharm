@@ -14,7 +14,6 @@ from app.modules.registration.schemas.ledger import (
     DomesticApprovalResponse,
     InternationalReviewCreate,
     InternationalReviewResponse,
-    LedgerSummary,
     OverseasApprovalCreate,
     OverseasApprovalResponse,
     WcCertificateCreate,

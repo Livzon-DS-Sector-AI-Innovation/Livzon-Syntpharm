@@ -128,9 +128,7 @@ def test_workflow_capabilities_mark_high_risk_as_not_allowed() -> None:
     assert (
         by_operation["procurement.list_purchase_requests"]["workflow_allowed"] is True
     )
-    approve_capability = by_operation[
-        "procurement.approve_purchase_request"
-    ]
+    approve_capability = by_operation["procurement.approve_purchase_request"]
     assert approve_capability["workflow_allowed"] is False
     assert by_operation["warehouse.restart_feishu_ws"]["workflow_allowed"] is False
 
@@ -139,9 +137,9 @@ def test_procurement_supplier_query_is_exposed_as_workflow_capability() -> None:
     service = AgentService(settings=SimpleNamespace())
 
     capabilities = service._workflow_capabilities()["capabilities"]
-    supplier_capability = {
-        item["operation"]: item for item in capabilities
-    }["procurement.list_suppliers"]
+    supplier_capability = {item["operation"]: item for item in capabilities}[
+        "procurement.list_suppliers"
+    ]
 
     assert supplier_capability["method"] == "GET"
     assert supplier_capability["path"] == "/procurement/suppliers"

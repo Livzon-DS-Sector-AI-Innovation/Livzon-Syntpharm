@@ -1,82 +1,71 @@
 """偏差管理 API 路由"""
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from app.core.database import get_db, AsyncSession
+from app.core.database import AsyncSession, get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.modules.quality.qms.deviation_service import (
-    DeviationService,
-    InvestigationService,
-    CorrectionService,
-    ClosingService,
-)
 from app.modules.quality.qms.deviation_schemas import (
-    DeviationCreate,
-    DeviationUpdate,
-    DeviationResponse,
-    DeviationListItem,
-    DeviationFilter,
-    InvestigationCreate,
-    InvestigationUpdate,
-    InvestigationResponse,
-    InvestigationListItem,
-    CorrectionCreate,
-    CorrectionUpdate,
-    CorrectionResponse,
-    CorrectionListItem,
+    BatchLockRequest,
     ClosingCreate,
     ClosingUpdate,
-    ClosingResponse,
-    ClosingListItem,
-    DeviationStatistics,
-    BatchLockRequest,
-    ApprovalResponse,
+    CorrectionCreate,
+    CorrectionUpdate,
+    DeviationCreate,
+    DeviationUpdate,
+    InvestigationCreate,
+    InvestigationUpdate,
 )
-from app.platform.ai.service import log_ai_interaction, AiLogService
+from app.modules.quality.qms.deviation_service import (
+    ClosingService,
+    CorrectionService,
+    DeviationService,
+    InvestigationService,
+)
 
 
 class ApiResponse(BaseModel):
     """统一响应格式"""
+
     code: int = 200
     message: str = "Success"
-    data: Optional[dict | list] = None
+    data: dict | list | None = None
 
 
 router = APIRouter(prefix="/deviation", tags=["偏差管理"])
 
 
-def get_deviation_service(session = Depends(get_db)) -> DeviationService:
+def get_deviation_service(session=Depends(get_db)) -> DeviationService:
     return DeviationService(session)
 
 
-def get_investigation_service(session = Depends(get_db)) -> InvestigationService:
+def get_investigation_service(session=Depends(get_db)) -> InvestigationService:
     return InvestigationService(session)
 
 
-def get_correction_service(session = Depends(get_db)) -> CorrectionService:
+def get_correction_service(session=Depends(get_db)) -> CorrectionService:
     return CorrectionService(session)
 
 
-def get_closing_service(session = Depends(get_db)) -> ClosingService:
+def get_closing_service(session=Depends(get_db)) -> ClosingService:
     return ClosingService(session)
 
 
 # ========== 偏差主数据 API ==========
 
+
 @router.get("", response_model=ApiResponse)
 async def list_deviations(
-    deviation_no: Optional[str] = Query(None, description="偏差编号"),
-    deviation_type: Optional[str] = Query(None, description="偏差类型"),
-    deviation_level: Optional[str] = Query(None, description="偏差等级"),
-    status: Optional[str] = Query(None, description="状态"),
-    start_date: Optional[str] = Query(None, description="开始日期"),
-    end_date: Optional[str] = Query(None, description="结束日期"),
-    product_batch: Optional[str] = Query(None, description="生产批次"),
-    department: Optional[str] = Query(None, description="部门"),
+    deviation_no: str | None = Query(None, description="偏差编号"),
+    deviation_type: str | None = Query(None, description="偏差类型"),
+    deviation_level: str | None = Query(None, description="偏差等级"),
+    status: str | None = Query(None, description="状态"),
+    start_date: str | None = Query(None, description="开始日期"),
+    end_date: str | None = Query(None, description="结束日期"),
+    product_batch: str | None = Query(None, description="生产批次"),
+    department: str | None = Query(None, description="部门"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: DeviationService = Depends(get_deviation_service),
@@ -102,33 +91,40 @@ async def list_deviations(
 
     items = []
     for dev in deviations:
-        items.append({
-            "id": str(dev.id),
-            "deviation_no": dev.deviation_no,
-            "occurrence_date": dev.occurrence_date.isoformat() if dev.occurrence_date else None,
-            "discovering_department": dev.discovering_department,
-            "deviation_type": dev.deviation_type,
-            "deviation_level": dev.deviation_level,
-            "product_name": dev.product_name,
-            "production_batch": dev.production_batch,
-            "description": dev.abnormal_description,
-            "status": dev.status,
-            "batch_locked": dev.batch_locked,
-            "has_investigation": dev.investigation is not None,
-            "has_correction": dev.correction is not None,
-            "has_closing": dev.closing is not None,
-            "created_at": dev.created_at.isoformat() if dev.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(dev.id),
+                "deviation_no": dev.deviation_no,
+                "occurrence_date": dev.occurrence_date.isoformat()
+                if dev.occurrence_date
+                else None,
+                "discovering_department": dev.discovering_department,
+                "deviation_type": dev.deviation_type,
+                "deviation_level": dev.deviation_level,
+                "product_name": dev.product_name,
+                "production_batch": dev.production_batch,
+                "description": dev.abnormal_description,
+                "status": dev.status,
+                "batch_locked": dev.batch_locked,
+                "has_investigation": dev.investigation is not None,
+                "has_correction": dev.correction is not None,
+                "has_closing": dev.closing is not None,
+                "created_at": dev.created_at.isoformat() if dev.created_at else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )
 
 
 # ========== 统计分析 API ==========
+
 
 @router.get("/statistics", response_model=ApiResponse)
 async def get_statistics(
@@ -141,14 +137,15 @@ async def get_statistics(
 
 # ========== AI辅助功能 API ==========
 
+
 @router.post("/ai/generate-description", response_model=ApiResponse)
 async def ai_generate_description(
-    deviation_type: Optional[str] = Query(None, description="偏差类型"),
-    deviation_level: Optional[str] = Query(None, description="偏差级别"),
-    occurrence_date: Optional[str] = Query(None, description="发生日期"),
-    discovering_department: Optional[str] = Query(None, description="发现部门"),
-    product_name: Optional[str] = Query(None, description="产品名称"),
-    production_batch: Optional[str] = Query(None, description="生产批次"),
+    deviation_type: str | None = Query(None, description="偏差类型"),
+    deviation_level: str | None = Query(None, description="偏差级别"),
+    occurrence_date: str | None = Query(None, description="发生日期"),
+    discovering_department: str | None = Query(None, description="发现部门"),
+    product_name: str | None = Query(None, description="产品名称"),
+    production_batch: str | None = Query(None, description="生产批次"),
     keywords: str = Query(..., description="关键词，多个用逗号分隔"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -162,12 +159,12 @@ async def ai_generate_description(
 【重要提醒】：以下信息是用户已填写的真实数据，请基于这些信息生成描述，不要自行想象或编造任何数据（如时间、地点、人员姓名、数量等）。
 
 用户提供的信息：
-- 偏差类型: {deviation_type or '未指定'}
-- 偏差级别: {deviation_level or '未指定'}
-- 发生日期: {occurrence_date or '未指定'}
-- 发现部门: {discovering_department or '未指定'}
-- 产品/物料名称: {product_name or '未指定'}
-- 生产批次: {production_batch or '未指定'}
+- 偏差类型: {deviation_type or "未指定"}
+- 偏差级别: {deviation_level or "未指定"}
+- 发生日期: {occurrence_date or "未指定"}
+- 发现部门: {discovering_department or "未指定"}
+- 产品/物料名称: {product_name or "未指定"}
+- 生产批次: {production_batch or "未指定"}
 - 关键词描述: {keywords}
 
 请基于以上真实信息生成偏差描述，描述格式参考：
@@ -216,19 +213,20 @@ async def ai_generate_description(
         raise HTTPException(status_code=400, detail=error_msg)
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"AI处理失败: {str(e)}")
 
 
 @router.post("/ai/analyze-impact", response_model=ApiResponse)
 async def ai_analyze_impact(
-    deviation_type: Optional[str] = Query(None, description="偏差类型"),
-    deviation_level: Optional[str] = Query(None, description="偏差级别"),
-    occurrence_date: Optional[str] = Query(None, description="发生日期"),
-    discovering_department: Optional[str] = Query(None, description="发现部门"),
-    product_name: Optional[str] = Query(None, description="产品名称"),
-    production_batch: Optional[str] = Query(None, description="生产批次"),
-    description: Optional[str] = Query(None, description="偏差描述"),
+    deviation_type: str | None = Query(None, description="偏差类型"),
+    deviation_level: str | None = Query(None, description="偏差级别"),
+    occurrence_date: str | None = Query(None, description="发生日期"),
+    discovering_department: str | None = Query(None, description="发现部门"),
+    product_name: str | None = Query(None, description="产品名称"),
+    production_batch: str | None = Query(None, description="生产批次"),
+    description: str | None = Query(None, description="偏差描述"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -241,13 +239,13 @@ async def ai_analyze_impact(
 【重要提醒】：以下信息是用户已填写的真实数据，请基于这些信息进行分析，不要自行想象或编造任何数据。
 
 用户提供的信息：
-- 偏差类型: {deviation_type or '未提供'}
-- 偏差级别: {deviation_level or '未提供'}
-- 发生日期: {occurrence_date or '未提供'}
-- 发现部门: {discovering_department or '未提供'}
-- 产品/物料名称: {product_name or '未提供'}
-- 生产批次: {production_batch or '未提供'}
-- 偏差描述: {description or '未提供'}
+- 偏差类型: {deviation_type or "未提供"}
+- 偏差级别: {deviation_level or "未提供"}
+- 发生日期: {occurrence_date or "未提供"}
+- 发现部门: {discovering_department or "未提供"}
+- 产品/物料名称: {product_name or "未提供"}
+- 生产批次: {production_batch or "未提供"}
+- 偏差描述: {description or "未提供"}
 
 请从以下维度分析影响范围：
 1. 对产品质量的影响（原料、中间体、成品）
@@ -289,8 +287,8 @@ async def ai_analyze_impact(
 @router.post("/ai/generate-emergency-measures", response_model=ApiResponse)
 async def ai_generate_emergency_measures(
     deviation_type: str = Query(..., description="偏差类型"),
-    deviation_level: Optional[str] = Query(None, description="偏差等级"),
-    description: Optional[str] = Query(None, description="偏差描述"),
+    deviation_level: str | None = Query(None, description="偏差等级"),
+    description: str | None = Query(None, description="偏差描述"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -301,8 +299,8 @@ async def ai_generate_emergency_measures(
         user_message = f"""请为以下偏差生成应急措施：
 
 偏差类型: {deviation_type}
-偏差等级: {deviation_level or '未指定'}
-偏差描述: {description or '未提供'}
+偏差等级: {deviation_level or "未指定"}
+偏差描述: {description or "未提供"}
 
 要求：
 1. 应急措施必须立即执行
@@ -345,9 +343,9 @@ async def ai_generate_emergency_measures(
 @router.post("/ai/analyze-root-cause", response_model=ApiResponse)
 async def ai_analyze_root_cause(
     deviation_type: str = Query(..., description="偏差类型"),
-    description: Optional[str] = Query(None, description="偏差描述"),
-    direct_cause: Optional[str] = Query(None, description="直接原因"),
-    investigation_data: Optional[str] = Query(None, description="调查数据"),
+    description: str | None = Query(None, description="偏差描述"),
+    direct_cause: str | None = Query(None, description="直接原因"),
+    investigation_data: str | None = Query(None, description="调查数据"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -358,9 +356,9 @@ async def ai_analyze_root_cause(
         user_message = f"""请使用5M1E方法论分析以下偏差的根本原因：
 
 偏差类型: {deviation_type}
-偏差描述: {description or '未提供'}
-直接原因: {direct_cause or '未提供'}
-调查数据: {investigation_data or '未提供'}
+偏差描述: {description or "未提供"}
+直接原因: {direct_cause or "未提供"}
+调查数据: {investigation_data or "未提供"}
 
 5M1E分析维度：
 - Man（人）：人员培训、操作失误、责任心等
@@ -404,9 +402,9 @@ async def ai_analyze_root_cause(
 @router.post("/ai/analyze-direct-cause", response_model=ApiResponse)
 async def ai_analyze_direct_cause(
     deviation_type: str = Query(..., description="偏差类型"),
-    description: Optional[str] = Query(None, description="偏差描述"),
-    product_name: Optional[str] = Query(None, description="产品/物料名称"),
-    production_batch: Optional[str] = Query(None, description="生产批次"),
+    description: str | None = Query(None, description="偏差描述"),
+    product_name: str | None = Query(None, description="产品/物料名称"),
+    production_batch: str | None = Query(None, description="生产批次"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -417,9 +415,9 @@ async def ai_analyze_direct_cause(
         user_message = f"""请分析以下偏差的直接原因：
 
 偏差类型: {deviation_type}
-偏差描述: {description or '未提供'}
-产品/物料名称: {product_name or '未提供'}
-生产批次: {production_batch or '未提供'}
+偏差描述: {description or "未提供"}
+产品/物料名称: {product_name or "未提供"}
+生产批次: {production_batch or "未提供"}
 
 直接原因定义：指导致偏差发生的最直接、最表面的原因，通常是偏差发生的当时就能观察到或测量到的现象。
 
@@ -454,9 +452,9 @@ async def ai_analyze_direct_cause(
 @router.post("/ai/generate-capa", response_model=ApiResponse)
 async def ai_generate_capa(
     deviation_type: str = Query(..., description="偏差类型"),
-    root_cause: Optional[str] = Query(None, description="根本原因"),
-    deviation_level: Optional[str] = Query(None, description="偏差等级"),
-    department: Optional[str] = Query(None, description="责任部门"),
+    root_cause: str | None = Query(None, description="根本原因"),
+    deviation_level: str | None = Query(None, description="偏差等级"),
+    department: str | None = Query(None, description="责任部门"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -467,9 +465,9 @@ async def ai_generate_capa(
         user_message = f"""请为以下偏差生成CAPA（纠正措施和预防措施）：
 
 偏差类型: {deviation_type}
-根本原因: {root_cause or '未提供'}
-偏差等级: {deviation_level or '未指定'}
-责任部门: {department or '未指定'}
+根本原因: {root_cause or "未提供"}
+偏差等级: {deviation_level or "未指定"}
+责任部门: {department or "未指定"}
 
 要求：
 1. 纠正措施（CA）针对已发生的偏差
@@ -519,9 +517,9 @@ CAPA结构：
 @router.post("/ai/generate-prevention", response_model=ApiResponse)
 async def ai_generate_prevention(
     deviation_type: str = Query(..., description="偏差类型"),
-    root_cause: Optional[str] = Query(None, description="根本原因"),
-    deviation_level: Optional[str] = Query(None, description="偏差等级"),
-    department: Optional[str] = Query(None, description="责任部门"),
+    root_cause: str | None = Query(None, description="根本原因"),
+    deviation_level: str | None = Query(None, description="偏差等级"),
+    department: str | None = Query(None, description="责任部门"),
     current_user: CurrentUser | None = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -532,9 +530,9 @@ async def ai_generate_prevention(
         user_message = f"""请为以下偏差生成预防措施（PA），防止类似偏差再次发生：
 
 偏差类型: {deviation_type}
-根本原因: {root_cause or '未提供'}
-偏差等级: {deviation_level or '未指定'}
-责任部门: {department or '未指定'}
+根本原因: {root_cause or "未提供"}
+偏差等级: {deviation_level or "未指定"}
+责任部门: {department or "未指定"}
 
 要求：
 1. 预防措施要针对根本原因，防止类似问题再次发生
@@ -589,7 +587,9 @@ async def get_deviation(
             "deviation": {
                 "id": str(result["deviation"].id),
                 "deviation_no": result["deviation"].deviation_no,
-                "occurrence_date": result["deviation"].occurrence_date.isoformat() if result["deviation"].occurrence_date else None,
+                "occurrence_date": result["deviation"].occurrence_date.isoformat()
+                if result["deviation"].occurrence_date
+                else None,
                 "discovering_department": result["deviation"].discovering_department,
                 "discoverer": result["deviation"].discoverer,
                 "product_code": result["deviation"].product_code,
@@ -608,7 +608,9 @@ async def get_deviation(
                 "batch_locked": result["deviation"].batch_locked,
                 "batch_lock_reason": result["deviation"].batch_lock_reason,
                 "status": result["deviation"].status,
-                "created_at": result["deviation"].created_at.isoformat() if result["deviation"].created_at else None,
+                "created_at": result["deviation"].created_at.isoformat()
+                if result["deviation"].created_at
+                else None,
             },
             "investigation": None,
             "correction": None,
@@ -621,15 +623,25 @@ async def get_deviation(
                 "id": str(result["investigation"].id),
                 "deviation_id": str(result["investigation"].deviation_id),
                 "investigation_team": result["investigation"].investigation_team,
-                "investigation_start_date": result["investigation"].investigation_start_date.isoformat() if result["investigation"].investigation_start_date else None,
-                "investigation_end_date": result["investigation"].investigation_end_date.isoformat() if result["investigation"].investigation_end_date else None,
+                "investigation_start_date": result[
+                    "investigation"
+                ].investigation_start_date.isoformat()
+                if result["investigation"].investigation_start_date
+                else None,
+                "investigation_end_date": result[
+                    "investigation"
+                ].investigation_end_date.isoformat()
+                if result["investigation"].investigation_end_date
+                else None,
                 "investigation_method": result["investigation"].investigation_method,
                 "direct_cause": result["investigation"].direct_cause,
                 "indirect_cause": result["investigation"].indirect_cause,
                 "root_cause": result["investigation"].root_cause,
                 "why_analysis": result["investigation"].why_analysis,
                 "impact_assessment": result["investigation"].impact_assessment,
-                "investigation_conclusion": result["investigation"].investigation_conclusion,
+                "investigation_conclusion": result[
+                    "investigation"
+                ].investigation_conclusion,
                 "affected_batches": result["investigation"].affected_batches,
                 "temporary_measures": result["investigation"].temporary_measures,
                 "attachments": result["investigation"].attachments or [],
@@ -643,9 +655,19 @@ async def get_deviation(
                 "correction_measures": result["correction"].correction_measures,
                 "responsible_department": result["correction"].responsible_department,
                 "responsible_person": result["correction"].responsible_person,
-                "plan_completion_date": result["correction"].plan_completion_date.isoformat() if result["correction"].plan_completion_date else None,
-                "temporary_corrective_actions": result["correction"].temporary_corrective_actions or [],
-                "long_term_corrective_actions": result["correction"].long_term_corrective_actions or [],
+                "plan_completion_date": result[
+                    "correction"
+                ].plan_completion_date.isoformat()
+                if result["correction"].plan_completion_date
+                else None,
+                "temporary_corrective_actions": result[
+                    "correction"
+                ].temporary_corrective_actions
+                or [],
+                "long_term_corrective_actions": result[
+                    "correction"
+                ].long_term_corrective_actions
+                or [],
                 "progress": result["correction"].progress,
                 "status": result["correction"].status,
                 "evidence_attachments": result["correction"].evidence_attachments or [],
@@ -685,7 +707,7 @@ async def create_deviation(
             data={
                 "id": str(result["deviation"].id),
                 "deviation_no": result["deviation_no"],
-            }
+            },
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -703,14 +725,12 @@ async def update_deviation(
         deviation = await service.update_deviation(deviation_id, data)
         if not deviation:
             raise ValueError("偏差不存在")
-        return ApiResponse(
-            message="更新成功",
-            data={"id": str(deviation.id)}
-        )
+        return ApiResponse(message="更新成功", data={"id": str(deviation.id)})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
 
@@ -749,7 +769,7 @@ async def submit_deviation(
 async def approve_deviation(
     deviation_id: UUID,
     approved: bool = Query(..., description="是否批准"),
-    comments: Optional[str] = Query(None, description="审批意见"),
+    comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型"),
     service: DeviationService = Depends(get_deviation_service),
     current_user: CurrentUser | None = Depends(get_current_user),
@@ -795,6 +815,7 @@ async def unlock_batch(
 
 # ========== 偏差调查 API ==========
 
+
 @router.get("/investigations/list", response_model=ApiResponse)
 async def list_investigations(
     page: int = Query(1, ge=1),
@@ -806,23 +827,31 @@ async def list_investigations(
 
     items = []
     for inv in investigations:
-        items.append({
-            "id": str(inv.id),
-            "deviation_id": str(inv.deviation_id),
-            "deviation_no": inv.deviation.deviation_no if inv.deviation else None,
-            "investigation_team": inv.investigation_team,
-            "investigation_start_date": inv.investigation_start_date.isoformat() if inv.investigation_start_date else None,
-            "investigation_end_date": inv.investigation_end_date.isoformat() if inv.investigation_end_date else None,
-            "status": inv.status,
-            "created_at": inv.created_at.isoformat() if inv.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(inv.id),
+                "deviation_id": str(inv.deviation_id),
+                "deviation_no": inv.deviation.deviation_no if inv.deviation else None,
+                "investigation_team": inv.investigation_team,
+                "investigation_start_date": inv.investigation_start_date.isoformat()
+                if inv.investigation_start_date
+                else None,
+                "investigation_end_date": inv.investigation_end_date.isoformat()
+                if inv.investigation_end_date
+                else None,
+                "status": inv.status,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )
 
 
 @router.post("/{deviation_id}/investigation", response_model=ApiResponse)
@@ -834,10 +863,7 @@ async def create_investigation(
     """创建调查"""
     try:
         investigation = await service.create_investigation(deviation_id, data)
-        return ApiResponse(
-            message="创建成功",
-            data={"id": str(investigation.id)}
-        )
+        return ApiResponse(message="创建成功", data={"id": str(investigation.id)})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -873,6 +899,7 @@ async def complete_investigation(
 
 # ========== 偏差整改 API ==========
 
+
 @router.get("/corrections/list", response_model=ApiResponse)
 async def list_corrections(
     page: int = Query(1, ge=1),
@@ -884,24 +911,30 @@ async def list_corrections(
 
     items = []
     for corr in corrections:
-        items.append({
-            "id": str(corr.id),
-            "deviation_id": str(corr.deviation_id),
-            "deviation_no": corr.deviation.deviation_no if corr.deviation else None,
-            "responsible_department": corr.responsible_department,
-            "responsible_person": corr.responsible_person,
-            "plan_completion_date": corr.plan_completion_date.isoformat() if corr.plan_completion_date else None,
-            "progress": corr.progress,
-            "status": corr.status,
-            "created_at": corr.created_at.isoformat() if corr.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(corr.id),
+                "deviation_id": str(corr.deviation_id),
+                "deviation_no": corr.deviation.deviation_no if corr.deviation else None,
+                "responsible_department": corr.responsible_department,
+                "responsible_person": corr.responsible_person,
+                "plan_completion_date": corr.plan_completion_date.isoformat()
+                if corr.plan_completion_date
+                else None,
+                "progress": corr.progress,
+                "status": corr.status,
+                "created_at": corr.created_at.isoformat() if corr.created_at else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )
 
 
 @router.post("/{deviation_id}/correction", response_model=ApiResponse)
@@ -913,10 +946,7 @@ async def create_correction(
     """创建整改"""
     try:
         correction = await service.create_correction(deviation_id, data)
-        return ApiResponse(
-            message="创建成功",
-            data={"id": str(correction.id)}
-        )
+        return ApiResponse(message="创建成功", data={"id": str(correction.id)})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -953,6 +983,7 @@ async def update_correction_progress(
 
 # ========== 偏差关闭 API ==========
 
+
 @router.get("/closings/list", response_model=ApiResponse)
 async def list_closings(
     page: int = Query(1, ge=1),
@@ -964,22 +995,26 @@ async def list_closings(
 
     items = []
     for clo in closings:
-        items.append({
-            "id": str(clo.id),
-            "deviation_id": str(clo.deviation_id),
-            "deviation_no": clo.deviation.deviation_no if clo.deviation else None,
-            "is_resolved": clo.is_resolved,
-            "conclusion": clo.conclusion,
-            "archived": clo.archived,
-            "created_at": clo.created_at.isoformat() if clo.created_at else None,
-        })
+        items.append(
+            {
+                "id": str(clo.id),
+                "deviation_id": str(clo.deviation_id),
+                "deviation_no": clo.deviation.deviation_no if clo.deviation else None,
+                "is_resolved": clo.is_resolved,
+                "conclusion": clo.conclusion,
+                "archived": clo.archived,
+                "created_at": clo.created_at.isoformat() if clo.created_at else None,
+            }
+        )
 
-    return ApiResponse(data={
-        "items": items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )
 
 
 @router.post("/{deviation_id}/closing", response_model=ApiResponse)
@@ -991,10 +1026,7 @@ async def create_closing(
     """创建关闭申请"""
     try:
         closing = await service.create_closing(deviation_id, data)
-        return ApiResponse(
-            message="创建成功",
-            data={"id": str(closing.id)}
-        )
+        return ApiResponse(message="创建成功", data={"id": str(closing.id)})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

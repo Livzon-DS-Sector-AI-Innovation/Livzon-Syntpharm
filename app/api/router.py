@@ -44,6 +44,8 @@ from app.platform.identity.api import (
     user_router,
 )
 from app.platform.system import router as system_router
+from app.core.llm.api import router as llm_router
+from app.core.config_api import router as module_settings_router
 
 api_router = APIRouter()
 
@@ -76,18 +78,14 @@ api_router.include_router(
 )
 # QMS routers
 api_router.include_router(quality_router, prefix="/quality", tags=["质量管理"])
-api_router.include_router(
-    sampling_router, prefix="/quality", tags=["质量管理 - 取样"]
-)
+api_router.include_router(sampling_router, prefix="/quality", tags=["质量管理 - 取样"])
 api_router.include_router(iqc_router, prefix="/quality", tags=["质量管理 - IQC"])
 api_router.include_router(ipqc_router, prefix="/quality", tags=["质量管理 - IPQC"])
 api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - FQC"])
 api_router.include_router(
     stability_router, prefix="/quality", tags=["质量管理 - 稳定性"]
 )
-api_router.include_router(
-    deviation_router, prefix="/quality", tags=["质量管理 - 偏差"]
-)
+api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
 api_router.include_router(
     quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"]
 )
@@ -124,10 +122,7 @@ api_router.include_router(
     prefix="/registration/dossier-writer",
     tags=["申报资料撰写"],
 )
-from app.core.llm.api import router as llm_router
 
 api_router.include_router(llm_router, tags=["LLM配置"])
-from app.core.config_api import router as module_settings_router
-
 api_router.include_router(module_settings_router, tags=["模块配置"])
 api_router.include_router(agent_router, prefix="/agent", tags=["中枢 Agent"])

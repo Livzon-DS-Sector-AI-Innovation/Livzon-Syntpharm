@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from sqlalchemy import CheckConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint
 
 from app.modules.equipment.models import Equipment, EquipmentCategory, Location
 
@@ -42,11 +42,11 @@ class TestEquipmentCategoryModel:
     def test_unique_constraint_includes_is_deleted(self) -> None:
         """Unique index on code with partial where clause."""
         from sqlalchemy import Index
+
         constraint = next(
             c
             for c in EquipmentCategory.__table_args__
-            if isinstance(c, Index)
-            and c.name == "uq_equipment_categories_code"
+            if isinstance(c, Index) and c.name == "uq_equipment_categories_code"
         )
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
@@ -79,15 +79,17 @@ class TestLocationModel:
     def test_unique_constraint_includes_is_deleted(self) -> None:
         """Unique index on code with partial where clause."""
         from sqlalchemy import Index
+
         constraint = next(
             c
             for c in Location.__table_args__
-            if isinstance(c, Index)
-            and c.name == "uq_locations_code"
+            if isinstance(c, Index) and c.name == "uq_locations_code"
         )
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
         assert constraint.unique is True
+
+
 class TestEquipmentModel:
     """Tests for Equipment model."""
 
@@ -140,15 +142,16 @@ class TestEquipmentModel:
     def test_unique_constraint_includes_is_deleted(self) -> None:
         """Unique index on code with partial where clause."""
         from sqlalchemy import Index
+
         constraint = next(
             c
             for c in Location.__table_args__
-            if isinstance(c, Index)
-            and c.name == "uq_locations_code"
+            if isinstance(c, Index) and c.name == "uq_locations_code"
         )
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
         assert constraint.unique is True
+
     def test_status_check_constraint_exists(self) -> None:
         """CheckConstraint validates status values."""
         constraint = next(

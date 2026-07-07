@@ -10,7 +10,6 @@ Run with: .venv/Scripts/python tests/test_ai_e2e.py
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 from datetime import date
 from unittest.mock import AsyncMock, patch
@@ -21,7 +20,6 @@ import openai
 
 from app.platform.ai.executor import execute_plan, format_step_results
 from app.platform.ai.planner import generate_plan
-
 
 # ---------------------------------------------------------------------------
 # Mock data
@@ -96,6 +94,7 @@ MOCK_EMPLOYEES = [
 # Mock helpers
 # ---------------------------------------------------------------------------
 
+
 async def mock_group_count(session, *, group_by: str, filters: dict):
     key = (group_by, frozenset(filters.items()))
     return MOCK_GROUP_COUNT.get(key, [])
@@ -119,6 +118,7 @@ async def mock_distinct(session, *, field: str, filters: dict):
 # Test runner
 # ---------------------------------------------------------------------------
 
+
 async def run_question(client: openai.AsyncOpenAI, session, q: str, idx: int):
     print(f"\n{'=' * 60}")
     print(f"【问题 {idx}】{q}")
@@ -131,7 +131,7 @@ async def run_question(client: openai.AsyncOpenAI, session, q: str, idx: int):
         return
 
     if not plan.needs_data:
-        print(f"  [Planner] needs_data=False，无需查询")
+        print("  [Planner] needs_data=False，无需查询")
         print(f"  [Planner] reasoning: {plan.reasoning}")
         return
 
@@ -144,10 +144,12 @@ async def run_question(client: openai.AsyncOpenAI, session, q: str, idx: int):
                 print(f"      -> {sq.action}: {sq.description} filters={sq.filters}")
 
     # Layer 2: Executor
-    with patch("app.platform.ai.executor.group_count_employees", mock_group_count), \
-         patch("app.platform.ai.executor.count_employees", mock_count), \
-         patch("app.platform.ai.executor.query_employees", mock_query), \
-         patch("app.platform.ai.executor.get_distinct_employee_values", mock_distinct):
+    with (
+        patch("app.platform.ai.executor.group_count_employees", mock_group_count),
+        patch("app.platform.ai.executor.count_employees", mock_count),
+        patch("app.platform.ai.executor.query_employees", mock_query),
+        patch("app.platform.ai.executor.get_distinct_employee_values", mock_distinct),
+    ):
         results = await execute_plan(session, plan, q, client)
 
     # Layer 3: Format
@@ -178,7 +180,7 @@ async def main():
         "请列出所有在职员工的姓名",
     ]
 
-    print(f"模型: kimi-k2.5")
+    print("模型: kimi-k2.5")
     print(f"日期: {date.today().isoformat()}")
     print(f"问题数: {len(questions)}")
 

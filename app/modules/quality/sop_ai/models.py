@@ -9,9 +9,17 @@
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from typing import Optional
 
-from sqlalchemy import Integer, String, Text, DateTime, Enum, ForeignKey, Index, Boolean, Uuid
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.base_model import Base, BaseModel
@@ -84,8 +92,8 @@ class SopAiConfig(BaseModel):
     )
     config_key: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     config_value: Mapped[str] = mapped_column(Text, nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    operator: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    operator: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -111,20 +119,22 @@ class SopAiCheckMain(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=True, server_default=None
     )
-    created_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
-    updated_by: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    file_code: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    file_name: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    file_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    check_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default=CheckStatus.PENDING.value)
-    result_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    file_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    check_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=CheckStatus.PENDING.value
+    )
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     total_problems: Mapped[int] = mapped_column(Integer, default=0)
     risk_high: Mapped[int] = mapped_column(Integer, default=0)
     risk_medium: Mapped[int] = mapped_column(Integer, default=0)
     risk_low: Mapped[int] = mapped_column(Integer, default=0)
-    operator: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    operator: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # 关联问题明细
     problems: Mapped[list["SopAiCheckProblem"]] = relationship(
@@ -158,21 +168,19 @@ class SopAiCheckProblem(BaseModel):
     main_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sop_ai_check_main.id"), nullable=False
     )
-    problem_type: Mapped[Optional[str]] = mapped_column(
+    problem_type: Mapped[str | None] = mapped_column(
         Enum(ProblemType), nullable=True
     )
-    risk_level: Mapped[Optional[str]] = mapped_column(
-        Enum(RiskLevel), nullable=True
-    )
-    location: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    source_file: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    suggestion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    risk_level: Mapped[str | None] = mapped_column(Enum(RiskLevel), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_file: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    suggestion: Mapped[str | None] = mapped_column(Text, nullable=True)
     handle_status: Mapped[str] = mapped_column(
         Enum(HandleStatus), nullable=False, default=HandleStatus.PENDING
     )
-    ignore_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    operator: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ignore_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    operator: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # 关联主记录
     main_record: Mapped["SopAiCheckMain"] = relationship(

@@ -4,10 +4,8 @@
 """
 
 import logging
-import time
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -199,13 +197,19 @@ def log_ai_interaction(
     with concurrent.futures.ThreadPoolExecutor() as pool:
         return pool.submit(_save_log).result()
 
+
 import openai
 
 
 class AiChatService:
     """Service for streaming chat completions via OpenAI-compatible API."""
 
-    def __init__(self, api_key: str, base_url: str = "https://api.moonshot.cn/v1", model: str = "moonshot-v1-128k") -> None:
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str = "https://api.moonshot.cn/v1",
+        model: str = "moonshot-v1-128k",
+    ) -> None:
         self.client = openai.AsyncOpenAI(
             api_key=api_key,
             base_url=base_url,

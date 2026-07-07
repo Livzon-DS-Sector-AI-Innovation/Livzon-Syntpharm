@@ -1,7 +1,6 @@
 """飞书机器人客户端 - 使用 App ID 和 App Secret 获取 tenant_access_token"""
 
 import logging
-from typing import Optional
 
 import httpx
 
@@ -18,7 +17,7 @@ class FeishuClient:
     def __init__(self, app_id: str, app_secret: str):
         self.app_id = app_id
         self.app_secret = app_secret
-        self._tenant_access_token: Optional[str] = None
+        self._tenant_access_token: str | None = None
 
     async def get_tenant_access_token(self) -> str:
         """获取 tenant_access_token"""
@@ -85,7 +84,9 @@ class FeishuClient:
 
             return data
 
-    async def send_text_message(self, receive_id_type: str, receive_id: str, text: str) -> dict:
+    async def send_text_message(
+        self, receive_id_type: str, receive_id: str, text: str
+    ) -> dict:
         """发送文本消息"""
         return await self.send_message(
             receive_id_type=receive_id_type,
@@ -127,7 +128,7 @@ class FeishuClient:
 
 
 # 全局客户端实例
-_feishu_client: Optional[FeishuClient] = None
+_feishu_client: FeishuClient | None = None
 
 
 def get_feishu_client() -> FeishuClient:
@@ -211,7 +212,10 @@ async def send_feishu_card(
                     "actions": [
                         {
                             "tag": "a",
-                            "text": {"tag": "lark_md", "content": action.get("text", "")},
+                            "text": {
+                                "tag": "lark_md",
+                                "content": action.get("text", ""),
+                            },
                             "href": {"url": action.get("url", "")},
                         }
                     ],

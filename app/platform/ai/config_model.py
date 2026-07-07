@@ -12,6 +12,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     """Base class for AI models"""
+
     pass
 
 
@@ -20,6 +21,7 @@ class QmsAiConfig(Base):
 
     存储 AI 能力的配置信息，支持持久化存储和运行时更新。
     """
+
     __tablename__ = "qms_ai_config"
     __table_args__ = {"schema": "qms"}
 

@@ -2,46 +2,50 @@
 
 import json
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
-from app.core.database import get_db, AsyncSession
+from app.core.database import AsyncSession, get_db
 
 logger = logging.getLogger(__name__)
 
 
 class ApiResponse(BaseModel):
     """统一响应格式"""
+
     code: int = 200
     message: str = "Success"
-    data: Optional[dict | list] = None
+    data: dict | list | None = None
 
 
 class CreateTableRequest(BaseModel):
     """创建数据表请求"""
+
     table_name: str
-    table_description: Optional[str] = None
+    table_description: str | None = None
     columns_config: list = []
 
 
 class UpdateTableRequest(BaseModel):
     """更新数据表请求"""
-    table_name: Optional[str] = None
-    table_description: Optional[str] = None
-    columns_config: Optional[list] = None
-    is_active: Optional[bool] = None
+
+    table_name: str | None = None
+    table_description: str | None = None
+    columns_config: list | None = None
+    is_active: bool | None = None
 
 
 class RowDataRequest(BaseModel):
     """行数据请求"""
+
     row_data: dict
 
 
 class BatchRowsRequest(BaseModel):
     """批量行数据请求"""
+
     rows: list[dict]
 
 
@@ -50,10 +54,11 @@ router = APIRouter(prefix="/inspection-table", tags=["原料检验数据"])
 
 # ============ 数据表管理 API ============
 
+
 @router.get("/", summary="获取数据表列表")
 async def list_tables(
-    is_active: Optional[bool] = None,
-    keyword: Optional[str] = None,
+    is_active: bool | None = None,
+    keyword: str | None = None,
     page: int = 1,
     page_size: int = 20,
     session: AsyncSession = Depends(get_db),
@@ -99,16 +104,18 @@ async def create_table(
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
 
     # 手动验证数据
-    if 'table_name' not in data:
-        raise HTTPException(status_code=400, detail="Missing required field: table_name")
+    if "table_name" not in data:
+        raise HTTPException(
+            status_code=400, detail="Missing required field: table_name"
+        )
 
     service = InspectionTableService(session)
 
     try:
         table = await service.create_table(
-            data.get('table_name'),
-            data.get('table_description'),
-            data.get('columns_config', [])
+            data.get("table_name"),
+            data.get("table_description"),
+            data.get("columns_config", []),
         )
         return ApiResponse(data=table)
     except ValueError as e:
@@ -180,6 +187,7 @@ async def delete_table(
 
 # ============ 数据行 API ============
 
+
 @router.post("/{table_id}/rows", summary="添加数据行")
 async def add_row(
     table_id: UUID,
@@ -245,7 +253,9 @@ async def batch_save_rows(
     from app.modules.quality.qms.inspection_table_service import InspectionTableService
 
     try:
-        logger.info(f"Batch save rows for table {table_id}, rows count: {len(request.rows)}")
+        logger.info(
+            f"Batch save rows for table {table_id}, rows count: {len(request.rows)}"
+        )
 
         service = InspectionTableService(session)
         saved_rows = await service.batch_save_rows(table_id, request.rows)
@@ -258,6 +268,7 @@ async def batch_save_rows(
 
 
 # ============ AI 识别 API ============
+
 
 @router.post("/{table_id}/recognize", summary="AI识别扫描件")
 async def recognize_image(
@@ -275,14 +286,12 @@ async def recognize_image(
     if not table:
         raise HTTPException(status_code=404, detail="数据表不存在")
 
-    columns_config = table.get('columns_config', [])
+    columns_config = table.get("columns_config", [])
 
     # 读取原始请求体
     body = await request.body()
 
     # 解析 multipart form data
-    import multipart
-    from fastapi import UploadFile, File
 
     # 这里直接接收 form data 中的 image 字段
     # 由于 FastAPI 处理 multipart 比较复杂，我们改用简化的方式
@@ -297,10 +306,11 @@ async def upload_and_recognize(
     session: AsyncSession = Depends(get_db),
 ):
     """上传扫描件图片并通过AI识别"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from app.platform.ai.minimax_util import get_vision_util
     import shutil
     from pathlib import Path
+
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
+    from app.platform.ai.minimax_util import get_vision_util
 
     # 获取数据表配置
     service = InspectionTableService(session)
@@ -309,10 +319,12 @@ async def upload_and_recognize(
     if not table:
         raise HTTPException(status_code=404, detail="数据表不存在")
 
-    columns_config = table.get('columns_config', [])
+    columns_config = table.get("columns_config", [])
 
     if not columns_config:
-        raise HTTPException(status_code=400, detail="该数据表没有配置列，请先编辑表头配置")
+        raise HTTPException(
+            status_code=400, detail="该数据表没有配置列，请先编辑表头配置"
+        )
 
     # 保存上传的文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -321,7 +333,8 @@ async def upload_and_recognize(
 
     # 生成唯一文件名
     import uuid
-    file_ext = Path(file.filename).suffix if file.filename else '.png'
+
+    file_ext = Path(file.filename).suffix if file.filename else ".png"
     saved_filename = f"{uuid.uuid4().hex}{file_ext}"
     file_path = uploads_dir / saved_filename
 
@@ -333,8 +346,8 @@ async def upload_and_recognize(
 
     # 构建 AI 识别提示词
     # 生成列名列表用于提示 AI
-    column_labels = [col.get('label', col.get('key', '')) for col in columns_config]
-    column_keys = [col.get('key', '') for col in columns_config]
+    column_labels = [col.get("label", col.get("key", "")) for col in columns_config]
+    column_keys = [col.get("key", "") for col in columns_config]
 
     prompt = f"""你是一个专业的表单数据提取AI。请仔细识别图片中的表单数据。
 
@@ -370,7 +383,8 @@ async def upload_and_recognize(
         try:
             # 尝试提取 JSON 部分
             import re
-            json_match = re.search(r'\{[\s\S]*\}', result)
+
+            json_match = re.search(r"\{[\s\S]*\}", result)
             if json_match:
                 recognized_data = json.loads(json_match.group())
             else:
@@ -380,11 +394,13 @@ async def upload_and_recognize(
             logger.error(f"Raw response: {result}")
             raise HTTPException(status_code=500, detail=f"AI返回格式解析失败: {str(e)}")
 
-        return ApiResponse(data={
-            "image_url": f"/uploads/inspection/{saved_filename}",
-            "recognized_rows": recognized_data.get('rows', []),
-            "columns_config": columns_config,
-        })
+        return ApiResponse(
+            data={
+                "image_url": f"/uploads/inspection/{saved_filename}",
+                "recognized_rows": recognized_data.get("rows", []),
+                "columns_config": columns_config,
+            }
+        )
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -397,11 +413,12 @@ async def upload_and_recognize_multiple(
     session: AsyncSession = Depends(get_db),
 ):
     """上传多个扫描件图片并通过AI识别，汇总所有识别结果"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from app.platform.ai.minimax_util import get_vision_util
     import shutil
     import uuid
     from pathlib import Path
+
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
+    from app.platform.ai.minimax_util import get_vision_util
 
     # 获取数据表配置
     service = InspectionTableService(session)
@@ -410,10 +427,12 @@ async def upload_and_recognize_multiple(
     if not table:
         raise HTTPException(status_code=404, detail="数据表不存在")
 
-    columns_config = table.get('columns_config', [])
+    columns_config = table.get("columns_config", [])
 
     if not columns_config:
-        raise HTTPException(status_code=400, detail="该数据表没有配置列，请先编辑表头配置")
+        raise HTTPException(
+            status_code=400, detail="该数据表没有配置列，请先编辑表头配置"
+        )
 
     if not files:
         raise HTTPException(status_code=400, detail="请上传至少一张图片")
@@ -428,7 +447,7 @@ async def upload_and_recognize_multiple(
     # 保存所有文件
     saved_files = []
     for i, file in enumerate(files):
-        file_ext = Path(file.filename).suffix if file.filename else '.png'
+        file_ext = Path(file.filename).suffix if file.filename else ".png"
         saved_filename = f"{uuid.uuid4().hex}{file_ext}"
         file_path = uploads_dir / saved_filename
 
@@ -439,15 +458,17 @@ async def upload_and_recognize_multiple(
 
         logger.info(f"[DEBUG] File saved: {file_path}, exists: {file_path.exists()}")
 
-        saved_files.append({
-            "original_name": file.filename,
-            "saved_path": f"/uploads/inspection/{saved_filename}",
-        })
+        saved_files.append(
+            {
+                "original_name": file.filename,
+                "saved_path": f"/uploads/inspection/{saved_filename}",
+            }
+        )
         logger.info(f"Uploaded file saved to: {file_path}")
 
     # 构建 AI 识别提示词
-    column_labels = [col.get('label', col.get('key', '')) for col in columns_config]
-    column_keys = [col.get('key', '') for col in columns_config]
+    column_labels = [col.get("label", col.get("key", "")) for col in columns_config]
+    column_keys = [col.get("key", "") for col in columns_config]
 
     # 为每张图片构建图片URL列表
     image_urls = [f["saved_path"] for f in saved_files]
@@ -484,12 +505,15 @@ async def upload_and_recognize_multiple(
             max_tokens=8192,
         )
 
-        logger.info(f"[DEBUG] AI recognition result length: {len(result) if result else 0}")
+        logger.info(
+            f"[DEBUG] AI recognition result length: {len(result) if result else 0}"
+        )
 
         # 解析 AI 返回的 JSON
         try:
             import re
-            json_match = re.search(r'\{[\s\S]*\}', result)
+
+            json_match = re.search(r"\{[\s\S]*\}", result)
             if json_match:
                 recognized_data = json.loads(json_match.group())
             else:
@@ -499,11 +523,13 @@ async def upload_and_recognize_multiple(
             logger.error(f"Raw response: {result}")
             raise HTTPException(status_code=500, detail=f"AI返回格式解析失败: {str(e)}")
 
-        return ApiResponse(data={
-            "images": saved_files,
-            "recognized_rows": recognized_data.get('rows', []),
-            "columns_config": columns_config,
-        })
+        return ApiResponse(
+            data={
+                "images": saved_files,
+                "recognized_rows": recognized_data.get("rows", []),
+                "columns_config": columns_config,
+            }
+        )
 
     except ValueError as e:
         logger.error(f"ValueError in multiple recognition: {e}")
@@ -511,11 +537,13 @@ async def upload_and_recognize_multiple(
     except Exception as e:
         logger.error(f"Unexpected error in multiple recognition: {e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
 
 
 # ============ Word 模板管理 API ============
+
 
 @router.post("/{table_id}/template", summary="上传Word模板")
 async def upload_template(
@@ -524,14 +552,17 @@ async def upload_template(
     session: AsyncSession = Depends(get_db),
 ):
     """上传Word模板文件"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
     import shutil
     import uuid
     from pathlib import Path
 
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
+
     # 验证文件类型
-    if not file.filename or not file.filename.lower().endswith(('.docx', '.doc')):
-        raise HTTPException(status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件")
+    if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
+        raise HTTPException(
+            status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件"
+        )
 
     # 获取数据表
     service = InspectionTableService(session)
@@ -558,7 +589,7 @@ async def upload_template(
         {
             "template_path": f"/uploads/templates/{saved_filename}",
             "template_name": file.filename,
-        }
+        },
     )
 
     return ApiResponse(
@@ -566,7 +597,7 @@ async def upload_template(
         data={
             "template_path": f"/uploads/templates/{saved_filename}",
             "template_name": file.filename,
-        }
+        },
     )
 
 
@@ -576,8 +607,9 @@ async def delete_template(
     session: AsyncSession = Depends(get_db),
 ):
     """删除Word模板文件"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
     from pathlib import Path
+
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
 
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
@@ -592,15 +624,13 @@ async def delete_template(
             file_path.unlink()
 
     # 更新数据库
-    await service.update_table(
-        table_id,
-        {"template_path": None, "template_name": None}
-    )
+    await service.update_table(table_id, {"template_path": None, "template_name": None})
 
     return ApiResponse(message="模板删除成功")
 
 
 # ============ Word 导出 API ============
+
 
 @router.get("/{table_id}/rows/{row_id}/export", summary="导出单条数据为Word")
 async def export_row_to_word(
@@ -609,10 +639,11 @@ async def export_row_to_word(
     session: AsyncSession = Depends(get_db),
 ):
     """导出单条数据为Word文档"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from fastapi.responses import FileResponse
+
     from docx import Document
-    import copy
+    from fastapi.responses import FileResponse
+
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
 
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
@@ -626,7 +657,9 @@ async def export_row_to_word(
 
     # 检查是否有模板
     if not table.get("template_path"):
-        raise HTTPException(status_code=400, detail="该数据表未设置Word模板，请先上传模板")
+        raise HTTPException(
+            status_code=400, detail="该数据表未设置Word模板，请先上传模板"
+        )
 
     # 读取模板
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -637,12 +670,13 @@ async def export_row_to_word(
 
     # 复制模板
     import tempfile
-    import os
+
     temp_dir = tempfile.gettempdir()
     output_filename = f"export_{uuid.uuid4().hex}.docx"
     output_path = Path(temp_dir) / output_filename
 
     import shutil
+
     shutil.copy(template_path, output_path)
 
     # 填充数据
@@ -678,7 +712,7 @@ async def export_row_to_word(
     return FileResponse(
         path=str(output_path),
         filename=download_name,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
 
 
@@ -689,14 +723,15 @@ async def export_rows_to_word(
     session: AsyncSession = Depends(get_db),
 ):
     """批量导出数据为Word文档（每行数据生成一个文档）"""
-    from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from fastapi.responses import FileResponse
-    from docx import Document
-    from pathlib import Path
-    import tempfile
     import shutil
+    import tempfile
     import zipfile
-    import os
+    from pathlib import Path
+
+    from docx import Document
+    from fastapi.responses import FileResponse
+
+    from app.modules.quality.qms.inspection_table_service import InspectionTableService
 
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
@@ -705,7 +740,9 @@ async def export_rows_to_word(
 
     # 检查是否有模板
     if not table.get("template_path"):
-        raise HTTPException(status_code=400, detail="该数据表未设置Word模板，请先上传模板")
+        raise HTTPException(
+            status_code=400, detail="该数据表未设置Word模板，请先上传模板"
+        )
 
     # 获取要导出的行
     if row_ids:
@@ -763,7 +800,7 @@ async def export_rows_to_word(
 
     # 创建 ZIP 文件
     zip_path = Path(tempfile.gettempdir()) / f"export_{uuid.uuid4().hex}.zip"
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in temp_dir.glob("*.docx"):
             zipf.write(file, file.name)
 
@@ -773,7 +810,5 @@ async def export_rows_to_word(
     download_name = f"{table.get('table_name', '导出')}_批量导出.zip"
 
     return FileResponse(
-        path=str(zip_path),
-        filename=download_name,
-        media_type="application/zip"
+        path=str(zip_path), filename=download_name, media_type="application/zip"
     )

@@ -1,6 +1,5 @@
 """原料检验数据表 Service"""
 
-from typing import Optional, Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +18,9 @@ class InspectionTableService:
         self.table_repo = InspectionTableRepository(session)
         self.row_repo = InspectionTableRowRepository(session)
 
-    async def create_table(self, table_name: str, table_description: str, columns_config: list) -> dict:
+    async def create_table(
+        self, table_name: str, table_description: str, columns_config: list
+    ) -> dict:
         """创建数据表"""
         # 检查表名是否已存在
         existing = await self.table_repo.list_all(keyword=table_name)
@@ -28,15 +29,17 @@ class InspectionTableService:
                 if t.table_name == table_name:
                     raise ValueError(f"数据表 '{table_name}' 已存在")
 
-        table = await self.table_repo.create({
-            "table_name": table_name,
-            "table_description": table_description,
-            "columns_config": columns_config,
-        })
+        table = await self.table_repo.create(
+            {
+                "table_name": table_name,
+                "table_description": table_description,
+                "columns_config": columns_config,
+            }
+        )
 
         return self._format_table(table)
 
-    async def get_table(self, table_id: UUID) -> Optional[dict]:
+    async def get_table(self, table_id: UUID) -> dict | None:
         """获取数据表详情"""
         table = await self.table_repo.get_by_id(table_id)
         if not table:
@@ -50,14 +53,14 @@ class InspectionTableService:
 
         return result
 
-    async def get_table_simple(self, table_id: UUID) -> Optional[dict]:
+    async def get_table_simple(self, table_id: UUID) -> dict | None:
         """获取数据表基本信息（不包含数据行）"""
         table = await self.table_repo.get_by_id(table_id)
         if not table:
             return None
         return self._format_table(table)
 
-    async def get_row(self, row_id: int) -> Optional[dict]:
+    async def get_row(self, row_id: int) -> dict | None:
         """获取单条数据行"""
         row = await self.row_repo.get_by_id(row_id)
         if not row:
@@ -69,7 +72,7 @@ class InspectionTableService:
         rows = await self.row_repo.get_by_table_id(table_id)
         return [self._format_row(row) for row in rows]
 
-    async def update_table(self, table_id: UUID, data: dict) -> Optional[dict]:
+    async def update_table(self, table_id: UUID, data: dict) -> dict | None:
         """更新数据表"""
         table = await self.table_repo.update(table_id, data)
         if not table:
@@ -83,8 +86,8 @@ class InspectionTableService:
 
     async def list_tables(
         self,
-        is_active: Optional[bool] = None,
-        keyword: Optional[str] = None,
+        is_active: bool | None = None,
+        keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict], int]:
@@ -115,7 +118,7 @@ class InspectionTableService:
         row = await self.row_repo.create(table_id, {"row_data": row_data})
         return self._format_row(row)
 
-    async def update_row(self, row_id: int, row_data: dict) -> Optional[dict]:
+    async def update_row(self, row_id: int, row_data: dict) -> dict | None:
         """更新数据行"""
         row = await self.row_repo.update(row_id, {"row_data": row_data})
         if not row:

@@ -42,7 +42,11 @@ class DossierRepository:
         """获取品种资料详情"""
         stmt = (
             select(ProductDossier)
-            .where(and_(ProductDossier.id == dossier_id, ProductDossier.is_deleted == False))
+            .where(
+                and_(
+                    ProductDossier.id == dossier_id, ProductDossier.is_deleted == False
+                )
+            )
             .options(selectinload(ProductDossier.templates))
         )
         result = await self.db.execute(stmt)

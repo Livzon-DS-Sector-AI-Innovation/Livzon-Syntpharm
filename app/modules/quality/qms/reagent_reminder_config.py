@@ -4,35 +4,55 @@
 """
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import String, Boolean, Integer, DateTime, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.modules.quality.qms.static_data.models import BaseModel
 
 
 class ReagentReminderConfig(BaseModel):
     """试剂提醒配置表"""
-    
+
     __tablename__ = "qms_reagent_reminder_config"
     __table_args__ = {"schema": "qms", "comment": "试剂提醒配置表"}
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    
+
     # 飞书配置
-    feishu_app_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, comment="飞书应用 AppID")
-    feishu_app_secret: Mapped[Optional[str]] = mapped_column(String(256), nullable=True, comment="飞书应用 AppSecret")
-    feishu_chat_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, comment="飞书群 ID")
-    
+    feishu_app_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="飞书应用 AppID"
+    )
+    feishu_app_secret: Mapped[str | None] = mapped_column(
+        String(256), nullable=True, comment="飞书应用 AppSecret"
+    )
+    feishu_chat_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="飞书群 ID"
+    )
+
     # 提醒规则
-    low_stock_threshold: Mapped[int] = mapped_column(Integer, default=2, comment="库存不足阈值（默认2）")
-    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用提醒")
-    
+    low_stock_threshold: Mapped[int] = mapped_column(
+        Integer, default=2, comment="库存不足阈值（默认2）"
+    )
+    is_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=True, comment="是否启用提醒"
+    )
+
     # 提醒历史
-    last_remind_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, comment="上次提醒时间")
-    last_remind_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="上次提醒内容")
-    
+    last_remind_time: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, comment="上次提醒时间"
+    )
+    last_remind_content: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="上次提醒内容"
+    )
+
     # 状态
-    created_by: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, comment="创建人")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.utcnow, comment="更新时间")
+    created_by: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="创建人"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, comment="创建时间"
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, onupdate=datetime.utcnow, comment="更新时间"
+    )

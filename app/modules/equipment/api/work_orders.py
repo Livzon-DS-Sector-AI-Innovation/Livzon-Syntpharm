@@ -122,14 +122,21 @@ async def list_work_orders(
     ),
 ) -> JSONResponse:
     work_orders, total = await service.get_work_orders(
-        db, ctx, status=status, exclude_status=exclude_status,
+        db,
+        ctx,
+        status=status,
+        exclude_status=exclude_status,
         equipment_id=equipment_id,
-        priority=priority, order_type=order_type,
-        page=page, page_size=page_size,
+        priority=priority,
+        order_type=order_type,
+        page=page,
+        page_size=page_size,
     )
     return paginated_response(
         data=[_to_response(wo) for wo in work_orders],
-        page=page, page_size=page_size, total=total,
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
@@ -142,7 +149,9 @@ async def get_work_order_statistics(
     ),
 ) -> JSONResponse:
     stats = await service.get_work_order_statistics(
-        db, ctx, exclude_status=exclude_status,
+        db,
+        ctx,
+        exclude_status=exclude_status,
     )
     return success_response(data=WorkOrderStatistics.model_validate(stats))
 

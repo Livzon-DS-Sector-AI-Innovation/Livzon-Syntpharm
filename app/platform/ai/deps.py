@@ -11,12 +11,16 @@ async def get_ai_chat_service():
 
     # If still no key, try reading from DB
     if not api_key:
-        from app.core.database import async_session_factory
         from sqlalchemy import text as sql_text
+
+        from app.core.database import async_session_factory
+
         async with async_session_factory() as session:
-            r = await session.execute(sql_text(
-                "SELECT value FROM hr.system_settings WHERE key = 'AI_API_KEY'"
-            ))
+            r = await session.execute(
+                sql_text(
+                    "SELECT value FROM hr.system_settings WHERE key = 'AI_API_KEY'"
+                )
+            )
             row = r.fetchone()
             if row:
                 api_key = row[0]
@@ -29,16 +33,20 @@ async def get_ai_chat_service():
 
     # Also check DB for base_url and model
     if not _settings.AI_BASE_URL:
-        from app.core.database import async_session_factory
         from sqlalchemy import text as sql_text
+
+        from app.core.database import async_session_factory
+
         async with async_session_factory() as session:
-            r = await session.execute(sql_text(
-                "SELECT key, value FROM hr.system_settings WHERE key IN ('AI_BASE_URL', 'AI_MODEL')"
-            ))
+            r = await session.execute(
+                sql_text(
+                    "SELECT key, value FROM hr.system_settings WHERE key IN ('AI_BASE_URL', 'AI_MODEL')"
+                )
+            )
             for row in r.fetchall():
-                if row[0] == 'AI_BASE_URL' and row[1]:
+                if row[0] == "AI_BASE_URL" and row[1]:
                     base_url = row[1]
-                elif row[0] == 'AI_MODEL' and row[1]:
+                elif row[0] == "AI_MODEL" and row[1]:
                     model = row[1]
 
     return AiChatService(api_key=api_key, base_url=base_url, model=model)

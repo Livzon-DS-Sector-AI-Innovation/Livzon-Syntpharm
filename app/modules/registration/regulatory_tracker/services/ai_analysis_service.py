@@ -14,7 +14,9 @@ from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.knowledge import (
     build_prompt_summary,
 )
-from app.modules.registration.regulatory_tracker.models.regulatory_document import RegulatoryDocument
+from app.modules.registration.regulatory_tracker.models.regulatory_document import (
+    RegulatoryDocument,
+)
 from app.modules.registration.regulatory_tracker.services.classification_service import (
     compute_document_category,
 )

@@ -621,8 +621,9 @@ class HazardReport(BaseModel):
         Text, nullable=True, comment="隐患描述（AI）"
     )
     defect_substance: Mapped[str | None] = mapped_column(
-        String(32), nullable=True,
-        comment="缺陷实质评估: substantive / procedural / uncertain"
+        String(32),
+        nullable=True,
+        comment="缺陷实质评估: substantive / procedural / uncertain",
     )
     defect_substance_reasoning: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="缺陷实质评估理由"

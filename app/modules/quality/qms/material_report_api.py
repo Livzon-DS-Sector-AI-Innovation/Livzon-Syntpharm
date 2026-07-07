@@ -1,33 +1,32 @@
 """原料报告单 API"""
 
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.core.database import get_db, AsyncSession
+from app.core.database import AsyncSession, get_db
 from app.core.storage import save_upload_file
+from app.modules.quality.qms.material_report_schemas import (
+    ReportCreate,
+    ReportItemsBatchSave,
+    ReportUpdate,
+    TemplateCreate,
+    TemplateUpdate,
+)
 from app.modules.quality.qms.material_report_service import (
     MaterialReportService,
     ReportTemplateService,
-)
-from app.modules.quality.qms.material_report_schemas import (
-    ReportCreate,
-    ReportUpdate,
-    ReportItemsBatchSave,
-    ReportFilter,
-    TemplateCreate,
-    TemplateUpdate,
 )
 
 
 class ApiResponse(BaseModel):
     """统一响应格式"""
+
     code: int = 200
     message: str = "Success"
-    data: Optional[dict | list] = None
+    data: dict | list | None = None
 
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
@@ -35,13 +34,14 @@ router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
 # ============ 报告单 API ============
 
+
 @router.get("/", summary="获取报告单列表")
 async def list_reports(
-    template_id: Optional[str] = None,
-    status: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    keyword: Optional[str] = None,
+    template_id: str | None = None,
+    status: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    keyword: str | None = None,
     page: int = 1,
     page_size: int = 20,
     session: AsyncSession = Depends(get_db),
@@ -182,9 +182,7 @@ async def generate_report(
     return StreamingResponse(
         iter([content]),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{filename}"
-        },
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
     )
 
 
@@ -206,9 +204,10 @@ async def submit_report(
 
 # ============ 模板管理 API ============
 
+
 @router.get("/template/", summary="获取模板列表")
 async def list_templates(
-    is_active: Optional[bool] = None,
+    is_active: bool | None = None,
     page: int = 1,
     page_size: int = 20,
     session: AsyncSession = Depends(get_db),
@@ -235,9 +234,9 @@ async def list_templates(
 async def upload_template(
     file: UploadFile = File(..., description="Word模板文件"),
     template_name: str = Form(..., description="模板名称"),
-    template_description: Optional[str] = Form(None, description="模板描述"),
-    field_mapping: Optional[str] = Form(None, description="静态字段映射JSON"),
-    table_fields: Optional[str] = Form(None, description="动态表格字段JSON"),
+    template_description: str | None = Form(None, description="模板描述"),
+    field_mapping: str | None = Form(None, description="静态字段映射JSON"),
+    table_fields: str | None = Form(None, description="动态表格字段JSON"),
     session: AsyncSession = Depends(get_db),
 ):
     """上传Word模板"""
@@ -250,6 +249,7 @@ async def upload_template(
 
     # 解析JSON字段
     import json
+
     field_mapping_dict = {}
     table_fields_dict = {}
 
@@ -343,11 +343,12 @@ async def preview_template(
 
 # ============ 图片上传与AI识别 API ============
 
+
 @router.post("/{report_id}/images", summary="上传图片并AI识别")
 async def upload_image_and_recognize(
     report_id: UUID,
-    field_key: Optional[str] = Form(None, description="对应字段key"),
-    row_index: Optional[int] = Form(None, description="对应行序号"),
+    field_key: str | None = Form(None, description="对应字段key"),
+    row_index: int | None = Form(None, description="对应行序号"),
     file: UploadFile = File(..., description="图片文件"),
     session: AsyncSession = Depends(get_db),
 ):

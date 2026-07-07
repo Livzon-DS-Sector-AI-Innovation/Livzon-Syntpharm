@@ -36,7 +36,9 @@ async def test_list_failure_symptoms(auth_client: AsyncClient):
         "/api/v1/equipment/maintenance/failure-codes/symptoms",
         json={"code": f"LEAK-{uid}", "name": "泄漏"},
     )
-    response = await auth_client.get("/api/v1/equipment/maintenance/failure-codes/symptoms")
+    response = await auth_client.get(
+        "/api/v1/equipment/maintenance/failure-codes/symptoms"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) >= 2
@@ -200,7 +202,9 @@ async def test_work_order_list(auth_client: AsyncClient):
 
 async def test_work_order_statistics(auth_client: AsyncClient):
     """测试工单统计"""
-    response = await auth_client.get("/api/v1/equipment/maintenance/work-orders/statistics")
+    response = await auth_client.get(
+        "/api/v1/equipment/maintenance/work-orders/statistics"
+    )
     assert response.status_code == 200
     data = response.json()["data"]
     assert "total" in data
@@ -302,7 +306,9 @@ async def test_create_calibration_record(auth_client: AsyncClient):
 
 async def test_calibration_records_list(auth_client: AsyncClient):
     """测试校准记录列表"""
-    response = await auth_client.get("/api/v1/equipment/maintenance/calibration/records")
+    response = await auth_client.get(
+        "/api/v1/equipment/maintenance/calibration/records"
+    )
     assert response.status_code == 200
 
 

@@ -7,7 +7,8 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import async_session_factory, get_db as core_get_db
+from app.core.database import async_session_factory
+from app.core.database import get_db as core_get_db
 
 # 导出 get_db_session 作为 get_db 的别名，保持向后兼容
 get_db_session = core_get_db

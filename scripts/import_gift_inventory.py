@@ -2,12 +2,11 @@
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import asyncpg
 import pandas as pd
-
 
 DB_URL = "postgresql://postgres:postgres@localhost:5432/dazah"
 EXCEL_PATH = Path(r"C:\Users\Administrator\Desktop\202603-04礼品酒水.xlsx")
@@ -17,6 +16,7 @@ SHEET_NAME = "2026-04库存"
 def parse_value(value, dtype=int, default=0):
     """Parse a cell value into int/float, handling NaN/empty."""
     import math
+
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return default
     try:
@@ -33,7 +33,7 @@ async def import_data():
     # Clean data: drop rows with empty name
     df = df[df["物品名称"].notna() & (df["物品名称"] != "")]
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = []
     for _, row in df.iterrows():
         name = str(row["物品名称"]).strip()

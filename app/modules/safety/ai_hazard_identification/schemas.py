@@ -56,9 +56,10 @@ class DefectSubstanceEnum(str, Enum):
 
     用于控制 AI 过度推断：区分直接安全风险与形式/管理瑕疵。
     """
-    SUBSTANTIVE = "substantive"    # 实质缺陷：直接造成安全风险，推断链 ≤2 步
-    PROCEDURAL = "procedural"      # 形式瑕疵：管理/文档/标签/临时放置，不直接构成物理威胁
-    UNCERTAIN = "uncertain"        # 不确定：信息不足，需人工判断
+
+    SUBSTANTIVE = "substantive"  # 实质缺陷：直接造成安全风险，推断链 ≤2 步
+    PROCEDURAL = "procedural"  # 形式瑕疵：管理/文档/标签/临时放置，不直接构成物理威胁
+    UNCERTAIN = "uncertain"  # 不确定：信息不足，需人工判断
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -133,8 +134,9 @@ class HazardIdentificationOutput(BaseModel):
         ..., description="缺陷实质评估 — 区分实质性安全风险与形式/管理瑕疵"
     )
     defect_substance_reasoning: str = Field(
-        ..., min_length=10,
-        description="缺陷实质评估理由 — 推断链长度分析、每步是物理必然还是概率假设"
+        ...,
+        min_length=10,
+        description="缺陷实质评估理由 — 推断链长度分析、每步是物理必然还是概率假设",
     )
 
     # ── 置信度（可选，用于质量评估）──

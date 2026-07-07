@@ -142,10 +142,16 @@ async def list_personnel(
 
     # 数据范围过滤
     stmt = apply_equipment_scope(
-        stmt, ctx, EquipmentPersonnel.department, "personnel_dept",
+        stmt,
+        ctx,
+        EquipmentPersonnel.department,
+        "personnel_dept",
     )
     count_stmt = apply_equipment_scope(
-        count_stmt, ctx, EquipmentPersonnel.department, "personnel_dept",
+        count_stmt,
+        ctx,
+        EquipmentPersonnel.department,
+        "personnel_dept",
     )
 
     if is_active is not None:

@@ -1,11 +1,9 @@
 """培训台账导出文档生成器 — 基于模板填入数据."""
 
-from datetime import date
 from io import BytesIO
 from pathlib import Path
 
 import openpyxl
-from openpyxl.styles import Alignment, Font, Border, Side
 from docx import Document
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls, qn
@@ -31,6 +29,7 @@ def _fmt_date(value) -> str:
         return value.strftime("%Y.%m.%d")
     if isinstance(value, str):
         from datetime import datetime
+
         for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"):
             try:
                 return datetime.strptime(value, fmt).strftime("%Y.%m.%d")
@@ -42,22 +41,22 @@ def _fmt_date(value) -> str:
 def _set_docx_cell(cell, text: str) -> None:
     """Fill a docx cell with 宋体小四 centered text."""
     tc = cell._tc
-    for p in tc.findall(qn('w:p')):
+    for p in tc.findall(qn("w:p")):
         tc.remove(p)
     safe = str(text or "")
-    escaped = safe.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    escaped = safe.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     p_xml = (
-        f'<w:p {nsdecls("w")}>'
+        f"<w:p {nsdecls('w')}>"
         f'<w:pPr><w:jc w:val="center"/></w:pPr>'
-        f'<w:r>'
-        f'<w:rPr>'
+        f"<w:r>"
+        f"<w:rPr>"
         f'<w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/>'
         f'<w:sz w:val="24"/>'
         f'<w:szCs w:val="24"/>'
-        f'</w:rPr>'
-        f'<w:t>{escaped}</w:t>'
-        f'</w:r>'
-        f'</w:p>'
+        f"</w:rPr>"
+        f"<w:t>{escaped}</w:t>"
+        f"</w:r>"
+        f"</w:p>"
     )
     p = parse_xml(p_xml)
     tc.append(p)
@@ -65,7 +64,9 @@ def _set_docx_cell(cell, text: str) -> None:
 
 def _fill_old_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
     """旧厂事件台账：7.9员工培训台账（非文件）.xlsx"""
-    wb = openpyxl.load_workbook(str(_find_template("员工培训教育管理规程", "7.9员工培训台账（非文件）.xlsx")))
+    wb = openpyxl.load_workbook(
+        str(_find_template("员工培训教育管理规程", "7.9员工培训台账（非文件）.xlsx"))
+    )
     ws = wb.active
 
     # 姓名 (A4:C4 merged → write to A4)
@@ -116,7 +117,9 @@ def _fill_old_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
 
 def _fill_old_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
     """旧厂SOP台账：7.10员工文件培训台账.xlsx"""
-    wb = openpyxl.load_workbook(str(_find_template("员工培训教育管理规程", "7.10员工文件培训台账.xlsx")))
+    wb = openpyxl.load_workbook(
+        str(_find_template("员工培训教育管理规程", "7.10员工文件培训台账.xlsx"))
+    )
     ws = wb.active
 
     # 姓名 (A4:B4 merged)
@@ -154,7 +157,9 @@ def _fill_old_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
 
 def _fill_new_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
     """新厂SOP台账：R-GN-2002 I 员工SOP培训台账.docx"""
-    doc = Document(str(_find_template("新厂人员培训管理规程", "R-GN-2002 I 员工SOP培训台账.docx")))
+    doc = Document(
+        str(_find_template("新厂人员培训管理规程", "R-GN-2002 I 员工SOP培训台账.docx"))
+    )
     table = doc.tables[0]
 
     # Row 0: employee info
@@ -186,7 +191,9 @@ def _fill_new_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
 
 def _fill_new_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
     """新厂事件台账：R-GN-2002 J 员工事件培训台账.docx"""
-    doc = Document(str(_find_template("新厂人员培训管理规程", "R-GN-2002 J 员工事件培训台账.docx")))
+    doc = Document(
+        str(_find_template("新厂人员培训管理规程", "R-GN-2002 J 员工事件培训台账.docx"))
+    )
     table = doc.tables[0]
 
     # Row 0: 姓名, 性别, 岗位/职务
@@ -222,7 +229,12 @@ def _fill_new_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
     return buf
 
 
-def generate_ledger_export(employee: dict, records: list[dict], factory: str = "old", ledger_type: str = "event") -> BytesIO:
+def generate_ledger_export(
+    employee: dict,
+    records: list[dict],
+    factory: str = "old",
+    ledger_type: str = "event",
+) -> BytesIO:
     """根据厂区和台账类型选择模板并填入数据."""
     if factory == "new":
         if ledger_type == "sop":

@@ -24,7 +24,7 @@ router = APIRouter()
 async def claim_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    settings = Depends(get_settings),
+    settings=Depends(get_settings),
     ctx: EquipmentAccessContext = Depends(
         require_equipment_access("equipment:work_order:update"),
     ),
@@ -43,9 +43,7 @@ async def claim_work_order(
 
     wo = await service.claim_work_order(db, work_order_id, ctx.user.id)
 
-    asyncio.ensure_future(
-        send_claim_notification(wo.work_order_no, ctx.user.name)
-    )
+    asyncio.ensure_future(send_claim_notification(wo.work_order_no, ctx.user.name))
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

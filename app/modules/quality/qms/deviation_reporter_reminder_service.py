@@ -7,12 +7,13 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.notification.feishu_client_config import FeishuClient
 from app.modules.quality.qms.feishu_service import get_feishu_config_from_db
+from app.platform.notification.feishu_client_config import FeishuClient
 
 logger = logging.getLogger(__name__)
 
@@ -23,42 +24,42 @@ class DeviationReporterReminderService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def check_and_remind(self) -> Dict[str, Any]:
+    async def check_and_remind(self) -> dict[str, Any]:
         """检查偏差任务并发送提醒"""
         # 获取所有未完成的偏差任务（包含填报人信息）
         unfinished_deviations = await self._get_unfinished_deviations()
-        
+
         # 按填报人分组未完成任务
         unfinished_grouped = self._group_by_reporter(unfinished_deviations)
-        
+
         # 获取飞书配置
         feishu_config = await get_feishu_config_from_db()
         if not feishu_config or not feishu_config.get("app_id"):
             logger.warning("飞书机器人配置未启用，跳过提醒")
             return {"unfinished": 0, "reminded": 0, "error": "飞书配置未启用"}
-        
+
         client = FeishuClient(feishu_config["app_id"], feishu_config["app_secret"])
-        
+
         reminded_count = 0
-        
+
         # 发送未完成任务的督促提醒
         for reporter_open_id, items in unfinished_grouped.items():
             if not reporter_open_id:
                 continue
-            
+
             try:
                 await self._send_urge_reminder(client, reporter_open_id, items)
                 reminded_count += 1
             except Exception as e:
                 logger.error(f"发送督促提醒给 {reporter_open_id} 失败: {e}")
-        
+
         return {
             "unfinished_total": len(unfinished_deviations),
             "unfinished_reporters": len(unfinished_grouped),
             "reminded": reminded_count,
         }
 
-    async def _get_unfinished_deviations(self) -> List[Dict[str, Any]]:
+    async def _get_unfinished_deviations(self) -> list[dict[str, Any]]:
         """获取未完成的偏差任务"""
         result = await self.session.execute(
             text("""
@@ -74,12 +75,13 @@ class DeviationReporterReminderService:
             """)
         )
         rows = result.fetchall()
-        
+
         # 计算剩余天数
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+
         now = datetime.now()
         deadline_days = 30
-        
+
         deviations = []
         for row in rows:
             created_at = row[8]
@@ -87,22 +89,26 @@ class DeviationReporterReminderService:
             if created_at:
                 deadline = created_at + timedelta(days=deadline_days)
                 remaining_days = max(0, (deadline - now).days)
-            
-            deviations.append({
-                "id": row[0],
-                "deviation_no": row[1],
-                "theme": row[2],
-                "status": row[3],
-                "reporter": row[4],
-                "reporter_open_id": row[5],
-                "deviation_type": row[6],
-                "urgency_level": row[7],
-                "remaining_days": remaining_days,
-            })
-        
+
+            deviations.append(
+                {
+                    "id": row[0],
+                    "deviation_no": row[1],
+                    "theme": row[2],
+                    "status": row[3],
+                    "reporter": row[4],
+                    "reporter_open_id": row[5],
+                    "deviation_type": row[6],
+                    "urgency_level": row[7],
+                    "remaining_days": remaining_days,
+                }
+            )
+
         return deviations
 
-    def _group_by_reporter(self, deviations: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    def _group_by_reporter(
+        self, deviations: list[dict[str, Any]]
+    ) -> dict[str, list[dict[str, Any]]]:
         """按填报人分组"""
         grouped = {}
         for d in deviations:
@@ -140,24 +146,24 @@ class DeviationReporterReminderService:
         return type_labels.get(deviation_type, deviation_type or "未知")
 
     async def _send_urge_reminder(
-        self, 
-        client: FeishuClient, 
-        reporter_open_id: str, 
-        deviations: List[Dict[str, Any]]
+        self,
+        client: FeishuClient,
+        reporter_open_id: str,
+        deviations: list[dict[str, Any]],
     ):
         """发送督促提醒给填报人（针对未完成的任务）"""
         count = len(deviations)
-        
+
         # 构建偏差列表
         deviation_list_md = ""
         for i, d in enumerate(deviations[:5], 1):  # 最多显示5条
             status_label = self._get_status_label(d["status"])
             remaining = d.get("remaining_days", 0)
             deviation_list_md += f"{i}. **{d['deviation_no']}** - {d['theme'][:20]}...\n   当前状态：{status_label} | 剩余完成天数：{remaining}天\n"
-        
+
         if count > 5:
             deviation_list_md += f"\n...还有 {count - 5} 条偏差任务待处理"
-        
+
         content = f"""**📋 偏差任务待处理提醒**
 
 您有 **{count}** 条偏差任务尚未完成，请及时处理：
@@ -168,38 +174,34 @@ class DeviationReporterReminderService:
 
         card_content = {
             "config": {"wide_screen_mode": True},
-            "elements": [{
-                "tag": "div",
-                "text": {"tag": "lark_md", "content": content}
-            }]
+            "elements": [
+                {"tag": "div", "text": {"tag": "lark_md", "content": content}}
+            ],
         }
-        
+
         await client.send_card_message(
             receive_id_type="open_id",
             receive_id=reporter_open_id,
             card_content=card_content,
         )
-        
+
         logger.info(f"已发送督促提醒给 {reporter_open_id}，共 {count} 条待处理任务")
 
 
 def send_completion_notification(
-    session: AsyncSession,
-    reporter_open_id: str,
-    deviation_no: str,
-    theme: str
+    session: AsyncSession, reporter_open_id: str, deviation_no: str, theme: str
 ):
     """发送任务完成通知（供偏差完成时调用）"""
     import asyncio
-    
+
     async def _send():
         feishu_config = await get_feishu_config_from_db()
         if not feishu_config or not feishu_config.get("app_id"):
             logger.warning("飞书机器人配置未启用，跳过完成通知")
             return
-        
+
         client = FeishuClient(feishu_config["app_id"], feishu_config["app_secret"])
-        
+
         content = f"""**✅ 偏差任务已完成**
 
 您提交的偏差单 **偏差单 {deviation_no}** 已完成全部填写流程！
@@ -210,18 +212,17 @@ def send_completion_notification(
 
         card_content = {
             "config": {"wide_screen_mode": True},
-            "elements": [{
-                "tag": "div",
-                "text": {"tag": "lark_md", "content": content}
-            }]
+            "elements": [
+                {"tag": "div", "text": {"tag": "lark_md", "content": content}}
+            ],
         }
-        
+
         await client.send_card_message(
             receive_id_type="open_id",
             receive_id=reporter_open_id,
             card_content=card_content,
         )
-        
+
         logger.info(f"已发送完成通知给 {reporter_open_id}，偏差单 {deviation_no}")
-    
+
     asyncio.create_task(_send())
