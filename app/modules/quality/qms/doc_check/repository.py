@@ -13,7 +13,7 @@ from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (
     SopAiCheckMain,
     SopAiCheckProblem,
     SopAiConfig as DocCheckConfig,

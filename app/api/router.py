@@ -14,7 +14,7 @@ from app.modules.production.product import product_router as workshop_product_ro
 from app.modules.production.product import output_router as product_output_router
 from app.modules.quality import cpv_router, deviation_router, doc_check_router, fqc_router, iqc_router, ipqc_router, quality_reagent_router, quality_router, reagent_reminder_router, sampling_router, stability_router, static_data_router
 from app.modules.quality.label_verification import router as label_verification_router
-from app.modules.sop_ai import router as sop_ai_router
+from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
 from app.modules.registration.regulatory_tracker import router as regulatory_tracker_router
 from app.modules.research import router as research_router

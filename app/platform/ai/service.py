@@ -198,3 +198,42 @@ def log_ai_interaction(
 
     with concurrent.futures.ThreadPoolExecutor() as pool:
         return pool.submit(_save_log).result()
+
+import openai
+
+
+class AiChatService:
+    """Service for streaming chat completions via OpenAI-compatible API."""
+
+    def __init__(self, api_key: str, base_url: str = "https://api.moonshot.cn/v1", model: str = "moonshot-v1-128k") -> None:
+        self.client = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+        )
+        self.model = model
+        self.base_url = base_url
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, any]],
+        system_prompt: str | None = None,
+    ):
+        """Stream chat completion tokens from the LLM."""
+        all_messages: list[dict[str, any]] = []
+        if system_prompt:
+            all_messages.append({"role": "system", "content": system_prompt})
+        all_messages.extend(messages)
+
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=all_messages,
+            stream=True,
+            temperature=0.1,
+            max_tokens=4096,
+        )
+
+        stream_resp = response
+        async for chunk in stream_resp:
+            delta = chunk.choices[0].delta.content if chunk.choices else None
+            if delta:
+                yield delta

@@ -10,7 +10,7 @@ from datetime import datetime
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (
     SopAiConfig,
     SopAiCheckMain,
     SopAiCheckProblem,

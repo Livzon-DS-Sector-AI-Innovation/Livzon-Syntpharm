@@ -11,8 +11,8 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.sop_ai.algorithm import DuplicateChecker
-from app.modules.sop_ai.models import (
+from app.modules.quality.sop_ai.algorithm import DuplicateChecker
+from app.modules.quality.sop_ai.models import (
     SopAiCheckMain,
     SopAiCheckProblem,
     CheckStatus,
@@ -21,7 +21,7 @@ from app.modules.sop_ai.models import (
     RiskLevel,
     HandleStatus,
 )
-from app.modules.sop_ai.repository import (
+from app.modules.quality.sop_ai.repository import (
     SopAiConfigRepository,
     SopAiCheckMainRepository,
     SopAiCheckProblemRepository,
@@ -128,7 +128,7 @@ class SopAiCheckService:
         )
 
         # 解析文件
-        from app.modules.sop_ai.algorithm import FileParser
+        from app.modules.quality.sop_ai.algorithm import FileParser
 
         parser = FileParser()
         try:
@@ -213,7 +213,7 @@ class SopAiCheckService:
         Returns:
             校验结果
         """
-        from app.modules.sop_ai.algorithm import FileParser
+        from app.modules.quality.sop_ai.algorithm import FileParser
 
         parser = FileParser()
         all_problems = []
@@ -326,7 +326,7 @@ class SopAiCheckService:
         compliance_enabled = await self._get_config("compliance_check_enabled", "true") == "true"
 
         # 1. SimHash 查重（与数据库已有记录比对）
-        from app.modules.sop_ai.algorithm import DuplicateChecker
+        from app.modules.quality.sop_ai.algorithm import DuplicateChecker
 
         checker = DuplicateChecker(threshold)
         existing_records = await self._get_existing_fingerprints()

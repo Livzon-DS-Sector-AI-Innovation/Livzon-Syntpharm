@@ -4,6 +4,6 @@
 支持单文件预审、批量巡检、定时任务等业务场景。
 """
 
-from app.modules.sop_ai.api import router
+from app.modules.quality.sop_ai.api import router
 
 __all__ = ["router"]

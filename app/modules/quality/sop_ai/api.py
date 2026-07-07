@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 
-from app.modules.sop_ai import schemas
-from app.modules.sop_ai.service import SopAiCheckService
+from app.modules.quality.sop_ai import schemas
+from app.modules.quality.sop_ai.service import SopAiCheckService
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +205,7 @@ async def list_jobs(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """获取定时任务列表"""
-    from app.modules.sop_ai.scheduler import get_sop_ai_scheduler
+    from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
     jobs = scheduler.list_jobs()
@@ -230,7 +230,7 @@ async def create_job(
     db: AsyncSession = Depends(get_db),
 ) -> dict():
     """创建定时任务"""
-    from app.modules.sop_ai.scheduler import get_sop_ai_scheduler
+    from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
 
@@ -259,7 +259,7 @@ async def delete_job(
     db: AsyncSession = Depends(get_db),
 ) -> dict():
     """删除定时任务"""
-    from app.modules.sop_ai.scheduler import get_sop_ai_scheduler
+    from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
     success = scheduler.remove_job(job_id)

@@ -11,7 +11,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.jobstores.memory import MemoryJobStore
 
-from app.modules.sop_ai.scheduler_models import ScheduledJob
+from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
 
 logger = logging.getLogger(__name__)
 

@@ -45,7 +45,7 @@ class HandleStatus(str, PyEnum):
 
 
 # 导出 sop_ai 模块的模型供本模块使用
-from app.modules.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (
     SopAiCheckMain as DocCheckMain,
     SopAiCheckProblem as DocCheckProblem,
     SopAiConfig as DocCheckConfig,
