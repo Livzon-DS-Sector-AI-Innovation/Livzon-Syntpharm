@@ -76,10 +76,13 @@ class ProductOutputService:
         month: str | None = None,
         year: int | None = None,
         product_id: uuid.UUID | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> SummaryResponse:
         """获取汇总统计"""
         rows = await self.repo.get_summary(
-            target_date=target_date, month=month, year=year, product_id=product_id
+            target_date=target_date, month=month, year=year, product_id=product_id,
+            start_date=start_date, end_date=end_date
         )
 
         # Build summary for all workshops, filling missing ones with 0
@@ -145,4 +148,19 @@ class ProductOutputService:
             year=year,
             workshops=workshops,
             grand_total=grand_total,
+        )
+
+    async def get_batch_count(
+        self,
+        target_date: date | None = None,
+        month: str | None = None,
+        year: int | None = None,
+        product_id: uuid.UUID | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[dict[str, Any]]:
+        """获取批次统计"""
+        return await self.repo.get_batch_count(
+            target_date=target_date, month=month, year=year, product_id=product_id,
+            start_date=start_date, end_date=end_date
         )
