@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.shared.base_model import BaseModel
 
 
-class Department(BaseModel):
+class HrDepartment(BaseModel):
     __tablename__ = "departments"
     __table_args__ = (
         Index("ix_departments_code", "code"),
@@ -62,8 +62,8 @@ class Team(BaseModel):
         ForeignKey("hr.departments.id"), nullable=False, comment="所属部门ID"
     )
 
-    department: Mapped["Department"] = relationship(
-        "Department", back_populates="teams", lazy="select"
+    department: Mapped["HrDepartment"] = relationship(
+        "HrDepartment", back_populates="teams", lazy="select"
     )
 
 

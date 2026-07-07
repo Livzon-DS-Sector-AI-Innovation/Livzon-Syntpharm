@@ -12,7 +12,7 @@ from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
     Candidate,
-    Department,
+    HrDepartment,
     DepartureRecord,
     Employee,
     OffboardingRecord,
@@ -690,18 +690,18 @@ class DepartmentService:
         self.repo = DepartmentRepository(session)
         self.feishu = FeishuBitableSync()
 
-    async def get_department(self, department_id: UUID) -> Department:
+    async def get_department(self, department_id: UUID) -> HrDepartment:
         department = await self.repo.get_by_id(department_id)
         if not department:
             raise NotFoundException("部门", str(department_id))
         return department
 
-    async def create_department(self, data: DepartmentCreate) -> Department:
+    async def create_department(self, data: DepartmentCreate) -> HrDepartment:
         existing = await self.repo.get_by_code(data.code)
         if existing:
             raise DuplicateException("部门编码", data.code)
 
-        department = Department(**data.model_dump())
+        department = HrDepartment(**data.model_dump())
         result = await self.repo.create(department)
 
         try:
@@ -713,7 +713,7 @@ class DepartmentService:
 
     async def update_department(
         self, department_id: UUID, data: DepartmentUpdate
-    ) -> Department:
+    ) -> HrDepartment:
         department = await self.get_department(department_id)
         update_data = data.model_dump(exclude_unset=True)
 
@@ -750,7 +750,7 @@ class DepartmentService:
         keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[list[Department], int]:
+    ) -> tuple[list[HrDepartment], int]:
         return await self.repo.list_departments(
             keyword=keyword,
             page=page,
