@@ -341,6 +341,8 @@ class AIRectificationReviewer:
             )
 
             return RectificationReviewOutput(
+                defect_reassessment=raw.get("defect_reassessment", ""),
+                defect_reassessment_level=raw.get("defect_reassessment_level", ""),
                 photo_match_analysis=raw.get("photo_match_analysis", ""),
                 photo_match_level=PhotoMatchLevel(
                     self._sanitize_enum_value(raw.get("photo_match_level", "no_photos"))

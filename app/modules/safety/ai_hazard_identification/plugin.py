@@ -54,7 +54,6 @@ logger = logging.getLogger(__name__)
 
 class IdentificationError(Exception):
     """AI 识别失败异常。"""
-
     pass
 
 
@@ -121,11 +120,8 @@ class AIHazardIdentifier:
             logger.info("阶段1.5：知识库未提供，使用空上下文（集成层应在调用前注入）")
 
         # ── 阶段二：AI 分析 ──
-        logger.info(
-            "阶段二：AI 分析 — has_photos=%s has_knowledge=%s",
-            has_photos,
-            bool(self.knowledge_context),
-        )
+        logger.info("阶段二：AI 分析 — has_photos=%s has_knowledge=%s",
+                     has_photos, bool(self.knowledge_context))
 
         if has_photos and self.config.enable_vision:
             raw_output = await self._call_vision_ai(input_data)
@@ -149,9 +145,7 @@ class AIHazardIdentifier:
                     f"原始输出: {_json.dumps(raw_output, ensure_ascii=False, default=str)[:500]}"
                 )
             else:
-                logger.warning(
-                    "AI 输出验证失败（非严格模式，继续返回）: %s", error_detail
-                )
+                logger.warning("AI 输出验证失败（非严格模式，继续返回）: %s", error_detail)
 
         # ── 阶段四：返回结果 ──
         elapsed = time.monotonic() - start_time
@@ -180,9 +174,7 @@ class AIHazardIdentifier:
         """
         results: list[HazardIdentificationOutput] = []
         for i, input_data in enumerate(inputs):
-            logger.info(
-                "批量识别 [%d/%d]: %s", i + 1, len(inputs), input_data.hazard_no
-            )
+            logger.info("批量识别 [%d/%d]: %s", i + 1, len(inputs), input_data.hazard_no)
             try:
                 result = await self.identify(input_data)
                 results.append(result)
@@ -203,15 +195,12 @@ class AIHazardIdentifier:
             discovered_by_name=input_data.discovered_by_name,
             discovered_at=(
                 input_data.discovered_at.strftime("%Y-%m-%d %H:%M")
-                if input_data.discovered_at
-                else None
+                if input_data.discovered_at else None
             ),
         )
 
         prompt = build_full_prompt(
-            context,
-            vision_mode=False,
-            include_fewshot=True,
+            context, vision_mode=False, include_fewshot=True,
             knowledge_context=self.knowledge_context,
         )
         expected_keys = get_expected_keys()
@@ -247,9 +236,7 @@ class AIHazardIdentifier:
             if hasattr(self.ai_service, "chat_vision_parsed"):
                 return await self.ai_service.chat_vision_parsed(
                     text_prompt=build_full_prompt(
-                        context,
-                        vision_mode=True,
-                        include_fewshot=True,
+                        context, vision_mode=True, include_fewshot=True,
                         knowledge_context=self.knowledge_context,
                     ),
                     image_urls=input_data.defect_photos,
@@ -285,6 +272,7 @@ class AIHazardIdentifier:
         try:
             # 解析枚举
             from app.modules.safety.ai_hazard_identification.schemas import (
+                DefectSubstanceEnum,
                 HazardCategoryEnum,
                 HazardLevelEnum,
                 HazardTypeEnum,
@@ -309,12 +297,10 @@ class AIHazardIdentifier:
                     preventive=rs.get("preventive", ""),
                 ),
                 major_hazard_basis=raw.get("major_hazard_basis", ""),
-                confidence=raw.get("confidence")
-                if self.config.enable_reasoning
-                else None,
-                reasoning=raw.get("reasoning")
-                if self.config.enable_reasoning
-                else None,
+                defect_substance=DefectSubstanceEnum(raw.get("defect_substance", "uncertain")),
+                defect_substance_reasoning=raw.get("defect_substance_reasoning", ""),
+                confidence=raw.get("confidence") if self.config.enable_reasoning else None,
+                reasoning=raw.get("reasoning") if self.config.enable_reasoning else None,
             )
         except (ValueError, KeyError, TypeError) as e:
             raise IdentificationError(

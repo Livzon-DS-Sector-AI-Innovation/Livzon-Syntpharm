@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.equipment import repository as repo
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models.equipment import EquipmentCategory
 from app.modules.equipment.models.personnel import (
     EquipmentPersonnel,
@@ -28,6 +29,7 @@ from app.modules.equipment.schemas.personnel import (
     RoleResponse,
     RoleUpdate,
 )
+from app.modules.equipment.service.data_scope import verify_write_ownership
 from app.platform.identity.models import User
 
 # ── 角色 Service ──
@@ -227,6 +229,7 @@ async def get_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> PersonnelR
 
 async def list_personnel(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     *,
     role_ids: list[uuid.UUID] | None = None,
     is_active: bool | None = None,
@@ -237,6 +240,7 @@ async def list_personnel(
     offset = (page - 1) * page_size
     items, total = await repo.list_personnel(
         db,
+        ctx,
         role_ids=role_ids,
         is_active=is_active,
         keyword=keyword,
@@ -324,11 +328,16 @@ async def list_personnel(
 
 
 async def update_personnel(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelUpdate
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelUpdate,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     if data.is_active is not None:
         personnel.is_active = data.is_active
     if data.extended_attrs is not None:
@@ -337,10 +346,16 @@ async def update_personnel(
     return await get_personnel(db, personnel_id)
 
 
-async def delete_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> None:
+async def delete_personnel(
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    ctx: EquipmentAccessContext | None = None,
+) -> None:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_roles(db, personnel_id)
     await repo.soft_delete_personnel_categories(db, personnel_id)
     personnel.is_deleted = True
@@ -348,11 +363,16 @@ async def delete_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> None:
 
 
 async def assign_roles(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelRoleAssign
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelRoleAssign,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_roles(db, personnel_id)
     if data.role_ids:
         await repo.add_personnel_roles(db, personnel_id, data.role_ids)
@@ -360,11 +380,16 @@ async def assign_roles(
 
 
 async def update_categories(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelCategoryAssign
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelCategoryAssign,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_categories(db, personnel_id)
     if data.categories:
         items = [

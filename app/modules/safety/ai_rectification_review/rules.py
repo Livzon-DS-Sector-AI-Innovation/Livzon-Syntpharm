@@ -76,17 +76,21 @@ class RuleEngine:
         errors: list[str] = []
         warnings: list[str] = []
 
+        # v2：无需整改结论时跳过严格校验（缺陷本身非实质，不需要照片/措施合规）
+        is_no_need = _enum_value(output.review_conclusion) == "无需整改"
+
         # 1. 枚举值合法性
         self._validate_enums(output, errors)
 
-        # 2. 文本长度和质量
-        self._validate_text_fields(output, errors, warnings)
+        # 2. 文本长度和质量（无需整改时仅校验 review_comments 非空）
+        self._validate_text_fields(output, errors, warnings, skip_strict=is_no_need)
 
         # 3. 泛泛表述检测
         self._validate_banned_phrases(output, warnings)
 
-        # 4. 逻辑一致性
-        self._check_consistency(output, errors, warnings)
+        # 4. 逻辑一致性（无需整改时跳过）
+        if not is_no_need:
+            self._check_consistency(output, errors, warnings)
 
         # 5. 输入-输出关联性
         if input_data.original_description:
@@ -136,14 +140,24 @@ class RuleEngine:
         output: RectificationReviewOutput,
         errors: list[str],
         warnings: list[str],
+        skip_strict: bool = False,
     ) -> None:
-        """验证各文本字段的长度下限。"""
-        text_checks = [
-            ("图片比对分析", output.photo_match_analysis, 50),
-            ("措施有效性评估", output.measure_quality_assessment, 50),
-            ("标准合规评估", output.standard_compliance, 30),
-            ("AI初审结果", output.review_comments, 1),
-        ]
+        """验证各文本字段的长度下限。
+
+        skip_strict: 无需整改时跳过图片/措施/合规的长度校验，仅校验 review_comments。
+        """
+        if skip_strict:
+            # 无需整改：仅要求 review_comments 非空
+            text_checks = [
+                ("AI初审结果", output.review_comments, 1),
+            ]
+        else:
+            text_checks = [
+                ("图片比对分析", output.photo_match_analysis, 50),
+                ("措施有效性评估", output.measure_quality_assessment, 50),
+                ("标准合规评估", output.standard_compliance, 30),
+                ("AI初审结果", output.review_comments, 1),
+            ]
         for field_name, text, min_len in text_checks:
             actual_len = len(text.strip())
             if actual_len < min_len:

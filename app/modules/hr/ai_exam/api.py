@@ -17,15 +17,19 @@ async def api_generate_exam(
     file: UploadFile,
     choice_count: int = Form(5),
     true_false_count: int = Form(5),
-    qa_count: int = Form(0),
+    multi_choice_count: int = Form(0),
+    fill_blank_count: int = Form(0),
 ):
     """上传培训材料（docx/txt），AI 自动识别内容并按指定题型/题量生成试卷。"""
     if not file.filename:
         raise HTTPException(400, "文件名不能为空")
+    import logging
+    logging.getLogger(__name__).info(f"Exam config: choice={choice_count} tf={true_false_count} multi={multi_choice_count} fill={fill_blank_count}")
     config = {
         "choice_count": choice_count,
         "true_false_count": true_false_count,
-        "qa_count": qa_count,
+        "multi_choice_count": multi_choice_count,
+        "fill_blank_count": fill_blank_count,
     }
     try:
         content = await file.read()
@@ -45,9 +49,10 @@ async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser):
     except Exception as e:
         raise HTTPException(500, f"导出失败: {e}")
 
-    filename = f"考试试卷_{data.title}.docx"
+    from urllib.parse import quote
+    safe_name = quote(f"考试试卷_{data.title}.docx")
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename*=utf-8''{safe_name}"},
     )

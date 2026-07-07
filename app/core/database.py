@@ -15,12 +15,17 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    pool_recycle=1800,  # 30 分钟后强制回收连接，防止残留脏事务
     # 禁用 asyncpg prepared statement 缓存，避免表结构变更后报错
     # 参考: https://github.com/MagicStack/asyncpg/issues/736
     connect_args={
-        "server_settings": {"search_path": _search_path},
-        "statement_cache_size": 0,  # 禁用 prepared statement 缓存
-        "max_cached_statement_lifetime": 0,  # 不缓存 statement
+        "server_settings": {
+            "search_path": _search_path,
+            "statement_cache_size": 0,  # 禁用 prepared statement 缓存
+            "max_cached_statement_lifetime": 0,  # 不缓存 statement
+            # 防御性超时：idle in transaction 超过 10 分钟自动断开，防止连接泄漏
+            "idle_in_transaction_session_timeout": "600000",
+        },
     },
 )
 

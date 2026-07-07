@@ -60,7 +60,7 @@ class RegulationService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
+                    pass
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
@@ -146,9 +146,7 @@ class RegulationService:
             "regulation_id": data.regulation_id,
             "regulation_name": reg.regulation_name,
             "old_document_path": reg.document_path,
-            "revision_type": data.revision_type.value
-            if hasattr(data.revision_type, "value")
-            else data.revision_type,
+            "revision_type": data.revision_type.value if hasattr(data.revision_type, 'value') else data.revision_type,
             "revision_opinion": data.revision_opinion,
             "reviser": data.reviser,
             "reviser_name": data.reviser_name,
@@ -284,10 +282,7 @@ class RegulationService:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(generated_content)
 
-        doc_name = (
-            document_name
-            or f"{revision.regulation_name}_修订版_{int(datetime.now().timestamp())}.md"
-        )
+        doc_name = document_name or f"{revision.regulation_name}_修订版_{int(datetime.now().timestamp())}.md"
 
         # 更新修订记录
         await self.repo.update_revision(
@@ -324,9 +319,7 @@ class RegulationService:
 
         if not revision.revision_opinion:
             # 无修订意见，默认仅安全要求
-            await self.repo.update_revision(
-                revision_id, {"revision_scope": "safety_requirement"}
-            )
+            await self.repo.update_revision(revision_id, {"revision_scope": "safety_requirement"})
             await self.session.flush()
             return await self.repo.get_revision_by_id(revision_id)
 
@@ -349,8 +342,7 @@ class RegulationService:
     async def _get_ai_client(self) -> AIService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
-
-        return await create_ai_service("text")
+        return create_ai_service("text")
 
     async def _ai_identify_scope(
         self,
@@ -381,10 +373,7 @@ class RegulationService:
             ai = await self._get_ai_client()
             result = await ai.chat_parsed(
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "你是一个专业的安全生产管理专家，擅长识别操规修订的影响范围。",
-                    },
+                    {"role": "system", "content": "你是一个专业的安全生产管理专家，擅长识别操规修订的影响范围。"},
                     {"role": "user", "content": prompt},
                 ],
                 expected_keys=["scope", "reasoning"],
@@ -426,10 +415,7 @@ class RegulationService:
         try:
             ai = await self._get_ai_client()
             messages = [
-                {
-                    "role": "system",
-                    "content": "你是一个专业的安全操作规程编写专家，服务于原料药生产企业。",
-                },
+                {"role": "system", "content": "你是一个专业的安全操作规程编写专家，服务于原料药生产企业。"},
                 {"role": "user", "content": prompt},
             ]
             # 自由文本生成，使用 chat 方法
@@ -505,5 +491,78 @@ class RegulationService:
             },
         )
 
+    # ==================== 在线修订流程 ====================
+
+    async def revise_regulation(
+        self,
+        regulation_id: uuid.UUID,
+        content: str,
+        revision_opinion: str | None = None,
+        reviser_name: str | None = None,
+    ) -> dict | None:
+        """在线修订操规：保存内容并自动生成修订记录。
+
+        1. 获取当前操规，保存旧文档路径
+        2. 更新操规内容 + 状态为 reviewed
+        3. 自动生成修订编号并创建修订记录
+        4. 返回 regulation_id + revision_id + revision_no
+        """
+        regulation = await self.repo.get_regulation_by_id(regulation_id)
+        if not regulation:
+            return None
+
+        # 保存旧文档路径（用于修订记录）
+        old_doc_path = regulation.document_path
+
+        # 更新操规内容和状态
+        await self.repo.update_regulation(
+            regulation_id,
+            {
+                "content": content,
+                "status": "reviewed",
+            },
+        )
+
+        # 自动生成修订编号：REV-{操规编号}-{时间戳}
+        ts = datetime.now().strftime("%Y%m%d%H%M%S")
+        revision_no = f"REV-{regulation.regulation_no}-{ts}"
+
+        # 创建修订记录
+        revision_data = {
+            "revision_no": revision_no,
+            "regulation_id": regulation_id,
+            "regulation_name": regulation.regulation_name,
+            "old_document_path": old_doc_path,
+            "revision_type": "manual",
+            "revision_opinion": revision_opinion,
+            "reviser_name": reviser_name,
+            "revision_time": datetime.now(),
+            "review_opinion": "approved",  # 直接编辑即审核通过
+        }
+        revision = await self.repo.create_revision(revision_data)
+
+        await self._audit(
+            "revise",
+            "regulation",
+            resource_id=regulation_id,
+            extra={
+                "revision_id": str(revision.id),
+                "revision_no": revision_no,
+                "reviser_name": reviser_name,
+            },
+        )
+
+        await self.session.flush()
+
+        return {
+            "regulation_id": regulation_id,
+            "revision_id": revision.id,
+            "revision_no": revision_no,
+            "regulation_name": regulation.regulation_name,
+            "status": "reviewed",
+        }
+
 
 # ==================== AI 配置 Service ====================
+
+

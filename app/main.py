@@ -163,12 +163,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         livzon_card_ws_task = asyncio.create_task(start_livzon_card_ws())
 
+    # ── 安全模块启动时 Bitable 漏单恢复（后台执行，不阻塞启动）──
+    from app.modules.safety.feishu.catch_up import recover_unprocessed_records
+
+    recovery_task = asyncio.create_task(recover_unprocessed_records())
+
     # ── 安全模块定时任务调度引擎 ──
     from app.modules.safety.scheduler import (
         scheduled_task_loop,
+        stop_scheduled_task_flag,
     )
 
-    asyncio.create_task(scheduled_task_loop())
+    scheduler_task = asyncio.create_task(scheduled_task_loop())
 
     # ── 统一调度引擎（平台级，各模块可渐进迁移）──
 
@@ -200,7 +206,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown: stop all workers in reverse order
     logger.info("Shutting down %s", settings.APP_NAME)
 
-    # Stop unified scheduler engine
+    # 停止安全模块 WebSocket
+    await stop_ws()
+    safety_ws_task.cancel()
+
+    # 停止定时任务调度引擎
+    stop_scheduled_task_flag.set()
+    scheduler_task.cancel()
+
+    # ── 停止统一调度引擎 ──
     scheduler_engine.stop()
     try:
         await asyncio.wait_for(scheduler_engine_task, timeout=10)
@@ -281,6 +295,11 @@ logger.info("MCP server mounted at /mcp")
 
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code, request.method, request.url.path, exc.message,
+        )
     return error_response(
         message=exc.message,
         detail=exc.detail_msg,
@@ -292,6 +311,11 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 async def http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code, request.method, request.url.path, exc.detail,
+        )
     return error_response(
         message=str(exc.detail),
         status_code=exc.status_code,
@@ -325,6 +349,21 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
         message="数据完整性错误",
         detail=msg,
         status_code=400,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", None)
+    logger.exception(
+        "Unhandled exception on %s %s [request_id=%s]: %s",
+        request.method, request.url.path, request_id, exc,
+    )
+    return error_response(
+        message="服务内部错误",
+        detail=f"请联系管理员，错误编号: {request_id}" if request_id else None,
+        status_code=500,
+        request_id=request_id,
     )
 
 

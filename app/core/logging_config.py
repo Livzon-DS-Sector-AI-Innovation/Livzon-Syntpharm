@@ -34,6 +34,7 @@ import os
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 # ── request_id 上下文（由 app.platform.audit.middleware.AuditMiddleware 设置）──
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
@@ -44,6 +45,7 @@ _MODULE_PREFIX_MAP: dict[str, str] = {
     "app.modules.equipment": "equipment",
     "app.modules.energy": "energy",
     "app.modules.hr": "hr",
+    "app.platform.audit": "audit",
     "app.platform": "platform",
     "app.core": "core",
 }
@@ -153,6 +155,15 @@ class ConsoleFormatter(logging.Formatter):
     }
     _RESET = "\033[0m"
     _DIM = "\033[2m"
+    _TZ = ZoneInfo("Asia/Shanghai")
+
+    def formatTime(  # noqa: N802
+        self, record: logging.LogRecord, datefmt: str | None = None
+    ) -> str:
+        ct = datetime.fromtimestamp(record.created, tz=self._TZ)
+        if datefmt:
+            return ct.strftime(datefmt)
+        return ct.isoformat()
 
     def format(self, record: logging.LogRecord) -> str:
         color = self._COLORS.get(record.levelname, "")

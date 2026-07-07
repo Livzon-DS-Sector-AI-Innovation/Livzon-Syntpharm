@@ -18,6 +18,7 @@ from app.modules.safety.schemas import (
     OperationRegulationCreate,
     OperationRegulationResponse,
     OperationRegulationUpdate,
+    RegulationReviseRequest,
     RegulationRevisionCreate,
     RegulationRevisionResponse,
     RegulationRevisionUpdate,
@@ -477,6 +478,37 @@ async def update_sop_content(
         },
         message="内容保存成功",
     )
+
+
+@regulations_router.post(
+    "/regulations/{regulation_id}/revise",
+    response_model=ApiResponse,
+    summary="在线修订操规",
+)
+async def revise_regulation(
+    regulation_id: uuid.UUID,
+    data: "RegulationReviseRequest",
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+):
+    """保存修订后的操规内容，并自动生成一条修订记录。
+
+    与 /content 端点不同，本端点会额外：
+    - 自动生成修订编号 (REV-{操规编号}-{时间戳})
+    - 创建 RegulationRevision 记录（revision_type=manual, review_opinion=approved）
+    - 记录审计日志
+    """
+    service = RegulationService(db)
+    result = await service.revise_regulation(
+        regulation_id,
+        content=data.content,
+        revision_opinion=data.revision_opinion,
+        reviser_name=data.reviser_name,
+    )
+    if not result:
+        return ApiResponse(code=404, message="操规不存在")
+    await db.commit()
+    return ApiResponse(data=result, message="修订保存成功")
 
 
 @regulations_router.post(

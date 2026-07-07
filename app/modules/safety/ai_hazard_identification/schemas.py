@@ -51,6 +51,16 @@ class HazardLevelEnum(StrEnum):
     MAJOR = "major"  # 重大隐患
 
 
+class DefectSubstanceEnum(str, Enum):
+    """缺陷实质评估 — 3 个枚举值
+
+    用于控制 AI 过度推断：区分直接安全风险与形式/管理瑕疵。
+    """
+    SUBSTANTIVE = "substantive"    # 实质缺陷：直接造成安全风险，推断链 ≤2 步
+    PROCEDURAL = "procedural"      # 形式瑕疵：管理/文档/标签/临时放置，不直接构成物理威胁
+    UNCERTAIN = "uncertain"        # 不确定：信息不足，需人工判断
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 输入模型
 # ═══════════════════════════════════════════════════════════════════════════
@@ -116,6 +126,15 @@ class HazardIdentificationOutput(BaseModel):
     # ── 判定依据 ──
     major_hazard_basis: str = Field(
         ..., min_length=5, description="隐患判定依据（AI）— 引用具体法规标准条文"
+    )
+
+    # ── 缺陷实质评估（v2：控制过度推断）──
+    defect_substance: DefectSubstanceEnum = Field(
+        ..., description="缺陷实质评估 — 区分实质性安全风险与形式/管理瑕疵"
+    )
+    defect_substance_reasoning: str = Field(
+        ..., min_length=10,
+        description="缺陷实质评估理由 — 推断链长度分析、每步是物理必然还是概率假设"
     )
 
     # ── 置信度（可选，用于质量评估）──

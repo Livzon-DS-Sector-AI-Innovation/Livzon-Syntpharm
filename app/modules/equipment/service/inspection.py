@@ -1,5 +1,6 @@
 """Inspection service: business logic for routes, tasks, photos."""
 
+import base64
 import os
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -16,6 +17,8 @@ from app.core.exceptions import AppException, NotFoundException
 from app.core.storage import delete_object, upload_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.equipment import repository as repo
+from app.modules.equipment.deps import EquipmentAccessContext
+from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.inspection import (
     InspectionPhoto,
     InspectionRoute,
@@ -24,12 +27,14 @@ from app.modules.equipment.models.inspection import (
 )
 from app.modules.equipment.models.inspection_route_location import (
     RouteLocation,
+    RouteLocationEquipment,
 )
 from app.modules.equipment.models.inspection_template import InspectionRecord
 from app.modules.equipment.models.work_order import WorkOrder
 from app.modules.equipment.schemas.inspection import (
     InspectionScheduleResponse,
 )
+from app.modules.equipment.service.data_scope import verify_write_ownership
 
 _UPLOAD_DIR = "uploads/inspection"
 _MAX_RETRIES = 3
@@ -44,11 +49,16 @@ _VALID_TRANSITIONS: dict[str, list[str]] = {
 
 
 # ═══════════ 路线 ═══════════
-async def create_route(db: AsyncSession, data: dict) -> InspectionRoute:
+async def create_route(
+    db: AsyncSession, data: dict, ctx: EquipmentAccessContext
+) -> InspectionRoute:
+    data["created_by"] = ctx.user.id
     return await repo.create_route(db, data)
 
 
-async def get_route_by_id(db: AsyncSession, route_id: uuid.UUID) -> InspectionRoute:
+async def get_route_by_id(
+    db: AsyncSession, route_id: uuid.UUID
+) -> InspectionRoute:
     route = await repo.get_route_by_id(db, route_id)
     if not route:
         raise NotFoundException("巡检路线", str(route_id))
@@ -57,6 +67,7 @@ async def get_route_by_id(db: AsyncSession, route_id: uuid.UUID) -> InspectionRo
 
 async def get_routes(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     is_active: bool | None = None,
     location_id: uuid.UUID | None = None,
     keyword: str | None = None,
@@ -65,6 +76,7 @@ async def get_routes(
 ) -> tuple[list[InspectionRoute], int]:
     return await repo.get_routes(
         db,
+        ctx=ctx,
         is_active=is_active,
         location_id=location_id,
         keyword=keyword,
@@ -74,24 +86,38 @@ async def get_routes(
 
 
 async def update_route(
-    db: AsyncSession, route_id: uuid.UUID, data: dict
+    db: AsyncSession, route_id: uuid.UUID, data: dict, ctx: EquipmentAccessContext
 ) -> InspectionRoute:
-    route = await repo.update_route(db, route_id, data)
+    route = await repo.get_route_by_id(db, route_id)
     if not route:
         raise NotFoundException("巡检路线", str(route_id))
-    return route
+    await verify_write_ownership(ctx, route, "created_by", "user_id")
+    updated = await repo.update_route(db, route_id, data)
+    if not updated:
+        raise NotFoundException("巡检路线", str(route_id))
+    return updated
 
 
-async def delete_route(db: AsyncSession, route_id: uuid.UUID) -> bool:
+async def delete_route(
+    db: AsyncSession, route_id: uuid.UUID, ctx: EquipmentAccessContext
+) -> bool:
+    route = await repo.get_route_by_id(db, route_id)
+    if not route:
+        raise NotFoundException("巡检路线", str(route_id))
+    await verify_write_ownership(ctx, route, "created_by", "user_id")
     if not await repo.delete_route(db, route_id):
         raise NotFoundException("巡检路线", str(route_id))
     return True
 
 
 async def set_route_locations(
-    db: AsyncSession, route_id: uuid.UUID, items: list[dict]
+    db: AsyncSession,
+    route_id: uuid.UUID,
+    items: list[dict],
+    ctx: EquipmentAccessContext,
 ) -> list[RouteLocation]:
-    await get_route_by_id(db, route_id)
+    route = await get_route_by_id(db, route_id)
+    await verify_write_ownership(ctx, route, "created_by", "user_id")
     return await repo.set_route_locations(db, route_id, items)
 
 
@@ -106,7 +132,9 @@ async def _generate_task_no(db: AsyncSession) -> str:
     return f"IT-{today}-{seq:04d}"
 
 
-async def _get_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
+async def _get_task(
+    db: AsyncSession, task_id: uuid.UUID
+) -> InspectionTask:
     task = await repo.get_task_by_id(db, task_id)
     if not task:
         raise NotFoundException("巡检任务", str(task_id))
@@ -116,10 +144,15 @@ async def _get_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
 def _validate_transition(current: str, target: str) -> None:
     allowed = _VALID_TRANSITIONS.get(current, [])
     if target not in allowed:
-        raise AppException(message=f"状态不允许从 '{current}' 转换到 '{target}'")
+        raise AppException(
+            message=f"状态不允许从 '{current}' 转换到 '{target}'"
+        )
 
 
-async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
+async def create_task(
+    db: AsyncSession, data: dict, ctx: EquipmentAccessContext
+) -> InspectionTask:
+    data["created_by"] = ctx.user.id
     plan_type = data.get("plan_type", "设备巡检")
     has_route = data.get("route_id")
     has_equipment = data.get("equipment_id") or data.get("equipment_ids")
@@ -143,14 +176,19 @@ async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
             # 校验 equipment_templates 的 key 都在 equipment_ids 中
             for eq_id in equipment_templates:
                 if eq_id not in eq_id_set:
-                    raise AppException(message=f"设备 {eq_id} 不在已选择的设备列表中")
+                    raise AppException(
+                        message=f"设备 {eq_id} 不在已选择的设备列表中"
+                    )
             # 校验每个已选设备都绑定了至少一个模板
             for eq_id in eq_id_set:
                 if eq_id not in equipment_templates or not equipment_templates[eq_id]:
-                    raise AppException(message="每台已选设备必须绑定至少一个检查模板")
+                    raise AppException(
+                        message="每台已选设备必须绑定至少一个检查模板"
+                    )
             # 将 UUID 转为字符串存储
             data["equipment_templates"] = {
-                str(k): [str(tid) for tid in v] for k, v in equipment_templates.items()
+                str(k): [str(tid) for tid in v]
+                for k, v in equipment_templates.items()
             }
         elif template_ids:
             # 兼容旧方式：扁平模板列表（所有模板应用于所有设备）
@@ -180,6 +218,7 @@ async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
 
 async def get_tasks(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     status: str | None = None,
     exclude_status: str | None = None,
     route_id: uuid.UUID | None = None,
@@ -192,6 +231,7 @@ async def get_tasks(
 ) -> tuple[list[InspectionTask], int]:
     return await repo.get_tasks(
         db,
+        ctx=ctx,
         status=status,
         exclude_status=exclude_status,
         route_id=route_id,
@@ -204,7 +244,9 @@ async def get_tasks(
     )
 
 
-async def get_task_by_id(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
+async def get_task_by_id(
+    db: AsyncSession, task_id: uuid.UUID
+) -> InspectionTask:
     return await _get_task(db, task_id)
 
 
@@ -237,8 +279,11 @@ async def _refetch_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
     return result.scalar_one()
 
 
-async def start_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
+async def start_task(
+    db: AsyncSession, task_id: uuid.UUID, ctx: EquipmentAccessContext
+) -> InspectionTask:
     task = await _get_task(db, task_id)
+    await verify_write_ownership(ctx, task, "created_by", "user_id")
     _validate_transition(task.status, "执行中")
     task.status = "执行中"
     task.started_at = datetime.now(UTC)
@@ -255,8 +300,11 @@ async def start_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
     return refreshed
 
 
-async def complete_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask:
+async def complete_task(
+    db: AsyncSession, task_id: uuid.UUID, ctx: EquipmentAccessContext
+) -> InspectionTask:
     task = await _get_task(db, task_id)
+    await verify_write_ownership(ctx, task, "created_by", "user_id")
     _validate_transition(task.status, "已完成")
 
     records = await repo.get_records_by_task(db, task_id)
@@ -273,9 +321,12 @@ async def submit_route_check(
     task_id: uuid.UUID,
     overall_result: str,
     route_summary: str | None = None,
+    ctx: EquipmentAccessContext | None = None,
 ) -> InspectionTask:
     """线路巡检提交：设置总体结果和现场描述，完成任务"""
     task = await _get_task(db, task_id)
+    if ctx:
+        await verify_write_ownership(ctx, task, "created_by", "user_id")
     if task.status != "执行中":
         raise AppException(message="任务未在'执行中'状态，不能提交")
     if task.plan_type != "线路巡检":
@@ -290,13 +341,20 @@ async def submit_route_check(
 
 
 async def close_task(
-    db: AsyncSession, task_id: uuid.UUID, remark: str | None = None
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    remark: str | None = None,
+    ctx: EquipmentAccessContext | None = None,
 ) -> InspectionTask:
     task = await _get_task(db, task_id)
+    if ctx:
+        await verify_write_ownership(ctx, task, "created_by", "user_id")
     _validate_transition(task.status, "已关闭")
 
     # 检查是否有未处理的关联工单
-    pending_wos = await repo.get_pending_work_orders_by_inspection_task(db, task_id)
+    pending_wos = await repo.get_pending_work_orders_by_inspection_task(
+        db, task_id
+    )
     if pending_wos:
         wo_list = [
             {
@@ -310,7 +368,8 @@ async def close_task(
         ]
         raise AppException(
             message=(
-                f"存在 {len(pending_wos)} 个未处理的异常工单，请先处理后再关闭巡检"
+                f"存在 {len(pending_wos)} 个未处理的异常工单，"
+                f"请先处理后再关闭巡检"
             ),
             detail={"pending_work_orders": wo_list},
         )
@@ -402,10 +461,7 @@ async def _create_anomaly_work_order(
     )
 
     await send_work_order_notification(
-        wo,
-        equipment,
-        task,
-        responsible_user_id_str,
+        wo, equipment, task, responsible_user_id_str,
     )
 
     return wo
@@ -416,10 +472,48 @@ async def submit_equipment_check(
     task_id: uuid.UUID,
     equipment_id: uuid.UUID,
     records: list[dict],
+    ctx: EquipmentAccessContext | None = None,
 ) -> list[InspectionRecord]:
     task = await _get_task(db, task_id)
+    if ctx:
+        await verify_write_ownership(ctx, task, "created_by", "user_id")
     if task.status != "执行中":
-        raise AppException(message="任务未在'执行中'状态，不能提交检查结果")
+        raise AppException(
+            message="任务未在'执行中'状态，不能提交检查结果"
+        )
+
+    # 校验设备是否存在且属于此任务
+    eq_result = await db.execute(
+        select(Equipment).where(
+            Equipment.id == equipment_id, Equipment.is_deleted == False  # noqa: E712
+        )
+    )
+    if not eq_result.scalar_one_or_none():
+        raise NotFoundException(resource="设备", resource_id=str(equipment_id))
+
+    if task.route_id:
+        # 线路巡检：校验设备在路线上
+        rle_result = await db.execute(
+            select(RouteLocationEquipment).join(RouteLocation).where(
+                RouteLocation.route_id == task.route_id,
+                RouteLocationEquipment.equipment_id == equipment_id,
+                RouteLocationEquipment.is_deleted == False,  # noqa: E712
+                RouteLocation.is_deleted == False,  # noqa: E712
+            )
+        )
+        if not rle_result.scalar_one_or_none():
+            raise AppException(
+                message=f"设备 {equipment_id} 不属于此巡检路线，请确认设备ID是否正确"
+            )
+    elif task.equipment_ids:
+        if str(equipment_id) not in task.equipment_ids:
+            raise AppException(
+                message=f"设备 {equipment_id} 不在此巡检任务中，请确认设备ID是否正确"
+            )
+    elif task.equipment_id and task.equipment_id != equipment_id:
+        raise AppException(
+            message=f"设备 {equipment_id} 不匹配此巡检任务的设备"
+        )
 
     for r in records:
         r["task_id"] = str(task_id)
@@ -483,12 +577,16 @@ async def skip_equipment_check(
 
     task = await _get_task(db, task_id)
     if task.status != "执行中":
-        raise AppException(message="任务未在'执行中'状态，不能跳过设备检查")
+        raise AppException(
+            message="任务未在'执行中'状态，不能跳过设备检查"
+        )
 
     # 获取该设备的检查项
-    items = await _get_inspection_items(db, task, equipment_id)
+    items, _ = await _get_inspection_items(db, task, equipment_id)
     if not items:
-        raise AppException(message="该设备没有关联检查项，无法跳过")
+        raise AppException(
+            message="该设备没有关联检查项，无法跳过"
+        )
 
     records = [
         {
@@ -517,7 +615,9 @@ async def upload_photo(
 ) -> InspectionPhoto:
     task = await _get_task(db, task_id)
     if task.status != "执行中":
-        raise AppException(message="任务未在'执行中'状态，不能上传照片")
+        raise AppException(
+            message="任务未在'执行中'状态，不能上传照片"
+        )
     if file is None:
         raise AppException(message="请提供照片文件")
 
@@ -560,7 +660,9 @@ async def get_task_photos(
     return await repo.get_photos_by_task(db, task_id)
 
 
-async def delete_photo(db: AsyncSession, photo_id: uuid.UUID) -> bool:
+async def delete_photo(
+    db: AsyncSession, photo_id: uuid.UUID, ctx: EquipmentAccessContext | None = None
+) -> bool:
     photo = await repo.get_photo_by_id(db, photo_id)
     if not photo:
         raise NotFoundException("照片", str(photo_id))
@@ -578,9 +680,122 @@ async def delete_photo(db: AsyncSession, photo_id: uuid.UUID) -> bool:
     return await repo.delete_photo(db, photo_id)
 
 
+async def save_photo_from_path(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    equipment_id: uuid.UUID,
+    file_path: str,
+) -> InspectionPhoto:
+    """从本地文件路径保存巡检照片到 MinIO（或本地）和数据库。"""
+    from pathlib import Path
+
+    p = Path(file_path)
+    if not p.exists():
+        raise AppException(message=f"照片文件不存在: {file_path}")
+
+    content = p.read_bytes()
+    filename = f"{uuid.uuid4()}_{p.name}"
+
+    if minio_enabled():
+        object_key = f"inspection/{filename}"
+        upload_object(
+            module="equipment",
+            object_key=object_key,
+            data=content,
+            length=len(content),
+            content_type="image/jpeg",
+        )
+        stored_path = object_key
+    else:
+        file_dest = os.path.normpath(os.path.join(_UPLOAD_DIR, filename))
+        if not file_dest.startswith(os.path.normpath(_UPLOAD_DIR)):
+            raise AppException(message="非法文件路径")
+        with open(file_dest, "wb") as f:
+            f.write(content)
+        stored_path = file_dest
+
+    photo_data = {
+        "task_id": str(task_id),
+        "equipment_id": str(equipment_id),
+        "file_name": p.name,
+        "file_path": stored_path,
+        "file_size": len(content),
+    }
+    return await repo.create_photo(db, photo_data)
+
+
+async def save_photo_from_base64(
+    db: AsyncSession,
+    task_id: uuid.UUID,
+    equipment_id: uuid.UUID,
+    image_b64: str,
+    filename: str = "",
+) -> InspectionPhoto:
+    """从 base64 编码保存巡检照片到 MinIO（或本地）和数据库。"""
+    MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+
+    # Validate base64
+    try:
+        content = base64.b64decode(image_b64, validate=True)
+    except Exception as e:
+        raise AppException(message=f"图片 base64 解码失败：{e}")
+
+    if len(content) > MAX_SIZE:
+        raise AppException(
+            message=f"图片大小 {len(content) / 1024 / 1024:.1f}MB 超过上限 10MB"
+        )
+
+    if len(content) < 64:
+        raise AppException(message="图片数据过小，可能不是有效图片")
+
+    # Basic image format check (magic bytes)
+    magic = content[:4]
+    valid_magics = {
+        b"\xff\xd8\xff": "jpg",       # JPEG
+        b"\x89PNG": "png",             # PNG
+        b"RIFF": "webp",              # WEBP
+        b"BM": "bmp",                 # BMP
+    }
+    ext = "jpg"
+    for magic_bytes, fmt in valid_magics.items():
+        if magic.startswith(magic_bytes):
+            ext = fmt
+            break
+
+    fname = filename or f"{uuid.uuid4()}.{ext}"
+
+    if minio_enabled():
+        object_key = f"inspection/{fname}"
+        upload_object(
+            module="equipment",
+            object_key=object_key,
+            data=content,
+            length=len(content),
+            content_type="image/jpeg",
+        )
+        stored_path = object_key
+    else:
+        file_dest = os.path.normpath(os.path.join(_UPLOAD_DIR, fname))
+        if not file_dest.startswith(os.path.normpath(_UPLOAD_DIR)):
+            raise AppException(message="非法文件路径")
+        with open(file_dest, "wb") as f:
+            f.write(content)
+        stored_path = file_dest
+
+    photo_data = {
+        "task_id": str(task_id),
+        "equipment_id": str(equipment_id),
+        "file_name": fname,
+        "file_path": stored_path,
+        "file_size": len(content),
+    }
+    return await repo.create_photo(db, photo_data)
+
+
 # ═══════════ 历史 ═══════════
 async def get_history(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     date_from: date | None = None,
     date_to: date | None = None,
     equipment_id: uuid.UUID | None = None,
@@ -592,6 +807,7 @@ async def get_history(
     from app.modules.equipment.models.inspection import (
         InspectionTask as ITask,
     )
+    from app.modules.equipment.service.data_scope import apply_equipment_scope
 
     conditions = [
         ITask.is_deleted == False,  # noqa: E712
@@ -605,7 +821,9 @@ async def get_history(
         conditions.append(
             or_(
                 ITask.equipment_id == equipment_id,
-                cast(ITask.equipment_ids, String).like(f'%"{equipment_id}"%'),
+                cast(ITask.equipment_ids, String).like(
+                    f'%"{equipment_id}"%'
+                ),
             )
         )
     if route_id:
@@ -613,7 +831,9 @@ async def get_history(
     if result:
         conditions.append(ITask.overall_result == result)
 
+    # Apply data scope filtering
     count_stmt = select(func.count(ITask.id)).where(and_(*conditions))
+    count_stmt = apply_equipment_scope(count_stmt, ctx, ITask.created_by, "user_id")
     total = (await db.execute(count_stmt)).scalar_one()
 
     from app.modules.equipment.models.inspection_route_location import (
@@ -637,11 +857,14 @@ async def get_history(
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
+    stmt = apply_equipment_scope(stmt, ctx, ITask.created_by, "user_id")
     result_set = await db.execute(stmt)
     return list(result_set.scalars().all()), total
 
 
-async def get_task_detail(db: AsyncSession, task_id: uuid.UUID) -> dict:
+async def get_task_detail(
+    db: AsyncSession, task_id: uuid.UUID
+) -> dict:
     task = await _get_task(db, task_id)
     records = await repo.get_records_by_task(db, task_id)
     photos = await repo.get_photos_by_task(db, task_id)
@@ -654,8 +877,7 @@ _CN_TZ = dt_timezone(timedelta(hours=8))
 
 
 def compute_next_cron(
-    expression: str,
-    from_time: datetime | None = None,
+    expression: str, from_time: datetime | None = None,
 ) -> datetime:
     """Compute the next fire time for a cron expression.
 
@@ -682,22 +904,21 @@ def _validate_cron(expression: str) -> None:
 
 
 async def _batch_fetch_user_names(
-    db: AsyncSession,
-    user_ids: set[uuid.UUID],
+    db: AsyncSession, user_ids: set[uuid.UUID],
 ) -> dict[uuid.UUID, str]:
     """Batch-fetch user names for a set of user IDs."""
     if not user_ids:
         return {}
     from app.platform.identity.models import User
 
-    result = await db.execute(select(User.id, User.name).where(User.id.in_(user_ids)))
+    result = await db.execute(
+        select(User.id, User.name).where(User.id.in_(user_ids))
+    )
     return {row.id: row.name for row in result.all()}
 
 
 async def create_schedule(
-    db: AsyncSession,
-    route_id: uuid.UUID,
-    data: dict,
+    db: AsyncSession, route_id: uuid.UUID, data: dict,
 ) -> InspectionRouteSchedule:
     await get_route_by_id(db, route_id)  # validate route exists
     _validate_cron(data["cron_expression"])
@@ -708,13 +929,16 @@ async def create_schedule(
 
 
 async def get_schedules_by_route(
-    db: AsyncSession,
-    route_id: uuid.UUID,
+    db: AsyncSession, route_id: uuid.UUID,
 ) -> list[InspectionScheduleResponse]:
     schedules = await repo.get_schedules_by_route(db, route_id)
 
     # batch-fetch assignee names
-    user_ids = {s.assigned_to for s in schedules if s.assigned_to is not None}
+    user_ids = {
+        s.assigned_to
+        for s in schedules
+        if s.assigned_to is not None
+    }
     name_map = await _batch_fetch_user_names(db, user_ids)
 
     result: list[InspectionScheduleResponse] = []
@@ -727,9 +951,7 @@ async def get_schedules_by_route(
 
 
 async def update_schedule(
-    db: AsyncSession,
-    schedule_id: uuid.UUID,
-    data: dict,
+    db: AsyncSession, schedule_id: uuid.UUID, data: dict,
 ) -> InspectionRouteSchedule:
     schedule = await repo.get_schedule_by_id(db, schedule_id)
     if not schedule:
@@ -743,8 +965,7 @@ async def update_schedule(
 
 
 async def delete_schedule(
-    db: AsyncSession,
-    schedule_id: uuid.UUID,
+    db: AsyncSession, schedule_id: uuid.UUID,
 ) -> bool:
     if not await repo.delete_schedule(db, schedule_id):
         raise NotFoundException("定时任务", str(schedule_id))
