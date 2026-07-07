@@ -197,6 +197,17 @@ class Settings(BaseSettings):
     # JWT
     JWT_EXPIRE_SECONDS: int = 86400  # 24 hours
 
+    # Bootstrap local users
+    BOOTSTRAP_ADMIN_USERNAME: str = ""
+    BOOTSTRAP_ADMIN_PASSWORD: str = ""
+    BOOTSTRAP_ADMIN_NAME: str = "系统管理员"
+    BOOTSTRAP_ADMIN_EMAIL: str = ""
+    BOOTSTRAP_USER_USERNAME: str = ""
+    BOOTSTRAP_USER_PASSWORD: str = ""
+    BOOTSTRAP_USER_NAME: str = "普通用户"
+    BOOTSTRAP_USER_EMAIL: str = ""
+    LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
+
     # AI — HR 离职分析
     MOONSHOT_API_KEY: str = ""
 
