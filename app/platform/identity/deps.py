@@ -8,7 +8,6 @@ from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
-from app.platform.identity.service import get_or_create_system_admin
 
 
 async def get_current_user(
@@ -33,12 +32,12 @@ async def get_current_user(
         token = auth_token
 
     if not token:
-        return await get_or_create_system_admin(db)
+        return None
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
     except jwt.InvalidTokenError:
-        return await get_or_create_system_admin(db)
+        return None
 
     repo = UserRepository()
     user: User | None = None
@@ -53,7 +52,7 @@ async def get_current_user(
             user = await repo.get_by_feishu_open_id(db, open_id)
 
     if user is None or user.status == "disabled":
-        return await get_or_create_system_admin(db)
+        return None
 
     return user
 
