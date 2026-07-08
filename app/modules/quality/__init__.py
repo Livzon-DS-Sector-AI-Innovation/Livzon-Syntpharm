@@ -13,6 +13,7 @@ from app.modules.quality.qms import (
     sampling_router,
     stability_router,
     static_data_router,
+    instrument_router,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "doc_check_router",
     "static_data_router",
     "reagent_reminder_router",
+    "instrument_router",
 ]

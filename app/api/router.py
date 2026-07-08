@@ -24,6 +24,7 @@ from app.modules.quality import (
     sampling_router,
     stability_router,
     static_data_router,
+    instrument_router,
 )
 from app.modules.quality.label_verification import router as label_verification_router
 from app.modules.quality.sop_ai import router as sop_ai_router
@@ -97,6 +98,9 @@ api_router.include_router(
 )
 api_router.include_router(
     reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"]
+)
+api_router.include_router(
+    instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"]
 )
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
