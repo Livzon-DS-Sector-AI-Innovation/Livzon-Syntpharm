@@ -55,6 +55,7 @@ dev = [
 target-version = "py312"
 line-length = 88
 exclude = [
+    "edbo_service",
     "edboplus-main",
     "alembic",
 ]
