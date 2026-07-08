@@ -182,6 +182,7 @@ class Settings(BaseSettings):
     feishu: FeishuSettings = Field(default_factory=FeishuSettings)
 
     FRONTEND_URL: str = ""
+    SSO_ADMIN_IDENTIFIERS: str = ""
 
     # Upload
     MAX_UPLOAD_SIZE_MB: int = 50
