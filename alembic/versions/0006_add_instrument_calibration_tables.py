@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cf179713d92e'
+revision: str = '0006'
 down_revision: Union[str, None] = 'fa15806508bf'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
