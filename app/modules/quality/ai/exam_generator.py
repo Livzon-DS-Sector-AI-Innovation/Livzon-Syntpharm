@@ -7,7 +7,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
-from app.platform.ai.schemas import ExamExportRequest
+from app.modules.quality.ai.schemas import ExamExportRequest
 
 _PROMPT_TEMPLATE = """你是一位专业的培训考核出题专家。请根据以下文件内容，生成一份新员工入职培训考核试卷。
 

@@ -10,7 +10,7 @@ from datetime import datetime
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.ai.models import QmsAiLog
+from app.modules.quality.ai.models import QmsAiLog
 
 logger = logging.getLogger(__name__)
 

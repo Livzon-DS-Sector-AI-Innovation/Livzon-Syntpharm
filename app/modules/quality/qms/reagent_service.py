@@ -12,7 +12,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.platform.ai.service import AiLogService
+from app.modules.quality.ai.service import AiLogService
 
 
 class ReagentService:
@@ -288,7 +288,7 @@ confidence 表示识别置信度（0-1之间）。
         operator: str = "system",
     ) -> dict:
         """AI识别试剂标签图片"""
-        from app.platform.ai.minimax_util import get_vision_util
+        from app.modules.quality.ai.minimax_util import get_vision_util
 
         vision_util = get_vision_util()
 

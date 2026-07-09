@@ -182,7 +182,7 @@ async def ai_optimize_text(
     request: OptimizeTextRequest,
 ):
     """使用AI优化选中的文本"""
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 根据优化类型构建提示词
     prompts = {

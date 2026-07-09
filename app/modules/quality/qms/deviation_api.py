@@ -152,7 +152,7 @@ async def ai_generate_description(
 ):
     """AI生成偏差描述"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请根据以下用户提供的信息，生成偏差描述。
 
@@ -232,7 +232,7 @@ async def ai_analyze_impact(
 ):
     """AI分析影响范围"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请基于以下用户提供的信息，分析偏差的影响范围。
 
@@ -294,7 +294,7 @@ async def ai_generate_emergency_measures(
 ):
     """AI生成应急措施"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请为以下偏差生成应急措施：
 
@@ -351,7 +351,7 @@ async def ai_analyze_root_cause(
 ):
     """AI使用5M1E方法分析根本原因"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请使用5M1E方法论分析以下偏差的根本原因：
 
@@ -410,7 +410,7 @@ async def ai_analyze_direct_cause(
 ):
     """AI分析直接原因"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请分析以下偏差的直接原因：
 
@@ -460,7 +460,7 @@ async def ai_generate_capa(
 ):
     """AI生成CAPA（纠正措施和预防措施）"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请为以下偏差生成CAPA（纠正措施和预防措施）：
 
@@ -525,7 +525,7 @@ async def ai_generate_prevention(
 ):
     """AI生成预防措施（PA）"""
     try:
-        from app.platform.ai.minimax_util import get_ai_util
+        from app.modules.quality.ai.minimax_util import get_ai_util
 
         user_message = f"""请为以下偏差生成预防措施（PA），防止类似偏差再次发生：
 

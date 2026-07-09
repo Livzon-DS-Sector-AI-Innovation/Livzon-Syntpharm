@@ -24,7 +24,7 @@ from app.modules.quality.qms.doc_check.schemas import (
     DocCheckCreate,
     DocCheckUpdate,
 )
-from app.platform.ai.minimax_util import MinimaxAiUtil
+from app.modules.quality.ai.minimax_util import MinimaxAiUtil
 
 logger = logging.getLogger(__name__)
 

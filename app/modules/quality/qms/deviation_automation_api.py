@@ -389,7 +389,7 @@ async def ai_parse_sop_file(
     """AI解析SOP文件内容，提取关键字段"""
     import mammoth
 
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 获取规则
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
@@ -788,7 +788,7 @@ SOP规则库：
 <|im_start|>assistant
 """
 
-            from app.platform.ai.minimax_util import get_vision_util
+            from app.modules.quality.ai.minimax_util import get_vision_util
 
             vision_util = get_vision_util()
             ai_result = await vision_util.recognize_text(prompt=prompt, max_tokens=8192)
@@ -938,7 +938,7 @@ async def trigger_ai_process(
     """触发AI处理原始Word内容 - 提取结构化数据"""
     import mammoth
 
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 获取任务
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
@@ -1564,7 +1564,7 @@ SOP规则库：
 <|im_start|>assistant
 """
 
-                from app.platform.ai.minimax_util import get_vision_util
+                from app.modules.quality.ai.minimax_util import get_vision_util
 
                 vision_util = get_vision_util()
                 ai_result = await vision_util.recognize_text(
@@ -1641,7 +1641,7 @@ async def generate_standard_docx(
     import mammoth
     from docx import Document
 
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 获取任务
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))

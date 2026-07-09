@@ -22,7 +22,7 @@ from app.modules.hr.public_api import (
     group_count_employees,
     query_employees,
 )
-from app.platform.ai.schemas import PlanStep, QueryPlan, SubQuery
+from app.modules.quality.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
 

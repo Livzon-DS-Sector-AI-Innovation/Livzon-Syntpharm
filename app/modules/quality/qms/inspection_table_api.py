@@ -310,7 +310,7 @@ async def upload_and_recognize(
     from pathlib import Path
 
     from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 获取数据表配置
     service = InspectionTableService(session)
@@ -418,7 +418,7 @@ async def upload_and_recognize_multiple(
     from pathlib import Path
 
     from app.modules.quality.qms.inspection_table_service import InspectionTableService
-    from app.platform.ai.minimax_util import get_vision_util
+    from app.modules.quality.ai.minimax_util import get_vision_util
 
     # 获取数据表配置
     service = InspectionTableService(session)

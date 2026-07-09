@@ -269,7 +269,7 @@ class MaterialReportService:
         import re
 
         from app.core.storage import save_upload_file
-        from app.platform.ai.minimax_util import get_vision_util
+        from app.modules.quality.ai.minimax_util import get_vision_util
 
         # 1. 保存上传的图片
         file_url = await save_upload_file(file, sub_dir="report-images")

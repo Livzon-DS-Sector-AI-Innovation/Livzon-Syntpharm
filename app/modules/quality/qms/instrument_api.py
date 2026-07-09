@@ -713,7 +713,7 @@ async def recognize_instrument_label(
             f.write(content)
 
         # 调用 AI 识别
-        from app.platform.ai.minimax_util import get_vision_util
+        from app.modules.quality.ai.minimax_util import get_vision_util
 
         vision_util = get_vision_util()
 

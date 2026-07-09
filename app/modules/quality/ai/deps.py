@@ -4,7 +4,7 @@ from app.core.config import get_settings
 
 
 async def get_ai_chat_service():
-    from app.platform.ai.service import AiChatService
+    from app.modules.quality.ai.service import AiChatService
 
     _settings = get_settings()
     api_key = _settings.AI_API_KEY or _settings.MOONSHOT_API_KEY

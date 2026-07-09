@@ -15,7 +15,7 @@ from typing import Any
 
 import openai
 
-from app.platform.ai.query_parser import EmployeeQueryCriteria
+from app.modules.quality.ai.query_parser import EmployeeQueryCriteria
 
 logger = logging.getLogger(__name__)
 

@@ -34,10 +34,10 @@ from app.modules.quality.qms.static_data.models import (
 )
 
 # Import platform AI models
-from app.platform.ai.models import (
+from app.modules.quality.ai.models import (
     QmsAiLog,
 )
-from app.platform.ai.config_model import (
+from app.modules.quality.ai.config_model import (
     QmsAiConfig,
 )
 

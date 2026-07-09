@@ -86,6 +86,7 @@ class SopAiConfig(BaseModel):
     """
 
     __tablename__ = "sop_ai_config"
+    __table_args__ = {"schema": "quality"}
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -148,6 +149,7 @@ class SopAiCheckMain(Base):
         Index("ix_sop_ai_check_main_status", "status"),
         Index("ix_sop_ai_check_main_file_code", "file_code"),
         Index("ix_sop_ai_check_main_created_at", "created_at"),
+        {"schema": "quality"},
     )
 
     def __repr__(self) -> str:
@@ -166,7 +168,7 @@ class SopAiCheckProblem(BaseModel):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     main_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sop_ai_check_main.id"), nullable=False
+        String(36), ForeignKey("quality.sop_ai_check_main.id"), nullable=False
     )
     problem_type: Mapped[str | None] = mapped_column(
         Enum(ProblemType), nullable=True
@@ -192,6 +194,7 @@ class SopAiCheckProblem(BaseModel):
         Index("ix_sop_ai_check_problem_main_id", "main_id"),
         Index("ix_sop_ai_check_problem_risk_level", "risk_level"),
         Index("ix_sop_ai_check_problem_handle_status", "handle_status"),
+        {"schema": "quality"},
     )
 
     def __repr__(self) -> str:

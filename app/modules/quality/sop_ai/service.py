@@ -394,7 +394,7 @@ class SopAiCheckService:
             冲突问题列表
         """
         try:
-            from app.platform.ai.minimax_util import get_ai_util
+            from app.modules.quality.ai.minimax_util import get_ai_util
 
             ai_util = get_ai_util()
 
@@ -429,7 +429,7 @@ class SopAiCheckService:
             合规问题列表
         """
         try:
-            from app.platform.ai.minimax_util import get_ai_util
+            from app.modules.quality.ai.minimax_util import get_ai_util
 
             ai_util = get_ai_util()
 
