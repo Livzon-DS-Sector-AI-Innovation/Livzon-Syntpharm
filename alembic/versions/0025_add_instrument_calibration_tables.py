@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0025'
-down_revision: Union[str, None] = '0024'
+revision: str = '0025_add_instrument_calibration_tables'
+down_revision: Union[str, None] = '0024_add_quality_module_tables'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
