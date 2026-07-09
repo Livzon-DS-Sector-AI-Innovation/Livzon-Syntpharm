@@ -3,7 +3,8 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import JSON, Boolean, Date, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.base_model import BaseModel
@@ -104,7 +105,7 @@ class Employee(BaseModel):
 
     # ─── Qualifications ───
     qualifications: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="职称／职业资格（多选）"
+        JSONB, nullable=True, comment="职称／职业资格（多选）"
     )
     qualification_type: Mapped[str | None] = mapped_column(
         String(32), nullable=True, comment="职称类型"
@@ -251,7 +252,7 @@ class Employee(BaseModel):
         Text, nullable=True, comment="异动（含曾经工作部门、岗位)"
     )
     remarks: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="备注（多选）"
+        JSONB, nullable=True, comment="备注（多选）"
     )
 
     # ─── Status ───
@@ -414,13 +415,13 @@ class DepartureRecord(BaseModel):
         comment="离职类型: 辞职, 辞退, 合同到期, 退休, 其他",
     )
     offboarding_reason: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="离职原因（多选）"
+        JSONB, nullable=True, comment="离职原因（多选）"
     )
     offboarding_reason_2: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="离职原因2（多选）"
+        JSONB, nullable=True, comment="离职原因2（多选）"
     )
     offboarding_remarks: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="离职备注（多选）"
+        JSONB, nullable=True, comment="离职备注（多选）"
     )
 
     # ─── Other ───
@@ -575,10 +576,10 @@ class TrainingTeam(BaseModel):
         String(64), nullable=False, comment="培训专员姓名"
     )
     employee_names: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, comment="受训人员姓名列表"
+        JSONB, nullable=True, comment="受训人员姓名列表"
     )
     employee_numbers: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, comment="受训人员工号列表"
+        JSONB, nullable=True, comment="受训人员工号列表"
     )
 
 
@@ -750,7 +751,7 @@ class OnboardingRecord(BaseModel):
         Text, nullable=True, comment="异动（含曾经工作部门、岗位)"
     )
     remarks: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="备注（多选）"
+        JSONB, nullable=True, comment="备注（多选）"
     )
 
     # ─── Feishu sync metadata ───
@@ -834,13 +835,13 @@ class TrainingSession(BaseModel):
         String(512), nullable=True, comment="培训内容"
     )
     trainee_departments: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="受训部门列表"
+        JSONB, nullable=True, comment="受训部门列表"
     )
     employee_names: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="应出席受训人员姓名列表"
+        JSONB, nullable=True, comment="应出席受训人员姓名列表"
     )
     employee_numbers: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="应出席受训人员工号列表"
+        JSONB, nullable=True, comment="应出席受训人员工号列表"
     )
     issuer_department: Mapped[str | None] = mapped_column(
         String(64), nullable=True, comment="落款部门"
@@ -862,7 +863,7 @@ class TrainingSession(BaseModel):
         String(64), nullable=True, comment="飞书选择任务token（兼容旧单任务）"
     )
     select_tasks: Mapped[list[dict] | None] = mapped_column(
-        JSON,
+        JSONB,
         nullable=True,
         comment="多部门选择任务列表[{department, token, status, employee_names, employee_numbers}]",
     )
@@ -963,7 +964,7 @@ class Candidate(BaseModel):
 
     # ─── Resume attachments (JSON metadata from Feishu) ───
     resume_attachments: Mapped[list[dict] | None] = mapped_column(
-        JSON, nullable=True, comment="简历附件元数据"
+        JSONB, nullable=True, comment="简历附件元数据"
     )
 
     # ─── Local resume file path (downloaded from Feishu during sync) ───
@@ -1011,9 +1012,9 @@ class PrejobTrainingPlanTemplate(BaseModel):
         comment="厂区: old=旧厂, new=新厂",
     )
     items: Mapped[list[dict]] = mapped_column(
-        JSON,
+        JSONB,
         nullable=False,
         default=list,
-        server_default="[]",
+        server_default=text("'[]'"),
         comment="培训计划条目列表 [{seq, content, deadline, trainer}]",
     )

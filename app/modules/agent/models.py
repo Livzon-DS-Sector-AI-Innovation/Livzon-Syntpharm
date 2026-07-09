@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,7 +19,7 @@ class AgentSession(BaseModel):
         String(32), default="active", server_default="active"
     )
     context: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default="{}"
+        JSONB, default=dict, server_default=text("'{}'")
     )
 
 
@@ -31,7 +31,7 @@ class AgentMessage(BaseModel):
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     message_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default="{}"
+        JSONB, default=dict, server_default=text("'{}'")
     )
 
 
@@ -45,7 +45,7 @@ class AgentToolCall(BaseModel):
         String(32), default="started", server_default="started"
     )
     request_payload: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default="{}"
+        JSONB, default=dict, server_default=text("'{}'")
     )
     response_payload: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB, nullable=True
@@ -71,7 +71,7 @@ class AgentConfirmation(BaseModel):
         String(32), default="pending", server_default="pending"
     )
     request_payload: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default="{}"
+        JSONB, default=dict, server_default=text("'{}'")
     )
     result_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     expires_at: Mapped[datetime] = mapped_column(
@@ -93,7 +93,7 @@ class AgentSkill(BaseModel):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     trigger_keywords: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
+        JSONB, default=list, server_default=text("'[]'")
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
@@ -117,10 +117,10 @@ class AgentWorkflow(BaseModel):
         String(32), default="enabled", server_default="enabled", index=True
     )
     trigger_phrases: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
+        JSONB, default=list, server_default=text("'[]'")
     )
     steps: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default="[]"
+        JSONB, default=list, server_default=text("'[]'")
     )
     source_skill: Mapped[str | None] = mapped_column(String(120), nullable=True)
     source_request: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -143,10 +143,10 @@ class AgentWorkflowRun(BaseModel):
     )
     current_step: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     steps_snapshot: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default="[]"
+        JSONB, default=list, server_default=text("'[]'")
     )
     step_results: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default="[]"
+        JSONB, default=list, server_default=text("'[]'")
     )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(

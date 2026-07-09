@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -38,7 +39,7 @@ class InspectionTable(BaseModel):
     # 列配置（JSONB）- 定义表头
     # 格式: [{"key": "col1", "label": "列1", "type": "text", "width": 120, "required": false}]
     columns_config: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="[]", comment="列配置"
+        JSONB, nullable=False, server_default=text("'[]'"), comment="列配置"
     )
 
     # 状态
@@ -85,7 +86,7 @@ class InspectionTableRow(BaseModel):
     # 行数据（JSONB）- 存储每个单元格的值
     # 格式: {"col1": "value1", "col2": "value2"}
     row_data: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="{}", comment="行数据"
+        JSONB, nullable=False, server_default=text("'{}'"), comment="行数据"
     )
 
     # 排序

@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy import (
     Enum as SQLEnum,
@@ -57,10 +58,10 @@ class ReportTemplate(BaseModel):
 
     # 字段配置（JSONB）
     field_mapping: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="{}", comment="静态字段映射配置"
+        JSONB, nullable=False, server_default=text("'{}'"), comment="静态字段映射配置"
     )
     table_fields: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="{}", comment="动态表格字段定义"
+        JSONB, nullable=False, server_default=text("'{}'"), comment="动态表格字段定义"
     )
 
     # 状态

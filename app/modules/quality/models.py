@@ -1,1 +1,66 @@
-"""Quality ORM models live here."""
+"""Quality ORM models - imports all model files for Alembic detection."""
+
+# Import all models so they register with SQLAlchemy metadata
+from app.modules.quality.qms.inspection_table_models import (
+    InspectionTable,
+    InspectionTableRow,
+)
+from app.modules.quality.qms.material_report_models import (
+    MaterialReport,
+    MaterialReportItem,
+    ReportTemplate,
+    ReportImage,
+)
+from app.modules.quality.qms.deviation_automation_api import (
+    DevTask,
+    SOPRule,
+)
+from app.modules.quality.sop_ai.models import (
+    SopAiConfig,
+    SopAiCheckMain,
+    SopAiCheckProblem,
+)
+from app.modules.quality.qms.reagent_reminder_config import (
+    ReagentReminderConfig,
+)
+from app.modules.quality.qms.static_data.models import (
+    StorageCondition,
+    Unit,
+    HplcReference,
+    HplcReferenceUsage,
+    ChromColumn,
+    Standard,
+    Medium,
+)
+
+# Import platform AI models
+from app.platform.ai.models import (
+    QmsAiLog,
+)
+from app.platform.ai.config_model import (
+    QmsAiConfig,
+)
+
+__all__ = [
+    "InspectionTable",
+    "InspectionTableRow",
+    "MaterialReport",
+    "MaterialReportItem",
+    "ReportTemplate",
+    "ReportImage",
+    "DevTask",
+    "SOPRule",
+    "SopAiConfig",
+    "SopAiCheckMain",
+    "SopAiCheckProblem",
+    "ReagentReminderConfig",
+    "StorageCondition",
+    "Unit",
+    "HplcReference",
+    "HplcReferenceUsage",
+    "ChromColumn",
+    "Standard",
+    "Medium",
+    "QmsAiLog",
+    "QmsAiConfig",
+]

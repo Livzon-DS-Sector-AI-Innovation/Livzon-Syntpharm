@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, Date, DateTime, Index, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Index, Integer, Numeric, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -93,7 +93,7 @@ class InvoiceRecognitionRecord(BaseModel):
         JSONB,
         nullable=False,
         default=list,
-        server_default="[]",
+        server_default=text("'[]'"),
         comment="识别到的发票明细",
     )
     raw_text: Mapped[str] = mapped_column(
@@ -203,14 +203,14 @@ class Supplier(BaseModel):
         JSONB,
         nullable=False,
         default=list,
-        server_default="[]",
+        server_default=text("'[]'"),
         comment="导入文件字段顺序",
     )
     raw_data: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
-        server_default="{}",
+        server_default=text("'{}'"),
         comment="导入原始行数据",
     )
 
@@ -279,7 +279,7 @@ class ContractRecord(BaseModel):
         JSONB,
         nullable=False,
         default=dict,
-        server_default="{}",
+        server_default=text("'{}'"),
         comment="合同生成请求快照",
     )
 
