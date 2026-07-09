@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "d4a1c9b7e6f3"
+revision: str = "0007"
 down_revision: str | None = "0005_product_output"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

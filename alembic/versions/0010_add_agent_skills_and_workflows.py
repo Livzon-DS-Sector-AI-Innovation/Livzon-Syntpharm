@@ -13,8 +13,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "8f2d4c6a9b10"
-down_revision: str | None = "3b7d9a2c4e6f"
+revision: str = "0010"
+down_revision: str | None = "0009"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
