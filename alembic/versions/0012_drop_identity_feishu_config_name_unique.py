@@ -1,6 +1,6 @@
 """drop identity feishu config name unique
 
-Revision ID: 0013_drop_identity_feishu_config_name_unique
+Revision ID: 0012_drop_identity_feishu_config_name_unique
 Revises: 0012_add_identity_feishu_configs
 Create Date: 2026-07-03 00:00:01.000000
 """
@@ -9,8 +9,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0013_drop_identity_feishu_config_name_unique"
-down_revision: str | None = "0012_add_identity_feishu_configs"
+revision: str = "0012_drop_identity_feishu_config_name_unique"
+down_revision: str | None = "0011_add_identity_feishu_configs"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

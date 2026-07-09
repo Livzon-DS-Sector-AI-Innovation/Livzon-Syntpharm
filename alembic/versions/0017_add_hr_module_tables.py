@@ -1,6 +1,6 @@
 """add_hr_module_tables
 
-Revision ID: 0018_add_hr_module_tables
+Revision ID: 0017_add_hr_module_tables
 Revises: 0017_add_equipment_module_tables
 Create Date: 2026-07-07 17:01:41.764324
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '0018_add_hr_module_tables'
-down_revision: Union[str, None] = '0017_add_equipment_module_tables'
+revision: str = '0017_add_hr_module_tables'
+down_revision: Union[str, None] = '0016_add_equipment_module_tables'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

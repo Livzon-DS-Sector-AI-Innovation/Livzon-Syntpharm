@@ -1,6 +1,6 @@
 """add procurement contract records
 
-Revision ID: 0015_add_procurement_contract_records
+Revision ID: 0014_add_procurement_contract_records
 Revises: 0014_add_livzon_feishu_card_actions
 Create Date: 2026-07-06 00:00:00.000000
 """
@@ -13,8 +13,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0015_add_procurement_contract_records"
-down_revision: str | None = "0014_add_livzon_feishu_card_actions"
+revision: str = "0014_add_procurement_contract_records"
+down_revision: str | None = "0013_add_livzon_feishu_card_actions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

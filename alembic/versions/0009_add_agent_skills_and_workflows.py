@@ -1,6 +1,6 @@
 """add agent skills and workflows
 
-Revision ID: 0010_add_agent_skills_and_workflows
+Revision ID: 0009_add_agent_skills_and_workflows
 Revises: 0009_add_procurement_suppliers
 Create Date: 2026-07-01 00:00:00.000000
 """
@@ -13,8 +13,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0010_add_agent_skills_and_workflows"
-down_revision: str | None = "0009_add_procurement_suppliers"
+revision: str = "0009_add_agent_skills_and_workflows"
+down_revision: str | None = "0008_add_procurement_suppliers"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

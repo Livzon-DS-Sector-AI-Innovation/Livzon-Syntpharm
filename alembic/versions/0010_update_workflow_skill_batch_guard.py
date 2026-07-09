@@ -1,6 +1,6 @@
 """update workflow skill batch guard
 
-Revision ID: 0011_update_workflow_skill_batch_guard
+Revision ID: 0010_update_workflow_skill_batch_guard
 Revises: 0010_add_agent_skills_and_workflows
 Create Date: 2026-07-01 17:32:00.000000
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0011_update_workflow_skill_batch_guard"
-down_revision: str | None = "0010_add_agent_skills_and_workflows"
+revision: str = "0010_update_workflow_skill_batch_guard"
+down_revision: str | None = "0009_add_agent_skills_and_workflows"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

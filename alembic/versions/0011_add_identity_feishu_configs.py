@@ -1,6 +1,6 @@
 """add identity feishu configs
 
-Revision ID: 0012_add_identity_feishu_configs
+Revision ID: 0011_add_identity_feishu_configs
 Revises: 0011_update_workflow_skill_batch_guard
 Create Date: 2026-07-03 00:00:00.000000
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0012_add_identity_feishu_configs"
-down_revision: str | None = "0011_update_workflow_skill_batch_guard"
+revision: str = "0011_add_identity_feishu_configs"
+down_revision: str | None = "0010_update_workflow_skill_batch_guard"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
