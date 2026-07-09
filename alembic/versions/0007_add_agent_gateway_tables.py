@@ -1,6 +1,6 @@
 """add agent gateway tables
 
-Revision ID: d4a1c9b7e6f3
+Revision ID: 0007_add_agent_gateway
 Revises: 0005_product_output
 Create Date: 2026-07-01 00:00:00.000000
 """

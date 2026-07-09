@@ -1,7 +1,7 @@
 """add procurement suppliers
 
-Revision ID: 3b7d9a2c4e6f
-Revises: c2e7a4d9f8b6
+Revision ID: 0009_add_procurement_suppliers
+Revises: 0008_add_local_auth_user_fields
 Create Date: 2026-07-01 16:30:00.000000
 """
 

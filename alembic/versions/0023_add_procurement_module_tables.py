@@ -1,7 +1,7 @@
 """add_procurement_module_tables
 
-Revision ID: ee046273a502
-Revises: 897e0fdd42fc
+Revision ID: 0023_add_procurement_module_tables
+Revises: 0022_add_identity_module_tables
 Create Date: 2026-07-07 17:04:58.180846
 """
 from typing import Sequence, Union

@@ -1,7 +1,7 @@
 """add livzon feishu card actions
 
-Revision ID: e5b7a6c9d8f0
-Revises: 4d8f1a6c2b7e
+Revision ID: 0014_add_livzon_feishu_card_actions
+Revises: 0013_drop_identity_feishu_config_name_unique
 Create Date: 2026-07-03 00:00:02.000000
 """
 

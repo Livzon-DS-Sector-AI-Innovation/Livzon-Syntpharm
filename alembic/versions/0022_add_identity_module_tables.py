@@ -1,7 +1,7 @@
 """add_identity_module_tables
 
-Revision ID: 897e0fdd42fc
-Revises: 39df821ea2f4
+Revision ID: 0022_add_identity_module_tables
+Revises: 0021_add_safety_module_tables
 Create Date: 2026-07-07 17:04:36.920337
 """
 from typing import Sequence, Union

@@ -1,7 +1,7 @@
 """drop identity feishu config name unique
 
-Revision ID: 4d8f1a6c2b7e
-Revises: 7c4f2a9b1d6e
+Revision ID: 0013_drop_identity_feishu_config_name_unique
+Revises: 0012_add_identity_feishu_configs
 Create Date: 2026-07-03 00:00:01.000000
 """
 

@@ -1,7 +1,7 @@
 """add_hr_module_tables
 
-Revision ID: ef797612eac4
-Revises: c265526a0530
+Revision ID: 0018_add_hr_module_tables
+Revises: 0017_add_equipment_module_tables
 Create Date: 2026-07-07 17:01:41.764324
 """
 from typing import Sequence, Union

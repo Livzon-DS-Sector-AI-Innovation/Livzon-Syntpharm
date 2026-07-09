@@ -1,7 +1,7 @@
 """add procurement contract records
 
-Revision ID: f1a2b3c4d5e6
-Revises: e5b7a6c9d8f0
+Revision ID: 0015_add_procurement_contract_records
+Revises: 0014_add_livzon_feishu_card_actions
 Create Date: 2026-07-06 00:00:00.000000
 """
 

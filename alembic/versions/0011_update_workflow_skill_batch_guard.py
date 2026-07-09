@@ -1,7 +1,7 @@
 """update workflow skill batch guard
 
-Revision ID: 9a1b2c3d4e5f
-Revises: 8f2d4c6a9b10
+Revision ID: 0011_update_workflow_skill_batch_guard
+Revises: 0010_add_agent_skills_and_workflows
 Create Date: 2026-07-01 17:32:00.000000
 """
 

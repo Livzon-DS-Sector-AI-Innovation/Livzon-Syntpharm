@@ -1,7 +1,7 @@
 """add_safety_module_tables
 
-Revision ID: 39df821ea2f4
-Revises: c94acb8b71cb
+Revision ID: 0021_add_safety_module_tables
+Revises: 0020_add_production_module_tables
 Create Date: 2026-07-07 17:02:00.647085
 """
 from typing import Sequence, Union

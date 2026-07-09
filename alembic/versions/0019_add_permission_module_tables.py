@@ -1,7 +1,7 @@
 """add_permission_module_tables
 
-Revision ID: 0d5e0cdfe9a4
-Revises: ef797612eac4
+Revision ID: 0019_add_permission_module_tables
+Revises: 0018_add_hr_module_tables
 Create Date: 2026-07-07 17:01:51.578420
 """
 from typing import Sequence, Union

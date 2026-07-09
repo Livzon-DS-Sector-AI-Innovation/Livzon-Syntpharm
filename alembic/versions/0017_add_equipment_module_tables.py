@@ -1,7 +1,7 @@
 """add_equipment_module_tables
 
-Revision ID: c265526a0530
-Revises: d4ef21aad03d
+Revision ID: 0017_add_equipment_module_tables
+Revises: 0016_add_core_module_tables
 Create Date: 2026-07-07 17:01:37.369258
 """
 from typing import Sequence, Union

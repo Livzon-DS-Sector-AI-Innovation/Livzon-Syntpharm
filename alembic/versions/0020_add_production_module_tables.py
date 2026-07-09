@@ -1,7 +1,7 @@
 """add_production_module_tables
 
-Revision ID: c94acb8b71cb
-Revises: 0d5e0cdfe9a4
+Revision ID: 0020_add_production_module_tables
+Revises: 0019_add_permission_module_tables
 Create Date: 2026-07-07 17:01:58.884884
 """
 from typing import Sequence, Union

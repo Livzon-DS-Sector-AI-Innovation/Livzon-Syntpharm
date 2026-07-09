@@ -1,7 +1,7 @@
 """add local auth user fields
 
-Revision ID: c2e7a4d9f8b6
-Revises: d4a1c9b7e6f3
+Revision ID: 0008_add_local_auth_user_fields
+Revises: 0007_add_agent_gateway
 Create Date: 2026-07-01 00:00:00.000000
 """
 

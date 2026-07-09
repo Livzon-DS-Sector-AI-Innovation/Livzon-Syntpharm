@@ -1,7 +1,7 @@
 """add_quality_module_tables
 
-Revision ID: fa15806508bf
-Revises: ee046273a502
+Revision ID: 0024_add_quality_module_tables
+Revises: 0023_add_procurement_module_tables
 Create Date: 2026-07-07 17:05:00.802544
 """
 from typing import Sequence, Union

@@ -1,7 +1,7 @@
 """add agent skills and workflows
 
-Revision ID: 8f2d4c6a9b10
-Revises: 3b7d9a2c4e6f
+Revision ID: 0010_add_agent_skills_and_workflows
+Revises: 0009_add_procurement_suppliers
 Create Date: 2026-07-01 00:00:00.000000
 """
 

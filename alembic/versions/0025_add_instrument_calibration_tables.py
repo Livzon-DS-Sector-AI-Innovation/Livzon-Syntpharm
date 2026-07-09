@@ -1,7 +1,7 @@
 """add instrument calibration tables
 
-Revision ID: cf179713d92e
-Revises: fa15806508bf
+Revision ID: 0025_add_instrument_calibration_tables
+Revises: 0024_add_quality_module_tables
 Create Date: 2026-07-09 08:34:59.207350
 """
 from typing import Sequence, Union

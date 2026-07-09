@@ -1,7 +1,7 @@
 """add_core_module_tables
 
-Revision ID: d4ef21aad03d
-Revises: f1a2b3c4d5e6
+Revision ID: 0016_add_core_module_tables
+Revises: 0015_add_procurement_contract_records
 Create Date: 2026-07-07 16:59:44.832769
 """
 from typing import Sequence, Union

@@ -1,7 +1,7 @@
 """add identity feishu configs
 
-Revision ID: 7c4f2a9b1d6e
-Revises: 9a1b2c3d4e5f
+Revision ID: 0012_add_identity_feishu_configs
+Revises: 0011_update_workflow_skill_batch_guard
 Create Date: 2026-07-03 00:00:00.000000
 """
 
