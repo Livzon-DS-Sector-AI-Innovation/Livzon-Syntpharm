@@ -45,3 +45,20 @@ __all__ = [
     "ValidationAuditTask",
     "WcCertificate",
 ]
+
+# Regulatory tracker models
+from app.modules.registration.regulatory_tracker.models import (
+    DataChannel,
+    DataSource,
+    RegulatoryDocument,
+    SyncJob,
+    SyncJobPage,
+)
+
+__all__.extend([
+    "DataChannel",
+    "DataSource",
+    "RegulatoryDocument",
+    "SyncJob",
+    "SyncJobPage",
+])
