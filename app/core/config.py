@@ -212,6 +212,10 @@ class Settings(BaseSettings):
     # AI — HR 离职分析
     MOONSHOT_API_KEY: str = ""
 
+    # AI — MiniMax (quality module AI features)
+    MINIMAX_API_KEY: str = ""
+    MINIMAX_BASE_URL: str = "https://api.minimax.chat/v1"
+
     # Regulatory Tracker — 定时同步
     CRAWLER_HEADLESS: str = "true"
     CRAWLER_BROWSERS_PATH: str = ""

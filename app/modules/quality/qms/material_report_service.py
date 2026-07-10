@@ -1,5 +1,6 @@
 """原料报告单 Service"""
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
@@ -20,6 +21,8 @@ from app.modules.quality.qms.material_report_schemas import (
     TemplateUpdate,
 )
 from app.modules.quality.word_generator import generate_report_bytes
+
+logger = logging.getLogger(__name__)
 
 
 class MaterialReportService:
@@ -116,9 +119,7 @@ class MaterialReportService:
 
         return result
 
-    async def update_report(
-        self, report_id: UUID, data: ReportUpdate
-    ) -> dict | None:
+    async def update_report(self, report_id: UUID, data: ReportUpdate) -> dict | None:
         """更新报告单"""
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -292,6 +293,9 @@ class MaterialReportService:
                 try:
                     print(msg)
                 except Exception:
+                    logger.exception(
+                        "Failed to print debug message in safe_print for report image recognition"
+                    )
                     print(repr(msg[:100]) if len(msg) > 100 else repr(msg))
 
             safe_print(f"[DEBUG] AI响应长度: {len(ai_response)}")
@@ -327,6 +331,9 @@ class MaterialReportService:
                     parsed_result = {"items": [], "error": "解析失败"}
 
         except Exception as e:
+            logger.exception(
+                "Failed to recognize report image via AI for material report"
+            )
             safe_print(f"[ERROR] AI识别异常: {e}")
             parsed_result = {"items": [], "error": str(e)}
 

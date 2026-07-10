@@ -8,11 +8,14 @@ a custom soffice path.
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # ── Known LibreOffice install locations ────────────────────────────────────
 _SOFFICE_CANDIDATES: list[str] = []
@@ -115,6 +118,7 @@ class ExcelToPdfConverter:
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
         except Exception:
+            logger.exception("LibreOffice conversion failed")
             return False
 
         if dst.exists():
@@ -155,6 +159,7 @@ class ExcelToPdfConverter:
                 timeout=120,
             )
         except Exception:
+            logger.exception("Excel COM conversion failed")
             return False
         return dst.exists()
 

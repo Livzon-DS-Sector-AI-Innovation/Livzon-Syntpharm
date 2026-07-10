@@ -164,12 +164,8 @@ class HplcReference(BaseModel):
     need_recal: Mapped[bool] = mapped_column(
         Boolean, default=False, comment="Need recalibration flag"
     )
-    purity: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 4), comment="Purity %"
-    )
-    content: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 4), comment="Content %"
-    )
+    purity: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), comment="Purity %")
+    content: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), comment="Content %")
     stock_status: Mapped[str | None] = mapped_column(
         String(100), comment="Current stock status"
     )
@@ -340,12 +336,8 @@ class Standard(BaseModel):
         String(50), nullable=False, comment="Batch number"
     )
     spec: Mapped[str | None] = mapped_column(String(100), comment="Specification")
-    purity: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 4), comment="Purity %"
-    )
-    content: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 4), comment="Content %"
-    )
+    purity: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), comment="Purity %")
+    content: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), comment="Content %")
     quantity: Mapped[int] = mapped_column(Integer, default=0, comment="Quantity")
     unit_code: Mapped[str] = mapped_column(
         String(20), nullable=False, comment="Unit code"
@@ -353,9 +345,7 @@ class Standard(BaseModel):
     min_stock: Mapped[int] = mapped_column(
         Integer, default=0, comment="Minimum stock alert"
     )
-    produce_date: Mapped[date | None] = mapped_column(
-        Date, comment="Production date"
-    )
+    produce_date: Mapped[date | None] = mapped_column(Date, comment="Production date")
     expire_date: Mapped[date | None] = mapped_column(Date, comment="Expiration date")
     storage_cond_code: Mapped[str] = mapped_column(
         String(50), nullable=False, comment="Storage condition code"

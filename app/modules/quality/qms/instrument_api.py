@@ -796,6 +796,9 @@ async def recognize_instrument_label(
             try:
                 os.remove(temp_path)
             except Exception:
+                logger.exception(
+                    "Failed to remove temporary instrument label file at %s", temp_path
+                )
                 pass
 
 

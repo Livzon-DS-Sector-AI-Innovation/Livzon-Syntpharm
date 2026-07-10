@@ -12,6 +12,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.quality.ai.minimax_util import MinimaxAiUtil
 from app.modules.quality.qms.doc_check.models import (
     CheckStatus,
     ProblemCategory,
@@ -24,7 +25,6 @@ from app.modules.quality.qms.doc_check.schemas import (
     DocCheckCreate,
     DocCheckUpdate,
 )
-from app.modules.quality.ai.minimax_util import MinimaxAiUtil
 
 logger = logging.getLogger(__name__)
 
@@ -376,6 +376,9 @@ class DocCheckService:
                     "prompt", self.DEFAULT_SYSTEM_PROMPT
                 )
             except Exception:
+                logger.exception(
+                    "Failed to parse system prompt config JSON, falling back to default"
+                )
                 pass
         return self.DEFAULT_SYSTEM_PROMPT
 
@@ -399,6 +402,9 @@ class DocCheckService:
             result = json.loads(ai_response)
             return result
         except Exception:
+            logger.exception(
+                "Failed to directly parse AI response as JSON, attempting regex extraction"
+            )
             pass
 
         try:
@@ -410,6 +416,9 @@ class DocCheckService:
                 result = json.loads(json_match.group())
                 return result
         except Exception:
+            logger.exception(
+                "Failed to extract and parse JSON from AI response using regex"
+            )
             pass
 
         # 解析失败，返回错误结果

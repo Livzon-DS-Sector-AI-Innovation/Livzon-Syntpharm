@@ -1,45 +1,39 @@
 """安全模块专属飞书客户端。
 
-使用独立凭证 SAFETY_FEISHU_APP_ID / SAFETY_FEISHU_APP_SECRET，
-与全局飞书集成完全隔离。
+使用独立凭证，通过 app.core.config 获取。
 """
 
 import json as _json
 import logging
-from pathlib import Path
 
 import lark_oapi as lark
-from dotenv import load_dotenv
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# 加载对应的 .env 文件（安全模块独立读取，不依赖全局 Settings）
-_env_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
-_app_env = get_settings().APP_ENV
-_env_path = _env_dir / f".env.{_app_env}"
-if _env_path.exists():
-    load_dotenv(_env_path, override=True)
 
-# 安全模块独立的应用凭证（从环境变量读取，不经过全局 config）
-import os
+def _get_safety_app_id() -> str:
+    return get_settings().feishu.safety.credentials.app_id
 
-SAFETY_FEISHU_APP_ID = os.getenv("SAFETY_FEISHU_APP_ID", "")
-SAFETY_FEISHU_APP_SECRET = os.getenv("SAFETY_FEISHU_APP_SECRET", "")
+
+def _get_safety_app_secret() -> str:
+    return get_settings().feishu.safety.credentials.app_secret
 
 
 async def get_safety_feishu_client() -> lark.Client:
     """获取安全模块专属的飞书客户端。"""
-    if not SAFETY_FEISHU_APP_ID or not SAFETY_FEISHU_APP_SECRET:
+    app_id = _get_safety_app_id()
+    app_secret = _get_safety_app_secret()
+    if not app_id or not app_secret:
         raise RuntimeError(
-            "安全模块飞书配置缺失：请设置 SAFETY_FEISHU_APP_ID "
-            "和 SAFETY_FEISHU_APP_SECRET 环境变量"
+            "安全模块飞书配置缺失：请设置 FEISHU__SAFETY__CREDENTIALS__APP_ID "
+            "和 FEISHU__SAFETY__CREDENTIALS__APP_SECRET 环境变量"
         )
     return (
         lark.Client.builder()
-        .app_id(SAFETY_FEISHU_APP_ID)
-        .app_secret(SAFETY_FEISHU_APP_SECRET)
+        .app_id(app_id)
+        .app_secret(app_secret)
         .domain(lark.FEISHU_DOMAIN)
         .app_type(lark.AppType.SELF)
         .build()
@@ -56,12 +50,14 @@ async def get_safety_tenant_token(client: lark.Client | None = None) -> str:
     if client is None:
         client = await get_safety_feishu_client()
 
+    app_id = _get_safety_app_id()
+    app_secret = _get_safety_app_secret()
     req = (
         InternalTenantAccessTokenRequest.builder()
         .request_body(
             InternalTenantAccessTokenRequestBody.builder()
-            .app_id(SAFETY_FEISHU_APP_ID)
-            .app_secret(SAFETY_FEISHU_APP_SECRET)
+            .app_id(app_id)
+            .app_secret(app_secret)
             .build()
         )
         .build()

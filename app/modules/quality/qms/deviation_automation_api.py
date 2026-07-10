@@ -363,6 +363,9 @@ async def upload_sop_file(
             text_result = mammoth.extract_raw_text(docx_file)
             plain_text = text_result.value
     except Exception:
+        logger.exception(
+            "Failed to extract raw text from uploaded SOP file for parsing"
+        )
         plain_text = ""
 
     # 更新规则记录
@@ -447,6 +450,7 @@ SOP文档内容：
             if json_match:
                 parsed_data = json.loads(json_match.group())
         except Exception:
+            logger.exception("Failed to parse AI response JSON for SOP file parsing")
             pass
 
         # 如果解析成功，更新规则
@@ -880,6 +884,7 @@ async def upload_and_parse_word(
             text_result = mammoth.extract_raw_text(docx_file)
             plain_text = text_result.value
     except Exception:
+        logger.exception("Failed to extract raw text from uploaded deviation Word file")
         plain_text = ""
 
     # 更新任务记录

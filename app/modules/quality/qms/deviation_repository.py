@@ -346,9 +346,7 @@ class ClosingRepository:
         await self.session.refresh(closing)
         return closing
 
-    async def get_by_deviation_id(
-        self, deviation_id: UUID
-    ) -> DeviationClosing | None:
+    async def get_by_deviation_id(self, deviation_id: UUID) -> DeviationClosing | None:
         """通过偏差ID获取关闭"""
         result = await self.session.execute(
             select(DeviationClosing).where(
@@ -357,9 +355,7 @@ class ClosingRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, deviation_id: UUID, data: dict
-    ) -> DeviationClosing | None:
+    async def update(self, deviation_id: UUID, data: dict) -> DeviationClosing | None:
         """更新关闭"""
         closing = await self.get_by_deviation_id(deviation_id)
         if not closing:

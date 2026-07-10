@@ -352,7 +352,7 @@ async def batch_import_hplc_reference(
                         if isinstance(value, str):
                             try:
                                 value = date.fromisoformat(value.split()[0])
-                            except:
+                            except (ValueError, IndexError, AttributeError):
                                 value = None
                     data[field] = value
 
@@ -794,7 +794,7 @@ async def batch_import_chrom_column(
                                 data["purchase_date"] = base + timedelta(
                                     days=int(value)
                                 )
-                            except:
+                            except (ValueError, TypeError, OverflowError):
                                 pass
                         elif (
                             isinstance(value, str)
@@ -811,7 +811,7 @@ async def batch_import_chrom_column(
                                     data["purchase_date"] = date.fromisoformat(
                                         v.replace("/", "-").split()[0]
                                     )
-                            except:
+                            except (ValueError, IndexError, AttributeError):
                                 pass
                     elif field == "use_start_date":
                         if isinstance(value, date):
@@ -824,7 +824,7 @@ async def batch_import_chrom_column(
                                 data["use_start_date"] = base + timedelta(
                                     days=int(value)
                                 )
-                            except:
+                            except (ValueError, TypeError, OverflowError):
                                 pass
                         elif (
                             isinstance(value, str)
@@ -841,12 +841,12 @@ async def batch_import_chrom_column(
                                     data["use_start_date"] = date.fromisoformat(
                                         v.replace("/", "-").split()[0]
                                     )
-                            except:
+                            except (ValueError, IndexError, AttributeError):
                                 pass
                     elif field == "max_use_times":
                         try:
                             data["max_use_times"] = int(float(value))
-                        except:
+                        except (ValueError, TypeError):
                             data["max_use_times"] = 100
                     elif field == "col_status":
                         v = str(value).strip()

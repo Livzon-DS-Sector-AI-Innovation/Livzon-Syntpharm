@@ -60,6 +60,7 @@ class RegulationService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
+                    logger.exception("Failed to delete file from MinIO: %s", file_path)
                     pass
             else:
                 abs_path = os.path.abspath(file_path)

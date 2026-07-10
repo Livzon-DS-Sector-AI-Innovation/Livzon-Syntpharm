@@ -252,4 +252,5 @@ class DocumentLoader:
         try:
             return content.decode("utf-8", errors="replace")
         except Exception:
+            logger.exception("Failed to decode content as UTF-8")
             return ""

@@ -7,7 +7,6 @@ Bitable → 平台：用户填表 → 自动创建隐患 + AI识别 + 回写结�
 平台 → Bitable：平台上修改隐患 → 自动回写 Bitable 对应行
 """
 
-import asyncio
 import json
 import logging
 import os
@@ -15,7 +14,9 @@ import uuid as _uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from app.core.config import get_settings
 from app.core.redis import redis_client
+from app.core.tasks import spawn_task
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 from app.modules.safety.feishu.event_client import on_event
@@ -41,6 +42,7 @@ def _debug_log(msg: str) -> None:
         with open(_debug_log_path, "a", encoding="utf-8") as f:
             f.write(f"[{ts}] {msg}\n")
     except Exception:
+        logger.exception("Failed to write debug log")
         pass
 
 
@@ -577,6 +579,7 @@ async def _set_sync_ignore(record_id: str, ttl: int = 30) -> None:
     try:
         await redis_client.set(key, "1", ex=ttl, nx=False)
     except Exception:
+        logger.exception("Failed to set sync ignore for record_id: %s", record_id)
         pass
 
 
@@ -586,6 +589,7 @@ async def _is_sync_ignored(record_id: str) -> bool:
     try:
         return await redis_client.exists(key) > 0
     except Exception:
+        logger.exception("Failed to check sync ignore for record_id: %s", record_id)
         return False
 
 
@@ -947,10 +951,12 @@ async def _create_hazard_from_bitable(
             try:
                 await _lock_transaction.rollback()
             except Exception:
+                logger.exception("Failed to rollback advisory lock transaction")
                 pass
         try:
             await session.close()
         except Exception:
+            logger.exception("Failed to close session after advisory lock failure")
             pass
         session = async_session_factory()
 
@@ -1329,13 +1335,12 @@ async def _create_hazard_from_bitable(
             )
 
         # 7. 异步通知责任人整改
-        import asyncio as _asyncio
 
         _debug_log(
             f"CREATE_DISPATCH_RECTIFY: record_id={record_id} hazard_no={item.hazard_no} "
             f"resp_name={item.rectification_responsible_person_name} dept={item.department}"
         )
-        _asyncio.create_task(_send_rectification_notification(item))
+        spawn_task(_send_rectification_notification(item))
 
         _debug_log(
             f"CREATE_DONE: record_id={record_id} hazard_no={item.hazard_no} "
@@ -1790,23 +1795,21 @@ async def _update_hazard_from_bitable(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                asyncio.create_task(service.hazard.run_rectification_review(hazard.id))
+                spawn_task(service.hazard.run_rectification_review(hazard.id))
             elif new_status == "replied":
                 _debug_log(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                asyncio.create_task(service.hazard.run_rectification_review(hazard.id))
+                spawn_task(service.hazard.run_rectification_review(hazard.id))
             elif new_status == "level1_approved":
                 # 一般隐患：L2（分管领导）无需复核，自动设为「无需复核」并跳至 L3
                 if getattr(hazard, "hazard_level", None) == "general":
-                    asyncio.create_task(
-                        _auto_skip_level2_for_general_hazard(hazard, record_id)
-                    )
+                    spawn_task(_auto_skip_level2_for_general_hazard(hazard, record_id))
                 else:
-                    asyncio.create_task(_send_verify_notification(hazard, 2))
+                    spawn_task(_send_verify_notification(hazard, 2))
             elif new_status == "level2_approved":
-                asyncio.create_task(_send_verify_notification(hazard, 3))
+                spawn_task(_send_verify_notification(hazard, 3))
 
             # ── 回写整改状态到 Bitable（跳过 ai_reviewing 中间态，AI 完成后会同步最终状态）──
             if new_status != "ai_reviewing":
@@ -1893,9 +1896,15 @@ async def push_hazard_to_bitable(hazard: Any) -> bool:
 #   drive.file.bitable_field_changed_v1   字段级变更，更细粒度
 # 我们使用 record_changed_v1 为主，field_changed_v1 作为补充。
 
-# Bitable 目标凭证（模块级缓存，避免每次 os.getenv）
-_TARGET_FILE_TOKEN = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
-_TARGET_TABLE_ID = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
+
+# Bitable 目标凭证
+def _get_target_file_token() -> str:
+    return get_settings().feishu.safety.bitable_app_token
+
+
+def _get_target_table_id() -> str:
+    return get_settings().feishu.safety.hazard_table_id
+
 
 # field_id → field_name 缓存（用于解析 action_list 中的 after_value）
 _field_name_cache: dict[str, str] | None = None
@@ -2065,7 +2074,7 @@ async def ensure_bitable_subscribed() -> bool:
     飞书要求：在接收 Bitable 事件之前，必须先调用 /drive/v1/files/:file_token/subscribe
     订阅文档事件。此订阅持久存在于飞书侧，只需调用一次，但每次启动时重试无害。
     """
-    if not _TARGET_FILE_TOKEN:
+    if not _get_target_file_token():
         logger.warning("Bitable file_token 未配置，跳过文档事件订阅")
         return False
 
@@ -2077,14 +2086,14 @@ async def ensure_bitable_subscribed() -> bool:
         token = await get_safety_tenant_token()
         async with httpx.AsyncClient(timeout=15) as http:
             resp = await http.post(
-                f"https://open.feishu.cn/open-apis/drive/v1/files/{_TARGET_FILE_TOKEN}/subscribe",
+                f"https://open.feishu.cn/open-apis/drive/v1/files/{_get_target_file_token()}/subscribe",
                 headers={"Authorization": f"Bearer {token}"},
                 params={"file_type": "bitable"},
             )
             data = resp.json()
             if data.get("code") == 0:
                 logger.info(
-                    "Bitable 文档事件订阅成功: file_token=%s", _TARGET_FILE_TOKEN
+                    "Bitable 文档事件订阅成功: file_token=%s", _get_target_file_token()
                 )
                 return True
             logger.error(
@@ -2100,9 +2109,9 @@ async def ensure_bitable_subscribed() -> bool:
 
 def _match_target(file_token: str, table_id: str) -> bool:
     """检查事件是否属于目标 Bitable 表格。"""
-    if file_token and file_token != _TARGET_FILE_TOKEN:
-        return False
-    if table_id and table_id != _TARGET_TABLE_ID:
+    if file_token and file_token != _get_target_file_token():
+        return
+    if table_id and table_id != _get_target_table_id():
         return False
     return True
 
@@ -2175,6 +2184,7 @@ async def _handle_single_record_action(
                 )
                 return
         except Exception:
+            logger.exception("Failed to set INSERT lock for record_id: %s", record_id)
             pass  # Redis 不可用时降级，依赖去重 + DB 查询兜底
 
         # 检查是否已有 feishu_record_id（极少数重复场景）
@@ -2245,6 +2255,9 @@ async def _handle_single_record_action(
                     )
                     return
             except Exception:
+                logger.exception(
+                    "Failed to check INSERT lock for record_id: %s", record_id
+                )
                 pass  # Redis 不可用时降级，走查询 + 创建路径
 
             # 尝试获取 INSERT 锁，确保只有一个创建者
@@ -2256,6 +2269,9 @@ async def _handle_single_record_action(
                     )
                     return
             except Exception:
+                logger.exception(
+                    "Failed to acquire INSERT lock for record_id: %s", record_id
+                )
                 pass  # Redis 不可用时降级
 
             # 再次查询（可能在等待锁期间已有 INSERT 完成）
@@ -2553,7 +2569,7 @@ async def _auto_skip_level2_for_general_hazard(hazard: Any, record_id: str) -> N
     # 更新内存对象以便通知使用最新状态
     hazard.verify_level_2_status = "no_review_needed"
     hazard.rectification_status = "level2_approved"
-    asyncio.create_task(_send_verify_notification(hazard, 3))
+    spawn_task(_send_verify_notification(hazard, 3))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2648,7 +2664,7 @@ async def handle_card_action(event: dict) -> dict | None:
     # ── 第二步：Bitable 更新 + PATCH 卡片放入后台异步执行 ──
     open_message_id = event.get("context", {}).get("open_message_id", "")
     hazard_no = getattr(hazard, "hazard_no", "") if hazard else ""
-    asyncio.create_task(
+    spawn_task(
         _handle_approve_background(
             record_id=record_id,
             bt_field=bt_field,

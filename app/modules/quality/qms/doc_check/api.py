@@ -4,6 +4,7 @@
 前缀: /api/v1/doc-check/
 """
 
+import logging
 import uuid
 from typing import Any
 
@@ -25,6 +26,8 @@ from app.modules.quality.qms.doc_check.schemas import (
     ProblemUpdate,
 )
 from app.modules.quality.qms.doc_check.service import DocCheckService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,6 +52,7 @@ async def get_configs(
             data=[DocCheckConfigResponse.model_validate(c) for c in configs]
         )
     except Exception as e:
+        logger.exception("Failed to get doc check configs")
         import traceback
 
         traceback.print_exc()
@@ -125,6 +129,7 @@ async def create_check(
             }
         )
     except Exception as e:
+        logger.exception("Failed to create doc check task")
         import traceback
 
         traceback.print_exc()
@@ -149,6 +154,7 @@ async def execute_check(
         await db.commit()
         return ApiResponse(data=DocCheckDetailResponse.model_validate(check))
     except Exception as e:
+        logger.exception("Failed to execute doc check")
         return ApiResponse(code=500, message=str(e))
 
 
@@ -304,6 +310,7 @@ async def upload_file(
         try:
             content_text = content.decode("utf-8")
         except Exception:
+            logger.exception("Failed to decode plain text file content as UTF-8")
             content_text = ""
 
     _upload_store[file_id] = {

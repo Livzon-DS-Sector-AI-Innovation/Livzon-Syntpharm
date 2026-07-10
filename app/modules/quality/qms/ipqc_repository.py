@@ -34,9 +34,7 @@ class IPQCInspectionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_no(
-        self, inspection_no: str
-    ) -> IPQCInspection | None:
+    async def get_by_inspection_no(self, inspection_no: str) -> IPQCInspection | None:
         """根据单号查询"""
         result = await self.session.execute(
             select(IPQCInspection).where(

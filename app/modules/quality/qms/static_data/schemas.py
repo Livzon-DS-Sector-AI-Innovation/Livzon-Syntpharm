@@ -116,9 +116,7 @@ class HplcReferenceBase(BaseModel):
     manufacturer_batch: str | None = Field(
         None, max_length=50, description="Manufacturer batch"
     )
-    manufacturer: str | None = Field(
-        None, max_length=200, description="Manufacturer"
-    )
+    manufacturer: str | None = Field(None, max_length=200, description="Manufacturer")
     spec: str | None = Field(
         None, max_length=50, description="Specification per bottle (e.g., 100mg)"
     )
@@ -127,9 +125,7 @@ class HplcReferenceBase(BaseModel):
     )
     quantity: int | None = Field(None, description="Quantity (bottle count)")
     total_amount: float | None = Field(None, description="Total amount (mg/g)")
-    remaining_amount: float | None = Field(
-        None, description="Remaining amount (mg/g)"
-    )
+    remaining_amount: float | None = Field(None, description="Remaining amount (mg/g)")
     remaining_unit: str | None = Field(
         "mg", max_length=10, description="Remaining amount unit"
     )
@@ -139,9 +135,7 @@ class HplcReferenceBase(BaseModel):
     need_recal: bool = Field(False, description="Need recalibration flag")
     purity: float | None = Field(None, description="Purity %")
     content: float | None = Field(None, description="Content %")
-    stock_status: str | None = Field(
-        None, max_length=100, description="Stock status"
-    )
+    stock_status: str | None = Field(None, max_length=100, description="Stock status")
     arrival_date: date | None = Field(None, description="Arrival date")
     produce_date: date | None = Field(None, description="Production date")
     expire_date: date | None = Field(None, description="Expiry date")
@@ -153,9 +147,7 @@ class HplcReferenceBase(BaseModel):
     )
     location: str | None = Field(None, max_length=100, description="Location")
     has_coa: bool = Field(False, description="Has COA")
-    handover_no: str | None = Field(
-        None, max_length=100, description="Handover number"
-    )
+    handover_no: str | None = Field(None, max_length=100, description="Handover number")
     ref_status: int = Field(
         0, description="Status: 0-active 1-used 2-expired 3-scrapped"
     )
@@ -223,9 +215,7 @@ class HplcReferenceUsageBase(BaseModel):
     usage_person: str | None = Field(
         None, max_length=100, description="Person who used"
     )
-    usage_purpose: str | None = Field(
-        None, max_length=200, description="Usage purpose"
-    )
+    usage_purpose: str | None = Field(None, max_length=200, description="Usage purpose")
     usage_date: date | None = Field(None, description="Usage date")
     remark: str | None = Field(None, description="Remark")
 
@@ -403,9 +393,7 @@ class StandardBase(BaseModel):
     storage_cond_code: str = Field(
         ..., max_length=50, description="Storage condition code"
     )
-    location: str | None = Field(
-        None, max_length=100, description="Storage location"
-    )
+    location: str | None = Field(None, max_length=100, description="Storage location")
     test_item: str | None = Field(
         None, max_length=200, description="Associated test item"
     )

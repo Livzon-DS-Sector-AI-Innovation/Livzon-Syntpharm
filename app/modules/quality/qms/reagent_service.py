@@ -4,6 +4,7 @@
 """
 
 import json
+import logging
 import re
 import uuid
 from datetime import date
@@ -13,6 +14,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.ai.service import AiLogService
+
+logger = logging.getLogger(__name__)
 
 
 class ReagentService:
@@ -308,6 +311,9 @@ confidence 表示识别置信度（0-1之间）。
                 try:
                     print(msg)
                 except Exception:
+                    logger.exception(
+                        "Failed to print debug message in safe_print for reagent label recognition"
+                    )
                     print(repr(msg[:100]) if len(msg) > 100 else repr(msg))
 
             safe_print(f"[DEBUG] AI响应长度: {len(ai_response)}")
@@ -388,5 +394,8 @@ confidence 表示识别置信度（0-1之间）。
                     error_message=str(e),
                 )
             except Exception:
+                logger.exception(
+                    "Failed to save AI error log for reagent label recognition"
+                )
                 pass
             raise

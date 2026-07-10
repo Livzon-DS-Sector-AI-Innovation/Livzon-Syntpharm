@@ -184,9 +184,7 @@ class CalibrationRuleBase(BaseModel):
 
     calibration_method: CalibrationMethod = Field(..., description="校准方式")
     calibration_cycle: int | None = Field(None, description="校准周期")
-    calibration_unit: CalibrationCycleUnit | None = Field(
-        None, description="周期单位"
-    )
+    calibration_unit: CalibrationCycleUnit | None = Field(None, description="周期单位")
     last_calibration_date: datetime | None = Field(None, description="最近校准日期")
     next_calibration_date: datetime | None = Field(None, description="下次校准日期")
     calibration_agency: str | None = Field(None, description="校准机构名称")

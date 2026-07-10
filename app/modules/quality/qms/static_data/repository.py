@@ -83,9 +83,7 @@ class StaticDataRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_hplc_reference_by_code(
-        self, ref_code: str
-    ) -> HplcReference | None:
+    async def get_hplc_reference_by_code(self, ref_code: str) -> HplcReference | None:
         """Get HPLC reference substance by code"""
         result = await self.db.execute(
             select(HplcReference).where(
@@ -110,9 +108,7 @@ class StaticDataRepository:
         # 阈值 > 0 且剩余量 <= 阈值 时标记需要复标；否则清除标记
         obj.need_recal = threshold > 0 and remaining <= threshold
 
-    async def update_hplc_reference(
-        self, id: int, data: dict
-    ) -> HplcReference | None:
+    async def update_hplc_reference(self, id: int, data: dict) -> HplcReference | None:
         """Update HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -550,9 +546,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def adjust_standard_quantity(
-        self, id: int, quantity: int
-    ) -> Standard | None:
+    async def adjust_standard_quantity(self, id: int, quantity: int) -> Standard | None:
         """Adjust standard quantity"""
         obj = await self.get_standard(id)
         if not obj:

@@ -1,44 +1,71 @@
 """SOP AI 模块定时任务调度器
 
-使用 APScheduler 实现定时文件巡检任务。
+使用 SchedulerEngine 的 TaskGenerator 模式替代 APScheduler，
+实现定时文件巡检任务的动态管理。
 """
 
 import logging
-from datetime import datetime
-
-from apscheduler.jobstores.memory import MemoryJobStore
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
+from datetime import datetime, timezone
 
 from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
+from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskGenerator
+from app.platform.scheduler.registry import scheduler_registry
 
 logger = logging.getLogger(__name__)
 
+_CST = timezone(__import__("datetime").timedelta(hours=8))
 
-class SopAiScheduler:
-    """SOP AI 定时任务调度器
 
-    管理定时文件巡检任务的创建、删除和执行。
+def _cron_matches(cron_expr: str, now: datetime) -> bool:
+    """检查 cron 表达式是否匹配当前时间（精确到分钟）"""
+    try:
+        import croniter
+
+        cron = croniter.croniter(cron_expr, now.replace(second=0, microsecond=0))
+        prev = cron.get_prev(datetime)
+        return prev == now.replace(second=0, microsecond=0)
+    except Exception:
+        return False
+
+
+class SopAiSchedulerGenerator(TaskGenerator):
+    """SOP AI 定时任务扫描器
+
+    每隔 60 秒扫描内存中的定时任务，执行匹配 cron 表达式的任务。
     """
 
+    name = "quality.sop_ai_jobs"
+    schedule = ScheduleConfig(
+        strategy=ScheduleStrategy.INTERVAL,
+        interval_seconds=60,
+    )
+
     def __init__(self):
-        self.scheduler = AsyncIOScheduler(
-            jobstores={"default": MemoryJobStore()},
-            job_defaults={"coalesce": True, "max_instances": 1},
-        )
+        super().__init__()
         self._jobs: dict[str, ScheduledJob] = {}
+        self._callbacks: dict[str, object] = {}
 
-    def start(self):
-        """启动调度器"""
-        if not self.scheduler.running:
-            self.scheduler.start()
-            logger.info("SOP AI 调度器已启动")
+    async def find_due(self, session):
+        return []
 
-    def shutdown(self):
-        """关闭调度器"""
-        if self.scheduler.running:
-            self.scheduler.shutdown()
-            logger.info("SOP AI 调度器已关闭")
+    async def execute_one(self, session, item) -> None:
+        pass
+
+    async def execute_all(self, session) -> None:
+        now = datetime.now(_CST)
+        for job in list(self._jobs.values()):
+            if not job.enabled:
+                continue
+            if _cron_matches(job.cron_expression, now):
+                callback = self._callbacks.get(job.job_id)
+                if callback:
+                    try:
+                        await callback()
+                        job.last_run_time = now
+                        job.run_count += 1
+                        logger.info(f"定时任务执行完成: {job.job_id}")
+                    except Exception as e:
+                        logger.error(f"定时任务执行失败: {job.job_id}, error={e}")
 
     def add_job(
         self,
@@ -49,41 +76,18 @@ class SopAiScheduler:
         callback,
         enabled: bool = True,
     ) -> ScheduledJob | None:
-        """添加定时任务
-
-        Args:
-            job_id: 任务ID
-            job_name: 任务名称
-            cron_expression: Cron 表达式（如 "0 2 * * *" 表示每天凌晨2点）
-            file_pattern: 文件匹配模式
-            callback: 回调函数
-            enabled: 是否启用
-
-        Returns:
-            ScheduledJob 对象
-        """
         if job_id in self._jobs:
             logger.warning(f"任务已存在: {job_id}")
             return None
 
-        # 解析 Cron 表达式
         try:
-            parts = cron_expression.split()
-            if len(parts) != 5:
-                raise ValueError(f"无效的 Cron 表达式: {cron_expression}")
+            import croniter
 
-            trigger = CronTrigger(
-                minute=parts[0],
-                hour=parts[1],
-                day=parts[2],
-                month=parts[3],
-                day_of_week=parts[4],
-            )
+            croniter.croniter(cron_expression)
         except Exception as e:
-            logger.error(f"解析 Cron 表达式失败: {e}")
+            logger.error(f"无效的 Cron 表达式: {cron_expression}, error={e}")
             return None
 
-        # 创建任务
         job = ScheduledJob(
             job_id=job_id,
             job_name=job_name,
@@ -91,119 +95,50 @@ class SopAiScheduler:
             file_pattern=file_pattern,
             enabled=enabled,
         )
-
-        # 添加到调度器
-        try:
-            self.scheduler.add_job(
-                callback,
-                trigger=trigger,
-                id=job_id,
-                name=job_name,
-                replace_existing=True,
-            )
-            self._jobs[job_id] = job
-            logger.info(f"定时任务已添加: {job_id}")
-            return job
-        except Exception as e:
-            logger.error(f"添加定时任务失败: {e}")
-            return None
+        self._jobs[job_id] = job
+        self._callbacks[job_id] = callback
+        logger.info(f"定时任务已添加: {job_id}")
+        return job
 
     def remove_job(self, job_id: str) -> bool:
-        """删除定时任务
-
-        Args:
-            job_id: 任务ID
-
-        Returns:
-            是否成功
-        """
         if job_id not in self._jobs:
             return False
-
-        try:
-            self.scheduler.remove_job(job_id)
-            del self._jobs[job_id]
-            logger.info(f"定时任务已删除: {job_id}")
-            return True
-        except Exception as e:
-            logger.error(f"删除定时任务失败: {e}")
-            return False
+        del self._jobs[job_id]
+        self._callbacks.pop(job_id, None)
+        logger.info(f"定时任务已删除: {job_id}")
+        return True
 
     def pause_job(self, job_id: str) -> bool:
-        """暂停定时任务
-
-        Args:
-            job_id: 任务ID
-
-        Returns:
-            是否成功
-        """
-        try:
-            self.scheduler.pause_job(job_id)
-            if job_id in self._jobs:
-                self._jobs[job_id].enabled = False
+        if job_id in self._jobs:
+            self._jobs[job_id].enabled = False
             logger.info(f"定时任务已暂停: {job_id}")
             return True
-        except Exception as e:
-            logger.error(f"暂停定时任务失败: {e}")
-            return False
+        return False
 
     def resume_job(self, job_id: str) -> bool:
-        """恢复定时任务
-
-        Args:
-            job_id: 任务ID
-
-        Returns:
-            是否成功
-        """
-        try:
-            self.scheduler.resume_job(job_id)
-            if job_id in self._jobs:
-                self._jobs[job_id].enabled = True
+        if job_id in self._jobs:
+            self._jobs[job_id].enabled = True
             logger.info(f"定时任务已恢复: {job_id}")
             return True
-        except Exception as e:
-            logger.error(f"恢复定时任务失败: {e}")
-            return False
+        return False
 
     def get_job(self, job_id: str) -> ScheduledJob | None:
-        """获取任务信息
-
-        Args:
-            job_id: 任务ID
-
-        Returns:
-            ScheduledJob 对象
-        """
         return self._jobs.get(job_id)
 
     def list_jobs(self) -> list[ScheduledJob]:
-        """获取所有任务"""
         return list(self._jobs.values())
 
-    def get_next_run_time(self, job_id: str) -> datetime | None:
-        """获取下次运行时间
 
-        Args:
-            job_id: 任务ID
-
-        Returns:
-            下次运行时间
-        """
-        job = self.scheduler.get_job(job_id)
-        if job:
-            return job.next_run_time
-        return None
+_generator: SopAiSchedulerGenerator | None = None
 
 
-# 全局调度器实例
-_scheduler: SopAiScheduler | None = None
+def get_sop_ai_scheduler() -> SopAiSchedulerGenerator:
+    global _generator
+    if _generator is None:
+        _generator = SopAiSchedulerGenerator()
+    return _generator
 
 
-def get_sop_ai_scheduler() -> SopAiScheduler:
-    """获取全局调度器实例"""
-    global _scheduler
-    if _scheduler is None:
-        _scheduler = SopAiScheduler()
-    return _scheduler
+def register():
+    scheduler_registry.register_generator(get_sop_ai_scheduler())
+    logger.info("SOP AI 定时任务生成器已注册")

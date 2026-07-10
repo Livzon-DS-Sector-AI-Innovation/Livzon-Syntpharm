@@ -170,9 +170,7 @@ class SopAiCheckProblem(BaseModel):
     main_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("quality.sop_ai_check_main.id"), nullable=False
     )
-    problem_type: Mapped[str | None] = mapped_column(
-        Enum(ProblemType), nullable=True
-    )
+    problem_type: Mapped[str | None] = mapped_column(Enum(ProblemType), nullable=True)
     risk_level: Mapped[str | None] = mapped_column(Enum(RiskLevel), nullable=True)
     location: Mapped[str | None] = mapped_column(String(500), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

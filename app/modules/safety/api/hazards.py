@@ -1,6 +1,5 @@
 """Safety API — hazards endpoints."""
 
-import asyncio
 import os
 import uuid
 from datetime import datetime
@@ -13,6 +12,7 @@ from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
+from app.core.tasks import spawn_task
 from app.modules.safety.schemas import (
     DepartmentLeaderResponse,
     DepartmentSafetyOfficerResponse,
@@ -425,7 +425,7 @@ async def run_hazard_ai(
     # AI 识别完成后异步通知责任人整改（与 Bitable 同步流程对齐：
     # _create_hazard_from_bitable → AI 完成 → _send_rectification_notification）
     if script_number == 1 and item and not item.ai_error_message:
-        asyncio.create_task(_send_rectification_notification(item))
+        spawn_task(_send_rectification_notification(item))
 
     return ApiResponse(data=HazardReportResponse.model_validate(item))
 
@@ -477,7 +477,7 @@ async def notify_reviewer(
     level_labels = {1: "部门负责人", 2: "分管领导", 3: "检查人员"}
 
     # 异步发送飞书通知，不阻塞响应
-    asyncio.create_task(_send_verify_notification(hazard, current_level))
+    spawn_task(_send_verify_notification(hazard, current_level))
 
     return ApiResponse(
         message=f"已向{level_labels[current_level]}发送飞书通知",
@@ -513,7 +513,7 @@ async def trigger_rectification_review(
         )
 
     # 异步执行，不阻塞 HTTP 响应
-    asyncio.create_task(service.run_rectification_review(hazard_id))
+    spawn_task(service.run_rectification_review(hazard_id))
 
     return ApiResponse(message="AI 初审已触发，正在异步处理中")
 
@@ -535,7 +535,7 @@ async def notify_rectification(
         return ApiResponse(code=404, message="隐患不存在")
 
     # 异步发送飞书通知，不阻塞响应
-    asyncio.create_task(_send_rectification_notification(hazard))
+    spawn_task(_send_rectification_notification(hazard))
 
     return ApiResponse(
         message="已向整改责任人发送飞书通知",

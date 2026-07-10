@@ -1,6 +1,5 @@
 """HazardReport service — CRUD + AI workflow + notifications."""
 
-import asyncio
 import json
 import logging
 import os
@@ -11,8 +10,10 @@ from typing import Any
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.storage import delete_object
 from app.core.storage import is_enabled as minio_enabled
+from app.core.tasks import spawn_task
 from app.modules.safety.feishu.notification import send_user_card
 from app.modules.safety.models import HazardReport
 from app.modules.safety.repository import SafetyRepository
@@ -268,6 +269,7 @@ class HazardService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
+                    logger.exception("Failed to delete file from MinIO: %s", file_path)
                     pass
             else:
                 abs_path = os.path.abspath(file_path)
@@ -449,6 +451,9 @@ class HazardService:
             try:
                 photos = json.loads(hazard.defect_photos.replace("\\", "/"))
             except Exception:
+                logger.exception(
+                    "Failed to parse defect_photos JSON after backslash replacement"
+                )
                 photos = []
         if not isinstance(photos, list):
             photos = []
@@ -477,6 +482,9 @@ class HazardService:
             try:
                 photos = json.loads(hazard.rectification_photos.replace("\\", "/"))
             except Exception:
+                logger.exception(
+                    "Failed to parse rectification_photos JSON after backslash replacement"
+                )
                 photos = []
         if not isinstance(photos, list):
             photos = []
@@ -533,7 +541,7 @@ class HazardService:
 
         # 整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            asyncio.create_task(self.run_rectification_review(hazard_id))
+            spawn_task(self.run_rectification_review(hazard_id))
 
         return updated
 
@@ -627,9 +635,9 @@ class HazardService:
                 # re-fetch 获取最新状态
                 updated = await self.repo.get_hazard_by_id(hazard_id)
                 if updated:
-                    asyncio.create_task(_send_verify_notification(updated, 3))
+                    spawn_task(_send_verify_notification(updated, 3))
             else:
-                asyncio.create_task(_send_verify_notification(updated, level + 1))
+                spawn_task(_send_verify_notification(updated, level + 1))
 
         return updated
 
@@ -662,7 +670,7 @@ class HazardService:
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            asyncio.create_task(self.run_rectification_review(hazard_id))
+            spawn_task(self.run_rectification_review(hazard_id))
 
         return updated
 
@@ -928,6 +936,7 @@ class HazardService:
             try:
                 ai_suggestion = {"raw": item.corrective_preventive_measures}
             except Exception:
+                logger.exception("Failed to parse corrective_preventive_measures")
                 ai_suggestion = None
 
         # 构建插件输入
@@ -1072,13 +1081,13 @@ class HazardService:
                     await bg_session.commit()
                     passed = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if passed:
-                        asyncio.create_task(_send_verify_notification(passed, 1))
+                        spawn_task(_send_verify_notification(passed, 1))
                         # 同步「已回复」状态到 Bitable
-                        asyncio.create_task(
+                        spawn_task(
                             _sync_rectification_status_to_bitable(passed, "replied")
                         )
                         # 同步 AI 初审结果到 Bitable
-                        asyncio.create_task(_sync_ai_review_to_bitable(passed, result))
+                        spawn_task(_sync_ai_review_to_bitable(passed, result))
                     logger.info("AI 初审通过 → 通知一级复核人: hazard_id=%s", hazard_id)
                 elif conclusion == "不通过":
                     # AI 判定不通过 → 自动驳回，通知责任人重新整改
@@ -1088,16 +1097,14 @@ class HazardService:
                     await bg_session.commit()
                     rejected = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if rejected:
-                        asyncio.create_task(_send_rectification_notification(rejected))
+                        spawn_task(_send_rectification_notification(rejected))
                         # 同步「已驳回」状态到 Bitable，防止 Bitable 仍显示「已回复」
                         # 导致部门负责人误认为仍需复核
-                        asyncio.create_task(
+                        spawn_task(
                             _sync_rectification_status_to_bitable(rejected, "rejected")
                         )
                         # 同步 AI 初审结果到 Bitable
-                        asyncio.create_task(
-                            _sync_ai_review_to_bitable(rejected, result)
-                        )
+                        spawn_task(_sync_ai_review_to_bitable(rejected, result))
                     logger.info(
                         "AI 初审不通过 → 自动驳回，通知责任人: hazard_id=%s",
                         hazard_id,
@@ -1118,25 +1125,25 @@ class HazardService:
                     no_need = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if no_need:
                         # 通知 L3 检查人员闭环确认，卡片中标注「AI 判定：无需整改」
-                        asyncio.create_task(_send_verify_notification(no_need, 3))
+                        spawn_task(_send_verify_notification(no_need, 3))
                         # 同步 AI 初审结果到 Bitable
-                        asyncio.create_task(_sync_ai_review_to_bitable(no_need, result))
+                        spawn_task(_sync_ai_review_to_bitable(no_need, result))
                         # 同步整改状态「无需整改」到 Bitable
-                        asyncio.create_task(
+                        spawn_task(
                             _sync_rectification_status_to_bitable(
                                 no_need,
                                 "no_rectification_needed",
                             )
                         )
                         # 同步 V1/V2「无需复核」到 Bitable（与多維表格保持一致）
-                        asyncio.create_task(
+                        spawn_task(
                             _sync_verify_status_to_bitable(
                                 no_need,
                                 "部门负责人复核",
                                 "无需复核",
                             )
                         )
-                        asyncio.create_task(
+                        spawn_task(
                             _sync_verify_status_to_bitable(
                                 no_need,
                                 "分管领导复核",
@@ -1161,9 +1168,9 @@ class HazardService:
                     await bg_session.commit()
                     unknown = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if unknown:
-                        asyncio.create_task(_send_rectification_notification(unknown))
+                        spawn_task(_send_rectification_notification(unknown))
                         # 同步 AI 初审结果到 Bitable
-                        asyncio.create_task(_sync_ai_review_to_bitable(unknown, result))
+                        spawn_task(_sync_ai_review_to_bitable(unknown, result))
                 return updated
             except AIOutputError as e:
                 logger.error("AI 整改初审失败(hazard %s): %s", hazard_id, e)
@@ -1177,7 +1184,7 @@ class HazardService:
                 )
                 await bg_session.commit()
                 # AI 失败兜底：开放复核 + 通知一级复核人进行人工审核，避免流程卡死
-                asyncio.create_task(_send_verify_notification(item, 1))
+                spawn_task(_send_verify_notification(item, 1))
                 return None
             except Exception as e:
                 logger.error("AI 整改初审异常(hazard %s): %s", hazard_id, e)
@@ -1191,7 +1198,7 @@ class HazardService:
                 )
                 await bg_session.commit()
                 # AI 异常兜底：开放复核 + 通知一级复核人进行人工审核，避免流程卡死
-                asyncio.create_task(_send_verify_notification(item, 1))
+                spawn_task(_send_verify_notification(item, 1))
                 return None
 
     # ── AI 服务工厂 ──
@@ -1329,8 +1336,8 @@ async def _build_verify_card_content(
     level_labels = {1: "（部门负责人）", 2: "（分管领导）", 3: "（检查人员）"}
     level_text = level_labels.get(level, f"{level}级")
 
-    bitable_file_token = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
-    bitable_table_id = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
+    bitable_file_token = get_settings().feishu.safety.bitable_app_token
+    bitable_table_id = get_settings().feishu.safety.hazard_table_id
     bitable_url = (
         (
             f"https://www.feishu.cn/base/{bitable_file_token}"
@@ -1749,8 +1756,8 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.open_id,
             )
 
-        bitable_file_token = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
-        bitable_table_id = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
+        bitable_file_token = get_settings().feishu.safety.bitable_app_token
+        bitable_table_id = get_settings().feishu.safety.hazard_table_id
         bitable_url = (
             (
                 f"https://www.feishu.cn/base/{bitable_file_token}"

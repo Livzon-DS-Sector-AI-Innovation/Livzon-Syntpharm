@@ -5,6 +5,7 @@ from app.modules.quality.qms import (
     deviation_router,
     doc_check_router,
     fqc_router,
+    instrument_router,
     ipqc_router,
     iqc_router,
     quality_reagent_router,
@@ -13,7 +14,6 @@ from app.modules.quality.qms import (
     sampling_router,
     stability_router,
     static_data_router,
-    instrument_router,
 )
 
 __all__ = [

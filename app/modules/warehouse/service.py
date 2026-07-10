@@ -322,6 +322,9 @@ class WarehouseService:
                     )
                 )
             except Exception as exc:
+                logger.exception(
+                    "读取表目录失败: domain=%s, app_token=%s", label, app_token
+                )
                 steps.append(
                     WarehouseFeishuConnectivityStep(
                         name=f"{label}表目录",
@@ -506,6 +509,7 @@ class WarehouseService:
         try:
             await self._sync_feishu_table(config, table)
         except Exception as exc:
+            logger.exception("飞书表同步失败: table=%s", table.name)
             table.sync_status = "failed"
             table.sync_error = self._exception_message(exc)
             await self.repo.session.commit()
@@ -883,6 +887,7 @@ class WarehouseService:
                 config, app_token
             ).get_tenant_access_token()
         except Exception as exc:
+            logger.exception("飞书 tenant_access_token 获取失败")
             steps.append(
                 WarehouseFeishuConnectivityStep(
                     name="应用凭证",

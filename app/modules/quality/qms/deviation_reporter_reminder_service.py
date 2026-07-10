@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.tasks import spawn_task
 from app.modules.quality.qms.feishu_service import get_feishu_config_from_db
 from app.platform.notification.feishu_client_config import FeishuClient
 
@@ -192,7 +193,6 @@ def send_completion_notification(
     session: AsyncSession, reporter_open_id: str, deviation_no: str, theme: str
 ):
     """发送任务完成通知（供偏差完成时调用）"""
-    import asyncio
 
     async def _send():
         feishu_config = await get_feishu_config_from_db()
@@ -225,4 +225,4 @@ def send_completion_notification(
 
         logger.info(f"已发送完成通知给 {reporter_open_id}，偏差单 {deviation_no}")
 
-    asyncio.create_task(_send())
+    spawn_task(_send())

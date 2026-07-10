@@ -1,66 +1,34 @@
 """MiniMax AI 工具类
 
 提供统一的 MiniMax AI 接口调用能力，支持文本生成和图片识别任务。
-配置通过环境变量或AI配置获取。
+配置通过 app.core.config 获取。
 """
 
 import json
-import os
 
 import httpx
 
-# 默认配置（环境变量作为备选）
+from app.core.config import get_settings
+
 DEFAULT_MODEL: str = "MiniMax-Text-01"
 VISION_MODEL: str = "MiniMax-VL-01"
 DEFAULT_BASE_URL: str = "https://api.minimax.chat/v1"
 
 
 def _get_api_key() -> str:
-    """获取API Key，优先从AI配置获取，其次从环境变量"""
-    try:
-        from app.core.ai_config import get_minimax_api_key
-
-        return get_minimax_api_key()
-    except Exception:
-        pass
-    return os.getenv("MINIMAX_API_KEY", "")
+    return get_settings().MINIMAX_API_KEY
 
 
 def _get_base_url() -> str:
-    """获取Base URL"""
-    try:
-        from app.core.ai_config import get_minimax_base_url
-
-        return get_minimax_base_url()
-    except Exception:
-        pass
-    return os.getenv("MINIMAX_BASE_URL", DEFAULT_BASE_URL)
+    return get_settings().MINIMAX_BASE_URL or DEFAULT_BASE_URL
 
 
 def _get_vision_model() -> str:
-    """获取视觉模型"""
-    try:
-        from app.core.ai_config import get_vision_model
-
-        return get_vision_model()
-    except Exception:
-        return VISION_MODEL
+    return VISION_MODEL
 
 
 def _get_text_model() -> str:
-    """获取文本模型"""
-    try:
-        from app.core.ai_config import get_text_model
-
-        return get_text_model()
-    except Exception:
-        return "MiniMax-Text-01"
-
-
-DEFAULT_BASE_URL = "https://api.minimaxi.com/v1"
-DEFAULT_API_KEY = ""
-DEFAULT_MODEL = "abab6.5s-chat"
-VISION_MODEL = "MiniMax-VL-01"
+    return DEFAULT_MODEL
 
 
 class MinimaxAiUtil:

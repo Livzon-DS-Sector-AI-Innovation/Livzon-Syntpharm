@@ -118,6 +118,14 @@ BUSINESS_MODULES: tuple[ModuleDefinition, ...] = (
         owner_hint="QA/QC 负责人",
         description="偏差、CAPA、检验、放行、变更和质量体系数据入口。",
     ),
+    ModuleDefinition(
+        code="agent",
+        name="AI 智能体",
+        path="/agent",
+        db_schema="core",
+        owner_hint="架构负责人",
+        description="AI Agent 会话、工具调用、工作流定义和执行引擎。",
+    ),
 )
 
 MODULES_BY_CODE = {module.code: module for module in BUSINESS_MODULES}

@@ -1,8 +1,11 @@
 """千文 (Qwen) API 客户端 — OpenAI 兼容接口。"""
 
+import logging
 import httpx
 
 from app.shared.config_reader import get_module_setting
+
+logger = logging.getLogger(__name__)
 
 
 class QwenClient:
@@ -133,6 +136,7 @@ class QwenClient:
                 err_data = resp.json()
                 detail = err_data.get("message", "") or str(err_data)
             except Exception:
+                logger.exception("Failed to parse error response JSON from Qwen API")
                 detail = resp.text[:500]
             raise AIAnalysisError(
                 f"千文 API 返回错误 (HTTP {resp.status_code}): {detail}"

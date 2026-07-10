@@ -111,23 +111,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Start reagent reminder scheduler
     try:
-        from app.modules.quality.qms.reagent_reminder_scheduler import (
-            start_reagent_reminder_scheduler,
-        )
+        from app.modules.quality.qms.reagent_reminder_scheduler import register
 
-        start_reagent_reminder_scheduler()
-        logger.info("Reagent reminder scheduler started")
+        register()
+        logger.info("Reagent reminder scheduler registered")
     except Exception as e:
-        logger.warning(f"Failed to start reagent reminder scheduler: {e}")
+        logger.warning(f"Failed to register reagent reminder scheduler: {e}")
 
     # Start deviation reporter reminder scheduler
     try:
         from app.modules.quality.qms.deviation_reporter_reminder_scheduler import (
-            start_deviation_reporter_reminder_scheduler,
+            register as register_deviation_reminder,
         )
 
-        start_deviation_reporter_reminder_scheduler()
-        logger.info("Deviation reporter reminder scheduler started")
+        register_deviation_reminder()
+        logger.info("Deviation reporter reminder scheduler registered")
     except Exception as e:
         logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
 
@@ -214,7 +212,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown: stop all workers in reverse order
     logger.info("Shutting down %s", settings.APP_NAME)
-
 
     # 停止定时任务调度引擎
     stop_scheduled_task_flag.set()

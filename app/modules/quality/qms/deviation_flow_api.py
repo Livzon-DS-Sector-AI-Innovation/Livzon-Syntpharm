@@ -288,7 +288,7 @@ async def generate_deviation_no(session: AsyncSession) -> str:
         # 提取流水号
         try:
             seq = int(last_no[-4:]) + 1
-        except:
+        except (ValueError, IndexError):
             seq = 1
     else:
         seq = 1
@@ -382,6 +382,7 @@ async def send_feishu_notification(
         )
         return True
     except Exception as e:
+        logger.exception("Failed to send Feishu notification via FeishuClient")
         print(f"发送飞书通知失败: {e}")
         return False
 
@@ -418,7 +419,7 @@ async def create_deviation(
         if date_str:
             try:
                 return date_parser.parse(date_str)
-            except:
+            except (ValueError, TypeError):
                 return None
         return None
 
@@ -594,6 +595,10 @@ async def update_deviation(
                 try:
                     params[field] = date_parser.parse(value)
                 except Exception:
+                    logger.exception(
+                        "Failed to parse date field '%s' in deviation update request",
+                        field,
+                    )
                     params[field] = value
             else:
                 params[field] = value

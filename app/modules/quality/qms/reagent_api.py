@@ -304,7 +304,7 @@ async def export_reagents_excel(
             try:
                 if cell.value and len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except (AttributeError, TypeError):
                 pass
         adjusted_width = min(max_length + 2, 30)
         column.width = adjusted_width
