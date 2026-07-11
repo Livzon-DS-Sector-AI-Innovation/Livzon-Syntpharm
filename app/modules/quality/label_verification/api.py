@@ -224,6 +224,7 @@ async def analyze_label_verification_video(
 
     from app.core.config import get_settings
     from app.core.llm import llm_client
+    from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 
     from .video_service import LabelVerificationVideoService
 
@@ -292,7 +293,19 @@ async def analyze_label_verification_video(
     if len(frames) > 1:
         images_to_analyze.append(frames[-1])
 
-    result = await llm_client.chat_vision(prompt, images_to_analyze)
+    try:
+        result = await llm_client.chat_vision(prompt, images_to_analyze)
+    except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+        logger.exception("LLM call failed")
+        return {
+            "code": 200,
+            "message": "AI 分析暂时不可用，请人工审核",
+            "data": {
+                "frames_extracted": len(frames),
+                "fps_used": fps,
+                "ai_result": {"error": str(e), "raw_response": None},
+            },
+        }
 
     # 解析 JSON 结果
 

@@ -199,21 +199,18 @@ def log_ai_interaction(
 
 
 import openai
+from app.core.llm import llm_client
 
 
 class AiChatService:
-    """Service for streaming chat completions via OpenAI-compatible API."""
+    """Service for streaming chat completions via centralized LLM client."""
 
     def __init__(
         self,
-        api_key: str,
-        base_url: str = "https://api.moonshot.cn/v1",
+        api_key: str = "",
+        base_url: str = "",
         model: str = "moonshot-v1-128k",
     ) -> None:
-        self.client = openai.AsyncOpenAI(
-            api_key=api_key,
-            base_url=base_url,
-        )
         self.model = model
         self.base_url = base_url
 
@@ -228,16 +225,9 @@ class AiChatService:
             all_messages.append({"role": "system", "content": system_prompt})
         all_messages.extend(messages)
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=all_messages,
-            stream=True,
+        async for chunk in llm_client.stream_chat(
+            all_messages,
             temperature=0.1,
             max_tokens=4096,
-        )
-
-        stream_resp = response
-        async for chunk in stream_resp:
-            delta = chunk.choices[0].delta.content if chunk.choices else None
-            if delta:
-                yield delta
+        ):
+            yield chunk.get("text", "")

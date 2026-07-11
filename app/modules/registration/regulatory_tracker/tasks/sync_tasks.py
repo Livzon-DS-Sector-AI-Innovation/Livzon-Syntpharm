@@ -129,9 +129,14 @@ def start_scheduler():
     # Register equipment generators
     registry.register_generator(get_inspection_schedule_generator())
 
-    # Create and start engine
+    # Create engine (started by background worker via await)
     _scheduler_engine = SchedulerEngine(registry)
-    import asyncio
+    logger.info("Scheduler engine initialized with %d tasks", len(registry.tasks))
 
-    asyncio.create_task(_scheduler_engine.run())
-    logger.info("Scheduler engine started with %d tasks", len(registry.tasks))
+
+async def run_scheduler():
+    """Run the scheduler engine (called from registered background worker)."""
+    if _scheduler_engine is None:
+        logger.error("Scheduler engine not initialized")
+        return
+    await _scheduler_engine.run()

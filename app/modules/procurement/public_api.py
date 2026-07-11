@@ -4,20 +4,26 @@ Other modules should import from this file instead of directly accessing
 internal service/repository/models.
 """
 
-from app.modules.procurement.repository import ProcurementRepository
+from app.modules.procurement.contract_generator import (
+    TEMPLATE_DIR,
+    TEMPLATE_FILES,
+    get_contract_template_metadata,
+)
+from app.modules.procurement.models import Supplier
+from app.modules.procurement.repository import SupplierRepository
 from app.modules.procurement.schemas import (
-    PurchaseOrderCreate,
-    PurchaseOrderResponse,
+    ContractCategory,
     PurchaseRequestCreate,
     PurchaseRequestResponse,
 )
-from app.modules.procurement.service import ProcurementService
 
 __all__ = [
-    "ProcurementService",
-    "ProcurementRepository",
+    "SupplierRepository",
+    "Supplier",
     "PurchaseRequestCreate",
     "PurchaseRequestResponse",
-    "PurchaseOrderCreate",
-    "PurchaseOrderResponse",
+    "ContractCategory",
+    "TEMPLATE_DIR",
+    "TEMPLATE_FILES",
+    "get_contract_template_metadata",
 ]

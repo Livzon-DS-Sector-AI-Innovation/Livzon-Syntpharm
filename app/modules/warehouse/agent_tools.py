@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.modules.agent.tools import ToolContext, agent_tool
+from app.modules.agent.public_api import ToolContext, agent_tool
 from app.modules.warehouse.schemas import (
     PackagingMaterialResponse,
     ProductInventoryResponse,

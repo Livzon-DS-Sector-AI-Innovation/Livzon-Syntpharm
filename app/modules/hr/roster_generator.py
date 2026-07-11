@@ -5,9 +5,10 @@ from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 
+from app.core.config import get_settings
 from docx import Document
 
-TEMPLATE = Path("/Users/chenjiangyue/Downloads/花名册-模板.docx")
+TEMPLATE = Path(get_settings().UPLOAD_DIR) / "templates" / "花名册-模板.docx"
 
 
 def generate_roster_sync(

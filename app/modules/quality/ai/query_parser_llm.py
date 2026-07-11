@@ -13,17 +13,11 @@ import json
 import logging
 from typing import Any
 
-import openai
+from app.core.llm import llm_client
 
 from app.modules.quality.ai.query_parser import EmployeeQueryCriteria
 
 logger = logging.getLogger(__name__)
-
-
-def _get_model() -> str:
-    from app.core.config import get_settings
-
-    return get_settings().AI_MODEL or "kimi-k2.5"
 
 
 _INTENT_SYSTEM_PROMPT = """你是工厂人事管理系统的「意图识别助手」。你的唯一任务是从用户的自然语言消息中提取数据库查询条件。
@@ -106,7 +100,6 @@ def _build_intent_prompt(user_text: str) -> tuple[str, str]:
 
 
 async def parse_with_llm(
-    client: openai.AsyncOpenAI,
     user_text: str,
 ) -> EmployeeQueryCriteria | None:
     """Use a lightweight LLM to parse user intent into structured query criteria.
@@ -117,21 +110,19 @@ async def parse_with_llm(
     system_prompt, user_prompt = _build_intent_prompt(user_text)
 
     try:
-        response = await client.chat.completions.create(
-            model=_get_model(),
+        raw = await llm_client.chat(
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
             temperature=1.0,
             max_tokens=512,
-            response_format={"type": "json_object"},
+            response_format="json_object",
         )
     except Exception as exc:
         logger.warning("LLM intent parsing failed: %s", exc)
         return None
 
-    raw = response.choices[0].message.content
     if not raw:
         logger.warning("LLM intent parsing returned empty content")
         return None

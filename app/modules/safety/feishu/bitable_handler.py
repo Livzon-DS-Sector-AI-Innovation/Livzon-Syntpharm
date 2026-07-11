@@ -16,7 +16,7 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.core.redis import redis_client
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 from app.modules.safety.feishu.event_client import on_event

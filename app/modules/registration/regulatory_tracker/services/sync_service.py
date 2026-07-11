@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.crawler.cde_crawler import (
     CdeDomesticGuidelineAdapter,

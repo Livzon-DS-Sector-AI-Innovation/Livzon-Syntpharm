@@ -18,17 +18,18 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # ── Known LibreOffice install locations ────────────────────────────────────
+_CUSTOM_SOFFICE = os.environ.get("SOFFICE_PATH", "")
 _SOFFICE_CANDIDATES: list[str] = []
+if _CUSTOM_SOFFICE:
+    _SOFFICE_CANDIDATES = [_CUSTOM_SOFFICE]
 if sys.platform == "win32":
-    _SOFFICE_CANDIDATES = [
+    _SOFFICE_CANDIDATES += [
         r"C:\Program Files\LibreOffice\program\soffice.exe",
         r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
     ]
 else:
-    _SOFFICE_CANDIDATES = [
-        "/usr/bin/soffice",
-        "/usr/local/bin/soffice",
-        "/opt/libreoffice/program/soffice",
+    _SOFFICE_CANDIDATES += [
+        "soffice",
     ]
 
 

@@ -16,12 +16,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.modules.procurement.contract_generator import (
+from app.modules.procurement.public_api import (
     TEMPLATE_DIR,
     TEMPLATE_FILES,
+    ContractCategory,
     get_contract_template_metadata,
 )
-from app.modules.procurement.schemas import ContractCategory
 from app.platform.identity.models import User
 
 from .models import AgentConfirmation, AgentSkill, AgentWorkflow, AgentWorkflowRun

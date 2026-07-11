@@ -12,7 +12,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.quality.qms.feishu_service import get_feishu_config_from_db
 from app.platform.notification.feishu_client_config import FeishuClient
 

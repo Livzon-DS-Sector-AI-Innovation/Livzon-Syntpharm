@@ -4,4 +4,6 @@ Other modules should import from this file instead of directly accessing
 internal service/repository/models.
 """
 
-__all__: list[str] = []
+from app.modules.quality.ai.service import AiChatService
+
+__all__ = ["AiChatService"]

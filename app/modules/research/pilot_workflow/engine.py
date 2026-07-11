@@ -8,7 +8,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.research.models import PilotWorkflow, PilotWorkflowStep
 from app.modules.research.pilot_workflow.step1_param_extraction import (
     execute_param_extraction,

@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from app.core.config_api import router as module_settings_router
+from app.core.llm.api import router as llm_router
 from app.modules.administration import router as administration_router
 from app.modules.agent import router as agent_router
 from app.modules.energy import router as energy_router
@@ -16,15 +18,15 @@ from app.modules.quality import (
     deviation_router,
     doc_check_router,
     fqc_router,
-    iqc_router,
+    instrument_router,
     ipqc_router,
+    iqc_router,
     quality_reagent_router,
     quality_router,
     reagent_reminder_router,
     sampling_router,
     stability_router,
     static_data_router,
-    instrument_router,
 )
 from app.modules.quality.label_verification import router as label_verification_router
 from app.modules.quality.sop_ai import router as sop_ai_router
@@ -45,8 +47,6 @@ from app.platform.identity.api import (
     user_router,
 )
 from app.platform.system import router as system_router
-from app.core.llm.api import router as llm_router
-from app.core.config_api import router as module_settings_router
 
 api_router = APIRouter()
 

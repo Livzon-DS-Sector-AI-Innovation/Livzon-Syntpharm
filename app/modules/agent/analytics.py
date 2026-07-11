@@ -9,7 +9,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.modules.agent.tools import ToolContext, agent_tool
-from app.modules.procurement.models import Supplier
+from app.modules.procurement.public_api import Supplier
 
 MetricType = Literal["count", "count_distinct", "sum", "avg", "min", "max"]
 FilterOp = Literal["eq", "ne", "contains", "not_empty", "is_empty", "gte", "lte"]

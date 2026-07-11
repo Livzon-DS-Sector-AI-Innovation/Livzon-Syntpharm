@@ -17,6 +17,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.llm import LLMError, llm_client
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 
 from .ai_prompts import (
     build_extract_fields_prompt,
@@ -247,7 +248,8 @@ class AIFillService:
 
             try:
                 parsed_result = await self.llm.chat_json(messages)
-            except LLMError as e:
+            except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+                logger.exception("LLM call failed")
                 for m in non_table_fields:
                     results.append(
                         {
@@ -374,7 +376,8 @@ class AIFillService:
                     _logger.info(
                         f"  {inst.get('field_name')}: action={inst.get('fill_action')} target={inst.get('target')}"
                     )
-            except LLMError as e:
+            except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+                logger.exception("LLM call failed")
                 _logger.warning(f"[Fill] AI location prompt failed: {e}")
 
         # 加载素材（带分类名称），用于图片插入
@@ -521,7 +524,8 @@ class AIFillService:
 
         try:
             parsed_result = await self.llm.chat_json(messages)
-        except LLMError as e:
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
             return {"success": False, "message": f"AI 拆分失败: {e}"}
 
         pages = parsed_result.get("pages", [])

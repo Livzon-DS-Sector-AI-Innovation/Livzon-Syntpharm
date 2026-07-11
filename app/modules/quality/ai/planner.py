@@ -12,17 +12,11 @@ import json
 import logging
 from datetime import date
 
-import openai
+from app.core.llm import llm_client
 
 from app.modules.quality.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
-
-
-def _get_model() -> str:
-    from app.core.config import get_settings
-
-    return get_settings().AI_MODEL or "kimi-k2.5"
 
 
 _PLANNER_SYSTEM_PROMPT = """你是工厂人事管理系统的「查询规划助手」。
@@ -181,7 +175,6 @@ def _parse_plan(raw: dict) -> QueryPlan | None:
 
 
 async def generate_plan(
-    client: openai.AsyncOpenAI,
     user_text: str,
 ) -> QueryPlan | None:
     """Generate a QueryPlan from user natural-language text.
@@ -193,15 +186,14 @@ async def generate_plan(
 
     for attempt in range(3):
         try:
-            response = await client.chat.completions.create(
-                model=_get_model(),
+            raw = await llm_client.chat(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=1.0,
                 max_tokens=1024,
-                response_format={"type": "json_object"},
+                response_format="json_object",
             )
         except Exception as exc:
             logger.warning("Planner LLM call failed (attempt %d): %s", attempt + 1, exc)
@@ -209,7 +201,6 @@ async def generate_plan(
                 continue
             return None
 
-        raw = response.choices[0].message.content
         if not raw:
             logger.warning("Planner returned empty content (attempt %d)", attempt + 1)
             if attempt < 2:

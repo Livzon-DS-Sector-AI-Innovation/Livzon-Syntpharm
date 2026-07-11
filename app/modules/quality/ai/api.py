@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import success_response
-from app.modules.administration.models import VehicleRequest
+from app.modules.administration.public_api import VehicleRequest
 from app.modules.administration.public_api import (
     count_vehicle_requests,
     search_vehicle_requests,
@@ -506,15 +506,14 @@ def _extract_text_from_file(file_bytes: bytes, file_type: str) -> str:
 
 
 async def _call_moonshot_for_exam(
-    client: openai.AsyncOpenAI,
     file_content: str,
     model: str = "kimi-k2.5",
 ) -> ExamGenerateResponse:
-    """调用 AI API 根据文件内容生成题目."""
+    from app.core.llm import llm_client
+
     prompt = build_generate_prompt(file_content)
 
-    response = await client.chat.completions.create(
-        model=model,
+    content = await llm_client.chat(
         messages=[
             {
                 "role": "system",
@@ -525,8 +524,6 @@ async def _call_moonshot_for_exam(
         temperature=1,
         max_tokens=4096,
     )
-
-    content = response.choices[0].message.content or ""
     logger.info("Moonshot raw response length: %d", len(content))
 
     # 尝试从响应中提取 JSON
@@ -619,7 +616,7 @@ async def generate_exam_questions(
 
     try:
         result = await _call_moonshot_for_exam(
-            service.client, file_content, service.model
+            file_content, service.model
         )
     except json.JSONDecodeError as exc:
         raise HTTPException(

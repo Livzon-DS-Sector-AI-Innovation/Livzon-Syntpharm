@@ -1,6 +1,11 @@
 """LLM 服务模块 - 使用 core.llm 统一客户端"""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from app.core.llm import llm_client
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 
 
 async def call_llm(prompt: str, system_prompt: str = "") -> dict:
@@ -10,7 +15,11 @@ async def call_llm(prompt: str, system_prompt: str = "") -> dict:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
-    return await llm_client.chat_json(messages)
+    try:
+        return await llm_client.chat_json(messages)
+    except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+        logger.exception("LLM call failed")
+        return {"error": f"AI 分析暂时不可用，请人工审核: {e}"}
 
 
 def build_q3d_prompt(text: str) -> str:

@@ -10,16 +10,18 @@ __all__ = ["router"]
 
 
 async def _start_regulatory_scheduler():
-    """Start regulatory tracker's APScheduler."""
+    """Start regulatory tracker's scheduler."""
     from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
+        run_scheduler,
         start_scheduler,
     )
 
-    await start_scheduler()
+    start_scheduler()
+    await run_scheduler()
 
 
 async def _stop_regulatory_scheduler():
-    """Stop regulatory tracker's APScheduler."""
+    """Stop regulatory tracker's scheduler."""
     from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
         stop_scheduler,
     )

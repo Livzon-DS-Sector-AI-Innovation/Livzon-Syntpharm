@@ -129,4 +129,4 @@ BUSINESS_MODULES: tuple[ModuleDefinition, ...] = (
 )
 
 MODULES_BY_CODE = {module.code: module for module in BUSINESS_MODULES}
-BUSINESS_SCHEMAS = tuple(module.db_schema for module in BUSINESS_MODULES)
+BUSINESS_SCHEMAS = tuple(module.db_schema for module in BUSINESS_MODULES) + ("qms", "dossier_writer", "regulatory_tracker")

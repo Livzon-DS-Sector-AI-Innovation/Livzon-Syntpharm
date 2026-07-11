@@ -12,7 +12,7 @@ from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.safety.schemas import (
     DepartmentLeaderResponse,
     DepartmentSafetyOfficerResponse,

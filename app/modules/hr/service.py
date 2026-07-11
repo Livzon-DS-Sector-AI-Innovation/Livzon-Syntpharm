@@ -58,7 +58,7 @@ from app.modules.hr.schemas import (
     TrainingSessionCreate,
     TrainingSessionUpdate,
 )
-from app.modules.quality.ai.service import AiChatService
+from app.modules.quality.public_api import AiChatService
 from app.platform.integrations.feishu import FeishuBitableSync
 from app.platform.integrations.feishu.candidate_datasource import (
     CandidateBitableDataSource,

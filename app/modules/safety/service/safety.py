@@ -1671,11 +1671,10 @@ class SafetyService:
             ("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf", "DroidSans"),
             ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK"),
             ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK"),
-            # Windows paths (fallback)
-            ("C:/Windows/Fonts/simsun.ttc", "SimSun"),
-            ("C:/Windows/Fonts/simhei.ttf", "SimHei"),
-            ("C:/Windows/Fonts/msyh.ttc", "MicrosoftYaHei"),
         ]
+        custom_font = os.environ.get("CJK_FONT_PATH", "")
+        if custom_font:
+            _font_candidates.insert(0, (custom_font, "CustomCJK"))
 
         for font_path, font_alias in _font_candidates:
             if os.path.exists(font_path):

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.llm import llm_client
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 from app.modules.registration.models.validation_audit import (
     ValidationAuditFile,
     ValidationAuditIssue,
@@ -205,9 +206,13 @@ class ValidationAuditService:
             {"role": "system", "content": GOLDEN_STANDARD_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(
-            messages, response_format="json_object", temperature=0.1
-        )
+        try:
+            raw = await llm_client.chat(
+                messages, response_format="json_object", temperature=0.1
+            )
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
+            return {"golden_standard": {"items": [], "summary": "AI 分析暂时不可用，请人工审核"}}
         try:
             return json.loads(raw)
         except json.JSONDecodeError:
@@ -265,9 +270,17 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_PROTOCOL_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(
-            messages, response_format="json_object", temperature=0.1, max_tokens=32768
-        )
+        try:
+            raw = await llm_client.chat(
+                messages, response_format="json_object", temperature=0.1, max_tokens=32768
+            )
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
+            return AuditResult(
+                conclusion="fail",
+                risk_level="high",
+                summary="AI 分析暂时不可用，请人工审核",
+            )
         return self._parse_audit_result(raw)
 
     async def _audit_report(
@@ -288,9 +301,17 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_REPORT_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(
-            messages, response_format="json_object", temperature=0.1, max_tokens=32768
-        )
+        try:
+            raw = await llm_client.chat(
+                messages, response_format="json_object", temperature=0.1, max_tokens=32768
+            )
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
+            return AuditResult(
+                conclusion="fail",
+                risk_level="high",
+                summary="AI 分析暂时不可用，请人工审核",
+            )
         return self._parse_audit_result(raw)
 
     async def _audit_cross(
@@ -325,9 +346,17 @@ class ValidationAuditService:
             {"role": "system", "content": AUDIT_CROSS_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        raw = await llm_client.chat(
-            messages, response_format="json_object", temperature=0.1, max_tokens=32768
-        )
+        try:
+            raw = await llm_client.chat(
+                messages, response_format="json_object", temperature=0.1, max_tokens=32768
+            )
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
+            return AuditResult(
+                conclusion="fail",
+                risk_level="high",
+                summary="AI 分析暂时不可用，请人工审核",
+            )
         return self._parse_audit_result(raw)
 
     def _parse_audit_result(self, raw: str) -> AuditResult:
@@ -511,7 +540,11 @@ class ValidationAuditService:
             {"role": "system", "content": REPORT_GENERATION_SYSTEM},
             {"role": "user", "content": user_prompt},
         ]
-        markdown = await llm_client.chat(messages, temperature=0.2, max_tokens=32768)
+        try:
+            markdown = await llm_client.chat(messages, temperature=0.2, max_tokens=32768)
+        except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+            logger.exception("LLM call failed")
+            markdown = "# AI 分析暂时不可用，请人工审核" 
 
         # 保存报告文件
         report_dir = _task_storage_path(task.id, "reports")

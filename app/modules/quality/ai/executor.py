@@ -13,9 +13,10 @@ import asyncio
 import json
 import logging
 
-import openai
+from app.core.llm import llm_client
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.llm import llm_client
 from app.modules.hr.public_api import (
     count_employees,
     get_distinct_employee_values,
@@ -25,12 +26,6 @@ from app.modules.hr.public_api import (
 from app.modules.quality.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
-
-
-def _get_model() -> str:
-    from app.core.config import get_settings
-
-    return get_settings().AI_MODEL or "kimi-k2.5"
 
 
 _DYNAMIC_SYSTEM_PROMPT = """你是工厂人事系统的「动态查询生成助手」。
@@ -183,7 +178,6 @@ async def _execute_parallel_queries(
 
 
 async def _generate_dynamic_queries(
-    client: openai.AsyncOpenAI,
     user_question: str,
     original_plan: QueryPlan,
     step: PlanStep,
@@ -226,15 +220,14 @@ async def _generate_dynamic_queries(
 
     for attempt in range(3):
         try:
-            response = await client.chat.completions.create(
-                model=_get_model(),
+            raw = await llm_client.chat(
                 messages=[
                     {"role": "system", "content": _DYNAMIC_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=1.0,
                 max_tokens=1024,
-                response_format={"type": "json_object"},
+                response_format="json_object",
             )
         except Exception as exc:
             logger.warning(
@@ -246,7 +239,6 @@ async def _generate_dynamic_queries(
                 continue
             return []
 
-        raw = response.choices[0].message.content
         if not raw:
             logger.warning("Dynamic query generation empty (attempt %d)", attempt + 1)
             if attempt < 2:
@@ -295,7 +287,6 @@ async def execute_plan(
     session: AsyncSession,
     plan: QueryPlan,
     user_question: str,
-    client: openai.AsyncOpenAI,
 ) -> list[StepResult]:
     """Execute a QueryPlan step by step.
 
@@ -312,7 +303,6 @@ async def execute_plan(
             queries = step.parallel_queries or []
         else:
             queries = await _generate_dynamic_queries(
-                client,
                 user_question,
                 plan,
                 step,

@@ -1,5 +1,6 @@
 """Research business workflows."""
 
+import logging
 import uuid
 from datetime import UTC, datetime
 from uuid import UUID
@@ -8,6 +9,8 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
+
+logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo
 from app.modules.research.models import (
     RdExperimentLog,
@@ -1131,6 +1134,7 @@ async def generate_report_with_ai(
 ) -> dict:
     """使用 AI 生成报告"""
     from app.core.llm import llm_client
+    from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
     from app.modules.research.models import (
         RdProject,
         RdResearchFinding,
@@ -1287,5 +1291,13 @@ async def generate_report_with_ai(
             "structure": None,
             "data_sources": data_sources,
         }
+    except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+        logger.exception("LLM call failed")
+        return {
+            "content": "AI 分析暂时不可用，请人工审核",
+            "structure": None,
+            "data_sources": data_sources,
+        }
     except Exception as e:
+        logger.exception("LLM call failed")
         raise HTTPException(status_code=500, detail=f"AI 生成失败: {str(e)}")

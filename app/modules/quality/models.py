@@ -9,8 +9,9 @@ from app.modules.quality.ai.config_model import (
 from app.modules.quality.ai.models import (
     QmsAiLog,
 )
-from app.modules.quality.qms.deviation_automation_api import (
+from app.modules.quality.qms.deviation_automation_models import (
     DevTask,
+    ReportTemplate,
     SOPRule,
 )
 from app.modules.quality.qms.inspection_table_models import (

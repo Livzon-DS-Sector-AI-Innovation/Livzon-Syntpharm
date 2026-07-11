@@ -3010,11 +3010,7 @@ async def get_system_settings(
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = (
-            db_settings.get(key)
-            or os.environ.get(key, "")
-            or getattr(_settings, key, "")
-        )
+        val = db_settings.get(key) or getattr(_settings, key, "")
         result[key] = val
 
     return success_response(data=result)
