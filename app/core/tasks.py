@@ -17,7 +17,7 @@ from uuid import uuid4
 logger = logging.getLogger(__name__)
 
 
-async def spawn_task(
+def spawn_task(
     coro: Awaitable[None],
     name: str | None = None,
 ) -> asyncio.Task[None]:

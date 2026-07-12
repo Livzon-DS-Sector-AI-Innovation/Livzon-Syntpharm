@@ -77,7 +77,7 @@ async def _start_platform_ws() -> Any:
     from app.platform.integrations.feishu.ws_client import start_ws_client
 
     set_main_loop(asyncio.get_running_loop())
-    await start_ws_client()  # type: ignore[func-returns-value,misc]
+    await start_ws_client()
 
 
 def _stop_platform_ws() -> Any:
