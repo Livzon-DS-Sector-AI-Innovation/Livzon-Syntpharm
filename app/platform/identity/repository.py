@@ -278,7 +278,7 @@ class DepartmentRepository:
 
 
 class LoginLogRepository:
-    async def _func_l283(  # type: ignore[no-untyped-def]
+    async def create(  # type: ignore[no-untyped-def]
         self,
         session: AsyncSession,
         *,

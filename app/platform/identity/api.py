@@ -70,7 +70,7 @@ async def auth_callback(
 
     # Validate state for CSRF protection
     if state and not validate_state_token(state):
-        await log_repo.create(  # type: ignore[attr-defined]
+        await log_repo.create(
             db,
             status="failed",
             login_type="feishu_sso",
@@ -91,7 +91,7 @@ async def auth_callback(
         # Rollback any pending transaction before logging the failure
         await db.rollback()
         try:
-            await log_repo.create(  # type: ignore[attr-defined]
+            await log_repo.create(
                 db,
                 status="failed",
                 login_type="feishu_sso",
@@ -108,7 +108,7 @@ async def auth_callback(
         )
 
     # Record successful login
-    await log_repo.create(  # type: ignore[attr-defined]
+    await log_repo.create(
         db,
         user_id=user.id,
         user_name=user.name,
