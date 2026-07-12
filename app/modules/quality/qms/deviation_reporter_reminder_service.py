@@ -185,7 +185,7 @@ class DeviationReporterReminderService:
         logger.info(f"已发送督促提醒给 {reporter_open_id}，共 {count} 条待处理任务")
 
 
-def send_completion_notification(  # type: ignore[no-untyped-def]
+async def send_completion_notification(  # type: ignore[no-untyped-def]
     session: AsyncSession, reporter_open_id: str, deviation_no: str, theme: str
 ):
     """发送任务完成通知（供偏差完成时调用）"""

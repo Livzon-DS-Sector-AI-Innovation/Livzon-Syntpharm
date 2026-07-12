@@ -14,7 +14,7 @@ _ws_threads: dict[str, threading.Thread] = {}
 _stop_flags: dict[str, threading.Event] = {}
 
 
-def start_ws_client(  # type: ignore[no-untyped-def]
+async def start_ws_client(  # type: ignore[no-untyped-def]
     app_id: str | None = None,
     app_secret: str | None = None,
     event_handler=None,
