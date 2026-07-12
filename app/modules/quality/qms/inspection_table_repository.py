@@ -1,5 +1,6 @@
 """原料检验数据表 Repository"""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -18,7 +19,7 @@ class InspectionTableRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> InspectionTable:
+    async def create(self, data: dict[str, Any]) -> InspectionTable:
         """创建数据表"""
         table = InspectionTable(**data)
         self.session.add(table)
@@ -29,13 +30,11 @@ class InspectionTableRepository:
     async def get_by_id(self, table_id: UUID) -> InspectionTable | None:
         """获取数据表详情"""
         result = await self.session.execute(
-            select(InspectionTable)
-            .options(selectinload(InspectionTable.rows))
-            .where(InspectionTable.id == table_id)
+            select(InspectionTable).options(selectinload(InspectionTable.rows)).where(InspectionTable.id == table_id)
         )
         return result.scalar_one_or_none()
 
-    async def update(self, table_id: UUID, data: dict) -> InspectionTable | None:
+    async def update(self, table_id: UUID, data: dict[str, Any]) -> InspectionTable | None:
         """更新数据表"""
         table = await self.get_by_id(table_id)
         if not table:
@@ -89,7 +88,7 @@ class InspectionTableRepository:
         result = await self.session.execute(query)
         tables = list(result.scalars().all())
 
-        return tables, total
+        return tables, total  # type: ignore[return-value]
 
 
 class InspectionTableRowRepository:
@@ -98,13 +97,11 @@ class InspectionTableRowRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, table_id: UUID, data: dict) -> InspectionTableRow:
+    async def create(self, table_id: UUID, data: dict[str, Any]) -> InspectionTableRow:
         """创建数据行"""
         # 获取最大排序号
         result = await self.session.execute(
-            select(func.max(InspectionTableRow.sort_order)).where(
-                InspectionTableRow.table_id == table_id
-            )
+            select(func.max(InspectionTableRow.sort_order)).where(InspectionTableRow.table_id == table_id)
         )
         max_order = result.scalar() or 0
 
@@ -114,23 +111,17 @@ class InspectionTableRowRepository:
         await self.session.refresh(row)
         return row
 
-    async def batch_create(
-        self, table_id: UUID, rows: list[dict]
-    ) -> list[InspectionTableRow]:
+    async def batch_create(self, table_id: UUID, rows: list[dict[str, Any]]) -> list[InspectionTableRow]:
         """批量创建数据行"""
         # 获取最大排序号
         result = await self.session.execute(
-            select(func.max(InspectionTableRow.sort_order)).where(
-                InspectionTableRow.table_id == table_id
-            )
+            select(func.max(InspectionTableRow.sort_order)).where(InspectionTableRow.table_id == table_id)
         )
         max_order = result.scalar() or 0
 
         created_rows = []
         for i, row_data in enumerate(rows):
-            row = InspectionTableRow(
-                table_id=table_id, sort_order=max_order + i + 1, row_data=row_data
-            )
+            row = InspectionTableRow(table_id=table_id, sort_order=max_order + i + 1, row_data=row_data)
             self.session.add(row)
             created_rows.append(row)
 
@@ -139,11 +130,9 @@ class InspectionTableRowRepository:
             await self.session.refresh(row)
         return created_rows
 
-    async def update(self, row_id: int, data: dict) -> InspectionTableRow | None:
+    async def update(self, row_id: int, data: dict[str, Any]) -> InspectionTableRow | None:
         """更新数据行"""
-        result = await self.session.execute(
-            select(InspectionTableRow).where(InspectionTableRow.id == row_id)
-        )
+        result = await self.session.execute(select(InspectionTableRow).where(InspectionTableRow.id == row_id))
         row = result.scalar_one_or_none()
         if not row:
             return None
@@ -158,9 +147,7 @@ class InspectionTableRowRepository:
 
     async def delete(self, row_id: int) -> bool:
         """删除数据行"""
-        result = await self.session.execute(
-            select(InspectionTableRow).where(InspectionTableRow.id == row_id)
-        )
+        result = await self.session.execute(select(InspectionTableRow).where(InspectionTableRow.id == row_id))
         row = result.scalar_one_or_none()
         if not row:
             return False
@@ -179,16 +166,12 @@ class InspectionTableRowRepository:
 
     async def get_by_id(self, row_id: int) -> InspectionTableRow | None:
         """根据ID获取数据行"""
-        result = await self.session.execute(
-            select(InspectionTableRow).where(InspectionTableRow.id == row_id)
-        )
+        result = await self.session.execute(select(InspectionTableRow).where(InspectionTableRow.id == row_id))
         return result.scalar_one_or_none()
 
     async def delete_by_table_id(self, table_id: UUID) -> bool:
         """删除表的所有数据行"""
         from sqlalchemy import delete
 
-        await self.session.execute(
-            delete(InspectionTableRow).where(InspectionTableRow.table_id == table_id)
-        )
+        await self.session.execute(delete(InspectionTableRow).where(InspectionTableRow.table_id == table_id))
         return True

@@ -1,6 +1,7 @@
 """原料报告单 Repository"""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -21,7 +22,7 @@ class MaterialReportRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> MaterialReport:
+    async def create(self, data: dict[str, Any]) -> MaterialReport:
         """创建报告单"""
         report = MaterialReport(**data)
         self.session.add(report)
@@ -43,12 +44,10 @@ class MaterialReportRepository:
 
     async def get_by_no(self, report_no: str) -> MaterialReport | None:
         """通过编号获取报告单"""
-        result = await self.session.execute(
-            select(MaterialReport).where(MaterialReport.report_no == report_no)
-        )
+        result = await self.session.execute(select(MaterialReport).where(MaterialReport.report_no == report_no))
         return result.scalar_one_or_none()
 
-    async def update(self, report_id: UUID, data: dict) -> MaterialReport | None:
+    async def update(self, report_id: UUID, data: dict[str, Any]) -> MaterialReport | None:
         """更新报告单"""
         report = await self.get_by_id(report_id)
         if not report:
@@ -118,14 +117,12 @@ class MaterialReportRepository:
         result = await self.session.execute(query)
         reports = list(result.scalars().all())
 
-        return reports, total
+        return reports, total  # type: ignore[return-value]
 
-    async def get_statistics(self) -> dict:
+    async def get_statistics(self) -> dict[str, Any]:
         """获取统计数据"""
         # 总数
-        total_result = await self.session.execute(
-            select(func.count()).select_from(MaterialReport)
-        )
+        total_result = await self.session.execute(select(func.count()).select_from(MaterialReport))
         total = total_result.scalar()
 
         # 按状态统计
@@ -174,7 +171,7 @@ class MaterialReportItemRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, report_id: UUID, data: dict) -> MaterialReportItem:
+    async def create(self, report_id: UUID, data: dict[str, Any]) -> MaterialReportItem:
         """创建明细"""
         item = MaterialReportItem(report_id=report_id, **data)
         self.session.add(item)
@@ -182,19 +179,13 @@ class MaterialReportItemRepository:
         await self.session.refresh(item)
         return item
 
-    async def batch_create(
-        self, report_id: UUID, items: list[dict]
-    ) -> list[MaterialReportItem]:
+    async def batch_create(self, report_id: UUID, items: list[dict[str, Any]]) -> list[MaterialReportItem]:
         """批量创建明细"""
         # 先删除现有明细
-        await self.session.execute(
-            select(MaterialReportItem).where(MaterialReportItem.report_id == report_id)
-        )
+        await self.session.execute(select(MaterialReportItem).where(MaterialReportItem.report_id == report_id))
         from sqlalchemy import delete
 
-        await self.session.execute(
-            delete(MaterialReportItem).where(MaterialReportItem.report_id == report_id)
-        )
+        await self.session.execute(delete(MaterialReportItem).where(MaterialReportItem.report_id == report_id))
 
         # 创建新明细
         created_items = []
@@ -221,9 +212,7 @@ class MaterialReportItemRepository:
         """删除报告单的所有明细"""
         from sqlalchemy import delete
 
-        await self.session.execute(
-            delete(MaterialReportItem).where(MaterialReportItem.report_id == report_id)
-        )
+        await self.session.execute(delete(MaterialReportItem).where(MaterialReportItem.report_id == report_id))
         return True
 
 
@@ -233,7 +222,7 @@ class ReportTemplateRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> ReportTemplate:
+    async def create(self, data: dict[str, Any]) -> ReportTemplate:
         """创建模板"""
         template = ReportTemplate(**data)
         self.session.add(template)
@@ -243,12 +232,10 @@ class ReportTemplateRepository:
 
     async def get_by_id(self, template_id: UUID) -> ReportTemplate | None:
         """获取模板详情"""
-        result = await self.session.execute(
-            select(ReportTemplate).where(ReportTemplate.id == template_id)
-        )
+        result = await self.session.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
         return result.scalar_one_or_none()
 
-    async def update(self, template_id: UUID, data: dict) -> ReportTemplate | None:
+    async def update(self, template_id: UUID, data: dict[str, Any]) -> ReportTemplate | None:
         """更新模板"""
         template = await self.get_by_id(template_id)
         if not template:
@@ -278,7 +265,7 @@ class ReportTemplateRepository:
         page_size: int = 20,
     ) -> tuple[list[ReportTemplate], int]:
         """获取启用的模板列表"""
-        query = select(ReportTemplate).where(ReportTemplate.is_active == True)
+        query = select(ReportTemplate).where(ReportTemplate.is_active)
 
         # 计数
         count_query = select(func.count()).select_from(query.subquery())
@@ -292,7 +279,7 @@ class ReportTemplateRepository:
         result = await self.session.execute(query)
         templates = list(result.scalars().all())
 
-        return templates, total
+        return templates, total  # type: ignore[return-value]
 
 
 class ReportImageRepository:
@@ -301,7 +288,7 @@ class ReportImageRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> ReportImage:
+    async def create(self, data: dict[str, Any]) -> ReportImage:
         """创建图片记录"""
         image = ReportImage(**data)
         self.session.add(image)
@@ -311,21 +298,17 @@ class ReportImageRepository:
 
     async def get_by_id(self, image_id: int) -> ReportImage | None:
         """获取图片记录"""
-        result = await self.session.execute(
-            select(ReportImage).where(ReportImage.id == image_id)
-        )
+        result = await self.session.execute(select(ReportImage).where(ReportImage.id == image_id))
         return result.scalar_one_or_none()
 
     async def get_by_report_id(self, report_id: UUID) -> list[ReportImage]:
         """获取报告单的所有图片记录"""
         result = await self.session.execute(
-            select(ReportImage)
-            .where(ReportImage.report_id == report_id)
-            .order_by(ReportImage.created_at.desc())
+            select(ReportImage).where(ReportImage.report_id == report_id).order_by(ReportImage.created_at.desc())
         )
         return list(result.scalars().all())
 
-    async def update(self, image_id: int, data: dict) -> ReportImage | None:
+    async def update(self, image_id: int, data: dict[str, Any]) -> ReportImage | None:
         """更新图片记录"""
         image = await self.get_by_id(image_id)
         if not image:
@@ -352,9 +335,7 @@ class ReportImageRepository:
         """删除报告单的所有图片记录"""
         from sqlalchemy import delete
 
-        await self.session.execute(
-            delete(ReportImage).where(ReportImage.report_id == report_id)
-        )
+        await self.session.execute(delete(ReportImage).where(ReportImage.report_id == report_id))
         return True
 
     async def list_all(
@@ -381,67 +362,4 @@ class ReportImageRepository:
         result = await self.session.execute(query)
         templates = list(result.scalars().all())
 
-        return templates, total
-
-
-class ReportImageRepository:
-    """报告单图片 Repository"""
-
-    def __init__(self, session: AsyncSession):
-        self.session = session
-
-    async def create(self, data: dict) -> ReportImage:
-        """创建图片记录"""
-        image = ReportImage(**data)
-        self.session.add(image)
-        await self.session.flush()
-        await self.session.refresh(image)
-        return image
-
-    async def get_by_id(self, image_id: int) -> ReportImage | None:
-        """获取图片记录"""
-        result = await self.session.execute(
-            select(ReportImage).where(ReportImage.id == image_id)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_report_id(self, report_id: UUID) -> list[ReportImage]:
-        """获取报告单的所有图片记录"""
-        result = await self.session.execute(
-            select(ReportImage)
-            .where(ReportImage.report_id == report_id)
-            .order_by(ReportImage.created_at.desc())
-        )
-        return list(result.scalars().all())
-
-    async def update(self, image_id: int, data: dict) -> ReportImage | None:
-        """更新图片记录"""
-        image = await self.get_by_id(image_id)
-        if not image:
-            return None
-
-        for key, value in data.items():
-            if hasattr(image, key):
-                setattr(image, key, value)
-
-        await self.session.flush()
-        await self.session.refresh(image)
-        return image
-
-    async def delete(self, image_id: int) -> bool:
-        """删除图片记录"""
-        image = await self.get_by_id(image_id)
-        if not image:
-            return False
-
-        await self.session.delete(image)
-        return True
-
-    async def delete_by_report_id(self, report_id: UUID) -> bool:
-        """删除报告单的所有图片记录"""
-        from sqlalchemy import delete
-
-        await self.session.execute(
-            delete(ReportImage).where(ReportImage.report_id == report_id)
-        )
-        return True
+        return templates, total  # type: ignore[return-value]

@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 CDE 国内药品技术指导原则页面监听脚本
@@ -116,9 +117,7 @@ def main():
         try:
             body = response.text()
             entry["response_length"] = len(body)
-            if body.strip().startswith("{") or "json" in response.headers.get(
-                "content-type", ""
-            ):
+            if body.strip().startswith("{") or "json" in response.headers.get("content-type", ""):
                 try:
                     jd = json.loads(body)
                     entry["is_json"] = True
@@ -216,9 +215,7 @@ def main():
         {
             "name": c["name"],
             "domain": c["domain"],
-            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat()
-            if c.get("expires", 0) > 0
-            else "Session",
+            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat() if c.get("expires", 0) > 0 else "Session",
         }
         for c in cookies
     ]
@@ -259,9 +256,7 @@ def _print_summary(output):
             print(f"\n  [{i}] {cap['method']} {cap['url'][:150]}")
             print(f"      Status: {cap['status']}")
             if cap.get("query_params"):
-                print(
-                    f"      参数: {json.dumps(cap['query_params'], ensure_ascii=False)[:200]}"
-                )
+                print(f"      参数: {json.dumps(cap['query_params'], ensure_ascii=False)[:200]}")
             if cap.get("is_json") and cap.get("response_json"):
                 jd = cap["response_json"]
                 print(f"      响应 keys: {list(jd.keys())}")

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Root test configuration — auth fixtures and shared DB session.
 
 Provides three client fixtures:

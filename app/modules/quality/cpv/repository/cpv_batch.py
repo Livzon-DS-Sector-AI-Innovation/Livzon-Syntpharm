@@ -125,4 +125,4 @@ async def delete_batches_by_product(
         )
         .values(is_deleted=True)
     )
-    return result.rowcount
+    return result.rowcount  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]

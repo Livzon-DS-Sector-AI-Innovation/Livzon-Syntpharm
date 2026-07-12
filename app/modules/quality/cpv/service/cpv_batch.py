@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,9 +22,7 @@ async def get_batches(
     page_size: int = 20,
 ) -> tuple[list[CpvBatch], int]:
     """获取批次列表"""
-    return await repo.get_batches(
-        db, product_id, data_type, batch_no, start_date, end_date, page, page_size
-    )
+    return await repo.get_batches(db, product_id, data_type, batch_no, start_date, end_date, page, page_size)
 
 
 async def get_batches_wide(
@@ -37,9 +36,7 @@ async def get_batches_wide(
     page_size: int = 20,
 ) -> tuple[list[CpvBatchWideResponse], int]:
     """获取批次宽表数据（参数值展开）"""
-    batches, total = await get_batches(
-        db, product_id, data_type, batch_no, start_date, end_date, page, page_size
-    )
+    batches, total = await get_batches(db, product_id, data_type, batch_no, start_date, end_date, page, page_size)
 
     if not batches:
         return [], total
@@ -53,11 +50,11 @@ async def get_batches_wide(
     values = await repo.get_values_by_batch_ids(db, batch_ids)
 
     # 按批次组织数据
-    values_by_batch: dict[uuid.UUID, list] = {}
+    values_by_batch: dict[uuid.UUID, list[Any]] = {}
     for v in values:
         if v.batch_id not in values_by_batch:
-            values_by_batch[v.batch_id] = []
-        values_by_batch[v.batch_id].append(v)
+            values_by_batch[v.batch_id] = []  # type: ignore[index]
+        values_by_batch[v.batch_id].append(v)  # type: ignore[index]
 
     # 构建宽表响应
     result = []

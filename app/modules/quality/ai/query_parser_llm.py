@@ -14,13 +14,13 @@ import logging
 from typing import Any
 
 from app.core.llm import llm_client
-
 from app.modules.quality.ai.query_parser import EmployeeQueryCriteria
 
 logger = logging.getLogger(__name__)
 
 
-_INTENT_SYSTEM_PROMPT = """你是工厂人事管理系统的「意图识别助手」。你的唯一任务是从用户的自然语言消息中提取数据库查询条件。
+_INTENT_SYSTEM_PROMPT = """你是工厂人事管理系统的「意图识别助手」。\
+你的唯一任务是从用户的自然语言消息中提取数据库查询条件。
 
 ## 可用字段
 你可以从用户消息中提取以下字段（只提取消息中明确提到的）：

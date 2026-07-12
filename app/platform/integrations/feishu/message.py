@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 from app.core.config import get_settings
 
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-async def _get_feishu_client():
+async def _get_feishu_client() -> Any:
     import lark_oapi as lark
 
     return (
@@ -22,7 +23,7 @@ async def _get_feishu_client():
     )
 
 
-async def _get_tenant_token(client) -> str:
+async def _get_tenant_token(client) -> Any:  # type: ignore[no-untyped-def]
     import json as _json
 
     from lark_oapi.api.auth.v3 import (
@@ -55,7 +56,7 @@ async def send_group_card(
     chat_id: str,
     title: str,
     content: str,
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
 ) -> bool:
     """发送卡片消息到群聊"""
     try:
@@ -78,7 +79,7 @@ async def send_group_card(
             ],
         }
         if elements:
-            card["elements"].extend(elements)
+            card["elements"].extend(elements)  # type: ignore[attr-defined]
 
         card_json = json.dumps(card, ensure_ascii=False)
 
@@ -156,9 +157,7 @@ async def send_claim_notification(work_order_no: str, claimer_name: str) -> bool
     )
 
 
-async def send_timeout_notification(
-    work_order_no: str, equipment_name: str, leader_name: str
-) -> bool:
+async def send_timeout_notification(work_order_no: str, equipment_name: str, leader_name: str) -> bool:
     """超时未接单通知主管"""
     chat_id = settings.feishu.platform.equipment_chat_id
     if not chat_id:
@@ -167,8 +166,5 @@ async def send_timeout_notification(
     return await send_group_card(
         chat_id,
         title="⏰ 工单超时未接单",
-        content=(
-            f"**{work_order_no}**（{equipment_name}）超时无人接单\n"
-            f"请主管 **{leader_name}** 及时派发"
-        ),
+        content=(f"**{work_order_no}**（{equipment_name}）超时无人接单\n请主管 **{leader_name}** 及时派发"),
     )

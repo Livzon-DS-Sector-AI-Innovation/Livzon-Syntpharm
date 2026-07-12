@@ -19,23 +19,17 @@ class CalibrationPlanCreate(BaseModel):
     calibration_type: CalibrationType = Field(..., description="校准类型")
     cycle_months: int = Field(..., ge=1, description="校准周期（月）")
     last_calibration_date: date | None = Field(default=None, description="上次校准日期")
-    responsible_person_id: uuid.UUID | None = Field(
-        default=None, description="负责人ID"
-    )
+    responsible_person_id: uuid.UUID | None = Field(default=None, description="负责人ID")
     remark: str | None = Field(default=None, description="备注")
 
 
 class CalibrationPlanUpdate(BaseModel):
     """更新校准计划请求"""
 
-    calibration_type: CalibrationType | None = Field(
-        default=None, description="校准类型"
-    )
+    calibration_type: CalibrationType | None = Field(default=None, description="校准类型")
     cycle_months: int | None = Field(default=None, ge=1, description="校准周期（月）")
     last_calibration_date: date | None = Field(default=None, description="上次校准日期")
-    responsible_person_id: uuid.UUID | None = Field(
-        default=None, description="负责人ID"
-    )
+    responsible_person_id: uuid.UUID | None = Field(default=None, description="负责人ID")
     status: CalibrationPlanStatus | None = Field(default=None, description="状态")
     remark: str | None = Field(default=None, description="备注")
 
@@ -67,12 +61,8 @@ class CalibrationRecordCreate(BaseModel):
     calibration_date: date = Field(..., description="校准日期")
     calibration_type: CalibrationType = Field(..., description="校准类型")
     result: CalibrationResult = Field(..., description="校准结果")
-    certificate_no: str | None = Field(
-        default=None, max_length=100, description="检定证书编号"
-    )
-    calibrated_by: str | None = Field(
-        default=None, max_length=200, description="校准单位/人员"
-    )
+    certificate_no: str | None = Field(default=None, max_length=100, description="检定证书编号")
+    calibrated_by: str | None = Field(default=None, max_length=200, description="校准单位/人员")
     remark: str | None = Field(default=None, description="备注")
 
 

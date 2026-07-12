@@ -4,6 +4,6 @@ Other modules should import from this file instead of directly accessing
 internal service/repository/models.
 """
 
-from app.modules.administration.models import VehicleRequest
+from app.modules.administration.models import VehicleRequest  # type: ignore[attr-defined]
 
 __all__ = ["VehicleRequest"]

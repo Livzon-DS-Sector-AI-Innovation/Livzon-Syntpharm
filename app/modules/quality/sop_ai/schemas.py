@@ -4,6 +4,7 @@
 """
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -144,9 +145,7 @@ class CheckMainResponse(CheckMainBase):
 class CheckMainDetailResponse(CheckMainResponse):
     """校验主记录详情响应模型（包含问题列表）"""
 
-    problems: list[CheckResultResponse] = Field(
-        default_factory=list, description="问题列表"
-    )
+    problems: list[CheckResultResponse] = Field(default_factory=list, description="问题列表")
 
     class Config:
         from_attributes = True
@@ -219,13 +218,13 @@ class ApiResponse(BaseModel):
 
     code: int = Field(200, description="状态码")
     message: str = Field("success", description="消息")
-    data: dict | None = Field(None, description="数据")
+    data: dict[str, Any] | None = Field(None, description="数据")
 
 
 class PaginatedResponse(BaseModel):
     """分页响应"""
 
-    items: list = Field(default_factory=list, description="数据列表")
+    items: list[Any] = Field(default_factory=list, description="数据列表")
     total: int = Field(0, description="总数")
     page: int = Field(1, description="当前页")
     page_size: int = Field(20, description="每页数量")

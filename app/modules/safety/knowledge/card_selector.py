@@ -75,9 +75,7 @@ class KnowledgeCardSelector:
 
         try:
             card_list_text = self._build_card_list_text(cards)
-            prompt = self._build_selection_prompt(
-                hazard_description, department, card_list_text, max_cards
-            )
+            prompt = self._build_selection_prompt(hazard_description, department, card_list_text, max_cards)
 
             result = await self.ai_service.chat_parsed(
                 messages=[
@@ -116,10 +114,7 @@ class KnowledgeCardSelector:
         lines: list[str] = []
         for i, card in enumerate(cards):
             summary = KnowledgeCardSelector._make_card_summary(card)
-            lines.append(
-                f"[{i}] [{card.priority}] {card.document_title} "
-                f"({card.document_category})\n    {summary}"
-            )
+            lines.append(f"[{i}] [{card.priority}] {card.document_title} ({card.document_category})\n    {summary}")
         return "\n".join(lines)
 
     @staticmethod
@@ -196,9 +191,7 @@ class KnowledgeCardSelector:
         return selected
 
     @staticmethod
-    def _fallback_select(
-        cards: list[KnowledgeCard], max_cards: int
-    ) -> list[KnowledgeCard]:
+    def _fallback_select(cards: list[KnowledgeCard], max_cards: int) -> list[KnowledgeCard]:
         """Fallback：按优先级排序取前 N 张。"""
         priority_order = {"P0": 0, "P1": 1, "P2": 2}
         sorted_cards = sorted(cards, key=lambda c: priority_order.get(c.priority, 2))

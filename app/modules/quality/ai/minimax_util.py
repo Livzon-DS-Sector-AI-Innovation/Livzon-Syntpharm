@@ -5,6 +5,7 @@
 """
 
 import json
+from typing import Any
 
 import httpx
 
@@ -111,7 +112,7 @@ class MinimaxAiUtil:
                 message = choice.get("message", {})
                 content = message.get("content", "")
                 if content:
-                    return content
+                    return content  # type: ignore[no-any-return]
             return ""
 
 
@@ -136,7 +137,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
         """
         super().__init__(api_key, base_url, timeout)
 
-    def _safe_print(self, msg):
+    def _safe_print(self, msg) -> Any:  # type: ignore[no-untyped-def]
         """安全打印，避免GBK编码问题"""
         try:
             print(msg)
@@ -221,7 +222,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
                         content.append(
                             {
                                 "type": "image_url",
-                                "image_url": {
+                                "image_url": {  # type: ignore[dict-item]
                                     "url": f"data:{media_type};base64,{img_base64}"
                                 },
                             }
@@ -230,11 +231,11 @@ class MinimaxVisionUtil(MinimaxAiUtil):
                     # 文件不存在，使用URL
                     self._safe_print(f"File not found: {file_path}")
                     content.append(
-                        {"type": "image_url", "image_url": {"url": image_url}}
+                        {"type": "image_url", "image_url": {"url": image_url}}  # type: ignore[dict-item]
                     )
             else:
                 # 外部URL
-                content.append({"type": "image_url", "image_url": {"url": image_url}})
+                content.append({"type": "image_url", "image_url": {"url": image_url}})  # type: ignore[dict-item]
 
         payload = {
             "model": vision_model,
@@ -250,9 +251,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
                 error_text = response.text
                 self._safe_print(f"MiniMax API Error: {response.status_code}")
                 self._safe_print(f"Response: {error_text[:500]}")
-                self._safe_print(
-                    f"Payload: {json.dumps(payload, ensure_ascii=False, indent=2)[:1000]}"
-                )
+                self._safe_print(f"Payload: {json.dumps(payload, ensure_ascii=False, indent=2)[:1000]}")
 
             response.raise_for_status()
 
@@ -260,7 +259,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
             # 解析 OpenAI 兼容格式返回
             choices = result.get("choices", [])
             if choices and len(choices) > 0:
-                return choices[0].get("message", {}).get("content", "")
+                return choices[0].get("message", {}).get("content", "")  # type: ignore[no-any-return]
             return ""
 
     async def recognize_text(
@@ -316,7 +315,7 @@ class MinimaxVisionUtil(MinimaxAiUtil):
             result = response.json()
             choices = result.get("choices", [])
             if choices and len(choices) > 0:
-                return choices[0].get("message", {}).get("content", "")
+                return choices[0].get("message", {}).get("content", "")  # type: ignore[no-any-return]
             return ""
 
 

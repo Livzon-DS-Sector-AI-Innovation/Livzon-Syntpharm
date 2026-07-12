@@ -55,10 +55,10 @@ def dict_to_response(data: dict[str, Any]) -> ReagentResponse:
 
 
 @router.post("/recognize", response_model=dict, summary="AI识别试剂标签图片")
-async def recognize_reagent_label(
+async def post(
     files: list[UploadFile] = File(..., description="试剂标签图片（支持多张）"),
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """上传试剂标签图片，通过AI识别提取试剂信息"""
     if not files:
         return {
@@ -106,10 +106,10 @@ async def recognize_reagent_label(
 
 
 @router.get("/next-lot-no", response_model=dict, summary="获取下一个入场批号")
-async def get_next_incoming_lot_no(
+async def get(
     date_str: str | None = Query(None, description="日期(YYYY-MM-DD)，默认今天"),
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """获取当天的下一个入场批号
     格式：年月日9序号，例如 260609901 表示2026年6月9日第1个
     """
@@ -141,15 +141,15 @@ async def get_next_incoming_lot_no(
         }
 
 
-@router.get("/list", response_model=dict, summary="获取试剂台账列表")
-async def get_reagent_list(
+@router.get("/list", response_model=dict, summary="获取试剂台账列表")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     keyword: str | None = Query(None, description="关键词搜索"),
     category: str | None = Query(None, description="分类（试剂/标准品）"),
     status: str | None = Query(None, description="状态"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """获取质量检验试剂/标准品台账列表"""
     service = ReagentService(session)
 
@@ -175,13 +175,13 @@ async def get_reagent_list(
     }
 
 
-@router.get("/export", summary="导出试剂台账Excel")
-async def export_reagents_excel(
+@router.get("/export", summary="导出试剂台账Excel")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     keyword: str | None = Query(None, description="关键词搜索"),
     category: str | None = Query(None, description="分类"),
     status: str | None = Query(None, description="状态"),
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """导出试剂/标准品台账为Excel文件"""
     service = ReagentService(session)
 
@@ -201,9 +201,7 @@ async def export_reagents_excel(
 
     # 定义样式
     header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(
-        start_color="4472C4", end_color="4472C4", fill_type="solid"
-    )
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     thin_border = Border(
         left=Side(style="thin"),
@@ -260,33 +258,21 @@ async def export_reagents_excel(
 
         row_data = [
             reagent_dict.get("reagent_name", ""),
-            str(reagent_dict.get("arrival_date", ""))
-            if reagent_dict.get("arrival_date")
-            else "",
-            str(reagent_dict.get("production_date", ""))
-            if reagent_dict.get("production_date")
-            else "",
+            str(reagent_dict.get("arrival_date", "")) if reagent_dict.get("arrival_date") else "",
+            str(reagent_dict.get("production_date", "")) if reagent_dict.get("production_date") else "",
             reagent_dict.get("lot_no", ""),
             reagent_dict.get("incoming_lot_no", ""),
-            str(reagent_dict.get("expiration_date", ""))
-            if reagent_dict.get("expiration_date")
-            else "",
+            str(reagent_dict.get("expiration_date", "")) if reagent_dict.get("expiration_date") else "",
             reagent_dict.get("specification", ""),
-            category_labels.get(
-                reagent_dict.get("category", ""), reagent_dict.get("category", "")
-            ),
+            category_labels.get(reagent_dict.get("category", ""), reagent_dict.get("category", "")),
             reagent_dict.get("reagent_no", ""),
             reagent_dict.get("content", ""),
             reagent_dict.get("manufacturer", ""),
             str(reagent_dict.get("quantity", "")),
             reagent_dict.get("unit", ""),
-            status_labels.get(
-                reagent_dict.get("status", ""), reagent_dict.get("status", "")
-            ),
+            status_labels.get(reagent_dict.get("status", ""), reagent_dict.get("status", "")),
             reagent_dict.get("created_by", ""),
-            str(reagent_dict.get("created_at", ""))
-            if reagent_dict.get("created_at")
-            else "",
+            str(reagent_dict.get("created_at", "")) if reagent_dict.get("created_at") else "",
         ]
 
         for col, value in enumerate(row_data, 1):
@@ -320,17 +306,15 @@ async def export_reagents_excel(
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        },
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"},
     )
 
 
-@router.get("/{reagent_id}", response_model=dict, summary="获取试剂详情")
-async def get_reagent_detail(
+@router.get("/{reagent_id}", response_model=dict, summary="获取试剂详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     reagent_id: str,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """根据ID获取试剂详情"""
     service = ReagentService(session)
     reagent = await service.get_reagent_by_id(reagent_id)
@@ -349,11 +333,11 @@ async def get_reagent_detail(
     }
 
 
-@router.post("", response_model=dict, summary="创建试剂记录")
-async def create_reagent(
+@router.post("", response_model=dict, summary="创建试剂记录")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     request: CreateReagentRequest,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """创建新的试剂记录"""
     service = ReagentService(session)
 
@@ -396,11 +380,11 @@ async def create_reagent(
 
 
 @router.put("/{reagent_id}", response_model=dict, summary="更新试剂记录")
-async def update_reagent(
+async def put(
     reagent_id: str,
     request: UpdateReagentRequest,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """更新试剂记录"""
     service = ReagentService(session)
 
@@ -431,10 +415,10 @@ async def update_reagent(
 
 
 @router.delete("/{reagent_id}", response_model=dict, summary="删除试剂记录")
-async def delete_reagent(
+async def delete(
     reagent_id: str,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """删除试剂记录"""
     service = ReagentService(session)
 

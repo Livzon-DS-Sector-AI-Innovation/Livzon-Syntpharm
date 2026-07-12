@@ -1,5 +1,7 @@
 """AI exam API endpoints."""
 
+from typing import Any
+
 from fastapi import APIRouter, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
@@ -12,14 +14,14 @@ router = APIRouter(tags=["AI 出题"])
 
 
 @router.post("/generate", summary="生成考试题目")
-async def api_generate_exam(
+async def post(
     current_user: CurrentUser,
     file: UploadFile,
     choice_count: int = Form(5),
     true_false_count: int = Form(5),
     multi_choice_count: int = Form(0),
     fill_blank_count: int = Form(0),
-):
+) -> Any:
     """上传培训材料（docx/txt），AI 自动识别内容并按指定题型/题量生成试卷。"""
     if not file.filename:
         raise HTTPException(400, "文件名不能为空")
@@ -45,7 +47,7 @@ async def api_generate_exam(
 
 
 @router.post("/export", summary="导出考试试卷")
-async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser):
+async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser) -> Any:
     """将试卷导出为 Word 文档。"""
     try:
         buffer = export_exam(data.model_dump())

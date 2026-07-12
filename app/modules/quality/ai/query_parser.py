@@ -156,9 +156,7 @@ _POSITION_KEYWORDS = [
 
 # Department: matches "XX部门", "XX车间", "XX科室", "XX组", "XX部", "XX中心"
 # Avoid matching if it's part of a larger entity like "部门经理"
-_DEPARTMENT_RE = re.compile(
-    r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))(?!经理|主管|主任|专员)"
-)
+_DEPARTMENT_RE = re.compile(r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))(?!经理|主管|主任|专员)")
 
 # Team: explicit "XX班组" or bare team names like "一班", "二班", "甲班", "乙班"
 _TEAM_RE = re.compile(r"([一-龥甲乙丙丁戊]{1,3}班)(?:组)?")
@@ -177,12 +175,8 @@ _YEAR_BEFORE_RE = re.compile(r"(\d{4})\s*年?\s*(?:之前|以前|前|小于|低�
 _YEAR_EXACT_RE = re.compile(r"(\d{4})\s*年(?:出生|入职|进厂)?")
 
 # Relative date patterns (supports Arabic numerals and Chinese numerals)
-_RECENT_MONTH_RE = re.compile(
-    r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*个月(?:以来|之内|内)?"
-)
-_RECENT_YEAR_RE = re.compile(
-    r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*年(?:以来|之内|内)?"
-)
+_RECENT_MONTH_RE = re.compile(r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*个月(?:以来|之内|内)?")
+_RECENT_YEAR_RE = re.compile(r"最近\s*(\d+|一|二|三|四|五|六|七|八|九|十)\s*年(?:以来|之内|内)?")
 
 # Query type detection
 _COUNT_RE = re.compile(r"(?:有多少|共多少|人数|几人|多少个|共计|总共|一共|统计|计数)")
@@ -439,10 +433,7 @@ def _extract_date_conditions(text: str) -> dict[str, date]:
         conditions[f"{date_field}_before"] = date(year, 12, 31)
 
     # Exact year: "2020年入职"
-    if (
-        f"{date_field}_after" not in conditions
-        and f"{date_field}_before" not in conditions
-    ):
+    if f"{date_field}_after" not in conditions and f"{date_field}_before" not in conditions:
         m = _YEAR_EXACT_RE.search(text)
         if m:
             year = int(m.group(1))

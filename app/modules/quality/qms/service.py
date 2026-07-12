@@ -43,7 +43,7 @@ class QualityService:
         pharmacopeia: str | None = None,
         version: str | None = None,
         is_effective: bool | None = None,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         """获取检验标准列表"""
         return await self.repo.get_standards(
             skip=skip,
@@ -63,7 +63,7 @@ class QualityService:
 
     async def get_effective_standards(
         self, material_code: str | None = None, material_category: str | None = None
-    ) -> list:
+    ) -> list[Any]:
         """获取已生效的标准列表(用于检验任务选择)"""
         standards, _ = await self.repo.get_standards(
             skip=0,
@@ -112,9 +112,7 @@ class QualityService:
                         "reference_materials": item.reference_materials,
                         "limit_type": item.limit_type.value,
                         "limit_value": item.limit_value,
-                        "item_category": item.item_category.value
-                        if item.item_category
-                        else None,
+                        "item_category": item.item_category.value if item.item_category else None,
                         "is_critical": item.is_critical,
                         "notes": item.notes,
                     }
@@ -124,9 +122,7 @@ class QualityService:
         # 重新获取完整数据
         return await self.repo.get_standard_by_id(standard.id)
 
-    async def update_standard(
-        self, standard_id: uuid.UUID, data: InspectionStandardUpdate
-    ) -> Any | None:
+    async def update_standard(self, standard_id: uuid.UUID, data: InspectionStandardUpdate) -> Any | None:
         """更新检验标准"""
         # 检查标准状态，只有草稿和驳回状态可以编辑
         standard = await self.repo.get_standard_by_id(standard_id)
@@ -154,9 +150,9 @@ class QualityService:
         if data.version is not None:
             update_data["version"] = data.version
         if data.effective_date is not None:
-            update_data["effective_date"] = data.effective_date
+            update_data["effective_date"] = data.effective_date  # type: ignore[assignment]
         if data.obsolete_date is not None:
-            update_data["obsolete_date"] = data.obsolete_date
+            update_data["obsolete_date"] = data.obsolete_date  # type: ignore[assignment]
         if data.sop_no is not None:
             update_data["sop_no"] = data.sop_no
         if data.attachment_urls is not None:
@@ -180,9 +176,7 @@ class QualityService:
                         "reference_materials": item.reference_materials,
                         "limit_type": item.limit_type.value,
                         "limit_value": item.limit_value,
-                        "item_category": item.item_category.value
-                        if item.item_category
-                        else None,
+                        "item_category": item.item_category.value if item.item_category else None,
                         "is_critical": item.is_critical,
                         "notes": item.notes,
                     }
@@ -225,9 +219,7 @@ class QualityService:
 
         return await self.repo.submit_for_approval(standard_id)
 
-    async def approve_standard(
-        self, standard_id: uuid.UUID, approver_id: uuid.UUID, approver_name: str
-    ) -> Any | None:
+    async def approve_standard(self, standard_id: uuid.UUID, approver_id: uuid.UUID, approver_name: str) -> Any | None:
         """审批标准"""
         standard = await self.repo.get_standard_by_id(standard_id)
         if not standard:
@@ -260,14 +252,10 @@ class QualityService:
         # 最终状态，设置生效日期
         standard = await self.repo.approve_standard(standard_id, "effective")
         if standard:
-            await self.repo.update_standard(
-                standard_id, {"effective_date": datetime.now()}
-            )
+            await self.repo.update_standard(standard_id, {"effective_date": datetime.now()})
         return await self.repo.get_standard_by_id(standard_id)
 
-    async def reject_standard(
-        self, standard_id: uuid.UUID, approver_id: uuid.UUID, comments: str
-    ) -> Any | None:
+    async def reject_standard(self, standard_id: uuid.UUID, approver_id: uuid.UUID, comments: str) -> Any | None:
         """驳回标准"""
         standard = await self.repo.get_standard_by_id(standard_id)
         if not standard:
@@ -293,9 +281,7 @@ class QualityService:
 
         return await self.repo.reject_standard(standard_id, comments)
 
-    async def obsolete_standard(
-        self, standard_id: uuid.UUID, data: ObsoleteSubmit
-    ) -> Any | None:
+    async def obsolete_standard(self, standard_id: uuid.UUID, data: ObsoleteSubmit) -> Any | None:
         """作废标准"""
         standard = await self.repo.get_standard_by_id(standard_id)
         if not standard:
@@ -316,9 +302,7 @@ class QualityService:
             return None
 
         # 生成新的标准编号
-        standard_no = await self._generate_standard_no(
-            source.material_code, data.new_version
-        )
+        standard_no = await self._generate_standard_no(source.material_code, data.new_version)
 
         # 复制主表数据
         new_data = {
@@ -369,7 +353,7 @@ class QualityService:
         # 格式: STD-物料编码-版本号
         return f"STD-{material_code}-{version}"
 
-    def _get_current_approval_level(self, standard) -> int | None:
+    def _get_current_approval_level(self, standard) -> Any:  # type: ignore[no-untyped-def]
         """获取当前待审批层级"""
         status_map = {
             "tech_review": 1,

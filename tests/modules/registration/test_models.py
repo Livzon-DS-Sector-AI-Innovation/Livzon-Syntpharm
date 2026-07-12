@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Registration module model tests."""
 
 from __future__ import annotations

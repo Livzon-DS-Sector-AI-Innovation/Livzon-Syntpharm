@@ -11,7 +11,7 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
-class SOPRule(Base):
+class SOPRule(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "sop_rule"
     __table_args__ = {"schema": "quality"}
 
@@ -25,12 +25,10 @@ class SOPRule(Base):
     sop_file_path = Column(String(512))
     status = Column(SmallInteger, nullable=False, default=1)
     create_time = Column(DateTime, nullable=False, default=datetime.now)
-    update_time = Column(
-        DateTime, nullable=False, default=datetime.now, onupdate=datetime.now
-    )
+    update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
 
-class DevTask(Base):
+class DevTask(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "dev_task"
     __table_args__ = {"schema": "quality"}
 
@@ -44,12 +42,10 @@ class DevTask(Base):
     task_status = Column(SmallInteger, nullable=False, default=1)
     ai_result = Column(Text)
     create_time = Column(DateTime, nullable=False, default=datetime.now)
-    update_time = Column(
-        DateTime, nullable=False, default=datetime.now, onupdate=datetime.now
-    )
+    update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
 
 
-class ReportTemplate(Base):
+class ReportTemplate(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "report_template"
     __table_args__ = {"schema": "quality"}
 
@@ -59,6 +55,4 @@ class ReportTemplate(Base):
     file_path = Column(String(512))
     is_active = Column(SmallInteger, nullable=False, default=1)
     create_time = Column(DateTime, nullable=False, default=datetime.now)
-    update_time = Column(
-        DateTime, nullable=False, default=datetime.now, onupdate=datetime.now
-    )
+    update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)

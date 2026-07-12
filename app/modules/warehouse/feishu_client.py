@@ -166,10 +166,6 @@ class WarehouseFeishuClient:
         return True
 
 
-def record_cache_key(
-    *, app_token: str, table_id: str, page_size: int, page_token: str | None
-) -> str:
-    digest = hashlib.sha256(
-        f"{app_token}:{table_id}:{page_size}:{page_token or ''}".encode()
-    ).hexdigest()
+def record_cache_key(*, app_token: str, table_id: str, page_size: int, page_token: str | None) -> str:
+    digest = hashlib.sha256(f"{app_token}:{table_id}:{page_size}:{page_token or ''}".encode()).hexdigest()
     return f"warehouse:feishu:records:{digest}"

@@ -7,6 +7,7 @@ import json
 import logging
 import re
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -79,7 +80,7 @@ class SopAiCheckService:
         self.main_repo = SopAiCheckMainRepository(session)
         self.problem_repo = SopAiCheckProblemRepository(session)
 
-    async def _init_default_config(self):
+    async def _init_default_config(self) -> Any:
         """初始化默认配置"""
         default_configs = {
             "simhash_threshold": "3",
@@ -104,7 +105,7 @@ class SopAiCheckService:
         file_name: str,
         check_type: str = "single",
         operator: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """单文件预审
 
         Args:
@@ -200,7 +201,7 @@ class SopAiCheckService:
         file_paths: list[str],
         check_type: str = "batch",
         operator: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """批量巡检
 
         Args:
@@ -284,10 +285,10 @@ class SopAiCheckService:
                     "file_path": file_path,
                     "status": "completed",
                     "task_id": main_record.id,
-                    "total_problems": len(problems),
-                    "risk_high": risk_counts["high"],
-                    "risk_medium": risk_counts["medium"],
-                    "risk_low": risk_counts["low"],
+                    "total_problems": len(problems),  # type: ignore[dict-item]
+                    "risk_high": risk_counts["high"],  # type: ignore[dict-item]
+                    "risk_medium": risk_counts["medium"],  # type: ignore[dict-item]
+                    "risk_low": risk_counts["low"],  # type: ignore[dict-item]
                 }
             )
 
@@ -308,7 +309,7 @@ class SopAiCheckService:
         main_id: str,
         text: str,
         operator: str | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """检查文件内容
 
         Args:
@@ -324,12 +325,8 @@ class SopAiCheckService:
         # 获取配置
         threshold = int(await self._get_config("simhash_threshold", "3"))
         ai_enabled = await self._get_config("ai_enabled", "true") == "true"
-        conflict_enabled = (
-            await self._get_config("conflict_check_enabled", "true") == "true"
-        )
-        compliance_enabled = (
-            await self._get_config("compliance_check_enabled", "true") == "true"
-        )
+        conflict_enabled = await self._get_config("conflict_check_enabled", "true") == "true"
+        compliance_enabled = await self._get_config("compliance_check_enabled", "true") == "true"
 
         # 1. SimHash 查重（与数据库已有记录比对）
 
@@ -384,7 +381,7 @@ class SopAiCheckService:
         # 生产环境需要存储 SimHash 指纹到数据库
         return []
 
-    async def _ai_conflict_check(self, text: str) -> list[dict]:
+    async def _ai_conflict_check(self, text: str) -> list[dict[str, Any]]:
         """AI 冲突检测
 
         Args:
@@ -419,7 +416,7 @@ class SopAiCheckService:
             logger.error(f"AI 冲突检测失败: {e}")
             return []
 
-    async def _ai_compliance_check(self, text: str) -> list[dict]:
+    async def _ai_compliance_check(self, text: str) -> list[dict[str, Any]]:
         """AI 合规检测
 
         Args:
@@ -450,7 +447,7 @@ class SopAiCheckService:
             logger.error(f"AI 合规检测失败: {e}")
             return []
 
-    def _extract_params(self, text: str) -> dict:
+    def _extract_params(self, text: str) -> dict[str, Any]:
         """提取关键参数
 
         从文本中提取温度、时间、压力等关键参数。
@@ -474,7 +471,7 @@ class SopAiCheckService:
 
         return params
 
-    def _parse_ai_result(self, result: str, problem_type: ProblemType) -> list[dict]:
+    def _parse_ai_result(self, result: str, problem_type: ProblemType) -> list[dict[str, Any]]:
         """解析 AI 返回结果
 
         Args:
@@ -538,7 +535,7 @@ class SopAiCheckService:
     async def get_record_detail(
         self,
         id: str,
-    ) -> dict | None:
+    ) -> dict[str, Any] | None:
         """获取校验记录详情"""
         main_record = await self.main_repo.get_by_id(id)
         if not main_record:
@@ -626,7 +623,7 @@ class SopAiCheckService:
         config_value: str,
         description: str | None = None,
         operator: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """设置配置"""
         config = await self.config_repo.upsert(
             config_key,
@@ -641,7 +638,7 @@ class SopAiCheckService:
             "description": config.description,
         }
 
-    async def list_config(self) -> list[dict]:
+    async def list_config(self) -> list[dict[str, Any]]:
         """获取所有配置"""
         configs = await self.config_repo.get_all()
         return [

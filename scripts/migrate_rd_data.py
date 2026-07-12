@@ -1,3 +1,4 @@
+# ruff: noqa
 """
 研发模块数据迁移脚本
 
@@ -44,9 +45,7 @@ async def migrate_data(dry_run: bool = False):
         # 检查打通路线数据
         try:
             result = await conn.execute(
-                text(
-                    "SELECT COUNT(*) FROM research.route_developments WHERE is_deleted = false"
-                )
+                text("SELECT COUNT(*) FROM research.route_developments WHERE is_deleted = false")
             )
             route_count = result.scalar()
             print(f"   - 打通路线记录: {route_count} 条")
@@ -57,9 +56,7 @@ async def migrate_data(dry_run: bool = False):
         # 检查工艺优化数据
         try:
             result = await conn.execute(
-                text(
-                    "SELECT COUNT(*) FROM research.process_optimizations WHERE is_deleted = false"
-                )
+                text("SELECT COUNT(*) FROM research.process_optimizations WHERE is_deleted = false")
             )
             optimization_count = result.scalar()
             print(f"   - 工艺优化记录: {optimization_count} 条")
@@ -68,9 +65,7 @@ async def migrate_data(dry_run: bool = False):
             optimization_count = 0
 
         # 检查现有项目
-        result = await conn.execute(
-            text("SELECT COUNT(*) FROM research.rd_projects WHERE is_deleted = false")
-        )
+        result = await conn.execute(text("SELECT COUNT(*) FROM research.rd_projects WHERE is_deleted = false"))
         project_count = result.scalar()
         print(f"   - 现有研发项目: {project_count} 条")
 
@@ -98,9 +93,7 @@ async def migrate_data(dry_run: bool = False):
                 route_id, product_name, route_name, created_at = route
 
                 if dry_run:
-                    print(
-                        f"   [DRY RUN] 将为打通路线 '{product_name} - {route_name}' 创建项目"
-                    )
+                    print(f"   [DRY RUN] 将为打通路线 '{product_name} - {route_name}' 创建项目")
                     continue
 
                 # 创建新项目
@@ -115,9 +108,7 @@ async def migrate_data(dry_run: bool = False):
                         "id": project_id,
                         "name": product_name,
                         "api_name": product_name,
-                        "start_date": created_at.date()
-                        if created_at
-                        else datetime.now().date(),
+                        "start_date": created_at.date() if created_at else datetime.now().date(),
                     },
                 )
 
@@ -169,9 +160,7 @@ async def migrate_data(dry_run: bool = False):
 
                 if existing_project_id:
                     if dry_run:
-                        print(
-                            f"   [DRY RUN] 工艺优化 '{product_name}' 已关联项目 {existing_project_id}"
-                        )
+                        print(f"   [DRY RUN] 工艺优化 '{product_name}' 已关联项目 {existing_project_id}")
                     continue
 
                 if dry_run:
@@ -190,9 +179,7 @@ async def migrate_data(dry_run: bool = False):
                         "id": project_id,
                         "name": product_name,
                         "api_name": product_name,
-                        "start_date": created_at.date()
-                        if created_at
-                        else datetime.now().date(),
+                        "start_date": created_at.date() if created_at else datetime.now().date(),
                     },
                 )
 

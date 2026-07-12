@@ -2,14 +2,14 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 # ========== Enums ==========
-class IPQCInspectionStatus(str, Enum):
+class IPQCInspectionStatus(StrEnum):
     """IPQC检验单状态"""
 
     DRAFT = "draft"  # 草稿
@@ -20,7 +20,7 @@ class IPQCInspectionStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class IPQCInspectionConclusion(str, Enum):
+class IPQCInspectionConclusion(StrEnum):
     """IPQC检验结论"""
 
     QUALIFIED = "qualified"  # 合格
@@ -28,7 +28,7 @@ class IPQCInspectionConclusion(str, Enum):
     CONDITIONAL = "conditional"  # 条件合格
 
 
-class IPQCItemResult(str, Enum):
+class IPQCItemResult(StrEnum):
     """IPQC单项判定"""
 
     PASS = "pass"  # 合格
@@ -36,7 +36,7 @@ class IPQCItemResult(str, Enum):
     NA = "na"  # 不适用
 
 
-class IPQCApprovalStatus(str, Enum):
+class IPQCApprovalStatus(StrEnum):
     """IPQC审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -120,9 +120,7 @@ class IPQCInspectionBase(BaseModel):
     standard_version: str | None = Field(None, description="标准版本")
 
     # 检验结论
-    inspection_conclusion: IPQCInspectionConclusion | None = Field(
-        None, description="检验结论"
-    )
+    inspection_conclusion: IPQCInspectionConclusion | None = Field(None, description="检验结论")
     conclusion_reason: str | None = Field(None, description="结论说明")
     remark: str | None = Field(None, description="备注")
     oos_report_no: str | None = Field(None, description="OOS报告编号")
@@ -131,9 +129,7 @@ class IPQCInspectionBase(BaseModel):
 class IPQCInspectionCreate(IPQCInspectionBase):
     """创建IPQC检验单"""
 
-    items: list[IPQCInspectionItemCreate] = Field(
-        default_factory=list, description="检验明细"
-    )
+    items: list[IPQCInspectionItemCreate] = Field(default_factory=list, description="检验明细")
 
 
 class IPQCInspectionUpdate(BaseModel):

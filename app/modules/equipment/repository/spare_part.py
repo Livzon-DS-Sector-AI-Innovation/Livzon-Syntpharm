@@ -63,15 +63,11 @@ async def get_spare_parts(
         query = query.where(SparePart.category == category)
     if keyword:
         pattern = f"%{keyword}%"
-        query = query.where(
-            SparePart.code.ilike(pattern) | SparePart.name.ilike(pattern)
-        )
+        query = query.where(SparePart.code.ilike(pattern) | SparePart.name.ilike(pattern))
     if is_active is not None:
         query = query.where(SparePart.is_active == is_active)
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(SparePart.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(SparePart.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 

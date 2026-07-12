@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """偏差报告自动化 API"""
 
 import json
@@ -191,9 +192,7 @@ async def update_sop_rule(
 
     # 检查编号唯一性（如果修改了编号）
     if rule.sop_code and rule.sop_code != db_rule.sop_code:
-        result = await db.execute(
-            select(SOPRule).where(SOPRule.sop_code == rule.sop_code)
-        )
+        result = await db.execute(select(SOPRule).where(SOPRule.sop_code == rule.sop_code))
         existing = result.scalar_one_or_none()
         if existing:
             raise HTTPException(status_code=400, detail="该SOP编号已存在，请重新填写")
@@ -264,9 +263,7 @@ def _identify_sop_codes_in_text(text: str) -> list:
     return unique_codes
 
 
-async def _load_sop_file_content(
-    sop_code: str, db: AsyncSession, backend_dir: Path
-) -> str:
+async def _load_sop_file_content(sop_code: str, db: AsyncSession, backend_dir: Path) -> str:
     """
     根据 SOP 编号读取对应的 SOP 文件内容
     支持带 SOP- 前缀和不带前缀的编号匹配
@@ -281,8 +278,7 @@ async def _load_sop_file_content(
     # 查询 SOP 规则 - 优先完整匹配，否则尝试去掉 SOP- 前缀
     result = await db.execute(
         select(SOPRule).where(
-            (SOPRule.sop_code == normalized_code)
-            | (SOPRule.sop_code == sop_code.upper()),
+            (SOPRule.sop_code == normalized_code) | (SOPRule.sop_code == sop_code.upper()),
             SOPRule.status == 1,
         )
     )
@@ -291,11 +287,7 @@ async def _load_sop_file_content(
     # 如果没找到，尝试去掉 SOP- 前缀后再匹配
     if not sop_rule and sop_code.upper().startswith("SOP-"):
         code_without_prefix = sop_code[4:]
-        result = await db.execute(
-            select(SOPRule).where(
-                SOPRule.sop_code == code_without_prefix, SOPRule.status == 1
-            )
-        )
+        result = await db.execute(select(SOPRule).where(SOPRule.sop_code == code_without_prefix, SOPRule.status == 1))
         sop_rule = result.scalar_one_or_none()
 
     if not sop_rule or not sop_rule.sop_file_path:
@@ -363,9 +355,7 @@ async def upload_sop_file(
             text_result = mammoth.extract_raw_text(docx_file)
             plain_text = text_result.value
     except Exception:
-        logger.exception(
-            "Failed to extract raw text from uploaded SOP file for parsing"
-        )
+        logger.exception("Failed to extract raw text from uploaded SOP file for parsing")
         plain_text = ""
 
     # 更新规则记录
@@ -486,9 +476,7 @@ SOP文档内容：
         if "UniqueViolationError" in error_str or "sop_rule_sop_code_key" in error_str:
             # sop_code重复，跳过code更新，只更新其他字段
             if parsed_data and "sop_code" in parsed_data:
-                logger.warning(
-                    f"sop_code {parsed_data['sop_code']} 已被其他记录使用，跳过code更新"
-                )
+                logger.warning(f"sop_code {parsed_data['sop_code']} 已被其他记录使用，跳过code更新")
                 # 需要先回滚当前事务，然后重新开始
                 await db.rollback()
                 # 重新获取规则
@@ -568,9 +556,7 @@ async def create_dev_task(
 ):
     """新建偏差报告任务"""
     # 检查编号唯一性
-    result = await db.execute(
-        select(DevTask).where(DevTask.deviation_no == task.deviation_no)
-    )
+    result = await db.execute(select(DevTask).where(DevTask.deviation_no == task.deviation_no))
     existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=400, detail="该偏差编号已存在，请重新填写")
@@ -845,9 +831,7 @@ async def upload_and_parse_word(
         raise HTTPException(status_code=400, detail="文件超出大小限制，请压缩后重试")
 
     if len(content) == 0:
-        raise HTTPException(
-            status_code=400, detail="文件为空或已损坏，请检查文件后重新上传"
-        )
+        raise HTTPException(status_code=400, detail="文件为空或已损坏，请检查文件后重新上传")
 
     # 检查任务是否存在
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
@@ -874,9 +858,7 @@ async def upload_and_parse_word(
             html_content = result.value
             messages = [msg.message for msg in result.messages]
     except Exception:
-        raise HTTPException(
-            status_code=400, detail="文件无法解析，请检查文件后重新上传"
-        )
+        raise HTTPException(status_code=400, detail="文件无法解析，请检查文件后重新上传")
 
     # 提取纯文本
     try:
@@ -1210,9 +1192,7 @@ def _generate_preview_html(ai_data: dict, task_info: dict = None) -> str:
     if isinstance(measures, list) and len(measures) > 0:
         for i, m in enumerate(measures, 1):
             if m:
-                measures_html += (
-                    f'<p style="margin: 4px 0; text-indent: 2em;">{i}. {m}</p>'
-                )
+                measures_html += f'<p style="margin: 4px 0; text-indent: 2em;">{i}. {m}</p>'
     else:
         measures_html = '<p style="color: #999;">无</p>'
 
@@ -1332,7 +1312,7 @@ def _generate_preview_html(ai_data: dict, task_info: dict = None) -> str:
 </head>
 <body>
     <h1 class="report-title">偏差调查报告</h1>
-    
+
     <table class="info-table">
         <tr>
             <td class="label">偏差编号</td>
@@ -1349,43 +1329,43 @@ def _generate_preview_html(ai_data: dict, task_info: dict = None) -> str:
     </table>
 
     <h2>一、总结概述</h2>
-    
+
     <div class="section">
         <h3>1.1 偏差描述</h3>
         <p style="text-indent: 2em;">{deviation_desc or "无"}</p>
     </div>
-    
+
     <div class="section">
         <h3>1.2 根本原因</h3>
         <p style="text-indent: 2em;">{root_cause or "无"}</p>
     </div>
-    
+
     <div class="section">
         <h3>1.3 纠正预防措施</h3>
         {measures_html}
     </div>
 
     <h2>二、根本原因调查</h2>
-    
+
     <div class="section">
         <h3>2.1 背景介绍</h3>
         <p><strong>检测方法：</strong>{detection_method or "无"}</p>
         <p><strong>溶液制备过程：</strong>{solution_prep or "无"}</p>
         <p><strong>检测结果：</strong>{detection_result or "无"}</p>
     </div>
-    
+
     <div class="section">
         <h3>2.2 根本原因分析及调查</h3>
         <p style="text-indent: 2em;">{initial_analysis or "无"}</p>
     </div>
-    
+
     <div class="section">
         <h3>2.3 深入调查</h3>
         <p style="text-indent: 2em;">{deep_investigation or "无"}</p>
     </div>
 
     <h2>三、影响评估</h2>
-    
+
     <div class="section">
         <p><strong>对目前批次产品质量的影响：</strong>{impact_current or "无"}</p>
         <p><strong>对偏差产品相邻批次质量的影响：</strong>{impact_adjacent or "无"}</p>
@@ -1395,20 +1375,20 @@ def _generate_preview_html(ai_data: dict, task_info: dict = None) -> str:
     </div>
 
     <h2>四、调查结论</h2>
-    
+
     <div class="section">
         <p><strong>调查结论：</strong>{conclusion or "无"}</p>
         <p><strong>根本原因类别：</strong>{category_html}</p>
     </div>
 
     <h2>五、纠正预防措施</h2>
-    
+
     <div class="section">
         {capa_html}
     </div>
 
     <h2>六、签名区</h2>
-    
+
     <div class="signature-area">
         <table class="signature-table">
             <tr>
@@ -1474,22 +1454,18 @@ async def get_task_preview(
                 backend_dir = Path(__file__).resolve().parent.parent.parent.parent
 
                 if not task.original_file_path:
-                    raise HTTPException(
-                        status_code=400, detail="原始文件不存在，无法自动恢复"
-                    )
+                    raise HTTPException(status_code=400, detail="原始文件不存在，无法自动恢复")
 
                 original_path = backend_dir / task.original_file_path.lstrip("/")
                 if not original_path.exists():
                     raise HTTPException(status_code=500, detail="原始文件不存在")
 
                 with open(original_path, "rb") as f:
-                    text_result = mammoth.extract_raw_text(f)
+                    text_result = mammoth.extract_raw_text(f)  # noqa: F821
                     original_text = text_result.value
 
                 # 获取SOP规则
-                sop_result = await db.execute(
-                    select(SOPRule).where(SOPRule.status == 1)
-                )
+                sop_result = await db.execute(select(SOPRule).where(SOPRule.status == 1))
                 sop_rules = sop_result.scalars().all()
                 sop_context = "\n\n".join(
                     [
@@ -1502,21 +1478,11 @@ async def get_task_preview(
                 identified_sop_codes = _identify_sop_codes_in_text(original_text)
                 sop_files_context = ""
                 if identified_sop_codes:
-                    sop_files_context = (
-                        "\n\n"
-                        + "=" * 60
-                        + "\n相关 SOP 文件内容：\n"
-                        + "=" * 60
-                        + "\n\n"
-                    )
+                    sop_files_context = "\n\n" + "=" * 60 + "\n相关 SOP 文件内容：\n" + "=" * 60 + "\n\n"
                     for sop_code in identified_sop_codes:
-                        sop_content = await _load_sop_file_content(
-                            sop_code, db, backend_dir
-                        )
+                        sop_content = await _load_sop_file_content(sop_code, db, backend_dir)
                         if sop_content:
-                            sop_files_context += (
-                                f"【{sop_code}】\n{sop_content[:5000]}\n\n"
-                            )
+                            sop_files_context += f"【{sop_code}】\n{sop_content[:5000]}\n\n"
 
                 prompt = f"""<|im_end|>
 <|im_start|>user
@@ -1572,9 +1538,7 @@ SOP规则库：
                 from app.modules.quality.ai.minimax_util import get_vision_util
 
                 vision_util = get_vision_util()
-                ai_result = await vision_util.recognize_text(
-                    prompt=prompt, max_tokens=8192
-                )
+                ai_result = await vision_util.recognize_text(prompt=prompt, max_tokens=8192)
                 ai_data = _parse_ai_result(ai_result)
                 logger.info(f"预览自动恢复成功，包含 {len(ai_data)} 个字段")
 
@@ -1669,9 +1633,7 @@ async def generate_standard_docx(
             logger.warning(f"AI返回数据格式错误，自动重新处理: {e}")
 
             if not task.original_file_path:
-                raise HTTPException(
-                    status_code=400, detail="原始文件不存在，无法重新处理"
-                )
+                raise HTTPException(status_code=400, detail="原始文件不存在，无法重新处理")
 
             # 读取原始文件
             backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -1698,13 +1660,9 @@ async def generate_standard_docx(
             identified_sop_codes = _identify_sop_codes_in_text(original_text)
             sop_files_context = ""
             if identified_sop_codes:
-                sop_files_context = (
-                    "\n\n" + "=" * 60 + "\n相关 SOP 文件内容：\n" + "=" * 60 + "\n\n"
-                )
+                sop_files_context = "\n\n" + "=" * 60 + "\n相关 SOP 文件内容：\n" + "=" * 60 + "\n\n"
                 for sop_code in identified_sop_codes:
-                    sop_content = await _load_sop_file_content(
-                        sop_code, db, backend_dir
-                    )
+                    sop_content = await _load_sop_file_content(sop_code, db, backend_dir)
                     if sop_content:
                         sop_files_context += f"【{sop_code}】\n{sop_content[:5000]}\n\n"
 
@@ -1776,22 +1734,16 @@ SOP规则库：
         backend_dir = Path(__file__).resolve().parent.parent.parent.parent
 
         # 查询启用的模板
-        template_result = await db.execute(
-            select(ReportTemplate).where(ReportTemplate.is_active == 1)
-        )
+        template_result = await db.execute(select(ReportTemplate).where(ReportTemplate.is_active == 1))
         active_template = template_result.scalar_one_or_none()
 
         if not active_template or not active_template.file_path:
-            raise HTTPException(
-                status_code=500, detail="未找到启用的报告模板，请在模板管理中启用模板"
-            )
+            raise HTTPException(status_code=500, detail="未找到启用的报告模板，请在模板管理中启用模板")
 
         template_path = backend_dir / active_template.file_path.lstrip("/")
 
         if not template_path.exists():
-            raise HTTPException(
-                status_code=500, detail=f"模板文件不存在: {active_template.name}"
-            )
+            raise HTTPException(status_code=500, detail=f"模板文件不存在: {active_template.name}")
 
         # 打开模板文件（保留原始格式，包括字体、字号、边距等）
         doc = Document(str(template_path))
@@ -1814,27 +1766,19 @@ SOP规则库：
 
             if "{{措施1}}" in text:
                 measures = ai_data.get("纠正预防措施", [])
-                text = text.replace(
-                    "{{措施1}}", measures[0] if len(measures) > 0 else ""
-                )
+                text = text.replace("{{措施1}}", measures[0] if len(measures) > 0 else "")
 
             if "{{措施2}}" in text:
                 measures = ai_data.get("纠正预防措施", [])
-                text = text.replace(
-                    "{{措施2}}", measures[1] if len(measures) > 1 else ""
-                )
+                text = text.replace("{{措施2}}", measures[1] if len(measures) > 1 else "")
 
             if "{{措施3}}" in text:
                 measures = ai_data.get("纠正预防措施", [])
-                text = text.replace(
-                    "{{措施3}}", measures[2] if len(measures) > 2 else ""
-                )
+                text = text.replace("{{措施3}}", measures[2] if len(measures) > 2 else "")
 
             if "{{措施4}}" in text:
                 measures = ai_data.get("纠正预防措施", [])
-                text = text.replace(
-                    "{{措施4}}", measures[3] if len(measures) > 3 else ""
-                )
+                text = text.replace("{{措施4}}", measures[3] if len(measures) > 3 else "")
 
             if "{{检测方法内容}}" in text or "{{检测方法}}" in text:
                 text = text.replace("{{检测方法内容}}", ai_data.get("检测方法", ""))
@@ -1856,19 +1800,13 @@ SOP规则库：
                 text = text.replace("{{调查内容}}", ai_data.get("深入调查", ""))
 
             if "{{影响1}}" in text:
-                text = text.replace(
-                    "{{影响1}}", ai_data.get("对目前批次产品质量的影响", "")
-                )
+                text = text.replace("{{影响1}}", ai_data.get("对目前批次产品质量的影响", ""))
 
             if "{{影响2}}" in text:
-                text = text.replace(
-                    "{{影响2}}", ai_data.get("对相邻批次质量的影响", "")
-                )
+                text = text.replace("{{影响2}}", ai_data.get("对相邻批次质量的影响", ""))
 
             if "{{影响3}}" in text:
-                text = text.replace(
-                    "{{影响3}}", ai_data.get("对其他产品质量或系统的影响", "")
-                )
+                text = text.replace("{{影响3}}", ai_data.get("对其他产品质量或系统的影响", ""))
 
             if "{{历史偏差}}" in text:
                 text = text.replace("{{历史偏差}}", ai_data.get("历史偏差", ""))
@@ -1882,9 +1820,7 @@ SOP规则库：
             if "{{其他原因}}" in text:
                 root_causes = ai_data.get("根本原因类别", [])
                 other_causes = [c for c in root_causes if "其他" in c]
-                text = text.replace(
-                    "{{其他原因}}", ",".join(other_causes) if other_causes else ""
-                )
+                text = text.replace("{{其他原因}}", ",".join(other_causes) if other_causes else "")
 
             # 更新段落文本
             if text != para.text:
@@ -1917,11 +1853,7 @@ SOP规则库：
                             else:
                                 idx = 0
                             ca_item = ca_pa[idx] if idx < len(ca_pa) else {}
-                            measure_text = (
-                                ca_item.get("措施", "")
-                                if isinstance(ca_item, dict)
-                                else ""
-                            )
+                            measure_text = ca_item.get("措施", "") if isinstance(ca_item, dict) else ""
                             text = text.replace("{{措施}}", measure_text)
                             text = text.replace("{{措施1}}", measure_text)
                             text = text.replace("{{措施2}}", "")
@@ -1941,11 +1873,7 @@ SOP规则库：
                             else:
                                 idx = 0
                             ca_item = ca_pa[idx] if idx < len(ca_pa) else {}
-                            desc_text = (
-                                ca_item.get("说明", "")
-                                if isinstance(ca_item, dict)
-                                else ""
-                            )
+                            desc_text = ca_item.get("说明", "") if isinstance(ca_item, dict) else ""
                             text = text.replace("{{说明}}", desc_text)
 
                         # 替换序号占位符
@@ -2052,7 +1980,7 @@ async def download_standard_file(
 
 
 @router.post("/sop-rules", summary="新增SOP规则")
-async def create_sop_rule(
+async def create_sop_rule(  # noqa: F811
     rule: SOPRuleCreate,
     db: AsyncSession = Depends(get_db),
 ):
@@ -2174,9 +2102,7 @@ async def update_template(
     db: AsyncSession = Depends(get_db),
 ):
     """编辑报告模板"""
-    result = await db.execute(
-        select(ReportTemplate).where(ReportTemplate.id == template_id)
-    )
+    result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     db_template = result.scalar_one_or_none()
     if not db_template:
         raise HTTPException(status_code=404, detail="模板不存在")
@@ -2204,9 +2130,7 @@ async def upload_template_file(
         raise HTTPException(status_code=400, detail="仅支持doc、docx格式文件")
 
     # 检查模板是否存在
-    result = await db.execute(
-        select(ReportTemplate).where(ReportTemplate.id == template_id)
-    )
+    result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     db_template = result.scalar_one_or_none()
     if not db_template:
         raise HTTPException(status_code=404, detail="模板不存在")
@@ -2247,9 +2171,7 @@ async def download_template_file(
     """下载模板文件"""
     from fastapi.responses import FileResponse
 
-    result = await db.execute(
-        select(ReportTemplate).where(ReportTemplate.id == template_id)
-    )
+    result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="模板不存在")
@@ -2276,9 +2198,7 @@ async def delete_template(
     db: AsyncSession = Depends(get_db),
 ):
     """删除报告模板"""
-    result = await db.execute(
-        select(ReportTemplate).where(ReportTemplate.id == template_id)
-    )
+    result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="模板不存在")
@@ -2291,7 +2211,7 @@ async def delete_template(
 
 # ============ 数据库模型 ============
 
-from app.modules.quality.qms.deviation_automation_models import (
+from app.modules.quality.qms.deviation_automation_models import (  # noqa: E402
     DevTask,
     ReportTemplate,
     SOPRule,

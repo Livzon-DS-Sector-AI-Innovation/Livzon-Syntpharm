@@ -114,7 +114,7 @@ async def get_department_tree(context: ToolContext, _: BaseModel) -> dict[str, A
     return {"departments": [node.model_dump(mode="json") for node in nodes]}
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="identity.search_personnel",
     summary="查询 Livzon 助手已同步的飞书人员",
     input_model=PersonnelSearchInput,
@@ -122,9 +122,7 @@ async def get_department_tree(context: ToolContext, _: BaseModel) -> dict[str, A
     path="/identity/personnel",
     output_hint="返回姓名、部门、手机号、邮箱和飞书 ID 等本地同步副本字段。",
 )
-async def search_personnel(
-    context: ToolContext, data: PersonnelSearchInput
-) -> dict[str, Any]:
+async def search_personnel(context: ToolContext, data: PersonnelSearchInput) -> dict[str, Any]:
     users, total = await UserRepository().list_all(
         context.db,
         department_id=data.department_id,
@@ -133,9 +131,7 @@ async def search_personnel(
         limit=data.limit,
     )
     return {
-        "items": [
-            PersonnelItem.model_validate(user).model_dump(mode="json") for user in users
-        ],
+        "items": [PersonnelItem.model_validate(user).model_dump(mode="json") for user in users],
         "total": total,
         "offset": data.offset,
         "limit": data.limit,
@@ -150,14 +146,12 @@ async def search_personnel(
     path="/identity/feishu-config/test",
     output_hint="通过实际 API 探测当前 Livzon 助手飞书应用的通讯录权限和字段可见性。",
 )
-async def check_feishu_permissions(
-    context: ToolContext, _: BaseModel
-) -> dict[str, Any]:
+async def check_feishu_permissions(context: ToolContext, _: BaseModel) -> dict[str, Any]:
     result = await diagnose_livzon_feishu_config(context.db)
     return result.model_dump(mode="json")
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="identity.send_feishu_message",
     summary="按 Livzon 助手规则向已同步飞书用户发送消息",
     input_model=FeishuUnifiedMessageInput,
@@ -171,9 +165,7 @@ async def check_feishu_permissions(
         "标题/正文摘要和是否包含处理按钮。"
     ),
 )
-async def send_feishu_message(
-    context: ToolContext, data: FeishuUnifiedMessageInput
-) -> dict[str, Any]:
+async def send_feishu_message(context: ToolContext, data: FeishuUnifiedMessageInput) -> dict[str, Any]:
     return await send_livzon_feishu_message(
         context.db,
         user_ids=data.user_ids,
@@ -185,16 +177,12 @@ async def send_feishu_message(
         requires_business_action=data.requires_business_action,
         message_form=data.message_form,
         header_template=data.header_template,
-        actions=[
-            item.model_dump(mode="json", exclude_none=True)
-            for item in data.actions or []
-        ]
-        or None,
+        actions=[item.model_dump(mode="json", exclude_none=True) for item in data.actions or []] or None,
         business_ref=data.business_ref,
     )
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="identity.send_feishu_text_message",
     summary="向已同步飞书用户发送文本消息",
     input_model=FeishuTextMessageInput,
@@ -203,13 +191,10 @@ async def send_feishu_message(
     method="POST",
     path="/identity/feishu/messages/text",
     output_hint=(
-        "发送前必须先通过确认项让用户核对收件人和正文；确认后返回每个收件人的"
-        "发送状态、message_id 和错误信息。"
+        "发送前必须先通过确认项让用户核对收件人和正文；确认后返回每个收件人的发送状态、message_id 和错误信息。"
     ),
 )
-async def send_feishu_text_message(
-    context: ToolContext, data: FeishuTextMessageInput
-) -> dict[str, Any]:
+async def send_feishu_text_message(context: ToolContext, data: FeishuTextMessageInput) -> dict[str, Any]:
     return await send_livzon_feishu_text_message(
         context.db,
         user_ids=data.user_ids,
@@ -217,7 +202,7 @@ async def send_feishu_text_message(
     )
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="identity.send_feishu_card_message",
     summary="向已同步飞书用户发送卡片消息",
     input_model=FeishuCardMessageInput,
@@ -230,9 +215,7 @@ async def send_feishu_text_message(
         "确认后返回每个收件人的发送状态、message_id 和错误信息。"
     ),
 )
-async def send_feishu_card_message(
-    context: ToolContext, data: FeishuCardMessageInput
-) -> dict[str, Any]:
+async def send_feishu_card_message(context: ToolContext, data: FeishuCardMessageInput) -> dict[str, Any]:
     return await send_livzon_feishu_card_message(
         context.db,
         user_ids=data.user_ids,

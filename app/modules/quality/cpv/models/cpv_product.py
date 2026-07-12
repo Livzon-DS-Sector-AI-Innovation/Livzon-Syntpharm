@@ -13,15 +13,7 @@ class CpvProduct(BaseModel):
     __table_args__ = {"schema": "quality", "comment": "CPV产品表"}
 
     name: Mapped[str] = mapped_column(String(200), nullable=False, comment="产品名称")
-    specification: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="规格"
-    )
-    process_version: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="工艺版本"
-    )
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="active", comment="状态: active/inactive"
-    )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="备注描述"
-    )
+    specification: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="规格")
+    process_version: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="工艺版本")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active", comment="状态: active/inactive")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注描述")

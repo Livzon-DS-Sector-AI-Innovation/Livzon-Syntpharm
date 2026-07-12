@@ -12,8 +12,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Any
 
-from app.core.llm import llm_client
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.llm import llm_client
@@ -73,11 +73,11 @@ work_start_date_after, work_start_date_before
 class StepResult:
     """Result of executing a single plan step."""
 
-    def __init__(self, step: PlanStep, results: list[dict]) -> None:
+    def __init__(self, step: PlanStep, results: list[dict[str, Any]]) -> None:
         self.step = step
         self.results = results
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "step": self.step.step,
             "mode": self.step.mode,
@@ -89,7 +89,7 @@ class StepResult:
 async def _execute_single_query(
     session: AsyncSession,
     query: SubQuery,
-) -> dict:
+) -> dict[str, Any]:
     """Execute a single SubQuery and return structured result."""
     action = query.action
     filters = query.filters or {}
@@ -160,7 +160,7 @@ async def _execute_single_query(
 async def _execute_parallel_queries(
     session: AsyncSession,
     queries: list[SubQuery],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Execute multiple SubQueries in parallel."""
     if not queries:
         return []
@@ -168,12 +168,12 @@ async def _execute_parallel_queries(
     coros = [_execute_single_query(session, q) for q in queries]
     results = await asyncio.gather(*coros, return_exceptions=True)
 
-    parsed: list[dict] = []
+    parsed: list[dict[str, Any]] = []
     for r in results:
         if isinstance(r, Exception):
             parsed.append({"error": str(r)})
         else:
-            parsed.append(r)
+            parsed.append(r)  # type: ignore[arg-type]
     return parsed
 
 

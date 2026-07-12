@@ -65,9 +65,7 @@ class IQCInspectionService:
             sampling_order_no=data.sampling_order_no,
             material_code=data.material_code,
             material_name=data.material_name,
-            material_category=data.material_category.value
-            if data.material_category
-            else None,
+            material_category=data.material_category.value if data.material_category else None,
             specification=data.specification,
             batch_no=data.batch_no,
             supplier_code=data.supplier_code,
@@ -82,9 +80,7 @@ class IQCInspectionService:
             standard_id=data.standard_id,
             standard_name=data.standard_name,
             standard_version=data.standard_version,
-            inspection_conclusion=data.inspection_conclusion.value
-            if data.inspection_conclusion
-            else None,
+            inspection_conclusion=data.inspection_conclusion.value if data.inspection_conclusion else None,
             remark=data.remark,
             created_by=user_id,
         )
@@ -171,9 +167,7 @@ class IQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def delete_inspection(
-        self, inspection_id: UUID, user_id: UUID | None = None
-    ) -> None:
+    async def delete_inspection(self, inspection_id: UUID, user_id: UUID | None = None) -> None:
         """删除IQC检验单"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -192,9 +186,7 @@ class IQCInspectionService:
 
         await self.session.commit()
 
-    async def submit_for_approval(
-        self, inspection_id: UUID, user_id: UUID | None = None
-    ) -> IQCInspection:
+    async def submit_for_approval(self, inspection_id: UUID, user_id: UUID | None = None) -> IQCInspection:
         """提交IQC检验单审批"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -298,8 +290,6 @@ class IQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def get_approval_records(
-        self, inspection_id: UUID
-    ) -> list[IQCApprovalRecord]:
+    async def get_approval_records(self, inspection_id: UUID) -> list[IQCApprovalRecord]:
         """获取审批记录"""
         return await self.approval_repo.get_by_inspection_id(inspection_id)

@@ -42,9 +42,7 @@ async def create_equipment_category(
 ) -> EquipmentCategory:
     """创建设备分类，自动绑定部门"""
     # 获取用户所属部门 ID（用于绑定和去重校验）
-    department_id = (
-        ctx.visible_department_ids[0] if ctx.visible_department_ids else None
-    )
+    department_id = ctx.visible_department_ids[0] if ctx.visible_department_ids else None
 
     # 检查编码是否重复（部门范围内）
     if await repo.exists_category_by_code(db, data.code, department_id=department_id):
@@ -97,14 +95,10 @@ async def update_equipment_category(
         # 获取该分类的部门 ID，用于同部门范围内去重
         existing = await repo.get_equipment_category_by_id(db, category_id)
         department_id = existing.department_id if existing else None
-        if await repo.exists_category_by_code(
-            db, data.code, exclude_id=category_id, department_id=department_id
-        ):
+        if await repo.exists_category_by_code(db, data.code, exclude_id=category_id, department_id=department_id):
             raise DuplicateException("分类代码", data.code)
 
-    category = await repo.update_equipment_category(
-        db, category_id, data.model_dump(exclude_unset=True)
-    )
+    category = await repo.update_equipment_category(db, category_id, data.model_dump(exclude_unset=True))
     if not category:
         raise NotFoundException("设备分类", str(category_id))
     return category
@@ -137,9 +131,7 @@ async def create_location(
 ) -> Location:
     """创建位置，自动绑定部门"""
     # 获取用户所属部门 ID（用于绑定和去重校验）
-    department_id = (
-        ctx.visible_department_ids[0] if ctx.visible_department_ids else None
-    )
+    department_id = ctx.visible_department_ids[0] if ctx.visible_department_ids else None
 
     # 检查编码是否重复（部门范围内）
     if await repo.exists_location_by_code(db, data.code, department_id=department_id):
@@ -192,14 +184,10 @@ async def update_location(
         # 获取该位置的部门 ID，用于同部门范围内去重
         existing = await repo.get_location_by_id(db, location_id)
         department_id = existing.department_id if existing else None
-        if await repo.exists_location_by_code(
-            db, data.code, exclude_id=location_id, department_id=department_id
-        ):
+        if await repo.exists_location_by_code(db, data.code, exclude_id=location_id, department_id=department_id):
             raise DuplicateException("位置代码", data.code)
 
-    location = await repo.update_location(
-        db, location_id, data.model_dump(exclude_unset=True)
-    )
+    location = await repo.update_location(db, location_id, data.model_dump(exclude_unset=True))
     if not location:
         raise NotFoundException("位置", str(location_id))
     return location
@@ -316,7 +304,7 @@ async def update_equipment(
         await get_location_by_id(db, data.location_id)
 
     update_data = data.model_dump(exclude_unset=True)
-    return await repo.update_equipment(db, equipment_id, update_data)
+    return await repo.update_equipment(db, equipment_id, update_data)  # type: ignore[return-value]
 
 
 async def delete_equipment(
@@ -393,7 +381,7 @@ TEMPLATE_HEADERS = [
 ]
 
 
-def _cell_str(row, col: int) -> str | None:
+def _cell_str(row, col: int) -> Any:  # type: ignore[no-untyped-def]
     val = row[col] if col < len(row) else None
     if val is None:
         return None
@@ -401,7 +389,7 @@ def _cell_str(row, col: int) -> str | None:
     return s if s else None
 
 
-def _parse_date(value) -> date | None:
+def _parse_date(value) -> Any:  # type: ignore[no-untyped-def]
     if value is None:
         return None
     if isinstance(value, date) and not isinstance(value, datetime):
@@ -430,18 +418,14 @@ def generate_template_bytes() -> io.BytesIO:
     ws.title = "设备台账"
 
     header_font = Font(name="微软雅黑", size=10, bold=True, color="FFFFFF")
-    header_fill = PatternFill(
-        start_color="2E75B6", end_color="2E75B6", fill_type="solid"
-    )
+    header_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin"),
         right=Side(style="thin"),
         top=Side(style="thin"),
         bottom=Side(style="thin"),
     )
-    example_fill = PatternFill(
-        start_color="FFF2CC", end_color="FFF2CC", fill_type="solid"
-    )
+    example_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
 
     ws.freeze_panes = "A3"
 
@@ -450,9 +434,7 @@ def generate_template_bytes() -> io.BytesIO:
         cell = ws.cell(row=1, column=i, value=label)
         cell.font = header_font
         cell.fill = header_fill
-        cell.alignment = Alignment(
-            horizontal="center", vertical="center", wrap_text=True
-        )
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = thin_border
         ws.column_dimensions[get_column_letter(i)].width = width
 
@@ -527,9 +509,7 @@ async def import_equipments_from_excel(
         raise ValueError("Excel 中缺少「设备台账」工作表，请使用模板文件")
 
     ws = wb["设备台账"]
-    rows = list(
-        ws.iter_rows(min_row=3, values_only=True)
-    )  # 第1行表头，第2行示例，第3行起数据
+    rows = list(ws.iter_rows(min_row=3, values_only=True))  # 第1行表头，第2行示例，第3行起数据
 
     imported = 0
     skipped = 0
@@ -616,9 +596,7 @@ async def import_equipments_from_excel(
                 skipped += 1
                 continue
 
-            assert (
-                eq_no and name and cat_name and loc_name and dept_name and person_name
-            )
+            assert eq_no and name and cat_name and loc_name and dept_name and person_name
 
             # 设备编号重复
             if eq_no in existing_nos:
@@ -669,10 +647,7 @@ async def import_equipments_from_excel(
 
             # 部门权限校验：非超管只能导入自己可见部门的设备
             if ctx and not ctx.is_unrestricted:
-                if (
-                    not ctx.visible_department_ids
-                    or department_id not in ctx.visible_department_ids
-                ):
+                if not ctx.visible_department_ids or department_id not in ctx.visible_department_ids:
                     errors.append(
                         ImportRowError(
                             row=row_num,
@@ -717,23 +692,11 @@ async def import_equipments_from_excel(
                 importance = "低"
 
             # 创建装备（使用 SAVEPOINT 隔离每行，避免一行失败导致整个事务损坏）
-            raw_pd = (
-                row[COL_PRODUCTION_DATE] if COL_PRODUCTION_DATE < len(row) else None
-            )
-            raw_cd = (
-                row[COL_COMMISSIONING_DATE]
-                if COL_COMMISSIONING_DATE < len(row)
-                else None
-            )
-            raw_we = (
-                row[COL_WARRANTY_EXPIRE] if COL_WARRANTY_EXPIRE < len(row) else None
-            )
+            raw_pd = row[COL_PRODUCTION_DATE] if COL_PRODUCTION_DATE < len(row) else None
+            raw_cd = row[COL_COMMISSIONING_DATE] if COL_COMMISSIONING_DATE < len(row) else None
+            raw_we = row[COL_WARRANTY_EXPIRE] if COL_WARRANTY_EXPIRE < len(row) else None
             raw_av = row[COL_ASSET_VALUE] if COL_ASSET_VALUE < len(row) else None
-            raw_dy = (
-                row[COL_DEPRECIATION_YEARS]
-                if COL_DEPRECIATION_YEARS < len(row)
-                else None
-            )
+            raw_dy = row[COL_DEPRECIATION_YEARS] if COL_DEPRECIATION_YEARS < len(row) else None
 
             async with db.begin_nested():
                 equipment = Equipment(
@@ -790,7 +753,7 @@ async def import_equipments_from_excel(
     )
 
 
-def _parse_float(value) -> float | None:
+def _parse_float(value) -> Any:  # type: ignore[no-untyped-def]
     if value is None:
         return None
     try:
@@ -799,7 +762,7 @@ def _parse_float(value) -> float | None:
         return None
 
 
-def _parse_int(value) -> int | None:
+def _parse_int(value) -> Any:  # type: ignore[no-untyped-def]
     if value is None:
         return None
     try:

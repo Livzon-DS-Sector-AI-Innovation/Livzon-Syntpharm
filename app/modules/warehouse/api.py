@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import Depends, Query
@@ -45,120 +46,111 @@ def get_warehouse_service(
     summary="原辅料库存列表",
     response_model=RawMaterialListResponse,
 )
-async def list_raw_materials(
+async def handler(
     current_user: CurrentUser,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.list_raw_materials()
 
-    data = [
-        RawMaterialResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [RawMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/packaging-materials",
     summary="包材库存列表",
     response_model=PackagingMaterialListResponse,
 )
-async def list_packaging_materials(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.list_packaging_materials()
 
-    data = [
-        PackagingMaterialResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [PackagingMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/products",
     summary="成品库存列表",
     response_model=ProductInventoryListResponse,
 )
-async def list_products(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.list_products()
 
-    data = [
-        ProductInventoryResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [ProductInventoryResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/feishu-config",
     summary="获取仓储飞书配置",
     response_model=WarehouseFeishuConfigApiResponse,
 )
-async def get_feishu_config(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.get_feishu_config_response()
 
     return success_response(data=data.model_dump(mode="json"))
 
 
-@router.put(
+@router.put(  # type: ignore[no-redef]
     "/feishu-config",
     summary="保存仓储飞书配置",
     response_model=WarehouseFeishuConfigApiResponse,
 )
-async def save_feishu_config(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     payload: WarehouseFeishuConfigUpsert,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.save_feishu_config(payload)
 
     return success_response(data=data.model_dump(mode="json"))
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/feishu-config/test",
     summary="测试仓储飞书连通性",
     response_model=WarehouseFeishuConnectivityApiResponse,
 )
-async def test_feishu_config(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     payload: WarehouseFeishuConfigUpsert | None = None,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.test_feishu_connectivity(payload)
 
     return success_response(data=data.model_dump(mode="json"))
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/feishu/tables",
     summary="获取仓储飞书数据表目录",
     response_model=WarehouseFeishuTableListApiResponse,
 )
-async def list_feishu_tables(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     business_domain: str | None = None,
     keyword: str | None = None,
     enabled: bool | None = None,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.list_feishu_tables(
         business_domain=business_domain,
@@ -166,69 +158,60 @@ async def list_feishu_tables(
         enabled=enabled,
     )
 
-    data = [
-        WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/feishu/tables/refresh",
     summary="刷新仓储飞书数据表目录",
     response_model=WarehouseFeishuTableListApiResponse,
 )
-async def refresh_feishu_tables(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.refresh_feishu_tables()
 
-    data = [
-        WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/feishu/tables/enabled/batch",
     summary="批量启用或停用仓储飞书数据表同步",
     response_model=WarehouseFeishuTableBatchEnableApiResponse,
 )
-async def set_feishu_tables_enabled(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     payload: WarehouseFeishuTableBatchEnablePayload,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     items = await service.set_feishu_tables_enabled(
         payload.table_ids,
         payload.is_enabled,
     )
 
-    data = [
-        WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json")
-        for item in items
-    ]
+    data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
     return success_response(data=data)
 
 
-@router.patch(
+@router.patch(  # type: ignore[no-redef]
     "/feishu/tables/{table_id}/enabled",
     summary="启用或停用仓储飞书数据表同步",
     response_model=WarehouseFeishuTableEnableApiResponse,
 )
-async def set_feishu_table_enabled(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     table_id: UUID,
     payload: WarehouseFeishuTableEnablePayload,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     table = await service.set_feishu_table_enabled(table_id, payload.is_enabled)
 
@@ -237,28 +220,28 @@ async def set_feishu_table_enabled(
     return success_response(data=data)
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/feishu/tables/{table_id}/sync",
     summary="同步仓储飞书数据表记录快照",
     response_model=WarehouseFeishuTableSyncApiResponse,
 )
-async def sync_feishu_table(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     table_id: UUID,
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.sync_feishu_table(table_id)
 
     return success_response(data=data.model_dump(mode="json"))
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/feishu/tables/{table_id}/records",
     summary="读取仓储飞书数据表本地记录快照",
     response_model=WarehouseFeishuRawRecordApiResponse,
 )
-async def get_feishu_table_records(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     table_id: UUID,
     keyword: str | None = None,
@@ -271,7 +254,7 @@ async def get_feishu_table_records(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.get_feishu_table_records(
         table_id,
@@ -286,12 +269,12 @@ async def get_feishu_table_records(
     return success_response(data=data.model_dump(mode="json"))
 
 
-@router.get(
+@router.get(  # type: ignore[no-redef]
     "/feishu/domains/{business_domain}/records",
     summary="读取仓储业务域启用表本地记录快照",
     response_model=WarehouseFeishuRawRecordApiResponse,
 )
-async def get_feishu_domain_records(
+async def handler(  # noqa: F811
     current_user: CurrentUser,
     business_domain: str,
     table_id: UUID | None = None,
@@ -305,10 +288,10 @@ async def get_feishu_domain_records(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
-):
+) -> Any:
 
     data = await service.get_feishu_domain_records(
-        business_domain,  # type: ignore[arg-type]
+        business_domain,
         table_id=table_id,
         keyword=keyword,
         field=field,
@@ -326,7 +309,7 @@ async def get_feishu_domain_records(
     summary="查询仓储飞书 WebSocket 状态",
     response_model=WarehouseFeishuWsStatusApiResponse,
 )
-async def get_feishu_ws_status(current_user: CurrentUser):
+async def get_feishu_ws_status(current_user: CurrentUser) -> Any:
 
     from app.modules.warehouse.ws_client import get_ws_status
 
@@ -338,7 +321,7 @@ async def get_feishu_ws_status(current_user: CurrentUser):
     summary="重启仓储飞书 WebSocket 长连接",
     response_model=WarehouseFeishuWsStatusApiResponse,
 )
-async def restart_feishu_ws(current_user: CurrentUser):
+async def restart_feishu_ws(current_user: CurrentUser) -> Any:
 
     from app.modules.warehouse.ws_client import restart_ws_from_db
 

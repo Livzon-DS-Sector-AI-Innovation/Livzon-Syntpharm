@@ -9,6 +9,7 @@ DB session 的生命周期由 MCPToolLoggingMiddleware（FastMCP 层）管理，
 """
 
 import logging
+from typing import Any
 
 from starlette.middleware import Middleware
 from starlette.responses import JSONResponse
@@ -26,11 +27,11 @@ class MCPAuthMiddleware:
     DB session 不再在此层管理（已移至 FastMCP MCPToolLoggingMiddleware）。
     """
 
-    def __init__(self, app, valid_keys: set[str]):
+    def __init__(self, app, valid_keys: set[str]) -> Any:  # type: ignore[misc,no-untyped-def]
         self.app = app
         self._valid_keys = valid_keys
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope, receive, send) -> Any:  # type: ignore[no-untyped-def]
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -69,13 +70,11 @@ class MCPAuthMiddleware:
         await self.app(scope, receive, send)
 
 
-def build_mcp_middleware() -> list:
+def build_mcp_middleware() -> list[Any]:
     """构建 MCP 应用的中间件列表，供 FastMCP http_app 使用。"""
     settings = get_settings()
     raw = settings.MCP_AGENT_API_KEYS
-    valid_keys: set[str] = (
-        {k.strip() for k in raw.split(",") if k.strip()} if raw else set()
-    )
+    valid_keys: set[str] = {k.strip() for k in raw.split(",") if k.strip()} if raw else set()
     return [
         Middleware(MCPAuthMiddleware, valid_keys=valid_keys),
     ]

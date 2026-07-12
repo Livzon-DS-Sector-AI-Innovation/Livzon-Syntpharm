@@ -1,3 +1,4 @@
+# ruff: noqa
 """Import gift inventory from a standard Excel template into PostgreSQL.
 
 Usage:

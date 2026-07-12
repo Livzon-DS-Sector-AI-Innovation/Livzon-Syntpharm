@@ -129,7 +129,7 @@ async def create_work_order(
                         priority=data.priority,
                     )
                 )
-            return result
+            return result  # type: ignore[return-value]
         except IntegrityError:
             if attempt < _MAX_RETRIES - 1:
                 await db.rollback()
@@ -157,7 +157,7 @@ async def update_work_order(
         setattr(wo, field, value)
 
     await db.flush()
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def assign_work_order(
@@ -173,7 +173,7 @@ async def assign_work_order(
     wo.assignee_id = assignee_id
     wo.assigned_at = datetime.now(UTC)
     await db.flush()
-    wo = await repo.get_work_order_by_id(db, wo.id)
+    wo = await repo.get_work_order_by_id(db, wo.id)  # type: ignore[assignment]
 
     # 飞书通知被指派人
     equipment = wo.equipment
@@ -203,7 +203,7 @@ async def start_work_order(
     wo.status = "执行中"
     wo.started_at = datetime.now(UTC)
     await db.flush()
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def complete_work_order(
@@ -240,9 +240,7 @@ async def complete_work_order(
     if target == "待验收":
         responsible = wo.responsible_person
         equipment = wo.equipment
-        feishu_uid = (
-            getattr(responsible, "feishu_user_id", None) if responsible else None
-        )
+        feishu_uid = getattr(responsible, "feishu_user_id", None) if responsible else None
         if feishu_uid:
             # 收集图片存储路径（直接传 DB 中 file_path，notification 层无需反推）
             img_paths: list[str] = []
@@ -261,7 +259,7 @@ async def complete_work_order(
                 )
             )
 
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def _update_maintenance_plan_on_completion(
@@ -289,9 +287,7 @@ async def _update_maintenance_plan_on_completion(
 
     today = date_type.today()
     plan.last_maintenance_date = today
-    plan.next_maintenance_date = _calculate_next_maintenance_date(
-        today, plan.frequency, plan.frequency_unit
-    )
+    plan.next_maintenance_date = _calculate_next_maintenance_date(today, plan.frequency, plan.frequency_unit)
     # last_generated_date 保持旧值，让 scheduler 下个周期自然触发
     await db.flush()
 
@@ -558,7 +554,7 @@ async def verify_work_order(
         wo.actual_duration = None
 
     await db.flush()
-    wo = await repo.get_work_order_by_id(db, wo.id)
+    wo = await repo.get_work_order_by_id(db, wo.id)  # type: ignore[assignment]
 
     # 退回时飞书通知维修人
     if data.result == "不合格" and wo.assignee:
@@ -595,7 +591,7 @@ async def close_work_order(
         await _try_restore_equipment_status(db, wo.equipment_id)
 
     # eager re-fetch
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def get_work_orders(
@@ -660,7 +656,7 @@ async def claim_work_order(
     wo.assignee_id = ctx.user.id
     wo.assigned_at = datetime.now(UTC)
     await db.flush()
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def consume_materials(

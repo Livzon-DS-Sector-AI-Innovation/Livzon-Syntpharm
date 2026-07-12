@@ -1,6 +1,7 @@
 """飞书机器人客户端 - 使用 App ID 和 App Secret 获取 tenant_access_token"""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -46,8 +47,8 @@ class FeishuClient:
         receive_id_type: str,
         receive_id: str,
         msg_type: str,
-        content: dict,
-    ) -> dict:
+        content: dict[str, Any],
+    ) -> dict[str, Any]:
         """发送消息
 
         Args:
@@ -73,31 +74,27 @@ class FeishuClient:
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                url, params=params, json=payload, headers=headers
-            )
+            response = await client.post(url, params=params, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
 
             if data.get("code") != 0:
                 raise ValueError(f"发送消息失败: {data.get('msg')}")
 
-            return data
+            return data  # type: ignore[no-any-return]
 
-    async def send_text_message(
-        self, receive_id_type: str, receive_id: str, text: str
-    ) -> dict:
+    async def send_text_message(self, receive_id_type: str, receive_id: str, text: str) -> dict[str, Any]:
         """发送文本消息"""
         return await self.send_message(
             receive_id_type=receive_id_type,
             receive_id=receive_id,
             msg_type="text",
-            content=f'{{"text": "{text}"}}',
+            content=f'{{"text": "{text}"}}',  # type: ignore[arg-type]
         )
 
     async def send_card_message(
-        self, receive_id_type: str, receive_id: str, card_content: dict
-    ) -> dict:
+        self, receive_id_type: str, receive_id: str, card_content: dict[str, Any]
+    ) -> dict[str, Any]:
         """发送卡片消息"""
         return await self.send_message(
             receive_id_type=receive_id_type,
@@ -106,7 +103,7 @@ class FeishuClient:
             content=card_content,
         )
 
-    async def send_text_to_chat(self, chat_id: str, text: str) -> dict:
+    async def send_text_to_chat(self, chat_id: str, text: str) -> dict[str, Any]:
         """发送文本消息到群组"""
         return await self.send_text_message(
             receive_id_type="chat_id",
@@ -114,7 +111,7 @@ class FeishuClient:
             text=text,
         )
 
-    async def send_text_to_user(self, user_id: str, text: str) -> dict:
+    async def send_text_to_user(self, user_id: str, text: str) -> dict[str, Any]:
         """发送文本消息给用户"""
         return await self.send_text_message(
             receive_id_type="user_id",
@@ -122,7 +119,7 @@ class FeishuClient:
             text=text,
         )
 
-    def invalidate_token(self):
+    def invalidate_token(self) -> Any:
         """使 token 失效，下次请求会重新获取"""
         self._tenant_access_token = None
 
@@ -140,9 +137,7 @@ def get_feishu_client() -> FeishuClient:
         app_secret = getattr(settings, "FEISHU_APP_SECRET", None)
 
         if not app_id or not app_secret:
-            raise ValueError(
-                "飞书配置未设置，请设置 FEISHU_APP_ID 和 FEISHU_APP_SECRET 环境变量"
-            )
+            raise ValueError("飞书配置未设置，请设置 FEISHU_APP_ID 和 FEISHU_APP_SECRET 环境变量")
 
         _feishu_client = FeishuClient(app_id, app_secret)
 
@@ -154,7 +149,7 @@ async def send_feishu_notification(
     receive_id_type: str = "chat_id",
     title: str = "",
     content: str = "",
-) -> dict:
+) -> dict[str, Any]:
     """发送飞书通知（简化接口）
 
     Args:
@@ -180,8 +175,8 @@ async def send_feishu_card(
     receive_id_type: str = "chat_id",
     title: str = "",
     content: str = "",
-    actions: list = None,
-) -> dict:
+    actions: list[Any] = None,  # type: ignore[assignment]
+) -> dict[str, Any]:
     """发送飞书卡片消息
 
     Args:
@@ -221,7 +216,7 @@ async def send_feishu_card(
                     ],
                 }
             )
-        card_elements.extend(action_elements)
+        card_elements.extend(action_elements)  # type: ignore[arg-type]
 
     card_content = {
         "config": {"wide_screen_mode": True},

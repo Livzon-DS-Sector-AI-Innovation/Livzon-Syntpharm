@@ -73,9 +73,7 @@ async def get_maintenance_plans(
     if keyword:
         query = query.where(MaintenancePlan.plan_name.ilike(f"%{keyword}%"))
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(MaintenancePlan.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(MaintenancePlan.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 

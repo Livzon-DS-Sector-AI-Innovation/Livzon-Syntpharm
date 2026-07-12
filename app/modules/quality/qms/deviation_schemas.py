@@ -1,7 +1,7 @@
 """偏差管理 Pydantic Schemas"""
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -37,7 +37,7 @@ class DeviationCreate(BaseModel):
     abnormal_description: str | None = None
     impact_scope: str | None = None
     emergency_measures: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
     batch_locked: bool = False
     batch_lock_reason: str | None = None
 
@@ -60,11 +60,11 @@ class DeviationUpdate(BaseModel):
     abnormal_description: str | None = None
     impact_scope: str | None = None
     emergency_measures: str | None = None
-    attachments: list | None = None
+    attachments: list[Any] | None = None
     batch_locked: bool | None = None
     batch_lock_reason: str | None = None
     # 调查信息
-    investigation: dict | None = None
+    investigation: dict[str, Any] | None = None
     # 整改信息
     correction: Optional["CorrectionUpdate"] = None
     status: str | None = None
@@ -92,7 +92,7 @@ class DeviationResponse(BaseModel):
     abnormal_description: str | None = None
     impact_scope: str | None = None
     emergency_measures: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
     batch_locked: bool = False
     batch_lock_reason: str | None = None
     batch_locked_at: datetime | None = None
@@ -153,7 +153,7 @@ class InvestigationCreate(BaseModel):
     investigation_conclusion: str | None = None
     affected_batches: str | None = None
     temporary_measures: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
 
 
 class InvestigationUpdate(BaseModel):
@@ -171,7 +171,7 @@ class InvestigationUpdate(BaseModel):
     investigation_conclusion: str | None = None
     affected_batches: str | None = None
     temporary_measures: str | None = None
-    attachments: list | None = None
+    attachments: list[Any] | None = None
     status: InvestigationStatus | None = None
 
 
@@ -194,7 +194,7 @@ class InvestigationResponse(BaseModel):
     investigation_conclusion: str | None = None
     affected_batches: str | None = None
     temporary_measures: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
     status: InvestigationStatus
     created_at: datetime
     updated_at: datetime
@@ -235,8 +235,8 @@ class CorrectionCreate(BaseModel):
     responsible_department: str | None = None
     responsible_person: str | None = None
     plan_completion_date: datetime | None = None
-    temporary_corrective_actions: list | None = []
-    long_term_corrective_actions: list | None = []
+    temporary_corrective_actions: list[Any] | None = []
+    long_term_corrective_actions: list[Any] | None = []
 
 
 class CorrectionUpdate(BaseModel):
@@ -246,11 +246,11 @@ class CorrectionUpdate(BaseModel):
     responsible_department: str | None = None
     responsible_person: str | None = None
     plan_completion_date: datetime | None = None
-    temporary_corrective_actions: list | None = None
-    long_term_corrective_actions: list | None = None
+    temporary_corrective_actions: list[Any] | None = None
+    long_term_corrective_actions: list[Any] | None = None
     progress: int | None = None
     status: CorrectionStatus | None = None
-    evidence_attachments: list | None = None
+    evidence_attachments: list[Any] | None = None
 
 
 class CorrectionResponse(BaseModel):
@@ -263,11 +263,11 @@ class CorrectionResponse(BaseModel):
     responsible_department: str | None = None
     responsible_person: str | None = None
     plan_completion_date: datetime | None = None
-    temporary_corrective_actions: list | None = []
-    long_term_corrective_actions: list | None = []
+    temporary_corrective_actions: list[Any] | None = []
+    long_term_corrective_actions: list[Any] | None = []
     progress: int = 0
     status: CorrectionStatus
-    evidence_attachments: list | None = []
+    evidence_attachments: list[Any] | None = []
     created_at: datetime
     updated_at: datetime
 
@@ -299,7 +299,7 @@ class ClosingCreate(BaseModel):
     verification_result: str | None = None
     is_resolved: bool = False
     conclusion: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
 
 
 class ClosingUpdate(BaseModel):
@@ -310,7 +310,7 @@ class ClosingUpdate(BaseModel):
     verification_result: str | None = None
     is_resolved: bool | None = None
     conclusion: str | None = None
-    attachments: list | None = None
+    attachments: list[Any] | None = None
 
 
 class ClosingResponse(BaseModel):
@@ -325,7 +325,7 @@ class ClosingResponse(BaseModel):
     verification_result: str | None = None
     is_resolved: bool = False
     conclusion: str | None = None
-    attachments: list | None = []
+    attachments: list[Any] | None = []
     batch_unlocked: bool = False
     archived: bool = False
     archived_at: datetime | None = None
@@ -382,10 +382,10 @@ class DeviationStatistics(BaseModel):
     """偏差统计"""
 
     total_count: int = 0
-    by_type: dict = {}
-    by_level: dict = {}
-    by_status: dict = {}
-    monthly_trend: list = []
+    by_type: dict[str, Any] = {}
+    by_level: dict[str, Any] = {}
+    by_status: dict[str, Any] = {}
+    monthly_trend: list[Any] = []
 
 
 class DeviationTypeCount(BaseModel):

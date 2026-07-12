@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -6,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.response import success_response
 from app.core.jobs import spawn_task
+from app.core.response import success_response
 from app.platform.identity.deps import CurrentUser
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
@@ -69,7 +70,7 @@ async def auth_callback(
 
     # Validate state for CSRF protection
     if state and not validate_state_token(state):
-        await log_repo.create(
+        await log_repo.create(  # type: ignore[attr-defined]
             db,
             status="failed",
             login_type="feishu_sso",
@@ -90,7 +91,7 @@ async def auth_callback(
         # Rollback any pending transaction before logging the failure
         await db.rollback()
         try:
-            await log_repo.create(
+            await log_repo.create(  # type: ignore[attr-defined]
                 db,
                 status="failed",
                 login_type="feishu_sso",
@@ -107,7 +108,7 @@ async def auth_callback(
         )
 
     # Record successful login
-    await log_repo.create(
+    await log_repo.create(  # type: ignore[attr-defined]
         db,
         user_id=user.id,
         user_name=user.name,
@@ -158,15 +159,13 @@ async def get_me(
 
 
 def _build_department_tree(
-    depts: list,
+    depts: list[Any],
     parent_id: str | None = None,
 ) -> list[DepartmentTreeNode]:
     """递归构建部门树。"""
     result: list[DepartmentTreeNode] = []
     for d in depts:
-        if d.parent_feishu_department_id == parent_id or (
-            parent_id is None and not d.parent_feishu_department_id
-        ):
+        if d.parent_feishu_department_id == parent_id or (parent_id is None and not d.parent_feishu_department_id):
             node = DepartmentTreeNode(
                 id=d.id,
                 feishu_department_id=d.feishu_department_id,
@@ -264,7 +263,7 @@ async def trigger_sync_departments(
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")
+    spawn_task(sync_departments(root_id), name="identity.sync_departments")  # type: ignore[arg-type]
     logger.info("Department sync triggered for root=%s", root_id)
     return success_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id},
@@ -285,7 +284,7 @@ async def trigger_sync_members(
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")
+    spawn_task(sync_members(target_id), name="identity.sync_members")  # type: ignore[arg-type]
     logger.info("Member sync triggered for target=%s", target_id)
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id},

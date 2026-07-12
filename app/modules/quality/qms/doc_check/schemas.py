@@ -5,12 +5,13 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
 
-class CheckStatus(str, Enum):
+class CheckStatus(StrEnum):
     """校验状态"""
 
     PENDING = "pending"
@@ -19,7 +20,7 @@ class CheckStatus(str, Enum):
     FAILED = "failed"
 
 
-class ProblemSeverity(str, Enum):
+class ProblemSeverity(StrEnum):
     """问题严重程度"""
 
     INFO = "info"
@@ -28,7 +29,7 @@ class ProblemSeverity(str, Enum):
     CRITICAL = "critical"
 
 
-class ProblemCategory(str, Enum):
+class ProblemCategory(StrEnum):
     """问题分类"""
 
     FORMAT = "format"
@@ -78,7 +79,7 @@ class DocCheckConfigResponse(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def convert_uuid_to_str(cls, data):
+    def convert_uuid_to_str(cls, data) -> Any:  # type: ignore[no-untyped-def]
         """将 UUID 对象转换为字符串"""
         if hasattr(data, "__dict__"):
             # SQLAlchemy 模型对象
@@ -103,7 +104,7 @@ class DocCheckCreate(BaseModel):
     doc_title: str | None = Field(None, max_length=255, description="文档标题")
     doc_content: str | None = Field(None, description="文档内容")
     file_id: str | None = Field(None, description="上传文件ID")
-    check_config: dict | None = Field(None, description="校验配置(前端扩展字段)")
+    check_config: dict[str, Any] | None = Field(None, description="校验配置(前端扩展字段)")
 
 
 class DocCheckUpdate(BaseModel):

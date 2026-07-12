@@ -1,6 +1,7 @@
 """偏差管理 Repository"""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -22,7 +23,7 @@ class DeviationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> Deviation:
+    async def create(self, data: dict[str, Any]) -> Deviation:
         """创建偏差"""
         deviation = Deviation(**data)
         self.session.add(deviation)
@@ -46,12 +47,10 @@ class DeviationRepository:
 
     async def get_by_no(self, deviation_no: str) -> Deviation | None:
         """通过编号获取偏差"""
-        result = await self.session.execute(
-            select(Deviation).where(Deviation.deviation_no == deviation_no)
-        )
+        result = await self.session.execute(select(Deviation).where(Deviation.deviation_no == deviation_no))
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> Deviation | None:
+    async def update(self, deviation_id: UUID, data: dict[str, Any]) -> Deviation | None:
         """更新偏差"""
         deviation = await self.get_by_id(deviation_id)
         if not deviation:
@@ -97,15 +96,15 @@ class DeviationRepository:
         if deviation_no:
             conditions.append(Deviation.deviation_no.ilike(f"%{deviation_no}%"))
         if deviation_type:
-            conditions.append(Deviation.deviation_type == deviation_type)
+            conditions.append(Deviation.deviation_type == deviation_type)  # type: ignore[arg-type]
         if deviation_level:
-            conditions.append(Deviation.deviation_level == deviation_level)
+            conditions.append(Deviation.deviation_level == deviation_level)  # type: ignore[arg-type]
         if status:
-            conditions.append(Deviation.status == status)
+            conditions.append(Deviation.status == status)  # type: ignore[arg-type]
         if start_date:
-            conditions.append(Deviation.occurrence_date >= start_date)
+            conditions.append(Deviation.occurrence_date >= start_date)  # type: ignore[arg-type]
         if end_date:
-            conditions.append(Deviation.occurrence_date <= end_date)
+            conditions.append(Deviation.occurrence_date <= end_date)  # type: ignore[arg-type]
         if product_batch:
             conditions.append(Deviation.production_batch.ilike(f"%{product_batch}%"))
         if department:
@@ -126,36 +125,28 @@ class DeviationRepository:
         result = await self.session.execute(query)
         deviations = list(result.scalars().all())
 
-        return deviations, total
+        return deviations, total  # type: ignore[return-value]
 
-    async def get_statistics(self) -> dict:
+    async def get_statistics(self) -> dict[str, Any]:
         """获取统计数据"""
         # 总数
-        total_result = await self.session.execute(
-            select(func.count()).select_from(Deviation)
-        )
+        total_result = await self.session.execute(select(func.count()).select_from(Deviation))
         total = total_result.scalar()
 
         # 按类型统计
         type_result = await self.session.execute(
-            select(Deviation.deviation_type, func.count()).group_by(
-                Deviation.deviation_type
-            )
+            select(Deviation.deviation_type, func.count()).group_by(Deviation.deviation_type)
         )
         by_type = {row[0]: row[1] for row in type_result.all()}
 
         # 按等级统计
         level_result = await self.session.execute(
-            select(Deviation.deviation_level, func.count()).group_by(
-                Deviation.deviation_level
-            )
+            select(Deviation.deviation_level, func.count()).group_by(Deviation.deviation_level)
         )
         by_level = {row[0]: row[1] for row in level_result.all()}
 
         # 按状态统计
-        status_result = await self.session.execute(
-            select(Deviation.status, func.count()).group_by(Deviation.status)
-        )
+        status_result = await self.session.execute(select(Deviation.status, func.count()).group_by(Deviation.status))
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         return {
@@ -173,7 +164,7 @@ class InvestigationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, deviation_id: UUID, data: dict) -> DeviationInvestigation:
+    async def create(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationInvestigation:
         """创建调查"""
         investigation = DeviationInvestigation(deviation_id=deviation_id, **data)
         self.session.add(investigation)
@@ -181,20 +172,14 @@ class InvestigationRepository:
         await self.session.refresh(investigation)
         return investigation
 
-    async def get_by_deviation_id(
-        self, deviation_id: UUID
-    ) -> DeviationInvestigation | None:
+    async def get_by_deviation_id(self, deviation_id: UUID) -> DeviationInvestigation | None:
         """通过偏差ID获取调查"""
         result = await self.session.execute(
-            select(DeviationInvestigation).where(
-                DeviationInvestigation.deviation_id == deviation_id
-            )
+            select(DeviationInvestigation).where(DeviationInvestigation.deviation_id == deviation_id)
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, deviation_id: UUID, data: dict
-    ) -> DeviationInvestigation | None:
+    async def update(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationInvestigation | None:
         """更新调查"""
         investigation = await self.get_by_deviation_id(deviation_id)
         if not investigation:
@@ -230,7 +215,7 @@ class InvestigationRepository:
         result = await self.session.execute(query)
         investigations = list(result.scalars().all())
 
-        return investigations, total
+        return investigations, total  # type: ignore[return-value]
 
 
 class CorrectionRepository:
@@ -239,7 +224,7 @@ class CorrectionRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    def _parse_date(self, value):
+    def _parse_date(self, value) -> Any:  # type: ignore[no-untyped-def]
         """解析日期，支持字符串和date格式"""
         if value is None:
             return None
@@ -260,13 +245,11 @@ class CorrectionRepository:
                 return None
         return value
 
-    async def create(self, deviation_id: UUID, data: dict) -> DeviationCorrection:
+    async def create(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationCorrection:
         """创建整改"""
         # 处理日期字段
         if "plan_completion_date" in data:
-            data["plan_completion_date"] = self._parse_date(
-                data["plan_completion_date"]
-            )
+            data["plan_completion_date"] = self._parse_date(data["plan_completion_date"])
 
         correction = DeviationCorrection(deviation_id=deviation_id, **data)
         self.session.add(correction)
@@ -274,20 +257,14 @@ class CorrectionRepository:
         await self.session.refresh(correction)
         return correction
 
-    async def get_by_deviation_id(
-        self, deviation_id: UUID
-    ) -> DeviationCorrection | None:
+    async def get_by_deviation_id(self, deviation_id: UUID) -> DeviationCorrection | None:
         """通过偏差ID获取整改"""
         result = await self.session.execute(
-            select(DeviationCorrection).where(
-                DeviationCorrection.deviation_id == deviation_id
-            )
+            select(DeviationCorrection).where(DeviationCorrection.deviation_id == deviation_id)
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, deviation_id: UUID, data: dict
-    ) -> DeviationCorrection | None:
+    async def update(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationCorrection | None:
         """更新整改"""
         correction = await self.get_by_deviation_id(deviation_id)
         if not correction:
@@ -295,9 +272,7 @@ class CorrectionRepository:
 
         # 处理日期字段
         if "plan_completion_date" in data:
-            data["plan_completion_date"] = self._parse_date(
-                data["plan_completion_date"]
-            )
+            data["plan_completion_date"] = self._parse_date(data["plan_completion_date"])
 
         for key, value in data.items():
             if hasattr(correction, key):
@@ -329,7 +304,7 @@ class CorrectionRepository:
         result = await self.session.execute(query)
         corrections = list(result.scalars().all())
 
-        return corrections, total
+        return corrections, total  # type: ignore[return-value]
 
 
 class ClosingRepository:
@@ -338,7 +313,7 @@ class ClosingRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, deviation_id: UUID, data: dict) -> DeviationClosing:
+    async def create(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationClosing:
         """创建关闭"""
         closing = DeviationClosing(deviation_id=deviation_id, **data)
         self.session.add(closing)
@@ -349,13 +324,11 @@ class ClosingRepository:
     async def get_by_deviation_id(self, deviation_id: UUID) -> DeviationClosing | None:
         """通过偏差ID获取关闭"""
         result = await self.session.execute(
-            select(DeviationClosing).where(
-                DeviationClosing.deviation_id == deviation_id
-            )
+            select(DeviationClosing).where(DeviationClosing.deviation_id == deviation_id)
         )
         return result.scalar_one_or_none()
 
-    async def update(self, deviation_id: UUID, data: dict) -> DeviationClosing | None:
+    async def update(self, deviation_id: UUID, data: dict[str, Any]) -> DeviationClosing | None:
         """更新关闭"""
         closing = await self.get_by_deviation_id(deviation_id)
         if not closing:
@@ -375,9 +348,7 @@ class ClosingRepository:
         page_size: int = 20,
     ) -> tuple[list[DeviationClosing], int]:
         """待关闭列表"""
-        query = select(DeviationClosing).options(
-            selectinload(DeviationClosing.deviation)
-        )
+        query = select(DeviationClosing).options(selectinload(DeviationClosing.deviation))
 
         count_query = select(func.count()).select_from(query.subquery())
         count_result = await self.session.execute(count_query)
@@ -389,7 +360,7 @@ class ClosingRepository:
         result = await self.session.execute(query)
         closings = list(result.scalars().all())
 
-        return closings, total
+        return closings, total  # type: ignore[return-value]
 
 
 class ApprovalRepository:
@@ -398,7 +369,7 @@ class ApprovalRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: dict) -> DeviationApproval:
+    async def create(self, data: dict[str, Any]) -> DeviationApproval:
         """创建审批记录"""
         approval = DeviationApproval(**data)
         self.session.add(approval)

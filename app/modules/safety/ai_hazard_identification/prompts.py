@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 系统角色定义
 # ═══════════════════════════════════════════════════════════════════════════
@@ -379,9 +381,7 @@ def build_full_prompt(
 
             prompt += f"\n\n**示例{i}**\n"
             prompt += f"输入描述：{ex['input']}\n"
-            prompt += (
-                f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
-            )
+            prompt += f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
 
     return prompt
 
@@ -400,7 +400,7 @@ def get_expected_keys() -> list[str]:
     ]
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回用于写入 ai_workflow_configs 表的种子配置。
 
     这是 DB-first 架构的初始数据，使插件可通过前端 AI 工作流配置界面管理。

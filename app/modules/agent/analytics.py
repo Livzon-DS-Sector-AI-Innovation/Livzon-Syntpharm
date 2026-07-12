@@ -41,33 +41,15 @@ DATASETS: dict[str, AnalyticsDataset] = {
         label="采购供应商清单",
         model=Supplier,
         fields={
-            "supplier_code": AnalyticsField(
-                Supplier.supplier_code, "供应商代码", "string"
-            ),
-            "supplier_name": AnalyticsField(
-                Supplier.supplier_name, "供应商名称", "string"
-            ),
-            "material_code": AnalyticsField(
-                Supplier.material_code, "物料编码", "string"
-            ),
-            "material_name": AnalyticsField(
-                Supplier.material_name, "物料名称", "string"
-            ),
-            "manufacturer_code": AnalyticsField(
-                Supplier.manufacturer_code, "生产厂家编码", "string"
-            ),
-            "manufacturer_name": AnalyticsField(
-                Supplier.manufacturer_name, "生产厂家名称", "string"
-            ),
-            "purchase_category": AnalyticsField(
-                Supplier.purchase_category, "采购品类", "string"
-            ),
-            "last_updated_by": AnalyticsField(
-                Supplier.last_updated_by, "最后更新人", "string"
-            ),
-            "last_updated_date": AnalyticsField(
-                Supplier.last_updated_date, "最后更新日期", "date"
-            ),
+            "supplier_code": AnalyticsField(Supplier.supplier_code, "供应商代码", "string"),
+            "supplier_name": AnalyticsField(Supplier.supplier_name, "供应商名称", "string"),
+            "material_code": AnalyticsField(Supplier.material_code, "物料编码", "string"),
+            "material_name": AnalyticsField(Supplier.material_name, "物料名称", "string"),
+            "manufacturer_code": AnalyticsField(Supplier.manufacturer_code, "生产厂家编码", "string"),
+            "manufacturer_name": AnalyticsField(Supplier.manufacturer_name, "生产厂家名称", "string"),
+            "purchase_category": AnalyticsField(Supplier.purchase_category, "采购品类", "string"),
+            "last_updated_by": AnalyticsField(Supplier.last_updated_by, "最后更新人", "string"),
+            "last_updated_date": AnalyticsField(Supplier.last_updated_date, "最后更新日期", "date"),
         },
         default_filters=(Supplier.is_deleted.is_(False),),
     )
@@ -100,9 +82,7 @@ class AnalyticsOrderInput(BaseModel):
 
 class AnalyticsAggregateInput(BaseModel):
     dataset: str
-    metrics: list[AnalyticsMetricInput] = Field(
-        default_factory=lambda: [AnalyticsMetricInput()]
-    )
+    metrics: list[AnalyticsMetricInput] = Field(default_factory=lambda: [AnalyticsMetricInput()])
     group_by: list[str] = Field(default_factory=list, max_length=3)
     filters: list[AnalyticsFilterInput] = Field(default_factory=list, max_length=20)
     order_by: list[AnalyticsOrderInput] = Field(default_factory=list, max_length=3)
@@ -135,9 +115,7 @@ def _bad_request(message: str) -> None:
     raise HTTPException(status.HTTP_400_BAD_REQUEST, message)
 
 
-def _metric_expr(
-    dataset: AnalyticsDataset, metric: AnalyticsMetricInput
-) -> tuple[str, Any]:
+def _metric_expr(dataset: AnalyticsDataset, metric: AnalyticsMetricInput) -> tuple[str, Any]:
     field = _field(dataset, metric.field) if metric.field else None
     if field and not field.aggregatable:
         _bad_request(f"Field is not aggregatable: {metric.field}")
@@ -147,36 +125,32 @@ def _metric_expr(
     elif metric.type == "count_distinct":
         if field is None:
             _bad_request("count_distinct requires field")
-        expr = func.count(func.distinct(field.column))
+        expr = func.count(func.distinct(field.column))  # type: ignore[union-attr]
     elif metric.type == "sum":
         if field is None or field.type != "number":
             _bad_request("sum requires a numeric field")
-        expr = func.sum(field.column)
+        expr = func.sum(field.column)  # type: ignore[assignment,union-attr]
     elif metric.type == "avg":
         if field is None or field.type != "number":
             _bad_request("avg requires a numeric field")
-        expr = func.avg(field.column)
+        expr = func.avg(field.column)  # type: ignore[assignment,union-attr]
     elif metric.type == "min":
         if field is None:
             _bad_request("min requires field")
-        expr = func.min(field.column)
+        expr = func.min(field.column)  # type: ignore[assignment,union-attr]
     elif metric.type == "max":
         if field is None:
             _bad_request("max requires field")
-        expr = func.max(field.column)
+        expr = func.max(field.column)  # type: ignore[assignment,union-attr]
     else:
         _bad_request(f"Unsupported metric type: {metric.type}")
 
-    default_alias = (
-        metric.type if metric.field is None else f"{metric.type}_{metric.field}"
-    )
+    default_alias = metric.type if metric.field is None else f"{metric.type}_{metric.field}"
     alias = metric.alias or default_alias
     return alias, expr.label(alias)
 
 
-def _filter_expr(
-    dataset: AnalyticsDataset, filter_input: AnalyticsFilterInput
-) -> ColumnElement[bool]:
+def _filter_expr(dataset: AnalyticsDataset, filter_input: AnalyticsFilterInput) -> ColumnElement[bool]:
     field = _field(dataset, filter_input.field)
     if not field.filterable:
         _bad_request(f"Field is not filterable: {filter_input.field}")
@@ -184,9 +158,9 @@ def _filter_expr(
     value = filter_input.value
 
     if filter_input.op == "eq":
-        return column == value
+        return column == value  # type: ignore[no-any-return]
     if filter_input.op == "ne":
-        return column != value
+        return column != value  # type: ignore[no-any-return]
     if filter_input.op == "contains":
         if value is None:
             _bad_request("contains requires value")
@@ -196,9 +170,9 @@ def _filter_expr(
     if filter_input.op == "is_empty":
         return column.is_(None) | (func.trim(column) == "")
     if filter_input.op == "gte":
-        return column >= value
+        return column >= value  # type: ignore[no-any-return]
     if filter_input.op == "lte":
-        return column <= value
+        return column <= value  # type: ignore[no-any-return]
     _bad_request(f"Unsupported filter op: {filter_input.op}")
 
 
@@ -227,15 +201,11 @@ def _apply_ordering(
             if order.field not in group_columns:
                 _bad_request("Ordering by field requires the field in group_by")
             expression = group_columns[order.field]
-        query = query.order_by(
-            desc(expression) if order.direction == "desc" else asc(expression)
-        )
+        query = query.order_by(desc(expression) if order.direction == "desc" else asc(expression))
     return query
 
 
-async def aggregate_analytics(
-    context: ToolContext, data: AnalyticsAggregateInput
-) -> dict[str, Any]:
+async def aggregate_analytics(context: ToolContext, data: AnalyticsAggregateInput) -> dict[str, Any]:
     dataset = _dataset(data.dataset)
     group_columns: dict[str, Any] = {}
     select_columns: list[Any] = []
@@ -285,7 +255,7 @@ async def aggregate_analytics(
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="analytics.aggregate",
     summary="通用业务数据聚合统计",
     input_model=AnalyticsAggregateInput,
@@ -317,12 +287,7 @@ async def aggregate_analytics(
             }
         ],
     },
-    output_hint=(
-        "用于全量计数、去重计数、TopN、分布统计等场景；返回数据库聚合后的 rows，"
-        "避免逐页读取全量明细。"
-    ),
+    output_hint=("用于全量计数、去重计数、TopN、分布统计等场景；返回数据库聚合后的 rows，避免逐页读取全量明细。"),
 )
-async def aggregate_analytics_tool(
-    context: ToolContext, data: AnalyticsAggregateInput
-) -> dict[str, Any]:
+async def aggregate_analytics_tool(context: ToolContext, data: AnalyticsAggregateInput) -> dict[str, Any]:
     return await aggregate_analytics(context, data)

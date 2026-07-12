@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 from sqlalchemy import text
 
-from app.platform.database import async_session_factory
+from app.platform.database import async_session_factory  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +16,8 @@ async def get_feishu_config_from_db() -> dict[str, str] | None:
     async with async_session_factory() as session:
         result = await session.execute(
             text("""
-                SELECT app_id, app_secret, is_enabled 
-                FROM qms.qms_deviation_feishu_bot_config 
+                SELECT app_id, app_secret, is_enabled
+                FROM qms.qms_deviation_feishu_bot_config
                 WHERE is_deleted = FALSE AND is_enabled = TRUE
                 LIMIT 1
             """)
@@ -41,7 +41,7 @@ class FeishuService:
         self.app_secret = app_secret
         self._tenant_access_token: str | None = None
 
-    async def _ensure_config(self):
+    async def _ensure_config(self) -> Any:
         """确保配置已加载"""
         if not self.app_id and not self.app_secret:
             config = await get_feishu_config_from_db()
@@ -79,9 +79,7 @@ class FeishuService:
         token = await self.get_tenant_access_token()
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    async def get_user_by_mobile(
-        self, mobile: str, country_code: str = "86"
-    ) -> dict[str, Any] | None:
+    async def get_user_by_mobile(self, mobile: str, country_code: str = "86") -> dict[str, Any] | None:
         """
         根据手机号查询用户信息
 
@@ -187,9 +185,7 @@ class FeishuService:
             logger.error(f"获取用户信息异常: {e}")
             return None
 
-    async def send_message(
-        self, open_id: str, msg_type: str = "text", content: Any = None
-    ) -> bool:
+    async def send_message(self, open_id: str, msg_type: str = "text", content: Any = None) -> bool:
         """
         发送消息给用户
 
@@ -220,9 +216,7 @@ class FeishuService:
                     json={
                         "receive_id": open_id,
                         "msg_type": msg_type,
-                        "content": content
-                        if isinstance(content, str)
-                        else str(content),
+                        "content": content if isinstance(content, str) else str(content),
                     },
                 )
                 data = response.json()

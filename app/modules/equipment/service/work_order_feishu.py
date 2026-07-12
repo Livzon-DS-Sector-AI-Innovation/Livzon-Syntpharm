@@ -1,6 +1,7 @@
 """Work order Feishu bot service: query and complete work orders via chat."""
 
 import logging
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,7 @@ from app.modules.equipment.service.work_order import complete_work_order
 logger = logging.getLogger(__name__)
 
 
-async def _find_user_by_user_id(db: AsyncSession, user_id: str):
+async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> Any:
     """根据飞书 user_id（租户级）查找系统用户。"""
     from app.platform.identity.models import User
 
@@ -55,16 +56,11 @@ async def list_user_work_orders(
         return
 
     lines = [f"**共 {len(work_orders)} 个未关闭工单**\n"]
-    options: list[dict] = []
+    options: list[dict[str, Any]] = []
     for i, wo in enumerate(work_orders, 1):
         eq_name = wo.equipment.name if wo.equipment else "未知设备"
-        status_icon = {"待处理": "⏳", "执行中": "🔄", "待验收": "✅"}.get(
-            wo.status, "📋"
-        )
-        lines.append(
-            f"**{i}.** {status_icon} {wo.work_order_no} | {wo.order_type} | {wo.status}\n"
-            f"   设备: {eq_name}"
-        )
+        status_icon = {"待处理": "⏳", "执行中": "🔄", "待验收": "✅"}.get(wo.status, "📋")
+        lines.append(f"**{i}.** {status_icon} {wo.work_order_no} | {wo.order_type} | {wo.status}\n   设备: {eq_name}")
         options.append(
             {
                 "index": i,
@@ -75,11 +71,7 @@ async def list_user_work_orders(
             }
         )
 
-    lines.append(
-        "\n---\n"
-        "发送「完成 工单号 描述」提交完成\n"
-        "或「完成 序号 描述」，例: `完成 1 更换密封圈`"
-    )
+    lines.append("\n---\n发送「完成 工单号 描述」提交完成\n或「完成 序号 描述」，例: `完成 1 更换密封圈`")
 
     # 保存选择列表，支持后续数字索引完成
     from app.modules.equipment.service.inspection_session import save_selection
@@ -128,10 +120,7 @@ async def complete_work_order_by_no(
                 open_id=open_id,
                 title="❌ 无法完成",
                 receive_id_type="open_id",
-                content=(
-                    f"工单 **{work_order_no}** 当前状态为「{wo.status}」，\n"
-                    "只有「执行中」的工单才能提交完成。"
-                ),
+                content=(f"工单 **{work_order_no}** 当前状态为「{wo.status}」，\n只有「执行中」的工单才能提交完成。"),
             )
             return
 
@@ -141,10 +130,7 @@ async def complete_work_order_by_no(
                 open_id=open_id,
                 title="❌ 无权限",
                 receive_id_type="open_id",
-                content=(
-                    f"工单 **{work_order_no}** 的执行人不是您，\n"
-                    "只能完成指派给自己的工单。"
-                ),
+                content=(f"工单 **{work_order_no}** 的执行人不是您，\n只能完成指派给自己的工单。"),
             )
             return
 

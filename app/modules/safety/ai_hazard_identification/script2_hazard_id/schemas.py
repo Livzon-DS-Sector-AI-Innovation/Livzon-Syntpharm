@@ -24,12 +24,6 @@ class HazardIdInput(BaseModel):
 class HazardIdOutput(BaseModel):
     """脚本2 输出：危险源辨识结果。"""
 
-    hazard_type: str = Field(
-        ..., description="危险类型（按 GB 6441《企业职工伤亡事故分类》归类）"
-    )
-    possible_accident: str = Field(
-        ..., description="可能导致的最典型事故（含事故链条简述）"
-    )
-    unsafe_behavior: str = Field(
-        ..., description="人的不规范作业行为表现（具体动作/状态描述）"
-    )
+    hazard_type: str = Field(..., description="危险类型（按 GB 6441《企业职工伤亡事故分类》归类）")
+    possible_accident: str = Field(..., description="可能导致的最典型事故（含事故链条简述）")
+    unsafe_behavior: str = Field(..., description="人的不规范作业行为表现（具体动作/状态描述）")

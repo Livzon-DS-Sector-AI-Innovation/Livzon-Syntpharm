@@ -69,8 +69,6 @@ async def _stream_chat(
         async with client.stream("POST", url, headers=headers, json=body) as response:
             if response.status_code >= 400:
                 detail = await response.aread()
-                raise HTTPException(
-                    status.HTTP_502_BAD_GATEWAY, detail.decode(errors="ignore")[:1000]
-                )
+                raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail.decode(errors="ignore")[:1000])
             async for chunk in response.aiter_bytes():
                 yield chunk

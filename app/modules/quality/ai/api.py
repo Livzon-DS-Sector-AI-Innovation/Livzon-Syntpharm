@@ -8,7 +8,6 @@ from io import BytesIO
 from typing import Any
 from urllib.parse import quote
 
-import openai
 from docx import Document as DocxDocument
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
@@ -17,8 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import success_response
-from app.modules.administration.public_api import VehicleRequest
-from app.modules.administration.public_api import (
+from app.modules.administration.public_api import (  # type: ignore[attr-defined]
+    VehicleRequest,
     count_vehicle_requests,
     search_vehicle_requests,
     search_vehicles,
@@ -53,7 +52,7 @@ def _extract_names(text: str) -> list[str]:
     return re.findall(r"[一-龥]{2,4}", text)
 
 
-def _detect_query_intent(text: str) -> tuple[str, dict] | None:
+def _detect_query_intent(text: str) -> tuple[str, dict[str, Any]] | None:
     """Detect user intent for HR database queries."""
     # 1. 某部门有哪些人 / 某部门的人 / 某部门名单
     m = re.search(
@@ -141,17 +140,15 @@ async def _build_db_context(session: AsyncSession, text: str) -> str:
                             f"，状态:{emp['status']}"
                         )
                 else:
-                    parts.append(
-                        f"【数据库查询结果】未找到姓名包含'{name}'或相关字的员工。"
-                    )
+                    parts.append(f"【数据库查询结果】未找到姓名包含'{name}'或相关字的员工。")
 
         elif action == "count_department":
             dept = params["department"]
-            total = await count_employees(session, department=dept)
+            total = await count_employees(session, department=dept)  # type: ignore[call-arg]
             parts.append(f"【数据库查询结果】{dept}共有{total}名员工。")
 
         elif action == "count_total":
-            total = await count_employees(session)
+            total = await count_employees(session)  # type: ignore[call-arg]
             parts.append(f"【数据库查询结果】全厂共有{total}名员工。")
 
     # Fallback: keyword-based name search if no intent matched
@@ -187,9 +184,7 @@ async def _build_db_context(session: AsyncSession, text: str) -> str:
                             f"，状态:{emp['status']}"
                         )
                 else:
-                    parts.append(
-                        f"【数据库查询结果】未找到姓名包含'{name}'或相关字的员工。"
-                    )
+                    parts.append(f"【数据库查询结果】未找到姓名包含'{name}'或相关字的员工。")
 
     return "\n".join(parts)
 
@@ -246,9 +241,7 @@ async def _build_vehicle_db_context(session: AsyncSession, text: str) -> str:
             total_count += count
 
         if len(months) == 1:
-            parts.append(
-                f"【数据库查询结果】{months[0]}月用车申请总数：{total_count}条。"
-            )
+            parts.append(f"【数据库查询结果】{months[0]}月用车申请总数：{total_count}条。")
         else:
             month_details = "，".join(f"{m}月{c}条" for m, c in month_counts)
             parts.append(f"【数据库查询结果】{month_details}，合计：{total_count}条。")
@@ -263,27 +256,19 @@ async def _build_vehicle_db_context(session: AsyncSession, text: str) -> str:
         for status, pattern in status_count_keywords:
             if re.search(pattern, text):
                 total = await count_vehicle_requests(session, status=status)
-                parts.append(
-                    f"【数据库查询结果】状态为'{status}'的用车申请共有{total}条。"
-                )
+                parts.append(f"【数据库查询结果】状态为'{status}'的用车申请共有{total}条。")
                 break
         else:
             # 总数量
-            if re.search(
-                r"(?:总共|一共|全部).*?(?:用车申请|申请).*?(?:多少|数量|几个)", text
-            ):
+            if re.search(r"(?:总共|一共|全部).*?(?:用车申请|申请).*?(?:多少|数量|几个)", text):
                 total = await count_vehicle_requests(session)
                 parts.append(f"【数据库查询结果】用车申请总数量：{total}条。")
 
     # 2. 按申请人查询（只匹配纯中文人名，避免误匹配月份数字）
-    applicant_match = re.search(
-        r"([一-龥]{2,10})(?:的用车申请|申请了车|申请用车)", text
-    )
+    applicant_match = re.search(r"([一-龥]{2,10})(?:的用车申请|申请了车|申请用车)", text)
     if applicant_match:
         name = applicant_match.group(1)
-        requests, total = await search_vehicle_requests(
-            session, keyword=name, page=1, page_size=20
-        )
+        requests, total = await search_vehicle_requests(session, keyword=name, page=1, page_size=20)
         if requests:
             parts.append(f"【数据库查询结果】申请人包含'{name}'的用车申请共{total}条：")
             for r in requests:
@@ -305,13 +290,9 @@ async def _build_vehicle_db_context(session: AsyncSession, text: str) -> str:
     ]
     for status, pattern in status_list_keywords:
         if re.search(pattern, text):
-            requests, total = await search_vehicle_requests(
-                session, status=status, page=1, page_size=20
-            )
+            requests, total = await search_vehicle_requests(session, status=status, page=1, page_size=20)
             if requests:
-                parts.append(
-                    f"【数据库查询结果】状态为'{status}'的用车申请共{total}条："
-                )
+                parts.append(f"【数据库查询结果】状态为'{status}'的用车申请共{total}条：")
                 for r in requests:
                     parts.append(
                         f"- 申请人:{r['applicant_name']}（{r['applicant_department']}）"
@@ -390,9 +371,9 @@ async def chat_stream(
     if is_regulation_page:
         system_prompt = None
     elif is_vehicle_page:
-        system_prompt = AiChatService.build_vehicle_system_prompt(page=page)
+        system_prompt = AiChatService.build_vehicle_system_prompt(page=page)  # type: ignore[attr-defined]
     else:
-        system_prompt = AiChatService.build_system_prompt(page=page)
+        system_prompt = AiChatService.build_system_prompt(page=page)  # type: ignore[attr-defined]
 
     # 2. Query database based on user intent
     db_context = ""
@@ -425,9 +406,7 @@ async def chat_stream(
                     break
         else:
             messages[-1]["content"] = (
-                f"【数据库查询结果，请严格基于以下事实回答，禁止编造】\n"
-                f"{db_context}\n\n"
-                f"【用户原始问题】\n{original}"
+                f"【数据库查询结果，请严格基于以下事实回答，禁止编造】\n{db_context}\n\n【用户原始问题】\n{original}"
             )
 
     # 4. Append page context as the last user message hint if provided
@@ -438,22 +417,15 @@ async def chat_stream(
             if isinstance(original, list):
                 for part in original:
                     if part.get("type") == "text":
-                        part["text"] = (
-                            f"[当前页面数据概览]\n{summary_text}\n\n"
-                            f"[用户问题]\n{part['text']}"
-                        )
+                        part["text"] = f"[当前页面数据概览]\n{summary_text}\n\n[用户问题]\n{part['text']}"
                         break
             else:
-                messages[-1]["content"] = (
-                    f"[当前页面数据概览]\n{summary_text}\n\n[用户问题]\n{original}"
-                )
+                messages[-1]["content"] = f"[当前页面数据概览]\n{summary_text}\n\n[用户问题]\n{original}"
 
     async def event_generator() -> AsyncGenerator[str, None]:
         if service is None:
             payload = json.dumps(
-                {
-                    "content": "\n\n[提示] Moonshot API Key 未配置，请在后端 .env 文件中设置 MOONSHOT_API_KEY"
-                },
+                {"content": "\n\n[提示] Moonshot API Key 未配置，请在后端 .env 文件中设置 MOONSHOT_API_KEY"},
                 ensure_ascii=False,
             )
             yield f"data: {payload}\n\n"
@@ -462,13 +434,11 @@ async def chat_stream(
             return
 
         try:
-            async for token in service.stream_chat(messages, system_prompt):
+            async for token in service.stream_chat(messages, system_prompt):  # type: ignore[attr-defined]
                 payload = json.dumps({"content": token}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
         except Exception as exc:
-            payload = json.dumps(
-                {"content": f"\n\n[错误] 服务异常: {exc}"}, ensure_ascii=False
-            )
+            payload = json.dumps({"content": f"\n\n[错误] 服务异常: {exc}"}, ensure_ascii=False)
             yield f"data: {payload}\n\n"
         done_payload = json.dumps({"done": True}, ensure_ascii=False)
         yield f"data: {done_payload}\n\n"
@@ -564,10 +534,7 @@ async def _call_moonshot_for_exam(
         ChoiceQuestion(
             number=q["number"],
             question=q["question"],
-            options=[
-                ChoiceOption(label=o["label"], text=o["text"])
-                for o in q.get("options", [])
-            ],
+            options=[ChoiceOption(label=o["label"], text=o["text"]) for o in q.get("options", [])],
             answer=q.get("answer"),
         )
         for q in data.get("choice_questions", [])
@@ -589,10 +556,10 @@ async def _call_moonshot_for_exam(
 
 
 @router.post("/exam/generate", summary="AI 出题：上传文件生成试卷题目")
-async def generate_exam_questions(
+async def post(
     file: UploadFile = File(..., description="上传的文件（支持 .docx, .txt）"),
     service: AiChatService = Depends(get_ai_chat_service),
-):
+) -> Any:
     """上传培训文件，AI 自动识别内容并生成选择题和判断题."""
     if not file.content_type or file.content_type not in _SUPPORTED_MIME_TYPES:
         raise HTTPException(
@@ -615,13 +582,9 @@ async def generate_exam_questions(
         raise HTTPException(status_code=400, detail="文件内容过短，无法生成题目")
 
     try:
-        result = await _call_moonshot_for_exam(
-            file_content, service.model
-        )
+        result = await _call_moonshot_for_exam(file_content, service.model)
     except json.JSONDecodeError as exc:
-        raise HTTPException(
-            status_code=500, detail=f"AI 返回格式解析失败: {exc}"
-        ) from exc
+        raise HTTPException(status_code=500, detail=f"AI 返回格式解析失败: {exc}") from exc
     except Exception as exc:
         logger.exception("AI 出题失败")
         raise HTTPException(status_code=500, detail=f"AI 出题失败: {exc}") from exc
@@ -632,10 +595,10 @@ async def generate_exam_questions(
     )
 
 
-@router.post("/exam/export", summary="导出试卷 Word 文档")
-async def export_exam(
+@router.post("/exam/export", summary="导出试卷 Word 文档")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     request: ExamExportRequest,
-):
+) -> Any:
     """根据试卷数据生成并下载 Word 文档."""
     try:
         buffer = generate_exam_docx(request)
@@ -643,7 +606,7 @@ async def export_exam(
         logger.exception("试卷导出失败")
         raise HTTPException(status_code=500, detail=f"试卷导出失败: {exc}") from exc
 
-    def _iterfile():
+    def _iterfile() -> Any:
         buffer.seek(0)
         yield buffer.read()
 
@@ -655,7 +618,5 @@ async def export_exam(
     return StreamingResponse(
         _iterfile(),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={
-            "Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}"
-        },
+        headers={"Content-Disposition": f"attachment; filename*=utf-8''{encoded_filename}"},
     )

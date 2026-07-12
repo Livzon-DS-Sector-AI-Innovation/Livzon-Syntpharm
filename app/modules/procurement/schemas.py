@@ -401,9 +401,7 @@ class ContractRecordResponse(BaseModel):
     filename: str = Field(..., description="合同文件名")
     content_type: str = Field(..., description="文件 MIME 类型")
     file_size: int = Field(..., description="文件大小（字节）")
-    payload: dict[str, Any] = Field(
-        default_factory=dict, description="合同生成请求快照"
-    )
+    payload: dict[str, Any] = Field(default_factory=dict, description="合同生成请求快照")
     created_at: datetime | None = Field(None, description="生成时间")
     updated_at: datetime | None = Field(None, description="更新时间")
 

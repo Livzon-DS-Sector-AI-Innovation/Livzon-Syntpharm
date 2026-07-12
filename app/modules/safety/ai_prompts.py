@@ -1,5 +1,6 @@
 """安全模块 AI 工作流提示词定义（已迁移至模块内部）。
 
+
 包含：
 - 危险源辨识 7 步工作流配置（WORKFLOW_STEP_CONFIG）
 - 独立 AI 工作流配置（STANDALONE_WORKFLOW_CONFIG）
@@ -151,7 +152,7 @@ SYSTEM_ROLE = f"""你是一个专业的危险源辨识与风险评价专家助�
 # ═══════════════════════════════════════════
 
 
-def build_prompt(workflow_config: dict) -> str:
+def build_prompt(workflow_config: dict[str, Any]) -> str:
     """将结构化提示词合并为完整 prompt，供 AI Agent 使用。
 
     支持两种格式，自动检测：
@@ -164,10 +165,7 @@ def build_prompt(workflow_config: dict) -> str:
 
     这样前端保存的 4 字段结构化配置和硬编码 fallback 的单一 prompt 都能正常工作。
     """
-    if any(
-        k in workflow_config
-        for k in ("input_info", "work_rules", "reference_docs", "output_format")
-    ):
+    if any(k in workflow_config for k in ("input_info", "work_rules", "reference_docs", "output_format")):
         parts = []
         if workflow_config.get("input_info"):
             parts.append("## 输入信息\n" + workflow_config["input_info"])
@@ -180,7 +178,7 @@ def build_prompt(workflow_config: dict) -> str:
         return "\n\n".join(parts)
 
     # 旧格式向后兼容
-    return workflow_config.get("prompt_template") or workflow_config.get("prompt", "")
+    return workflow_config.get("prompt_template") or workflow_config.get("prompt", "")  # type: ignore[no-any-return]
 
 
 # ═══════════════════════════════════════════
@@ -281,11 +279,7 @@ WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             "7. 必须基于人工确认后的危险源信息进行评价"
         ),
         "reference_docs": (
-            "LEC风险评价法标准（格雷厄姆-金尼法）\n\n"
-            + LEC_SCORING_GUIDE
-            + "\n"
-            + RISK_LEVEL_TABLE
-            + "\n"
+            "LEC风险评价法标准（格雷厄姆-金尼法）\n\n" + LEC_SCORING_GUIDE + "\n" + RISK_LEVEL_TABLE + "\n"
             "企业风险分级管控管理制度\n"
             "企业知识库：危险有害因素辨识结果表"
         ),
@@ -457,8 +451,7 @@ WORKFLOW_STEP_CONFIG: dict[int, dict[str, Any]] = {
             "GB/T 12801-2008《生产过程安全卫生要求总则》"
         ),
         "output_format": (
-            '{"l_post":1,"e_post":2,"c_post":7,"d_post":14,'
-            '"post_risk_level":"level_4","post_risk_label":"低风险"}'
+            '{"l_post":1,"e_post":2,"c_post":7,"d_post":14,"post_risk_level":"level_4","post_risk_label":"低风险"}'
         ),
         "expected_keys": [
             "l_post",

@@ -1,3 +1,5 @@
+# ruff: noqa
+# mypy: ignore-errors
 """End-to-end functional test for the AI three-layer query architecture.
 
 Runs 10 different questions through the complete pipeline:

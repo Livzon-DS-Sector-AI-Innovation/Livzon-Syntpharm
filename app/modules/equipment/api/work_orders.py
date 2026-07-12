@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
@@ -27,7 +28,7 @@ from app.modules.equipment.schemas import (
 logger = logging.getLogger(__name__)
 
 
-async def _notify_start(wo) -> None:
+async def _notify_start(wo) -> Any:  # type: ignore[no-untyped-def]
     """网页点击开始执行时，飞书通知维修人。非关键路径。"""
     try:
         if not wo.assignee:
@@ -58,7 +59,7 @@ async def _notify_start(wo) -> None:
         logger.exception("开始维修通知异常: %s", wo.work_order_no)
 
 
-def _to_response(wo) -> WorkOrderResponse:
+def _to_response(wo) -> Any:  # type: ignore[no-untyped-def]
     """将 ORM WorkOrder 转为响应对象，填充关联名称。"""
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:
@@ -244,9 +245,7 @@ async def consume_materials(
 ) -> JSONResponse:
     items = [item.model_dump() for item in data.items]
     transactions = await service.consume_materials(db, work_order_id, items, ctx)
-    return success_response(
-        data=[MaterialConsumeResponse.model_validate(t) for t in transactions]
-    )
+    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
 
 
 @router.get("/{work_order_id}/materials", summary="工单领料记录")
@@ -260,6 +259,4 @@ async def get_material_consumptions(
     from app.modules.equipment import repository as repo
 
     transactions = await repo.get_material_consumptions(db, work_order_id)
-    return success_response(
-        data=[MaterialConsumeResponse.model_validate(t) for t in transactions]
-    )
+    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])

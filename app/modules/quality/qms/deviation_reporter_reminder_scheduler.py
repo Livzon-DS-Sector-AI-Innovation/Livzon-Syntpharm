@@ -5,16 +5,17 @@
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskDefinition
-from app.platform.scheduler.registry import scheduler_registry
+from app.platform.scheduler.registry import scheduler_registry  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 
 JOB_ID = "deviation_reporter_reminder_daily"
 
 
-async def _run_reminder_check():
+async def _run_reminder_check() -> Any:
     logger.info(f"[{datetime.now()}] 开始执行偏差填报人提醒检查...")
     try:
         from app.modules.quality.qms.deviation_reporter_reminder_service import (
@@ -48,6 +49,6 @@ deviation_reporter_reminder_task = TaskDefinition(
 )
 
 
-def register():
+def register() -> Any:
     scheduler_registry.register_task(deviation_reporter_reminder_task)
     logger.info("偏差填报人提醒任务已注册（每天 08:00）")

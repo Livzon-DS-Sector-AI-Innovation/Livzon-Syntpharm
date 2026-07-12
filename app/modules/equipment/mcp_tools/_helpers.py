@@ -99,9 +99,7 @@ def _it_to_dict(task: Any) -> dict[str, Any]:
         "route_name": task.route.name if task.route else "",
         "route_id": str(task.route.id) if task.route else "",
         "equipment_name": task.equipment.name if task.equipment else "",
-        "equipment_ids": [str(eid) for eid in task.equipment_ids]
-        if task.equipment_ids
-        else [],
+        "equipment_ids": [str(eid) for eid in task.equipment_ids] if task.equipment_ids else [],
         "equipment_count": eq_count,
         "planned_time": task.planned_time.isoformat() if task.planned_time else "",
         "overall_result": task.overall_result or "",
@@ -110,9 +108,7 @@ def _it_to_dict(task: Any) -> dict[str, Any]:
     }
 
 
-async def _get_template_item_map(
-    db: AsyncSession, task: Any, equipment_id: uuid.UUID | None = None
-) -> dict[str, str]:
+async def _get_template_item_map(db: AsyncSession, task: Any, equipment_id: uuid.UUID | None = None) -> dict[str, str]:
     """根据任务类型获取模板检查项的 item_name → template_item_id 映射。
 
     线路巡检：从路线 → 地点 → 设备 → 模板绑定获取（可能多个模板合并）
@@ -138,9 +134,7 @@ async def _get_template_item_map(
                 RouteLocationEquipment.is_deleted == False,  # noqa: E712
             )
             if equipment_id is not None:
-                eq_stmt = eq_stmt.where(
-                    RouteLocationEquipment.equipment_id == equipment_id
-                )
+                eq_stmt = eq_stmt.where(RouteLocationEquipment.equipment_id == equipment_id)
             eqs = (await db.execute(eq_stmt)).scalars().all()
             for eq in eqs:
                 tpl_stmt = select(RouteEquipmentTemplate).where(
@@ -164,7 +158,7 @@ async def _get_template_item_map(
                                 name_to_id[item_.item_name] = ""
 
     elif task.equipment_templates:
-        seen_tids: set[uuid.UUID] = set()
+        seen_tids: set[uuid.UUID] = set()  # type: ignore[no-redef]
         for tpl_ids in task.equipment_templates.values():
             for tid_str in tpl_ids:
                 tid = uuid.UUID(tid_str) if isinstance(tid_str, str) else tid_str
@@ -228,9 +222,7 @@ async def _resolve_work_order(db: AsyncSession, identifier: str) -> Any:
             return wo
     except ValueError:
         pass
-    raise ValueError(
-        f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。"
-    )
+    raise ValueError(f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。")
 
 
 async def _resolve_template(db: AsyncSession, identifier: str) -> Any:

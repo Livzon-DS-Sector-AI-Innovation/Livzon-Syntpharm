@@ -69,9 +69,7 @@ async def list_employees_by_department(
 ) -> tuple[list[dict[str, str | None]], int]:
     """List employees by department name."""
     repo = EmployeeRepository(session)
-    employees, total = await repo.list_employees(
-        department=department, page=1, page_size=200
-    )
+    employees, total = await repo.list_employees(department=department, page=1, page_size=200)
     data = [_employee_to_dict(e) for e in employees]
     return data, total
 
@@ -95,9 +93,7 @@ async def query_employees(
     """
     repo = EmployeeRepository(session)
     normalized = _normalize_filters(filters)
-    employees, total = await repo.list_employees(
-        **normalized, page=page, page_size=page_size
-    )
+    employees, total = await repo.list_employees(**normalized, page=page, page_size=page_size)
     data = [_employee_to_dict(e) for e in employees]
     return data, total
 
@@ -114,9 +110,7 @@ async def count_employees(
     return total
 
 
-async def search_employees_by_name(
-    session: AsyncSession, name: str
-) -> list[dict[str, str | None]]:
+async def search_employees_by_name(session: AsyncSession, name: str) -> list[dict[str, str | None]]:
     """Search employees by name keyword.
 
     Returns a lightweight list of employee facts for AI context injection.
@@ -126,9 +120,7 @@ async def search_employees_by_name(
     return [_employee_to_dict(e) for e in employees]
 
 
-async def search_employees_fuzzy(
-    session: AsyncSession, name: str
-) -> list[dict[str, str | None]]:
+async def search_employees_fuzzy(session: AsyncSession, name: str) -> list[dict[str, str | None]]:
     """Fuzzy search: when exact match returns empty, search by each Chinese character.
 
     Returns employees whose name contains any character from the query name.
@@ -154,7 +146,7 @@ async def group_count_employees(
     *,
     group_by: str,
     filters: dict[str, Any],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Group employees by a field and count occurrences.
 
     Args:
@@ -166,7 +158,7 @@ async def group_count_employees(
     """
     repo = EmployeeRepository(session)
     normalized = _normalize_filters(filters)
-    return await repo.group_count(group_by, **normalized)
+    return await repo.group_count(group_by, **normalized)  # type: ignore[no-any-return]
 
 
 async def get_distinct_employee_values(
@@ -186,4 +178,4 @@ async def get_distinct_employee_values(
     """
     repo = EmployeeRepository(session)
     normalized = _normalize_filters(filters)
-    return await repo.get_distinct_values(field, **normalized)
+    return await repo.get_distinct_values(field, **normalized)  # type: ignore[no-any-return]

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import uuid
 
 import pytest
@@ -113,9 +114,7 @@ async def test_aggregate_suppliers_groups_by_manufacturer(
             ],
             group_by=["manufacturer_name"],
             filters=[
-                AnalyticsFilterInput(
-                    field="purchase_category", op="eq", value=category
-                ),
+                AnalyticsFilterInput(field="purchase_category", op="eq", value=category),
                 AnalyticsFilterInput(field="manufacturer_name", op="not_empty"),
             ],
             order_by=[AnalyticsOrderInput(metric="record_count", direction="desc")],

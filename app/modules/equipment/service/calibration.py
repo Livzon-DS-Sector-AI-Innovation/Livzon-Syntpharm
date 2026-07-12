@@ -55,9 +55,7 @@ async def create_calibration_plan(
 
     # 自动计算下次校准日期
     if data.last_calibration_date:
-        plan_data["next_calibration_date"] = _add_months(
-            data.last_calibration_date, data.cycle_months
-        )
+        plan_data["next_calibration_date"] = _add_months(data.last_calibration_date, data.cycle_months)
 
     return await repo.create_calibration_plan(db, plan_data)
 

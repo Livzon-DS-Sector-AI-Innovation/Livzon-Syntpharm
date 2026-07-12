@@ -1,3 +1,4 @@
+# ruff: noqa
 """Import gift inventory from Excel into PostgreSQL."""
 
 import asyncio

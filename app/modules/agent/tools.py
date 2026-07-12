@@ -125,11 +125,7 @@ def agent_tool(
             write=write,
             risk_level=risk_level,
             required_roles=tuple(required_roles),
-            workflow_allowed=(
-                not human_decision_required
-                if workflow_allowed is None
-                else workflow_allowed
-            ),
+            workflow_allowed=(not human_decision_required if workflow_allowed is None else workflow_allowed),
             human_decision_required=human_decision_required,
             method=method,
             path=path,
@@ -231,9 +227,7 @@ class ToolExecutor:
                     operation=request.operation,
                     data=None,
                     requires_confirmation=True,
-                    confirmation=agent_service._confirmation_out(confirmation)
-                    if agent_service is not None
-                    else None,
+                    confirmation=agent_service._confirmation_out(confirmation) if agent_service is not None else None,
                 )
                 await self.repo.finish_tool_call(
                     db,
@@ -285,9 +279,7 @@ class ToolExecutor:
             await self.repo.finish_tool_call(
                 db,
                 call,
-                status="invalid_request"
-                if exc.status_code == status.HTTP_400_BAD_REQUEST
-                else "failed",
+                status="invalid_request" if exc.status_code == status.HTTP_400_BAD_REQUEST else "failed",
                 error_message=str(exc.detail),
             )
             await self._write_audit(
@@ -375,7 +367,7 @@ class ToolExecutor:
         try:
             return spec.input_model.model_validate(payload)
         except ValidationError as exc:
-            first = exc.errors()[0] if exc.errors() else {}
+            first = exc.errors()[0] if exc.errors() else {}  # type: ignore[typeddict-item]
             loc = ".".join(str(part) for part in first.get("loc", ()))
             message = first.get("msg") or str(exc)
             detail = f"{loc}: {message}" if loc else message
@@ -435,8 +427,7 @@ class ToolExecutor:
             summary=request.reason or spec.summary or request.operation,
             risk_level=spec.risk_level,
             request_payload=request.model_dump(mode="json"),
-            expires_at=datetime.now(UTC)
-            + timedelta(seconds=self.confirmation_ttl_seconds),
+            expires_at=datetime.now(UTC) + timedelta(seconds=self.confirmation_ttl_seconds),
         )
 
     async def _resolve_identity(
@@ -478,9 +469,7 @@ class ToolExecutor:
             user_id=user_id,
             method="AGENT",
             path=f"agent://tools/{spec.name}",
-            status_code=(
-                200 if status_value in {"succeeded", "confirmation_required"} else 400
-            ),
+            status_code=(200 if status_value in {"succeeded", "confirmation_required"} else 400),
             resource_type="agent_tool",
             action=action,
             new_value=self._truncate_payload(response_payload),
@@ -511,9 +500,7 @@ class ToolExecutor:
         masked: dict[str, Any] = {}
         for key, item in value.items():
             key_lower = str(key).lower()
-            if any(
-                token in key_lower for token in ("secret", "token", "password", "key")
-            ):
+            if any(token in key_lower for token in ("secret", "token", "password", "key")):
                 masked[key] = "***"
             elif isinstance(item, dict):
                 masked[key] = ToolExecutor._mask_secret_fields(item)

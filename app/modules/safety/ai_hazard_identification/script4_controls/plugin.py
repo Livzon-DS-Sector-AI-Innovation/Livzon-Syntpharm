@@ -64,7 +64,7 @@ class ControlMeasureExtractor(BasePlugin[ControlsInput, ControlsOutput]):
     def _get_expected_keys(self) -> list[str]:
         return EXPECTED_KEYS
 
-    def _parse_output(self, raw: dict) -> ControlsOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> ControlsOutput:
         try:
             return ControlsOutput(
                 engineering_controls=raw.get("engineering_controls", "待人工确认"),

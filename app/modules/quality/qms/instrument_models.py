@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.shared.base_model import BaseModel
 
 
-class InstrumentStatus(str, enum.Enum):
+class InstrumentStatus(enum.StrEnum):
     """仪器状态"""
 
     DRAFT = "draft"  # 草稿
@@ -25,21 +25,21 @@ class InstrumentStatus(str, enum.Enum):
     INACTIVE = "inactive"  # 已停用
 
 
-class CalibrationMethod(str, enum.Enum):
+class CalibrationMethod(enum.StrEnum):
     """校准方式"""
 
     EXTERNAL = "external"  # 外委校准
     INTERNAL = "internal"  # 内部校准
 
 
-class CalibrationCycleUnit(str, enum.Enum):
+class CalibrationCycleUnit(enum.StrEnum):
     """校准周期单位"""
 
     MONTH = "month"  # 月
     YEAR = "year"  # 年
 
 
-class IQStatus(str, enum.Enum):
+class IQStatus(enum.StrEnum):
     """IQ确认状态"""
 
     PENDING = "pending"  # 待确认
@@ -47,7 +47,7 @@ class IQStatus(str, enum.Enum):
     NOT_REQUIRED = "not_required"  # 不需要
 
 
-class OQStatus(str, enum.Enum):
+class OQStatus(enum.StrEnum):
     """OQ确认状态"""
 
     PENDING = "pending"  # 待确认
@@ -55,7 +55,7 @@ class OQStatus(str, enum.Enum):
     NOT_REQUIRED = "not_required"  # 不需要
 
 
-class InstrumentCategory(str, enum.Enum):
+class InstrumentCategory(enum.StrEnum):
     """仪器分类"""
 
     PHYSICOCHEMICAL = "physicochemical"  # 理化
@@ -66,7 +66,7 @@ class InstrumentCategory(str, enum.Enum):
     OTHER = "other"  # 其他
 
 
-class CalibrationResult(str, enum.Enum):
+class CalibrationResult(enum.StrEnum):
     """校准结论"""
 
     QUALIFIED = "qualified"  # 合格
@@ -74,7 +74,7 @@ class CalibrationResult(str, enum.Enum):
     LIMITED = "limited"  # 限用
 
 
-class RecordStatus(str, enum.Enum):
+class RecordStatus(enum.StrEnum):
     """校准记录状态"""
 
     DRAFT = "draft"  # 草稿
@@ -84,14 +84,14 @@ class RecordStatus(str, enum.Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class ApprovalType(str, enum.Enum):
+class ApprovalType(enum.StrEnum):
     """审批类型"""
 
     INSTRUMENT = "instrument"  # 仪器档案审批
     RECORD = "record"  # 校准记录审批
 
 
-class ApprovalStatus(str, enum.Enum):
+class ApprovalStatus(enum.StrEnum):
     """审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -114,40 +114,22 @@ class InstrumentCalibration(BaseModel):
     )
 
     # 仪器基本信息
-    instrument_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, comment="仪器编号"
-    )
-    instrument_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="仪器名称"
-    )
-    model: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="型号"
-    )
-    serial_no: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="出厂编号"
-    )
-    manufacturer: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="制造商"
-    )
+    instrument_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="仪器编号")
+    instrument_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="仪器名称")
+    model: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="型号")
+    serial_no: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="出厂编号")
+    manufacturer: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="制造商")
     # 存放信息
-    location: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="存放地点"
-    )
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="存放地点")
     # 仪器分类
-    category: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="仪器分类"
-    )
+    category: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="仪器分类")
     # 出厂日期
     manufacture_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="出厂日期"
     )
     # IQ/OQ确认状态
-    iq_status: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="IQ确认状态"
-    )
-    oq_status: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="OQ确认状态"
-    )
+    iq_status: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="IQ确认状态")
+    oq_status: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="OQ确认状态")
     iq_confirm_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="IQ确认日期"
     )
@@ -158,23 +140,13 @@ class InstrumentCalibration(BaseModel):
     responsible_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), nullable=True, comment="使用负责人ID"
     )
-    responsible_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="使用负责人"
-    )
+    responsible_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="使用负责人")
     # 启用状态
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, server_default="true", nullable=False, comment="是否启用"
-    )
-    deactivate_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="停用日期"
-    )
-    deactivate_reason: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="停用原因"
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="true", nullable=False, comment="是否启用")
+    deactivate_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="停用日期")
+    deactivate_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="停用原因")
     # 审核状态
-    status: Mapped[str] = mapped_column(
-        String(32), server_default="draft", nullable=False, comment="状态"
-    )
+    status: Mapped[str] = mapped_column(String(32), server_default="draft", nullable=False, comment="状态")
     # 备注
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -205,16 +177,10 @@ class InstrumentCalibrationRule(BaseModel):
         comment="关联仪器ID",
     )
     # 校准方式
-    calibration_method: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="校准方式"
-    )
+    calibration_method: Mapped[str] = mapped_column(String(32), nullable=False, comment="校准方式")
     # 校准周期
-    calibration_cycle: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="校准周期"
-    )
-    calibration_unit: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="周期单位"
-    )
+    calibration_cycle: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="校准周期")
+    calibration_unit: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="周期单位")
     # 最近校准信息
     last_calibration_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="最近校准日期"
@@ -223,27 +189,17 @@ class InstrumentCalibrationRule(BaseModel):
         DateTime(timezone=True), nullable=True, comment="下次校准日期"
     )
     # 校准机构（外校时）
-    calibration_agency: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="校准机构名称"
-    )
-    agency_contact: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="机构联系方式"
-    )
+    calibration_agency: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="校准机构名称")
+    agency_contact: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="机构联系方式")
     # 内校人员
     internal_calibrator_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), nullable=True, comment="内校人员ID"
     )
-    internal_calibrator_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="内校人员"
-    )
+    internal_calibrator_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="内校人员")
     # 到期预警
-    warning_days: Mapped[int | None] = mapped_column(
-        Integer, server_default="7", nullable=True, comment="提前预警天数"
-    )
+    warning_days: Mapped[int | None] = mapped_column(Integer, server_default="7", nullable=True, comment="提前预警天数")
     # 是否启用
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, server_default="true", nullable=False, comment="是否启用"
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="true", nullable=False, comment="是否启用")
 
     # 关系
     instrument: Mapped["InstrumentCalibration"] = relationship(
@@ -271,65 +227,35 @@ class InstrumentCalibrationRecord(BaseModel):
         nullable=False,
         comment="关联仪器ID",
     )
-    rule_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True, comment="关联校准规则ID"
-    )
+    rule_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, comment="关联校准规则ID")
     # 校准单据信息
-    calibration_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, comment="校准单据编号"
-    )
+    calibration_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="校准单据编号")
     # 校准日期
-    calibration_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, comment="校准日期"
-    )
+    calibration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, comment="校准日期")
     calibration_end_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="校准完成日期"
     )
     # 校准方式/机构/人员
-    calibration_method: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="校准方式"
-    )
-    calibration_agency: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="校准机构"
-    )
-    calibrator_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True, comment="校准人员ID"
-    )
-    calibrator_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="校准人员"
-    )
+    calibration_method: Mapped[str] = mapped_column(String(32), nullable=False, comment="校准方式")
+    calibration_agency: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="校准机构")
+    calibrator_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, comment="校准人员ID")
+    calibrator_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="校准人员")
     # 校准证书
-    certificate_no: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="校准证书编号"
-    )
-    certificate_url: Mapped[str | None] = mapped_column(
-        String(512), nullable=True, comment="校准证书附件URL"
-    )
+    certificate_no: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="校准证书编号")
+    certificate_url: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="校准证书附件URL")
     # 校准结论
-    calibration_result: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="校准结论"
-    )
-    result_reason: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="结论说明"
-    )
+    calibration_result: Mapped[str] = mapped_column(String(32), nullable=False, comment="校准结论")
+    result_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="结论说明")
     # 有效期
-    valid_from: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="有效期起"
-    )
-    valid_until: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="有效期至"
-    )
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="有效期起")
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="有效期至")
     # 计划信息
-    is_scheduled: Mapped[bool] = mapped_column(
-        Boolean, server_default="false", nullable=False, comment="是否计划校准"
-    )
+    is_scheduled: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False, comment="是否计划校准")
     scheduled_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="计划校准日期"
     )
     # 审核状态
-    status: Mapped[str] = mapped_column(
-        String(32), server_default="draft", nullable=False, comment="状态"
-    )
+    status: Mapped[str] = mapped_column(String(32), server_default="draft", nullable=False, comment="状态")
     # 备注
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -351,36 +277,18 @@ class InstrumentCalibrationApproval(BaseModel):
     )
 
     # 关联类型
-    related_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="关联类型"
-    )
-    related_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, comment="关联ID"
-    )
+    related_type: Mapped[str] = mapped_column(String(32), nullable=False, comment="关联类型")
+    related_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, comment="关联ID")
     # 审批流程
-    approval_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="审批类型"
-    )
-    sequence: Mapped[int] = mapped_column(
-        Integer, server_default="1", nullable=False, comment="审批顺序"
-    )
+    approval_type: Mapped[str] = mapped_column(String(32), nullable=False, comment="审批类型")
+    sequence: Mapped[int] = mapped_column(Integer, server_default="1", nullable=False, comment="审批顺序")
     # 审批状态
-    status: Mapped[str] = mapped_column(
-        String(32), server_default="pending", nullable=False, comment="审批状态"
-    )
-    approval_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="审批日期"
-    )
-    comments: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="审批意见"
-    )
+    status: Mapped[str] = mapped_column(String(32), server_default="pending", nullable=False, comment="审批状态")
+    approval_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="审批日期")
+    comments: Mapped[str | None] = mapped_column(Text, nullable=True, comment="审批意见")
     # 审批人
-    approver_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True, comment="审批人ID"
-    )
-    approver_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="审批人"
-    )
+    approver_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, comment="审批人ID")
+    approver_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="审批人")
 
 
 # ========== 校准到期提醒配置表 ==========
@@ -394,15 +302,9 @@ class CalibrationReminderConfig(BaseModel):
     )
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="配置名称")
-    feishu_app_id: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="飞书应用AppID"
-    )
-    feishu_app_secret: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="飞书应用AppSecret"
-    )
-    chat_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="飞书群ID或用户ID"
-    )
+    feishu_app_id: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="飞书应用AppID")
+    feishu_app_secret: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="飞书应用AppSecret")
+    chat_id: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="飞书群ID或用户ID")
     receive_id_type: Mapped[str] = mapped_column(
         String(20),
         server_default="chat_id",
@@ -422,9 +324,7 @@ class CalibrationReminderConfig(BaseModel):
     remind_overdue: Mapped[bool] = mapped_column(
         Boolean, server_default="true", nullable=False, comment="是否在超期后提醒"
     )
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, server_default="true", nullable=False, comment="是否启用"
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default="true", nullable=False, comment="是否启用")
     # 上次提醒时间
     last_remind_30_days: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="上次30天提醒时间"

@@ -1,11 +1,14 @@
 """通用 AI 提示词构建工具。
 
+
 提供跨模块复用的 prompt 构建基础设施。
 模块特定的提示词配置应放在各自模块内部（如 app/modules/<module>/ai_prompts.py）。
 """
 
+from typing import Any
 
-def build_prompt(workflow_config: dict) -> str:
+
+def build_prompt(workflow_config: dict[str, Any]) -> str:
     """将结构化提示词合并为完整 prompt，供 AI Agent 使用。
 
     支持两种配置格式：
@@ -40,4 +43,4 @@ def build_prompt(workflow_config: dict) -> str:
         return "\n\n".join(parts)
 
     # 旧格式：单一 prompt 或 prompt_template
-    return workflow_config.get("prompt_template") or workflow_config.get("prompt", "")
+    return workflow_config.get("prompt_template") or workflow_config.get("prompt", "")  # type: ignore[no-any-return]

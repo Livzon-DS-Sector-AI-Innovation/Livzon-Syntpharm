@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Production module model tests."""
 
 from __future__ import annotations
@@ -26,9 +27,7 @@ async def test_production_plan_model_creation(db_session, sample_production_plan
     db_session.add(plan)
     await db_session.commit()
 
-    result = await db_session.execute(
-        select(ProductionPlan).where(ProductionPlan.id == plan.id)
-    )
+    result = await db_session.execute(select(ProductionPlan).where(ProductionPlan.id == plan.id))
     fetched = result.scalar_one()
     assert fetched.plan_no == sample_production_plan_data["plan_no"]
     assert fetched.total_batches == 10

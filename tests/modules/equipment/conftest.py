@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Equipment module test fixtures."""
 
 from __future__ import annotations
@@ -157,9 +158,7 @@ async def auth_client(
     patcher.start()
 
     # Mock the require_equipment_access to return our mock dependency
-    access_patcher = patch(
-        "app.modules.equipment.deps.require_equipment_access", _mock_equipment_access
-    )
+    access_patcher = patch("app.modules.equipment.deps.require_equipment_access", _mock_equipment_access)
     access_patcher.start()
 
     transport = ASGITransport(app=app)
@@ -204,9 +203,7 @@ async def admin_client(
     patcher.start()
 
     # Mock the require_equipment_access to return our mock dependency
-    access_patcher = patch(
-        "app.modules.equipment.deps.require_equipment_access", _mock_equipment_access
-    )
+    access_patcher = patch("app.modules.equipment.deps.require_equipment_access", _mock_equipment_access)
     access_patcher.start()
 
     transport = ASGITransport(app=app)

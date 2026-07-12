@@ -1,8 +1,10 @@
 """Safety API — 飞书事件订阅管理端点（WebSocket 状态查询 / 手动恢复）。"""
 
+from typing import Any
+
 from fastapi import APIRouter
 
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.safety.feishu.event_client import get_ws_status, restart_ws
 
 feishu_router = APIRouter()
@@ -13,7 +15,7 @@ feishu_router = APIRouter()
     response_model=ApiResponse,
     summary="查询飞书 WebSocket 连接状态",
 )
-async def ws_status():
+async def ws_status() -> Any:
     """查询安全模块飞书事件订阅的 WebSocket 连接状态。
 
     Returns:
@@ -33,7 +35,7 @@ async def ws_status():
     response_model=ApiResponse,
     summary="手动恢复飞书 WebSocket 连接",
 )
-async def ws_restart():
+async def ws_restart() -> Any:
     """手动恢复安全模块飞书事件订阅的 WebSocket 连接。
 
     当 WS 连接因重试次数耗尽而自动退出时，调用此端点重新启动。

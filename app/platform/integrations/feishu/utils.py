@@ -49,8 +49,8 @@ def parse_bitable_url(value: str | None) -> BitableReference:
 
     return BitableReference(
         app_token=app_token,
-        table_id=(query.get("table") or [None])[0],
-        view_id=(query.get("view") or [None])[0],
+        table_id=(query.get("table") or [None])[0],  # type: ignore[list-item]
+        view_id=(query.get("view") or [None])[0],  # type: ignore[list-item]
     )
 
 
@@ -137,7 +137,7 @@ async def get_tenant_access_token(
         except Exception:
             pass
 
-    return token
+    return token  # type: ignore[no-any-return]
 
 
 async def test_bitable_table_with_token(

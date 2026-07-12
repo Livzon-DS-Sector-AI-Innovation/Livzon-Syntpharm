@@ -1,6 +1,7 @@
 """原料报告单 Pydantic Schemas"""
 
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -16,7 +17,7 @@ class TemplateColumnConfig(BaseModel):
     type: str = "text"  # text, number, date, select
     width: int | None = None
     required: bool = False
-    options: list | None = None  # 下拉选项
+    options: list[Any] | None = None  # 下拉选项
 
 
 class TableFieldsConfig(BaseModel):
@@ -30,8 +31,8 @@ class TemplateCreate(BaseModel):
 
     template_name: str
     template_description: str | None = None
-    field_mapping: dict | None = {}
-    table_fields: dict | None = {}
+    field_mapping: dict[str, Any] | None = {}
+    table_fields: dict[str, Any] | None = {}
 
 
 class TemplateUpdate(BaseModel):
@@ -39,8 +40,8 @@ class TemplateUpdate(BaseModel):
 
     template_name: str | None = None
     template_description: str | None = None
-    field_mapping: dict | None = None
-    table_fields: dict | None = None
+    field_mapping: dict[str, Any] | None = None
+    table_fields: dict[str, Any] | None = None
     is_active: bool | None = None
 
 
@@ -53,8 +54,8 @@ class TemplateResponse(BaseModel):
     template_name: str
     template_file_url: str
     template_description: str | None = None
-    field_mapping: dict = {}
-    table_fields: dict = {}
+    field_mapping: dict[str, Any] = {}
+    table_fields: dict[str, Any] = {}
     is_active: bool = True
     created_at: datetime
     updated_at: datetime | None = None
@@ -81,7 +82,7 @@ class ReportCreate(BaseModel):
     template_id: UUID | None = None
     report_title: str
     report_date: date
-    static_data: dict | None = None
+    static_data: dict[str, Any] | None = None
 
 
 class ReportUpdate(BaseModel):
@@ -90,7 +91,7 @@ class ReportUpdate(BaseModel):
     template_id: UUID | None = None
     report_title: str | None = None
     report_date: date | None = None
-    static_data: dict | None = None
+    static_data: dict[str, Any] | None = None
     status: str | None = None
 
 
@@ -118,7 +119,7 @@ class ReportResponse(BaseModel):
     template_id: UUID | None = None
     report_title: str
     report_date: date
-    static_data: dict | None = None
+    static_data: dict[str, Any] | None = None
     status: str
     generated_file_url: str | None = None
     created_at: datetime
@@ -151,10 +152,10 @@ class ReportDetailResponse(BaseModel):
     template: TemplateResponse | None = None
     report_title: str
     report_date: date
-    static_data: dict | None = None
+    static_data: dict[str, Any] | None = None
     status: str
     generated_file_url: str | None = None
-    items: list = []
+    items: list[Any] = []
     created_at: datetime
     updated_at: datetime | None = None
 
@@ -179,4 +180,4 @@ class ReportStatistics(BaseModel):
     draft_count: int = 0
     completed_count: int = 0
     approved_count: int = 0
-    by_template: dict = {}
+    by_template: dict[str, Any] = {}

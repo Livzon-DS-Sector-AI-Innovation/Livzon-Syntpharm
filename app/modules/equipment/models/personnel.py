@@ -1,6 +1,7 @@
 """Equipment personnel ORM models."""
 
 import uuid as _uuid
+from typing import Any
 
 from sqlalchemy import Boolean, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -27,15 +28,9 @@ class EquipmentRole(BaseModel):
 
     name: Mapped[str] = mapped_column(String(100), comment="角色名称")
     code: Mapped[str] = mapped_column(String(50), comment="角色编码")
-    description: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="角色描述"
-    )
-    scope: Mapped[str] = mapped_column(
-        String(50), default="global", server_default="'global'", comment="作用域"
-    )
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true", comment="是否启用"
-    )
+    description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="角色描述")
+    scope: Mapped[str] = mapped_column(String(50), default="global", server_default="'global'", comment="作用域")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否启用")
 
 
 class EquipmentPersonnel(BaseModel):
@@ -53,27 +48,15 @@ class EquipmentPersonnel(BaseModel):
         UUID(as_uuid=True), nullable=True, comment="逻辑引用 identity.users.id"
     )
     name: Mapped[str] = mapped_column(String(100), comment="冗余，人员姓名")
-    employee_no: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="冗余，工号"
-    )
-    department: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="冗余，部门"
-    )
+    employee_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="冗余，工号")
+    department: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="冗余，部门")
     feishu_user_id: Mapped[str | None] = mapped_column(
         String(128), nullable=True, comment="飞书 user_id（发消息通知用）"
     )
-    feishu_open_id: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="飞书 open_id"
-    )
-    mobile: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="冗余，手机号"
-    )
-    extended_attrs: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, comment="扩展属性槽"
-    )
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true", comment="是否在岗"
-    )
+    feishu_open_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书 open_id")
+    mobile: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="冗余，手机号")
+    extended_attrs: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="扩展属性槽")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否在岗")
 
 
 class EquipmentPersonnelRole(BaseModel):
@@ -92,12 +75,8 @@ class EquipmentPersonnelRole(BaseModel):
         {"schema": "equipment"},
     )
 
-    personnel_id: Mapped[_uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), comment="逻辑引用 equipment_personnel.id"
-    )
-    role_id: Mapped[_uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), comment="逻辑引用 equipment_role.id"
-    )
+    personnel_id: Mapped[_uuid.UUID] = mapped_column(UUID(as_uuid=True), comment="逻辑引用 equipment_personnel.id")
+    role_id: Mapped[_uuid.UUID] = mapped_column(UUID(as_uuid=True), comment="逻辑引用 equipment_role.id")
 
 
 class EquipmentPersonnelCategory(BaseModel):
@@ -117,12 +96,6 @@ class EquipmentPersonnelCategory(BaseModel):
         {"schema": "equipment"},
     )
 
-    personnel_id: Mapped[_uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), comment="逻辑引用 equipment_personnel.id"
-    )
-    role_id: Mapped[_uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), comment="逻辑引用 equipment_role.id"
-    )
-    category_id: Mapped[_uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), comment="逻辑引用 equipment_categories.id"
-    )
+    personnel_id: Mapped[_uuid.UUID] = mapped_column(UUID(as_uuid=True), comment="逻辑引用 equipment_personnel.id")
+    role_id: Mapped[_uuid.UUID] = mapped_column(UUID(as_uuid=True), comment="逻辑引用 equipment_role.id")
+    category_id: Mapped[_uuid.UUID] = mapped_column(UUID(as_uuid=True), comment="逻辑引用 equipment_categories.id")

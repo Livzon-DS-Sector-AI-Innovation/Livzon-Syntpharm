@@ -54,22 +54,15 @@ async def get_safety_tenant_token(client: lark.Client | None = None) -> str:
     app_secret = _get_safety_app_secret()
     req = (
         InternalTenantAccessTokenRequest.builder()
-        .request_body(
-            InternalTenantAccessTokenRequestBody.builder()
-            .app_id(app_id)
-            .app_secret(app_secret)
-            .build()
-        )
+        .request_body(InternalTenantAccessTokenRequestBody.builder().app_id(app_id).app_secret(app_secret).build())
         .build()
     )
     resp = await client.auth.v3.tenant_access_token.ainternal(req)
     if not resp.success():
-        raise RuntimeError(
-            f"获取安全模块飞书 tenant token 失败: code={resp.code}, msg={resp.msg}"
-        )
+        raise RuntimeError(f"获取安全模块飞书 tenant token 失败: code={resp.code}, msg={resp.msg}")
     if resp.raw and resp.raw.content:
         data = _json.loads(resp.raw.content.decode("utf-8"))
         token = data.get("tenant_access_token", "")
         logger.debug("安全模块飞书 tenant token 获取成功")
-        return token
+        return token  # type: ignore[no-any-return]
     raise RuntimeError("安全模块飞书 tenant token 响应为空")

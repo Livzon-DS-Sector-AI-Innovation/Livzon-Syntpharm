@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 系统角色定义
 # ═══════════════════════════════════════════════════════════════════════════
@@ -384,7 +386,7 @@ def build_context_text(
     hazard_category: str | None = None,
     hazard_level: str | None = None,
     department: str | None = None,
-    ai_rectification_suggestion: dict | None = None,
+    ai_rectification_suggestion: dict[str, Any] | None = None,
 ) -> str:
     """构建原始隐患上下文文本（纯文本模式）。"""
 
@@ -476,12 +478,8 @@ def build_full_prompt(
         prompt += "\n\n" + FEWSHOT_MARKER
         for i, ex in enumerate(FEWSHOT_EXAMPLES, 1):
             prompt += f"\n\n**示例{i}：{ex['scenario']}**\n"
-            prompt += (
-                f"输入：{_json.dumps(ex['input'], ensure_ascii=False, indent=2)}\n"
-            )
-            prompt += (
-                f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
-            )
+            prompt += f"输入：{_json.dumps(ex['input'], ensure_ascii=False, indent=2)}\n"
+            prompt += f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
 
     return prompt
 
@@ -502,7 +500,7 @@ def get_expected_keys() -> list[str]:
     ]
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回用于写入 ai_workflow_configs 表的种子配置。"""
     return {
         "module_code": "hazard",

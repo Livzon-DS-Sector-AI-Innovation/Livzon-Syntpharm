@@ -3,6 +3,7 @@
 import logging
 import uuid
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -15,7 +16,7 @@ class ApiResponse(BaseModel):
 
     code: int = 200
     message: str = "Success"
-    data: dict | list | None = None
+    data: dict[str, Any] | list[Any] | None = None
 
 
 router = APIRouter(prefix="/deviation-report", tags=["偏差报告"])
@@ -25,19 +26,17 @@ router = APIRouter(prefix="/deviation-report", tags=["偏差报告"])
 
 
 @router.post("/upload", summary="上传并解析Word模板")
-async def upload_word_template(
+async def post(
     file: UploadFile = File(...),
-):
+) -> Any:
     """上传Word文档并解析为HTML格式"""
     import shutil
 
-    import mammoth
+    import mammoth  # type: ignore[import-not-found]
 
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(
-            status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件"
-        )
+        raise HTTPException(status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件")
 
     # 保存上传的文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -76,11 +75,11 @@ async def upload_word_template(
         raise HTTPException(status_code=500, detail=f"文档解析失败: {str(e)}")
 
 
-@router.post("/save", summary="保存HTML内容为Word")
-async def save_html_to_word(
+@router.post("/save", summary="保存HTML内容为Word")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     file_id: str,
     html_content: str,
-):
+) -> Any:
     """将HTML内容保存为Word文档"""
     import tempfile
 
@@ -145,9 +144,9 @@ async def save_html_to_word(
 
 
 @router.get("/download", summary="下载原始Word文档")
-async def download_word(
+async def get(
     file_id: str,
-):
+) -> Any:
     """下载原始Word文档"""
     from fastapi.responses import FileResponse
 
@@ -172,15 +171,13 @@ class OptimizeTextRequest(BaseModel):
     """AI优化文本请求"""
 
     text: str
-    optimize_type: str = (
-        "polish"  # polish=润色, summarize=总结, expand=扩展, simplify=简化
-    )
+    optimize_type: str = "polish"  # polish=润色, summarize=总结, expand=扩展, simplify=简化
 
 
-@router.post("/ai/optimize", summary="AI优化文本")
-async def ai_optimize_text(
+@router.post("/ai/optimize", summary="AI优化文本")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     request: OptimizeTextRequest,
-):
+) -> Any:
     """使用AI优化选中的文本"""
     from app.modules.quality.ai.minimax_util import get_vision_util
 

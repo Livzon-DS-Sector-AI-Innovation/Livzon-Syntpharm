@@ -11,6 +11,7 @@ and monitoring capabilities.
 import asyncio
 import logging
 from collections.abc import Awaitable
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def spawn_task(
     coro: Awaitable[None],
     name: str | None = None,
-) -> asyncio.Task:
+) -> asyncio.Task[None]:
     """Spawn a background task with proper error handling.
 
     Args:
@@ -33,7 +34,7 @@ def spawn_task(
     """
     task_name = name or f"task-{uuid4().hex[:8]}"
 
-    async def wrapper():
+    async def wrapper() -> Any:
         try:
             await coro
         except asyncio.CancelledError:

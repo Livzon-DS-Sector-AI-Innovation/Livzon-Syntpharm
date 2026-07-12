@@ -23,16 +23,10 @@ class WorkOrderCreate(BaseModel):
     fault_cause_id: uuid.UUID | None = Field(default=None, description="故障原因ID")
     fault_action_id: uuid.UUID | None = Field(default=None, description="维修措施ID")
     fault_description: str | None = Field(default=None, description="故障详细描述")
-    maintenance_plan_id: uuid.UUID | None = Field(
-        default=None, description="关联维护计划ID"
-    )
+    maintenance_plan_id: uuid.UUID | None = Field(default=None, description="关联维护计划ID")
     planned_start_date: date | None = Field(default=None, description="计划执行日期")
-    checklist_template_id: uuid.UUID | None = Field(
-        default=None, description="关联巡检模板ID"
-    )
-    responsible_person_id: uuid.UUID | None = Field(
-        default=None, description="责任人ID"
-    )
+    checklist_template_id: uuid.UUID | None = Field(default=None, description="关联巡检模板ID")
+    responsible_person_id: uuid.UUID | None = Field(default=None, description="责任人ID")
 
 
 class WorkOrderUpdate(BaseModel):
@@ -47,9 +41,7 @@ class WorkOrderUpdate(BaseModel):
     fault_action_id: uuid.UUID | None = Field(default=None, description="维修措施ID")
     fault_description: str | None = Field(default=None, description="故障详细描述")
     planned_start_date: date | None = Field(default=None, description="计划执行日期")
-    responsible_person_id: uuid.UUID | None = Field(
-        default=None, description="责任人ID"
-    )
+    responsible_person_id: uuid.UUID | None = Field(default=None, description="责任人ID")
 
 
 class WorkOrderAssign(BaseModel):
@@ -122,7 +114,7 @@ class WorkOrderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse
+from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse  # noqa: E402
 
 WorkOrderResponse.model_rebuild()
 

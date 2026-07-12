@@ -84,9 +84,7 @@ class EhsChangeService:
         await self._audit("create", "ehs_change", resource_id=item.id)
         return item
 
-    async def update_ehs_change(
-        self, change_id: uuid.UUID, data: EhsChangeUpdate
-    ) -> EhsChange | None:
+    async def update_ehs_change(self, change_id: uuid.UUID, data: EhsChangeUpdate) -> EhsChange | None:
         """更新EHS变更"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_ehs_change(change_id, update_data)
@@ -143,9 +141,7 @@ class EhsChangeService:
             return await self.repo.update_ehs_change(change_id, {"status": "rejected"})
         return None
 
-    async def reject_change(
-        self, change_id: uuid.UUID, comments: str | None = None
-    ) -> EhsChange | None:
+    async def reject_change(self, change_id: uuid.UUID, comments: str | None = None) -> EhsChange | None:
         """驳回变更（审核中→已驳回）"""
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change or change.status != "under_review":
@@ -214,22 +210,16 @@ class EhsChangeService:
 
     # ── JSON 子记录操作 ──
 
-    async def add_risk_assessment(
-        self, change_id: uuid.UUID, item: dict
-    ) -> EhsChange | None:
+    async def add_risk_assessment(self, change_id: uuid.UUID, item: dict[str, Any]) -> EhsChange | None:
         """追加风险评估记录"""
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:
             return None
         assessments = list(change.risk_assessments or [])
         assessments.append(item)
-        return await self.repo.update_ehs_change(
-            change_id, {"risk_assessments": assessments}
-        )
+        return await self.repo.update_ehs_change(change_id, {"risk_assessments": assessments})
 
-    async def update_action_item(
-        self, change_id: uuid.UUID, index: int, status: str
-    ) -> EhsChange | None:
+    async def update_action_item(self, change_id: uuid.UUID, index: int, status: str) -> EhsChange | None:
         """更新行动项状态"""
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:
@@ -242,18 +232,14 @@ class EhsChangeService:
             items[index]["completed_at"] = datetime.now().isoformat()
         return await self.repo.update_ehs_change(change_id, {"action_items": items})
 
-    async def update_pssr_checklist(
-        self, change_id: uuid.UUID, items: list[dict]
-    ) -> EhsChange | None:
+    async def update_pssr_checklist(self, change_id: uuid.UUID, items: list[dict[str, Any]]) -> EhsChange | None:
         """更新PSSR检查清单"""
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:
             return None
         return await self.repo.update_ehs_change(change_id, {"pssr_checklist": items})
 
-    async def submit_verification(
-        self, change_id: uuid.UUID, data: dict
-    ) -> EhsChange | None:
+    async def submit_verification(self, change_id: uuid.UUID, data: dict[str, Any]) -> EhsChange | None:
         """提交变更验证数据"""
         change = await self.repo.get_ehs_change_by_id(change_id)
         if not change:

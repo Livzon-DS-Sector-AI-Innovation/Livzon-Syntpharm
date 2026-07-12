@@ -33,7 +33,7 @@ class ProductOutputService:
         batch_no: str | None = None,
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         """获取列表"""
         return await self.repo.get_list(
             skip=skip,
@@ -46,15 +46,15 @@ class ProductOutputService:
             end_date=end_date,
         )
 
-    async def get_by_id(self, record_id: uuid.UUID):
+    async def get_by_id(self, record_id: uuid.UUID) -> Any:
         """获取详情"""
         return await self.repo.get_by_id(record_id)
 
-    async def create(self, data: ProductOutputCreate):
+    async def create(self, data: ProductOutputCreate) -> Any:
         """创建记录"""
         return await self.repo.create(data.model_dump())
 
-    async def update(self, record_id: uuid.UUID, data: ProductOutputUpdate):
+    async def update(self, record_id: uuid.UUID, data: ProductOutputUpdate) -> Any:
         """更新记录"""
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -96,16 +96,10 @@ class ProductOutputService:
 
         # For daily summary, we need daily/monthly/yearly per workshop
         if target_date:
-            daily_rows = await self.repo.get_summary(
-                target_date=target_date, product_id=product_id
-            )
+            daily_rows = await self.repo.get_summary(target_date=target_date, product_id=product_id)
             month_str = target_date.strftime("%Y-%m")
-            monthly_rows = await self.repo.get_summary(
-                month=month_str, product_id=product_id
-            )
-            yearly_rows = await self.repo.get_summary(
-                year=target_date.year, product_id=product_id
-            )
+            monthly_rows = await self.repo.get_summary(month=month_str, product_id=product_id)
+            yearly_rows = await self.repo.get_summary(year=target_date.year, product_id=product_id)
 
             daily_map = {r["workshop"]: r["total_weight"] for r in daily_rows}
             monthly_map = {r["workshop"]: r["total_weight"] for r in monthly_rows}
@@ -125,9 +119,7 @@ class ProductOutputService:
                     )
                 )
         elif month:
-            monthly_rows = await self.repo.get_summary(
-                month=month, product_id=product_id
-            )
+            monthly_rows = await self.repo.get_summary(month=month, product_id=product_id)
             monthly_map = {r["workshop"]: r["total_weight"] for r in monthly_rows}
             for ws in WORKSHOP_CHOICES:
                 total = monthly_map.get(ws, 0.0)

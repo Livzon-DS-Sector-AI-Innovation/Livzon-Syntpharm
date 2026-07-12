@@ -56,9 +56,7 @@ class OhHazardMonitorService:
         keyword: str | None = None,
     ) -> tuple[list[OhHazardMonitor], int]:
         """获取监测列表"""
-        return await self.repo.get_hazard_monitors(
-            skip, limit, status, detection_type, workplace, keyword
-        )
+        return await self.repo.get_hazard_monitors(skip, limit, status, detection_type, workplace, keyword)
 
     async def get_monitor(self, monitor_id: uuid.UUID) -> OhHazardMonitor | None:
         """获取监测详情"""
@@ -71,9 +69,7 @@ class OhHazardMonitorService:
         await self._audit("create", "oh_hazard_monitor", resource_id=item.id)
         return item
 
-    async def update_monitor(
-        self, monitor_id: uuid.UUID, data: Any
-    ) -> OhHazardMonitor | None:
+    async def update_monitor(self, monitor_id: uuid.UUID, data: Any) -> OhHazardMonitor | None:
         """更新监测记录"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_hazard_monitor(monitor_id, update_data)
@@ -95,13 +91,9 @@ class OhHazardMonitorService:
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
         if not monitor or monitor.status != "draft":
             return None
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"status": "in_progress"}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"status": "in_progress"})
 
-    async def complete_monitoring(
-        self, monitor_id: uuid.UUID
-    ) -> OhHazardMonitor | None:
+    async def complete_monitoring(self, monitor_id: uuid.UUID) -> OhHazardMonitor | None:
         """完成监测（检测中→已完成），自动计算OEL合规状态并生成异常记录"""
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
         if not monitor or monitor.status != "in_progress":
@@ -160,28 +152,22 @@ class OhHazardMonitorService:
         if verified_by:
             update_data["verifier_name"] = verified_by
         if comments:
-            update_data["notes"] = (
-                f"{(monitor.notes or '')}\n验证意见: {comments}".strip()
-            )
+            update_data["notes"] = f"{(monitor.notes or '')}\n验证意见: {comments}".strip()
         return await self.repo.update_hazard_monitor(monitor_id, update_data)
 
     # ── JSON 子记录操作 ──
 
-    async def add_detection_result(
-        self, monitor_id: uuid.UUID, item: dict
-    ) -> OhHazardMonitor | None:
+    async def add_detection_result(self, monitor_id: uuid.UUID, item: dict[str, Any]) -> OhHazardMonitor | None:
         """追加检测结果"""
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
         if not monitor:
             return None
         results = list(monitor.detection_results or [])
         results.append(item)
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"detection_results": results}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"detection_results": results})
 
     async def update_detection_result(
-        self, monitor_id: uuid.UUID, index: int, data: dict
+        self, monitor_id: uuid.UUID, index: int, data: dict[str, Any]
     ) -> OhHazardMonitor | None:
         """更新检测结果"""
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
@@ -191,13 +177,9 @@ class OhHazardMonitorService:
         if index < 0 or index >= len(results):
             return None
         results[index] = {**results[index], **data}
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"detection_results": results}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"detection_results": results})
 
-    async def remove_detection_result(
-        self, monitor_id: uuid.UUID, index: int
-    ) -> OhHazardMonitor | None:
+    async def remove_detection_result(self, monitor_id: uuid.UUID, index: int) -> OhHazardMonitor | None:
         """删除检测结果"""
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
         if not monitor:
@@ -206,22 +188,16 @@ class OhHazardMonitorService:
         if index < 0 or index >= len(results):
             return None
         results.pop(index)
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"detection_results": results}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"detection_results": results})
 
-    async def add_abnormality_record(
-        self, monitor_id: uuid.UUID, item: dict
-    ) -> OhHazardMonitor | None:
+    async def add_abnormality_record(self, monitor_id: uuid.UUID, item: dict[str, Any]) -> OhHazardMonitor | None:
         """追加异常处置记录"""
         monitor = await self.repo.get_hazard_monitor_by_id(monitor_id)
         if not monitor:
             return None
         records = list(monitor.abnormality_records or [])
         records.append(item)
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"abnormality_records": records}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"abnormality_records": records})
 
     async def update_abnormality_record_status(
         self, monitor_id: uuid.UUID, index: int, status: str
@@ -236,9 +212,7 @@ class OhHazardMonitorService:
         records[index] = {**records[index], "status": status}
         if status == "closed":
             records[index]["completed_at"] = datetime.now().isoformat()
-        return await self.repo.update_hazard_monitor(
-            monitor_id, {"abnormality_records": records}
-        )
+        return await self.repo.update_hazard_monitor(monitor_id, {"abnormality_records": records})
 
 
 # ==================== 职业健康体检 Service ====================

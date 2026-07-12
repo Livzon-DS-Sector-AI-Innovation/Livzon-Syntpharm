@@ -69,9 +69,7 @@ class SpecialOperationService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning(
-                        "Failed to delete file from MinIO: %s", file_path, exc_info=True
-                    )
+                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
@@ -95,15 +93,11 @@ class SpecialOperationService:
             skip, limit, status, certificate_type, department, keyword
         )
 
-    async def get_personnel_by_id(
-        self, personnel_id: uuid.UUID
-    ) -> SpecialOperationPersonnel | None:
+    async def get_personnel_by_id(self, personnel_id: uuid.UUID) -> SpecialOperationPersonnel | None:
         """获取人员资质详情"""
         return await self.repo.get_special_operation_personnel_by_id(personnel_id)
 
-    async def create_personnel(
-        self, data: SpecialOperationPersonnelCreate
-    ) -> SpecialOperationPersonnel:
+    async def create_personnel(self, data: SpecialOperationPersonnelCreate) -> SpecialOperationPersonnel:
         """创建人员资质"""
         create_data = data.model_dump()
         item = await self.repo.create_special_operation_personnel(create_data)
@@ -115,13 +109,9 @@ class SpecialOperationService:
     ) -> SpecialOperationPersonnel | None:
         """更新人员资质"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-        item = await self.repo.update_special_operation_personnel(
-            personnel_id, update_data
-        )
+        item = await self.repo.update_special_operation_personnel(personnel_id, update_data)
         if item:
-            await self._audit(
-                "update", "special_operation_personnel", resource_id=personnel_id
-            )
+            await self._audit("update", "special_operation_personnel", resource_id=personnel_id)
         return item
 
     async def delete_personnel(self, personnel_id: uuid.UUID) -> bool:
@@ -131,9 +121,7 @@ class SpecialOperationService:
         if result:
             if personnel:
                 self._cleanup_file(personnel.certificate_file_path)
-            await self._audit(
-                "delete", "special_operation_personnel", resource_id=personnel_id
-            )
+            await self._audit("delete", "special_operation_personnel", resource_id=personnel_id)
         return result
 
     # ==================== 作业票 CRUD ====================
@@ -156,9 +144,7 @@ class SpecialOperationService:
         """获取作业票详情"""
         return await self.repo.get_special_operation_permit_by_id(permit_id)
 
-    async def create_permit(
-        self, data: SpecialOperationPermitCreate
-    ) -> SpecialOperationPermit:
+    async def create_permit(self, data: SpecialOperationPermitCreate) -> SpecialOperationPermit:
         """创建作业票"""
         create_data = data.model_dump()
         item = await self.repo.create_special_operation_permit(create_data)
@@ -172,47 +158,33 @@ class SpecialOperationService:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_special_operation_permit(permit_id, update_data)
         if item:
-            await self._audit(
-                "update", "special_operation_permit", resource_id=permit_id
-            )
+            await self._audit("update", "special_operation_permit", resource_id=permit_id)
         return item
 
     async def delete_permit(self, permit_id: uuid.UUID) -> bool:
         """删除作业票"""
         result = await self.repo.delete_special_operation_permit(permit_id)
         if result:
-            await self._audit(
-                "delete", "special_operation_permit", resource_id=permit_id
-            )
+            await self._audit("delete", "special_operation_permit", resource_id=permit_id)
         return result
 
     # ==================== 作业票工作流 ====================
 
-    async def submit_permit(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def submit_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """提交作业票（草稿→已提交）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "draft":
             return None
-        return await self.repo.update_special_operation_permit(
-            permit_id, {"status": "submitted"}
-        )
+        return await self.repo.update_special_operation_permit(permit_id, {"status": "submitted"})
 
-    async def approve_permit(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def approve_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """审批作业票（已提交→已审批）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "submitted":
             return None
-        return await self.repo.update_special_operation_permit(
-            permit_id, {"status": "approved"}
-        )
+        return await self.repo.update_special_operation_permit(permit_id, {"status": "approved"})
 
-    async def reject_permit(
-        self, permit_id: uuid.UUID, reason: str
-    ) -> SpecialOperationPermit | None:
+    async def reject_permit(self, permit_id: uuid.UUID, reason: str) -> SpecialOperationPermit | None:
         """驳回作业票（已提交→已驳回）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "submitted":
@@ -231,9 +203,7 @@ class SpecialOperationService:
             {"status": "in_progress", "actual_start_time": datetime.now()},
         )
 
-    async def complete_permit(
-        self, permit_id: uuid.UUID, method: str
-    ) -> SpecialOperationPermit | None:
+    async def complete_permit(self, permit_id: uuid.UUID, method: str) -> SpecialOperationPermit | None:
         """完工（作业中→已完工）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "in_progress":
@@ -247,16 +217,12 @@ class SpecialOperationService:
             },
         )
 
-    async def archive_permit(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def archive_permit(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """归档作业票（已完工→已归档）"""
         permit = await self.repo.get_special_operation_permit_by_id(permit_id)
         if not permit or permit.status != "completed":
             return None
-        return await self.repo.update_special_operation_permit(
-            permit_id, {"status": "archived"}
-        )
+        return await self.repo.update_special_operation_permit(permit_id, {"status": "archived"})
 
 
 # ==================== 安全知识库 Service ====================

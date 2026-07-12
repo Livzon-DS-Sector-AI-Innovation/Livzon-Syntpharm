@@ -4,41 +4,42 @@ import json
 import re
 import tempfile
 from pathlib import Path
+from typing import Any
 
 try:
     from docx import Document
 except ImportError:
-    Document = None
+    Document = None  # type: ignore[assignment]
 
 
 # 数据目录
 DATA_DIR = Path(__file__).parent / "data"
 
 
-def load_q3d_elements() -> dict:
+def load_q3d_elements() -> dict[str, Any]:
     """加载 Q3D 元素数据库"""
     q3d_path = DATA_DIR / "q3d_elements.json"
     if q3d_path.exists():
         with open(q3d_path, encoding="utf-8") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
-def load_q3c_solvents() -> dict:
+def load_q3c_solvents() -> dict[str, Any]:
     """加载 Q3C 溶剂数据库"""
     q3c_path = DATA_DIR / "ich-q3c-full.json"
     if q3c_path.exists():
         with open(q3c_path, encoding="utf-8") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
-def load_solvent_synonyms() -> dict:
+def load_solvent_synonyms() -> dict[str, Any]:
     """加载溶剂同义词数据库"""
     syn_path = DATA_DIR / "solvent-synonyms.json"
     if syn_path.exists():
         with open(syn_path, encoding="utf-8") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
     return {}
 
 
@@ -64,7 +65,7 @@ def extract_text_from_docx(file_content: bytes) -> str:
         Path(tmp_path).unlink(missing_ok=True)
 
 
-def parse_process_steps(text: str) -> list[dict]:
+def parse_process_steps(text: str) -> list[dict[str, Any]]:
     """解析工艺步骤
 
     支持的格式：
@@ -126,7 +127,7 @@ def remove_concentration_prefix(solvent_name: str) -> str:
     return solvent_name.strip()
 
 
-def get_element_data(symbol: str) -> dict:
+def get_element_data(symbol: str) -> dict[str, Any]:
     """获取元素数据"""
     for class_name, class_data in Q3D_DATA.get("classes", {}).items():
         elements = class_data.get("elements", {})
@@ -135,16 +136,14 @@ def get_element_data(symbol: str) -> dict:
     return {}
 
 
-def get_all_mandatory_elements() -> dict:
+def get_all_mandatory_elements() -> dict[str, Any]:
     """Get all elements that must be assessed per ICH Q3D(R2) Table 5.1."""
     mandatory = {}
     for class_name, class_data in Q3D_DATA.get("classes", {}).items():
         if class_name in ("Class 1", "Class 2A", "Class 3"):
             for symbol, data in class_data.get("elements", {}).items():
                 if class_name in ("Class 1", "Class 2A"):
-                    oral_assess = parenteral_assess = inhalation_assess = (
-                        cutaneous_assess
-                    ) = True
+                    oral_assess = parenteral_assess = inhalation_assess = cutaneous_assess = True
                 else:  # Class 3
                     oral_assess = False
                     parenteral_assess = data.get("parenteral_assess", True)
@@ -170,13 +169,13 @@ def get_all_mandatory_elements() -> dict:
     return mandatory
 
 
-def get_option1_concentrations(symbol: str) -> dict:
+def get_option1_concentrations(symbol: str) -> dict[str, Any]:
     """Get Option 1 permitted concentrations for an element (ICH Q3D Table 1)."""
     option1_data = Q3D_DATA.get("option_1_concentrations", {})
-    return option1_data.get("elements", {}).get(symbol, {})
+    return option1_data.get("elements", {}).get(symbol, {})  # type: ignore[no-any-return]
 
 
-def identify_elements(llm_response: dict) -> dict:
+def identify_elements(llm_response: dict[str, Any]) -> dict[str, Any]:
     """Build element assessment from LLM-identified elements + Q3D rules.
 
     LLM only needs to identify:
@@ -257,7 +256,7 @@ def identify_elements(llm_response: dict) -> dict:
     return elements_found
 
 
-def generate_report(process_text: str, elements: dict) -> str:
+def generate_report(process_text: str, elements: dict[str, Any]) -> str:
     """Generate ICH Q3D report from skill's generate_report, returns markdown string."""
     from datetime import datetime
 
@@ -274,9 +273,7 @@ def generate_report(process_text: str, elements: dict) -> str:
     report.append("**本报告仅采用选项1：** 日剂量≤10g的药品各组分通用允许浓度")
     report.append("- 公式：Concentration (μg/g) = PDE (μg/day) / 10 (g/day)")
     report.append("")
-    report.append(
-        "**注意：** 本报告中所有浓度限度（μg/g）均基于选项1计算得出。选项2a、2b和3不在本评估范围内。"
-    )
+    report.append("**注意：** 本报告中所有浓度限度（μg/g）均基于选项1计算得出。选项2a、2b和3不在本评估范围内。")
     report.append("")
     report.append("---")
     report.append("")
@@ -322,9 +319,7 @@ def generate_report(process_text: str, elements: dict) -> str:
                 inhalation = "不需要" if not data.get("inhalation_assess") else "需要"
                 cutaneous = "不需要" if not data.get("cutaneous_assess") else "需要"
         else:
-            oral = parenteral = inhalation = cutaneous = (
-                "需要" if data.get("assessment_required") else "不需要"
-            )
+            oral = parenteral = inhalation = cutaneous = "需要" if data.get("assessment_required") else "不需要"
         report.append(
             f"| {symbol} | {q3d_class} | {intentionally} | {oral} | {parenteral} | {inhalation} | {cutaneous} |"
         )
@@ -401,13 +396,9 @@ def generate_report(process_text: str, elements: dict) -> str:
 
         # Assessment logic
         if q3d_class == "Class 1":
-            report.append(
-                "**评估：** 1类元素必须在风险评估中评估所有潜在来源和给药途径。"
-            )
+            report.append("**评估：** 1类元素必须在风险评估中评估所有潜在来源和给药途径。")
         elif q3d_class == "Class 2A":
-            report.append(
-                "**评估：** 2A类元素出现概率较高，需要对所有潜在来源进行风险评估。"
-            )
+            report.append("**评估：** 2A类元素出现概率较高，需要对所有潜在来源进行风险评估。")
         elif q3d_class == "Class 2B":
             if intentionally:
                 report.append("**评估：** 2B类元素有意添加，需要评估。")
@@ -436,9 +427,7 @@ def generate_report(process_text: str, elements: dict) -> str:
                     parts.append("皮肤途径无需评估")
                 report.append("**评估：** " + "；".join(parts) + "。")
         elif q3d_class == "Other":
-            report.append(
-                "**评估：** 该元素不在ICH Q3D范围内，未建立PDE。需要逐案进行毒理学论证。"
-            )
+            report.append("**评估：** 该元素不在ICH Q3D范围内，未建立PDE。需要逐案进行毒理学论证。")
 
         report.append("")
 
@@ -462,9 +451,7 @@ def generate_report(process_text: str, elements: dict) -> str:
     if counts["Class 2B"] > 0:
         report.append(f"4. {counts['Class 2B']} 个2B类元素（仅有意添加时需要评估）")
     if counts["Class 3"] > 0:
-        report.append(
-            f"5. {counts['Class 3']} 个3类元素（口服途径除非有意添加否则无需评估）"
-        )
+        report.append(f"5. {counts['Class 3']} 个3类元素（口服途径除非有意添加否则无需评估）")
     if counts["Other"] > 0:
         report.append(f"6. {counts['Other']} 个元素不在Q3D范围内，需要单独毒理学论证")
 
@@ -508,7 +495,7 @@ def generate_report(process_text: str, elements: dict) -> str:
     return "\n".join(report)
 
 
-def _add_frontend_fields(elements: dict, llm_response: dict) -> dict:
+def _add_frontend_fields(elements: dict[str, Any], llm_response: dict[str, Any]) -> dict[str, Any]:
     """Add fields needed by frontend table display.
 
     The skill's identify_elements returns dict keyed by symbol,
@@ -561,7 +548,7 @@ def _add_frontend_fields(elements: dict, llm_response: dict) -> dict:
     return elements
 
 
-async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict:
+async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict[str, Any]:
     """Analyze ICH Q3D elemental impurities using LLM.
 
     LLM only identifies elements (symbol, source, intentionally_added).
@@ -624,7 +611,7 @@ async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict:
     }
 
 
-async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
+async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict[str, Any]:
     """Analyze ICH Q3C solvent residues using LLM (skill's pipeline).
 
     LLM extracts AND classifies solvents using the full ICH Q3C database.
@@ -661,9 +648,7 @@ async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
         # Collect solvents for this step
         raw_solvents = []
         for solvent_info in step_data.get("solvents", []):
-            matched_name = solvent_info.get("matched_name") or solvent_info.get(
-                "original_name", ""
-            )
+            matched_name = solvent_info.get("matched_name") or solvent_info.get("original_name", "")
             original_name = solvent_info.get("original_name", matched_name)
             ich_class = solvent_info.get("ich_class", "Unlisted")
 
@@ -708,9 +693,7 @@ async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict:
     }
 
     # 6. Generate markdown report
-    report = generate_q3c_report(
-        analysis, flag_class1=True, ich_data_source="ICH Q3C(R9) 数据库"
-    )
+    report = generate_q3c_report(analysis, flag_class1=True, ich_data_source="ICH Q3C(R9) 数据库")
 
     # 7. Convert to frontend format (flat list)
     solvents_list = []

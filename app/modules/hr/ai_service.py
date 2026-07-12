@@ -4,7 +4,6 @@ Uses the centralized llm_client for streaming completions.
 """
 
 from collections.abc import AsyncGenerator
-from typing import Any
 
 from app.core.config import get_settings
 from app.core.llm import llm_client
@@ -32,7 +31,7 @@ class AiChatService:
             all_messages.append({"role": "system", "content": system_prompt})
         all_messages.extend(messages)
 
-        async for chunk in llm_client.stream_chat(
+        async for chunk in llm_client.stream_chat(  # type: ignore[attr-defined]
             all_messages,
             temperature=1,
             max_tokens=4096,
@@ -43,9 +42,9 @@ class AiChatService:
     def build_system_prompt(page: str | None = None) -> str:
         """Build the system prompt for the HR assistant."""
         settings = get_settings()
-        prompt = settings.HR_AI_SYSTEM_PROMPT
+        prompt = settings.HR_AI_SYSTEM_PROMPT  # type: ignore[attr-defined]
 
         if page:
             prompt += f"\n当前页面：{page}"
 
-        return prompt
+        return prompt  # type: ignore[no-any-return]

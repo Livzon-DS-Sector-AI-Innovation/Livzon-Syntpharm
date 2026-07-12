@@ -98,9 +98,7 @@ async def get_equipment_categories(
     )
     # 部门范围过滤
     if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
-        query = query.where(
-            EquipmentCategory.department_id.in_(ctx.visible_department_ids)
-        )
+        query = query.where(EquipmentCategory.department_id.in_(ctx.visible_department_ids))
     if parent_id is not None:
         query = query.where(EquipmentCategory.parent_id == parent_id)
     else:
@@ -123,15 +121,11 @@ async def get_equipment_category_tree(
     )
     # 部门范围过滤
     if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
-        query = query.where(
-            EquipmentCategory.department_id.in_(ctx.visible_department_ids)
-        )
+        query = query.where(EquipmentCategory.department_id.in_(ctx.visible_department_ids))
     result = await db.execute(query)
     categories = list(result.scalars().all())
 
-    category_map: dict[uuid.UUID, EquipmentCategory] = {
-        cat.id: cat for cat in categories
-    }
+    category_map: dict[uuid.UUID, EquipmentCategory] = {cat.id: cat for cat in categories}
     for category in categories:
         category.children = []
     root_categories: list[EquipmentCategory] = []
@@ -342,19 +336,15 @@ async def create_equipment(
     await db.flush()
 
     # eager re-fetch
-    return await _refetch_equipment(db, equipment.id)
+    return await _refetch_equipment(db, equipment.id)  # type: ignore[return-value]
 
 
-async def _refetch_equipment(
-    db: AsyncSession, equipment_id: uuid.UUID
-) -> Equipment | None:
+async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equipment | None:
     """eager re-fetch 设备及关联"""
     result = await db.execute(
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(Equipment.id == equipment_id, Equipment.is_deleted == False)  # noqa: E712
@@ -370,9 +360,7 @@ async def get_equipment_by_id(
     result = await db.execute(
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(
@@ -412,9 +400,7 @@ async def get_equipments(
     query = (
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(Equipment.is_deleted == False)  # noqa: E712
@@ -448,9 +434,7 @@ async def get_equipments(
         )
 
     # 获取总数
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(Equipment.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(Equipment.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
@@ -493,9 +477,7 @@ async def update_equipment(
             )
         )
         existing_links = list(all_existing_result.scalars().all())
-        existing_by_cid: dict[uuid.UUID, EquipmentCategoryLink] = {
-            link.category_id: link for link in existing_links
-        }
+        existing_by_cid: dict[uuid.UUID, EquipmentCategoryLink] = {link.category_id: link for link in existing_links}
 
         new_cid_set = set(cids)
 
@@ -512,9 +494,7 @@ async def update_equipment(
         # 创建新的关联（之前不存在的分类）
         for cid in cids:
             if cid not in existing_by_cid:
-                db.add(
-                    EquipmentCategoryLink(equipment_id=equipment_id, category_id=cid)
-                )
+                db.add(EquipmentCategoryLink(equipment_id=equipment_id, category_id=cid))
 
         await db.flush()
 
@@ -703,9 +683,7 @@ async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
     return [dict(row._mapping) for row in rows]
 
 
-async def get_department_info(
-    db: AsyncSession, department_id: uuid.UUID
-) -> dict[str, Any] | None:
+async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dict[str, Any] | None:
     """获取单个部门信息（含负责人姓名和 leader_id）"""
     query = (
         select(
@@ -728,9 +706,7 @@ async def get_department_info(
     return dict(row._mapping)
 
 
-async def get_department_leader_user_id(
-    db: AsyncSession, department_id: uuid.UUID
-) -> uuid.UUID | None:
+async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UUID) -> uuid.UUID | None:
     """获取部门负责人的 User.id（UUID），通过 feishu_open_id 关联"""
     from app.platform.identity.models import Department, User
 

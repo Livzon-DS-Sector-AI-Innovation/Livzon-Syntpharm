@@ -66,7 +66,7 @@ class PostMeasureAssessor(BasePlugin[PostRiskInput, PostRiskOutput]):
     def _get_expected_keys(self) -> list[str]:
         return EXPECTED_KEYS
 
-    def _parse_output(self, raw: dict) -> PostRiskOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> PostRiskOutput:
         try:
             lec_raw = raw.get("lec", {})
             if not isinstance(lec_raw, dict):

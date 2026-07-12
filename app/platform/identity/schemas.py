@@ -1,5 +1,5 @@
 import json
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -47,7 +47,7 @@ class UserResponse(BaseModel):
     feishu_open_id: str | None = None
     feishu_union_id: str | None = None
     tenant_key: str | None = None
-    role: str = "member"
+    role: str = "member"  # type: ignore[no-redef]
 
     model_config = {"from_attributes": True}
 
@@ -61,7 +61,7 @@ class UserManagementItem(UserResponse):
         if v is None:
             return None
         if hasattr(v, "isoformat"):
-            return v.isoformat()
+            return v.isoformat()  # type: ignore[no-any-return]
         return str(v)
 
 
@@ -177,7 +177,7 @@ class PersonnelItem(BaseModel):
             return v
         if isinstance(v, str):
             try:
-                return json.loads(v)
+                return json.loads(v)  # type: ignore[no-any-return]
             except (json.JSONDecodeError, TypeError):
                 return None
         return None
@@ -214,7 +214,7 @@ class LoginLogResponse(BaseModel):
     @classmethod
     def format_created_at(cls, v: object) -> str:
         if hasattr(v, "strftime"):
-            return v.strftime("%Y-%m-%d %H:%M:%S")
+            return v.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore[no-any-return]
         return str(v)
 
 
@@ -289,7 +289,7 @@ class FeishuConfigResponse(BaseModel):
         if value is None:
             return None
         if hasattr(value, "isoformat"):
-            return value.isoformat()
+            return value.isoformat()  # type: ignore[no-any-return]
         return str(value)
 
 
@@ -322,6 +322,6 @@ class FeishuDiagnosticApiResponse(BaseModel):
 
 
 class FeishuCardCallbackResponse(BaseModel):
-    toast: dict | None = None
-    card: dict | None = None
+    toast: dict[str, Any] | None = None
+    card: dict[str, Any] | None = None
     challenge: str | None = None

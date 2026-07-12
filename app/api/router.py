@@ -83,31 +83,17 @@ api_router.include_router(sampling_router, prefix="/quality", tags=["质量管�
 api_router.include_router(iqc_router, prefix="/quality", tags=["质量管理 - IQC"])
 api_router.include_router(ipqc_router, prefix="/quality", tags=["质量管理 - IPQC"])
 api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - FQC"])
-api_router.include_router(
-    stability_router, prefix="/quality", tags=["质量管理 - 稳定性"]
-)
+api_router.include_router(stability_router, prefix="/quality", tags=["质量管理 - 稳定性"])
 api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
-api_router.include_router(
-    quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"]
-)
-api_router.include_router(
-    doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"]
-)
-api_router.include_router(
-    static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"]
-)
-api_router.include_router(
-    reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"]
-)
-api_router.include_router(
-    instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"]
-)
+api_router.include_router(quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"])
+api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"])
+api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])
+api_router.include_router(reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"])
+api_router.include_router(instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"])
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
 api_router.include_router(sop_ai_router, prefix="/sop-ai", tags=["SOP AI"])
-api_router.include_router(
-    label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"]
-)
+api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])
 api_router.include_router(
     workshop_product_router,
     prefix="/production",
@@ -118,9 +104,7 @@ api_router.include_router(
     prefix="/production",
     tags=["生产管理 - 产量记录"],
 )
-api_router.include_router(
-    regulatory_tracker_router, prefix="/registration", tags=["法规追踪"]
-)
+api_router.include_router(regulatory_tracker_router, prefix="/registration", tags=["法规追踪"])
 api_router.include_router(
     dossier_writer_router,
     prefix="/registration/dossier-writer",

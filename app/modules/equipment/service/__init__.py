@@ -1,4 +1,5 @@
 """Equipment service layer: re-export all public functions."""
+# ruff: noqa: F401
 
 from app.modules.equipment.service.ai import analyze_inspection_photo
 from app.modules.equipment.service.ai.service import (

@@ -17,9 +17,7 @@ async def create_value(db: AsyncSession, data: dict[str, Any]) -> CpvValue:
     return value
 
 
-async def create_values_bulk(
-    db: AsyncSession, data_list: list[dict[str, Any]]
-) -> list[CpvValue]:
+async def create_values_bulk(db: AsyncSession, data_list: list[dict[str, Any]]) -> list[CpvValue]:
     """批量创建参数值"""
     values = [CpvValue(**data) for data in data_list]
     db.add_all(values)
@@ -27,9 +25,7 @@ async def create_values_bulk(
     return values
 
 
-async def get_values_by_batch_id(
-    db: AsyncSession, batch_id: uuid.UUID
-) -> list[CpvValue]:
+async def get_values_by_batch_id(db: AsyncSession, batch_id: uuid.UUID) -> list[CpvValue]:
     """根据批次ID获取参数值列表"""
     result = await db.execute(
         select(CpvValue).where(
@@ -103,4 +99,4 @@ async def delete_values_by_batch_id(db: AsyncSession, batch_id: uuid.UUID) -> in
         )
         .values(is_deleted=True)
     )
-    return result.rowcount
+    return result.rowcount  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]

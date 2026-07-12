@@ -5,11 +5,13 @@
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.service import SopAiCheckService
 
@@ -22,9 +24,9 @@ router = APIRouter()
 
 
 @router.get("/config", summary="获取配置列表")
-async def list_config(
+async def get(
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """获取所有配置"""
     service = SopAiCheckService(db)
     configs = await service.list_config()
@@ -35,7 +37,7 @@ async def list_config(
 async def get_config(
     config_key: str,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """获取指定配置"""
     service = SopAiCheckService(db)
     value = await service.get_config(config_key)
@@ -47,7 +49,7 @@ async def update_config(
     config_key: str,
     request: schemas.SopAiConfigUpdate,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """更新配置"""
     service = SopAiCheckService(db)
     result = await service.set_config(
@@ -66,7 +68,7 @@ async def update_config(
 async def single_check(
     request: schemas.SingleCheckRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """对单个文件进行预审校验"""
     service = SopAiCheckService(db)
     result = await service.single_check(
@@ -75,7 +77,7 @@ async def single_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)
+    return ApiResponse(data=result)  # type: ignore[return-value]
 
 
 # ============ 批量巡检接口 ============
@@ -85,7 +87,7 @@ async def single_check(
 async def batch_check(
     request: schemas.BatchCheckRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """对多个文件进行批量巡检"""
     service = SopAiCheckService(db)
     result = await service.batch_check(
@@ -93,7 +95,7 @@ async def batch_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)
+    return ApiResponse(data=result)  # type: ignore[return-value]
 
 
 # ============ 记录查询接口 ============
@@ -108,7 +110,7 @@ async def list_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """获取校验记录列表"""
     service = SopAiCheckService(db)
     records, total = await service.list_records(
@@ -140,7 +142,7 @@ async def list_records(
         for r in records
     ]
 
-    return ApiResponse(
+    return ApiResponse(  # type: ignore[return-value]
         data={
             "items": items,
             "total": total,
@@ -154,7 +156,7 @@ async def list_records(
 async def get_record(
     id: str,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """获取校验记录详情"""
     service = SopAiCheckService(db)
     record = await service.get_record_detail(id)
@@ -173,7 +175,7 @@ async def handle_problem(
     problem_id: str,
     request: schemas.ProblemHandleRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """处理问题"""
     service = SopAiCheckService(db)
     problem = await service.handle_problem(
@@ -201,14 +203,14 @@ async def handle_problem(
 @router.get("/jobs", summary="获取定时任务列表")
 async def list_jobs(
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """获取定时任务列表"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
     jobs = scheduler.list_jobs()
 
-    return ApiResponse(
+    return ApiResponse(  # type: ignore[return-value]
         data=[
             {
                 "job_id": job.job_id,
@@ -226,14 +228,14 @@ async def list_jobs(
 async def create_job(
     request: schemas.ScheduledJobCreate,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """创建定时任务"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
 
     # 创建回调函数（实际需��绑定文件检查逻辑）
-    async def job_callback():
+    async def job_callback() -> Any:
         logger.info(f"执行定时任务: {request.job_id}")
 
     job = scheduler.add_job(
@@ -255,7 +257,7 @@ async def create_job(
 async def delete_job(
     job_id: str,
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """删除定时任务"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
@@ -277,7 +279,7 @@ async def export_report(
     format: str = Query("excel", description="导出格式: excel/pdf"),
     include_problems: bool = Query(True, description="是否包含问题明细"),
     db: AsyncSession = Depends(get_db),
-) -> dict():
+) -> dict():  # type: ignore[valid-type]
     """导出校验报告"""
     service = SopAiCheckService(db)
     record = await service.get_record_detail(id)

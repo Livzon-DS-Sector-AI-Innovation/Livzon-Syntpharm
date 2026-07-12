@@ -97,11 +97,7 @@ class MCPToolLoggingMiddleware(Middleware):
 
         # 入参脱敏处理：屏蔽 password / token / secret 字段
         safe_args = {
-            k: (
-                "***"
-                if any(s in k.lower() for s in ("password", "token", "secret"))
-                else v
-            )
+            k: ("***" if any(s in k.lower() for s in ("password", "token", "secret")) else v)
             for k, v in arguments.items()
         }
         args_json = json.dumps(safe_args, ensure_ascii=False, default=str)

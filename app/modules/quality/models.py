@@ -11,7 +11,6 @@ from app.modules.quality.ai.models import (
 )
 from app.modules.quality.qms.deviation_automation_models import (
     DevTask,
-    ReportTemplate,
     SOPRule,
 )
 from app.modules.quality.qms.inspection_table_models import (

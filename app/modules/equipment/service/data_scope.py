@@ -12,12 +12,12 @@ from app.core.exceptions import ForbiddenException
 from app.modules.equipment.deps import EquipmentAccessContext
 
 
-def apply_equipment_scope(
-    query: Select,
+def apply_equipment_scope(  # type: ignore[no-untyped-def]
+    query: Select,  # type: ignore[type-arg]
     ctx: EquipmentAccessContext,
     model_field,  # noqa: ANN001 - SQLAlchemy InstrumentedAttribute
     mode: str = "department_id",
-) -> Select:
+) -> Select:  # type: ignore[type-arg]
     """根据数据范围给查询添加 WHERE 条件。
 
     Args:
@@ -55,14 +55,12 @@ def apply_equipment_scope(
         if ctx.data_scope == "department":
             return query.where(model_field == user_dept)
         if ctx.data_scope == "department_and_children":
-            return query.where(
-                (model_field == user_dept) | model_field.like(f"{user_dept}/%")
-            )
+            return query.where((model_field == user_dept) | model_field.like(f"{user_dept}/%"))
 
     return query
 
 
-async def verify_write_ownership(
+async def verify_write_ownership(  # type: ignore[no-untyped-def]
     ctx: EquipmentAccessContext,
     resource,  # noqa: ANN001 - ORM object
     field: str = "department_id",
@@ -91,10 +89,7 @@ async def verify_write_ownership(
 
     if mode == "department_id":
         # 设备台账：检查 department_id 是否在可见部门列表中
-        if (
-            ctx.visible_department_ids
-            and resource_value not in ctx.visible_department_ids
-        ):
+        if ctx.visible_department_ids and resource_value not in ctx.visible_department_ids:
             raise ForbiddenException("无权操作其他部门的资源")
         if not ctx.visible_department_ids:
             raise ForbiddenException("无权操作其他部门的资源")

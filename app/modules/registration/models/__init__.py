@@ -1,4 +1,5 @@
 """Registration module models."""
+# ruff: noqa: F401
 
 from app.modules.registration.models.authorization import (
     AuthorizationLetter,

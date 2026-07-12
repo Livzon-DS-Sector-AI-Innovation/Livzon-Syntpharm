@@ -70,27 +70,19 @@ OPERATION_WHITELIST: dict[str, OperationSpec] = {
                 "dataset": "数据集名称，例如 procurement.suppliers",
                 "metrics": "聚合指标列表，支持 count/count_distinct/sum/avg/min/max",
                 "group_by": "分组字段列表，例如 manufacturer_name",
-                "filters": (
-                    "过滤条件列表，支持 eq/ne/contains/not_empty/is_empty/gte/lte"
-                ),
+                "filters": ("过滤条件列表，支持 eq/ne/contains/not_empty/is_empty/gte/lte"),
                 "order_by": "按 metric 或 group_by 字段排序",
                 "limit": "返回分组数量，默认 20，最大 200",
             }
         },
         output_hint="用于全量计数、去重计数、TopN、分布统计等场景，避免逐页读取全量明细。",
     ),
-    "warehouse.list_raw_materials": OperationSpec(
-        "GET", "/warehouse/raw-materials", summary="查询原辅料库存"
-    ),
+    "warehouse.list_raw_materials": OperationSpec("GET", "/warehouse/raw-materials", summary="查询原辅料库存"),
     "warehouse.list_packaging_materials": OperationSpec(
         "GET", "/warehouse/packaging-materials", summary="查询包材库存"
     ),
-    "warehouse.list_products": OperationSpec(
-        "GET", "/warehouse/products", summary="查询产品库存"
-    ),
-    "warehouse.list_feishu_tables": OperationSpec(
-        "GET", "/warehouse/feishu/tables", summary="查询仓储飞书表目录"
-    ),
+    "warehouse.list_products": OperationSpec("GET", "/warehouse/products", summary="查询产品库存"),
+    "warehouse.list_feishu_tables": OperationSpec("GET", "/warehouse/feishu/tables", summary="查询仓储飞书表目录"),
     "warehouse.get_feishu_table_records": OperationSpec(
         "GET",
         "/warehouse/feishu/tables/{table_id}/records",
@@ -187,9 +179,7 @@ OPERATION_WHITELIST: dict[str, OperationSpec] = {
         "high",
         "驳回采购申请",
     ),
-    "procurement.list_purchase_orders": OperationSpec(
-        "GET", "/procurement/purchase-orders", summary="查询采购订单"
-    ),
+    "procurement.list_purchase_orders": OperationSpec("GET", "/procurement/purchase-orders", summary="查询采购订单"),
     "procurement.export_purchase_orders": OperationSpec(
         "GET", "/procurement/purchase-orders/export", summary="导出采购订单"
     ),
@@ -205,15 +195,9 @@ OPERATION_WHITELIST: dict[str, OperationSpec] = {
     "agent.list_workflow_capabilities": OperationSpec(
         "GET", "/agent/workflow-capabilities", summary="查询可编排业务能力"
     ),
-    "agent.create_workflow": OperationSpec(
-        "POST", "/agent/workflows", True, "medium", "创建助手工作流"
-    ),
-    "agent.list_workflows": OperationSpec(
-        "GET", "/agent/workflows", summary="查询我的助手工作流"
-    ),
-    "agent.get_workflow": OperationSpec(
-        "GET", "/agent/workflows/{workflow_id}", summary="查看助手工作流详情"
-    ),
+    "agent.create_workflow": OperationSpec("POST", "/agent/workflows", True, "medium", "创建助手工作流"),
+    "agent.list_workflows": OperationSpec("GET", "/agent/workflows", summary="查询我的助手工作流"),
+    "agent.get_workflow": OperationSpec("GET", "/agent/workflows/{workflow_id}", summary="查看助手工作流详情"),
     "agent.set_workflow_enabled": OperationSpec(
         "POST",
         "/agent/workflows/{workflow_id}/enabled",
@@ -221,9 +205,7 @@ OPERATION_WHITELIST: dict[str, OperationSpec] = {
         "medium",
         "启停助手工作流",
     ),
-    "agent.run_workflow": OperationSpec(
-        "POST", "/agent/workflows/{workflow_id}/run", True, "medium", "运行助手工作流"
-    ),
+    "agent.run_workflow": OperationSpec("POST", "/agent/workflows/{workflow_id}/run", True, "medium", "运行助手工作流"),
     "agent.cancel_workflow_run": OperationSpec(
         "POST",
         "/agent/workflow-runs/{run_id}/cancel",
@@ -231,9 +213,7 @@ OPERATION_WHITELIST: dict[str, OperationSpec] = {
         "medium",
         "取消助手工作流运行",
     ),
-    "agent.get_workflow_run": OperationSpec(
-        "GET", "/agent/workflow-runs/{run_id}", summary="查看助手工作流运行状态"
-    ),
+    "agent.get_workflow_run": OperationSpec("GET", "/agent/workflow-runs/{run_id}", summary="查看助手工作流运行状态"),
 }
 
 HUMAN_DECISION_REQUIRED_MESSAGE = (
@@ -354,9 +334,7 @@ class AgentService:
     ) -> AgentSkillOut:
         existing = await self.repo.get_skill_by_name(db, request.name)
         if existing is not None:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Agent skill name already exists"
-            )
+            raise HTTPException(status.HTTP_409_CONFLICT, "Agent skill name already exists")
         skill = AgentSkill(
             name=request.name,
             title=request.title,
@@ -499,9 +477,7 @@ class AgentService:
             context=request.context,
             history=history,
         )
-        assistant_text = str(
-            hermes_result.get("message") or hermes_result.get("final_response") or ""
-        )
+        assistant_text = str(hermes_result.get("message") or hermes_result.get("final_response") or "")
         if not assistant_text:
             assistant_text = "Livzon Agent 已返回空结果，请稍后重试或换一种描述。"
         assistant = await self.repo.add_message(
@@ -514,8 +490,7 @@ class AgentService:
         )
 
         pending_confirmations = [
-            self._confirmation_out(item)
-            for item in await self._resolve_pending_confirmations(db, hermes_result)
+            self._confirmation_out(item) for item in await self._resolve_pending_confirmations(db, hermes_result)
         ]
         return AgentChatResponse(
             session_id=session.id,
@@ -572,9 +547,7 @@ class AgentService:
                 continue
 
             if event == "error":
-                message = str(
-                    data.get("message") or "Livzon Agent 服务暂不可用，请稍后重试。"
-                )
+                message = str(data.get("message") or "Livzon Agent 服务暂不可用，请稍后重试。")
                 yield self._sse_event("error", {"message": message})
                 return
 
@@ -599,8 +572,7 @@ class AgentService:
             )
             await db.commit()
             pending_confirmations = [
-                self._confirmation_out(item)
-                for item in await self._resolve_pending_confirmations(db, hermes_result)
+                self._confirmation_out(item) for item in await self._resolve_pending_confirmations(db, hermes_result)
             ]
             response = AgentChatResponse(
                 session_id=session.id,
@@ -629,9 +601,7 @@ class AgentService:
         if request.session_id:
             session = await self.repo.get_session(db, request.session_id)
             if session is None:
-                raise HTTPException(
-                    status.HTTP_404_NOT_FOUND, "Agent session not found"
-                )
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Agent session not found")
             if session.user_id and session.user_id != user_id:
                 raise HTTPException(
                     status.HTTP_403_FORBIDDEN,
@@ -744,24 +714,18 @@ class AgentService:
     ) -> tuple[AgentConfirmation, AgentToolExecuteResponse]:
         confirmation = await self.repo.get_confirmation(db, confirmation_id)
         if confirmation is None:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND, "Agent confirmation not found"
-            )
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Agent confirmation not found")
         if confirmation.user_id and confirmation.user_id != current_user.id:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
                 "Agent confirmation does not belong to current user",
             )
         if confirmation.status != "pending":
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Agent confirmation is not pending"
-            )
+            raise HTTPException(status.HTTP_409_CONFLICT, "Agent confirmation is not pending")
         if confirmation.expires_at <= datetime.now(UTC):
             confirmation.status = "expired"
             await db.flush()
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Agent confirmation has expired"
-            )
+            raise HTTPException(status.HTTP_409_CONFLICT, "Agent confirmation has expired")
 
         payload = confirmation.request_payload
         request = AgentToolExecuteRequest.model_validate(payload)
@@ -823,18 +787,14 @@ class AgentService:
     ) -> AgentConfirmation:
         confirmation = await self.repo.get_confirmation(db, confirmation_id)
         if confirmation is None:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND, "Agent confirmation not found"
-            )
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Agent confirmation not found")
         if confirmation.user_id and confirmation.user_id != current_user.id:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
                 "Agent confirmation does not belong to current user",
             )
         if confirmation.status != "pending":
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Agent confirmation is not pending"
-            )
+            raise HTTPException(status.HTTP_409_CONFLICT, "Agent confirmation is not pending")
         confirmation = await self.repo.cancel_confirmation(
             db,
             confirmation,
@@ -862,10 +822,7 @@ class AgentService:
     ) -> dict[str, Any]:
         if not self.settings.HERMES_AGENT_URL:
             return {
-                "message": (
-                    "Livzon Agent 服务尚未配置。请设置 HERMES_AGENT_URL "
-                    "后再使用仓储/采购智能助手。"
-                ),
+                "message": ("Livzon Agent 服务尚未配置。请设置 HERMES_AGENT_URL 后再使用仓储/采购智能助手。"),
                 "pending_confirmations": [],
                 "tool_trace": [],
             }
@@ -885,19 +842,11 @@ class AgentService:
             },
         }
         try:
-            async with httpx.AsyncClient(
-                timeout=self._hermes_timeout_seconds()
-            ) as client:
-                response = await client.post(
-                    self.settings.HERMES_AGENT_URL, json=payload, headers=headers
-                )
+            async with httpx.AsyncClient(timeout=self._hermes_timeout_seconds()) as client:
+                response = await client.post(self.settings.HERMES_AGENT_URL, json=payload, headers=headers)
                 response.raise_for_status()
                 data = response.json()
-                if (
-                    isinstance(data, dict)
-                    and "data" in data
-                    and isinstance(data["data"], dict)
-                ):
+                if isinstance(data, dict) and "data" in data and isinstance(data["data"], dict):
                     return data["data"]
                 return data if isinstance(data, dict) else {"message": str(data)}
         except httpx.HTTPError:
@@ -925,12 +874,7 @@ class AgentService:
         if not self.settings.HERMES_AGENT_URL:
             yield (
                 "error",
-                {
-                    "message": (
-                        "Livzon Agent 服务尚未配置。请设置 HERMES_AGENT_URL "
-                        "后再使用仓储/采购智能助手。"
-                    )
-                },
+                {"message": ("Livzon Agent 服务尚未配置。请设置 HERMES_AGENT_URL 后再使用仓储/采购智能助手。")},
             )
             return
         headers = {"Content-Type": "application/json"}
@@ -1032,33 +976,21 @@ class AgentService:
         if local_result is not None:
             return local_result
 
-        base_url = self.settings.AGENT_INTERNAL_API_BASE_URL.rstrip("/")
+        base_url = self.settings.AGENT_INTERNAL_API_BASE_URL.rstrip("/")  # type: ignore[attr-defined]
         path = self._format_path(spec.path, params)
         api_prefix = self.settings.API_V1_PREFIX.rstrip("/")
-        if (
-            api_prefix
-            and base_url.endswith(api_prefix)
-            and path.startswith(api_prefix + "/")
-        ):
+        if api_prefix and base_url.endswith(api_prefix) and path.startswith(api_prefix + "/"):
             path = path[len(api_prefix) :]
-        query_params = {
-            key: value
-            for key, value in params.items()
-            if "{" + key + "}" not in spec.path
-        }
+        query_params = {key: value for key, value in params.items() if "{" + key + "}" not in spec.path}
         headers: dict[str, str] = {}
-        if self.settings.AGENT_INTERNAL_API_TOKEN:
-            headers["Authorization"] = (
-                f"Bearer {self.settings.AGENT_INTERNAL_API_TOKEN}"
-            )
+        if self.settings.AGENT_INTERNAL_API_TOKEN:  # type: ignore[attr-defined]
+            headers["Authorization"] = f"Bearer {self.settings.AGENT_INTERNAL_API_TOKEN}"  # type: ignore[attr-defined]
         async with httpx.AsyncClient(
             base_url=base_url,
             timeout=self._internal_api_timeout_seconds(),
             headers=headers,
         ) as client:
-            response = await client.request(
-                spec.method, path, params=query_params, json=body
-            )
+            response = await client.request(spec.method, path, params=query_params, json=body)
             if response.status_code >= 400:
                 raise HTTPException(response.status_code, response.text[:1000])
             content_type = response.headers.get("content-type", "")
@@ -1075,13 +1007,9 @@ class AgentService:
                 content_disposition = response.headers.get("content-disposition")
                 result["artifact"] = {
                     "kind": "file",
-                    "filename": self._download_filename(content_disposition)
-                    or "采购合同.docx",
+                    "filename": self._download_filename(content_disposition) or "采购合同.docx",
                     "content_type": content_type
-                    or (
-                        "application/vnd.openxmlformats-officedocument."
-                        "wordprocessingml.document"
-                    ),
+                    or ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     "base64": base64.b64encode(content).decode("ascii"),
                     "size": len(content),
                 }
@@ -1099,10 +1027,7 @@ class AgentService:
     ) -> Any:
         if operation == "procurement.list_contract_templates":
             return {
-                "templates": [
-                    self._contract_template_info(category)
-                    for category in ContractCategory
-                ],
+                "templates": [self._contract_template_info(category) for category in ContractCategory],
                 "generate_operation": "procurement.generate_contract",
                 "template_lookup_operation": "procurement.get_contract_template",
             }
@@ -1126,7 +1051,7 @@ class AgentService:
             self._require_local_db(db)
             request = AgentWorkflowCreate.model_validate(body or params)
             workflow = await self._create_workflow_from_request(
-                db,
+                db,  # type: ignore[arg-type]
                 request=request,
                 user_id=user_id,
                 session_id=session_id,
@@ -1134,31 +1059,26 @@ class AgentService:
             return {"workflow": self._workflow_out(workflow).model_dump(mode="json")}
         if operation == "agent.list_workflows":
             self._require_local_db(db)
-            workflows = await self.repo.list_workflows(db, user_id=user_id)
-            return {
-                "workflows": [
-                    self._workflow_out(workflow).model_dump(mode="json")
-                    for workflow in workflows
-                ]
-            }
+            workflows = await self.repo.list_workflows(db, user_id=user_id)  # type: ignore[arg-type]
+            return {"workflows": [self._workflow_out(workflow).model_dump(mode="json") for workflow in workflows]}
         if operation == "agent.get_workflow":
             self._require_local_db(db)
-            workflow = await self._get_user_workflow(db, params, user_id=user_id)
+            workflow = await self._get_user_workflow(db, params, user_id=user_id)  # type: ignore[arg-type]
             return {"workflow": self._workflow_out(workflow).model_dump(mode="json")}
         if operation == "agent.set_workflow_enabled":
             self._require_local_db(db)
-            workflow = await self._get_user_workflow(db, params, user_id=user_id)
+            workflow = await self._get_user_workflow(db, params, user_id=user_id)  # type: ignore[arg-type]
             enabled = bool((body or params).get("enabled"))
             workflow.status = "enabled" if enabled else "disabled"
             workflow.updated_by = user_id
-            await db.flush()
-            workflow = await self._refetch_workflow(db, workflow)
+            await db.flush()  # type: ignore[union-attr]
+            workflow = await self._refetch_workflow(db, workflow)  # type: ignore[arg-type]
             return {"workflow": self._workflow_out(workflow).model_dump(mode="json")}
         if operation == "agent.run_workflow":
             self._require_local_db(db)
-            workflow = await self._get_user_workflow(db, params, user_id=user_id)
+            workflow = await self._get_user_workflow(db, params, user_id=user_id)  # type: ignore[arg-type]
             run = await self._start_workflow_run(
-                db,
+                db,  # type: ignore[arg-type]
                 workflow=workflow,
                 user_id=user_id,
                 session_id=session_id,
@@ -1166,19 +1086,19 @@ class AgentService:
             return run
         if operation == "agent.cancel_workflow_run":
             self._require_local_db(db)
-            run = await self._get_user_workflow_run(db, params, user_id=user_id)
-            if run.status in {"succeeded", "failed", "cancelled"}:
-                return {"run": self._workflow_run_out(run).model_dump(mode="json")}
-            run.status = "cancelled"
-            run.finished_at = datetime.now(UTC)
-            run.updated_by = user_id
-            await db.flush()
-            run = await self._refetch_workflow_run(db, run)
-            return {"run": self._workflow_run_out(run).model_dump(mode="json")}
+            run = await self._get_user_workflow_run(db, params, user_id=user_id)  # type: ignore[arg-type,assignment]
+            if run.status in {"succeeded", "failed", "cancelled"}:  # type: ignore[attr-defined]
+                return {"run": self._workflow_run_out(run).model_dump(mode="json")}  # type: ignore[arg-type]
+            run.status = "cancelled"  # type: ignore[attr-defined]
+            run.finished_at = datetime.now(UTC)  # type: ignore[attr-defined]
+            run.updated_by = user_id  # type: ignore[attr-defined]
+            await db.flush()  # type: ignore[union-attr]
+            run = await self._refetch_workflow_run(db, run)  # type: ignore[arg-type,assignment]
+            return {"run": self._workflow_run_out(run).model_dump(mode="json")}  # type: ignore[arg-type]
         if operation == "agent.get_workflow_run":
             self._require_local_db(db)
-            run = await self._get_user_workflow_run(db, params, user_id=user_id)
-            return {"run": self._workflow_run_out(run).model_dump(mode="json")}
+            run = await self._get_user_workflow_run(db, params, user_id=user_id)  # type: ignore[arg-type,assignment]
+            return {"run": self._workflow_run_out(run).model_dump(mode="json")}  # type: ignore[arg-type]
         return None
 
     def _workflow_capabilities(self) -> dict[str, Any]:
@@ -1194,24 +1114,15 @@ class AgentService:
                     "path": spec.path,
                     "write": spec.write,
                     "risk_level": spec.risk_level,
-                    "workflow_allowed": spec.workflow_allowed
-                    and not spec.human_decision_required,
+                    "workflow_allowed": spec.workflow_allowed and not spec.human_decision_required,
                     "input_schema": spec.input_schema or {},
                     "output_hint": spec.output_hint
-                    or (
-                        "写操作会暂停工作流并生成确认卡"
-                        if spec.write
-                        else "查询操作可在工作流中自动执行"
-                    ),
+                    or ("写操作会暂停工作流并生成确认卡" if spec.write else "查询操作可在工作流中自动执行"),
                 }
             )
         return {
             "capabilities": capabilities,
-            "workflow_operations": [
-                spec.name
-                for spec in tool_registry.list()
-                if spec.name.startswith("agent.")
-            ],
+            "workflow_operations": [spec.name for spec in tool_registry.list() if spec.name.startswith("agent.")],
         }
 
     async def _create_workflow_from_request(
@@ -1241,11 +1152,7 @@ class AgentService:
     def _validated_workflow_steps(cls, steps: list[Any]) -> list[dict[str, Any]]:
         validated = []
         for raw_step in steps:
-            step = (
-                raw_step.model_dump(mode="json")
-                if hasattr(raw_step, "model_dump")
-                else dict(raw_step)
-            )
+            step = raw_step.model_dump(mode="json") if hasattr(raw_step, "model_dump") else dict(raw_step)
             operation = str(step.get("operation") or "")
             spec = tool_registry.get(operation)
             if spec is None or operation.startswith("agent."):
@@ -1320,9 +1227,7 @@ class AgentService:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing run_id")
         run = await self.repo.get_workflow_run(db, run_id, user_id=user_id)
         if run is None:
-            raise HTTPException(
-                status.HTTP_404_NOT_FOUND, "Agent workflow run not found"
-            )
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Agent workflow run not found")
         return run
 
     async def _start_workflow_run(
@@ -1334,12 +1239,8 @@ class AgentService:
         session_id: uuid.UUID | None,
     ) -> dict[str, Any]:
         if workflow.status != "enabled":
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, "Agent workflow is disabled"
-            )
-        run = await self.repo.create_workflow_run(
-            db, workflow=workflow, user_id=user_id, session_id=session_id
-        )
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Agent workflow is disabled")
+        run = await self.repo.create_workflow_run(db, workflow=workflow, user_id=user_id, session_id=session_id)
         return await self._continue_workflow_run(db, run=run, workflow=workflow)
 
     async def _continue_workflow_after_step_confirmation(
@@ -1391,9 +1292,7 @@ class AgentService:
                 or not spec.workflow_allowed
             ):
                 run.status = "failed"
-                run.error_message = (
-                    f"Workflow step operation is not allowed: {operation}"
-                )
+                run.error_message = f"Workflow step operation is not allowed: {operation}"
                 run.finished_at = datetime.now(UTC)
                 await self._sync_workflow_last_run(workflow, run)
                 await db.flush()
@@ -1447,9 +1346,7 @@ class AgentService:
                 run = await self._refetch_workflow_run(db, run)
                 return {
                     "run": self._workflow_run_out(run).model_dump(mode="json"),
-                    "pending_confirmation": self._confirmation_out(
-                        confirmation
-                    ).model_dump(mode="json"),
+                    "pending_confirmation": self._confirmation_out(confirmation).model_dump(mode="json"),
                 }
             try:
                 result = await self.tool_executor.execute(
@@ -1459,9 +1356,7 @@ class AgentService:
                         params=step.get("params") or {},
                         body=step.get("body"),
                         context={
-                            "session_id": str(run.session_id)
-                            if run.session_id
-                            else None,
+                            "session_id": str(run.session_id) if run.session_id else None,
                             "user_id": str(run.user_id) if run.user_id else None,
                             "workflow_id": str(workflow.id),
                             "workflow_run_id": str(run.id),
@@ -1498,16 +1393,12 @@ class AgentService:
         run = await self._refetch_workflow_run(db, run)
         return {"run": self._workflow_run_out(run).model_dump(mode="json")}
 
-    async def _sync_workflow_last_run(
-        self, workflow: AgentWorkflow, run: AgentWorkflowRun
-    ) -> None:
+    async def _sync_workflow_last_run(self, workflow: AgentWorkflow, run: AgentWorkflowRun) -> None:
         workflow.last_run_id = run.id
         workflow.last_run_status = run.status
         workflow.last_run_at = datetime.now(UTC)
 
-    async def _refetch_workflow(
-        self, db: AsyncSession, workflow: AgentWorkflow
-    ) -> AgentWorkflow:
+    async def _refetch_workflow(self, db: AsyncSession, workflow: AgentWorkflow) -> AgentWorkflow:
         if not hasattr(db, "execute"):
             return workflow
         result = await db.execute(
@@ -1520,9 +1411,7 @@ class AgentService:
         )
         return result.scalar_one()
 
-    async def _refetch_workflow_run(
-        self, db: AsyncSession, run: AgentWorkflowRun
-    ) -> AgentWorkflowRun:
+    async def _refetch_workflow_run(self, db: AsyncSession, run: AgentWorkflowRun) -> AgentWorkflowRun:
         if not hasattr(db, "execute"):
             return run
         result = await db.execute(
@@ -1646,9 +1535,7 @@ class AgentService:
         for key, value in params.items():
             formatted = formatted.replace("{" + key + "}", str(value))
         if "{" in formatted or "}" in formatted:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, "Missing required operation path parameter"
-            )
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing required operation path parameter")
         return self.settings.API_V1_PREFIX.rstrip("/") + formatted
 
     @staticmethod
@@ -1687,12 +1574,8 @@ class AgentService:
             return False
         if any(phrase in normalized for phrase in HUMAN_DECISION_PHRASES):
             return True
-        has_action = any(
-            keyword in normalized for keyword in HUMAN_DECISION_ACTION_KEYWORDS
-        )
-        has_delegation = any(
-            keyword in normalized for keyword in HUMAN_DECISION_DELEGATION_KEYWORDS
-        )
+        has_action = any(keyword in normalized for keyword in HUMAN_DECISION_ACTION_KEYWORDS)
+        has_delegation = any(keyword in normalized for keyword in HUMAN_DECISION_DELEGATION_KEYWORDS)
         if not has_action or not has_delegation:
             return False
         read_only_markers = ("查看", "查询", "列出", "详情", "明细", "统计")
@@ -1700,16 +1583,10 @@ class AgentService:
             return False
         return True
 
-    def _normalize_tool_request(
-        self, request: AgentToolExecuteRequest
-    ) -> AgentToolExecuteRequest:
+    def _normalize_tool_request(self, request: AgentToolExecuteRequest) -> AgentToolExecuteRequest:
         if request.operation == "procurement.get_contract_template":
             source = self._unwrap_payload(request.body, request.params)
-            source_text = " ".join(
-                str(value)
-                for value in [request.reason, *source.values()]
-                if value is not None
-            )
+            source_text = " ".join(str(value) for value in [request.reason, *source.values()] if value is not None)
             category = self._normalize_contract_category(
                 source.get("category")
                 or source.get("contract_category")
@@ -1750,9 +1627,7 @@ class AgentService:
         if not isinstance(items, list) or not items:
             return "合同生成缺少合同明细，请至少补充一个物品名称、数量和单价。"
         missing_name = [
-            index + 1
-            for index, item in enumerate(items)
-            if isinstance(item, dict) and not item.get("name")
+            index + 1 for index, item in enumerate(items) if isinstance(item, dict) and not item.get("name")
         ]
         if missing_name:
             return f"合同生成第 {missing_name[0]} 条明细缺少物品名称。"
@@ -1801,9 +1676,7 @@ class AgentService:
         reason: str | None,
     ) -> dict[str, Any]:
         source = self._unwrap_payload(body, params)
-        source_text = " ".join(
-            str(value) for value in [reason, *source.values()] if value is not None
-        )
+        source_text = " ".join(str(value) for value in [reason, *source.values()] if value is not None)
         category = self._normalize_contract_category(
             source.get("category")
             or source.get("contract_category")
@@ -1817,10 +1690,7 @@ class AgentService:
                 {
                     "name": self._sample_contract_item_name(category, source_text),
                     "department": (
-                        source.get("department")
-                        or source.get("request_department")
-                        or source.get("dept")
-                        or ""
+                        source.get("department") or source.get("request_department") or source.get("dept") or ""
                     ),
                     "quantity": source.get("quantity") or source.get("qty") or 1,
                     "unit": source.get("unit") or self._default_contract_unit(category),
@@ -1851,14 +1721,8 @@ class AgentService:
                 or datetime.now(UTC).date().isoformat()
             ),
             "tax_rate": source.get("tax_rate") or 13,
-            "seller": (
-                source.get("seller") if isinstance(source.get("seller"), dict) else {}
-            ),
-            "items": [
-                self._normalize_contract_item(item)
-                for item in items_source
-                if isinstance(item, dict)
-            ],
+            "seller": (source.get("seller") if isinstance(source.get("seller"), dict) else {}),
+            "items": [self._normalize_contract_item(item) for item in items_source if isinstance(item, dict)],
         }
 
     @staticmethod
@@ -1999,18 +1863,11 @@ class AgentService:
     def _normalize_contract_item(item: dict[str, Any]) -> dict[str, Any]:
         return {
             "item_code": item.get("item_code") or item.get("code") or "",
-            "name": (
-                item.get("name")
-                or item.get("product_name")
-                or item.get("item_name")
-                or item.get("title")
-            ),
+            "name": (item.get("name") or item.get("product_name") or item.get("item_name") or item.get("title")),
             "specification": item.get("specification") or item.get("spec") or "",
             "quality_standard": item.get("quality_standard") or "",
             "manufacturer": item.get("manufacturer") or item.get("factory") or "",
-            "department": (
-                item.get("department") or item.get("request_department") or ""
-            ),
+            "department": (item.get("department") or item.get("request_department") or ""),
             "quantity": item.get("quantity") or item.get("qty") or 1,
             "unit": item.get("unit") or "",
             "unit_price": item.get("unit_price") or item.get("price") or 0,
@@ -2063,11 +1920,7 @@ class AgentService:
                 or source.get("apply_date")
                 or datetime.now(UTC).date().isoformat()
             ),
-            "items": [
-                self._normalize_purchase_request_item(item)
-                for item in items_source
-                if isinstance(item, dict)
-            ],
+            "items": [self._normalize_purchase_request_item(item) for item in items_source if isinstance(item, dict)],
         }
 
     @staticmethod
@@ -2108,14 +1961,9 @@ class AgentService:
     def _normalize_purchase_request_item(item: dict[str, Any]) -> dict[str, Any]:
         return {
             "product_name": (
-                item.get("product_name")
-                or item.get("name")
-                or item.get("item_name")
-                or item.get("title")
+                item.get("product_name") or item.get("name") or item.get("item_name") or item.get("title")
             ),
-            "specification": (
-                item.get("specification") or item.get("spec") or item.get("model") or ""
-            ),
+            "specification": (item.get("specification") or item.get("spec") or item.get("model") or ""),
             "purpose": item.get("purpose") or item.get("use") or item.get("note") or "",
             "material": item.get("material") or "",
             "brand": item.get("brand") or "",
@@ -2160,9 +2008,7 @@ class AgentService:
             normalized = self._normalize_match_text(keyword)
             if normalized and normalized in message:
                 score += 100
-        haystack = self._normalize_match_text(
-            " ".join([skill.name, skill.title, skill.description])
-        )
+        haystack = self._normalize_match_text(" ".join([skill.name, skill.title, skill.description]))
         for token in [*request.business_scope, *request.available_tools]:
             normalized = self._normalize_match_text(token)
             if normalized and normalized in haystack:
@@ -2225,9 +2071,7 @@ class AgentService:
             updated_at=run.updated_at,
         )
 
-    def _confirmation_out(
-        self, confirmation: AgentConfirmation
-    ) -> AgentConfirmationOut:
+    def _confirmation_out(self, confirmation: AgentConfirmation) -> AgentConfirmationOut:
         return AgentConfirmationOut(
             id=confirmation.id,
             operation=confirmation.operation,

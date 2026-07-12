@@ -70,9 +70,7 @@ async def get_overdue_plans(
     ),
 ) -> JSONResponse:
     plans = await service.get_overdue_calibration_plans(db, ctx, days)
-    return success_response(
-        data=[CalibrationPlanResponse.model_validate(p) for p in plans]
-    )
+    return success_response(data=[CalibrationPlanResponse.model_validate(p) for p in plans])
 
 
 @router.get("/plans/{plan_id}", summary="校准计划详情")

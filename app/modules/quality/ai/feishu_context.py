@@ -20,11 +20,11 @@ _settings = get_settings()
 
 def _get_ai_query_tables() -> dict[str, dict[str, Any]]:
     """Parse FEISHU_AI_QUERY_TABLES config."""
-    raw = _settings.FEISHU_AI_QUERY_TABLES
+    raw = _settings.FEISHU_AI_QUERY_TABLES  # type: ignore[attr-defined]
     if not raw:
         return {}
     try:
-        return json.loads(raw)
+        return json.loads(raw)  # type: ignore[no-any-return]
     except json.JSONDecodeError:
         logger.warning("Invalid FEISHU_AI_QUERY_TABLES JSON: %s", raw)
         return {}
@@ -181,9 +181,7 @@ def extract_filter_conditions(text: str, filterable_fields: list[str]) -> str | 
     return " and ".join(conditions)
 
 
-async def query_feishu_table(
-    table_alias: str, filter_str: str | None
-) -> list[dict[str, Any]]:
+async def query_feishu_table(table_alias: str, filter_str: str | None) -> list[dict[str, Any]]:
     """Query Feishu Bitable with optional filter.
 
     Args:
@@ -198,14 +196,14 @@ async def query_feishu_table(
     if not cfg:
         return []
 
-    app_token = cfg.get("app_token") or _settings.FEISHU_BITABLE_APP_TOKEN
+    app_token = cfg.get("app_token") or _settings.FEISHU_BITABLE_APP_TOKEN  # type: ignore[attr-defined]
     table_id = cfg.get("table_id")
     if not table_id:
         logger.warning("No table_id configured for %s", table_alias)
         return []
 
     ds = BitableDataSource(app_token=app_token, table_id=table_id)
-    max_rows = _settings.FEISHU_AI_QUERY_MAX_ROWS
+    max_rows = _settings.FEISHU_AI_QUERY_MAX_ROWS  # type: ignore[attr-defined]
 
     try:
         records = await ds.query(filter_str=filter_str, page_size=max_rows)
@@ -254,9 +252,7 @@ def format_feishu_records(records: list[dict[str, Any]], table_alias: str) -> st
     if not records:
         return f"【飞书多维表格查询结果 - {table_alias}】未找到匹配记录。"
 
-    lines: list[str] = [
-        f"【飞书多维表格查询结果 - {table_alias}】共 {len(records)} 条记录："
-    ]
+    lines: list[str] = [f"【飞书多维表格查询结果 - {table_alias}】共 {len(records)} 条记录："]
 
     for rec in records:
         fields = rec.get("fields", {})

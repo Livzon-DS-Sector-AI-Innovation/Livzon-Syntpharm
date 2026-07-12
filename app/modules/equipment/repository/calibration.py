@@ -56,9 +56,7 @@ async def get_calibration_plans(
     if status:
         query = query.where(CalibrationPlan.status == status)
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(CalibrationPlan.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(CalibrationPlan.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
@@ -158,9 +156,7 @@ async def get_calibration_records(
     if plan_id:
         query = query.where(CalibrationRecord.calibration_plan_id == plan_id)
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(CalibrationRecord.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(CalibrationRecord.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 

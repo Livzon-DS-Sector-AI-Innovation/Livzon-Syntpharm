@@ -43,9 +43,7 @@ class ProductOutputRepository:
             count_query = count_query.where(ProductOutput.product_id == product_id)
         if product_name:
             query = query.where(ProductOutput.product_name.contains(product_name))
-            count_query = count_query.where(
-                ProductOutput.product_name.contains(product_name)
-            )
+            count_query = count_query.where(ProductOutput.product_name.contains(product_name))
         if batch_no:
             query = query.where(ProductOutput.batch_no.contains(batch_no))
             count_query = count_query.where(ProductOutput.batch_no.contains(batch_no))
@@ -87,9 +85,7 @@ class ProductOutputRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update(
-        self, record_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProductOutput | None:
+    async def update(self, record_id: uuid.UUID, data: dict[str, Any]) -> ProductOutput | None:
         """更新记录"""
         query = (
             update(ProductOutput)
@@ -114,11 +110,9 @@ class ProductOutputRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
-    async def batch_create(
-        self, records_data: list[dict[str, Any]]
-    ) -> list[ProductOutput]:
+    async def batch_create(self, records_data: list[dict[str, Any]]) -> list[ProductOutput]:
         """批量创建"""
         records = [ProductOutput(**data) for data in records_data]
         self.session.add_all(records)

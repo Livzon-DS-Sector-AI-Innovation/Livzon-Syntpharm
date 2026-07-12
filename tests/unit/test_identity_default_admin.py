@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -24,9 +25,7 @@ async def test_current_user_defaults_to_system_admin_without_token(monkeypatch) 
     async def fake_get_or_create_system_admin(db):
         return default_admin
 
-    monkeypatch.setattr(
-        deps, "get_or_create_system_admin", fake_get_or_create_system_admin
-    )
+    monkeypatch.setattr(deps, "get_or_create_system_admin", fake_get_or_create_system_admin)
 
     user = await deps.get_current_user(
         make_request(),
@@ -55,9 +54,7 @@ async def test_me_endpoint_returns_system_admin_without_token(monkeypatch) -> No
     async def fake_get_or_create_system_admin(db):
         return default_admin
 
-    monkeypatch.setattr(
-        deps, "get_or_create_system_admin", fake_get_or_create_system_admin
-    )
+    monkeypatch.setattr(deps, "get_or_create_system_admin", fake_get_or_create_system_admin)
     app.dependency_overrides[get_db] = fake_get_db
     try:
         transport = ASGITransport(app=app)
@@ -82,9 +79,7 @@ async def test_current_user_defaults_to_system_admin_for_invalid_token(
     async def fake_get_or_create_system_admin(db):
         return default_admin
 
-    monkeypatch.setattr(
-        deps, "get_or_create_system_admin", fake_get_or_create_system_admin
-    )
+    monkeypatch.setattr(deps, "get_or_create_system_admin", fake_get_or_create_system_admin)
 
     user = await deps.get_current_user(
         make_request("Bearer not-a-valid-jwt"),

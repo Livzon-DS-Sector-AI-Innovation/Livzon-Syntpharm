@@ -35,23 +35,11 @@ class ProductOutput(BaseModel):
         index=True,
         comment="关联产品ID",
     )
-    workshop: Mapped[str] = mapped_column(
-        String(64), nullable=False, index=True, comment="车间名称"
-    )
-    product_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="产品名称（冗余字段）"
-    )
+    workshop: Mapped[str] = mapped_column(String(64), nullable=False, index=True, comment="车间名称")
+    product_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="产品名称（冗余字段）")
     batch_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="批号")
-    production_date: Mapped[date] = mapped_column(
-        Date, nullable=False, comment="生产日期"
-    )
-    end_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="结束日期"
-    )
-    weight: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0, comment="重量(kg)"
-    )
-    unit: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="kg", comment="单位"
-    )
+    production_date: Mapped[date] = mapped_column(Date, nullable=False, comment="生产日期")
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="结束日期")
+    weight: Mapped[float] = mapped_column(Float, nullable=False, default=0, comment="重量(kg)")
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, default="kg", comment="单位")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")

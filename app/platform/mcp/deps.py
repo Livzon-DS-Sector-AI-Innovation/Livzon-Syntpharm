@@ -10,17 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
 
-_session_ctx: contextvars.ContextVar[AsyncSession | None] = contextvars.ContextVar(
-    "mcp_db_session", default=None
-)
+_session_ctx: contextvars.ContextVar[AsyncSession | None] = contextvars.ContextVar("mcp_db_session", default=None)
 
-_user_ctx: contextvars.ContextVar[User | None] = contextvars.ContextVar(
-    "mcp_user", default=None
-)
+_user_ctx: contextvars.ContextVar[User | None] = contextvars.ContextVar("mcp_user", default=None)
 
-_agent_api_key_ctx: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "mcp_agent_api_key", default=""
-)
+_agent_api_key_ctx: contextvars.ContextVar[str] = contextvars.ContextVar("mcp_agent_api_key", default="")
 
 
 def get_db() -> AsyncSession:

@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.put("/{work_order_id}/claim", summary="抢单（维修人员自主接单）")
-async def claim_work_order(
+async def claim_work_order(  # type: ignore[no-untyped-def]
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     settings=Depends(get_settings),
@@ -41,7 +41,7 @@ async def claim_work_order(
     if not is_member:
         raise ForbiddenException(message="只有设备部成员才能接单")
 
-    wo = await service.claim_work_order(db, work_order_id, ctx.user.id)
+    wo = await service.claim_work_order(db, work_order_id, ctx.user.id)  # type: ignore[arg-type]
 
     asyncio.ensure_future(send_claim_notification(wo.work_order_no, ctx.user.name))
 

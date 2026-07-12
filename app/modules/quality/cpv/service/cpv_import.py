@@ -89,12 +89,8 @@ async def preview_import(
     # 解析数据行
     error_rows = []
     valid_count = 0
-    batch_no_col = next(
-        (i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None
-    )
-    date_col = next(
-        (i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None
-    )
+    batch_no_col = next((i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None)
+    date_col = next((i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None)
 
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         row_data = dict(zip(headers, row))
@@ -184,12 +180,8 @@ async def confirm_import(
         if header and str(header).strip() in param_map:
             matched_params[col_idx] = param_map[str(header).strip()]
 
-    batch_no_col = next(
-        (i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None
-    )
-    date_col = next(
-        (i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None
-    )
+    batch_no_col = next((i for i, h in enumerate(headers) if h in ("批号", "batch_no")), None)
+    date_col = next((i for i, h in enumerate(headers) if h in ("生产日期", "production_date")), None)
 
     # 覆盖模式：删除旧数据
     if request.import_mode == "overwrite":
@@ -219,16 +211,12 @@ async def confirm_import(
             continue
 
         # 检查批号是否已存在
-        existing_batch = await repo.get_batch_by_no(
-            db, request.product_id, str(batch_no), request.data_type
-        )
+        existing_batch = await repo.get_batch_by_no(db, request.product_id, str(batch_no), request.data_type)
 
         if existing_batch:
             if request.import_mode == "create":
                 failed_rows += 1
-                error_details.append(
-                    {"row": row_idx, "error": f"批号已存在: {batch_no}"}
-                )
+                error_details.append({"row": row_idx, "error": f"批号已存在: {batch_no}"})
                 continue
             batch = existing_batch
         else:
@@ -251,9 +239,7 @@ async def confirm_import(
             value = row[col_idx] if col_idx < len(row) else None
             if value is not None and value != "":
                 str_value = str(value)
-                is_abnormal = _check_abnormal(
-                    str_value, param.lower_limit, param.upper_limit
-                )
+                is_abnormal = _check_abnormal(str_value, param.lower_limit, param.upper_limit)
                 values_data.append(
                     {
                         "batch_id": batch.id,
@@ -272,7 +258,7 @@ async def confirm_import(
     wb.close()
 
     # 更新任务状态
-    task = await repo.update_import_task(
+    task = await repo.update_import_task(  # type: ignore[assignment]
         db,
         task.id,
         {

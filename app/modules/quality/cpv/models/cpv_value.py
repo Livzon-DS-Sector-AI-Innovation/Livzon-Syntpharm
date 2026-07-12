@@ -19,18 +19,8 @@ class CpvValue(BaseModel):
         {"schema": "quality", "comment": "CPV参数值表"},
     )
 
-    batch_id: Mapped[str] = mapped_column(
-        ForeignKey("quality.cpv_batches.id"), nullable=False, comment="批次ID"
-    )
-    parameter_id: Mapped[str] = mapped_column(
-        ForeignKey("quality.cpv_parameters.id"), nullable=False, comment="参数ID"
-    )
-    actual_value: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="实测值"
-    )
-    is_abnormal: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, comment="是否异常"
-    )
-    remark: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="备注"
-    )
+    batch_id: Mapped[str] = mapped_column(ForeignKey("quality.cpv_batches.id"), nullable=False, comment="批次ID")
+    parameter_id: Mapped[str] = mapped_column(ForeignKey("quality.cpv_parameters.id"), nullable=False, comment="参数ID")
+    actual_value: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="实测值")
+    is_abnormal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, comment="是否异常")
+    remark: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="备注")

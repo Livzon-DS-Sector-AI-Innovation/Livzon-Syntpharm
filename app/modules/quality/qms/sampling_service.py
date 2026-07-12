@@ -40,9 +40,7 @@ class SamplingService:
         self.retention_repo = SampleRetentionLedgerRepository(session)
         self.approval_repo = SamplingApprovalRecordRepository(session)
 
-    async def create_order(
-        self, data: SamplingOrderCreate, user_id: UUID | None = None
-    ) -> SamplingOrder:
+    async def create_order(self, data: SamplingOrderCreate, user_id: UUID | None = None) -> SamplingOrder:
         """创建取样单"""
         # 生成单号
         order_no = await self.order_repo.generate_order_no()
@@ -146,9 +144,7 @@ class SamplingService:
         await self.session.refresh(order)
         return order
 
-    async def submit_for_approval(
-        self, order_id: UUID, user_id: UUID | None = None
-    ) -> SamplingOrder:
+    async def submit_for_approval(self, order_id: UUID, user_id: UUID | None = None) -> SamplingOrder:
         """提交审批"""
         order = await self.order_repo.get_by_id(order_id)
         if not order:
@@ -295,14 +291,10 @@ class SamplingService:
         """获取留样台账列表"""
         return await self.retention_repo.get_list(filters, skip, limit)
 
-    async def get_retention_by_order_id(
-        self, order_id: UUID
-    ) -> list[SampleRetentionLedger]:
+    async def get_retention_by_order_id(self, order_id: UUID) -> list[SampleRetentionLedger]:
         """根据取样单ID获取留样记录"""
         return await self.retention_repo.get_by_sampling_order_id(order_id)
 
-    async def get_approval_records(
-        self, order_id: UUID
-    ) -> list[SamplingApprovalRecord]:
+    async def get_approval_records(self, order_id: UUID) -> list[SamplingApprovalRecord]:
         """获取审批记录"""
         return await self.approval_repo.get_by_sampling_order_id(order_id)

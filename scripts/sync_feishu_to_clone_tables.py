@@ -1,3 +1,4 @@
+# ruff: noqa
 """Sync Feishu Bitable data to hr._old / hr._new clone tables.
 
 Usage:
@@ -450,20 +451,14 @@ async def sync_table(
         record["feishu_record_id"] = record_id
 
         # Post-process: employees_old has no "入职时间", use "入丽珠时间" as hire_date
-        if (
-            db_table == "hr.employees_old"
-            and not record.get("hire_date")
-            and record.get("livo_entry_date")
-        ):
+        if db_table == "hr.employees_old" and not record.get("hire_date") and record.get("livo_entry_date"):
             record["hire_date"] = record["livo_entry_date"]
 
         # Skip records with empty required fields
         if db_table in ("hr.employees_old", "hr.employees_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning(
-                    "  Skipping record %s: missing employee_number", record_id
-                )
+                logger.warning("  Skipping record %s: missing employee_number", record_id)
                 continue
             if not record.get("hire_date"):
                 errors += 1
@@ -472,9 +467,7 @@ async def sync_table(
         if db_table in ("hr.onboarding_records_old", "hr.onboarding_records_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning(
-                    "  Skipping record %s: missing employee_number", record_id
-                )
+                logger.warning("  Skipping record %s: missing employee_number", record_id)
                 continue
             if not record.get("hire_date"):
                 errors += 1

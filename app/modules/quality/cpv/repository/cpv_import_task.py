@@ -17,9 +17,7 @@ async def create_import_task(db: AsyncSession, data: dict[str, Any]) -> CpvImpor
     return task
 
 
-async def get_import_task_by_id(
-    db: AsyncSession, task_id: uuid.UUID
-) -> CpvImportTask | None:
+async def get_import_task_by_id(db: AsyncSession, task_id: uuid.UUID) -> CpvImportTask | None:
     """根据ID获取导入任务"""
     result = await db.execute(
         select(CpvImportTask).where(

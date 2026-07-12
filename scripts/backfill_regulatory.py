@@ -38,14 +38,10 @@ async def backfill():
         # 检查数据源
         source = await repo.get_data_source_by_code(db, "CDE")
         if not source:
-            logger.error(
-                "❌ CDE 数据源不存在，请先执行：python scripts/seed_regulatory_tracker.py"
-            )
+            logger.error("❌ CDE 数据源不存在，请先执行：python scripts/seed_regulatory_tracker.py")
             return False
 
-        channel = await repo.get_channel_by_code(
-            db, source.id, "cde_domestic_guideline"
-        )
+        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
         if not channel:
             logger.error("❌ cde_domestic_guideline 栏目不存在，请先执行 seed")
             return False

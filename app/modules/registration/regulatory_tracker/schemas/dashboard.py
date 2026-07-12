@@ -1,7 +1,9 @@
 """Dashboard schemas V2 - 原料药企业影响评估。"""
+# ruff: noqa: N815  # Pydantic model fields use camelCase for JSON compatibility
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -48,7 +50,7 @@ class DashboardResponse(BaseModel):
     trend7Days: list[TrendItem]
     byClassification: dict[str, int]
     sourceStatus: list[SourceStatusItem]
-    todayNewDocuments: list[dict]
+    todayNewDocuments: list[dict[str, Any]]
     priorityDocuments: list[PriorityDocument] = []
 
 

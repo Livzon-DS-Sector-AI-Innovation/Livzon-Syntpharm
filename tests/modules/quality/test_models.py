@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Quality module model tests."""
 
 from __future__ import annotations
@@ -14,9 +15,7 @@ async def test_deviation_model_creation(db_session, sample_deviation_data):
     db_session.add(deviation)
     await db_session.commit()
 
-    result = await db_session.execute(
-        select(Deviation).where(Deviation.id == deviation.id)
-    )
+    result = await db_session.execute(select(Deviation).where(Deviation.id == deviation.id))
     fetched = result.scalar_one()
     assert fetched.deviation_code == sample_deviation_data["deviation_code"]
     assert fetched.status == "draft"

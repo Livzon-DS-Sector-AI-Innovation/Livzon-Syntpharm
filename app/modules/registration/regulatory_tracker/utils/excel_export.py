@@ -2,6 +2,7 @@
 
 import io
 from datetime import date, datetime
+from typing import Any
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -33,7 +34,7 @@ COLUMNS = [
 ]
 
 
-def _format_cell_value(value) -> str:
+def _format_cell_value(value) -> Any:  # type: ignore[no-untyped-def]
     """格式化单元格值"""
     if value is None:
         return ""
@@ -47,9 +48,9 @@ def _format_cell_value(value) -> str:
 
 
 def generate_regulatory_excel(
-    documents: list,
-    source_map: dict | None = None,
-    channel_map: dict | None = None,
+    documents: list[Any],
+    source_map: dict[str, Any] | None = None,
+    channel_map: dict[str, Any] | None = None,
 ) -> io.BytesIO:
     """
     生成法规文档 Excel 文件。
@@ -111,9 +112,7 @@ def generate_regulatory_excel(
 
         # 交替行背景色
         if row_idx % 2 == 0:
-            alt_fill = PatternFill(
-                start_color="F2F7FB", end_color="F2F7FB", fill_type="solid"
-            )
+            alt_fill = PatternFill(start_color="F2F7FB", end_color="F2F7FB", fill_type="solid")
             for col_idx in range(1, len(values) + 1):
                 ws.cell(row=row_num, column=col_idx).fill = alt_fill
 

@@ -13,6 +13,7 @@ Ref: https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/authen-v1/l
 
 from __future__ import annotations
 
+from typing import Any
 from urllib.parse import urlencode
 
 import httpx
@@ -64,7 +65,7 @@ class FeishuOAuthClient:
 
     # ── Token operations ────────────────────────────────────────────
 
-    async def exchange_code(self, code: str) -> dict:
+    async def exchange_code(self, code: str) -> dict[str, Any]:
         """Exchange an authorization code for tokens.
 
         Returns dict with keys: access_token, token_type, expires_in,
@@ -93,9 +94,9 @@ class FeishuOAuthClient:
                 f"error={data.get('error')}, "
                 f"desc={data.get('error_description', '')}",
             )
-        return data
+        return data  # type: ignore[no-any-return]
 
-    async def refresh_access_token(self, refresh_token: str) -> dict:
+    async def refresh_access_token(self, refresh_token: str) -> dict[str, Any]:
         """Refresh a user_access_token using a refresh_token."""
         payload = {
             "grant_type": "refresh_token",
@@ -119,11 +120,11 @@ class FeishuOAuthClient:
                 f"error={data.get('error')}, "
                 f"desc={data.get('error_description', '')}",
             )
-        return data
+        return data  # type: ignore[no-any-return]
 
     # ── User info ───────────────────────────────────────────────────
 
-    async def get_user_info(self, user_access_token: str) -> dict:
+    async def get_user_info(self, user_access_token: str) -> dict[str, Any]:
         """Fetch the authenticated user's profile from Feishu.
 
         Returns dict with keys: name, en_name, avatar_url, avatar_thumb,
@@ -144,7 +145,7 @@ class FeishuOAuthClient:
             raise OAuthError(
                 f"get_user_info failed: code={data.get('code')}, msg={data.get('msg')}",
             )
-        return data.get("data", {})
+        return data.get("data", {})  # type: ignore[no-any-return]
 
 
 class OAuthError(Exception):

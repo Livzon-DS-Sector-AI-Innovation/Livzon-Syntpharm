@@ -90,36 +90,23 @@ class ProductionRepository:
         await self.session.refresh(batch)
         return batch
 
-    async def update_batch(
-        self, batch_id: uuid.UUID, data: dict[str, Any]
-    ) -> Batch | None:
+    async def update_batch(self, batch_id: uuid.UUID, data: dict[str, Any]) -> Batch | None:
         """更新批次"""
-        query = (
-            update(Batch)
-            .where(Batch.id == batch_id, not Batch.is_deleted)
-            .values(**data)
-            .returning(Batch)
-        )
+        query = update(Batch).where(Batch.id == batch_id, not Batch.is_deleted).values(**data).returning(Batch)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def delete_batch(self, batch_id: uuid.UUID) -> bool:
         """删除批次(软删除)"""
-        query = (
-            update(Batch)
-            .where(Batch.id == batch_id, not Batch.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(Batch).where(Batch.id == batch_id, not Batch.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ BatchMaterial Operations ============
 
     async def get_batch_materials(self, batch_id: uuid.UUID) -> list[BatchMaterial]:
         """获取批次物料列表"""
-        query = select(BatchMaterial).where(
-            BatchMaterial.batch_id == batch_id, not BatchMaterial.is_deleted
-        )
+        query = select(BatchMaterial).where(BatchMaterial.batch_id == batch_id, not BatchMaterial.is_deleted)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
@@ -131,9 +118,7 @@ class ProductionRepository:
         await self.session.refresh(material)
         return material
 
-    async def update_batch_material(
-        self, material_id: uuid.UUID, data: dict[str, Any]
-    ) -> BatchMaterial | None:
+    async def update_batch_material(self, material_id: uuid.UUID, data: dict[str, Any]) -> BatchMaterial | None:
         """更新批次物料"""
         query = (
             update(BatchMaterial)
@@ -152,7 +137,7 @@ class ProductionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ ProductionPlan Operations ============
 
@@ -171,18 +156,14 @@ class ProductionRepository:
         if plan_month:
             query = query.where(ProductionPlan.plan_month == plan_month)
 
-        count_query = select(func.count(ProductionPlan.id)).where(
-            not ProductionPlan.is_deleted
-        )
+        count_query = select(func.count(ProductionPlan.id)).where(not ProductionPlan.is_deleted)
         if status:
             count_query = count_query.where(ProductionPlan.status == status)
         if plan_month:
             count_query = count_query.where(ProductionPlan.plan_month == plan_month)
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip).limit(limit).order_by(ProductionPlan.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(ProductionPlan.created_at.desc())
         result = await self.session.execute(query)
         plans = list(result.scalars().all())
         return plans, total or 0
@@ -205,9 +186,7 @@ class ProductionRepository:
         await self.session.refresh(plan)
         return plan
 
-    async def update_plan(
-        self, plan_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProductionPlan | None:
+    async def update_plan(self, plan_id: uuid.UUID, data: dict[str, Any]) -> ProductionPlan | None:
         """更新生产计划"""
         query = (
             update(ProductionPlan)
@@ -226,15 +205,13 @@ class ProductionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ PlanTask Operations ============
 
     async def get_tasks_by_plan(self, plan_id: uuid.UUID) -> list[PlanTask]:
         """获取计划任务列表"""
-        query = select(PlanTask).where(
-            PlanTask.plan_id == plan_id, not PlanTask.is_deleted
-        )
+        query = select(PlanTask).where(PlanTask.plan_id == plan_id, not PlanTask.is_deleted)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
@@ -246,28 +223,19 @@ class ProductionRepository:
         await self.session.refresh(task)
         return task
 
-    async def update_task(
-        self, task_id: uuid.UUID, data: dict[str, Any]
-    ) -> PlanTask | None:
+    async def update_task(self, task_id: uuid.UUID, data: dict[str, Any]) -> PlanTask | None:
         """更新计划任务"""
         query = (
-            update(PlanTask)
-            .where(PlanTask.id == task_id, not PlanTask.is_deleted)
-            .values(**data)
-            .returning(PlanTask)
+            update(PlanTask).where(PlanTask.id == task_id, not PlanTask.is_deleted).values(**data).returning(PlanTask)
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def delete_task(self, task_id: uuid.UUID) -> bool:
         """删除计划任务"""
-        query = (
-            update(PlanTask)
-            .where(PlanTask.id == task_id, not PlanTask.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(PlanTask).where(PlanTask.id == task_id, not PlanTask.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ ProcessSpec Operations ============
 
@@ -286,9 +254,7 @@ class ProductionRepository:
         if product_code:
             query = query.where(ProcessSpec.product_code == product_code)
 
-        count_query = select(func.count(ProcessSpec.id)).where(
-            not ProcessSpec.is_deleted
-        )
+        count_query = select(func.count(ProcessSpec.id)).where(not ProcessSpec.is_deleted)
         if status:
             count_query = count_query.where(ProcessSpec.status == status)
         if product_code:
@@ -304,9 +270,7 @@ class ProductionRepository:
         """获取工艺规程详情"""
         query = (
             select(ProcessSpec)
-            .options(
-                selectinload(ProcessSpec.steps).selectinload(ProcessStep.parameters)
-            )
+            .options(selectinload(ProcessSpec.steps).selectinload(ProcessStep.parameters))
             .where(ProcessSpec.id == spec_id, not ProcessSpec.is_deleted)
         )
         result = await self.session.execute(query)
@@ -320,9 +284,7 @@ class ProductionRepository:
         await self.session.refresh(spec)
         return spec
 
-    async def update_process_spec(
-        self, spec_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProcessSpec | None:
+    async def update_process_spec(self, spec_id: uuid.UUID, data: dict[str, Any]) -> ProcessSpec | None:
         """更新工艺规程"""
         query = (
             update(ProcessSpec)
@@ -335,13 +297,9 @@ class ProductionRepository:
 
     async def delete_process_spec(self, spec_id: uuid.UUID) -> bool:
         """删除工艺规程"""
-        query = (
-            update(ProcessSpec)
-            .where(ProcessSpec.id == spec_id, not ProcessSpec.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(ProcessSpec).where(ProcessSpec.id == spec_id, not ProcessSpec.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ ProcessStep Operations ============
 
@@ -363,9 +321,7 @@ class ProductionRepository:
         await self.session.refresh(step)
         return step
 
-    async def update_process_step(
-        self, step_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProcessStep | None:
+    async def update_process_step(self, step_id: uuid.UUID, data: dict[str, Any]) -> ProcessStep | None:
         """更新工艺步骤"""
         query = (
             update(ProcessStep)
@@ -378,23 +334,15 @@ class ProductionRepository:
 
     async def delete_process_step(self, step_id: uuid.UUID) -> bool:
         """删除工艺步骤"""
-        query = (
-            update(ProcessStep)
-            .where(ProcessStep.id == step_id, not ProcessStep.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(ProcessStep).where(ProcessStep.id == step_id, not ProcessStep.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ ProcessParameter Operations ============
 
-    async def get_parameters_by_step(
-        self, step_id: uuid.UUID
-    ) -> list[ProcessParameter]:
+    async def get_parameters_by_step(self, step_id: uuid.UUID) -> list[ProcessParameter]:
         """获取工艺参数列表"""
-        query = select(ProcessParameter).where(
-            ProcessParameter.step_id == step_id, not ProcessParameter.is_deleted
-        )
+        query = select(ProcessParameter).where(ProcessParameter.step_id == step_id, not ProcessParameter.is_deleted)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
@@ -406,9 +354,7 @@ class ProductionRepository:
         await self.session.refresh(param)
         return param
 
-    async def update_process_parameter(
-        self, param_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProcessParameter | None:
+    async def update_process_parameter(self, param_id: uuid.UUID, data: dict[str, Any]) -> ProcessParameter | None:
         """更新工艺参数"""
         query = (
             update(ProcessParameter)
@@ -427,7 +373,7 @@ class ProductionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ ProductionRecord Operations ============
 
@@ -450,9 +396,7 @@ class ProductionRepository:
 
     async def get_record_by_id(self, record_id: uuid.UUID) -> ProductionRecord | None:
         """通过ID获取单条生产记录"""
-        query = select(ProductionRecord).where(
-            ProductionRecord.id == record_id, not ProductionRecord.is_deleted
-        )
+        query = select(ProductionRecord).where(ProductionRecord.id == record_id, not ProductionRecord.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -464,9 +408,7 @@ class ProductionRepository:
         await self.session.refresh(record)
         return record
 
-    async def update_production_record(
-        self, record_id: uuid.UUID, data: dict[str, Any]
-    ) -> ProductionRecord | None:
+    async def update_production_record(self, record_id: uuid.UUID, data: dict[str, Any]) -> ProductionRecord | None:
         """更新生产记录"""
         query = (
             update(ProductionRecord)
@@ -485,15 +427,13 @@ class ProductionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ MaterialBalance Operations ============
 
     async def get_material_balance(self, batch_id: uuid.UUID) -> MaterialBalance | None:
         """获取物料平衡"""
-        query = select(MaterialBalance).where(
-            MaterialBalance.batch_id == batch_id, not MaterialBalance.is_deleted
-        )
+        query = select(MaterialBalance).where(MaterialBalance.batch_id == batch_id, not MaterialBalance.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -505,9 +445,7 @@ class ProductionRepository:
         await self.session.refresh(balance)
         return balance
 
-    async def update_material_balance(
-        self, batch_id: uuid.UUID, data: dict[str, Any]
-    ) -> MaterialBalance | None:
+    async def update_material_balance(self, batch_id: uuid.UUID, data: dict[str, Any]) -> MaterialBalance | None:
         """更新物料平衡"""
         query = (
             update(MaterialBalance)

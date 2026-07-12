@@ -20,18 +20,14 @@ from app.modules.energy.models import (
 # ── 设备配置 ──
 
 
-async def create_device_config(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyDeviceConfig:
+async def create_device_config(db: AsyncSession, data: dict[str, Any]) -> EnergyDeviceConfig:
     obj = EnergyDeviceConfig(**data)
     db.add(obj)
     await db.flush()
     return obj
 
 
-async def get_device_config_by_id(
-    db: AsyncSession, config_id: UUID
-) -> EnergyDeviceConfig | None:
+async def get_device_config_by_id(db: AsyncSession, config_id: UUID) -> EnergyDeviceConfig | None:
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.id == config_id,
@@ -74,9 +70,7 @@ async def list_device_configs(
     return list(result.scalars().all()), total
 
 
-async def update_device_config(
-    db: AsyncSession, config_id: UUID, data: dict[str, Any]
-) -> EnergyDeviceConfig | None:
+async def update_device_config(db: AsyncSession, config_id: UUID, data: dict[str, Any]) -> EnergyDeviceConfig | None:
     obj = await get_device_config_by_id(db, config_id)
     if obj is None:
         return None
@@ -119,9 +113,7 @@ async def exists_device_config(
     return count > 0
 
 
-async def get_enabled_devices_by_platform(
-    db: AsyncSession, platform_code: str
-) -> list[EnergyDeviceConfig]:
+async def get_enabled_devices_by_platform(db: AsyncSession, platform_code: str) -> list[EnergyDeviceConfig]:
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.platform_code == platform_code,
@@ -132,9 +124,7 @@ async def get_enabled_devices_by_platform(
     return list(result.scalars().all())
 
 
-async def get_latest_energy_data(
-    db: AsyncSession, device_config_id: UUID
-) -> EnergyData | None:
+async def get_latest_energy_data(db: AsyncSession, device_config_id: UUID) -> EnergyData | None:
     """获取指定设备最近一条能耗数据记录。"""
     result = await db.execute(
         select(EnergyData)
@@ -240,7 +230,7 @@ async def get_energy_statistics(
     if group_by == "workshop":
         group_col = EnergyDeviceConfig.workshop
     elif group_by == "production_line":
-        group_col = EnergyDeviceConfig.production_line
+        group_col = EnergyDeviceConfig.production_line  # type: ignore[assignment]
     else:
         group_col = EnergyDeviceConfig.device_name
 
@@ -357,9 +347,7 @@ async def get_overview_trend(
     ]
 
 
-async def create_collect_log(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyCollectLog:
+async def create_collect_log(db: AsyncSession, data: dict[str, Any]) -> EnergyCollectLog:
     obj = EnergyCollectLog(**data)
     db.add(obj)
     await db.flush()
@@ -431,7 +419,7 @@ async def get_collect_log_detail(
     result = await db.execute(query)
     rows = list(result.all())
 
-    return log, rows
+    return log, rows  # type: ignore[return-value]
 
 
 # ── 预警规则 ──
@@ -450,9 +438,7 @@ async def create_alert_rule(db: AsyncSession, data: dict[str, Any]) -> EnergyAle
     return result.scalar_one()
 
 
-async def get_alert_rule_by_id(
-    db: AsyncSession, rule_id: UUID
-) -> EnergyAlertRule | None:
+async def get_alert_rule_by_id(db: AsyncSession, rule_id: UUID) -> EnergyAlertRule | None:
     result = await db.execute(
         select(EnergyAlertRule).where(
             EnergyAlertRule.id == rule_id,
@@ -490,9 +476,7 @@ async def list_alert_rules(
     return list(result.scalars().all()), total
 
 
-async def update_alert_rule(
-    db: AsyncSession, rule_id: UUID, data: dict[str, Any]
-) -> EnergyAlertRule | None:
+async def update_alert_rule(db: AsyncSession, rule_id: UUID, data: dict[str, Any]) -> EnergyAlertRule | None:
     obj = await get_alert_rule_by_id(db, rule_id)
     if obj is None:
         return None
@@ -520,9 +504,7 @@ async def delete_alert_rule(db: AsyncSession, rule_id: UUID) -> bool:
 # ── 预警记录 ──
 
 
-async def create_alert_record(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyAlertRecord:
+async def create_alert_record(db: AsyncSession, data: dict[str, Any]) -> EnergyAlertRecord:
     obj = EnergyAlertRecord(**data)
     db.add(obj)
     await db.flush()
@@ -535,9 +517,7 @@ async def create_alert_record(
     return result.scalar_one()
 
 
-async def get_alert_record_by_id(
-    db: AsyncSession, record_id: UUID
-) -> EnergyAlertRecord | None:
+async def get_alert_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyAlertRecord | None:
     result = await db.execute(
         select(EnergyAlertRecord).where(
             EnergyAlertRecord.id == record_id,
@@ -581,9 +561,7 @@ async def list_alert_records(
     return list(result.scalars().all()), total
 
 
-async def update_alert_record(
-    db: AsyncSession, record_id: UUID, data: dict[str, Any]
-) -> EnergyAlertRecord | None:
+async def update_alert_record(db: AsyncSession, record_id: UUID, data: dict[str, Any]) -> EnergyAlertRecord | None:
     obj = await get_alert_record_by_id(db, record_id)
     if obj is None:
         return None

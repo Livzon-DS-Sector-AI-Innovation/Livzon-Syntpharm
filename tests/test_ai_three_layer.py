@@ -1,3 +1,5 @@
+# ruff: noqa
+# mypy: ignore-errors
 """Tests for the AI three-layer query architecture.
 
 Test strategy: three rounds of testing.

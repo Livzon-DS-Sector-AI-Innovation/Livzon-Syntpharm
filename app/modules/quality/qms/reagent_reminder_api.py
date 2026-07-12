@@ -3,6 +3,8 @@
 提供试剂库存不足时的飞书提醒配置和手动触发接口
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +39,7 @@ class ItemReminderRequest(BaseModel):
 
 
 @router.get("/config", summary="获取提醒配置")
-async def get_config(session: AsyncSession = Depends(get_db_session)):
+async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
     """获取当前的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_config()
@@ -54,19 +56,17 @@ async def get_config(session: AsyncSession = Depends(get_db_session)):
             "feishu_chat_id": config.feishu_chat_id,
             "low_stock_threshold": config.low_stock_threshold,
             "is_enabled": config.is_enabled,
-            "last_remind_time": config.last_remind_time.isoformat()
-            if config.last_remind_time
-            else None,
+            "last_remind_time": config.last_remind_time.isoformat() if config.last_remind_time else None,
             "last_remind_content": config.last_remind_content,
         },
     }
 
 
 @router.post("/config", summary="保存提醒配置")
-async def save_config(
+async def post(
     request: ReminderConfigRequest,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """保存提醒配置"""
     service = ReagentReminderService(session)
     config = await service.create_or_update_config(
@@ -91,7 +91,7 @@ async def save_config(
 
 
 @router.post("/check", summary="手动检查并发送提醒")
-async def check_and_remind(session: AsyncSession = Depends(get_db_session)):
+async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> Any:
     """手动触发库存检查和提醒"""
     service = ReagentReminderService(session)
     result = await service.check_and_remind()
@@ -99,10 +99,10 @@ async def check_and_remind(session: AsyncSession = Depends(get_db_session)):
 
 
 @router.get("/low-stock", summary="获取库存不足的试剂列表")
-async def get_low_stock_reagents(
+async def get(
     threshold: int = 2,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """获取库存不足的试剂列表（用于预览，包含每个试剂的提醒开关状态）"""
     service = ReagentReminderService(session)
     items = await service.get_low_stock_reagents(threshold)
@@ -117,24 +117,22 @@ async def get_low_stock_reagents(
     }
 
 
-@router.post("/item-reminder", summary="设置单个试剂的提醒开关")
-async def set_item_reminder(
+@router.post("/item-reminder", summary="设置单个试剂的提醒开关")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     request: ItemReminderRequest,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """设置单个试剂的提醒开关（启用/禁用）"""
     service = ReagentReminderService(session)
-    result = await service.set_item_reminder_enabled(
-        request.reagent_name, request.is_enabled
-    )
+    result = await service.set_item_reminder_enabled(request.reagent_name, request.is_enabled)
     return result
 
 
-@router.get("/item-reminder/{reagent_name}", summary="获取单个试剂的提醒配置")
-async def get_item_reminder(
+@router.get("/item-reminder/{reagent_name}", summary="获取单个试剂的提醒配置")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     reagent_name: str,
     session: AsyncSession = Depends(get_db_session),
-):
+) -> Any:
     """获取单个试剂的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_item_reminder_config(reagent_name)

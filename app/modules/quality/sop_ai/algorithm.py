@@ -7,6 +7,7 @@ import hashlib
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ class SimHash:
         distance = self._hamming_distance(hash1, hash2)
         return distance <= self.threshold
 
-    def compute_text_similarity(self, text1: str, text2: str) -> dict:
+    def compute_text_similarity(self, text1: str, text2: str) -> dict[str, Any]:
         """计算两个文本的相似度
 
         Args:
@@ -176,7 +177,7 @@ class FileParser:
     # 支持的文件类型
     SUPPORTED_EXTENSIONS = {".doc", ".docx", ".pdf", ".txt"}
 
-    def __init__(self):
+    def __init__(self) -> Any:  # type: ignore[misc]
         self.supported_extensions = self.SUPPORTED_EXTENSIONS
 
     def is_supported(self, file_path: str) -> bool:
@@ -270,7 +271,7 @@ class FileParser:
     def _parse_pdf(self, file_path: str) -> str:
         """解析 PDF 文件"""
         try:
-            import PyPDF2
+            import PyPDF2  # type: ignore[import-not-found]
 
             text_parts = []
             with open(file_path, "rb") as f:
@@ -321,7 +322,7 @@ class DuplicateChecker:
         self,
         text1: str,
         text2: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """检查两个文本是否重复"""
         return self.simhash.compute_text_similarity(text1, text2)
 
@@ -329,7 +330,7 @@ class DuplicateChecker:
         self,
         file_path1: str,
         file_path2: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """检查两个文件是否重复
 
         Args:
@@ -355,7 +356,7 @@ class DuplicateChecker:
         self,
         target_text: str,
         reference_texts: list[tuple[str, str]],
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """在参考文本列表中查找重复
 
         Args:

@@ -79,9 +79,7 @@ class IPQCInspectionService:
             standard_id=data.standard_id,
             standard_name=data.standard_name,
             standard_version=data.standard_version,
-            inspection_conclusion=data.inspection_conclusion.value
-            if data.inspection_conclusion
-            else None,
+            inspection_conclusion=data.inspection_conclusion.value if data.inspection_conclusion else None,
             conclusion_reason=data.conclusion_reason,
             remark=data.remark,
             oos_report_no=data.oos_report_no,
@@ -173,9 +171,7 @@ class IPQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def delete_inspection(
-        self, inspection_id: UUID, user_id: UUID | None = None
-    ) -> None:
+    async def delete_inspection(self, inspection_id: UUID, user_id: UUID | None = None) -> None:
         """删除IPQC检验单"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -194,9 +190,7 @@ class IPQCInspectionService:
 
         await self.session.commit()
 
-    async def submit_for_approval(
-        self, inspection_id: UUID, user_id: UUID | None = None
-    ) -> IPQCInspection:
+    async def submit_for_approval(self, inspection_id: UUID, user_id: UUID | None = None) -> IPQCInspection:
         """提交IPQC检验单审批"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -296,9 +290,7 @@ class IPQCInspectionService:
                 # 如果检验结论为不合格，需要锁定批次
                 if inspection.inspection_conclusion == "unqualified":
                     inspection.batch_locked = True
-                    inspection.batch_lock_reason = (
-                        f"IPQC检验不合格，检验单号: {inspection.inspection_no}"
-                    )
+                    inspection.batch_lock_reason = f"IPQC检验不合格，检验单号: {inspection.inspection_no}"
 
             inspection.updated_by = user_id
             inspection.updated_at = datetime.now()
@@ -307,9 +299,7 @@ class IPQCInspectionService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def get_approval_records(
-        self, inspection_id: UUID
-    ) -> list[IPQCApprovalRecord]:
+    async def get_approval_records(self, inspection_id: UUID) -> list[IPQCApprovalRecord]:
         """获取审批记录"""
         return await self.approval_repo.get_by_inspection_id(inspection_id)
 

@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 HTTP 数据链路分析工具（使用标准库）
@@ -195,9 +196,7 @@ class UrllibDataFlowAnalyzer:
             ]
             if rs_cookies:
                 result["anti_bot_detected"] = True
-                result["anti_bot_details"].append(
-                    f"反爬Cookie: {[c['name'] for c in rs_cookies]}"
-                )
+                result["anti_bot_details"].append(f"反爬Cookie: {[c['name'] for c in rs_cookies]}")
                 print(f"   ⚠️ 检测到反爬Cookie: {[c['name'] for c in rs_cookies]}")
 
             # Parse HTML
@@ -247,11 +246,7 @@ class UrllibDataFlowAnalyzer:
             ]
 
             for pattern in common_patterns:
-                test_url = (
-                    base_url + pattern
-                    if not pattern.startswith("?")
-                    else target["url"] + pattern
-                )
+                test_url = base_url + pattern if not pattern.startswith("?") else target["url"] + pattern
                 try:
                     test_resp = self.fetch_url(test_url, timeout=10)
                     if test_resp["status"] == 200:
@@ -308,10 +303,7 @@ class UrllibDataFlowAnalyzer:
                 result["browser_required_reason"].append("React 应用，需要浏览器渲染")
 
             # Check for inline data
-            if (
-                "window.__INITIAL_STATE__" in response["content"]
-                or "window.__DATA__" in response["content"]
-            ):
+            if "window.__INITIAL_STATE__" in response["content"] or "window.__DATA__" in response["content"]:
                 print("   ✅ 发现内联数据")
                 result["key_findings"].append("页面包含内联初始化数据")
 
@@ -345,15 +337,8 @@ class UrllibDataFlowAnalyzer:
                                 matches = re.findall(pattern, script_resp["content"])
                                 for match in matches[:3]:
                                     if "/api/" in match or "listpage" in match:
-                                        full_url = (
-                                            urljoin(script_url, match)
-                                            if match.startswith("/")
-                                            else match
-                                        )
-                                        if full_url not in [
-                                            a["url"]
-                                            for a in result["api_endpoints_found"]
-                                        ]:
+                                        full_url = urljoin(script_url, match) if match.startswith("/") else match
+                                        if full_url not in [a["url"] for a in result["api_endpoints_found"]]:
                                             result["api_endpoints_found"].append(
                                                 {
                                                     "url": full_url,
@@ -368,14 +353,8 @@ class UrllibDataFlowAnalyzer:
                         matches = re.findall(pattern, script["content"])
                         for match in matches[:3]:
                             if "/api/" in match or "listpage" in match:
-                                full_url = (
-                                    urljoin(target["url"], match)
-                                    if match.startswith("/")
-                                    else match
-                                )
-                                if full_url not in [
-                                    a["url"] for a in result["api_endpoints_found"]
-                                ]:
+                                full_url = urljoin(target["url"], match) if match.startswith("/") else match
+                                if full_url not in [a["url"] for a in result["api_endpoints_found"]]:
                                     result["api_endpoints_found"].append(
                                         {
                                             "url": full_url,
@@ -405,18 +384,14 @@ class UrllibDataFlowAnalyzer:
             # Step 8: Summary
             print("\n[8] 关键发现:")
             if result["json_apis"]:
-                result["key_findings"].append(
-                    f"发现 {len(result['json_apis'])} 个 JSON API"
-                )
+                result["key_findings"].append(f"发现 {len(result['json_apis'])} 个 JSON API")
                 print(f"   ✅ 发现 {len(result['json_apis'])} 个 JSON API")
             else:
                 result["key_findings"].append("未发现直接的 JSON API")
                 print("   ❌ 未发现直接的 JSON API")
 
             if result["api_endpoints_found"]:
-                result["key_findings"].append(
-                    f"发现 {len(result['api_endpoints_found'])} 个 API 端点"
-                )
+                result["key_findings"].append(f"发现 {len(result['api_endpoints_found'])} 个 API 端点")
                 print(f"   ✅ 发现 {len(result['api_endpoints_found'])} 个 API 端点")
 
             if result["pagination_detected"]:
@@ -428,9 +403,7 @@ class UrllibDataFlowAnalyzer:
                 print("   ⚠️ 检测到反爬机制")
 
             if result["browser_required"]:
-                print(
-                    f"   ⚠️ 需要浏览器: {'; '.join(result['browser_required_reason'])}"
-                )
+                print(f"   ⚠️ 需要浏览器: {'; '.join(result['browser_required_reason'])}")
             else:
                 print("   ✅ 可能不需要浏览器")
 
@@ -487,9 +460,7 @@ def main():
 
     for r in all_results:
         print(f"\n[{r['source']}] {r['section']}")
-        print(
-            f"  页面加载: {'✅' if r['page_loaded'] else '❌'} (状态码: {r['response_status']})"
-        )
+        print(f"  页面加载: {'✅' if r['page_loaded'] else '❌'} (状态码: {r['response_status']})")
         print(f"  Cookies: {len(r['cookies_set'])} 个")
         print(f"  JSON API: {len(r['json_apis'])}")
         print(f"  API 端点: {len(r['api_endpoints_found'])}")

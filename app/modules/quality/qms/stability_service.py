@@ -1,6 +1,7 @@
 """Stability Study (稳定性试验) service"""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityApprovalCreate,
     StabilityInspectionCreate,
     StabilityInspectionUpdate,
+    StabilitySampleNodeUpdate,
     StabilityStudyCreate,
     StabilityStudyFilter,
     StabilityStudyUpdate,
@@ -80,9 +82,7 @@ class StabilityStudyService:
             start_date=data.start_date,
             end_date=data.end_date,
             expiry_date=data.expiry_date,
-            sample_intervals=",".join(map(str, data.sample_intervals))
-            if data.sample_intervals
-            else None,
+            sample_intervals=",".join(map(str, data.sample_intervals)) if data.sample_intervals else None,
             standard_id=data.standard_id,
             standard_name=data.standard_name,
             standard_version=data.standard_version,
@@ -96,9 +96,7 @@ class StabilityStudyService:
         await self.session.flush()
 
         # 创建取样节点
-        intervals = (
-            data.sample_intervals if isinstance(data.sample_intervals, list) else []
-        )
+        intervals = data.sample_intervals if isinstance(data.sample_intervals, list) else []
         if data.sample_nodes:
             nodes_data = [
                 {
@@ -179,9 +177,7 @@ class StabilityStudyService:
 
         await self.session.commit()
 
-    async def submit_study(
-        self, study_id: UUID, user_id: UUID | None = None
-    ) -> StabilityStudy:
+    async def submit_study(self, study_id: UUID, user_id: UUID | None = None) -> StabilityStudy:
         """提交稳定性试验"""
         study = await self.get_study(study_id)
 
@@ -352,9 +348,7 @@ class StabilityStudyService:
             sample_condition=data.sample_condition,
             standard_id=data.standard_id or study.standard_id,
             standard_name=data.standard_name or study.standard_name,
-            inspection_conclusion=data.inspection_conclusion.value
-            if data.inspection_conclusion
-            else None,
+            inspection_conclusion=data.inspection_conclusion.value if data.inspection_conclusion else None,
             conclusion_reason=data.conclusion_reason,
             remark=data.remark,
             oos_report_no=data.oos_report_no,
@@ -451,9 +445,7 @@ class StabilityStudyService:
         await self.session.refresh(inspection)
         return inspection
 
-    async def submit_inspection(
-        self, inspection_id: UUID, user_id: UUID | None = None
-    ) -> StabilityInspection:
+    async def submit_inspection(self, inspection_id: UUID, user_id: UUID | None = None) -> StabilityInspection:
         """提交检验记录"""
         inspection = await self.get_inspection(inspection_id)
 
@@ -477,13 +469,13 @@ class StabilityStudyService:
 
     # ========== Trend Analysis ==========
 
-    async def get_trend_data(self, study_id: UUID) -> dict:
+    async def get_trend_data(self, study_id: UUID) -> dict[str, Any]:
         """获取趋势分析数据"""
         study = await self.get_study(study_id)
         inspections = await self.inspection_repo.get_by_study_id(study_id)
 
         # 按检验项目分组
-        trend_data = {}
+        trend_data = {}  # type: ignore[var-annotated]
         for inspection in inspections:
             items = await self.item_repo.get_by_inspection_id(inspection.id)
             for item in items:

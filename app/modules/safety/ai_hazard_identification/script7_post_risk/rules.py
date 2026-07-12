@@ -52,52 +52,28 @@ class PostRiskRuleEngine:
             return errors
 
         # 2. D = L×E×C 校验
-        if all(
-            v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)
-        ):
-            expected_d = lec.l_value * lec.e_value * lec.c_value
+        if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)):
+            expected_d = lec.l_value * lec.e_value * lec.c_value  # type: ignore[operator]
             if expected_d > 0:
-                deviation = abs(lec.d_value - expected_d) / expected_d
+                deviation = abs(lec.d_value - expected_d) / expected_d  # type: ignore[operator]
                 if deviation > 0.05:
-                    errors.append(
-                        f"D 值 {lec.d_value} 与 L×E×C={expected_d} 偏差 {deviation:.1%}"
-                    )
+                    errors.append(f"D 值 {lec.d_value} 与 L×E×C={expected_d} 偏差 {deviation:.1%}")
 
         # 3. 风险等级与 D 值一致性
         if lec.d_value is not None and lec.risk_level is not None:
             ranges = RISK_LEVEL_RANGES.get(lec.risk_level)
             if ranges:
                 min_d, max_d = ranges
-                if not (
-                    min_d <= lec.d_value < max_d
-                    if max_d != float("inf")
-                    else lec.d_value >= min_d
-                ):
-                    errors.append(
-                        f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致"
-                    )
+                if not (min_d <= lec.d_value < max_d if max_d != float("inf") else lec.d_value >= min_d):
+                    errors.append(f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致")
 
         # 4. 措施后风险不应高于残余风险
-        if (
-            lec.d_value is not None
-            and input_data.d_residual is not None
-            and lec.d_value > input_data.d_residual * 1.05
-        ):
-            errors.append(
-                f"措施后风险 D={lec.d_value} 高于残余风险 D={input_data.d_residual}，"
-                "建议措施不应增加风险"
-            )
+        if lec.d_value is not None and input_data.d_residual is not None and lec.d_value > input_data.d_residual * 1.05:
+            errors.append(f"措施后风险 D={lec.d_value} 高于残余风险 D={input_data.d_residual}，建议措施不应增加风险")
 
         # 5. 措施后风险不应高于固有风险（基本约束）
-        if (
-            lec.d_value is not None
-            and input_data.d_inherent is not None
-            and lec.d_value > input_data.d_inherent * 1.05
-        ):
-            errors.append(
-                f"措施后风险 D={lec.d_value} 高于固有风险 D={input_data.d_inherent}，"
-                "这不合理"
-            )
+        if lec.d_value is not None and input_data.d_inherent is not None and lec.d_value > input_data.d_inherent * 1.05:
+            errors.append(f"措施后风险 D={lec.d_value} 高于固有风险 D={input_data.d_inherent}，这不合理")
 
         # 6. 措施类型对应的合理降幅检查
         if (
@@ -131,10 +107,7 @@ def auto_correct(output: PostRiskOutput) -> PostRiskOutput:
     """自动修正 LEC 输出（计算 D = L×E×C）。"""
     lec = output.lec
     if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value)):
-        calculated_d = lec.l_value * lec.e_value * lec.c_value
-        if (
-            lec.d_value is None
-            or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1
-        ):
+        calculated_d = lec.l_value * lec.e_value * lec.c_value  # type: ignore[operator]
+        if lec.d_value is None or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1:
             lec.d_value = calculated_d
     return output

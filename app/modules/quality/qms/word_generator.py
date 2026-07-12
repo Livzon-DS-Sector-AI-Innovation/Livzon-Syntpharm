@@ -3,7 +3,7 @@
 import re
 from io import BytesIO
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from docx import Document
 
@@ -19,8 +19,8 @@ class TableColumnConfig(TypedDict):
 class TemplateFields(TypedDict):
     """模板字段配置"""
 
-    static: dict
-    table_fields: dict
+    static: dict[str, Any]
+    table_fields: dict[str, Any]
 
 
 class WordGenerator:
@@ -33,14 +33,14 @@ class WordGenerator:
 
     def __init__(self, template_path: str):
         self.template_path = template_path
-        self.document: Document | None = None
+        self.document: Document | None = None  # type: ignore[valid-type]
 
-    def load_template(self) -> Document:
+    def load_template(self) -> Document:  # type: ignore[valid-type]
         """加载模板文件"""
         self.document = Document(self.template_path)
         return self.document
 
-    def scan_table_structure(self) -> dict:
+    def scan_table_structure(self) -> dict[str, Any]:
         """扫描Word文档中的表格结构，自动提取字段配置"""
         if not self.document:
             self.load_template()
@@ -51,7 +51,7 @@ class WordGenerator:
         }
 
         # 扫描所有表格
-        for table_idx, table in enumerate(self.document.tables):
+        for table_idx, table in enumerate(self.document.tables):  # type: ignore[union-attr]
             # 检查是否是数据表格（通常有表头行）
             if len(table.rows) < 2:
                 continue
@@ -75,12 +75,10 @@ class WordGenerator:
             # 如果找到多个列，认为是数据表格
             if len(columns) >= 2:
                 result["table_fields"]["columns"] = columns
-                result["table_fields"]["rows"] = max(
-                    len(table.rows) - 1, 10
-                )  # 至少10行
+                result["table_fields"]["rows"] = max(len(table.rows) - 1, 10)  # 至少10行
 
         # 扫描段落中的静态字段占位符
-        for paragraph in self.document.paragraphs:
+        for paragraph in self.document.paragraphs:  # type: ignore[union-attr]
             text = paragraph.text
             matches = self.PLACEHOLDER_PATTERN.findall(text)
             for match in matches:
@@ -90,7 +88,7 @@ class WordGenerator:
                         "label": match,
                     }
 
-        return result
+        return result  # type: ignore[return-value]
 
     def _text_to_key(self, text: str) -> str:
         """将文本转换为字段key"""
@@ -103,7 +101,7 @@ class WordGenerator:
             return "field"
         return key.lower()
 
-    def parse_template(self) -> dict:
+    def parse_template(self) -> dict[str, Any]:
         """解析模板，提取字段配置（兼容旧版本）"""
         if not self.document:
             self.load_template()
@@ -114,7 +112,7 @@ class WordGenerator:
         }
 
         # 解析段落中的占位符
-        for paragraph in self.document.paragraphs:
+        for paragraph in self.document.paragraphs:  # type: ignore[union-attr]
             text = paragraph.text
             matches = self.PLACEHOLDER_PATTERN.findall(text)
             for match in matches:
@@ -131,7 +129,7 @@ class WordGenerator:
 
         return fields
 
-    def generate_report(self, static_data: dict, table_data: list[dict]) -> bytes:
+    def generate_report(self, static_data: dict[str, Any], table_data: list[dict[str, Any]]) -> bytes:
         """生成报告单Word文档"""
         if not self.document:
             self.load_template()
@@ -153,7 +151,7 @@ class WordGenerator:
         buffer.seek(0)
         return buffer.getvalue()
 
-    def _replace_in_paragraph(self, paragraph, data: dict):
+    def _replace_in_paragraph(self, paragraph, data: dict[str, Any]) -> Any:  # type: ignore[no-untyped-def]
         """替换段落中的占位符"""
         for run in paragraph.runs:
             text = run.text
@@ -164,7 +162,7 @@ class WordGenerator:
                     text = text.replace(f"{{{{{key}}}}}", value)
             run.text = text
 
-    def _replace_in_table(self, table, rows: list[dict]):
+    def _replace_in_table(self, table, rows: list[dict[str, Any]]) -> Any:  # type: ignore[no-untyped-def]
         """替换表格内容"""
         # 查找包含表格占位符的行
         placeholder_row_idx = None
@@ -203,7 +201,7 @@ class WordGenerator:
                         # 如果是普通文本，复制模板内容
                         cell.text = template_cell.text
 
-    def save_to_file(self, output_path: str, static_data: dict, table_data: list[dict]):
+    def save_to_file(self, output_path: str, static_data: dict[str, Any], table_data: list[dict[str, Any]]) -> Any:
         """保存到文件"""
         content = self.generate_report(static_data, table_data)
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -211,13 +209,13 @@ class WordGenerator:
             f.write(content)
 
 
-def scan_word_table_structure(template_path: str) -> dict:
+def scan_word_table_structure(template_path: str) -> dict[str, Any]:
     """扫描Word文档表格结构，返回字段配置"""
     generator = WordGenerator(template_path)
     return generator.scan_table_structure()
 
 
-def get_template_fields(template_path: str) -> dict:
+def get_template_fields(template_path: str) -> dict[str, Any]:
     """解析模板文件，返回字段配置"""
     generator = WordGenerator(template_path)
     return generator.parse_template()
@@ -226,8 +224,8 @@ def get_template_fields(template_path: str) -> dict:
 def generate_report_file(
     template_path: str,
     output_path: str,
-    static_data: dict,
-    table_data: list[dict],
+    static_data: dict[str, Any],
+    table_data: list[dict[str, Any]],
 ) -> str:
     """生成报告文件并返回保存路径"""
     generator = WordGenerator(template_path)
@@ -237,8 +235,8 @@ def generate_report_file(
 
 def generate_report_bytes(
     template_path: str,
-    static_data: dict,
-    table_data: list[dict],
+    static_data: dict[str, Any],
+    table_data: list[dict[str, Any]],
 ) -> bytes:
     """生成报告文件并返回字节内容"""
     generator = WordGenerator(template_path)

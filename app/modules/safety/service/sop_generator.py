@@ -38,7 +38,7 @@ class SopGeneratorService:
 
     # ── Public API ─────────────────────────────────────────────────
 
-    async def generate_from_draft(self, file: Any) -> dict:
+    async def generate_from_draft(self, file: Any) -> dict[str, Any]:
         """上传旧版操规 → 运行三层 pipeline → 返回标准化内容
 
         Args:
@@ -58,14 +58,10 @@ class SopGeneratorService:
         reg = await self._create_draft_regulation(name, draft_path)
 
         # 3. Run the generator pipeline (synchronous, in thread)
-        pdf_local_path = os.path.join(
-            self.UPLOAD_DIR, f"{reg.id}_{int(datetime.now().timestamp())}.pdf"
-        )
+        pdf_local_path = os.path.join(self.UPLOAD_DIR, f"{reg.id}_{int(datetime.now().timestamp())}.pdf")
         os.makedirs(self.UPLOAD_DIR, exist_ok=True)
 
-        result = await asyncio.to_thread(
-            self._run_pipeline_sync, draft_path, str(pdf_local_path)
-        )
+        result = await asyncio.to_thread(self._run_pipeline_sync, draft_path, str(pdf_local_path))
 
         # 4. Read generated Markdown
         md_path = result.get("md_path", "")
@@ -79,12 +75,8 @@ class SopGeneratorService:
         if minio_enabled() and os.path.exists(pdf_local_path):
             with open(pdf_local_path, "rb") as f:
                 pdf_data = f.read()
-            object_key = (
-                f"regulation/{reg.id}_export_{int(datetime.now().timestamp())}.pdf"
-            )
-            upload_object(
-                "safety", object_key, pdf_data, len(pdf_data), "application/pdf"
-            )
+            object_key = f"regulation/{reg.id}_export_{int(datetime.now().timestamp())}.pdf"
+            upload_object("safety", object_key, pdf_data, len(pdf_data), "application/pdf")
             pdf_stored_path = object_key
 
         # 6. Update regulation record with generated content
@@ -120,9 +112,7 @@ class SopGeneratorService:
             "status": "generated",
         }
 
-    async def update_content(
-        self, regulation_id: uuid.UUID, content: str, status: str | None = None
-    ) -> Any | None:
+    async def update_content(self, regulation_id: uuid.UUID, content: str, status: str | None = None) -> Any | None:
         """保存用户编辑后的 Markdown 内容"""
         update_data: dict[str, Any] = {"content": content}
         if status:
@@ -192,18 +182,14 @@ class SopGeneratorService:
 
         os.makedirs(self.UPLOAD_DIR, exist_ok=True)
 
-        await asyncio.to_thread(
-            self._render_markdown_sync, reg.content, str(pdf_local_path), pdf_meta
-        )
+        await asyncio.to_thread(self._render_markdown_sync, reg.content, str(pdf_local_path), pdf_meta)
 
         # Upload to MinIO (or keep local path)
         if minio_enabled() and os.path.exists(pdf_local_path):
             with open(pdf_local_path, "rb") as f:
                 pdf_data = f.read()
             object_key = f"regulation/{regulation_id}_export_{int(datetime.now().timestamp())}.pdf"
-            upload_object(
-                "safety", object_key, pdf_data, len(pdf_data), "application/pdf"
-            )
+            upload_object("safety", object_key, pdf_data, len(pdf_data), "application/pdf")
             stored_path = object_key
         else:
             stored_path = pdf_local_path
@@ -217,7 +203,7 @@ class SopGeneratorService:
 
         return stored_path
 
-    async def get_content(self, regulation_id: uuid.UUID) -> dict | None:
+    async def get_content(self, regulation_id: uuid.UUID) -> dict[str, Any] | None:
         """获取 Markdown 内容（供编辑器加载）"""
         reg = await self.repo.get_regulation_by_id(regulation_id)
         if not reg:
@@ -269,11 +255,11 @@ class SopGeneratorService:
         return reg
 
     @staticmethod
-    def _run_pipeline_sync(draft_path: str, pdf_path: str) -> dict:
+    def _run_pipeline_sync(draft_path: str, pdf_path: str) -> dict[str, Any]:
         """Synchronous pipeline call — runs in asyncio.to_thread."""
-        from pipeline import run_pipeline
+        from pipeline import run_pipeline  # type: ignore[import-not-found]
 
-        return run_pipeline(
+        return run_pipeline(  # type: ignore[no-any-return]
             draft_path=draft_path,
             output_pdf=pdf_path,
             keep_intermediate=True,  # Keep JSON & MD so we can read content
@@ -281,8 +267,8 @@ class SopGeneratorService:
         )
 
     @staticmethod
-    def _render_markdown_sync(content: str, pdf_path: str, meta: dict) -> None:
+    def _render_markdown_sync(content: str, pdf_path: str, meta: dict[str, Any]) -> None:
         """Synchronous Markdown → PDF render — runs in asyncio.to_thread."""
-        from layer3_render_pdf import render
+        from layer3_render_pdf import render  # type: ignore[import-not-found]
 
         render(content, pdf_path, meta)

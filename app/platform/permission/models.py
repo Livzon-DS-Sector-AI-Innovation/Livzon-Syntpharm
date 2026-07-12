@@ -28,12 +28,8 @@ class Permission(BaseModel):
         nullable=False,
         comment="显示名称，如 创建巡检",
     )
-    module: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="所属模块编码"
-    )
-    resource: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="资源类型"
-    )
+    module: Mapped[str] = mapped_column(String(50), nullable=False, comment="所属模块编码")
+    resource: Mapped[str] = mapped_column(String(50), nullable=False, comment="资源类型")
     action: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -88,12 +84,8 @@ class RolePermission(BaseModel):
         {"schema": "permission"},
     )
 
-    role_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), nullable=False, comment="角色 ID"
-    )
-    permission_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), nullable=False, comment="权限 ID"
-    )
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, comment="角色 ID")
+    permission_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, comment="权限 ID")
 
 
 class UserRole(BaseModel):
@@ -110,12 +102,8 @@ class UserRole(BaseModel):
         {"schema": "permission"},
     )
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), nullable=False, comment="用户 ID (identity.users)"
-    )
-    role_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), nullable=False, comment="角色 ID"
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, comment="用户 ID (identity.users)")
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, comment="角色 ID")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         nullable=True,
@@ -132,9 +120,7 @@ class RoleDataScopeOverride(BaseModel):
         {"schema": "permission"},
     )
 
-    role_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), nullable=False, comment="角色 ID"
-    )
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False, comment="角色 ID")
     module: Mapped[str] = mapped_column(String(50), nullable=False, comment="模块编码")
     data_scope: Mapped[str] = mapped_column(
         String(30),

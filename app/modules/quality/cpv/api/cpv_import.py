@@ -33,7 +33,7 @@ async def preview_import(
 
     file_content = await file.read()
 
-    preview = await service.preview_import(
+    preview = await service.preview_import(  # type: ignore[attr-defined]
         db, file_content, product_id, data_type, import_mode
     )
 
@@ -68,7 +68,7 @@ async def confirm_import(
         skip_errors=skip_errors,
     )
 
-    task = await service.confirm_import(db, file_content, request, current_user_id)
+    task = await service.confirm_import(db, file_content, request, current_user_id)  # type: ignore[attr-defined]
 
     return success_response(data=task.model_dump())
 
@@ -83,7 +83,7 @@ async def get_import_tasks(
 ) -> JSONResponse:
     """获取导入任务列表"""
 
-    tasks, total = await service.get_import_tasks(db, product_id, page, page_size)
+    tasks, total = await service.get_import_tasks(db, product_id, page, page_size)  # type: ignore[attr-defined]
 
     return paginated_response(
         data=[t.model_dump() for t in tasks],
@@ -101,6 +101,6 @@ async def get_import_task(
 ) -> JSONResponse:
     """获取导入任务详情"""
 
-    task = await service.get_import_task_by_id(db, task_id)
+    task = await service.get_import_task_by_id(db, task_id)  # type: ignore[attr-defined]
 
     return success_response(data=task.model_dump())

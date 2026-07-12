@@ -7,6 +7,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,7 +63,7 @@ class ReagentReminderService:
         await self.session.refresh(config)
         return config
 
-    async def get_item_reminder_config(self, reagent_name: str) -> dict | None:
+    async def get_item_reminder_config(self, reagent_name: str) -> dict[str, Any] | None:
         """获取单个试剂的提醒配置"""
         result = await self.session.execute(
             text("""
@@ -83,9 +84,7 @@ class ReagentReminderService:
             }
         return None
 
-    async def set_item_reminder_enabled(
-        self, reagent_name: str, is_enabled: bool
-    ) -> dict:
+    async def set_item_reminder_enabled(self, reagent_name: str, is_enabled: bool) -> dict[str, Any]:
         """设置单个试剂的提醒开关"""
         # 检查是否已存在
         existing = await self.get_item_reminder_config(reagent_name)
@@ -115,23 +114,21 @@ class ReagentReminderService:
         await self.session.commit()
         return {"code": 200, "message": "设置成功"}
 
-    async def get_all_item_configs(self) -> dict:
+    async def get_all_item_configs(self) -> dict[str, Any]:
         """获取所有单个试剂的提醒配置"""
         result = await self.session.execute(
-            text(
-                "SELECT reagent_name, is_enabled FROM qms.qms_reagent_item_reminder_config"
-            )
+            text("SELECT reagent_name, is_enabled FROM qms.qms_reagent_item_reminder_config")
         )
         rows = result.fetchall()
         return {row[0]: row[1] for row in rows}
 
-    async def get_low_stock_reagents(self, threshold: int = 2) -> list[dict]:
+    async def get_low_stock_reagents(self, threshold: int = 2) -> list[dict[str, Any]]:
         """获取库存不足的试剂（按名称分组统计）"""
         # 获取所有单个试剂的提醒配置
         item_configs = await self.get_all_item_configs()
 
         query = text("""
-            SELECT 
+            SELECT
                 reagent_name,
                 COUNT(*) as count,
                 STRING_AGG(DISTINCT status, ', ') as statuses,
@@ -159,7 +156,7 @@ class ReagentReminderService:
             for row in rows
         ]
 
-    async def check_and_remind(self) -> dict:
+    async def check_and_remind(self) -> dict[str, Any]:
         """检查库存并发送提醒"""
         config = await self.get_config()
 
@@ -169,11 +166,7 @@ class ReagentReminderService:
         if not config.is_enabled:
             return {"code": 200, "message": "提醒功能已禁用", "data": None}
 
-        if (
-            not config.feishu_app_id
-            or not config.feishu_app_secret
-            or not config.feishu_chat_id
-        ):
+        if not config.feishu_app_id or not config.feishu_app_secret or not config.feishu_chat_id:
             return {"code": 400, "message": "飞书配置不完整", "data": None}
 
         # 获取库存不足的试剂
@@ -183,9 +176,7 @@ class ReagentReminderService:
             return {"code": 200, "message": "库存充足，无需提醒", "data": {"count": 0}}
 
         # 过滤出启用了提醒的试剂
-        enabled_items = [
-            item for item in low_stock_items if item.get("is_enabled", True)
-        ]
+        enabled_items = [item for item in low_stock_items if item.get("is_enabled", True)]
 
         if not enabled_items:
             return {
@@ -226,15 +217,15 @@ class ReagentReminderService:
             return {"code": 500, "message": f"发送失败: {str(e)}", "data": None}
 
     def _build_reminder_content(
-        self, items: list[dict], total_count: int = None
-    ) -> dict:
+        self,
+        items: list[dict[str, Any]],
+        total_count: int = None,  # type: ignore[assignment]
+    ) -> dict[str, Any]:
         """构建飞书卡片内容"""
         # 构建表格内容
         table_rows = []
         for item in items[:20]:  # 最多显示20条
-            table_rows.append(
-                f"| {item['reagent_name']} | {item['count']} | {item['statuses']} |"
-            )
+            table_rows.append(f"| {item['reagent_name']} | {item['count']} | {item['statuses']} |")
 
         content_lines = [
             "⚠️ **试剂库存不足提醒**",
@@ -280,7 +271,7 @@ class ReagentReminderService:
         }
 
 
-async def run_reagent_reminder_check(session: AsyncSession) -> dict:
+async def run_reagent_reminder_check(session: AsyncSession) -> dict[str, Any]:
     """独立的提醒检查函数（用于定时任务调用）"""
     service = ReagentReminderService(session)
     return await service.check_and_remind()

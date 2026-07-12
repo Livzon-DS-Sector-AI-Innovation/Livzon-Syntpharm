@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -44,9 +45,7 @@ class EquipmentCategory(BaseModel):
         nullable=True,
         comment="父分类ID",
     )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="分类描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="分类描述")
 
     # 关系
     parent: Mapped["EquipmentCategory | None"] = relationship(
@@ -86,9 +85,7 @@ class Location(BaseModel):
         nullable=True,
         comment="父位置ID",
     )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="位置描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="位置描述")
 
     # 关系
     parent: Mapped["Location | None"] = relationship(
@@ -128,9 +125,7 @@ class EquipmentCategoryLink(BaseModel):
     )
 
     # 关系
-    equipment: Mapped["Equipment"] = relationship(
-        "Equipment", back_populates="category_links"
-    )
+    equipment: Mapped["Equipment"] = relationship("Equipment", back_populates="category_links")
     category: Mapped["EquipmentCategory"] = relationship("EquipmentCategory")
 
 
@@ -168,44 +163,22 @@ class Equipment(BaseModel):
         default="在用",
         comment="设备状态：在用/备用/维修中/停用/报废",
     )
-    model: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="设备型号"
-    )
-    specification: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="设备规格"
-    )
-    manufacturer: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="制造商"
-    )
-    supplier: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="供应商"
-    )
-    production_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="出厂日期"
-    )
-    commissioning_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="投用日期"
-    )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="设备描述"
-    )
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备型号")
+    specification: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="设备规格")
+    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="制造商")
+    supplier: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="供应商")
+    production_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="出厂日期")
+    commissioning_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="投用日期")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="设备描述")
     importance: Mapped[str] = mapped_column(
         String(10),
         default="低",
         comment="设备重要性：高/中/低",
     )
-    warranty_expire_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="保修到期日"
-    )
-    asset_value: Mapped[float | None] = mapped_column(
-        nullable=True, comment="资产原值（元）"
-    )
-    depreciation_years: Mapped[int | None] = mapped_column(
-        nullable=True, comment="折旧年限"
-    )
-    technical_params: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True, comment="技术参数（JSON）"
-    )
+    warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
+    asset_value: Mapped[float | None] = mapped_column(nullable=True, comment="资产原值（元）")
+    depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
+    technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )

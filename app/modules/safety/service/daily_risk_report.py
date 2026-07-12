@@ -37,9 +37,7 @@ class DailyRiskReportService:
         keyword: str | None = None,
     ) -> tuple[list[DailyRiskReport], int]:
         """获取每日风险作业报备列表"""
-        return await self.repo.get_daily_risk_reports(
-            skip, limit, status, department, report_date, keyword
-        )
+        return await self.repo.get_daily_risk_reports(skip, limit, status, department, report_date, keyword)
 
     async def get_report(self, report_id: uuid.UUID) -> DailyRiskReport | None:
         """获取报备详情"""
@@ -49,9 +47,7 @@ class DailyRiskReportService:
         """创建报备"""
         return await self.repo.create_daily_risk_report(data.model_dump())
 
-    async def update_report(
-        self, report_id: uuid.UUID, data: DailyRiskReportUpdate
-    ) -> DailyRiskReport | None:
+    async def update_report(self, report_id: uuid.UUID, data: DailyRiskReportUpdate) -> DailyRiskReport | None:
         """更新报备"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_daily_risk_report(report_id, update_data)
@@ -67,9 +63,7 @@ class DailyRiskReportService:
         report = await self.repo.get_daily_risk_report_by_id(report_id)
         if not report or report.status != "draft":
             return None
-        return await self.repo.update_daily_risk_report(
-            report_id, {"status": "submitted"}
-        )
+        return await self.repo.update_daily_risk_report(report_id, {"status": "submitted"})
 
     async def approve_report(self, report_id: uuid.UUID) -> DailyRiskReport | None:
         """审批报备（已提交→已审批）"""
@@ -81,9 +75,7 @@ class DailyRiskReportService:
             {"status": "approved", "approved_at": datetime.now()},
         )
 
-    async def reject_report(
-        self, report_id: uuid.UUID, reason: str
-    ) -> DailyRiskReport | None:
+    async def reject_report(self, report_id: uuid.UUID, reason: str) -> DailyRiskReport | None:
         """驳回报备（已提交→已驳回）"""
         report = await self.repo.get_daily_risk_report_by_id(report_id)
         if not report or report.status != "submitted":

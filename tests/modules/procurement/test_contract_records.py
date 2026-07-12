@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 import uuid
@@ -55,9 +56,7 @@ class FakeContractRecordRepository:
             records = [
                 record
                 for record in records
-                if keyword in record.title
-                or keyword in record.contract_number
-                or keyword in record.seller_name
+                if keyword in record.title or keyword in record.contract_number or keyword in record.seller_name
             ]
         total = len(records)
         return records[(page - 1) * page_size : page * page_size], total
@@ -156,9 +155,7 @@ async def test_generate_and_store_contract_persists_record_and_local_file(
     assert record.seller_name == "测试供应商有限公司"
     assert record.payload["title"] == "测试耗材采购合同"
     assert record.file_size == len(b"contract-bytes")
-    assert (
-        tmp_path / "procurement" / "contracts" / str(record.id) / filename
-    ).read_bytes() == b"contract-bytes"
+    assert (tmp_path / "procurement" / "contracts" / str(record.id) / filename).read_bytes() == b"contract-bytes"
 
 
 @pytest.mark.anyio

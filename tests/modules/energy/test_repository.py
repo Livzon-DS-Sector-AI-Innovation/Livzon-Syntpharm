@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -37,9 +38,7 @@ async def test_list_device_configs_with_filters(db_session, sample_device_config
 @pytest.mark.asyncio
 async def test_update_device_config(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
-    updated = await repo.update_device_config(
-        db_session, created.id, {"device_name": "新名称"}
-    )
+    updated = await repo.update_device_config(db_session, created.id, {"device_name": "新名称"})
     assert updated.device_name == "新名称"
 
 
@@ -66,9 +65,7 @@ async def test_exists_device_config(db_session, sample_device_config_data):
 @pytest.mark.asyncio
 async def test_exists_device_config_exclude_id(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
-    exists = await repo.exists_device_config(
-        db_session, "zhiheng", "WD-001", exclude_id=created.id
-    )
+    exists = await repo.exists_device_config(db_session, "zhiheng", "WD-001", exclude_id=created.id)
     assert exists is False
 
 
@@ -78,9 +75,7 @@ async def test_upsert_energy_data(db_session, sample_device_config_data):
     config_id = config.id
     ts = datetime(2024, 1, 1, 8, 0, 0, tzinfo=UTC)
 
-    data = await repo.upsert_energy_data(
-        db_session, device_config_id=config_id, timestamp=ts, value=100.0, unit="m3"
-    )
+    data = await repo.upsert_energy_data(db_session, device_config_id=config_id, timestamp=ts, value=100.0, unit="m3")
     assert float(data.value) == 100.0
 
     # Clear the identity map so the second upsert RETURNING reads fresh
@@ -88,9 +83,7 @@ async def test_upsert_energy_data(db_session, sample_device_config_data):
     # We use config_id (a plain UUID) so no ORM lazy-load is triggered.
     db_session.expire_all()
 
-    data2 = await repo.upsert_energy_data(
-        db_session, device_config_id=config_id, timestamp=ts, value=150.0, unit="m3"
-    )
+    data2 = await repo.upsert_energy_data(db_session, device_config_id=config_id, timestamp=ts, value=150.0, unit="m3")
     assert float(data2.value) == 150.0
 
 

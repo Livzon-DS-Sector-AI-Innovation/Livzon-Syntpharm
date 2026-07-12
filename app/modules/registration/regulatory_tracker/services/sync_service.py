@@ -30,7 +30,7 @@ ADAPTER_REGISTRY = {
 }
 
 
-def _get_adapter(source: DataSource, channel: DataChannel, headless: bool = True):
+def _get_adapter(source: DataSource, channel: DataChannel, headless: bool = True) -> Any:
     """根据数据源和栏目获取对应的爬虫适配器"""
     key = (source.code, channel.code)
     adapter_cls = ADAPTER_REGISTRY.get(key)
@@ -54,9 +54,7 @@ async def upsert_document(
     if not document_id:
         return ("skipped", uuid.UUID(int=0))
 
-    existing = await repo.get_document_by_document_id(
-        db, source_id, channel_id, document_id
-    )
+    existing = await repo.get_document_by_document_id(db, source_id, channel_id, document_id)
 
     if existing:
         # 已存在：更新 last_checked_at，标记为非新文档
@@ -70,9 +68,7 @@ async def upsert_document(
                 "title": normalized.get("title", existing.title),
                 "publish_date": normalized.get("publish_date") or existing.publish_date,
                 "status_text": normalized.get("status_text", existing.status_text),
-                "classification": normalized.get(
-                    "classification", existing.classification
-                ),
+                "classification": normalized.get("classification", existing.classification),
                 "raw_data": normalized.get("raw_data", existing.raw_data),
             },
         )
@@ -98,17 +94,17 @@ async def upsert_document(
         },
     )
     await db.flush()  # 确保 doc.id 可用
-    return ("created", doc)
+    return ("created", doc)  # type: ignore[return-value]
 
 
-async def sync_page_to_db(
+async def sync_page_to_db(  # type: ignore[no-untyped-def]
     db: AsyncSession,
     adapter,  # CdeDomesticGuidelineAdapter | NmpaRecordAdapter
     source: DataSource,
     channel: DataChannel,
     job_id: uuid.UUID,
     page_num: int,
-) -> dict:
+) -> dict[str, Any]:
     """同步单页数据到数据库。
 
     Returns:
@@ -159,21 +155,19 @@ async def sync_page_to_db(
         )
 
         for record in records:
-            stats["checked"] += 1
+            stats["checked"] += 1  # type: ignore[operator]
             try:
                 normalized = adapter.normalize_record(record)
-                action, result = await upsert_document(
-                    db, source.id, channel.id, normalized
-                )
+                action, result = await upsert_document(db, source.id, channel.id, normalized)
                 if action == "created":
-                    stats["new"] += 1
+                    stats["new"] += 1  # type: ignore[operator]
                     new_on_page += 1
                     # 收集新增文档 ID（用于后续提交 AI 分析）
-                    stats["new_doc_ids"].append(result.id)
+                    stats["new_doc_ids"].append(result.id)  # type: ignore[attr-defined]
                 elif action == "updated":
-                    stats["updated"] += 1
+                    stats["updated"] += 1  # type: ignore[operator]
             except Exception as e:
-                stats["failed"] += 1
+                stats["failed"] += 1  # type: ignore[operator]
                 logger.error(f"处理记录失败: {record.get('zdyzIdCODE', 'N/A')}: {e}")
 
         await repo.update_sync_job_page(
@@ -260,9 +254,7 @@ async def run_sync_job(
             # 逐页同步
             for page_num in range(start_page, end_page + 1):
                 logger.info(f"同步第 {page_num}/{end_page} 页...")
-                stats = await sync_page_to_db(
-                    db, adapter_ctx, source, channel, job.id, page_num
-                )
+                stats = await sync_page_to_db(db, adapter_ctx, source, channel, job.id, page_num)
                 total_stats["checked"] += stats["checked"]
                 total_stats["new"] += stats["new"]
                 total_stats["updated"] += stats["updated"]
@@ -319,8 +311,7 @@ async def run_sync_job(
             logger.error(f"提交 AI 工作流失败: {e}", exc_info=True)
 
     logger.info(
-        f"===== 同步任务完成: {source.code}/{channel.code} | "
-        f"耗时={sync_elapsed:.1f}s | 新增={total_stats['new']} ====="
+        f"===== 同步任务完成: {source.code}/{channel.code} | 耗时={sync_elapsed:.1f}s | 新增={total_stats['new']} ====="
     )
 
     return {

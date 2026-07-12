@@ -88,9 +88,7 @@ def _record_data(data: WarehouseFeishuRawRecordData) -> dict[str, Any]:
     path="/warehouse/raw-materials",
     output_hint="返回原辅料库存条目列表。",
 )
-async def list_raw_materials(
-    context: ToolContext, _: BaseModel
-) -> list[dict[str, Any]]:
+async def list_raw_materials(context: ToolContext, _: BaseModel) -> list[dict[str, Any]]:
     items = await _warehouse_service(context).list_raw_materials()
     return [_raw_material(item) for item in items]
 
@@ -102,9 +100,7 @@ async def list_raw_materials(
     path="/warehouse/packaging-materials",
     output_hint="返回包材库存条目列表。",
 )
-async def list_packaging_materials(
-    context: ToolContext, _: BaseModel
-) -> list[dict[str, Any]]:
+async def list_packaging_materials(context: ToolContext, _: BaseModel) -> list[dict[str, Any]]:
     items = await _warehouse_service(context).list_packaging_materials()
     return [_packaging_material(item) for item in items]
 
@@ -121,16 +117,14 @@ async def list_products(context: ToolContext, _: BaseModel) -> list[dict[str, An
     return [_product(item) for item in items]
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.list_feishu_tables",
     summary="查询仓储飞书表目录",
     input_model=WarehouseFeishuTablesInput,
     method="GET",
     path="/warehouse/feishu/tables",
 )
-async def list_feishu_tables(
-    context: ToolContext, data: WarehouseFeishuTablesInput
-) -> list[dict[str, Any]]:
+async def list_feishu_tables(context: ToolContext, data: WarehouseFeishuTablesInput) -> list[dict[str, Any]]:
     items = await _warehouse_service(context).list_feishu_tables(
         business_domain=data.business_domain,
         keyword=data.keyword,
@@ -139,16 +133,14 @@ async def list_feishu_tables(
     return [_table(item) for item in items]
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.get_feishu_table_records",
     summary="查询飞书表本地记录",
     input_model=WarehouseFeishuTableRecordsInput,
     method="GET",
     path="/warehouse/feishu/tables/{table_id}/records",
 )
-async def get_feishu_table_records(
-    context: ToolContext, data: WarehouseFeishuTableRecordsInput
-) -> dict[str, Any]:
+async def get_feishu_table_records(context: ToolContext, data: WarehouseFeishuTableRecordsInput) -> dict[str, Any]:
     result = await _warehouse_service(context).get_feishu_table_records(
         data.table_id,
         keyword=data.keyword,
@@ -161,16 +153,14 @@ async def get_feishu_table_records(
     return _record_data(result)
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.get_feishu_domain_records",
     summary="查询仓储飞书领域记录",
     input_model=WarehouseFeishuDomainRecordsInput,
     method="GET",
     path="/warehouse/feishu/domains/{business_domain}/records",
 )
-async def get_feishu_domain_records(
-    context: ToolContext, data: WarehouseFeishuDomainRecordsInput
-) -> dict[str, Any]:
+async def get_feishu_domain_records(context: ToolContext, data: WarehouseFeishuDomainRecordsInput) -> dict[str, Any]:
     result = await _warehouse_service(context).get_feishu_domain_records(
         data.business_domain,  # type: ignore[arg-type]
         table_id=data.table_id,
@@ -204,14 +194,12 @@ async def get_feishu_ws_status(context: ToolContext, _: BaseModel) -> dict[str, 
     method="POST",
     path="/warehouse/feishu/tables/refresh",
 )
-async def refresh_feishu_tables(
-    context: ToolContext, _: BaseModel
-) -> list[dict[str, Any]]:
+async def refresh_feishu_tables(context: ToolContext, _: BaseModel) -> list[dict[str, Any]]:
     items = await _warehouse_service(context).refresh_feishu_tables()
     return [_table(item) for item in items]
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.set_feishu_tables_enabled",
     summary="批量启停仓储飞书表",
     input_model=WarehouseFeishuTablesEnableInput,
@@ -234,7 +222,7 @@ async def set_feishu_tables_enabled(
     return [_table(item) for item in items]
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.set_feishu_table_enabled",
     summary="启停仓储飞书表",
     input_model=WarehouseFeishuTableEnableInput,
@@ -243,9 +231,7 @@ async def set_feishu_tables_enabled(
     method="PATCH",
     path="/warehouse/feishu/tables/{table_id}/enabled",
 )
-async def set_feishu_table_enabled(
-    context: ToolContext, data: WarehouseFeishuTableEnableInput
-) -> dict[str, Any]:
+async def set_feishu_table_enabled(context: ToolContext, data: WarehouseFeishuTableEnableInput) -> dict[str, Any]:
     payload = WarehouseFeishuTableEnablePayload(is_enabled=data.is_enabled)
     table = await _warehouse_service(context).set_feishu_table_enabled(
         data.table_id,
@@ -254,7 +240,7 @@ async def set_feishu_table_enabled(
     return _table(table)
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="warehouse.sync_feishu_table",
     summary="同步仓储飞书表",
     input_model=WarehouseFeishuSyncInput,
@@ -263,9 +249,7 @@ async def set_feishu_table_enabled(
     method="POST",
     path="/warehouse/feishu/tables/{table_id}/sync",
 )
-async def sync_feishu_table(
-    context: ToolContext, data: WarehouseFeishuSyncInput
-) -> dict[str, Any]:
+async def sync_feishu_table(context: ToolContext, data: WarehouseFeishuSyncInput) -> dict[str, Any]:
     result = await _warehouse_service(context).sync_feishu_table(data.table_id)
     return result.model_dump(mode="json")
 

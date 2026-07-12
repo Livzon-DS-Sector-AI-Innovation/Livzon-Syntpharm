@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -58,14 +59,10 @@ COMMON_FIELDS = [
         input_type="date",
         required=True,
     ),
-    ContractTemplateField(
-        name="delivery_date", label="最迟交货日期", input_type="date"
-    ),
+    ContractTemplateField(name="delivery_date", label="最迟交货日期", input_type="date"),
     ContractTemplateField(name="delivery_terms", label="交货说明"),
     ContractTemplateField(name="payment_terms", label="付款期限/方式"),
-    ContractTemplateField(
-        name="tax_rate", label="税率", input_type="number", default_value="13"
-    ),
+    ContractTemplateField(name="tax_rate", label="税率", input_type="number", default_value="13"),
     ContractTemplateField(name="seller.name", label="卖方名称", required=True),
     ContractTemplateField(name="seller.representative", label="卖方代表人"),
     ContractTemplateField(name="seller.address", label="卖方地址"),
@@ -82,9 +79,7 @@ COMMON_FIELDS = [
 
 CONSUMABLE_FIELDS = [
     ContractTemplateField(name="buyer_invoice_recipient", label="发票接收人"),
-    ContractTemplateField(
-        name="buyer_invoice_recipient_mobile", label="发票接收人手机"
-    ),
+    ContractTemplateField(name="buyer_invoice_recipient_mobile", label="发票接收人手机"),
     ContractTemplateField(name="buyer_receiver", label="收货人"),
     ContractTemplateField(name="buyer_receiver_mobile", label="收货人手机"),
     ContractTemplateField(name="buyer_receiver_phone", label="收货人电话"),
@@ -93,38 +88,24 @@ CONSUMABLE_FIELDS = [
 FIXED_ASSET_FIELDS = [
     ContractTemplateField(name="attached_documents", label="随货资料"),
     ContractTemplateField(name="seller.bank_line_number", label="银行行号"),
-    ContractTemplateField(
-        name="installation_days", label="安装调试天数", input_type="number"
-    ),
-    ContractTemplateField(
-        name="warranty_months", label="质保期（月）", input_type="number"
-    ),
-    ContractTemplateField(
-        name="response_hours", label="质保响应小时", input_type="number"
-    ),
-    ContractTemplateField(
-        name="onsite_hours", label="到场处理小时", input_type="number"
-    ),
+    ContractTemplateField(name="installation_days", label="安装调试天数", input_type="number"),
+    ContractTemplateField(name="warranty_months", label="质保期（月）", input_type="number"),
+    ContractTemplateField(name="response_hours", label="质保响应小时", input_type="number"),
+    ContractTemplateField(name="onsite_hours", label="到场处理小时", input_type="number"),
     ContractTemplateField(
         name="maintenance_response_hours",
         label="质保期满维修响应小时",
         input_type="number",
     ),
-    ContractTemplateField(
-        name="overdue_days", label="逾期解除天数", input_type="number"
-    ),
+    ContractTemplateField(name="overdue_days", label="逾期解除天数", input_type="number"),
     ContractTemplateField(name="jurisdiction", label="争议管辖地"),
     ContractTemplateField(name="attachment_note", label="附件说明"),
     ContractTemplateField(name="copies", label="合同总份数", input_type="number"),
     ContractTemplateField(name="buyer_copies", label="买方执份数", input_type="number"),
     ContractTemplateField(name="arrival_payment_condition", label="到货款支付条件"),
     ContractTemplateField(name="arrival_payment_method", label="到货款支付方式"),
-    ContractTemplateField(
-        name="arrival_payment_ratio", label="到货款比例", input_type="number"
-    ),
-    ContractTemplateField(
-        name="warranty_payment_ratio", label="质保金比例", input_type="number"
-    ),
+    ContractTemplateField(name="arrival_payment_ratio", label="到货款比例", input_type="number"),
+    ContractTemplateField(name="warranty_payment_ratio", label="质保金比例", input_type="number"),
     ContractTemplateField(name="warranty_payment_method", label="质保金支付方式"),
 ]
 
@@ -169,15 +150,14 @@ def generate_contract(payload: ContractGenerateRequest) -> tuple[BytesIO, str, s
     label = CATEGORY_LABELS[payload.category]
     safe_number = _safe_filename(payload.contract_number)
     filename = f"{label}合同_{safe_number}.docx"
-    media_type = (
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
     return buffer, filename, media_type
 
 
 def _fill_raw_material_contract(
-    doc: Document, payload: ContractGenerateRequest
+    doc: Document,  # type: ignore[valid-type]
+    payload: ContractGenerateRequest,
 ) -> None:
     _replace_red_groups(
         _find_paragraph(doc, "签订日期"),
@@ -189,14 +169,11 @@ def _fill_raw_material_contract(
     )
     _replace_red_groups(
         _find_paragraph(doc, "五、付款方式及期限"),
-        [
-            payload.payment_terms
-            or "货到验收合格后，凭卖方开具的增值税发票30天内以银行承兑汇票支付货款"
-        ],
+        [payload.payment_terms or "货到验收合格后，凭卖方开具的增值税发票30天内以银行承兑汇票支付货款"],
     )
 
     summary = _amount_summary(payload)
-    table = doc.tables[0]
+    table = doc.tables[0]  # type: ignore[attr-defined]
     summary_start = _fit_detail_rows(
         table,
         template_row_index=1,
@@ -270,10 +247,10 @@ def _fill_raw_material_contract(
         ],
     )
     _center_cells(table.rows[summary_start + 2].cells[:3])
-    _fill_raw_material_party_table(doc.tables[1], payload.seller)
+    _fill_raw_material_party_table(doc.tables[1], payload.seller)  # type: ignore[attr-defined]
 
 
-def _fill_consumables_contract(doc: Document, payload: ContractGenerateRequest) -> None:
+def _fill_consumables_contract(doc: Document, payload: ContractGenerateRequest) -> None:  # type: ignore[valid-type]
     _replace_red_groups(
         _find_paragraph(doc, "签订日期"),
         [_date_plain_cn(payload.contract_date), payload.contract_number],
@@ -287,12 +264,10 @@ def _fill_consumables_contract(doc: Document, payload: ContractGenerateRequest) 
         [payload.payment_terms or "买方收货且检验合格后30天以6个月承兑汇票方式付款"],
     )
     if payload.overdue_days is not None:
-        _replace_red_groups(
-            _find_paragraph(doc, "卖方逾期供货"), [f"{payload.overdue_days}天"]
-        )
+        _replace_red_groups(_find_paragraph(doc, "卖方逾期供货"), [f"{payload.overdue_days}天"])
 
     summary = _amount_summary(payload)
-    table = doc.tables[0]
+    table = doc.tables[0]  # type: ignore[attr-defined]
     summary_row = len(table.rows) - 1
     summary_row = _fit_detail_rows(
         table,
@@ -319,23 +294,21 @@ def _fill_consumables_contract(doc: Document, payload: ContractGenerateRequest) 
         [_summary_text(summary, payload.tax_rate)] * 8,
     )
     _fill_simple_party_table(
-        doc.tables[1],
+        doc.tables[1],  # type: ignore[attr-defined]
         payload.seller,
         include_contact_phone=False,
         contact_person_label="代表人姓名（当货品有质量问题等联络用）",
         tax_label="税务登记号",
     )
-    _fill_consumables_buyer_delivery_table(doc.tables[1], payload)
+    _fill_consumables_buyer_delivery_table(doc.tables[1], payload)  # type: ignore[attr-defined]
 
 
-def _fill_hardware_contract(doc: Document, payload: ContractGenerateRequest) -> None:
+def _fill_hardware_contract(doc: Document, payload: ContractGenerateRequest) -> None:  # type: ignore[valid-type]
     _replace_red_groups(
         _find_paragraph(doc, "签订日期"),
         [_date_plain_cn(payload.contract_date), payload.contract_number],
     )
-    _replace_red_groups(
-        _find_paragraph(doc, "交货日期"), [_delivery_single_date_text(payload)]
-    )
+    _replace_red_groups(_find_paragraph(doc, "交货日期"), [_delivery_single_date_text(payload)])
     _replace_red_groups(
         _find_paragraph(doc, "付款期限"),
         [
@@ -345,7 +318,7 @@ def _fill_hardware_contract(doc: Document, payload: ContractGenerateRequest) -> 
     )
 
     summary = _amount_summary(payload)
-    table = doc.tables[0]
+    table = doc.tables[0]  # type: ignore[attr-defined]
     summary_row = len(table.rows) - 1
     summary_row = _fit_detail_rows(
         table,
@@ -372,10 +345,10 @@ def _fill_hardware_contract(doc: Document, payload: ContractGenerateRequest) -> 
         table.rows[summary_row].cells,
         [_summary_text(summary, payload.tax_rate)] * 9,
     )
-    _fill_simple_party_table(doc.tables[1], payload.seller, include_postal_code=True)
+    _fill_simple_party_table(doc.tables[1], payload.seller, include_postal_code=True)  # type: ignore[attr-defined]
 
 
-def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) -> None:
+def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) -> None:  # type: ignore[valid-type]
     _replace_red_groups(_find_paragraph(doc, "合同编号"), [payload.contract_number])
     _replace_red_groups(
         _find_paragraph(doc, "卖方在交货时应附上"),
@@ -390,9 +363,7 @@ def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) 
     )
     _replace_red_groups(_find_paragraph(doc, "制造的全新"), [payload.seller.name])
     if payload.installation_days is not None:
-        _replace_red_groups(
-            _find_paragraph(doc, "安装调试及质量验收"), [str(payload.installation_days)]
-        )
+        _replace_red_groups(_find_paragraph(doc, "安装调试及质量验收"), [str(payload.installation_days)])
     _replace_red_groups(
         _find_paragraph(doc, "本合同生效后"),
         [
@@ -438,9 +409,7 @@ def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) 
         [f"银行行号：{payload.seller.bank_line_number}"],
     )
     if payload.warranty_months is not None:
-        _replace_red_groups(
-            _find_paragraph(doc, "设备验收合格之日起"), [str(payload.warranty_months)]
-        )
+        _replace_red_groups(_find_paragraph(doc, "设备验收合格之日起"), [str(payload.warranty_months)])
     _replace_red_groups(
         _find_paragraph(doc, "接到买方电话"),
         [str(payload.response_hours or 24), str(payload.onsite_hours or 48)],
@@ -461,19 +430,15 @@ def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) 
     _replace_red_groups(_find_paragraph(doc, "不按时开具"), ["100"])
     if payload.jurisdiction:
         _replace_red_groups(_find_paragraph(doc, "有管辖权"), [payload.jurisdiction])
-    _replace_red_groups(
-        _find_paragraph(doc, "附件 ①"), [payload.attachment_note or "/"]
-    )
+    _replace_red_groups(_find_paragraph(doc, "附件 ①"), [payload.attachment_note or "/"])
     _replace_red_groups(
         _find_paragraph(doc, "本合同一式"),
         [str(payload.copies or 2), str(payload.buyer_copies or 1)],
     )
-    _replace_red_groups(
-        _find_paragraph(doc, "签订日期"), [_date_cn(payload.contract_date)]
-    )
+    _replace_red_groups(_find_paragraph(doc, "签订日期"), [_date_cn(payload.contract_date)])
 
     summary = _amount_summary(payload)
-    table = doc.tables[0]
+    table = doc.tables[0]  # type: ignore[attr-defined]
     summary_row = _fit_detail_rows(
         table,
         template_row_index=1,
@@ -498,7 +463,7 @@ def _fill_fixed_asset_contract(doc: Document, payload: ContractGenerateRequest) 
         table.rows[summary_row].cells,
         [_summary_text(summary, payload.tax_rate)] * 7,
     )
-    _fill_fixed_asset_party_table(doc.tables[1], payload.seller)
+    _fill_fixed_asset_party_table(doc.tables[1], payload.seller)  # type: ignore[attr-defined]
 
 
 def _amount_summary(payload: ContractGenerateRequest) -> AmountSummary:
@@ -506,17 +471,13 @@ def _amount_summary(payload: ContractGenerateRequest) -> AmountSummary:
     tax_base = Decimal("1") + payload.tax_rate / Decimal("100")
     untaxed = (total / tax_base).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     tax = (total - untaxed).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    return AmountSummary(
-        total=total.quantize(Decimal("0.01")), untaxed=untaxed, tax=tax
-    )
+    return AmountSummary(total=total.quantize(Decimal("0.01")), untaxed=untaxed, tax=tax)
 
 
 def _item_amount(item: ContractItemInput) -> Decimal:
     if item.amount is not None:
         return item.amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    return (item.quantity * item.unit_price).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
-    )
+    return (item.quantity * item.unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _summary_text(summary: AmountSummary, tax_rate: Decimal) -> str:
@@ -528,7 +489,7 @@ def _summary_text(summary: AmountSummary, tax_rate: Decimal) -> str:
     )
 
 
-def _fill_raw_material_party_table(table, seller: ContractPartyInfo) -> None:
+def _fill_raw_material_party_table(table, seller: ContractPartyInfo) -> Any:  # type: ignore[no-untyped-def]
     _set_cell_text(table.rows[0].cells[0], f"卖方（必须盖章）：{seller.name}")
     _set_cell_text(table.rows[1].cells[0], f"地址：{seller.address}")
     _set_cell_text(table.rows[1].cells[1], f"开户行：{seller.bank_name}")
@@ -541,7 +502,7 @@ def _fill_raw_material_party_table(table, seller: ContractPartyInfo) -> None:
     _set_cell_text(table.rows[3].cells[1], f"统一社会信用代码：{seller.tax_id}")
 
 
-def _fill_simple_party_table(
+def _fill_simple_party_table(  # type: ignore[no-untyped-def]
     table,
     seller: ContractPartyInfo,
     *,
@@ -569,7 +530,7 @@ def _fill_simple_party_table(
     )
 
 
-def _fill_consumables_buyer_delivery_table(
+def _fill_consumables_buyer_delivery_table(  # type: ignore[no-untyped-def]
     table, payload: ContractGenerateRequest
 ) -> None:
     address = "宁夏石嘴山市平罗太沙工业园丽珠制药"
@@ -585,7 +546,7 @@ def _fill_consumables_buyer_delivery_table(
     )
 
 
-def _fill_fixed_asset_party_table(table, seller: ContractPartyInfo) -> None:
+def _fill_fixed_asset_party_table(table, seller: ContractPartyInfo) -> Any:  # type: ignore[no-untyped-def]
     _set_cell_text(
         table.rows[0].cells[1],
         f"卖方：{seller.name}\n"
@@ -599,7 +560,7 @@ def _fill_fixed_asset_party_table(table, seller: ContractPartyInfo) -> None:
     )
 
 
-def _replace_red_groups(paragraph, replacements: Iterable[str]) -> None:
+def _replace_red_groups(paragraph, replacements: Iterable[str]) -> Any:  # type: ignore[no-untyped-def]
     if paragraph is None:
         return
     replacement_iter = iter(replacements)
@@ -620,7 +581,7 @@ def _replace_red_groups(paragraph, replacements: Iterable[str]) -> None:
             active_run = None
 
 
-def _is_red_run(run) -> bool:
+def _is_red_run(run) -> Any:  # type: ignore[no-untyped-def]
     rpr = run._element.rPr
     if rpr is None:
         return False
@@ -639,16 +600,16 @@ def _is_red_run(run) -> bool:
     return value in {"FF0000", "C00000"}
 
 
-def _set_run_black(run) -> None:
+def _set_run_black(run) -> Any:  # type: ignore[no-untyped-def]
     run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-def _clear_remaining_red_runs(doc: Document) -> None:
-    for paragraph in doc.paragraphs:
+def _clear_remaining_red_runs(doc: Document) -> None:  # type: ignore[valid-type]
+    for paragraph in doc.paragraphs:  # type: ignore[attr-defined]
         for run in paragraph.runs:
             if _is_red_run(run):
                 _set_run_black(run)
-    for table in doc.tables:
+    for table in doc.tables:  # type: ignore[attr-defined]
         for row in table.rows:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
@@ -657,16 +618,16 @@ def _clear_remaining_red_runs(doc: Document) -> None:
                             _set_run_black(run)
 
 
-def _find_paragraph(doc: Document, contains: str):
-    for paragraph in doc.paragraphs:
+def _find_paragraph(doc: Document, contains: str) -> Any:  # type: ignore[valid-type]
+    for paragraph in doc.paragraphs:  # type: ignore[attr-defined]
         if contains in paragraph.text:
             return paragraph
     return None
 
 
-def _find_paragraph_after(doc: Document, after_contains: str, contains: str):
+def _find_paragraph_after(doc: Document, after_contains: str, contains: str) -> Any:  # type: ignore[valid-type]
     matched_anchor = False
-    for paragraph in doc.paragraphs:
+    for paragraph in doc.paragraphs:  # type: ignore[attr-defined]
         if matched_anchor and contains in paragraph.text:
             return paragraph
         if after_contains in paragraph.text:
@@ -674,7 +635,7 @@ def _find_paragraph_after(doc: Document, after_contains: str, contains: str):
     return None
 
 
-def _remove_placeholder_underscores(paragraph, value: str, *, suffix: str) -> None:
+def _remove_placeholder_underscores(paragraph, value: str, *, suffix: str) -> Any:  # type: ignore[no-untyped-def]
     if paragraph is None:
         return
     text = paragraph.text
@@ -692,7 +653,7 @@ def _remove_placeholder_underscores(paragraph, value: str, *, suffix: str) -> No
         run.text = ""
 
 
-def _ensure_rows_before(
+def _ensure_rows_before(  # type: ignore[no-untyped-def]
     table, *, template_row_index: int, insert_before_index: int, count: int
 ) -> None:
     existing_count = insert_before_index - template_row_index
@@ -705,7 +666,7 @@ def _ensure_rows_before(
         insert_before_index += 1
 
 
-def _fit_detail_rows(
+def _fit_detail_rows(  # type: ignore[no-untyped-def]
     table,
     *,
     template_row_index: int,
@@ -731,26 +692,26 @@ def _fit_detail_rows(
     return first_detail_index + count
 
 
-def _insert_row_before(table, row_index: int, row_element) -> None:
+def _insert_row_before(table, row_index: int, row_element) -> Any:  # type: ignore[no-untyped-def]
     if row_index >= len(table.rows):
         table._tbl.append(row_element)
         return
     table.rows[row_index]._tr.addprevious(row_element)
 
 
-def _set_cells(cells, values: list[str]) -> None:
+def _set_cells(cells, values: list[str]) -> Any:  # type: ignore[no-untyped-def]
     for cell, value in zip(cells, values, strict=False):
         _set_cell_text(cell, value)
 
 
-def _set_cell_text(cell, value: str) -> None:
+def _set_cell_text(cell, value: str) -> Any:  # type: ignore[no-untyped-def]
     cell.text = value or ""
     for paragraph in cell.paragraphs:
         for run in paragraph.runs:
             run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-def _center_cells(cells) -> None:
+def _center_cells(cells) -> Any:  # type: ignore[no-untyped-def]
     for cell in cells:
         for paragraph in cell.paragraphs:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -770,7 +731,7 @@ def _delivery_date_groups(payload: ContractGenerateRequest) -> list[str]:
 def _delivery_single_date_text(payload: ContractGenerateRequest) -> str:
     if payload.delivery_terms and not payload.delivery_date:
         return payload.delivery_terms
-    return _date_plain_cn(payload.delivery_date or payload.contract_date)
+    return _date_plain_cn(payload.delivery_date or payload.contract_date)  # type: ignore[no-any-return]
 
 
 def _delivery_text(payload: ContractGenerateRequest) -> str:
@@ -781,11 +742,11 @@ def _delivery_text(payload: ContractGenerateRequest) -> str:
     return "按买方电话通知送货"
 
 
-def _date_cn(value) -> str:
+def _date_cn(value) -> Any:  # type: ignore[no-untyped-def]
     return f"{value.year} 年{value.month:02d}月{value.day:02d}日"
 
 
-def _date_plain_cn(value) -> str:
+def _date_plain_cn(value) -> Any:  # type: ignore[no-untyped-def]
     return f"{value.year}年{value.month:02d}月{value.day:02d}日"
 
 
@@ -805,9 +766,7 @@ def _ratio_text(value: Decimal | None, default: str) -> str:
 
 
 def _safe_filename(value: str) -> str:
-    return "".join(
-        char if char.isalnum() or char in ("-", "_") else "_" for char in value
-    )
+    return "".join(char if char.isalnum() or char in ("-", "_") else "_" for char in value)
 
 
 _CN_NUM = "零壹贰叁肆伍陆柒捌玖"

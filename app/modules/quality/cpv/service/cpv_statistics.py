@@ -141,12 +141,8 @@ async def get_statistics(
     cpk_value = _calc_cpk(numeric_values, parameter.lower_limit, parameter.upper_limit)
 
     # Use auto-calculated limits from data when parameter limits are not set
-    effective_lower = (
-        parameter.lower_limit if parameter.lower_limit is not None else min_value
-    )
-    effective_upper = (
-        parameter.upper_limit if parameter.upper_limit is not None else max_value
-    )
+    effective_lower = parameter.lower_limit if parameter.lower_limit is not None else min_value
+    effective_upper = parameter.upper_limit if parameter.upper_limit is not None else max_value
 
     return CpvStatisticsResponse(
         total_batches=len(batches),
@@ -204,21 +200,17 @@ async def get_trend_data(
 
     # Auto-calculate limits from data when parameter limits are not set
     effective_lower = (
-        parameter.lower_limit
-        if parameter.lower_limit is not None
-        else (min(all_numeric) if all_numeric else 0.0)
+        parameter.lower_limit if parameter.lower_limit is not None else (min(all_numeric) if all_numeric else 0.0)
     )
     effective_upper = (
-        parameter.upper_limit
-        if parameter.upper_limit is not None
-        else (max(all_numeric) if all_numeric else 0.0)
+        parameter.upper_limit if parameter.upper_limit is not None else (max(all_numeric) if all_numeric else 0.0)
     )
 
     # 构建趋势数据
     items = []
     for v in values:
         if v.parameter_id == parameter_id:
-            batch = batch_map.get(v.batch_id)
+            batch = batch_map.get(v.batch_id)  # type: ignore[call-overload]
             if batch:
                 num_val = _to_float(v.actual_value)
                 if num_val is not None:

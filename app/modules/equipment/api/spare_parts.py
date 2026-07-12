@@ -78,9 +78,9 @@ async def get_stock_warnings(
     return success_response(
         data=[
             StockWarningResponse(
-                spare_part=SparePartResponse.model_validate(w["spare_part"]),
-                stock=StockResponse.model_validate(w["stock"]),
-                shortage=w["shortage"],
+                spare_part=SparePartResponse.model_validate(w["spare_part"]),  # type: ignore[index]
+                stock=StockResponse.model_validate(w["stock"]),  # type: ignore[index]
+                shortage=w["shortage"],  # type: ignore[index]
             )
             for w in warnings
         ]

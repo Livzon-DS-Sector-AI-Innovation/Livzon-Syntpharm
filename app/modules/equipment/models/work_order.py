@@ -68,9 +68,7 @@ class WorkOrder(BaseModel):
         ForeignKey("equipment.equipments.id"),
         comment="设备ID",
     )
-    order_type: Mapped[str] = mapped_column(
-        String(20), comment="工单类型：故障维修/计划维护/校准/异常处理/日常维护"
-    )
+    order_type: Mapped[str] = mapped_column(String(20), comment="工单类型：故障维修/计划维护/校准/异常处理/日常维护")
     responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("identity.users.id"),
         nullable=True,
@@ -101,9 +99,7 @@ class WorkOrder(BaseModel):
         nullable=True,
         comment="维修措施ID",
     )
-    fault_description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="故障描述"
-    )
+    fault_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="故障描述")
     reporter_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("identity.users.id"),
         nullable=True,
@@ -149,12 +145,8 @@ class WorkOrder(BaseModel):
         nullable=True,
         comment="验收结果：合格/不合格",
     )
-    verification_remark: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="验收备注"
-    )
-    repair_detail: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="维修详情"
-    )
+    verification_remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="验收备注")
+    repair_detail: Mapped[str | None] = mapped_column(Text, nullable=True, comment="维修详情")
     actual_duration: Mapped[int | None] = mapped_column(
         nullable=True,
         comment="实际用时（分钟）",
@@ -169,20 +161,14 @@ class WorkOrder(BaseModel):
         nullable=True,
         comment="关联维护计划ID",
     )
-    planned_start_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="计划执行日期"
-    )
+    planned_start_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="计划执行日期")
     checklist_template_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.inspection_templates.id"),
         nullable=True,
         comment="关联巡检模板ID",
     )
-    check_result: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, comment="巡检结果：正常/异常"
-    )
-    spare_parts_cost: Mapped[float | None] = mapped_column(
-        nullable=True, comment="备件费用汇总"
-    )
+    check_result: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="巡检结果：正常/异常")
+    spare_parts_cost: Mapped[float | None] = mapped_column(nullable=True, comment="备件费用汇总")
     inspection_task_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="来源巡检任务ID，由巡检异常自动创建时填入"
     )

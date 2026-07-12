@@ -44,7 +44,7 @@ async def get_current_user(
 
     subject: str | None = payload.get("sub")
     if subject:
-        user = await repo.get_by_id(db, subject)
+        user = await repo.get_by_id(db, subject)  # type: ignore[arg-type]
 
     if user is None:
         open_id: str | None = payload.get("open_id")

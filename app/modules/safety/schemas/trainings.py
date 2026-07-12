@@ -28,9 +28,7 @@ class SafetyTrainingBase(BaseModel):
     content: str | None = Field(None, description="培训内容")
     department: str | None = Field(None, max_length=100, description="培训部门")
     exam_passing_score: float | None = Field(60, ge=0, description="及格分数线")
-    course_material_path: str | None = Field(
-        None, max_length=500, description="课程资料路径"
-    )
+    course_material_path: str | None = Field(None, max_length=500, description="课程资料路径")
     notes: str | None = Field(None, description="备注")
 
 
@@ -86,9 +84,7 @@ class TrainingRecordBase(BaseModel):
     certificate_no: str | None = Field(None, max_length=100, description="证书编号")
     certificate_expiry: datetime | None = Field(None, description="证书有效期至")
     certificate_status: str | None = Field(None, max_length=32, description="证书状态")
-    certificate_file_path: str | None = Field(
-        None, max_length=500, description="证书文件路径"
-    )
+    certificate_file_path: str | None = Field(None, max_length=500, description="证书文件路径")
     notes: str | None = Field(None, description="备注")
 
 
@@ -111,9 +107,7 @@ class TrainingRecordUpdate(BaseModel):
     certificate_no: str | None = Field(None, max_length=100, description="证书编号")
     certificate_expiry: datetime | None = Field(None, description="证书有效期至")
     certificate_status: str | None = Field(None, max_length=32, description="证书状态")
-    certificate_file_path: str | None = Field(
-        None, max_length=500, description="证书文件路径"
-    )
+    certificate_file_path: str | None = Field(None, max_length=500, description="证书文件路径")
     notes: str | None = Field(None, description="备注")
 
 

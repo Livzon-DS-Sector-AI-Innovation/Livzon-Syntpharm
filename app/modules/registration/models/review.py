@@ -1,5 +1,7 @@
 """Review node configuration (static data)."""
 
+from typing import Any
+
 
 class ReviewNode:
     """审评节点配置"""
@@ -18,11 +20,11 @@ class ReviewNode:
     ]
 
     @classmethod
-    def get_all(cls) -> list[dict]:
+    def get_all(cls) -> list[dict[str, Any]]:
         return cls.NODES
 
     @classmethod
-    def get_by_index(cls, index: int) -> dict | None:
+    def get_by_index(cls, index: int) -> dict[str, Any] | None:
         for node in cls.NODES:
             if node["index"] == index:
                 return node

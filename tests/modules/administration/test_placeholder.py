@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Administration module placeholder tests."""
 
 from __future__ import annotations

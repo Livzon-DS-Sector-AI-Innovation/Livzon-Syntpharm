@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
+from typing import Any, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -26,7 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.shared.base_model import BaseModel
 
 
-class ReportStatus(str, Enum):
+class ReportStatus(StrEnum):
     """报告单状态"""
 
     DRAFT = "draft"  # 草稿
@@ -46,21 +46,15 @@ class ReportTemplate(BaseModel):
     )
 
     # 模板基本信息
-    template_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="模板名称"
-    )
-    template_file_url: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="模板文件存储路径"
-    )
-    template_description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="模板描述说明"
-    )
+    template_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="模板名称")
+    template_file_url: Mapped[str] = mapped_column(String(500), nullable=False, comment="模板文件存储路径")
+    template_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述说明")
 
     # 字段配置（JSONB）
-    field_mapping: Mapped[dict] = mapped_column(
+    field_mapping: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'"), comment="静态字段映射配置"
     )
-    table_fields: Mapped[dict] = mapped_column(
+    table_fields: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'"), comment="动态表格字段定义"
     )
 
@@ -68,9 +62,7 @@ class ReportTemplate(BaseModel):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
 
     # 关联报告单
-    reports: Mapped[list["MaterialReport"]] = relationship(
-        "MaterialReport", back_populates="template"
-    )
+    reports: Mapped[list["MaterialReport"]] = relationship("MaterialReport", back_populates="template")
 
 
 class MaterialReport(BaseModel):
@@ -86,26 +78,18 @@ class MaterialReport(BaseModel):
     )
 
     # 报告单基本信息
-    report_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, comment="报告单编号"
-    )
+    report_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="报告单编号")
     template_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("quality.report_templates.id"),
         nullable=True,
         comment="关联模板ID",
     )
-    report_title: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="报告单标题"
-    )
-    report_date: Mapped[datetime] = mapped_column(
-        Date, nullable=False, comment="报告日期"
-    )
+    report_title: Mapped[str] = mapped_column(String(255), nullable=False, comment="报告单标题")
+    report_date: Mapped[datetime] = mapped_column(Date, nullable=False, comment="报告日期")
 
     # 静态字段数据（JSONB）
-    static_data: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, comment="静态字段数据"
-    )
+    static_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="静态字段数据")
 
     # 状态
     status: Mapped[str] = mapped_column(
@@ -120,14 +104,10 @@ class MaterialReport(BaseModel):
     )
 
     # 生成文件
-    generated_file_url: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="生成文件路径"
-    )
+    generated_file_url: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="生成文件路径")
 
     # 关联
-    template: Mapped[Optional["ReportTemplate"]] = relationship(
-        "ReportTemplate", back_populates="reports"
-    )
+    template: Mapped[Optional["ReportTemplate"]] = relationship("ReportTemplate", back_populates="reports")
     items: Mapped[list["MaterialReportItem"]] = relationship(
         "MaterialReportItem", back_populates="report", cascade="all, delete-orphan"
     )
@@ -143,9 +123,7 @@ class MaterialReportItem(BaseModel):
     __table_args__ = (
         Index("idx_item_report", "report_id"),
         Index("idx_item_row", "row_index"),
-        UniqueConstraint(
-            "report_id", "row_index", "field_key", name="uq_item_composite"
-        ),
+        UniqueConstraint("report_id", "row_index", "field_key", name="uq_item_composite"),
         {"schema": "quality"},
     )
 
@@ -159,17 +137,11 @@ class MaterialReportItem(BaseModel):
 
     # 行信息
     row_index: Mapped[int] = mapped_column(Integer, nullable=False, comment="行序号")
-    field_key: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="字段标识"
-    )
-    field_value: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="字段值"
-    )
+    field_key: Mapped[str] = mapped_column(String(100), nullable=False, comment="字段标识")
+    field_value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="字段值")
 
     # 关联
-    report: Mapped["MaterialReport"] = relationship(
-        "MaterialReport", back_populates="items"
-    )
+    report: Mapped["MaterialReport"] = relationship("MaterialReport", back_populates="items")
 
 
 class ReportImage(BaseModel):
@@ -191,22 +163,12 @@ class ReportImage(BaseModel):
     )
 
     # 图片信息
-    row_index: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="关联行序号"
-    )
-    field_key: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="对应字段"
-    )
-    image_url: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="图片路径"
-    )
+    row_index: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="关联行序号")
+    field_key: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="对应字段")
+    image_url: Mapped[str] = mapped_column(String(500), nullable=False, comment="图片路径")
 
     # AI识别结果
-    ai_result: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, comment="AI识别结果"
-    )
+    ai_result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="AI识别结果")
 
     # 关联
-    report: Mapped[Optional["MaterialReport"]] = relationship(
-        "MaterialReport", back_populates="images"
-    )
+    report: Mapped[Optional["MaterialReport"]] = relationship("MaterialReport", back_populates="images")

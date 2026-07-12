@@ -20,9 +20,9 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 # 事件类型 → 处理器列表
-_handlers: dict[str, list] = {}
+_handlers: dict[str, list[Any]] = {}
 _stop: asyncio.Event | None = None
-_ws_task: asyncio.Task | None = None
+_ws_task: asyncio.Task[None] | None = None
 
 # 长连接重连：与设备模块一致，不设置重试上限，持续重连直到显式 stop
 # 连接失败/断连后等待 10s 重试，由无限 while 循环驱动
@@ -35,10 +35,10 @@ WS_ENDPOINT_URL = f"{FEISHU_DOMAIN}/callback/ws/endpoint"
 _ping_interval: int = 120
 
 
-def on_event(event_type: str):
+def on_event(event_type: str) -> Any:
     """装饰器：注册安全模块事件处理器。"""
 
-    def decorator(func):
+    def decorator(func) -> Any:  # type: ignore[no-untyped-def]
         _handlers.setdefault(event_type, []).append(func)
         logger.info("注册安全飞书事件: type=%s handler=%s", event_type, func.__name__)
         return func
@@ -71,10 +71,7 @@ async def _get_ws_url_and_config() -> tuple[str | None, int]:
 
     返回 (url, service_id)。
     """
-    if (
-        not get_settings().feishu.safety.credentials.app_id
-        or not get_settings().feishu.safety.credentials.app_secret
-    ):
+    if not get_settings().feishu.safety.credentials.app_id or not get_settings().feishu.safety.credentials.app_secret:
         logger.error("安全模块飞书配置缺失，无法获取 WebSocket URL")
         return None, 0
 
@@ -134,10 +131,10 @@ def _build_ping_frame(service_id: int) -> bytes:
     frame.method = FrameType.CONTROL.value
     frame.SeqID = 0
     frame.LogID = 0
-    return frame.SerializeToString()
+    return frame.SerializeToString()  # type: ignore[no-any-return]
 
 
-def _build_ack_frame(frame, biz_rt: int) -> bytes:
+def _build_ack_frame(frame, biz_rt: int) -> Any:  # type: ignore[no-untyped-def]
     """构建 DATA 帧的 ACK 回复（飞书协议要求收到事件后必须回复 ACK）。
 
     注意：不覆盖 frame.payload —— 调用方（如 card.action.trigger 处理）可能
@@ -152,9 +149,9 @@ def _build_ack_frame(frame, biz_rt: int) -> bytes:
     return frame.SerializeToString()
 
 
-async def _ping_loop(ws, service_id: int) -> None:
+async def _ping_loop(ws, service_id: int) -> Any:  # type: ignore[no-untyped-def]
     """定期发送 protobuf PING 帧保持连接和事件路由。"""
-    while not _stop.is_set():
+    while not _stop.is_set():  # type: ignore[union-attr]
         try:
             ping_data = _build_ping_frame(service_id)
             await ws.send(ping_data)
@@ -163,7 +160,7 @@ async def _ping_loop(ws, service_id: int) -> None:
             logger.warning("安全飞书 PING 失败: %s", e)
             return
         try:
-            await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)
+            await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)  # type: ignore[union-attr]
             return
         except TimeoutError:
             pass
@@ -185,12 +182,12 @@ _frame_count: dict[str, int] = {
 _last_pong_at: float = 0.0  # monotonic seconds
 
 
-def _get_frame_stats() -> dict:
+def _get_frame_stats() -> dict[str, Any]:
     """返回帧活动统计。"""
     return dict(_frame_count)
 
 
-async def _handle_binary_message(ws, message: bytes) -> None:
+async def _handle_binary_message(ws, message: bytes) -> Any:  # type: ignore[no-untyped-def]
     """处理 protobuf 帧（区分 CONTROL 和 DATA）。"""
     _frame_count["received"] += 1
     try:
@@ -261,9 +258,7 @@ async def _handle_binary_message(ws, message: bytes) -> None:
                         card_json = json.dumps(card_resp, ensure_ascii=False)
                         resp = {
                             "code": 200,
-                            "data": _b64.b64encode(card_json.encode("utf-8")).decode(
-                                "ascii"
-                            ),
+                            "data": _b64.b64encode(card_json.encode("utf-8")).decode("ascii"),
                         }
                     else:
                         resp = {"code": 200}
@@ -300,13 +295,8 @@ async def start_ws() -> None:
     _stop = asyncio.Event()
     _ws_task = asyncio.current_task()
 
-    if (
-        not get_settings().feishu.safety.credentials.app_id
-        or not get_settings().feishu.safety.credentials.app_secret
-    ):
-        logger.warning(
-            "安全模块飞书配置缺失（feishu.safety.credentials），跳过事件订阅"
-        )
+    if not get_settings().feishu.safety.credentials.app_id or not get_settings().feishu.safety.credentials.app_secret:
+        logger.warning("安全模块飞书配置缺失（feishu.safety.credentials），跳过事件订阅")
         return
 
     logger.info(
@@ -390,10 +380,7 @@ async def start_ws() -> None:
                                 else:
                                     logger.info(
                                         "安全飞书收到文本事件: type=%s",
-                                        msg_type
-                                        or event.get("header", {}).get(
-                                            "event_type", "?"
-                                        ),
+                                        msg_type or event.get("header", {}).get("event_type", "?"),
                                     )
                                     await _dispatch_event(event)
                             except json.JSONDecodeError:
@@ -444,9 +431,7 @@ async def _dispatch_event(event: dict[str, Any]) -> Any:
         event_data = event.get("event", event)
         return await _dispatch(event_type, event_data)
     else:
-        logger.debug(
-            "安全飞书无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200]
-        )
+        logger.debug("安全飞书无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200])
         return None
 
 
@@ -457,7 +442,7 @@ async def stop_ws() -> None:
         _stop.set()
 
 
-async def restart_ws() -> dict:
+async def restart_ws() -> dict[str, Any]:
     """手动重启 WS 连接（先停止旧连接，再启动新连接）。"""
     global _stop, _ws_task
 
@@ -484,7 +469,7 @@ async def restart_ws() -> dict:
 _subscription_ok: bool = False
 
 
-async def get_ws_status() -> dict:
+async def get_ws_status() -> dict[str, Any]:
     """查询当前 WS 连接状态。"""
     task_alive = _ws_task is not None and not _ws_task.done()
     pong_ago: float | None = None
@@ -497,7 +482,5 @@ async def get_ws_status() -> dict:
         "mode": "unlimited",  # 无限重连模式，与设备交互机器人一致
         "frame_stats": _get_frame_stats(),
         "last_pong_seconds_ago": round(pong_ago, 1) if pong_ago is not None else None,
-        "pong_watchdog_healthy": pong_ago is not None and pong_ago < 300
-        if pong_ago is not None
-        else None,
+        "pong_watchdog_healthy": pong_ago is not None and pong_ago < 300 if pong_ago is not None else None,
     }

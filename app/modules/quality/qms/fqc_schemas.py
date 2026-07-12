@@ -2,14 +2,14 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 # ========== Enums ==========
-class FQCInspectionStatus(str, Enum):
+class FQCInspectionStatus(StrEnum):
     """FQC检验单状态"""
 
     DRAFT = "draft"  # 草稿
@@ -23,14 +23,14 @@ class FQCInspectionStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class FQCInspectionConclusion(str, Enum):
+class FQCInspectionConclusion(StrEnum):
     """FQC检验结论"""
 
     QUALIFIED = "qualified"  # 合格
     UNQUALIFIED = "unqualified"  # 不合格
 
 
-class FQCItemResult(str, Enum):
+class FQCItemResult(StrEnum):
     """FQC单项判定"""
 
     PASS = "pass"  # 合格
@@ -38,7 +38,7 @@ class FQCItemResult(str, Enum):
     NA = "na"  # 不适用
 
 
-class FQCReleaseStatus(str, Enum):
+class FQCReleaseStatus(StrEnum):
     """FQC放行状态"""
 
     PENDING_RELEASE = "pending_release"  # 待放行
@@ -46,7 +46,7 @@ class FQCReleaseStatus(str, Enum):
     NOT_RELEASED = "not_released"  # 未放行
 
 
-class FQCApprovalStatus(str, Enum):
+class FQCApprovalStatus(StrEnum):
     """FQC审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -54,7 +54,7 @@ class FQCApprovalStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class FQCInspectionCategory(str, Enum):
+class FQCInspectionCategory(StrEnum):
     """FQC检验类别"""
 
     CONTENT = "content"  # 含量
@@ -69,9 +69,7 @@ class FQCInspectionItemBase(BaseModel):
     """FQC检验明细基础Schema"""
 
     item_no: int = Field(..., description="项次")
-    inspection_category: FQCInspectionCategory | None = Field(
-        None, description="检验类别"
-    )
+    inspection_category: FQCInspectionCategory | None = Field(None, description="检验类别")
     inspection_item: str = Field(..., description="检验项目名称")
     inspection_method: str | None = Field(None, description="检验方法")
     standard_value: str | None = Field(None, description="标准值/限度")
@@ -144,9 +142,7 @@ class FQCInspectionBase(BaseModel):
     standard_version: str | None = Field(None, description="标准版本")
 
     # 检验结论
-    inspection_conclusion: FQCInspectionConclusion | None = Field(
-        None, description="检验结论"
-    )
+    inspection_conclusion: FQCInspectionConclusion | None = Field(None, description="检验结论")
     conclusion_reason: str | None = Field(None, description="结论说明")
     remark: str | None = Field(None, description="备注")
 
@@ -162,9 +158,7 @@ class FQCInspectionBase(BaseModel):
 class FQCInspectionCreate(FQCInspectionBase):
     """创建FQC检验单"""
 
-    items: list[FQCInspectionItemCreate] = Field(
-        default_factory=list, description="检验明细"
-    )
+    items: list[FQCInspectionItemCreate] = Field(default_factory=list, description="检验明细")
 
 
 class FQCInspectionUpdate(BaseModel):

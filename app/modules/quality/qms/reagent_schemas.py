@@ -13,14 +13,10 @@ from pydantic import BaseModel, Field
 class CreateReagentRequest(BaseModel):
     """创建试剂记录请求"""
 
-    reagent_label_urls: list[str] = Field(
-        default_factory=list, description="试剂标签图片URL数组"
-    )
+    reagent_label_urls: list[str] = Field(default_factory=list, description="试剂标签图片URL数组")
     reagent_name: str = Field(..., description="试剂名称")
     arrival_date: date = Field(..., description="到货日期（默认当天）")
-    production_date: date | None = Field(
-        None, description="生产日期（AI识别，默认到货日期+3年）"
-    )
+    production_date: date | None = Field(None, description="生产日期（AI识别，默认到货日期+3年）")
     lot_no: str = Field(..., description="批号")
     incoming_lot_no: str | None = Field(None, description="入场批号")
     expiration_date: date = Field(..., description="有效期")
@@ -35,9 +31,7 @@ class CreateReagentRequest(BaseModel):
 class UpdateReagentRequest(BaseModel):
     """更新试剂记录请求"""
 
-    reagent_label_urls: list[str] | None = Field(
-        None, description="试剂标签图片URL数组"
-    )
+    reagent_label_urls: list[str] | None = Field(None, description="试剂标签图片URL数组")
     reagent_name: str | None = Field(None, description="试剂名称")
     arrival_date: date | None = Field(None, description="到货日期")
     production_date: date | None = Field(None, description="生产日期")

@@ -6,6 +6,7 @@
 
 import uuid
 from dataclasses import dataclass, field
+from typing import Any
 
 from fastapi import Depends
 from sqlalchemy import or_, select
@@ -38,9 +39,7 @@ class EquipmentAccessContext:
         return self.data_scope == "all"
 
 
-async def _resolve_department_user_ids(
-    db: AsyncSession, user: User, scope: str
-) -> list[uuid.UUID]:
+async def _resolve_department_user_ids(db: AsyncSession, user: User, scope: str) -> list[uuid.UUID]:
     """根据数据范围获取可见部门下的所有用户 ID。"""
     department = user.department
     if not department:
@@ -71,9 +70,7 @@ async def _resolve_department_user_ids(
     return []
 
 
-async def _resolve_visible_department_ids(
-    db: AsyncSession, user: User, scope: str
-) -> list[uuid.UUID]:
+async def _resolve_visible_department_ids(db: AsyncSession, user: User, scope: str) -> list[uuid.UUID]:
     """根据数据范围获取可见部门的 ID 列表（用于 Equipment.department_id 过滤）。
 
     Equipment.department_id 逻辑引用 identity.departments.id (UUID)。
@@ -106,7 +103,7 @@ async def _resolve_visible_department_ids(
 
     if scope == "department_and_children":
         # 匹配叶子部门 + 其所有子部门（通过 parent 关系向下遍历）
-        stmt = select(Department).where(
+        stmt = select(Department).where(  # type: ignore[assignment]
             Department.name == leaf_name,
             Department.is_deleted == False,  # noqa: E712
         )
@@ -116,8 +113,8 @@ async def _resolve_visible_department_ids(
         if not matched_depts:
             return []
 
-        dept_ids: list[uuid.UUID] = [d.id for d in matched_depts]
-        feishu_ids = [d.feishu_department_id for d in matched_depts]
+        dept_ids: list[uuid.UUID] = [d.id for d in matched_depts]  # type: ignore[attr-defined]
+        feishu_ids = [d.feishu_department_id for d in matched_depts]  # type: ignore[attr-defined]
 
         # 向下遍历子部门（最多 5 层）
         for _ in range(5):
@@ -137,7 +134,7 @@ async def _resolve_visible_department_ids(
     return []
 
 
-def require_equipment_access(*codes: str):
+def require_equipment_access(*codes: str) -> Any:
     """组合依赖工厂：权限检查 + 数据范围解析。
 
     用法:

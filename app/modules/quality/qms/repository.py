@@ -35,68 +35,42 @@ class QualityRepository:
         is_effective: bool | None = None,
     ) -> tuple[list[InspectionStandard], int]:
         """获取检验标准列表"""
-        query = select(InspectionStandard).where(InspectionStandard.is_deleted == False)
+        query = select(InspectionStandard).where(not InspectionStandard.is_deleted)
 
         if status:
             query = query.where(InspectionStandard.status == status)
         if material_code:
-            query = query.where(
-                InspectionStandard.material_code.contains(material_code)
-            )
+            query = query.where(InspectionStandard.material_code.contains(material_code))
         if material_name:
-            query = query.where(
-                InspectionStandard.material_name.contains(material_name)
-            )
+            query = query.where(InspectionStandard.material_name.contains(material_name))
         if material_category:
-            query = query.where(
-                InspectionStandard.material_category == material_category
-            )
+            query = query.where(InspectionStandard.material_category == material_category)
         if pharmacopeia:
             query = query.where(InspectionStandard.pharmacopeia == pharmacopeia)
         if version:
             query = query.where(InspectionStandard.version == version)
         if is_effective is not None:
-            query = (
-                query.where(InspectionStandard.status == "effective")
-                if is_effective
-                else query
-            )
+            query = query.where(InspectionStandard.status == "effective") if is_effective else query
 
-        count_query = select(func.count(InspectionStandard.id)).where(
-            InspectionStandard.is_deleted == False
-        )
+        count_query = select(func.count(InspectionStandard.id)).where(not InspectionStandard.is_deleted)
         if status:
             count_query = count_query.where(InspectionStandard.status == status)
         if material_code:
-            count_query = count_query.where(
-                InspectionStandard.material_code.contains(material_code)
-            )
+            count_query = count_query.where(InspectionStandard.material_code.contains(material_code))
         if material_name:
-            count_query = count_query.where(
-                InspectionStandard.material_name.contains(material_name)
-            )
+            count_query = count_query.where(InspectionStandard.material_name.contains(material_name))
         if material_category:
-            count_query = count_query.where(
-                InspectionStandard.material_category == material_category
-            )
+            count_query = count_query.where(InspectionStandard.material_category == material_category)
         if pharmacopeia:
-            count_query = count_query.where(
-                InspectionStandard.pharmacopeia == pharmacopeia
-            )
+            count_query = count_query.where(InspectionStandard.pharmacopeia == pharmacopeia)
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(InspectionStandard.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(InspectionStandard.created_at.desc())
         result = await self.session.execute(query)
         standards = list(result.scalars().all())
         return standards, total or 0
 
-    async def get_standard_by_id(
-        self, standard_id: uuid.UUID
-    ) -> InspectionStandard | None:
+    async def get_standard_by_id(self, standard_id: uuid.UUID) -> InspectionStandard | None:
         """获取检验标准详情"""
         query = (
             select(InspectionStandard)
@@ -106,15 +80,13 @@ class QualityRepository:
             )
             .where(
                 InspectionStandard.id == standard_id,
-                InspectionStandard.is_deleted == False,
+                not InspectionStandard.is_deleted,
             )
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_standard_by_material_version(
-        self, material_code: str, version: str
-    ) -> InspectionStandard | None:
+    async def get_standard_by_material_version(self, material_code: str, version: str) -> InspectionStandard | None:
         """根据物料编码和版本获取检验标准"""
         query = (
             select(InspectionStandard)
@@ -122,7 +94,7 @@ class QualityRepository:
             .where(
                 InspectionStandard.material_code == material_code,
                 InspectionStandard.version == version,
-                InspectionStandard.is_deleted == False,
+                not InspectionStandard.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -134,7 +106,7 @@ class QualityRepository:
             select(InspectionStandard.version)
             .where(
                 InspectionStandard.material_code == material_code,
-                InspectionStandard.is_deleted == False,
+                not InspectionStandard.is_deleted,
             )
             .order_by(InspectionStandard.created_at.desc())
             .limit(1)
@@ -150,15 +122,13 @@ class QualityRepository:
         await self.session.refresh(standard)
         return standard
 
-    async def update_standard(
-        self, standard_id: uuid.UUID, data: dict[str, Any]
-    ) -> InspectionStandard | None:
+    async def update_standard(self, standard_id: uuid.UUID, data: dict[str, Any]) -> InspectionStandard | None:
         """更新检验标准"""
         query = (
             update(InspectionStandard)
             .where(
                 InspectionStandard.id == standard_id,
-                InspectionStandard.is_deleted == False,
+                not InspectionStandard.is_deleted,
             )
             .values(**data)
             .returning(InspectionStandard)
@@ -172,34 +142,26 @@ class QualityRepository:
             update(InspectionStandard)
             .where(
                 InspectionStandard.id == standard_id,
-                InspectionStandard.is_deleted == False,
+                not InspectionStandard.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
-    async def submit_for_approval(
-        self, standard_id: uuid.UUID
-    ) -> InspectionStandard | None:
+    async def submit_for_approval(self, standard_id: uuid.UUID) -> InspectionStandard | None:
         """提交审批"""
         return await self.update_standard(standard_id, {"status": "tech_review"})
 
-    async def approve_standard(
-        self, standard_id: uuid.UUID, next_status: str
-    ) -> InspectionStandard | None:
+    async def approve_standard(self, standard_id: uuid.UUID, next_status: str) -> InspectionStandard | None:
         """审批通过"""
         return await self.update_standard(standard_id, {"status": next_status})
 
-    async def reject_standard(
-        self, standard_id: uuid.UUID, comments: str | None = None
-    ) -> InspectionStandard | None:
+    async def reject_standard(self, standard_id: uuid.UUID, comments: str | None = None) -> InspectionStandard | None:
         """驳回标准"""
         return await self.update_standard(standard_id, {"status": "rejected"})
 
-    async def obsolete_standard(
-        self, standard_id: uuid.UUID, obsolete_reason: str
-    ) -> InspectionStandard | None:
+    async def obsolete_standard(self, standard_id: uuid.UUID, obsolete_reason: str) -> InspectionStandard | None:
         """作废标准"""
         return await self.update_standard(
             standard_id,
@@ -212,15 +174,13 @@ class QualityRepository:
 
     # ============ InspectionStandardItem Operations ============
 
-    async def get_items_by_standard(
-        self, standard_id: uuid.UUID
-    ) -> list[InspectionStandardItem]:
+    async def get_items_by_standard(self, standard_id: uuid.UUID) -> list[InspectionStandardItem]:
         """获取检验项目列表"""
         query = (
             select(InspectionStandardItem)
             .where(
                 InspectionStandardItem.standard_id == standard_id,
-                InspectionStandardItem.is_deleted == False,
+                not InspectionStandardItem.is_deleted,
             )
             .order_by(InspectionStandardItem.item_no)
         )
@@ -260,24 +220,20 @@ class QualityRepository:
 
     # ============ ApprovalRecord Operations ============
 
-    async def get_approval_records(
-        self, standard_id: uuid.UUID
-    ) -> list[StandardApprovalRecord]:
+    async def get_approval_records(self, standard_id: uuid.UUID) -> list[StandardApprovalRecord]:
         """获取审批记录列表"""
         query = (
             select(StandardApprovalRecord)
             .where(
                 StandardApprovalRecord.standard_id == standard_id,
-                StandardApprovalRecord.is_deleted == False,
+                not StandardApprovalRecord.is_deleted,
             )
             .order_by(StandardApprovalRecord.approval_level)
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def create_approval_record(
-        self, data: dict[str, Any]
-    ) -> StandardApprovalRecord:
+    async def create_approval_record(self, data: dict[str, Any]) -> StandardApprovalRecord:
         """创建审批记录"""
         record = StandardApprovalRecord(**data)
         self.session.add(record)
@@ -285,31 +241,27 @@ class QualityRepository:
         await self.session.refresh(record)
         return record
 
-    async def get_pending_approvers(
-        self, standard_id: uuid.UUID
-    ) -> list[StandardApprovalRecord]:
+    async def get_pending_approvers(self, standard_id: uuid.UUID) -> list[StandardApprovalRecord]:
         """获取待审批记录"""
         query = (
             select(StandardApprovalRecord)
             .where(
                 StandardApprovalRecord.standard_id == standard_id,
                 StandardApprovalRecord.approval_status == "pending",
-                StandardApprovalRecord.is_deleted == False,
+                not StandardApprovalRecord.is_deleted,
             )
             .order_by(StandardApprovalRecord.approval_level)
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def update_approval_record(
-        self, record_id: uuid.UUID, data: dict[str, Any]
-    ) -> StandardApprovalRecord | None:
+    async def update_approval_record(self, record_id: uuid.UUID, data: dict[str, Any]) -> StandardApprovalRecord | None:
         """更新审批记录"""
         query = (
             update(StandardApprovalRecord)
             .where(
                 StandardApprovalRecord.id == record_id,
-                StandardApprovalRecord.is_deleted == False,
+                not StandardApprovalRecord.is_deleted,
             )
             .values(**data)
             .returning(StandardApprovalRecord)

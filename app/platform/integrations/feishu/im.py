@@ -211,7 +211,7 @@ class FeishuIM:
     def __init__(self, auth: FeishuAuth | None = None) -> None:
         self._auth = auth or FeishuAuth.default()
 
-    async def _batch_get_ids(self, payload: dict) -> dict[str, str]:
+    async def _batch_get_ids(self, payload: dict[str, Any]) -> dict[str, str]:
         """Internal helper to call batch_get_id and extract open_id mapping."""
         token = await self._auth.get_token()
         async with httpx.AsyncClient() as client:
@@ -228,10 +228,7 @@ class FeishuIM:
             data = resp.json()
 
         if data.get("code") != 0:
-            raise RuntimeError(
-                "Feishu batch_get_id failed: "
-                f"code={data.get('code')}, msg={data.get('msg')}"
-            )
+            raise RuntimeError(f"Feishu batch_get_id failed: code={data.get('code')}, msg={data.get('msg')}")
 
         result: dict[str, str] = {}
         for item in data.get("data", {}).get("user_list", []):
@@ -259,17 +256,11 @@ class FeishuIM:
         """Return mapping email -> open_id."""
         return await self._batch_get_ids({"emails": emails, "include_resigned": True})
 
-    async def batch_get_open_ids_by_employee_id(
-        self, employee_ids: list[str]
-    ) -> dict[str, str]:
+    async def batch_get_open_ids_by_employee_id(self, employee_ids: list[str]) -> dict[str, str]:
         """Return mapping employee_id -> open_id."""
-        return await self._batch_get_ids(
-            {"employee_ids": employee_ids, "include_resigned": True}
-        )
+        return await self._batch_get_ids({"employee_ids": employee_ids, "include_resigned": True})
 
-    async def send_text_message(
-        self, receive_id: str, content: str, *, receive_id_type: str = "open_id"
-    ) -> None:
+    async def send_text_message(self, receive_id: str, content: str, *, receive_id_type: str = "open_id") -> None:
         """Send text message to a single user."""
         token = await self._auth.get_token()
         result = await send_feishu_message(
@@ -280,7 +271,4 @@ class FeishuIM:
             content=build_text_message_content(content),
         )
         if not result.ok:
-            raise RuntimeError(
-                "Feishu send message failed: "
-                f"code={result.code}, msg={result.error_message}"
-            )
+            raise RuntimeError(f"Feishu send message failed: code={result.code}, msg={result.error_message}")

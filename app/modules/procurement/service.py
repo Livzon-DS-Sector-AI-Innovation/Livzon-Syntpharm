@@ -57,9 +57,7 @@ MONEY_QUANT = Decimal("0.01")
 
 APPROVAL_ROLE_TO_PENDING_STATUS = {
     PurchaseApprovalRole.department_head: PurchaseRequestStatus.pending_department_head,
-    PurchaseApprovalRole.responsible_leader: (
-        PurchaseRequestStatus.pending_responsible_leader
-    ),
+    PurchaseApprovalRole.responsible_leader: (PurchaseRequestStatus.pending_responsible_leader),
 }
 
 PURCHASE_CATEGORY_LABELS = {
@@ -119,10 +117,7 @@ CONTRACT_STORAGE_DIR = "contracts"
 class DuplicateInvoiceError(ValueError):
     def __init__(self, existing_record: InvoiceRecognitionRecord) -> None:
         self.existing_record = existing_record
-        super().__init__(
-            "发票已识别过，"
-            f"记录 ID：{existing_record.id}，文件：{existing_record.file_name}"
-        )
+        super().__init__(f"发票已识别过，记录 ID：{existing_record.id}，文件：{existing_record.file_name}")
 
 
 def recognize_invoice_pdf(
@@ -171,10 +166,7 @@ async def recognize_and_store_invoice_pdf(
         seller_name=result.seller_name,
         total_tax_amount=result.total_tax_amount,
         total_amount_with_tax_small=result.total_amount_with_tax_small,
-        line_items=[
-            item.model_dump(mode="json", exclude_none=False)
-            for item in result.line_items
-        ],
+        line_items=[item.model_dump(mode="json", exclude_none=False) for item in result.line_items],
         raw_text=result.raw_text,
     )
     return await repository.create(record)
@@ -349,10 +341,7 @@ async def list_purchase_requests(
                 page=page,
                 page_size=page_size,
             )
-            responses = [
-                await _get_purchase_request_response(repository, request.id)
-                for request in requests
-            ]
+            responses = [await _get_purchase_request_response(repository, request.id) for request in requests]
             return responses, total
 
     requests, total = await repository.list_requests(
@@ -362,10 +351,7 @@ async def list_purchase_requests(
         page=page,
         page_size=page_size,
     )
-    responses = [
-        await _get_purchase_request_response(repository, request.id)
-        for request in requests
-    ]
+    responses = [await _get_purchase_request_response(repository, request.id) for request in requests]
     return responses, total
 
 
@@ -603,7 +589,7 @@ async def _review_purchase_request(
 
 
 def _build_purchase_request_items(
-    item_inputs: list,
+    item_inputs: list,  # type: ignore[type-arg]
 ) -> tuple[list[PurchaseRequestItem], Decimal]:
     items: list[PurchaseRequestItem] = []
     total_amount = Decimal("0")
@@ -694,9 +680,7 @@ def _build_purchase_order_workbook(
 
     row_index = 4
     total_rows: list[int] = []
-    for department, department_lines in _group_purchase_order_lines_by_department(
-        lines
-    ):
+    for department, department_lines in _group_purchase_order_lines_by_department(lines):
         _write_department_row(worksheet, row_index, department)
         row_index += 1
         _write_purchase_order_header_row(worksheet, row_index)
@@ -717,9 +701,7 @@ def _build_purchase_order_workbook(
         )
         row_index += 1
 
-    total_formula = (
-        f"=SUM({','.join(f'J{row}' for row in total_rows)})" if total_rows else "0"
-    )
+    total_formula = f"=SUM({','.join(f'J{row}' for row in total_rows)})" if total_rows else "0"
     _write_purchase_order_total_row(worksheet, row_index, "总计", total_formula)
     row_index += 1
     _write_signature_row(worksheet, row_index)
@@ -764,7 +746,7 @@ def _group_purchase_order_lines_by_department(
     return list(groups.items())
 
 
-def _apply_purchase_order_sheet_setup(worksheet) -> None:
+def _apply_purchase_order_sheet_setup(worksheet) -> None:  # type: ignore[no-untyped-def]
     for column_letter, width in PURCHASE_ORDER_EXPORT_COLUMN_WIDTHS.items():
         worksheet.column_dimensions[column_letter].width = width
     worksheet.page_setup.orientation = "landscape"
@@ -782,7 +764,7 @@ def _apply_purchase_order_sheet_setup(worksheet) -> None:
     )
 
 
-def _write_merged_title(worksheet, row_index: int, value: str) -> None:
+def _write_merged_title(worksheet, row_index: int, value: str) -> None:  # type: ignore[no-untyped-def]
     worksheet.merge_cells(
         start_row=row_index,
         start_column=1,
@@ -795,7 +777,7 @@ def _write_merged_title(worksheet, row_index: int, value: str) -> None:
     cell.alignment = Alignment(horizontal="center", vertical="center")
 
 
-def _write_department_row(worksheet, row_index: int, department: str) -> None:
+def _write_department_row(worksheet, row_index: int, department: str) -> None:  # type: ignore[no-untyped-def]
     worksheet.row_dimensions[row_index].height = 32.15
     worksheet.cell(row_index, 1, f"申购部门：{department}")
     fill = PatternFill("solid", fgColor="D9E1F4")
@@ -811,7 +793,7 @@ def _write_department_row(worksheet, row_index: int, department: str) -> None:
         cell.border = border
 
 
-def _write_purchase_order_header_row(worksheet, row_index: int) -> None:
+def _write_purchase_order_header_row(worksheet, row_index: int) -> None:  # type: ignore[no-untyped-def]
     worksheet.row_dimensions[row_index].height = 32.15
     for column_index, header in enumerate(PURCHASE_ORDER_EXPORT_HEADERS, start=1):
         cell = worksheet.cell(row_index, column_index, header)
@@ -824,7 +806,7 @@ def _write_purchase_order_header_row(worksheet, row_index: int) -> None:
         cell.border = _purchase_order_border()
 
 
-def _write_purchase_order_detail_row(
+def _write_purchase_order_detail_row(  # type: ignore[no-untyped-def]
     worksheet,
     row_index: int,
     index: int,
@@ -853,7 +835,7 @@ def _write_purchase_order_detail_row(
     worksheet.cell(row_index, 10).number_format = "0.00"
 
 
-def _write_purchase_order_total_row(
+def _write_purchase_order_total_row(  # type: ignore[no-untyped-def]
     worksheet,
     row_index: int,
     label: str,
@@ -870,7 +852,7 @@ def _write_purchase_order_total_row(
     worksheet.cell(row_index, 10).number_format = "0.00"
 
 
-def _write_signature_row(worksheet, row_index: int) -> None:
+def _write_signature_row(worksheet, row_index: int) -> None:  # type: ignore[no-untyped-def]
     worksheet.merge_cells(
         start_row=row_index,
         start_column=1,
@@ -948,7 +930,7 @@ def _parse_supplier_text_table(
 ) -> tuple[list[str], list[tuple[int, dict[str, object]]], str]:
     text = _decode_table_text(file_bytes)
     reader = csv.reader(StringIO(text), delimiter=delimiter)
-    return _build_supplier_rows(list(reader), "CSV" if delimiter == "," else "TSV")
+    return _build_supplier_rows(list(reader), "CSV" if delimiter == "," else "TSV")  # type: ignore[arg-type]
 
 
 def _decode_table_text(file_bytes: bytes) -> str:
@@ -980,9 +962,7 @@ def _build_supplier_rows(
     ):
         row_values = list(row)
         raw_data = {
-            column: _cell_to_json_value(
-                row_values[index] if index < len(row_values) else None
-            )
+            column: _cell_to_json_value(row_values[index] if index < len(row_values) else None)
             for index, column in enumerate(columns)
         }
         if all(value in ("", None) for value in raw_data.values()):
@@ -1032,9 +1012,7 @@ def _build_supplier_from_row(
         manufacturer_name=_get_supplier_field(raw_data, "manufacturer_name"),
         purchase_category=_get_supplier_field(raw_data, "purchase_category"),
         last_updated_by=_get_supplier_field(raw_data, "last_updated_by"),
-        last_updated_date=_parse_supplier_date(
-            _get_supplier_field(raw_data, "last_updated_date")
-        ),
+        last_updated_date=_parse_supplier_date(_get_supplier_field(raw_data, "last_updated_date")),
         import_file_name=file_name,
         import_sheet_name=sheet_name,
         import_row_number=row_number,
@@ -1129,9 +1107,7 @@ def _build_invoice_duplicate_key(result: InvoiceRecognitionResult) -> str | None
         _normalize_duplicate_part(result.invoice_number),
         _normalize_duplicate_part(result.invoice_date),
         _normalize_duplicate_part(result.seller_name),
-        _normalize_duplicate_part(
-            _format_money_for_key(result.total_amount_with_tax_small)
-        ),
+        _normalize_duplicate_part(_format_money_for_key(result.total_amount_with_tax_small)),
     ]
     return "|".join(parts)
 
@@ -1164,7 +1140,7 @@ def _extract_seller_name(lines: list[str]) -> str | None:
             line,
         )
         if len(names) >= 2:
-            return names[1].strip()
+            return names[1].strip()  # type: ignore[no-any-return]
 
         seller_name = _extract_seller_name_before_marker(line)
         if seller_name:
@@ -1177,11 +1153,7 @@ def _extract_seller_name_before_marker(line: str) -> str | None:
     if not match:
         return None
 
-    candidates = [
-        part.strip()
-        for part in re.split(r"\s{2,}", match.group(1).strip())
-        if part.strip()
-    ]
+    candidates = [part.strip() for part in re.split(r"\s{2,}", match.group(1).strip()) if part.strip()]
     if not candidates:
         return None
 
@@ -1264,7 +1236,7 @@ def _parse_line_item(line: str) -> InvoiceLineItem | None:
 
         amount = _to_decimal(numeric_values[-1])
         quantity = (
-            _to_decimal(numeric_values[0])
+            _to_decimal(numeric_values[0])  # type: ignore[assignment]
             if len(numeric_values) >= 3
             else _extract_quantity(numeric_values[0], amount)
         )

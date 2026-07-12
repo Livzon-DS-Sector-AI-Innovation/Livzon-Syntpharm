@@ -55,16 +55,9 @@ class DocCheckRepository:
         await self.session.refresh(config)
         return config
 
-    async def update_config(
-        self, config_id: uuid.UUID, data: dict[str, Any]
-    ) -> DocCheckConfig | None:
+    async def update_config(self, config_id: uuid.UUID, data: dict[str, Any]) -> DocCheckConfig | None:
         """更新配置"""
-        query = (
-            update(DocCheckConfig)
-            .where(DocCheckConfig.id == config_id)
-            .values(**data)
-            .returning(DocCheckConfig)
-        )
+        query = update(DocCheckConfig).where(DocCheckConfig.id == config_id).values(**data).returning(DocCheckConfig)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -79,7 +72,7 @@ class DocCheckRepository:
         operator: str | None = None,
     ) -> tuple[list[SopAiCheckMain], int]:
         """获取校验列表"""
-        query = select(SopAiCheckMain).where(SopAiCheckMain.is_deleted == False)
+        query = select(SopAiCheckMain).where(not SopAiCheckMain.is_deleted)
 
         if status:
             query = query.where(SopAiCheckMain.status == status)
@@ -88,9 +81,7 @@ class DocCheckRepository:
         if operator:
             query = query.where(SopAiCheckMain.operator == operator)
 
-        count_query = select(func.count(SopAiCheckMain.id)).where(
-            SopAiCheckMain.is_deleted == False
-        )
+        count_query = select(func.count(SopAiCheckMain.id)).where(not SopAiCheckMain.is_deleted)
         if status:
             count_query = count_query.where(SopAiCheckMain.status == status)
         if doc_type:
@@ -99,9 +90,7 @@ class DocCheckRepository:
             count_query = count_query.where(SopAiCheckMain.operator == operator)
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip).limit(limit).order_by(SopAiCheckMain.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SopAiCheckMain.created_at.desc())
         result = await self.session.execute(query)
         checks = list(result.scalars().all())
         return checks, total or 0
@@ -113,7 +102,7 @@ class DocCheckRepository:
             .options(selectinload(SopAiCheckMain.problems))
             .where(
                 SopAiCheckMain.id == check_id,
-                SopAiCheckMain.is_deleted == False,
+                not SopAiCheckMain.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -125,8 +114,8 @@ class DocCheckRepository:
             select(SopAiCheckMain)
             .options(selectinload(SopAiCheckMain.problems))
             .where(
-                SopAiCheckMain.check_no == check_no,
-                SopAiCheckMain.is_deleted == False,
+                SopAiCheckMain.check_no == check_no,  # type: ignore[attr-defined]
+                not SopAiCheckMain.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -145,15 +134,13 @@ class DocCheckRepository:
         await self.session.refresh(check)
         return check
 
-    async def update_check(
-        self, check_id: uuid.UUID, data: dict[str, Any]
-    ) -> SopAiCheckMain | None:
+    async def update_check(self, check_id: uuid.UUID, data: dict[str, Any]) -> SopAiCheckMain | None:
         """更新校验"""
         query = (
             update(SopAiCheckMain)
             .where(
                 SopAiCheckMain.id == check_id,
-                SopAiCheckMain.is_deleted == False,
+                not SopAiCheckMain.is_deleted,
             )
             .values(**data)
             .returning(SopAiCheckMain)
@@ -167,26 +154,24 @@ class DocCheckRepository:
             update(SopAiCheckMain)
             .where(
                 SopAiCheckMain.id == check_id,
-                SopAiCheckMain.is_deleted == False,
+                not SopAiCheckMain.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ============ 问题明细操作 ============
 
-    async def get_problems_by_check(
-        self, check_main_id: uuid.UUID
-    ) -> list[SopAiCheckProblem]:
+    async def get_problems_by_check(self, check_main_id: uuid.UUID) -> list[SopAiCheckProblem]:
         """获取校验问题列表"""
         query = (
             select(SopAiCheckProblem)
             .where(
-                SopAiCheckProblem.check_main_id == check_main_id,
-                SopAiCheckProblem.is_deleted == False,
+                SopAiCheckProblem.check_main_id == check_main_id,  # type: ignore[attr-defined]
+                not SopAiCheckProblem.is_deleted,
             )
-            .order_by(SopAiCheckProblem.problem_no)
+            .order_by(SopAiCheckProblem.problem_no)  # type: ignore[attr-defined]
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -217,7 +202,7 @@ class DocCheckRepository:
         """删除校验下的所有问题"""
         query = (
             update(SopAiCheckProblem)
-            .where(SopAiCheckProblem.check_main_id == check_main_id)
+            .where(SopAiCheckProblem.check_main_id == check_main_id)  # type: ignore[attr-defined]
             .values(is_deleted=True)
         )
         await self.session.execute(query)

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import uuid
 from types import SimpleNamespace
 

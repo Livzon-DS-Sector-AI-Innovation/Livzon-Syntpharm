@@ -28,9 +28,7 @@ async def get_claim_timeout_config(
     )
 
 
-async def update_claim_timeout_config(
-    db: AsyncSession, data: ClaimTimeoutUpdateRequest
-) -> ClaimTimeoutConfig:
+async def update_claim_timeout_config(db: AsyncSession, data: ClaimTimeoutUpdateRequest) -> ClaimTimeoutConfig:
     updates = {}
     for key, field in [
         ("claim_timeout_emergency", "emergency"),

@@ -1,6 +1,7 @@
 """维护计划管理 API 路由."""
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
@@ -37,7 +38,7 @@ async def _fetch_category_names(
     return {str(row[0]): row[1] for row in result.all()}
 
 
-def _enrich_plan(plan, category_names: dict[str, str]) -> MaintenancePlanResponse:
+def _enrich_plan(plan, category_names: dict[str, str]) -> Any:  # type: ignore[no-untyped-def]
     """填充维护计划响应的关联名称"""
     resp = MaintenancePlanResponse.model_validate(plan)
     if plan.equipment:

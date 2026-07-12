@@ -1,5 +1,6 @@
 """Warehouse database queries live here."""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import Float, asc, case, cast, func, or_, select, update
@@ -21,7 +22,7 @@ class WarehouseRepository:
         self.session = session
 
     @staticmethod
-    def _json_scalar_text(json_value):
+    def _json_scalar_text(json_value) -> Any:  # type: ignore[no-untyped-def]
         json_type = func.jsonb_typeof(json_value)
         return case(
             (json_type.in_(("string", "number", "boolean")), json_value.astext),
@@ -29,7 +30,7 @@ class WarehouseRepository:
         )
 
     @classmethod
-    def _feishu_field_display_text(cls, field: str):
+    def _feishu_field_display_text(cls, field: str) -> Any:
         field_value = WarehouseFeishuRecord.fields[field]
         first_item = field_value[0]
         nested_value = field_value["value"]
@@ -96,44 +97,28 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def get_raw_material_by_import_key(
-        self, import_key: str
-    ) -> RawMaterialInventory | None:
+    async def get_raw_material_by_import_key(self, import_key: str) -> RawMaterialInventory | None:
         result = await self.session.execute(
-            select(RawMaterialInventory).where(
-                RawMaterialInventory.import_key == import_key
-            )
+            select(RawMaterialInventory).where(RawMaterialInventory.import_key == import_key)
         )
         return result.scalar_one_or_none()
 
-    async def get_packaging_material_by_import_key(
-        self, import_key: str
-    ) -> PackagingMaterialInventory | None:
+    async def get_packaging_material_by_import_key(self, import_key: str) -> PackagingMaterialInventory | None:
         result = await self.session.execute(
-            select(PackagingMaterialInventory).where(
-                PackagingMaterialInventory.import_key == import_key
-            )
+            select(PackagingMaterialInventory).where(PackagingMaterialInventory.import_key == import_key)
         )
         return result.scalar_one_or_none()
 
-    async def get_product_by_import_key(
-        self, import_key: str
-    ) -> ProductInventory | None:
-        result = await self.session.execute(
-            select(ProductInventory).where(ProductInventory.import_key == import_key)
-        )
+    async def get_product_by_import_key(self, import_key: str) -> ProductInventory | None:
+        result = await self.session.execute(select(ProductInventory).where(ProductInventory.import_key == import_key))
         return result.scalar_one_or_none()
 
-    async def create_raw_material(
-        self, item: RawMaterialInventory
-    ) -> RawMaterialInventory:
+    async def create_raw_material(self, item: RawMaterialInventory) -> RawMaterialInventory:
         self.session.add(item)
         await self.session.flush()
         return item
 
-    async def create_packaging_material(
-        self, item: PackagingMaterialInventory
-    ) -> PackagingMaterialInventory:
+    async def create_packaging_material(self, item: PackagingMaterialInventory) -> PackagingMaterialInventory:
         self.session.add(item)
         await self.session.flush()
         return item
@@ -164,9 +149,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def save_feishu_config(
-        self, config: WarehouseFeishuConfig
-    ) -> WarehouseFeishuConfig:
+    async def save_feishu_config(self, config: WarehouseFeishuConfig) -> WarehouseFeishuConfig:
         self.session.add(config)
         await self.session.flush()
         return config
@@ -216,9 +199,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_feishu_table_by_id(
-        self, table_pk: UUID
-    ) -> WarehouseFeishuTable | None:
+    async def get_feishu_table_by_id(self, table_pk: UUID) -> WarehouseFeishuTable | None:
         result = await self.session.execute(
             select(WarehouseFeishuTable).where(
                 WarehouseFeishuTable.is_deleted.is_(False),
@@ -227,9 +208,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_enabled_feishu_table(
-        self, app_token: str, table_id: str
-    ) -> WarehouseFeishuTable | None:
+    async def get_enabled_feishu_table(self, app_token: str, table_id: str) -> WarehouseFeishuTable | None:
         result = await self.session.execute(
             select(WarehouseFeishuTable).where(
                 WarehouseFeishuTable.is_deleted.is_(False),
@@ -254,9 +233,7 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def save_feishu_table(
-        self, table: WarehouseFeishuTable
-    ) -> WarehouseFeishuTable:
+    async def save_feishu_table(self, table: WarehouseFeishuTable) -> WarehouseFeishuTable:
         self.session.add(table)
         await self.session.flush()
         return table
@@ -293,9 +270,7 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def save_feishu_field(
-        self, field: WarehouseFeishuField
-    ) -> WarehouseFeishuField:
+    async def save_feishu_field(self, field: WarehouseFeishuField) -> WarehouseFeishuField:
         self.session.add(field)
         await self.session.flush()
         return field
@@ -313,9 +288,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def save_feishu_record(
-        self, record: WarehouseFeishuRecord
-    ) -> WarehouseFeishuRecord:
+    async def save_feishu_record(self, record: WarehouseFeishuRecord) -> WarehouseFeishuRecord:
         self.session.add(record)
         await self.session.flush()
         return record

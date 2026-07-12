@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Equipment module integration tests: lifecycle, numbering, and filtering."""
 
 import uuid
@@ -61,9 +62,7 @@ async def test_equipment_lifecycle(auth_client: AsyncClient):
     assert update_response.json()["data"]["status"] == "维修中"
 
     # 5. 获取设备详情
-    detail_response = await auth_client.get(
-        f"/api/v1/equipment/equipments/{equipment_id}"
-    )
+    detail_response = await auth_client.get(f"/api/v1/equipment/equipments/{equipment_id}")
     assert detail_response.status_code == 200
     assert detail_response.json()["data"]["status"] == "维修中"
 
@@ -159,9 +158,7 @@ async def test_equipment_filter(auth_client: AsyncClient):
     )
 
     # 按状态筛选 - 使用 category_id 限定范围以精确断言
-    response = await auth_client.get(
-        f"/api/v1/equipment/equipments?status=在用&category_id={category_id}"
-    )
+    response = await auth_client.get(f"/api/v1/equipment/equipments?status=在用&category_id={category_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["meta"]["total"] == 1
@@ -170,9 +167,7 @@ async def test_equipment_filter(auth_client: AsyncClient):
     assert data["data"][0]["name"] == "R-101反应釜"
 
     # 按关键词搜索 - 使用 category_id 限定范围以精确断言
-    response = await auth_client.get(
-        f"/api/v1/equipment/equipments?keyword=R-101&category_id={category_id}"
-    )
+    response = await auth_client.get(f"/api/v1/equipment/equipments?keyword=R-101&category_id={category_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["meta"]["total"] == 1
@@ -230,7 +225,5 @@ async def test_create_duplicate_category_code(auth_client: AsyncClient):
 async def test_get_nonexistent_equipment(auth_client: AsyncClient):
     """测试获取不存在的设备（应返回404）"""
     fake_equipment_id = "00000000-0000-0000-0000-000000000000"
-    response = await auth_client.get(
-        f"/api/v1/equipment/equipments/{fake_equipment_id}"
-    )
+    response = await auth_client.get(f"/api/v1/equipment/equipments/{fake_equipment_id}")
     assert response.status_code == 404

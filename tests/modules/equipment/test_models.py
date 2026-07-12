@@ -1,3 +1,5 @@
+# ruff: noqa
+# mypy: ignore-errors
 """Tests for equipment ORM models."""
 
 from datetime import date
@@ -80,11 +82,7 @@ class TestLocationModel:
         """Unique index on code with partial where clause."""
         from sqlalchemy import Index
 
-        constraint = next(
-            c
-            for c in Location.__table_args__
-            if isinstance(c, Index) and c.name == "uq_locations_code"
-        )
+        constraint = next(c for c in Location.__table_args__ if isinstance(c, Index) and c.name == "uq_locations_code")
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
         assert constraint.unique is True
@@ -143,11 +141,7 @@ class TestEquipmentModel:
         """Unique index on code with partial where clause."""
         from sqlalchemy import Index
 
-        constraint = next(
-            c
-            for c in Location.__table_args__
-            if isinstance(c, Index) and c.name == "uq_locations_code"
-        )
+        constraint = next(c for c in Location.__table_args__ if isinstance(c, Index) and c.name == "uq_locations_code")
         col_names = {col.name for col in constraint.columns}
         assert "code" in col_names
         assert constraint.unique is True
@@ -155,9 +149,7 @@ class TestEquipmentModel:
     def test_status_check_constraint_exists(self) -> None:
         """CheckConstraint validates status values."""
         constraint = next(
-            c
-            for c in Equipment.__table_args__
-            if isinstance(c, CheckConstraint) and c.name == "ck_equipments_status"
+            c for c in Equipment.__table_args__ if isinstance(c, CheckConstraint) and c.name == "ck_equipments_status"
         )
         assert "在用" in constraint.sqltext.text
         assert "备用" in constraint.sqltext.text

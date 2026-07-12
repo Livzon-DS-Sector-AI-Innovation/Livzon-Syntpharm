@@ -12,9 +12,9 @@ from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
     Candidate,
-    HrDepartment,
     DepartureRecord,
     Employee,
+    HrDepartment,
     OffboardingRecord,
     OnboardingRecord,
     PrejobTrainingPlanTemplate,
@@ -22,6 +22,7 @@ from app.modules.hr.models import (
     TrainingLedger,
     TrainingLedgerPage,
     TrainingSession,
+    TrainingTeam,
 )
 
 
@@ -31,9 +32,7 @@ class EmployeeRepository:
 
     async def get_by_id(self, employee_id: UUID) -> Employee | None:
         result = await self.session.execute(
-            select(Employee).where(
-                Employee.id == employee_id, Employee.is_deleted.is_(False)
-            )
+            select(Employee).where(Employee.id == employee_id, Employee.is_deleted.is_(False))
         )
         return result.scalar_one_or_none()
 
@@ -48,10 +47,7 @@ class EmployeeRepository:
 
     async def get_new_employee_by_number(self, employee_number: str) -> Employee | None:
         """Search the new factory employees_new table by employee number."""
-        sql = text(
-            "SELECT * FROM hr.employees_new "
-            "WHERE employee_number = :num AND is_deleted = false LIMIT 1"
-        )
+        sql = text("SELECT * FROM hr.employees_new WHERE employee_number = :num AND is_deleted = false LIMIT 1")
         result = await self.session.execute(sql, {"num": employee_number})
         row = result.mappings().first()
         if row:
@@ -98,10 +94,7 @@ class EmployeeRepository:
             # 默认排除待审批员工，只有显式筛选时才显示
             stmt = stmt.where(Employee.status != "待审批")
         if keyword:
-            stmt = stmt.where(
-                Employee.name.ilike(f"{keyword}%")
-                | Employee.employee_number.ilike(f"{keyword}%")
-            )
+            stmt = stmt.where(Employee.name.ilike(f"{keyword}%") | Employee.employee_number.ilike(f"{keyword}%"))
         if team:
             stmt = stmt.where(Employee.team == team)
         if position:
@@ -145,11 +138,7 @@ class EmployeeRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         sort_column = getattr(Employee, sort_by, Employee.created_at)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         # NOTE: asyncio.gather 在共享 AsyncSession 下可能无法真正并行，
         # 且小数据量时顺序执行更稳定。保留顺序执行。
@@ -170,7 +159,7 @@ class EmployeeRepository:
         await self.session.refresh(employee)
         return employee
 
-    async def upsert_by_employee_number(self, data: dict) -> Employee:
+    async def upsert_by_employee_number(self, data: dict[str, Any]) -> Employee:
         """Create or update employee by employee_number (used for Feishu sync)."""
         emp = await self.get_by_employee_number(data["employee_number"])
         if emp:
@@ -198,12 +187,10 @@ class EmployeeRepository:
         return {row[0]: row[1] for row in result.all()}
 
     async def count_total(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(Employee.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(func.count()).where(Employee.is_deleted.is_(False)))
         return result.scalar() or 0
 
-    def _apply_filters(self, stmt, **filters) -> Any:
+    def _apply_filters(self, stmt, **filters) -> Any:  # type: ignore[no-untyped-def]
         """Apply common filters to a select statement."""
         if filters.get("department"):
             stmt = stmt.where(Employee.department.ilike(f"{filters['department']}%"))
@@ -213,8 +200,7 @@ class EmployeeRepository:
             stmt = stmt.where(Employee.status != "待审批")
         if filters.get("keyword"):
             stmt = stmt.where(
-                Employee.name.ilike(f"{filters['keyword']}%")
-                | Employee.employee_number.ilike(f"{filters['keyword']}%")
+                Employee.name.ilike(f"{filters['keyword']}%") | Employee.employee_number.ilike(f"{filters['keyword']}%")
             )
         if filters.get("team"):
             stmt = stmt.where(Employee.team == filters["team"])
@@ -247,24 +233,16 @@ class EmployeeRepository:
         if filters.get("hire_date_before"):
             stmt = stmt.where(Employee.hire_date <= filters["hire_date_before"])
         if filters.get("factory_entry_date_after"):
-            stmt = stmt.where(
-                Employee.factory_entry_date >= filters["factory_entry_date_after"]
-            )
+            stmt = stmt.where(Employee.factory_entry_date >= filters["factory_entry_date_after"])
         if filters.get("factory_entry_date_before"):
-            stmt = stmt.where(
-                Employee.factory_entry_date <= filters["factory_entry_date_before"]
-            )
+            stmt = stmt.where(Employee.factory_entry_date <= filters["factory_entry_date_before"])
         if filters.get("work_start_date_after"):
-            stmt = stmt.where(
-                Employee.work_start_date >= filters["work_start_date_after"]
-            )
+            stmt = stmt.where(Employee.work_start_date >= filters["work_start_date_after"])
         if filters.get("work_start_date_before"):
-            stmt = stmt.where(
-                Employee.work_start_date <= filters["work_start_date_before"]
-            )
+            stmt = stmt.where(Employee.work_start_date <= filters["work_start_date_before"])
         return stmt
 
-    async def group_count(self, field_name: str, **filters) -> list[dict]:
+    async def group_count(self, field_name: str, **filters) -> Any:  # type: ignore[no-untyped-def]
         """Group employees by a field and count occurrences.
 
         Returns:
@@ -274,18 +252,14 @@ class EmployeeRepository:
         if field is None:
             return []
 
-        stmt = select(field, func.count().label("count")).where(
-            Employee.is_deleted.is_(False)
-        )
+        stmt = select(field, func.count().label("count")).where(Employee.is_deleted.is_(False))
         stmt = self._apply_filters(stmt, **filters)
         stmt = stmt.group_by(field).order_by(desc("count"))
         result = await self.session.execute(stmt)
         rows = result.all()
-        return [
-            {"value": row[0], "count": row[1]} for row in rows if row[0] is not None
-        ]
+        return [{"value": row[0], "count": row[1]} for row in rows if row[0] is not None]
 
-    async def get_distinct_values(self, field_name: str, **filters) -> list[str]:
+    async def get_distinct_values(self, field_name: str, **filters) -> Any:  # type: ignore[no-untyped-def]
         """Get distinct non-null values for a field.
 
         Returns:
@@ -321,17 +295,13 @@ class DepartmentRepository:
 
     async def get_by_id(self, department_id: UUID) -> HrDepartment | None:
         result = await self.session.execute(
-            select(HrDepartment).where(
-                HrDepartment.id == department_id, HrDepartment.is_deleted.is_(False)
-            )
+            select(HrDepartment).where(HrDepartment.id == department_id, HrDepartment.is_deleted.is_(False))
         )
         return result.scalar_one_or_none()
 
     async def get_by_code(self, code: str) -> HrDepartment | None:
         # 包含已删除记录，确保唯一性检查覆盖软删除数据
-        result = await self.session.execute(
-            select(HrDepartment).where(HrDepartment.code == code)
-        )
+        result = await self.session.execute(select(HrDepartment).where(HrDepartment.code == code))
         return result.scalar_one_or_none()
 
     async def list_departments(
@@ -344,10 +314,7 @@ class DepartmentRepository:
         stmt = select(HrDepartment).where(HrDepartment.is_deleted.is_(False))
 
         if keyword:
-            stmt = stmt.where(
-                HrDepartment.name.ilike(f"%{keyword}%")
-                | HrDepartment.code.ilike(f"%{keyword}%")
-            )
+            stmt = stmt.where(HrDepartment.name.ilike(f"%{keyword}%") | HrDepartment.code.ilike(f"%{keyword}%"))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -381,9 +348,7 @@ class TeamRepository:
 
     async def get_by_id(self, team_id: UUID) -> Team | None:
         result = await self.session.execute(
-            select(Team)
-            .where(Team.id == team_id, Team.is_deleted.is_(False))
-            .options(selectinload(Team.department))
+            select(Team).where(Team.id == team_id, Team.is_deleted.is_(False)).options(selectinload(Team.department))
         )
         return result.scalar_one_or_none()
 
@@ -395,18 +360,12 @@ class TeamRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Team], int]:
-        stmt = (
-            select(Team)
-            .where(Team.is_deleted.is_(False))
-            .options(selectinload(Team.department))
-        )
+        stmt = select(Team).where(Team.is_deleted.is_(False)).options(selectinload(Team.department))
 
         if department_id:
             stmt = stmt.where(Team.department_id == department_id)
         if keyword:
-            stmt = stmt.where(
-                Team.name.ilike(f"%{keyword}%") | Team.code.ilike(f"%{keyword}%")
-            )
+            stmt = stmt.where(Team.name.ilike(f"%{keyword}%") | Team.code.ilike(f"%{keyword}%"))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -467,8 +426,7 @@ class OffboardingRecordRepository:
             stmt = stmt.where(OffboardingRecord.employee_id == employee_id)
         if keyword:
             stmt = stmt.join(Employee).where(
-                Employee.name.ilike(f"%{keyword}%")
-                | Employee.employee_number.ilike(f"%{keyword}%")
+                Employee.name.ilike(f"%{keyword}%") | Employee.employee_number.ilike(f"%{keyword}%")
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
@@ -510,9 +468,7 @@ class OnboardingRecordRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_feishu_record_id(
-        self, feishu_record_id: str
-    ) -> OnboardingRecord | None:
+    async def get_by_feishu_record_id(self, feishu_record_id: str) -> OnboardingRecord | None:
         result = await self.session.execute(
             select(OnboardingRecord).where(
                 OnboardingRecord.feishu_record_id == feishu_record_id,
@@ -543,18 +499,13 @@ class OnboardingRecordRepository:
             stmt = stmt.where(OnboardingRecord.is_employed == is_employed)
         if keyword:
             stmt = stmt.where(
-                OnboardingRecord.name.ilike(f"%{keyword}%")
-                | OnboardingRecord.employee_number.ilike(f"%{keyword}%")
+                OnboardingRecord.name.ilike(f"%{keyword}%") | OnboardingRecord.employee_number.ilike(f"%{keyword}%")
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         sort_column = getattr(OnboardingRecord, sort_by, OnboardingRecord.created_at)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -573,7 +524,7 @@ class OnboardingRecordRepository:
         await self.session.refresh(record)
         return record
 
-    async def upsert_by_feishu_record_id(self, data: dict) -> OnboardingRecord:
+    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> OnboardingRecord:
         """Create or update onboarding record by feishu_record_id (used for Feishu sync)."""
         rid = data.get("feishu_record_id")
         if not rid:
@@ -588,18 +539,14 @@ class OnboardingRecordRepository:
             await self.session.refresh(record)
             return record
         else:
-            new_record = OnboardingRecord(
-                **{k: v for k, v in data.items() if v is not None}
-            )
+            new_record = OnboardingRecord(**{k: v for k, v in data.items() if v is not None})
             self.session.add(new_record)
             await self.session.flush()
             await self.session.refresh(new_record)
             return new_record
 
     async def count_total(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(OnboardingRecord.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(func.count()).where(OnboardingRecord.is_deleted.is_(False)))
         return result.scalar() or 0
 
     async def count_synced(self) -> int:
@@ -629,9 +576,7 @@ class DepartureRecordRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_feishu_record_id(
-        self, feishu_record_id: str
-    ) -> DepartureRecord | None:
+    async def get_by_feishu_record_id(self, feishu_record_id: str) -> DepartureRecord | None:
         result = await self.session.execute(
             select(DepartureRecord).where(
                 DepartureRecord.feishu_record_id == feishu_record_id,
@@ -665,15 +610,9 @@ class DepartureRecordRepository:
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(
-            DepartureRecord, sort_by, DepartureRecord.offboarding_date
-        )
+        sort_column = getattr(DepartureRecord, sort_by, DepartureRecord.offboarding_date)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -692,7 +631,7 @@ class DepartureRecordRepository:
         await self.session.refresh(record)
         return record
 
-    async def upsert_by_feishu_record_id(self, data: dict) -> DepartureRecord:
+    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> DepartureRecord:
         """Create or update departure record by feishu_record_id (used for Feishu sync)."""
         rid = data.get("feishu_record_id")
         if not rid:
@@ -707,18 +646,14 @@ class DepartureRecordRepository:
             await self.session.refresh(record)
             return record
         else:
-            new_record = DepartureRecord(
-                **{k: v for k, v in data.items() if v is not None}
-            )
+            new_record = DepartureRecord(**{k: v for k, v in data.items() if v is not None})
             self.session.add(new_record)
             await self.session.flush()
             await self.session.refresh(new_record)
             return new_record
 
     async def count_total(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(DepartureRecord.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(func.count()).where(DepartureRecord.is_deleted.is_(False)))
         return result.scalar() or 0
 
     async def count_synced(self) -> int:
@@ -774,11 +709,7 @@ class TrainingLedgerRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         sort_column = getattr(TrainingLedger, sort_by, TrainingLedger.training_date)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -801,9 +732,7 @@ class TrainingLedgerRepository:
         record.is_deleted = True
         await self.session.flush()
 
-    async def get_by_source(
-        self, source_type: str, source_id: str
-    ) -> TrainingLedger | None:
+    async def get_by_source(self, source_type: str, source_id: str) -> TrainingLedger | None:
         result = await self.session.execute(
             select(TrainingLedger).where(
                 TrainingLedger.source_type == source_type,
@@ -860,11 +789,7 @@ class TrainingSessionRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         sort_column = getattr(TrainingSession, sort_by, TrainingSession.training_date)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -881,17 +806,13 @@ class TrainingSessionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_select_tasks_json_token(
-        self, token: str
-    ) -> TrainingSession | None:
+    async def get_by_select_tasks_json_token(self, token: str) -> TrainingSession | None:
         """Search for a session where the token exists inside the select_tasks JSON array."""
         from sqlalchemy import String, cast
 
         result = await self.session.execute(
             select(TrainingSession).where(
-                cast(TrainingSession.select_tasks, String).like(
-                    f'%"token": "{token}"%'
-                ),
+                cast(TrainingSession.select_tasks, String).like(f'%"token": "{token}"%'),
                 TrainingSession.is_deleted.is_(False),
             )
         )
@@ -918,9 +839,7 @@ class TrainingLedgerPageRepository:
         self.session = session
 
     async def list_pages(self) -> list[TrainingLedgerPage]:
-        result = await self.session.execute(
-            select(TrainingLedgerPage).where(TrainingLedgerPage.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(TrainingLedgerPage).where(TrainingLedgerPage.is_deleted.is_(False)))
         return list(result.scalars().all())
 
     async def get_by_employee_number(
@@ -965,7 +884,8 @@ class TrainingLedgerPageRepository:
         if remaining:
             new_result = await self.session.execute(
                 text(
-                    "SELECT employee_number, department FROM hr.employees_new WHERE employee_number = ANY(:nums) AND is_deleted = false"
+                    "SELECT employee_number, department FROM hr.employees_new "
+                    "WHERE employee_number = ANY(:nums) AND is_deleted = false"
                 ),
                 {"nums": remaining},
             )
@@ -980,7 +900,7 @@ class TrainingLedgerPageRepository:
                 results.append((page, new_map[num], "new"))
             else:
                 results.append((page, None, None))
-        return results
+        return results  # type: ignore[return-value]
 
     async def create(self, page: TrainingLedgerPage) -> TrainingLedgerPage:
         self.session.add(page)
@@ -1004,9 +924,7 @@ class AnnualTrainingPlanRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_year_and_department(
-        self, year: int, department: str
-    ) -> AnnualTrainingPlan | None:
+    async def get_by_year_and_department(self, year: int, department: str) -> AnnualTrainingPlan | None:
         result = await self.session.execute(
             select(AnnualTrainingPlan).where(
                 AnnualTrainingPlan.year == year,
@@ -1024,9 +942,7 @@ class AnnualTrainingPlanRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[AnnualTrainingPlan], int]:
-        stmt = select(AnnualTrainingPlan).where(
-            AnnualTrainingPlan.is_deleted.is_(False)
-        )
+        stmt = select(AnnualTrainingPlan).where(AnnualTrainingPlan.is_deleted.is_(False))
 
         if year is not None:
             stmt = stmt.where(AnnualTrainingPlan.year == year)
@@ -1037,9 +953,7 @@ class AnnualTrainingPlanRepository:
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
 
-        stmt = stmt.order_by(
-            desc(AnnualTrainingPlan.year), asc(AnnualTrainingPlan.department)
-        )
+        stmt = stmt.order_by(desc(AnnualTrainingPlan.year), asc(AnnualTrainingPlan.department))
         stmt = stmt.offset((page - 1) * page_size).limit(page_size)
 
         result = await self.session.execute(stmt)
@@ -1104,11 +1018,7 @@ class AnnualTrainingPlanItemRepository:
         await self.session.flush()
 
     async def delete_by_plan_id(self, plan_id: UUID) -> None:
-        await self.session.execute(
-            delete(AnnualTrainingPlanItem).where(
-                AnnualTrainingPlanItem.plan_id == plan_id
-            )
-        )
+        await self.session.execute(delete(AnnualTrainingPlanItem).where(AnnualTrainingPlanItem.plan_id == plan_id))
         await self.session.flush()
 
 
@@ -1116,15 +1026,13 @@ class TrainingSpecialistRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list_all(self) -> list:
+    async def list_all(self) -> list[Any]:
         from app.modules.hr.models import TrainingSpecialist
 
-        result = await self.session.execute(
-            select(TrainingSpecialist).where(TrainingSpecialist.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(TrainingSpecialist).where(TrainingSpecialist.is_deleted.is_(False)))
         return list(result.scalars().all())
 
-    async def get_by_dept_factory(self, department: str, factory: str):
+    async def get_by_dept_factory(self, department: str, factory: str) -> Any:
         from app.modules.hr.models import TrainingSpecialist
 
         result = await self.session.execute(
@@ -1136,9 +1044,7 @@ class TrainingSpecialistRepository:
         )
         return result.scalar_one_or_none()
 
-    async def upsert(
-        self, department: str, employee_number: str, employee_name: str, factory: str
-    ):
+    async def _func_l1141(self, department: str, employee_number: str, employee_name: str, factory: str) -> Any:
         from app.modules.hr.models import TrainingSpecialist
 
         existing = await self.get_by_dept_factory(department, factory)
@@ -1170,7 +1076,7 @@ class TrainingTeamRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list_by_factory(self, factory: str) -> list:
+    async def list_by_factory(self, factory: str) -> list[Any]:
         from app.modules.hr.models import TrainingTeam
 
         result = await self.session.execute(
@@ -1181,7 +1087,7 @@ class TrainingTeamRepository:
         )
         return list(result.scalars().all())
 
-    async def get_by_id(self, team_id: UUID):
+    async def get_by_id(self, team_id: UUID) -> Any:
         from app.modules.hr.models import TrainingTeam
 
         result = await self.session.execute(
@@ -1192,9 +1098,7 @@ class TrainingTeamRepository:
         )
         return result.scalar_one_or_none()
 
-    async def create(self, data) -> "TrainingTeam":
-        from app.modules.hr.models import TrainingTeam
-
+    async def create(self, data) -> Any:  # type: ignore[no-untyped-def]
         obj = TrainingTeam(
             name=data.name,
             factory=data.factory,
@@ -1208,7 +1112,7 @@ class TrainingTeamRepository:
         await self.session.flush()
         return obj
 
-    async def update(self, team_id: UUID, data) -> "TrainingTeam":
+    async def update(self, team_id: UUID, data) -> Any:  # type: ignore[no-untyped-def]
         obj = await self.get_by_id(team_id)
         if not obj:
             raise ValueError(f"TrainingTeam {team_id} not found")
@@ -1231,9 +1135,7 @@ class CandidateRepository:
 
     async def get_by_id(self, candidate_id: UUID) -> Candidate | None:
         result = await self.session.execute(
-            select(Candidate).where(
-                Candidate.id == candidate_id, Candidate.is_deleted.is_(False)
-            )
+            select(Candidate).where(Candidate.id == candidate_id, Candidate.is_deleted.is_(False))
         )
         return result.scalar_one_or_none()
 
@@ -1269,16 +1171,9 @@ class CandidateRepository:
         if education:
             stmt = stmt.where(Candidate.education == education)
         if keyword:
-            stmt = stmt.where(
-                Candidate.name.ilike(f"%{keyword}%")
-                | Candidate.position.ilike(f"%{keyword}%")
-            )
+            stmt = stmt.where(Candidate.name.ilike(f"%{keyword}%") | Candidate.position.ilike(f"%{keyword}%"))
         if recommendation_level:
-            levels = [
-                level.strip()
-                for level in recommendation_level.split(",")
-                if level.strip()
-            ]
+            levels = [level.strip() for level in recommendation_level.split(",") if level.strip()]
             _logger.debug("REPO levels=%s", levels)
             if levels:
                 stmt = stmt.where(Candidate.recommendation_level.in_(levels))
@@ -1294,11 +1189,7 @@ class CandidateRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         sort_column = getattr(Candidate, sort_by, Candidate.created_at)
         order_func = desc if sort_order == "desc" else asc
-        data_stmt = (
-            stmt.order_by(order_func(sort_column))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -1317,7 +1208,7 @@ class CandidateRepository:
         await self.session.refresh(candidate)
         return candidate
 
-    async def upsert_by_feishu_record_id(self, data: dict) -> Candidate:
+    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> Candidate:
         rid = data.get("feishu_record_id")
         if not rid:
             raise ValueError("feishu_record_id is required for upsert")
@@ -1331,18 +1222,14 @@ class CandidateRepository:
             await self.session.refresh(candidate)
             return candidate
         else:
-            new_candidate = Candidate(
-                **{k: v for k, v in data.items() if v is not None}
-            )
+            new_candidate = Candidate(**{k: v for k, v in data.items() if v is not None})
             self.session.add(new_candidate)
             await self.session.flush()
             await self.session.refresh(new_candidate)
             return new_candidate
 
     async def count_total(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(Candidate.is_deleted.is_(False))
-        )
+        result = await self.session.execute(select(func.count()).where(Candidate.is_deleted.is_(False)))
         return result.scalar() or 0
 
     async def count_synced(self) -> int:
@@ -1384,9 +1271,7 @@ class PrejobTemplateRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_dept_factory(
-        self, department: str, factory: str
-    ) -> PrejobTrainingPlanTemplate | None:
+    async def get_by_dept_factory(self, department: str, factory: str) -> PrejobTrainingPlanTemplate | None:
         result = await self.session.execute(
             select(PrejobTrainingPlanTemplate).where(
                 PrejobTrainingPlanTemplate.department == department,
@@ -1400,7 +1285,7 @@ class PrejobTemplateRepository:
         self,
         department: str,
         factory: str,
-        items: list[dict],
+        items: list[dict[str, Any]],
     ) -> PrejobTrainingPlanTemplate:
         existing = await self.get_by_dept_factory(department, factory)
         if existing:

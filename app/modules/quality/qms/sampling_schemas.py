@@ -2,14 +2,14 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 # ========== Enums ==========
-class SamplingSource(str, Enum):
+class SamplingSource(StrEnum):
     """取样来源"""
 
     PURCHASED_MATERIAL = "purchased_material"  # 外购原料
@@ -17,14 +17,14 @@ class SamplingSource(str, Enum):
     FINISHED_PRODUCT = "finished_product"  # 成品
 
 
-class SourceType(str, Enum):
+class SourceType(StrEnum):
     """来源类型"""
 
     PURCHASE_INBOUND = "purchase_inbound"  # 来料入库单
     BATCH_NO = "batch_no"  # 生产批号
 
 
-class SamplingStatus(str, Enum):
+class SamplingStatus(StrEnum):
     """取样单状态"""
 
     DRAFT = "draft"  # 草稿
@@ -35,14 +35,14 @@ class SamplingStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class SamplingResult(str, Enum):
+class SamplingResult(StrEnum):
     """取样判定"""
 
     NORMAL = "normal"  # 正常取样
     ABNORMAL = "abnormal"  # 取样异常
 
 
-class SampleStatus(str, Enum):
+class SampleStatus(StrEnum):
     """样品状态"""
 
     PENDING = "pending"  # 待留样
@@ -51,7 +51,7 @@ class SampleStatus(str, Enum):
     EXPIRED = "expired"  # 已到期
 
 
-class RetentionStatus(str, Enum):
+class RetentionStatus(StrEnum):
     """留样状态"""
 
     RETAINED = "retained"  # 已留样
@@ -59,7 +59,7 @@ class RetentionStatus(str, Enum):
     DISPOSED = "disposed"  # 已处置
 
 
-class ApprovalStatus(str, Enum):
+class ApprovalStatus(StrEnum):
     """审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -86,7 +86,7 @@ class SamplingOrderItemCreate(SamplingOrderItemBase):
     """创建取样明细"""
 
     # sample_no 由服务层自动生成,此处设为可选
-    sample_no: str | None = Field(None, description="样品编号(自动生成)")
+    sample_no: str | None = Field(None, description="样品编号(自动生成)")  # type: ignore[assignment]
 
 
 class SamplingOrderItemUpdate(SamplingOrderItemBase):
@@ -132,9 +132,7 @@ class SamplingOrderBase(BaseModel):
 class SamplingOrderCreate(SamplingOrderBase):
     """创建取样单"""
 
-    items: list[SamplingOrderItemCreate] = Field(
-        default_factory=list, description="取样明细"
-    )
+    items: list[SamplingOrderItemCreate] = Field(default_factory=list, description="取样明细")
 
 
 class SamplingOrderUpdate(BaseModel):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from sqlalchemy import select
 
@@ -31,10 +32,10 @@ class InspectionScheduleGenerator(TaskGenerator):
         interval_seconds=180,
     )
 
-    async def find_due(self, session):
+    async def find_due(self, session) -> Any:  # type: ignore[no-untyped-def]
         return await get_due_schedules(session)
 
-    async def execute_one(self, session, item) -> None:
+    async def execute_one(self, session, item) -> Any:  # type: ignore[no-untyped-def]
         now = datetime.now(_CST)
 
         if not item.assigned_to:

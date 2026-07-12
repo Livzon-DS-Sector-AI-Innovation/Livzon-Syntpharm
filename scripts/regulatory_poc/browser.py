@@ -27,7 +27,9 @@ from playwright.sync_api import sync_playwright
 
 # 浏览器二进制文件路径
 CHROME_EXECUTABLE = "/tmp/chromium-extracted/chrome-linux64/chrome"
-HEADLESS_SHELL = "/tmp/playwright-browsers/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell"
+HEADLESS_SHELL = (
+    "/tmp/playwright-browsers/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell"
+)
 
 # Playwright 浏览器缓存路径
 BROWSERS_PATH = "/tmp/playwright-browsers"

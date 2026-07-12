@@ -316,13 +316,9 @@ async def main():
             for record in cpp_data["data"]:
                 batch_id = uuid.uuid4()
                 # CPP JSON 使用 product_batch 字段
-                batch_no = record.get(
-                    "product_batch", record.get("product_batch_no", "UNKNOWN")
-                )
+                batch_no = record.get("product_batch", record.get("product_batch_no", "UNKNOWN"))
                 prod_date_str = record.get("production_date", "2025-01-01T00:00:00Z")
-                prod_date = datetime.fromisoformat(
-                    prod_date_str.replace("Z", "+00:00")
-                ).date()
+                prod_date = datetime.fromisoformat(prod_date_str.replace("Z", "+00:00")).date()
 
                 await conn.execute(
                     """
@@ -383,13 +379,9 @@ async def main():
             for record in cqa_data["data"]:
                 batch_id = uuid.uuid4()
                 # CQA JSON 使用 product_batch_no 字段
-                batch_no = record.get(
-                    "product_batch_no", record.get("product_batch", "UNKNOWN")
-                )
+                batch_no = record.get("product_batch_no", record.get("product_batch", "UNKNOWN"))
                 prod_date_str = record.get("production_date", "2025-01-01T00:00:00Z")
-                prod_date = datetime.fromisoformat(
-                    prod_date_str.replace("Z", "+00:00")
-                ).date()
+                prod_date = datetime.fromisoformat(prod_date_str.replace("Z", "+00:00")).date()
 
                 await conn.execute(
                     """

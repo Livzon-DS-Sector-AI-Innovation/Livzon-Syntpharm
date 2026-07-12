@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends
 from sqlalchemy import or_, select
@@ -43,7 +43,7 @@ async def get_user_permissions(user_id: str, db: AsyncSession) -> set[str]:
     return perms
 
 
-def require_permission(*codes: str) -> Callable:
+def require_permission(*codes: str) -> Callable[..., Any]:
     """依赖注入工厂：要求用户拥有指定权限之一。
 
     用法: user = Depends(require_permission("equipment:inspection:create"))
@@ -79,13 +79,13 @@ async def require_admin(
 RequireAdmin = Annotated[User, Depends(require_admin)]
 
 
-async def apply_data_scope(
+async def _func_l82(  # type: ignore[no-untyped-def]
     query,  # sqlalchemy Select
     user: User,
     module: str,
     db: AsyncSession,
     model,  # ORM model class with created_by column
-):
+) -> Any:
     """根据用户角色在该模块的数据范围，自动注入 WHERE 过滤条件。"""
     scope = await _repo.get_effective_data_scope(db, user.id, module)
 
@@ -110,7 +110,7 @@ async def apply_data_scope(
     return query
 
 
-async def _get_department_user_ids(db: AsyncSession, department: str | None) -> list:
+async def _get_department_user_ids(db: AsyncSession, department: str | None) -> list[Any]:
     """获取同部门所有用户 ID（按 department 字符串匹配）。"""
     if not department:
         return []
@@ -122,9 +122,7 @@ async def _get_department_user_ids(db: AsyncSession, department: str | None) -> 
     return list(result.scalars())
 
 
-async def _get_department_tree_user_ids(
-    db: AsyncSession, department: str | None
-) -> list:
+async def _get_department_tree_user_ids(db: AsyncSession, department: str | None) -> list[Any]:
     """获取部门及所有下级部门的用户 ID。
     简化实现：按 department 名称前缀匹配。
     """

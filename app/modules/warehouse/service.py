@@ -242,9 +242,7 @@ class WarehouseService:
             )
         return self._to_feishu_config_response(config)
 
-    async def save_feishu_config(
-        self, data: WarehouseFeishuConfigUpsert
-    ) -> WarehouseFeishuConfigResponse:
+    async def save_feishu_config(self, data: WarehouseFeishuConfigUpsert) -> WarehouseFeishuConfigResponse:
         existing = await self.repo.get_any_feishu_config()
         legacy_token = self._legacy_app_token(data)
         if existing:
@@ -322,9 +320,7 @@ class WarehouseService:
                     )
                 )
             except Exception as exc:
-                logger.exception(
-                    "读取表目录失败: domain=%s, app_token=%s", label, app_token
-                )
+                logger.exception("读取表目录失败: domain=%s, app_token=%s", label, app_token)
                 steps.append(
                     WarehouseFeishuConnectivityStep(
                         name=f"{label}表目录",
@@ -357,14 +353,10 @@ class WarehouseService:
         for domain, app_token in self._config_app_tokens(config).items():
             client = self._build_feishu_client(config, app_token)
             raw_tables = await client.list_tables()
-            discovered.extend(
-                await self._save_discovered_feishu_tables(domain, app_token, raw_tables)
-            )
+            discovered.extend(await self._save_discovered_feishu_tables(domain, app_token, raw_tables))
         return discovered
 
-    async def set_feishu_table_enabled(
-        self, table_pk: UUID, is_enabled: bool
-    ) -> WarehouseFeishuTable:
+    async def set_feishu_table_enabled(self, table_pk: UUID, is_enabled: bool) -> WarehouseFeishuTable:
         table = await self._get_table_by_id_or_raise(table_pk)
         table.is_enabled = is_enabled
         table.sync_error = None
@@ -375,9 +367,7 @@ class WarehouseService:
             return await self._get_table_by_id_or_raise(table_pk)
         return table
 
-    async def set_feishu_tables_enabled(
-        self, table_pks: list[UUID], is_enabled: bool
-    ) -> list[WarehouseFeishuTable]:
+    async def set_feishu_tables_enabled(self, table_pks: list[UUID], is_enabled: bool) -> list[WarehouseFeishuTable]:
         if not table_pks:
             return []
 
@@ -456,7 +446,7 @@ class WarehouseService:
                 business_domain=business_domain,
                 enabled=True,
             )
-            table = tables[0] if tables else None
+            table = tables[0] if tables else None  # type: ignore[assignment]
         if not table:
             return WarehouseFeishuRawRecordData(fields=[], records=[], total=0)
         return await self._get_records_for_table(
@@ -498,8 +488,7 @@ class WarehouseService:
 
         table.last_event_at = datetime.now(UTC)
         action_summary = ",".join(
-            f"{item.get('action') or 'unknown'}:{item.get('record_id') or ''}"
-            for item in actions[:20]
+            f"{item.get('action') or 'unknown'}:{item.get('record_id') or ''}" for item in actions[:20]
         )
         await redis_client.set(
             f"warehouse:feishu:last_event:{table.business_domain}",
@@ -582,11 +571,7 @@ class WarehouseService:
             if table_pk:
                 table = await self._get_table_by_id_or_raise(table_pk)
             table.sync_status = "failed"
-            table.sync_error = (
-                "同步超过 "
-                f"{WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS:g} 秒未完成，"
-                "已自动标记失败"
-            )
+            table.sync_error = f"同步超过 {WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS:g} 秒未完成，已自动标记失败"
             await self.repo.session.commit()
             raise AppException(message=table.sync_error) from exc
         except Exception as exc:
@@ -641,7 +626,7 @@ class WarehouseService:
             if not record.record_id:
                 continue
             active_record_ids.add(record.record_id)
-            existing = await self.repo.get_feishu_record(
+            existing = await self.repo.get_feishu_record(  # type: ignore[assignment]
                 table.business_domain,
                 table.app_token,
                 table.table_id,
@@ -688,9 +673,7 @@ class WarehouseService:
             record_count=table.record_count,
         )
 
-    async def _read_all_records(
-        self, client: WarehouseFeishuClient, table_id: str
-    ) -> list[dict[str, Any]]:
+    async def _read_all_records(self, client: WarehouseFeishuClient, table_id: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         page_token: str | None = None
         while True:
@@ -745,17 +728,13 @@ class WarehouseService:
             total=total,
         )
 
-    def _to_feishu_config_response(
-        self, config: WarehouseFeishuConfig
-    ) -> WarehouseFeishuConfigResponse:
+    def _to_feishu_config_response(self, config: WarehouseFeishuConfig) -> WarehouseFeishuConfigResponse:
         return WarehouseFeishuConfigResponse(
             id=config.id,
             config_name=config.config_name,
             app_id=config.app_id,
             finished_product_app_token=config.finished_product_app_token,
-            materials_packaging_app_token=(
-                config.materials_packaging_app_token or config.bitable_app_token
-            ),
+            materials_packaging_app_token=(config.materials_packaging_app_token or config.bitable_app_token),
             hardware_app_token=config.hardware_app_token,
             bitable_app_token=config.bitable_app_token,
             is_active=config.is_active,
@@ -794,9 +773,7 @@ class WarehouseService:
 
         return operator, value
 
-    async def _resolve_feishu_config(
-        self, data: WarehouseFeishuConfigUpsert | None
-    ) -> WarehouseFeishuConfig:
+    async def _resolve_feishu_config(self, data: WarehouseFeishuConfigUpsert | None) -> WarehouseFeishuConfig:
         if data:
             if data.app_secret:
                 encrypted_secret = encrypt_secret(data.app_secret)
@@ -830,9 +807,7 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
 
@@ -842,9 +817,7 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
         if not config:
@@ -857,9 +830,7 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书表目录不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书表目录不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
         if not table:
@@ -883,9 +854,7 @@ class WarehouseService:
 
         try:
             app_token = next(iter(self._config_app_tokens(config).values()), "")
-            token = await self._build_feishu_client(
-                config, app_token
-            ).get_tenant_access_token()
+            token = await self._build_feishu_client(config, app_token).get_tenant_access_token()
         except Exception as exc:
             logger.exception("飞书 tenant_access_token 获取失败")
             steps.append(
@@ -927,9 +896,7 @@ class WarehouseService:
                 app_tokens=self._config_app_tokens(config),
             )
         except Exception:
-            logger.warning(
-                "Failed to restart warehouse WebSocket after config save", exc_info=True
-            )
+            logger.warning("Failed to restart warehouse WebSocket after config save", exc_info=True)
 
     async def _after_feishu_config_saved(self, config: WarehouseFeishuConfig) -> None:
         try:
@@ -942,21 +909,14 @@ class WarehouseService:
     def _config_app_tokens(config: WarehouseFeishuConfig) -> dict[str, str]:
         tokens = {
             "finished_product": config.finished_product_app_token,
-            "materials_packaging": (
-                config.materials_packaging_app_token or config.bitable_app_token
-            ),
+            "materials_packaging": (config.materials_packaging_app_token or config.bitable_app_token),
             "hardware": config.hardware_app_token,
         }
         return {key: value for key, value in tokens.items() if value}
 
     @staticmethod
     def _legacy_app_token(data: WarehouseFeishuConfigUpsert) -> str:
-        return (
-            data.materials_packaging_app_token
-            or data.finished_product_app_token
-            or data.hardware_app_token
-            or ""
-        )
+        return data.materials_packaging_app_token or data.finished_product_app_token or data.hardware_app_token or ""
 
     @staticmethod
     def _validate_optional_domain(domain: str | None) -> None:
@@ -1013,9 +973,7 @@ class WarehouseService:
             field_id=field_id,
             field_name=field_name,
             type=WarehouseService._safe_int(item.get("type")),
-            property=(
-                item.get("property") if isinstance(item.get("property"), dict) else None
-            ),
+            property=(item.get("property") if isinstance(item.get("property"), dict) else None),
         )
 
     @staticmethod
@@ -1025,9 +983,7 @@ class WarehouseService:
             record_id=str(item.get("record_id") or ""),
             fields=fields,
             created_time=WarehouseService._safe_int(item.get("created_time")),
-            last_modified_time=WarehouseService._safe_int(
-                item.get("last_modified_time")
-            ),
+            last_modified_time=WarehouseService._safe_int(item.get("last_modified_time")),
         )
 
     @staticmethod

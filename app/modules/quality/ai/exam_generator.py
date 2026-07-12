@@ -60,7 +60,7 @@ SIZE_4 = Pt(14)  # 四号
 SIZE_X3 = Pt(15)  # 小三号
 
 
-def _set_run_font(
+def _set_run_font(  # type: ignore[no-untyped-def]
     run, western: str, east_asian: str, size: Pt, bold: bool = False
 ) -> None:
     """设置 run 的字体：西文字体 + 中文字体 + 字号 + 加粗."""
@@ -68,12 +68,12 @@ def _set_run_font(
     run.font.size = size
     run.font.bold = bold
     r = run._element
-    rPr = r.get_or_add_rPr()
-    rFonts = rPr.get_or_add_rFonts()
+    rPr = r.get_or_add_rPr()  # noqa: N806
+    rFonts = rPr.get_or_add_rFonts()  # noqa: N806
     rFonts.set(qn("w:eastAsia"), east_asian)
 
 
-def _apply_para_format(
+def _apply_para_format(  # type: ignore[no-untyped-def]
     para,
     space_before: Pt = Pt(0),
     space_after: Pt = Pt(0),
@@ -91,7 +91,7 @@ def _apply_para_format(
         para.alignment = alignment
 
 
-def _add_para(
+def _add_para(  # type: ignore[no-untyped-def]
     doc,
     text: str,
     western: str = "Times New Roman",
@@ -106,7 +106,7 @@ def _add_para(
     run = para.add_run(text)
     _set_run_font(run, western, east_asian, size, bold)
     _apply_para_format(para, alignment=alignment, **fmt_kwargs)
-    return para
+    return para  # type: ignore[no-any-return]
 
 
 def generate_exam_docx(data: ExamExportRequest) -> BytesIO:
@@ -156,7 +156,7 @@ def generate_exam_docx(data: ExamExportRequest) -> BytesIO:
         answer = q.answer or ""
 
         # 题干段落
-        stem_para = _add_para(
+        stem_para = _add_para(  # type: ignore[func-returns-value]
             doc,
             f"{q.number}. {q.question}（{answer}  ）",
             east_asian="宋体",
@@ -191,7 +191,7 @@ def generate_exam_docx(data: ExamExportRequest) -> BytesIO:
         bold=True,
     )
 
-    for q in data.true_false_questions:
+    for q in data.true_false_questions:  # type: ignore[assignment]
         answer = q.answer or ""
         _add_para(
             doc,

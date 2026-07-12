@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 CDE 国内药品技术指导原则 - 翻页测试
@@ -108,9 +109,7 @@ def main():
         try:
             body = response.text()
             entry["response_length"] = len(body)
-            if body.strip().startswith("{") or "json" in response.headers.get(
-                "content-type", ""
-            ):
+            if body.strip().startswith("{") or "json" in response.headers.get("content-type", ""):
                 try:
                     jd = json.loads(body)
                     entry["is_json"] = True
@@ -125,9 +124,7 @@ def main():
                                     entry[f"field_{k}_len"] = len(v)
                                     # 记录第一条记录的标题用于对比
                                     if k == "records" and v and isinstance(v[0], dict):
-                                        entry["first_record_title"] = v[0].get(
-                                            "title", ""
-                                        )
+                                        entry["first_record_title"] = v[0].get("title", "")
                                 elif isinstance(v, (int, float)):
                                     entry[f"field_{k}"] = v
                                 elif isinstance(v, dict) and k == "data":
@@ -142,9 +139,7 @@ def main():
                                         records = v["records"]
                                         entry["field_records_len"] = len(records)
                                         if records and isinstance(records[0], dict):
-                                            entry["first_record_title"] = records[
-                                                0
-                                            ].get("title", "")
+                                            entry["first_record_title"] = records[0].get("title", "")
                 except json.JSONDecodeError:
                     entry["is_json"] = False
             else:
@@ -238,9 +233,7 @@ def main():
 
     print(f"   找到 {len(pagination_info)} 个分页相关元素")
     for info in pagination_info[:10]:
-        print(
-            f"      [{info['selector']}] <{info['tag']}> '{info['text']}' visible={info['visible']}"
-        )
+        print(f"      [{info['selector']}] <{info['tag']}> '{info['text']}' visible={info['visible']}")
 
     # 尝试翻页
     print("\n[6] 开始翻页测试...")
@@ -369,9 +362,7 @@ def main():
         {
             "name": c["name"],
             "domain": c["domain"],
-            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat()
-            if c.get("expires", 0) > 0
-            else "Session",
+            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat() if c.get("expires", 0) > 0 else "Session",
         }
         for c in cookies
     ]
@@ -428,9 +419,7 @@ def _print_summary(output):
     if output["pagination_events"]:
         print("\n  翻页事件记录:")
         for event in output["pagination_events"]:
-            print(
-                f"      {event['from_page']} → {event['to_page']} | 新增 {event['new_responses']} 个响应"
-            )
+            print(f"      {event['from_page']} → {event['to_page']} | 新增 {event['new_responses']} 个响应")
 
     # 验证数据是否不同
     if len(output["getDomesticGuideList_captured"]) >= 2:

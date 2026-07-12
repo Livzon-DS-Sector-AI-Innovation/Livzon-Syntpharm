@@ -3,6 +3,7 @@
 import io
 import logging
 import re
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class PDFParser:
         self.pdf_data = pdf_data
         self.text = ""
         self.metadata: dict[str, str] = {}
-        self.questions: list[dict] = []
+        self.questions: list[dict[str, Any]] = []
 
     def extract_text(self) -> str:
         """提取 PDF 全文"""
@@ -74,13 +75,13 @@ class PDFParser:
 
         return self.metadata
 
-    def extract_questions(self) -> list[dict]:
+    def extract_questions(self) -> list[dict[str, Any]]:
         """提取所有问题"""
         text = self.text or self.extract_text()
         if not text:
             return []
 
-        questions: list[dict] = []
+        questions: list[dict[str, Any]] = []
         lines = text.split("\n")
 
         for line in lines:
@@ -127,7 +128,7 @@ class PDFParser:
         self.questions = questions
         return questions
 
-    def parse(self) -> dict:
+    def parse(self) -> dict[str, Any]:
         """完整解析"""
         self.extract_text()
         self.extract_metadata()
@@ -139,7 +140,7 @@ class PDFParser:
         }
 
 
-def parse_cde_notice(pdf_data: bytes) -> dict:
+def parse_cde_notice(pdf_data: bytes) -> dict[str, Any]:
     """便捷函数：解析 CDE 通知函"""
     parser = PDFParser(pdf_data)
     return parser.parse()

@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
+from typing import Any, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -24,7 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.shared.base_model import BaseModel
 
 
-class DeviationType(str, Enum):
+class DeviationType(StrEnum):
     """偏差类型"""
 
     IPC_DEFECT = "ipc_defect"  # 过程控制（IPC）缺陷
@@ -40,7 +40,7 @@ class DeviationType(str, Enum):
     OTHER = "other"  # 其它
 
 
-class DeviationLevel(str, Enum):
+class DeviationLevel(StrEnum):
     """偏差等级"""
 
     CRITICAL = "critical"  # 重大
@@ -48,7 +48,7 @@ class DeviationLevel(str, Enum):
     MINOR = "minor"  # 次要
 
 
-class DeviationStatus(str, Enum):
+class DeviationStatus(StrEnum):
     """偏差状态"""
 
     DRAFT = "draft"  # 草稿
@@ -67,7 +67,7 @@ class DeviationStatus(str, Enum):
     REJECTED = "rejected"  # 已驳回
 
 
-class InvestigationStatus(str, Enum):
+class InvestigationStatus(StrEnum):
     """调查状态"""
 
     PENDING = "pending"  # 待调查
@@ -75,7 +75,7 @@ class InvestigationStatus(str, Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class CorrectionStatus(str, Enum):
+class CorrectionStatus(StrEnum):
     """整改状态"""
 
     PENDING = "pending"  # 待整改
@@ -83,7 +83,7 @@ class CorrectionStatus(str, Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class BatchLockStatus(str, Enum):
+class BatchLockStatus(StrEnum):
     """批次锁定状态"""
 
     LOCKED = "locked"  # 已锁定
@@ -104,37 +104,19 @@ class Deviation(BaseModel):
     )
 
     # 偏差编号（系统自动生成）
-    deviation_no: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, comment="偏差编号"
-    )
+    deviation_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="偏差编号")
 
     # 发生信息
-    occurrence_date: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="发生日期"
-    )
-    discovering_department: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="发现部门"
-    )
-    discoverer: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="发现人"
-    )
+    occurrence_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="发生日期")
+    discovering_department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="发现部门")
+    discoverer: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="发现人")
 
     # 涉及产品信息
-    product_code: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="产品编码"
-    )
-    product_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="产品名称"
-    )
-    production_batch: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="生产批次"
-    )
-    material_code: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="物料编码"
-    )
-    batch_size: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="批量"
-    )
+    product_code: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="产品编码")
+    product_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="产品名称")
+    production_batch: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="生产批次")
+    material_code: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="物料编码")
+    batch_size: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="批量")
 
     # 分类
     deviation_type: Mapped[str] = mapped_column(
@@ -159,31 +141,17 @@ class Deviation(BaseModel):
     )
 
     # 偏差描述
-    abnormal_description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="异常现象描述"
-    )
-    impact_scope: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="影响范围"
-    )
-    emergency_measures: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="已执行临时应急措施"
-    )
+    abnormal_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="异常现象描述")
+    impact_scope: Mapped[str | None] = mapped_column(Text, nullable=True, comment="影响范围")
+    emergency_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="已执行临时应急措施")
 
     # 附件（JSON数组存储）
-    attachments: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="附件列表"
-    )
+    attachments: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="附件列表")
 
     # 批次锁定
-    batch_locked: Mapped[bool] = mapped_column(
-        Boolean, default=False, comment="批次是否锁定"
-    )
-    batch_lock_reason: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="锁定原因"
-    )
-    batch_locked_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="锁定时间"
-    )
+    batch_locked: Mapped[bool] = mapped_column(Boolean, default=False, comment="批次是否锁定")
+    batch_lock_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="锁定原因")
+    batch_locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="锁定时间")
 
     # 状态
     status: Mapped[str] = mapped_column(
@@ -207,9 +175,7 @@ class Deviation(BaseModel):
     closing: Mapped[Optional["DeviationClosing"]] = relationship(
         "DeviationClosing", back_populates="deviation", uselist=False
     )
-    approvals: Mapped[list["DeviationApproval"]] = relationship(
-        "DeviationApproval", back_populates="deviation"
-    )
+    approvals: Mapped[list["DeviationApproval"]] = relationship("DeviationApproval", back_populates="deviation")
 
 
 class DeviationInvestigation(BaseModel):
@@ -229,51 +195,25 @@ class DeviationInvestigation(BaseModel):
     )
 
     # 调查信息
-    investigation_team: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="调查小组"
-    )
-    investigation_start_date: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="调查开始日期"
-    )
-    investigation_end_date: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="调查结束日期"
-    )
-    investigation_method: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="调查方式"
-    )
+    investigation_team: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="调查小组")
+    investigation_start_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="调查开始日期")
+    investigation_end_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="调查结束日期")
+    investigation_method: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="调查方式")
 
     # 原因分析
-    direct_cause: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="直接原因"
-    )
-    indirect_cause: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="间接原因"
-    )
-    root_cause: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="根本原因"
-    )
-    why_analysis: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="5Why分析内容"
-    )
+    direct_cause: Mapped[str | None] = mapped_column(Text, nullable=True, comment="直接原因")
+    indirect_cause: Mapped[str | None] = mapped_column(Text, nullable=True, comment="间接原因")
+    root_cause: Mapped[str | None] = mapped_column(Text, nullable=True, comment="根本原因")
+    why_analysis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="5Why分析内容")
 
     # 影响评估
-    impact_assessment: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="影响评估"
-    )
-    investigation_conclusion: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="调查结论"
-    )
-    affected_batches: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="受影响批次范围"
-    )
-    temporary_measures: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="阶段性临时措施"
-    )
+    impact_assessment: Mapped[str | None] = mapped_column(Text, nullable=True, comment="影响评估")
+    investigation_conclusion: Mapped[str | None] = mapped_column(Text, nullable=True, comment="调查结论")
+    affected_batches: Mapped[str | None] = mapped_column(Text, nullable=True, comment="受影响批次范围")
+    temporary_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="阶段性临时措施")
 
     # 附件
-    attachments: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="附件（鱼骨图、分析报告等）"
-    )
+    attachments: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="附件（鱼骨图、分析报告等）")
 
     # 状态
     status: Mapped[str] = mapped_column(
@@ -288,9 +228,7 @@ class DeviationInvestigation(BaseModel):
     )
 
     # 关联
-    deviation: Mapped["Deviation"] = relationship(
-        "Deviation", back_populates="investigation"
-    )
+    deviation: Mapped["Deviation"] = relationship("Deviation", back_populates="investigation")
 
 
 class DeviationCorrection(BaseModel):
@@ -310,28 +248,16 @@ class DeviationCorrection(BaseModel):
     )
 
     # 整改责任人
-    responsible_department: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="责任部门"
-    )
-    responsible_person: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="责任人"
-    )
-    plan_completion_date: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="计划完成日期"
-    )
+    responsible_department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任部门")
+    responsible_person: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任人")
+    plan_completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="计划完成日期")
 
     # 整改措施（合并CA+PA文本）
-    correction_measures: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="整改措施（CA+PA）"
-    )
+    correction_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="整改措施（CA+PA）")
 
     # 整改内容（JSON数组存储）
-    temporary_corrective_actions: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="临时纠正措施"
-    )
-    long_term_corrective_actions: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="长期整改措施"
-    )
+    temporary_corrective_actions: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="临时纠正措施")
+    long_term_corrective_actions: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="长期整改措施")
 
     # 整改进度
     progress: Mapped[int] = mapped_column(Integer, default=0, comment="整改进度(0-100)")
@@ -347,14 +273,10 @@ class DeviationCorrection(BaseModel):
     )
 
     # 佐证材料
-    evidence_attachments: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="整改佐证材料"
-    )
+    evidence_attachments: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="整改佐证材料")
 
     # 关联
-    deviation: Mapped["Deviation"] = relationship(
-        "Deviation", back_populates="correction"
-    )
+    deviation: Mapped["Deviation"] = relationship("Deviation", back_populates="correction")
 
 
 class DeviationClosing(BaseModel):
@@ -374,39 +296,23 @@ class DeviationClosing(BaseModel):
     )
 
     # 效果验证
-    verification_plan: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="验证方案"
-    )
-    verification_data: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="验证数据"
-    )
-    verification_result: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="比对结果"
-    )
-    is_resolved: Mapped[bool] = mapped_column(
-        Boolean, default=False, comment="问题是否彻底解决"
-    )
+    verification_plan: Mapped[str | None] = mapped_column(Text, nullable=True, comment="验证方案")
+    verification_data: Mapped[str | None] = mapped_column(Text, nullable=True, comment="验证数据")
+    verification_result: Mapped[str | None] = mapped_column(Text, nullable=True, comment="比对结果")
+    is_resolved: Mapped[bool] = mapped_column(Boolean, default=False, comment="问题是否彻底解决")
 
     # 综合结论
-    conclusion: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="综合结论"
-    )
+    conclusion: Mapped[str | None] = mapped_column(Text, nullable=True, comment="综合结论")
 
     # 附件
-    attachments: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, comment="验证报告等附件"
-    )
+    attachments: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True, comment="验证报告等附件")
 
     # 批次解锁
-    batch_unlocked: Mapped[bool] = mapped_column(
-        Boolean, default=False, comment="批次是否已解锁"
-    )
+    batch_unlocked: Mapped[bool] = mapped_column(Boolean, default=False, comment="批次是否已解锁")
 
     # 归档
     archived: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否已归档")
-    archived_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="归档时间"
-    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="归档时间")
 
     # 关联
     deviation: Mapped["Deviation"] = relationship("Deviation", back_populates="closing")
@@ -433,21 +339,11 @@ class DeviationApproval(BaseModel):
         nullable=False,
         comment="审批类型: submit/admin/qa/quality/investigation/correction/closing",
     )
-    approver_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="审批人姓名"
-    )
-    approver_department: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="审批人部门"
-    )
-    approval_comments: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="审批意见"
-    )
+    approver_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="审批人姓名")
+    approver_department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="审批人部门")
+    approval_comments: Mapped[str | None] = mapped_column(Text, nullable=True, comment="审批意见")
     approved: Mapped[bool] = mapped_column(Boolean, nullable=True, comment="是否批准")
-    approved_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="审批时间"
-    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="审批时间")
 
     # 关联
-    deviation: Mapped["Deviation"] = relationship(
-        "Deviation", back_populates="approvals"
-    )
+    deviation: Mapped["Deviation"] = relationship("Deviation", back_populates="approvals")

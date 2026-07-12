@@ -48,9 +48,7 @@ async def update_parameter(
     data: CpvParameterUpdate,
 ) -> CpvParameter:
     """更新参数"""
-    parameter = await repo.update_parameter(
-        db, parameter_id, data.model_dump(exclude_unset=True)
-    )
+    parameter = await repo.update_parameter(db, parameter_id, data.model_dump(exclude_unset=True))
     if not parameter:
         raise NotFoundException("参数", str(parameter_id))
     return parameter

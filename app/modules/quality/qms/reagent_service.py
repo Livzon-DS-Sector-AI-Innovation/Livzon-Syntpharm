@@ -148,7 +148,7 @@ confidence 表示识别置信度（0-1之间）。
         columns = result.keys()
         return dict(zip(columns, row))
 
-    async def get_next_incoming_lot_no(self, target_date: date = None) -> str:
+    async def get_next_incoming_lot_no(self, target_date: date = None) -> str:  # type: ignore[assignment]
         """获取当天的下一个入场批号
         格式：年月日9序号
         例如：260609901 表示2026年6月9日第1个
@@ -189,7 +189,7 @@ confidence 表示识别置信度（0-1之间）。
 
     async def create_reagent(
         self,
-        data: dict,
+        data: dict[str, Any],
         operator: str = "system",
     ) -> dict[str, Any]:
         """创建试剂记录"""
@@ -235,12 +235,12 @@ confidence 表示识别置信度（0-1之间）。
 
         row = result.fetchone()
         columns = result.keys()
-        return dict(zip(columns, row))
+        return dict(zip(columns, row))  # type: ignore[arg-type]
 
     async def update_reagent(
         self,
         reagent_id: str,
-        data: dict,
+        data: dict[str, Any],
     ) -> dict[str, Any] | None:
         """更新试剂记录"""
         # 构建更新字段
@@ -283,13 +283,13 @@ confidence 表示识别置信度（0-1之间）。
         result = await self.session.execute(delete_sql, {"id": reagent_id})
         await self.session.commit()
 
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     async def recognize_label(
         self,
         image_urls: list[str],
         operator: str = "system",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """AI识别试剂标签图片"""
         from app.modules.quality.ai.minimax_util import get_vision_util
 
@@ -306,14 +306,12 @@ confidence 表示识别置信度（0-1之间）。
             # 解析AI响应
             # MiniMax-M3 可能返回包含 思考过程，需要提取JSON部分
 
-            def safe_print(msg):
+            def safe_print(msg) -> Any:  # type: ignore[no-untyped-def]
                 """安全打印，避免GBK编码问题"""
                 try:
                     print(msg)
                 except Exception:
-                    logger.exception(
-                        "Failed to print debug message in safe_print for reagent label recognition"
-                    )
+                    logger.exception("Failed to print debug message in safe_print for reagent label recognition")
                     print(repr(msg[:100]) if len(msg) > 100 else repr(msg))
 
             safe_print(f"[DEBUG] AI响应长度: {len(ai_response)}")
@@ -334,9 +332,7 @@ confidence 表示识别置信度（0-1之间）。
                 safe_print(f"[DEBUG] 清理后前100字符: {repr(clean_response[:100])}")
 
                 # 查找JSON代码块（可能用```json包裹）
-                json_match = re.search(
-                    r"```json\s*(\{[\s\S]*?\})\s*```", clean_response, re.DOTALL
-                )
+                json_match = re.search(r"```json\s*(\{[\s\S]*?\})\s*```", clean_response, re.DOTALL)
                 if json_match:
                     json_str = json_match.group(1)
                 else:
@@ -372,14 +368,12 @@ confidence 表示识别置信度（0-1之间）。
                     operator=operator,
                     system_prompt=self.SYSTEM_PROMPT_REAGENT_LABEL,
                     user_input=f"图片URLs: {image_urls}",
-                    ai_response=ai_response[:1000]
-                    if ai_response
-                    else None,  # 截断避免过长
+                    ai_response=ai_response[:1000] if ai_response else None,  # 截断避免过长
                 )
             except Exception:
                 safe_print("[DEBUG] 保存AI日志失败（不影响结果）")
 
-            return result
+            return result  # type: ignore[no-any-return]
 
         except Exception as e:
             # 保存错误日志
@@ -394,8 +388,6 @@ confidence 表示识别置信度（0-1之间）。
                     error_message=str(e),
                 )
             except Exception:
-                logger.exception(
-                    "Failed to save AI error log for reagent label recognition"
-                )
+                logger.exception("Failed to save AI error log for reagent label recognition")
                 pass
             raise

@@ -186,9 +186,7 @@ async def inspect_table():
         out("\n  [OK] All expected fields are present in the new table.")
 
     if extra:
-        out(
-            f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):"
-        )
+        out(f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):")
         for name in sorted(extra):
             out(f"      - {name}")
     else:

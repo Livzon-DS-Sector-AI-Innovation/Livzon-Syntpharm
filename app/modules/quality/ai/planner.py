@@ -11,9 +11,9 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date
+from typing import Any
 
 from app.core.llm import llm_client
-
 from app.modules.quality.ai.schemas import PlanStep, QueryPlan, SubQuery
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ def _build_planner_prompt(user_text: str) -> tuple[str, str]:
     return system, user_text
 
 
-def _parse_sub_query(raw: dict) -> SubQuery | None:
+def _parse_sub_query(raw: dict[str, Any]) -> SubQuery | None:
     """Parse a raw sub-query dict into a SubQuery model."""
     action = raw.get("action")
     if action not in ("query", "count", "group_count", "get_distinct"):
@@ -128,7 +128,7 @@ def _parse_sub_query(raw: dict) -> SubQuery | None:
     )
 
 
-def _parse_plan_step(raw: dict) -> PlanStep | None:
+def _parse_plan_step(raw: dict[str, Any]) -> PlanStep | None:
     """Parse a raw step dict into a PlanStep model."""
     mode = raw.get("mode")
     if mode not in ("static", "dynamic"):
@@ -152,7 +152,7 @@ def _parse_plan_step(raw: dict) -> PlanStep | None:
     )
 
 
-def _parse_plan(raw: dict) -> QueryPlan | None:
+def _parse_plan(raw: dict[str, Any]) -> QueryPlan | None:
     """Parse LLM JSON output into a QueryPlan model."""
     if not raw.get("needs_data"):
         return QueryPlan(needs_data=False, reasoning=raw.get("reasoning", ""))

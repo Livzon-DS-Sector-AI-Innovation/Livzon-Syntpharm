@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 import pytest
@@ -5,9 +6,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_create_device_config_api(auth_client, sample_device_config_data):
-    response = await auth_client.post(
-        "/api/v1/energy/devices", json=sample_device_config_data
-    )
+    response = await auth_client.post("/api/v1/energy/devices", json=sample_device_config_data)
     assert response.status_code == 200
     data = response.json()
     assert data["data"]["platform_code"] == "zhiheng"
@@ -25,9 +24,7 @@ async def test_list_device_configs_api(auth_client, sample_device_config_data):
 
 @pytest.mark.asyncio
 async def test_get_device_config_api(auth_client, sample_device_config_data):
-    create_resp = await auth_client.post(
-        "/api/v1/energy/devices", json=sample_device_config_data
-    )
+    create_resp = await auth_client.post("/api/v1/energy/devices", json=sample_device_config_data)
     config_id = create_resp.json()["data"]["id"]
 
     response = await auth_client.get(f"/api/v1/energy/devices/{config_id}")
@@ -37,9 +34,7 @@ async def test_get_device_config_api(auth_client, sample_device_config_data):
 
 @pytest.mark.asyncio
 async def test_update_device_config_api(auth_client, sample_device_config_data):
-    create_resp = await auth_client.post(
-        "/api/v1/energy/devices", json=sample_device_config_data
-    )
+    create_resp = await auth_client.post("/api/v1/energy/devices", json=sample_device_config_data)
     config_id = create_resp.json()["data"]["id"]
 
     response = await auth_client.put(
@@ -52,9 +47,7 @@ async def test_update_device_config_api(auth_client, sample_device_config_data):
 
 @pytest.mark.asyncio
 async def test_delete_device_config_api(auth_client, sample_device_config_data):
-    create_resp = await auth_client.post(
-        "/api/v1/energy/devices", json=sample_device_config_data
-    )
+    create_resp = await auth_client.post("/api/v1/energy/devices", json=sample_device_config_data)
     config_id = create_resp.json()["data"]["id"]
 
     response = await auth_client.delete(f"/api/v1/energy/devices/{config_id}")

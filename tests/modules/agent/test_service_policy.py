@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import json
 import uuid
 from datetime import UTC, datetime
@@ -178,9 +179,7 @@ def test_human_decision_policy_detects_delegated_approval() -> None:
 
 def test_human_decision_policy_allows_read_only_approval_queries() -> None:
     assert not AgentService._is_human_decision_required_message("查看待审批采购申请")
-    assert not AgentService._is_human_decision_required_message(
-        "给我查询待审批采购申请明细"
-    )
+    assert not AgentService._is_human_decision_required_message("给我查询待审批采购申请明细")
 
 
 @pytest.mark.anyio
@@ -312,10 +311,7 @@ async def test_resolve_pending_confirmation_from_assistant_text_id() -> None:
     pending = await service._resolve_pending_confirmations(
         FakeDb(),
         {
-            "message": (
-                "已生成确认项，需要你确认后执行。\n"
-                f"发送确认编号：{confirmation.id} 状态：待确认"
-            ),
+            "message": (f"已生成确认项，需要你确认后执行。\n发送确认编号：{confirmation.id} 状态：待确认"),
             "pending_confirmations": [],
             "tool_trace": [],
         },
@@ -353,9 +349,7 @@ async def test_resolve_multiple_pending_confirmations_from_same_result() -> None
         FakeDb(),
         {
             "message": (
-                "已生成两个确认项。\n"
-                f"第一个确认编号：{first_confirmation.id}\n"
-                f"第二个确认编号：{second_confirmation.id}"
+                f"已生成两个确认项。\n第一个确认编号：{first_confirmation.id}\n第二个确认编号：{second_confirmation.id}"
             ),
             "pending_confirmations": [
                 {"id": str(first_confirmation.id)},
@@ -459,20 +453,13 @@ def test_contract_generation_sample_matches_template_and_exports_docx() -> None:
     text = "\n".join(
         [
             *(paragraph.text for paragraph in document.paragraphs),
-            *(
-                cell.text
-                for table in document.tables
-                for row in table.rows
-                for cell in row.cells
-            ),
+            *(cell.text for table in document.tables for row in table.rows for cell in row.cells),
         ]
     )
 
     assert filename.startswith("耗材合同_")
     assert filename.endswith(".docx")
-    assert media_type.endswith(
-        "vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    assert media_type.endswith("vnd.openxmlformats-officedocument.wordprocessingml.document")
     assert len(buffer.getvalue()) > 1000
     assert "办公用品耗材" in text
     assert "行政部" in text

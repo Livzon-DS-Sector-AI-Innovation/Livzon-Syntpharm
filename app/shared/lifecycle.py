@@ -15,9 +15,7 @@ class BackgroundWorker:
 
     name: str  # Unique identifier (e.g., "safety.ws_client")
     start: Callable[[], Awaitable[None]]  # Async function to start the worker
-    stop: Callable[[], Awaitable[None]] | Callable[[], None] | None = (
-        None  # Optional graceful shutdown (sync or async)
-    )
+    stop: Callable[[], Awaitable[None]] | Callable[[], None] | None = None  # Optional graceful shutdown (sync or async)
 
 
 # Global registry of background workers

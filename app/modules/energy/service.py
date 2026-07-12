@@ -34,12 +34,8 @@ logger = logging.getLogger(__name__)
 CST = timezone(timedelta(hours=8))
 
 
-async def create_device_config(
-    db: AsyncSession, data: EnergyDeviceConfigCreate
-) -> EnergyDeviceConfig:
-    if await repo.exists_device_config(
-        db, data.platform_code, data.platform_device_code
-    ):
+async def create_device_config(db: AsyncSession, data: EnergyDeviceConfigCreate) -> EnergyDeviceConfig:
+    if await repo.exists_device_config(db, data.platform_code, data.platform_device_code):
         raise DuplicateException(
             "设备配置",
             f"{data.platform_code}:{data.platform_device_code}",
@@ -77,9 +73,7 @@ async def list_device_configs(
     )
 
 
-async def update_device_config(
-    db: AsyncSession, config_id: UUID, data: EnergyDeviceConfigUpdate
-) -> EnergyDeviceConfig:
+async def update_device_config(db: AsyncSession, config_id: UUID, data: EnergyDeviceConfigUpdate) -> EnergyDeviceConfig:
     existing = await repo.get_device_config_by_id(db, config_id)
     if existing is None:
         raise NotFoundException("设备配置", str(config_id))
@@ -109,9 +103,7 @@ def get_target_hour() -> datetime:
     return now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
 
 
-async def trigger_collection(
-    db: AsyncSession, request: CollectTriggerRequest
-) -> dict[str, Any]:
+async def trigger_collection(db: AsyncSession, request: CollectTriggerRequest) -> dict[str, Any]:
     """触发采集任务"""
     target_hour = get_target_hour()
 
@@ -144,9 +136,7 @@ async def trigger_collection(
         api_endpoint = devices[0].api_endpoint
 
         try:
-            collect_results = await adapter.fetch_energy_data(
-                device_codes, target_hour, api_endpoint
-            )
+            collect_results = await adapter.fetch_energy_data(device_codes, target_hour, api_endpoint)
 
             success_count = 0
             for cr in collect_results:
@@ -317,9 +307,7 @@ async def get_overview(
         if et in summary:
             summary[et] = row["total_value"]
 
-    trend_rows = await repo.get_overview_trend(
-        db, start_time, end_time, energy_type=energy_type
-    )
+    trend_rows = await repo.get_overview_trend(db, start_time, end_time, energy_type=energy_type)
 
     distribution_rows = await repo.get_energy_statistics(
         db,
@@ -343,9 +331,7 @@ async def get_overview(
 # ── 预警规则 ──
 
 
-async def create_alert_rule(
-    db: AsyncSession, data: EnergyAlertRuleCreate
-) -> EnergyAlertRule:
+async def create_alert_rule(db: AsyncSession, data: EnergyAlertRuleCreate) -> EnergyAlertRule:
     return await repo.create_alert_rule(db, data.model_dump())
 
 
@@ -375,15 +361,11 @@ async def list_alert_rules(
     )
 
 
-async def update_alert_rule(
-    db: AsyncSession, rule_id: UUID, data: EnergyAlertRuleUpdate
-) -> EnergyAlertRule:
+async def update_alert_rule(db: AsyncSession, rule_id: UUID, data: EnergyAlertRuleUpdate) -> EnergyAlertRule:
     existing = await repo.get_alert_rule_by_id(db, rule_id)
     if existing is None:
         raise NotFoundException("预警规则", str(rule_id))
-    result = await repo.update_alert_rule(
-        db, rule_id, data.model_dump(exclude_unset=True)
-    )
+    result = await repo.update_alert_rule(db, rule_id, data.model_dump(exclude_unset=True))
     assert result is not None
     return result
 

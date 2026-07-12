@@ -62,10 +62,7 @@ class ControlsRuleEngine:
             if value and value.strip() != UNCONFIRMED:
                 for phrase in BANNED_IN_CONTROLS:
                     if phrase in value:
-                        errors.append(
-                            f"{label} 包含建议类表述 '{phrase}' — "
-                            "脚本4只输出已有措施，禁止建议"
-                        )
+                        errors.append(f"{label} 包含建议类表述 '{phrase}' — 脚本4只输出已有措施，禁止建议")
 
         # 3. 每个非空字段最低长度
         for label, value in fields:
@@ -79,10 +76,7 @@ class ControlsRuleEngine:
             engineering_keywords = ["联锁", "报警器", "通风机", "安全阀", "爆破片"]
             for kw in engineering_keywords:
                 if kw in ppe_text:
-                    errors.append(
-                        f"PPE 维度不应包含工程控制描述（检测到: '{kw}'），"
-                        "请移至 engineering_controls"
-                    )
+                    errors.append(f"PPE 维度不应包含工程控制描述（检测到: '{kw}'），请移至 engineering_controls")
 
         return errors
 

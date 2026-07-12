@@ -37,9 +37,7 @@ class KnowledgeService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning(
-                        "Failed to delete file from MinIO: %s", file_path, exc_info=True
-                    )
+                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
@@ -56,22 +54,16 @@ class KnowledgeService:
         keyword: str | None = None,
     ) -> tuple[list[SafetyKnowledgeArticle], int]:
         """获取知识库文章列表"""
-        return await self.repo.get_knowledge_articles(
-            skip, limit, category, status, keyword
-        )
+        return await self.repo.get_knowledge_articles(skip, limit, category, status, keyword)
 
     async def get_article(self, article_id: uuid.UUID) -> SafetyKnowledgeArticle | None:
         """获取文章详情（浏览计数+1）"""
         article = await self.repo.get_knowledge_article_by_id(article_id)
         if article:
-            await self.repo.update_knowledge_article(
-                article_id, {"view_count": article.view_count + 1}
-            )
+            await self.repo.update_knowledge_article(article_id, {"view_count": article.view_count + 1})
         return article
 
-    async def create_article(
-        self, data: SafetyKnowledgeArticleCreate
-    ) -> SafetyKnowledgeArticle:
+    async def create_article(self, data: SafetyKnowledgeArticleCreate) -> SafetyKnowledgeArticle:
         """创建知识库文章"""
         article_data = data.model_dump()
         return await self.repo.create_knowledge_article(article_data)
@@ -91,27 +83,19 @@ class KnowledgeService:
             self._cleanup_file(article.attachment_path)
         return result
 
-    async def publish_article(
-        self, article_id: uuid.UUID
-    ) -> SafetyKnowledgeArticle | None:
+    async def publish_article(self, article_id: uuid.UUID) -> SafetyKnowledgeArticle | None:
         """发布文章（草稿→已发布）"""
         article = await self.repo.get_knowledge_article_by_id(article_id)
         if not article or article.status != "draft":
             return None
-        return await self.repo.update_knowledge_article(
-            article_id, {"status": "published"}
-        )
+        return await self.repo.update_knowledge_article(article_id, {"status": "published"})
 
-    async def archive_article(
-        self, article_id: uuid.UUID
-    ) -> SafetyKnowledgeArticle | None:
+    async def archive_article(self, article_id: uuid.UUID) -> SafetyKnowledgeArticle | None:
         """归档文章（已发布→已归档）"""
         article = await self.repo.get_knowledge_article_by_id(article_id)
         if not article or article.status != "published":
             return None
-        return await self.repo.update_knowledge_article(
-            article_id, {"status": "archived"}
-        )
+        return await self.repo.update_knowledge_article(article_id, {"status": "archived"})
 
 
 # ==================== 风险作业报备 Services ====================

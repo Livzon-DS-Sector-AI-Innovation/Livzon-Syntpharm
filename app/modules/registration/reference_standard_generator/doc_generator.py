@@ -3,6 +3,7 @@
 import io
 import logging
 import re
+from typing import Any
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
@@ -20,7 +21,7 @@ FIXED_INFO = {
 }
 
 
-def _set_cell_format(cell, text, align_center=True, is_formula=False):
+def _set_cell_format(cell, text, align_center=True, is_formula=False) -> Any:  # type: ignore[no-untyped-def]
     """设置单元格格式，is_formula 为 True 时分子式数字转为下标"""
     cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
 
@@ -52,7 +53,7 @@ def _set_cell_format(cell, text, align_center=True, is_formula=False):
 
 
 def generate_reference_standard_document(
-    coa_data: dict,
+    coa_data: dict[str, Any],
     template_data: bytes,
 ) -> bytes:
     """

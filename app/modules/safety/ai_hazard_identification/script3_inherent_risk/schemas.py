@@ -25,17 +25,11 @@ class LECOutput(BaseModel):
     """
 
     l_value: float | None = Field(None, ge=0.1, le=10, description="可能性 L（0.1~10）")
-    e_value: float | None = Field(
-        None, ge=0.5, le=10, description="暴露频率 E（0.5~10）"
-    )
+    e_value: float | None = Field(None, ge=0.5, le=10, description="暴露频率 E（0.5~10）")
     c_value: float | None = Field(None, ge=1, le=100, description="严重性 C（1~100）")
     d_value: float | None = Field(None, description="风险值 D = L × E × C")
-    risk_level: str | None = Field(
-        None, description="风险等级 key（level_1 / level_2 / level_3 / level_4）"
-    )
-    risk_label: str | None = Field(
-        None, description="风险等级中文名（一级/重大风险 等）"
-    )
+    risk_level: str | None = Field(None, description="风险等级 key（level_1 / level_2 / level_3 / level_4）")
+    risk_label: str | None = Field(None, description="风险等级中文名（一级/重大风险 等）")
 
     @property
     def is_unconfirmed(self) -> bool:

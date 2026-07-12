@@ -46,9 +46,7 @@ async def update_product(
     data: CpvProductUpdate,
 ) -> CpvProduct:
     """更新产品"""
-    product = await repo.update_product(
-        db, product_id, data.model_dump(exclude_unset=True)
-    )
+    product = await repo.update_product(db, product_id, data.model_dump(exclude_unset=True))
     if not product:
         raise NotFoundException("产品", str(product_id))
     return product

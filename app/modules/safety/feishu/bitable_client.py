@@ -83,7 +83,7 @@ class SafetyBitableClient:
                 len(fields),
                 list(fields.keys())[:10],
             )
-            return fields
+            return fields  # type: ignore[no-any-return]
 
     async def update_record(
         self,
@@ -134,9 +134,7 @@ class SafetyBitableClient:
         import asyncio
 
         token = await self._token()
-        base_url = (
-            f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
-        )
+        base_url = f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
 
         async def _try_download(url: str) -> bytes | None:
             last_error = None
@@ -207,7 +205,7 @@ class SafetyBitableClient:
 
         token = await self._token()
 
-        async def _try(headers: dict | None = None) -> bytes | None:
+        async def _try(headers: dict[str, Any] | None = None) -> bytes | None:
             h = headers if headers is not None else {}
             last_error = None
             for attempt in range(3):
@@ -242,9 +240,7 @@ class SafetyBitableClient:
                             if attempt < 2:
                                 await asyncio.sleep(2**attempt)
                             continue
-                        if ct.startswith("application/json") or ct.startswith(
-                            "text/html"
-                        ):
+                        if ct.startswith("application/json") or ct.startswith("text/html"):
                             text = content[:500].decode(errors="replace")
                             logger.warning(
                                 "Bitable URL 返回非文件内容(ct=%s): url=%s... body=%s (attempt %d/3)",
@@ -428,7 +424,7 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error("Bitable list_fields 失败: %s", data.get("msg"))
                 return []
-            return data.get("data", {}).get("items", [])
+            return data.get("data", {}).get("items", [])  # type: ignore[no-any-return]
 
     async def create_field(
         self,
@@ -471,7 +467,7 @@ class SafetyBitableClient:
                 field_name,
                 field.get("field_id"),
             )
-            return field
+            return field  # type: ignore[no-any-return]
 
     async def update_field(
         self,
@@ -514,4 +510,4 @@ class SafetyBitableClient:
                 return {}
             field = data.get("data", {}).get("field", {})
             logger.info("Bitable update_field 成功: field_id=%s", field_id)
-            return field
+            return field  # type: ignore[no-any-return]

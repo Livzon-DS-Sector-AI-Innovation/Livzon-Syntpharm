@@ -4,10 +4,10 @@ doc_check 模块复用 sop_ai 模块的模型。
 只定义本模块特有的枚举类型。
 """
 
-from enum import Enum as PyEnum
+from enum import StrEnum
 
 
-class CheckStatus(str, PyEnum):
+class CheckStatus(StrEnum):
     """校验状态"""
 
     PENDING = "pending"  # 待处理
@@ -16,7 +16,7 @@ class CheckStatus(str, PyEnum):
     FAILED = "failed"  # 失败
 
 
-class ProblemSeverity(str, PyEnum):
+class ProblemSeverity(StrEnum):
     """问题严重程度"""
 
     INFO = "info"  # 提示
@@ -25,7 +25,7 @@ class ProblemSeverity(str, PyEnum):
     CRITICAL = "critical"  # 严重
 
 
-class ProblemCategory(str, PyEnum):
+class ProblemCategory(StrEnum):
     """问题分类"""
 
     FORMAT = "format"  # 格式问题
@@ -35,7 +35,7 @@ class ProblemCategory(str, PyEnum):
     MISSING = "missing"  # 缺失问题
 
 
-class HandleStatus(str, PyEnum):
+class HandleStatus(StrEnum):
     """问题处理状态"""
 
     PENDING = "pending"  # 待处理
@@ -45,13 +45,13 @@ class HandleStatus(str, PyEnum):
 
 
 # 导出 sop_ai 模块的模型供本模块使用
-from app.modules.quality.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (  # noqa: E402
     SopAiCheckMain as DocCheckMain,
 )
-from app.modules.quality.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (  # noqa: E402
     SopAiCheckProblem as DocCheckProblem,
 )
-from app.modules.quality.sop_ai.models import (
+from app.modules.quality.sop_ai.models import (  # noqa: E402
     SopAiConfig as DocCheckConfig,
 )
 

@@ -186,9 +186,7 @@ class AgentRepository:
 
     async def list_skills(self, db: AsyncSession) -> list[AgentSkill]:
         result = await db.execute(
-            select(AgentSkill)
-            .where(AgentSkill.is_deleted.is_(False))
-            .order_by(AgentSkill.created_at.desc())
+            select(AgentSkill).where(AgentSkill.is_deleted.is_(False)).order_by(AgentSkill.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -203,9 +201,7 @@ class AgentRepository:
         )
         return list(result.scalars().all())
 
-    async def get_skill(
-        self, db: AsyncSession, skill_id: uuid.UUID
-    ) -> AgentSkill | None:
+    async def get_skill(self, db: AsyncSession, skill_id: uuid.UUID) -> AgentSkill | None:
         result = await db.execute(
             select(AgentSkill).where(
                 AgentSkill.id == skill_id,

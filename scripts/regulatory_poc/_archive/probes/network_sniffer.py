@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 网络请求嗅探工具 v2
@@ -67,11 +68,7 @@ class NetworkSniffer:
                             try:
                                 jd = json.loads(body)
                                 entry["is_json"] = True
-                                entry["json_keys"] = (
-                                    list(jd.keys())
-                                    if isinstance(jd, dict)
-                                    else f"list[{len(jd)}]"
-                                )
+                                entry["json_keys"] = list(jd.keys()) if isinstance(jd, dict) else f"list[{len(jd)}]"
                                 # 提取分页信息
                                 if isinstance(jd, dict):
                                     for k in (
@@ -155,12 +152,7 @@ class NetworkSniffer:
             for link in links:
                 text = link.inner_text().strip()
                 href = link.get_attribute("href") or ""
-                if (
-                    text
-                    and len(text) > 8
-                    and href
-                    and not href.startswith("javascript:")
-                ):
+                if text and len(text) > 8 and href and not href.startswith("javascript:"):
                     meaningful_links.append({"text": text[:80], "href": href[:150]})
 
             print(f"   有效链接: {len(meaningful_links)}")
@@ -172,9 +164,7 @@ class NetworkSniffer:
 
             # 检查分页
             print("\n[4] 分页元素:")
-            page_el = page.query_selector(
-                ".pagination, .pager, .page-bar, [class*='paging'], [class*='pageNav']"
-            )
+            page_el = page.query_selector(".pagination, .pager, .page-bar, [class*='paging'], [class*='pageNav']")
             if page_el:
                 print(f"   找到分页: {page_el.inner_text().strip()[:100]}")
             else:
@@ -186,9 +176,7 @@ class NetworkSniffer:
             has_react = page.evaluate(
                 "() => !!window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || !!document.querySelector('[data-reactroot]')"
             )
-            has_angular = page.evaluate(
-                "() => !!window.ng || !!document.querySelector('[ng-app]')"
-            )
+            has_angular = page.evaluate("() => !!window.ng || !!document.querySelector('[ng-app]')")
             print(f"   Vue: {'✅' if has_vue else '❌'}")
             print(f"   React: {'✅' if has_react else '❌'}")
             print(f"   Angular: {'✅' if has_angular else '❌'}")
@@ -208,9 +196,7 @@ class NetworkSniffer:
                     page.wait_for_timeout(3000)
                     after_count = len(self.api_calls)
                     if after_count > before_count:
-                        print(
-                            f"   ✅ 翻页后新增 {after_count - before_count} 个 API 请求!"
-                        )
+                        print(f"   ✅ 翻页后新增 {after_count - before_count} 个 API 请求!")
                     else:
                         print("   翻页后无新 API 请求")
                 except Exception as e:
@@ -243,11 +229,7 @@ def main():
         sys.exit(1)
 
     url = sys.argv[1]
-    output_file = (
-        sys.argv[2]
-        if len(sys.argv) > 2
-        else f"/tmp/sniff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    )
+    output_file = sys.argv[2] if len(sys.argv) > 2 else f"/tmp/sniff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
     print("=" * 70)
     print("网络请求嗅探工具 v2")

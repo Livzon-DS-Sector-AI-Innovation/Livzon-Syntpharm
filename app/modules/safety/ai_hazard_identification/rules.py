@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from app.modules.safety.ai_hazard_identification.schemas import (
     HazardCategoryEnum,
@@ -146,9 +147,7 @@ class RuleEngine:
         is_valid = len(errors) == 0
 
         if warnings:
-            logger.debug(
-                "Validation warnings for %s: %s", input_data.hazard_no, warnings
-            )
+            logger.debug("Validation warnings for %s: %s", input_data.hazard_no, warnings)
         if not is_valid:
             logger.warning("Validation errors for %s: %s", input_data.hazard_no, errors)
 
@@ -156,9 +155,7 @@ class RuleEngine:
 
     # ── 子校验 ──
 
-    def _validate_enums(
-        self, output: HazardIdentificationOutput, errors: list[str]
-    ) -> None:
+    def _validate_enums(self, output: HazardIdentificationOutput, errors: list[str]) -> None:
         """验证枚举值在合法范围内（兼容 model_construct 的裸字符串）。"""
         valid_types = {e.value for e in HazardTypeEnum}
         type_val = _enum_value(output.hazard_type)
@@ -186,20 +183,15 @@ class RuleEngine:
         if len(output.key_defect) < 10:
             errors.append(f"隐患描述（AI）过短（{len(output.key_defect)}字），最少10字")
         if len(output.key_defect) > 250:
-            warnings.append(
-                f"隐患描述（AI）超过200字限制（{len(output.key_defect)}字）"
-            )
+            warnings.append(f"隐患描述（AI）超过200字限制（{len(output.key_defect)}字）")
 
         # key_defect 不应只是重复输入
-        if (
-            output.key_defect.strip().endswith("。") is False
-            and len(output.key_defect) > 20
-        ):
+        if output.key_defect.strip().endswith("。") is False and len(output.key_defect) > 20:
             warnings.append("隐患描述（AI）建议以句号结尾，确保表述完整")
 
     def _validate_rectification(
         self,
-        suggestion: RectificationSuggestion | dict,
+        suggestion: RectificationSuggestion | dict[str, Any],
         errors: list[str],
         warnings: list[str],
     ) -> None:
@@ -237,14 +229,11 @@ class RuleEngine:
         # 检查是否至少引用了法规名称
         has_regulation_ref = any(reg in basis for reg in KNOWN_REGULATIONS)
         if not has_regulation_ref:
-            errors.append(
-                "隐患判定依据必须引用具体法规/标准名称（如《安全生产法》、GB 30871 等）"
-            )
+            errors.append("隐患判定依据必须引用具体法规/标准名称（如《安全生产法》、GB 30871 等）")
 
         # 检查是否有条文编号（第X条、第X.X节等）
         has_article_ref = bool(
-            re.search(r"第[一二三四五六七八九十\d]+[条章节]", basis)
-            or re.search(r"第\s*\d+(\.\d+)*\s*[条章节]", basis)
+            re.search(r"第[一二三四五六七八九十\d]+[条章节]", basis) or re.search(r"第\s*\d+(\.\d+)*\s*[条章节]", basis)
         )
         if not has_article_ref:
             warnings.append("判定依据建议包含具体条文编号（如'第X条'）")
@@ -256,17 +245,11 @@ class RuleEngine:
     ) -> None:
         """检查分类-类别逻辑一致性（非阻塞警告）。"""
         # 去除 None 值
-        compat = {
-            k: {x for x in v if x is not None}
-            for k, v in TYPE_CATEGORY_COMPATIBILITY.items()
-        }
+        compat = {k: {x for x in v if x is not None} for k, v in TYPE_CATEGORY_COMPATIBILITY.items()}
 
         if output.hazard_type in compat:
             expected_categories = compat[output.hazard_type]
-            if (
-                expected_categories
-                and output.hazard_category not in expected_categories
-            ):
+            if expected_categories and output.hazard_category not in expected_categories:
                 type_val = _enum_value(output.hazard_type)
                 cat_val = _enum_value(output.hazard_category)
                 warnings.append(
@@ -286,18 +269,13 @@ class RuleEngine:
         desc = input_data.description
         # 简单关键词重叠检测
         desc_words = set(desc.replace("，", " ").replace("、", " ").split())
-        defect_words = set(
-            output.key_defect.replace("，", " ").replace("、", " ").split()
-        )
+        defect_words = set(output.key_defect.replace("，", " ").replace("、", " ").split())
 
         if desc_words:
             overlap = desc_words & defect_words
             overlap_ratio = len(overlap) / len(desc_words) if desc_words else 0
             if overlap_ratio < 0.1:
-                warnings.append(
-                    f"输出描述与输入文本关键词重叠率仅 {overlap_ratio:.0%}，"
-                    f"可能存在理解偏差"
-                )
+                warnings.append(f"输出描述与输入文本关键词重叠率仅 {overlap_ratio:.0%}，可能存在理解偏差")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

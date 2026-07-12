@@ -20,39 +20,21 @@ class ReagentReminderConfig(BaseModel):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
 
     # 飞书配置
-    feishu_app_id: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="飞书应用 AppID"
-    )
-    feishu_app_secret: Mapped[str | None] = mapped_column(
-        String(256), nullable=True, comment="飞书应用 AppSecret"
-    )
-    feishu_chat_id: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="飞书群 ID"
-    )
+    feishu_app_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书应用 AppID")
+    feishu_app_secret: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="飞书应用 AppSecret")
+    feishu_chat_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书群 ID")
 
     # 提醒规则
-    low_stock_threshold: Mapped[int] = mapped_column(
-        Integer, default=2, comment="库存不足阈值（默认2）"
-    )
-    is_enabled: Mapped[bool] = mapped_column(
-        Boolean, default=True, comment="是否启用提醒"
-    )
+    low_stock_threshold: Mapped[int] = mapped_column(Integer, default=2, comment="库存不足阈值（默认2）")
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用提醒")
 
     # 提醒历史
-    last_remind_time: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="上次提醒时间"
-    )
-    last_remind_content: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="上次提醒内容"
-    )
+    last_remind_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="上次提醒时间")
+    last_remind_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="上次提醒内容")
 
     # 状态
-    created_by: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, comment="创建人"
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, comment="创建时间"
-    )
+    created_by: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="创建人")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, comment="创建时间")
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True, onupdate=datetime.utcnow, comment="更新时间"
     )

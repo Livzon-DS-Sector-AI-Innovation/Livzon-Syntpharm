@@ -165,16 +165,14 @@ def _contract_template_info(category: ContractCategory) -> dict[str, Any]:
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.list_invoice_records",
     summary="查询发票识别记录",
     input_model=InvoiceRecordsInput,
     method="GET",
     path="/procurement/invoices/recognition-records",
 )
-async def list_invoice_records(
-    context: ToolContext, data: InvoiceRecordsInput
-) -> dict[str, Any]:
+async def list_invoice_records(context: ToolContext, data: InvoiceRecordsInput) -> dict[str, Any]:
     records, total = await list_invoice_recognition_records(
         context.db,
         keyword=data.keyword,
@@ -184,17 +182,12 @@ async def list_invoice_records(
         page_size=data.page_size,
     )
     return {
-        "data": [
-            InvoiceRecognitionRecordResponse.model_validate(record).model_dump(
-                mode="json"
-            )
-            for record in records
-        ],
+        "data": [InvoiceRecognitionRecordResponse.model_validate(record).model_dump(mode="json") for record in records],
         "meta": {"page": data.page, "page_size": data.page_size, "total": total},
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.list_suppliers",
     summary="查询供应商清单",
     input_model=SupplierListInput,
@@ -212,9 +205,7 @@ async def list_invoice_records(
     },
     output_hint="返回供应商代码、供应商名称、物料、厂家、品类和导入原始字段。",
 )
-async def list_supplier_records(
-    context: ToolContext, data: SupplierListInput
-) -> dict[str, Any]:
+async def list_supplier_records(context: ToolContext, data: SupplierListInput) -> dict[str, Any]:
     suppliers, total, columns = await list_suppliers(
         context.db,
         keyword=data.keyword,
@@ -225,10 +216,7 @@ async def list_supplier_records(
         page_size=data.page_size,
     )
     return {
-        "data": [
-            SupplierResponse.model_validate(supplier).model_dump(mode="json")
-            for supplier in suppliers
-        ],
+        "data": [SupplierResponse.model_validate(supplier).model_dump(mode="json") for supplier in suppliers],
         "meta": {
             "page": data.page,
             "page_size": data.page_size,
@@ -238,16 +226,14 @@ async def list_supplier_records(
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.list_purchase_requests",
     summary="查询采购申请",
     input_model=PurchaseRequestListInput,
     method="GET",
     path="/procurement/purchase-requests",
 )
-async def list_purchase_request_records(
-    context: ToolContext, data: PurchaseRequestListInput
-) -> dict[str, Any]:
+async def list_purchase_request_records(context: ToolContext, data: PurchaseRequestListInput) -> dict[str, Any]:
     requests, total = await list_purchase_requests(
         context.db,
         category=data.category,
@@ -264,20 +250,18 @@ async def list_purchase_request_records(
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.get_purchase_request",
     summary="查看采购申请详情",
     input_model=PurchaseRequestIdInput,
     method="GET",
     path="/procurement/purchase-requests/{request_id}",
 )
-async def get_purchase_request_record(
-    context: ToolContext, data: PurchaseRequestIdInput
-) -> dict[str, Any]:
+async def get_purchase_request_record(context: ToolContext, data: PurchaseRequestIdInput) -> dict[str, Any]:
     return _purchase_request(await get_purchase_request(context.db, data.request_id))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.create_purchase_request",
     summary="创建采购申请",
     input_model=PurchaseRequestCreateInput,
@@ -286,13 +270,11 @@ async def get_purchase_request_record(
     method="POST",
     path="/procurement/purchase-requests",
 )
-async def create_purchase_request(
-    context: ToolContext, data: PurchaseRequestCreateInput
-) -> dict[str, Any]:
+async def create_purchase_request(context: ToolContext, data: PurchaseRequestCreateInput) -> dict[str, Any]:
     return _purchase_request(await create_purchase_request_service(context.db, data))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.update_purchase_request",
     summary="更新采购申请",
     input_model=PurchaseRequestUpdateInput,
@@ -301,18 +283,12 @@ async def create_purchase_request(
     method="PUT",
     path="/procurement/purchase-requests/{request_id}",
 )
-async def update_purchase_request(
-    context: ToolContext, data: PurchaseRequestUpdateInput
-) -> dict[str, Any]:
-    payload = PurchaseRequestUpdate.model_validate(
-        data.model_dump(exclude={"request_id"})
-    )
-    return _purchase_request(
-        await update_purchase_request_service(context.db, data.request_id, payload)
-    )
+async def update_purchase_request(context: ToolContext, data: PurchaseRequestUpdateInput) -> dict[str, Any]:
+    payload = PurchaseRequestUpdate.model_validate(data.model_dump(exclude={"request_id"}))
+    return _purchase_request(await update_purchase_request_service(context.db, data.request_id, payload))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.submit_purchase_request",
     summary="提交采购申请",
     input_model=PurchaseRequestIdInput,
@@ -321,13 +297,11 @@ async def update_purchase_request(
     method="POST",
     path="/procurement/purchase-requests/{request_id}/submit",
 )
-async def submit_purchase_request_record(
-    context: ToolContext, data: PurchaseRequestIdInput
-) -> dict[str, Any]:
+async def submit_purchase_request_record(context: ToolContext, data: PurchaseRequestIdInput) -> dict[str, Any]:
     return _purchase_request(await submit_purchase_request(context.db, data.request_id))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.approve_purchase_request",
     summary="审批通过采购申请",
     input_model=PurchaseApprovalInput,
@@ -338,21 +312,17 @@ async def submit_purchase_request_record(
     method="POST",
     path="/procurement/purchase-requests/{request_id}/approve",
 )
-async def approve_purchase_request_record(
-    context: ToolContext, data: PurchaseApprovalInput
-) -> dict[str, Any]:
+async def approve_purchase_request_record(context: ToolContext, data: PurchaseApprovalInput) -> dict[str, Any]:
     payload = PurchaseApprovalRequest(
         approval_role=data.approval_role,
         approver_name=data.approver_name,
         opinion=data.opinion,
         result=PurchaseApprovalResult.approved,
     )
-    return _purchase_request(
-        await approve_purchase_request(context.db, data.request_id, payload)
-    )
+    return _purchase_request(await approve_purchase_request(context.db, data.request_id, payload))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.reject_purchase_request",
     summary="驳回采购申请",
     input_model=PurchaseApprovalInput,
@@ -363,30 +333,24 @@ async def approve_purchase_request_record(
     method="POST",
     path="/procurement/purchase-requests/{request_id}/reject",
 )
-async def reject_purchase_request_record(
-    context: ToolContext, data: PurchaseApprovalInput
-) -> dict[str, Any]:
+async def reject_purchase_request_record(context: ToolContext, data: PurchaseApprovalInput) -> dict[str, Any]:
     payload = PurchaseApprovalRequest(
         approval_role=data.approval_role,
         approver_name=data.approver_name,
         opinion=data.opinion,
         result=PurchaseApprovalResult.rejected,
     )
-    return _purchase_request(
-        await reject_purchase_request(context.db, data.request_id, payload)
-    )
+    return _purchase_request(await reject_purchase_request(context.db, data.request_id, payload))
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.list_purchase_orders",
     summary="查询采购订单",
     input_model=PurchaseOrderInput,
     method="GET",
     path="/procurement/purchase-orders",
 )
-async def list_purchase_order_records(
-    context: ToolContext, data: PurchaseOrderInput
-) -> dict[str, Any]:
+async def list_purchase_order_records(context: ToolContext, data: PurchaseOrderInput) -> dict[str, Any]:
     lines, total = await list_purchase_order_lines(
         context.db,
         category=data.category,
@@ -401,16 +365,14 @@ async def list_purchase_order_records(
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.export_purchase_orders",
     summary="导出采购订单",
     input_model=PurchaseOrderExportInput,
     method="GET",
     path="/procurement/purchase-orders/export",
 )
-async def export_purchase_orders(
-    context: ToolContext, data: PurchaseOrderExportInput
-) -> dict[str, Any]:
+async def export_purchase_orders(context: ToolContext, data: PurchaseOrderExportInput) -> dict[str, Any]:
     content = await export_purchase_order_lines_xlsx(
         context.db,
         category=data.category,
@@ -420,9 +382,7 @@ async def export_purchase_orders(
     filename = f"采购订单_{data.year}-{data.month:02d}.xlsx"
     return _artifact_response(
         filename=filename,
-        content_type=(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ),
+        content_type=("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
         content=content,
         operation="procurement.export_purchase_orders",
     )
@@ -436,28 +396,24 @@ async def export_purchase_orders(
 )
 async def list_contract_templates(context: ToolContext, _: BaseModel) -> dict[str, Any]:
     return {
-        "templates": [
-            _contract_template_info(category) for category in ContractCategory
-        ],
+        "templates": [_contract_template_info(category) for category in ContractCategory],
         "generate_operation": "procurement.generate_contract",
         "template_lookup_operation": "procurement.get_contract_template",
     }
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.get_contract_template",
     summary="查询合同模板",
     input_model=ContractTemplateInput,
     method="GET",
     path="/procurement/contracts/templates/{category}",
 )
-async def get_contract_template(
-    context: ToolContext, data: ContractTemplateInput
-) -> dict[str, Any]:
+async def get_contract_template(context: ToolContext, data: ContractTemplateInput) -> dict[str, Any]:
     return _contract_template_info(data.category)
 
 
-@agent_tool(
+@agent_tool(  # type: ignore[arg-type]
     name="procurement.generate_contract",
     summary="生成采购合同",
     input_model=ContractGenerateRequest,
@@ -466,9 +422,7 @@ async def get_contract_template(
     method="POST",
     path="/procurement/contracts/generate",
 )
-async def generate_purchase_contract(
-    context: ToolContext, data: ContractGenerateRequest
-) -> dict[str, Any]:
+async def generate_purchase_contract(context: ToolContext, data: ContractGenerateRequest) -> dict[str, Any]:
     buffer, filename, media_type = generate_contract(data)
     return _artifact_response(
         filename=filename,

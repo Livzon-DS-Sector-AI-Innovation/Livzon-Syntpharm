@@ -22,16 +22,10 @@ class CpvBatch(BaseModel):
         {"schema": "quality", "comment": "CPV批次表"},
     )
 
-    product_id: Mapped[str] = mapped_column(
-        ForeignKey("quality.cpv_products.id"), nullable=False, comment="产品ID"
-    )
+    product_id: Mapped[str] = mapped_column(ForeignKey("quality.cpv_products.id"), nullable=False, comment="产品ID")
     batch_no: Mapped[str] = mapped_column(String(100), nullable=False, comment="批号")
-    production_date: Mapped[date] = mapped_column(
-        Date, nullable=False, comment="生产日期"
-    )
-    data_type: Mapped[str] = mapped_column(
-        String(10), nullable=False, comment="数据类型: CPP/CQA"
-    )
+    production_date: Mapped[date] = mapped_column(Date, nullable=False, comment="生产日期")
+    data_type: Mapped[str] = mapped_column(String(10), nullable=False, comment="数据类型: CPP/CQA")
     source: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

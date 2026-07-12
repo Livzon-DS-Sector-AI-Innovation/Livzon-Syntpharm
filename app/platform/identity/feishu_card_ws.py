@@ -32,7 +32,7 @@ FEISHU_DOMAIN = "https://open.feishu.cn"
 WS_ENDPOINT_URL = f"{FEISHU_DOMAIN}/callback/ws/endpoint"
 
 _stop: asyncio.Event | None = None
-_ws_task: asyncio.Task | None = None
+_ws_task: asyncio.Task[None] | None = None
 _ping_interval: int = 120
 _last_error: str | None = None
 _last_connected_at: float | None = None
@@ -114,10 +114,10 @@ def _build_ping_frame(service_id: int) -> bytes:
     frame.method = FrameType.CONTROL.value
     frame.SeqID = 0
     frame.LogID = 0
-    return frame.SerializeToString()
+    return frame.SerializeToString()  # type: ignore[no-any-return]
 
 
-def _build_ack_frame(frame, payload: dict[str, Any], biz_rt: int) -> bytes:
+def _build_ack_frame(frame, payload: dict[str, Any], biz_rt: int) -> Any:  # type: ignore[no-untyped-def]
     from lark_oapi.ws.const import HEADER_BIZ_RT
 
     header = frame.headers.add()
@@ -127,7 +127,7 @@ def _build_ack_frame(frame, payload: dict[str, Any], biz_rt: int) -> bytes:
     return frame.SerializeToString()
 
 
-async def _ping_loop(ws, service_id: int) -> None:
+async def _ping_loop(ws, service_id: int) -> Any:  # type: ignore[no-untyped-def]
     while _stop is not None and not _stop.is_set():
         try:
             await ws.send(_build_ping_frame(service_id))
@@ -144,7 +144,7 @@ async def _ping_loop(ws, service_id: int) -> None:
 def _event_type(payload: dict[str, Any]) -> str:
     header = payload.get("header")
     if isinstance(header, dict) and isinstance(header.get("event_type"), str):
-        return header["event_type"]
+        return header["event_type"]  # type: ignore[no-any-return]
     event = payload.get("event")
     if isinstance(event, dict):
         return str(event.get("type") or "")
@@ -190,7 +190,7 @@ async def _dispatch_event(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-async def _handle_binary_message(ws, message: bytes) -> None:
+async def _handle_binary_message(ws, message: bytes) -> Any:  # type: ignore[no-untyped-def]
     _frame_count["received"] += 1
     start_ms = int(round(time.time() * 1000))
     try:

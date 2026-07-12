@@ -10,6 +10,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from hashlib import pbkdf2_hmac
 from hmac import compare_digest
+from typing import Any
 from uuid import UUID
 
 import jwt
@@ -54,10 +55,7 @@ ALLOWED_CARD_ACTIONS = {
 def _secret_runtime_error(exc: RuntimeError) -> HTTPException:
     return HTTPException(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        (
-            "Livzon 助手飞书密钥加解密失败："
-            f"{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。"
-        ),
+        (f"Livzon 助手飞书密钥加解密失败：{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。"),
     )
 
 
@@ -141,15 +139,9 @@ def _feishu_config_to_response(config: FeishuConfig | None) -> FeishuConfigRespo
         app_id=config.app_id,
         app_secret_configured=bool(config.encrypted_app_secret),
         app_secret_masked=mask_secret(secret),
-        card_callback_verification_token_configured=bool(
-            config.card_callback_verification_token
-        ),
-        card_callback_verification_token_masked=mask_secret(
-            config.card_callback_verification_token or ""
-        ),
-        card_callback_encrypt_key_configured=bool(
-            config.encrypted_card_callback_encrypt_key
-        ),
+        card_callback_verification_token_configured=bool(config.card_callback_verification_token),
+        card_callback_verification_token_masked=mask_secret(config.card_callback_verification_token or ""),
+        card_callback_encrypt_key_configured=bool(config.encrypted_card_callback_encrypt_key),
         card_callback_encrypt_key_masked=mask_secret(encrypt_key),
         sync_root_department_id=config.sync_root_department_id,
         sync_member_department_id=config.sync_member_department_id,
@@ -169,9 +161,7 @@ async def get_livzon_feishu_config_response(db: AsyncSession) -> FeishuConfigRes
     return _feishu_config_to_response(config)
 
 
-async def save_livzon_feishu_config(
-    db: AsyncSession, payload: FeishuConfigUpsert
-) -> FeishuConfigResponse:
+async def save_livzon_feishu_config(db: AsyncSession, payload: FeishuConfigUpsert) -> FeishuConfigResponse:
     existing = await _feishu_config_repo.get_latest(db)
     target_name = payload.config_name or DEFAULT_FEISHU_CONFIG_NAME
     if existing is None:
@@ -241,9 +231,7 @@ async def _effective_feishu_credentials(
     stored = await _feishu_config_repo.get_active(db)
 
     app_id = (
-        (payload.app_id if payload else None)
-        or (stored.app_id if stored else None)
-        or settings.FEISHU_APP_ID
+        (payload.app_id if payload else None) or (stored.app_id if stored else None) or settings.FEISHU_APP_ID  # type: ignore[attr-defined]
     )
     encrypted_secret = stored.encrypted_app_secret if stored else ""
     try:
@@ -252,20 +240,20 @@ async def _effective_feishu_credentials(
             if payload and payload.app_secret
             else decrypt_secret(encrypted_secret)
             if encrypted_secret
-            else settings.FEISHU_APP_SECRET
+            else settings.FEISHU_APP_SECRET  # type: ignore[attr-defined]
         )
     except RuntimeError as exc:
         raise _secret_runtime_error(exc) from exc
     root_id = (
         (payload.sync_root_department_id if payload else None)
         or (stored.sync_root_department_id if stored else None)
-        or settings.FEISHU_SYNC_ROOT_DEPT_ID
+        or settings.FEISHU_SYNC_ROOT_DEPT_ID  # type: ignore[attr-defined]
         or "0"
     )
     member_id = (
         (payload.sync_member_department_id if payload else None)
         or (stored.sync_member_department_id if stored else None)
-        or settings.FEISHU_SYNC_MEMBER_DEPT_ID
+        or settings.FEISHU_SYNC_MEMBER_DEPT_ID  # type: ignore[attr-defined]
         or root_id
     )
     if not app_id or not app_secret:
@@ -288,7 +276,7 @@ async def diagnose_livzon_feishu_config(
     db: AsyncSession,
     payload: FeishuConfigUpsert | None = None,
 ) -> FeishuDiagnosticResult:
-    from app.platform.integrations.feishu.contact import (
+    from app.platform.integrations.feishu.contact import (  # type: ignore[attr-defined]
         find_users_by_department,
         get_all_departments,
         get_contact_scope,
@@ -296,15 +284,13 @@ async def diagnose_livzon_feishu_config(
     from app.platform.integrations.feishu.utils import get_tenant_access_token
 
     steps: list[FeishuDiagnosticStep] = []
-    departments: list[dict] = []
-    users: list[dict] = []
-    scope: dict = {}
+    departments: list[dict[str, Any]] = []
+    users: list[dict[str, Any]] = []
+    scope: dict[str, Any] = {}
     stored = await _feishu_config_repo.get_active(db)
 
     try:
-        app_id, app_secret, root_id, member_id = await _effective_feishu_credentials(
-            db, payload
-        )
+        app_id, app_secret, root_id, member_id = await _effective_feishu_credentials(db, payload)
     except HTTPException as exc:
         if exc.status_code != status.HTTP_400_BAD_REQUEST:
             raise
@@ -341,9 +327,7 @@ async def diagnose_livzon_feishu_config(
                 name="tenant_access_token",
                 status="error",
                 message=f"获取 tenant_access_token 失败：{exc}",
-                suggestion=(
-                    "请确认 App ID / App Secret 正确，且应用已发布或处于可调用状态。"
-                ),
+                suggestion=("请确认 App ID / App Secret 正确，且应用已发布或处于可调用状态。"),
             )
         )
         result = FeishuDiagnosticResult(
@@ -366,9 +350,7 @@ async def diagnose_livzon_feishu_config(
         steps.append(
             FeishuDiagnosticStep(
                 name="通讯录授权范围",
-                status="ok"
-                if scope_department_count or scope_user_count or scope_group_count
-                else "warning",
+                status="ok" if scope_department_count or scope_user_count or scope_group_count else "warning",
                 message=(
                     "当前应用通讯录授权范围："
                     f"部门 {scope_department_count} 个，"
@@ -377,10 +359,7 @@ async def diagnose_livzon_feishu_config(
                 ),
                 suggestion=None
                 if scope_department_count or scope_user_count or scope_group_count
-                else (
-                    "飞书开放平台的权限开通后，还需要在“通讯录权限范围”"
-                    "中授权可访问的部门或成员。"
-                ),
+                else ("飞书开放平台的权限开通后，还需要在“通讯录权限范围”中授权可访问的部门或成员。"),
             )
         )
     except Exception as exc:
@@ -389,15 +368,12 @@ async def diagnose_livzon_feishu_config(
                 name="通讯录授权范围",
                 status="warning",
                 message=f"读取通讯录授权范围失败：{exc}",
-                suggestion=(
-                    "请确认已开通 contact:scope:readonly，或在飞书开放平台检查"
-                    "通讯录权限范围是否已发布生效。"
-                ),
+                suggestion=("请确认已开通 contact:scope:readonly，或在飞书开放平台检查通讯录权限范围是否已发布生效。"),
             )
         )
 
     try:
-        departments = await get_all_departments(
+        departments = await get_all_departments(  # type: ignore[call-arg]
             root_department_id=root_id,
             app_id=app_id,
             app_secret=app_secret,
@@ -408,9 +384,7 @@ async def diagnose_livzon_feishu_config(
                 name="部门列表",
                 status="ok" if departments else "warning",
                 message=(
-                    f"读取到 {len(departments)} 个部门。"
-                    if departments
-                    else "部门 API 调用成功，但未读取到部门数据。"
+                    f"读取到 {len(departments)} 个部门。" if departments else "部门 API 调用成功，但未读取到部门数据。"
                 ),
                 suggestion=None
                 if departments
@@ -436,11 +410,7 @@ async def diagnose_livzon_feishu_config(
         )
 
     sample_department_ids = []
-    departments_with_members = (
-        dept.get("department_id", "")
-        for dept in departments
-        if dept.get("member_count")
-    )
+    departments_with_members = (dept.get("department_id", "") for dept in departments if dept.get("member_count"))
     for dept_id in [
         member_id,
         *departments_with_members,
@@ -458,7 +428,7 @@ async def diagnose_livzon_feishu_config(
         try:
             for sample_department_id in sample_department_ids:
                 tried_ids.append(sample_department_id)
-                users = await find_users_by_department(
+                users = await find_users_by_department(  # type: ignore[call-arg]
                     sample_department_id,
                     app_id=app_id,
                     app_secret=app_secret,
@@ -476,11 +446,7 @@ async def diagnose_livzon_feishu_config(
                     message=(
                         f"部门 {sampled_department_id} 读取到 {len(users)} 名用户。"
                         if users
-                        else (
-                            "已尝试部门 "
-                            f"{', '.join(tried_ids[:5])}，API 调用成功，"
-                            "但未读取到用户。"
-                        )
+                        else (f"已尝试部门 {', '.join(tried_ids[:5])}，API 调用成功，但未读取到用户。")
                     ),
                     suggestion=None
                     if users
@@ -498,10 +464,7 @@ async def diagnose_livzon_feishu_config(
                     name="部门用户",
                     status="error" if last_error else "warning",
                     message=f"读取部门用户失败：{last_error or exc}",
-                    suggestion=(
-                        "请开通 contact:user.base:readonly，"
-                        "并确认应用通讯录权限范围包含目标部门。"
-                    ),
+                    suggestion=("请开通 contact:user.base:readonly，并确认应用通讯录权限范围包含目标部门。"),
                 )
             )
     else:
@@ -526,35 +489,23 @@ async def diagnose_livzon_feishu_config(
                     message="已返回用户 department_ids 字段。"
                     if has_department_ids
                     else "用户可读取，但未返回 department_ids。",
-                    suggestion=None
-                    if has_department_ids
-                    else "请开通 contact:user.department:readonly。",
+                    suggestion=None if has_department_ids else "请开通 contact:user.department:readonly。",
                 ),
                 FeishuDiagnosticStep(
                     name="用户手机号",
                     status="ok" if has_mobile else "warning",
-                    message="已返回至少一名用户手机号。"
-                    if has_mobile
-                    else "用户可读取，但未返回手机号。",
+                    message="已返回至少一名用户手机号。" if has_mobile else "用户可读取，但未返回手机号。",
                     suggestion=None
                     if has_mobile
-                    else (
-                        "请开通 contact:user.phone:readonly，"
-                        "并确认通讯录权限范围包含手机号字段。"
-                    ),
+                    else ("请开通 contact:user.phone:readonly，并确认通讯录权限范围包含手机号字段。"),
                 ),
                 FeishuDiagnosticStep(
                     name="用户邮箱",
                     status="ok" if has_email else "warning",
-                    message="已返回至少一名用户邮箱。"
-                    if has_email
-                    else "用户可读取，但未返回邮箱。",
+                    message="已返回至少一名用户邮箱。" if has_email else "用户可读取，但未返回邮箱。",
                     suggestion=None
                     if has_email
-                    else (
-                        "请开通 contact:user.email:readonly，"
-                        "并确认通讯录权限范围包含邮箱字段。"
-                    ),
+                    else ("请开通 contact:user.email:readonly，并确认通讯录权限范围包含邮箱字段。"),
                 ),
             ]
         )
@@ -589,8 +540,8 @@ async def _save_diagnostic_result(
     await db.flush()
 
 
-async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
-    from app.platform.integrations.feishu.contact import get_contact_scope
+async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
+    from app.platform.integrations.feishu.contact import get_contact_scope  # type: ignore[attr-defined]
     from app.platform.integrations.feishu.sync import (
         sync_departments,
         sync_members,
@@ -600,7 +551,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
     config = await _feishu_config_repo.get_active(db)
     app_id, app_secret, root_id, member_id = await _effective_feishu_credentials(db)
 
-    scope: dict = {}
+    scope: dict[str, Any] = {}
     scope_department_ids: list[str] = []
     scope_user_ids: list[str] = []
     try:
@@ -617,7 +568,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
     if member_id == "0" and scope_department_ids:
         member_targets = scope_department_ids
 
-    dept_results: list[dict] = []
+    dept_results: list[dict[str, Any]] = []
     dept_errors: list[str] = []
     for department_id in dict.fromkeys(department_targets):
         try:
@@ -632,7 +583,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
             logger.exception("Livzon Feishu department sync failed: %s", department_id)
             dept_errors.append(f"{department_id}: {exc}")
 
-    member_results: list[dict] = []
+    member_results: list[dict[str, Any]] = []
     member_errors: list[str] = []
     for department_id in dict.fromkeys(member_targets):
         try:
@@ -660,15 +611,12 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
     member_count = sum(item.get("user_count", 0) for item in member_results)
     direct_user_count = direct_user_result.get("user_count", 0)
     total_user_count = member_count + direct_user_count
-    nested_member_errors = [
-        str(error) for result in member_results for error in result.get("errors", [])
-    ]
+    nested_member_errors = [str(error) for result in member_results for error in result.get("errors", [])]
     all_errors = dept_errors + member_errors + nested_member_errors
 
     if not dept_results and not member_results and not direct_user_count:
         message = (
-            "同步失败：当前 Livzon 助手飞书应用没有可同步的通讯录数据。"
-            "请检查通讯录权限范围是否包含目标部门或用户。"
+            "同步失败：当前 Livzon 助手飞书应用没有可同步的通讯录数据。请检查通讯录权限范围是否包含目标部门或用户。"
         )
         if all_errors:
             message = f"{message} 错误：{'; '.join(all_errors)}"
@@ -680,10 +628,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, message)
 
     sync_status = "warning" if all_errors else "ok"
-    sync_message = (
-        f"同步完成：部门 {dept_count} 个，"
-        f"部门用户 {member_count} 名，直接授权用户 {direct_user_count} 名。"
-    )
+    sync_message = f"同步完成：部门 {dept_count} 个，部门用户 {member_count} 名，直接授权用户 {direct_user_count} 名。"
     if sync_status == "warning":
         sync_message = f"{sync_message} 部分部门同步失败：{'; '.join(all_errors)}"
     if config is not None:
@@ -740,7 +685,7 @@ def _dedupe_user_ids(user_ids: list[UUID]) -> list[UUID]:
     return list(dict.fromkeys(user_ids))
 
 
-def _empty_message_result(user_id: UUID, message: str) -> dict:
+def _empty_message_result(user_id: UUID, message: str) -> dict[str, Any]:
     return {
         "user_id": str(user_id),
         "name": None,
@@ -773,7 +718,7 @@ def _message_shape(
     return expected
 
 
-def _normalize_card_actions(actions: list[dict] | None) -> list[dict[str, str]]:
+def _normalize_card_actions(actions: list[dict[str, Any]] | None) -> list[dict[str, str]]:
     raw_actions = actions or [
         {"action_key": "start_processing", "label": "开始处理"},
         {"action_key": "mark_done", "label": "标记完成"},
@@ -840,7 +785,7 @@ async def _send_livzon_feishu_message(
     user_ids: list[UUID],
     msg_type: str,
     content: str,
-) -> dict:
+) -> dict[str, Any]:
     from app.platform.integrations.feishu.im import send_feishu_message
     from app.platform.integrations.feishu.utils import get_tenant_access_token
 
@@ -851,7 +796,7 @@ async def _send_livzon_feishu_message(
         cache_key=f"livzon-assistant:{app_id}",
     )
 
-    results: list[dict] = []
+    results: list[dict[str, Any]] = []
     for user_id in _dedupe_user_ids(user_ids):
         user = await _repo.get_by_id(db, user_id)
         if user is None:
@@ -926,9 +871,9 @@ async def _send_livzon_feishu_callback_card(
     title: str,
     markdown: str,
     header_template: str,
-    actions: list[dict] | None,
-    business_ref: dict | None,
-) -> dict:
+    actions: list[dict[str, Any]] | None,
+    business_ref: dict[str, Any] | None,
+) -> dict[str, Any]:
     from app.platform.integrations.feishu.im import (
         build_callback_card_content,
         send_feishu_message,
@@ -938,8 +883,7 @@ async def _send_livzon_feishu_callback_card(
     settings = get_settings()
     config = await _feishu_config_repo.get_active(db)
     if config is None or (
-        not config.card_callback_verification_token
-        and not settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED
+        not config.card_callback_verification_token and not settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED
     ):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -956,7 +900,7 @@ async def _send_livzon_feishu_callback_card(
         cache_key=f"livzon-assistant:{app_id}",
     )
     normalized_actions = _normalize_card_actions(actions)
-    results: list[dict] = []
+    results: list[dict[str, Any]] = []
     expires_at = datetime.now(UTC) + timedelta(days=14)
 
     for user_id in _dedupe_user_ids(user_ids):
@@ -1067,7 +1011,7 @@ async def send_livzon_feishu_text_message(
     *,
     user_ids: list[UUID],
     text: str,
-) -> dict:
+) -> dict[str, Any]:
     from app.platform.integrations.feishu.im import build_text_message_content
 
     return await _send_livzon_feishu_message(
@@ -1087,7 +1031,7 @@ async def send_livzon_feishu_card_message(
     header_template: str = "blue",
     button_text: str | None = None,
     button_url: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     from app.platform.integrations.feishu.im import build_simple_card_content
 
     return await _send_livzon_feishu_message(
@@ -1114,11 +1058,11 @@ async def send_livzon_feishu_message(
     value_level: str = "low",
     structured: bool = False,
     requires_business_action: bool = False,
-    actions: list[dict] | None = None,
-    business_ref: dict | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    business_ref: dict[str, Any] | None = None,
     header_template: str = "blue",
     message_form: str = "auto",
-) -> dict:
+) -> dict[str, Any]:
     shape = _message_shape(
         value_level=value_level,
         structured=structured,
@@ -1171,18 +1115,18 @@ def _verify_feishu_callback_signature(
     return hmac.compare_digest(expected, signature)
 
 
-def _callback_payload_token(payload: dict) -> str | None:
+def _callback_payload_token(payload: dict[str, Any]) -> str | None:
     token = payload.get("token")
     if isinstance(token, str):
         return token
     header = payload.get("header")
     if isinstance(header, dict) and isinstance(header.get("token"), str):
-        return header["token"]
+        return header["token"]  # type: ignore[no-any-return]
     return None
 
 
 def _extract_callback_action(
-    payload: dict,
+    payload: dict[str, Any],
 ) -> tuple[str | None, str | None, str | None]:
     event = payload.get("event") if isinstance(payload.get("event"), dict) else payload
     action = event.get("action") if isinstance(event, dict) else None
@@ -1206,12 +1150,12 @@ def _extract_callback_action(
 async def handle_livzon_feishu_card_callback(
     db: AsyncSession,
     *,
-    payload: dict,
+    payload: dict[str, Any],
     raw_body: bytes,
     timestamp: str | None = None,
     nonce: str | None = None,
     signature: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     config = await _feishu_config_repo.get_active(db)
     if config is None or not config.card_callback_verification_token:
         raise HTTPException(
@@ -1253,8 +1197,8 @@ async def handle_livzon_feishu_card_callback(
 async def handle_livzon_feishu_card_action_event(
     db: AsyncSession,
     *,
-    payload: dict,
-) -> dict:
+    payload: dict[str, Any],
+) -> dict[str, Any]:
     """Handle authenticated Livzon Feishu card action payloads.
 
     HTTP callbacks validate verification token/signature before calling this.
@@ -1425,9 +1369,7 @@ def generate_jwt(user: User) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
 
-async def authenticate_local_user(
-    db: AsyncSession, *, username: str, password: str
-) -> tuple[User, str]:
+async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
     if user is None or not verify_password(password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")

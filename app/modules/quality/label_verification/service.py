@@ -28,18 +28,14 @@ class LabelVerificationService:
     def _to_response(self, obj: LabelVerification) -> LabelVerificationResponse:
         return LabelVerificationResponse.model_validate(obj)
 
-    async def get_verification(
-        self, verification_id: UUID
-    ) -> LabelVerificationResponse:
+    async def get_verification(self, verification_id: UUID) -> LabelVerificationResponse:
         """获取单条标签复核记录"""
         verification = await self.repo.get_by_id(verification_id)
         if not verification:
             raise NotFoundException("标签复核记录", str(verification_id))
         return self._to_response(verification)
 
-    async def create_verification(
-        self, data: LabelVerificationCreate
-    ) -> LabelVerificationResponse:
+    async def create_verification(self, data: LabelVerificationCreate) -> LabelVerificationResponse:
         """创建标签复核记录"""
         # 检查视频是否已处理（去重）
         existing = await self.repo.get_by_video_file_key(data.video_file_key)
@@ -135,9 +131,7 @@ class LabelVerificationService:
         stats = await self.repo.get_statistics()
         return LabelVerificationStatistics(**stats)
 
-    async def get_by_batch_number(
-        self, batch_number: str
-    ) -> list[LabelVerificationResponse]:
+    async def get_by_batch_number(self, batch_number: str) -> list[LabelVerificationResponse]:
         """根据批号查询历史记录"""
         verifications = await self.repo.get_by_batch_number(batch_number)
         return [self._to_response(v) for v in verifications]

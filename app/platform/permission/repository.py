@@ -28,9 +28,7 @@ class PermissionRepository:
         result = await db.execute(stmt)
         return list(result.scalars())
 
-    async def get_permission_by_id(
-        self, db: AsyncSession, permission_id: uuid.UUID
-    ) -> Permission | None:
+    async def get_permission_by_id(self, db: AsyncSession, permission_id: uuid.UUID) -> Permission | None:
         stmt = select(Permission).where(
             Permission.id == permission_id,
             Permission.is_deleted == False,  # noqa: E712
@@ -57,9 +55,7 @@ class PermissionRepository:
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_roles_by_ids(
-        self, db: AsyncSession, role_ids: list[uuid.UUID]
-    ) -> list[Role]:
+    async def get_roles_by_ids(self, db: AsyncSession, role_ids: list[uuid.UUID]) -> list[Role]:
         """批量获取角色，一次查询替代 N 次 get_role_by_id。"""
         if not role_ids:
             return []
@@ -102,12 +98,8 @@ class PermissionRepository:
 
     # ── 角色权限关联 ──
 
-    async def get_role_permission_ids(
-        self, db: AsyncSession, role_id: uuid.UUID
-    ) -> list[uuid.UUID]:
-        stmt = select(RolePermission.permission_id).where(
-            RolePermission.role_id == role_id
-        )
+    async def get_role_permission_ids(self, db: AsyncSession, role_id: uuid.UUID) -> list[uuid.UUID]:
+        stmt = select(RolePermission.permission_id).where(RolePermission.role_id == role_id)
         result = await db.execute(stmt)
         return list(result.scalars())
 
@@ -118,18 +110,14 @@ class PermissionRepository:
         permission_ids: list[uuid.UUID],
     ) -> None:
         """全量替换角色的权限列表。"""
-        await db.execute(
-            delete(RolePermission).where(RolePermission.role_id == role_id)
-        )
+        await db.execute(delete(RolePermission).where(RolePermission.role_id == role_id))
         for pid in permission_ids:
             db.add(RolePermission(role_id=role_id, permission_id=pid))
         await db.flush()
 
     # ── 用户角色关联 ──
 
-    async def get_user_roles(
-        self, db: AsyncSession, user_id: uuid.UUID
-    ) -> list[UserRole]:
+    async def get_user_roles(self, db: AsyncSession, user_id: uuid.UUID) -> list[UserRole]:
         stmt = select(UserRole).where(UserRole.user_id == user_id)
         result = await db.execute(stmt)
         return list(result.scalars())
@@ -155,22 +143,18 @@ class PermissionRepository:
         await db.flush()
         return ur
 
-    async def remove_role_from_user(
-        self, db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID
-    ) -> bool:
+    async def remove_role_from_user(self, db: AsyncSession, user_id: uuid.UUID, role_id: uuid.UUID) -> bool:
         stmt = delete(UserRole).where(
             UserRole.user_id == user_id,
             UserRole.role_id == role_id,
         )
         result = await db.execute(stmt)
         await db.flush()
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ── 用户权限查询（合并所有角色） ──
 
-    async def get_user_permission_codes(
-        self, db: AsyncSession, user_id: uuid.UUID
-    ) -> set[str]:
+    async def get_user_permission_codes(self, db: AsyncSession, user_id: uuid.UUID) -> set[str]:
         """获取用户所有权限编码（合并所有角色的权限）。"""
         stmt = (
             select(Permission.code)
@@ -186,12 +170,8 @@ class PermissionRepository:
 
     # ── 数据范围 ──
 
-    async def get_role_data_scope_overrides(
-        self, db: AsyncSession, role_id: uuid.UUID
-    ) -> dict[str, str]:
-        stmt = select(RoleDataScopeOverride).where(
-            RoleDataScopeOverride.role_id == role_id
-        )
+    async def get_role_data_scope_overrides(self, db: AsyncSession, role_id: uuid.UUID) -> dict[str, str]:
+        stmt = select(RoleDataScopeOverride).where(RoleDataScopeOverride.role_id == role_id)
         result = await db.execute(stmt)
         return {o.module: o.data_scope for o in result.scalars()}
 
@@ -202,20 +182,12 @@ class PermissionRepository:
         overrides: dict[str, str],
     ) -> None:
         """全量替换角色的模块级数据范围覆盖。"""
-        await db.execute(
-            delete(RoleDataScopeOverride).where(
-                RoleDataScopeOverride.role_id == role_id
-            )
-        )
+        await db.execute(delete(RoleDataScopeOverride).where(RoleDataScopeOverride.role_id == role_id))
         for module, scope in overrides.items():
-            db.add(
-                RoleDataScopeOverride(role_id=role_id, module=module, data_scope=scope)
-            )
+            db.add(RoleDataScopeOverride(role_id=role_id, module=module, data_scope=scope))
         await db.flush()
 
-    async def get_effective_data_scope(
-        self, db: AsyncSession, user_id: uuid.UUID, module: str
-    ) -> str:
+    async def get_effective_data_scope(self, db: AsyncSession, user_id: uuid.UUID, module: str) -> str:
         """获取用户在某模块的有效数据范围（取最宽松）。
 
         优先级: all > department_and_children > department > self_only
@@ -282,9 +254,7 @@ class PermissionRepository:
         roles = list(roles_result.scalars())
 
         # 一次查询所有 overrides
-        overrides_stmt = select(RoleDataScopeOverride).where(
-            RoleDataScopeOverride.role_id.in_(role_ids)
-        )
+        overrides_stmt = select(RoleDataScopeOverride).where(RoleDataScopeOverride.role_id.in_(role_ids))
         overrides_result = await db.execute(overrides_stmt)
         all_overrides = list(overrides_result.scalars())
 

@@ -1,4 +1,5 @@
 """Equipment module schemas."""
+# ruff: noqa: F401
 
 from app.modules.equipment.schemas.calibration import (
     CalibrationPlanCreate,

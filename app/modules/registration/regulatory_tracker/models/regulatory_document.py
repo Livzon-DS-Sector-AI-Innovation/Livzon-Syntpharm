@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -25,9 +26,7 @@ class RegulatoryDocument(BaseModel):
 
     __tablename__ = "regulatory_documents"
     __table_args__ = (
-        UniqueConstraint(
-            "source_id", "channel_id", "document_id", name="uq_reg_docs_src_ch_doc"
-        ),
+        UniqueConstraint("source_id", "channel_id", "document_id", name="uq_reg_docs_src_ch_doc"),
         {"schema": "regulatory_tracker"},
     )
 
@@ -41,38 +40,24 @@ class RegulatoryDocument(BaseModel):
         ForeignKey("regulatory_tracker.data_channels.id", ondelete="CASCADE"),
         nullable=False,
     )
-    document_id: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="文档唯一标识，如 zdyzIdCODE"
-    )
+    document_id: Mapped[str] = mapped_column(String(200), nullable=False, comment="文档唯一标识，如 zdyzIdCODE")
     title: Mapped[str] = mapped_column(String(1000), nullable=False)
     publish_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    status_text: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="状态，如 颁布"
-    )
+    status_text: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="状态，如 颁布")
     classification: Mapped[str | None] = mapped_column(
         String(200), nullable=True, comment="分类，如 生物制品、化学药品"
     )
     original_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     is_new: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    is_read: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false"
-    )
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     first_found_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()"), nullable=False
     )
-    last_checked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # AI analysis fields
-    ai_summary: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="AI 生成的文档摘要"
-    )
-    ai_key_points: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, comment="AI 提取的关键要点"
-    )
-    ai_relevance_score: Mapped[float | None] = mapped_column(
-        Float, nullable=True, comment="AI 评估的相关性评分 (0-1)"
-    )
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI 生成的文档摘要")
+    ai_key_points: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="AI 提取的关键要点")
+    ai_relevance_score: Mapped[float | None] = mapped_column(Float, nullable=True, comment="AI 评估的相关性评分 (0-1)")
     ai_analyzed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="AI 分析完成时间"
     )
@@ -87,7 +72,7 @@ class RegulatoryDocument(BaseModel):
         default="general",
         server_default="general",
     )
-    raw_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    raw_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     # Relationships
     source = relationship("DataSource", back_populates="documents")

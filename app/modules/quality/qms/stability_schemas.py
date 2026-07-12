@@ -2,14 +2,14 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 # ========== Enums ==========
-class StabilityStudyType(str, Enum):
+class StabilityStudyType(StrEnum):
     """稳定性试验类型"""
 
     LONG_TERM = "long_term"  # 长期试验
@@ -17,7 +17,7 @@ class StabilityStudyType(str, Enum):
     INTERMEDIATE = "intermediate"  # 中间条件试验
 
 
-class StabilityStudyStatus(str, Enum):
+class StabilityStudyStatus(StrEnum):
     """稳定性试验状态"""
 
     DRAFT = "draft"  # 草稿
@@ -32,7 +32,7 @@ class StabilityStudyStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class StabilityStudyConclusion(str, Enum):
+class StabilityStudyConclusion(StrEnum):
     """稳定性试验结论"""
 
     QUALIFIED = "qualified"  # 合格
@@ -40,7 +40,7 @@ class StabilityStudyConclusion(str, Enum):
     UNQUALIFIED = "unqualified"  # 不合格
 
 
-class SampleNodeStatus(str, Enum):
+class SampleNodeStatus(StrEnum):
     """取样节点状态"""
 
     PENDING = "pending"  # 待取样
@@ -49,7 +49,7 @@ class SampleNodeStatus(str, Enum):
     OVERDUE = "overdue"  # 逾期
 
 
-class StabilityInspectionStatus(str, Enum):
+class StabilityInspectionStatus(StrEnum):
     """稳定性检验状态"""
 
     DRAFT = "draft"  # 草稿
@@ -58,14 +58,14 @@ class StabilityInspectionStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class StabilityInspectionConclusion(str, Enum):
+class StabilityInspectionConclusion(StrEnum):
     """稳定性检验结论"""
 
     QUALIFIED = "qualified"  # 合格
     UNQUALIFIED = "unqualified"  # 不合格
 
 
-class StabilityItemResult(str, Enum):
+class StabilityItemResult(StrEnum):
     """稳定性单项判定"""
 
     PASS = "pass"  # 合格
@@ -73,14 +73,14 @@ class StabilityItemResult(str, Enum):
     NA = "na"  # 不适用
 
 
-class StabilityApprovalType(str, Enum):
+class StabilityApprovalType(StrEnum):
     """审批类型"""
 
     STUDY = "study"  # 方案审批
     INSPECTION = "inspection"  # 检验审批
 
 
-class StabilityApprovalStatus(str, Enum):
+class StabilityApprovalStatus(StrEnum):
     """审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -189,9 +189,7 @@ class StabilityInspectionBase(BaseModel):
     sample_condition: str | None = Field(None, description="样品状态")
     standard_id: UUID | None = Field(None, description="检验标准ID")
     standard_name: str | None = Field(None, description="质量标准名称")
-    inspection_conclusion: StabilityInspectionConclusion | None = Field(
-        None, description="检验结论"
-    )
+    inspection_conclusion: StabilityInspectionConclusion | None = Field(None, description="检验结论")
     conclusion_reason: str | None = Field(None, description="结论说明")
     remark: str | None = Field(None, description="备注")
     oos_report_no: str | None = Field(None, description="OOS报告编号")
@@ -203,9 +201,7 @@ class StabilityInspectionCreate(StabilityInspectionBase):
 
     study_id: UUID = Field(..., description="稳定性试验ID")
     sample_node_id: UUID = Field(..., description="取样节点ID")
-    items: list[StabilityInspectionItemCreate] = Field(
-        default_factory=list, description="检验明细"
-    )
+    items: list[StabilityInspectionItemCreate] = Field(default_factory=list, description="检验明细")
 
 
 class StabilityInspectionUpdate(BaseModel):
@@ -284,17 +280,13 @@ class StabilityStudyBase(BaseModel):
     start_date: datetime | None = Field(None, description="试验开始日期")
     end_date: datetime | None = Field(None, description="试验结束日期")
     expiry_date: datetime | None = Field(None, description="有效期")
-    sample_intervals: str | list[int] | None = Field(
-        None, description="取样周期节点，逗号分隔或数组"
-    )
+    sample_intervals: str | list[int] | None = Field(None, description="取样周期节点，逗号分隔或数组")
     standard_id: UUID | None = Field(None, description="检验标准ID")
     standard_name: str | None = Field(None, description="质量标准名称")
     standard_version: str | None = Field(None, description="标准版本")
     developer_id: UUID | None = Field(None, description="研发人员ID")
     developer_name: str | None = Field(None, description="研发人员")
-    study_conclusion: StabilityStudyConclusion | None = Field(
-        None, description="试验结论"
-    )
+    study_conclusion: StabilityStudyConclusion | None = Field(None, description="试验结论")
     conclusion_reason: str | None = Field(None, description="结论说明")
     remark: str | None = Field(None, description="备注")
     attachments: str | None = Field(None, description="附件JSON")
@@ -303,9 +295,7 @@ class StabilityStudyBase(BaseModel):
 class StabilityStudyCreate(StabilityStudyBase):
     """创建稳定性试验"""
 
-    sample_nodes: list[StabilitySampleNodeCreate] = Field(
-        default_factory=list, description="取样节点列表"
-    )
+    sample_nodes: list[StabilitySampleNodeCreate] = Field(default_factory=list, description="取样节点列表")
 
 
 class StabilityStudyUpdate(BaseModel):

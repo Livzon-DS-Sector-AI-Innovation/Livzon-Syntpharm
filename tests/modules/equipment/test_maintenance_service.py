@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for maintenance service layer (failure code and work order functions)."""
 
 import uuid
@@ -52,9 +53,7 @@ def sample_symptom_data() -> FailureCodeCreate:
     )
 
 
-async def test_create_failure_code_success(
-    db_session: AsyncSession, sample_symptom_data: FailureCodeCreate
-) -> None:
+async def test_create_failure_code_success(db_session: AsyncSession, sample_symptom_data: FailureCodeCreate) -> None:
     """测试成功创建故障代码"""
     result = await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
     assert result.code == "NOISE"
@@ -62,18 +61,14 @@ async def test_create_failure_code_success(
     assert result.id is not None
 
 
-async def test_create_failure_code_duplicate(
-    db_session: AsyncSession, sample_symptom_data: FailureCodeCreate
-) -> None:
+async def test_create_failure_code_duplicate(db_session: AsyncSession, sample_symptom_data: FailureCodeCreate) -> None:
     """测试创建重复故障代码抛出异常"""
     await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
     with pytest.raises(DuplicateException):
         await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
 
 
-async def test_get_failure_code_by_id_success(
-    db_session: AsyncSession, sample_symptom_data: FailureCodeCreate
-) -> None:
+async def test_get_failure_code_by_id_success(db_session: AsyncSession, sample_symptom_data: FailureCodeCreate) -> None:
     """测试根据ID获取故障代码"""
     created = await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
     result = await get_failure_code_by_id(db_session, FailureSymptom, created.id)
@@ -89,9 +84,7 @@ async def test_get_failure_code_by_id_not_found(
         await get_failure_code_by_id(db_session, FailureSymptom, uuid.uuid4())
 
 
-async def test_update_failure_code_success(
-    db_session: AsyncSession, sample_symptom_data: FailureCodeCreate
-) -> None:
+async def test_update_failure_code_success(db_session: AsyncSession, sample_symptom_data: FailureCodeCreate) -> None:
     """测试成功更新故障代码"""
     created = await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
     updated = await update_failure_code(
@@ -105,9 +98,7 @@ async def test_update_failure_code_success(
     assert updated.code == "NOISE"
 
 
-async def test_delete_failure_code_success(
-    db_session: AsyncSession, sample_symptom_data: FailureCodeCreate
-) -> None:
+async def test_delete_failure_code_success(db_session: AsyncSession, sample_symptom_data: FailureCodeCreate) -> None:
     """测试成功删除故障代码"""
     created = await create_failure_code(db_session, FailureSymptom, sample_symptom_data)
     result = await delete_failure_code(db_session, FailureSymptom, created.id)
@@ -234,17 +225,13 @@ async def test_work_order_lifecycle(
     assert wo.started_at is not None
 
     # 完成
-    wo = await complete_work_order(
-        db_session, wo.id, WorkOrderComplete(repair_detail="更换了轴承")
-    )
+    wo = await complete_work_order(db_session, wo.id, WorkOrderComplete(repair_detail="更换了轴承"))
     assert wo.status == "待验收"
     assert wo.completed_at is not None
     assert wo.actual_duration is not None
 
     # 验收通过
-    wo = await verify_work_order(
-        db_session, wo.id, verifier.id, WorkOrderVerify(result="合格")
-    )
+    wo = await verify_work_order(db_session, wo.id, verifier.id, WorkOrderVerify(result="合格"))
     assert wo.status == "已完成"
     assert wo.verification_result == "合格"
 
@@ -268,9 +255,7 @@ async def test_work_order_verify_reject(
     wo = await create_work_order(db_session, data, sample_user.id)
     wo = await assign_work_order(db_session, wo.id, assignee.id)
     wo = await start_work_order(db_session, wo.id)
-    wo = await complete_work_order(
-        db_session, wo.id, WorkOrderComplete(repair_detail="简单处理")
-    )
+    wo = await complete_work_order(db_session, wo.id, WorkOrderComplete(repair_detail="简单处理"))
 
     # 验收不通过
     wo = await verify_work_order(
@@ -304,9 +289,7 @@ async def test_work_order_invalid_transition(
 # ==================== Calibration Service Tests ====================
 
 
-async def test_create_calibration_plan(
-    db_session: AsyncSession, sample_equipment: Equipment
-) -> None:
+async def test_create_calibration_plan(db_session: AsyncSession, sample_equipment: Equipment) -> None:
     """测试创建校准计划"""
     data = CalibrationPlanCreate(
         equipment_id=sample_equipment.id,
@@ -320,9 +303,7 @@ async def test_create_calibration_plan(
     assert plan.next_calibration_date == date(2026, 7, 1)
 
 
-async def test_create_calibration_plan_without_last_date(
-    db_session: AsyncSession, sample_equipment: Equipment
-) -> None:
+async def test_create_calibration_plan_without_last_date(db_session: AsyncSession, sample_equipment: Equipment) -> None:
     """测试创建校准计划（无上次校准日期时不自动计算下次日期）"""
     data = CalibrationPlanCreate(
         equipment_id=sample_equipment.id,
@@ -333,9 +314,7 @@ async def test_create_calibration_plan_without_last_date(
     assert plan.next_calibration_date is None
 
 
-async def test_get_calibration_plan_by_id(
-    db_session: AsyncSession, sample_equipment: Equipment
-) -> None:
+async def test_get_calibration_plan_by_id(db_session: AsyncSession, sample_equipment: Equipment) -> None:
     """测试根据ID获取校准计划"""
     data = CalibrationPlanCreate(
         equipment_id=sample_equipment.id,
@@ -356,9 +335,7 @@ async def test_get_calibration_plan_not_found(
         await get_calibration_plan_by_id(db_session, uuid.uuid4())
 
 
-async def test_create_calibration_record_updates_plan(
-    db_session: AsyncSession, sample_equipment: Equipment
-) -> None:
+async def test_create_calibration_record_updates_plan(db_session: AsyncSession, sample_equipment: Equipment) -> None:
     """测试创建校准记录后自动更新计划日期"""
     plan_data = CalibrationPlanCreate(
         equipment_id=sample_equipment.id,
@@ -384,9 +361,7 @@ async def test_create_calibration_record_updates_plan(
     assert plan.next_calibration_date == date(2027, 1, 1)
 
 
-async def test_get_calibration_record_by_id(
-    db_session: AsyncSession, sample_equipment: Equipment
-) -> None:
+async def test_get_calibration_record_by_id(db_session: AsyncSession, sample_equipment: Equipment) -> None:
     """测试根据ID获取校准记录"""
     plan_data = CalibrationPlanCreate(
         equipment_id=sample_equipment.id,
@@ -444,9 +419,7 @@ async def test_maintenance_work_order_lifecycle(
     assert wo.status == "执行中"
 
     # 完成（跳过验收）
-    wo = await complete_work_order(
-        db_session, wo.id, WorkOrderComplete(repair_detail="更换润滑油，检查密封")
-    )
+    wo = await complete_work_order(db_session, wo.id, WorkOrderComplete(repair_detail="更换润滑油，检查密封"))
     assert wo.status == "已完成"
 
     # 关闭
@@ -470,9 +443,7 @@ async def test_inspection_work_order_lifecycle(
     wo = await start_work_order(db_session, wo.id)
     assert wo.status == "执行中"
 
-    wo = await complete_work_order(
-        db_session, wo.id, WorkOrderComplete(repair_detail="巡检完成")
-    )
+    wo = await complete_work_order(db_session, wo.id, WorkOrderComplete(repair_detail="巡检完成"))
     assert wo.status == "已完成"
 
 
@@ -492,11 +463,7 @@ async def test_verify_not_allowed_for_maintenance(
     )
     wo = await create_work_order(db_session, data, sample_user.id)
     wo = await start_work_order(db_session, wo.id)
-    wo = await complete_work_order(
-        db_session, wo.id, WorkOrderComplete(repair_detail="维护完成")
-    )
+    wo = await complete_work_order(db_session, wo.id, WorkOrderComplete(repair_detail="维护完成"))
 
     with pytest.raises(AppException):
-        await verify_work_order(
-            db_session, wo.id, verifier.id, WorkOrderVerify(result="合格")
-        )
+        await verify_work_order(db_session, wo.id, verifier.id, WorkOrderVerify(result="合格"))

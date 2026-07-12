@@ -107,9 +107,7 @@ class RuleEngine:
 
     # ── 子校验 ──
 
-    def _validate_enums(
-        self, output: RectificationReviewOutput, errors: list[str]
-    ) -> None:
+    def _validate_enums(self, output: RectificationReviewOutput, errors: list[str]) -> None:
         """验证 5 个枚举值在合法范围内。"""
         valid_photo = {e.value for e in PhotoMatchLevel}
         photo_val = _enum_value(output.photo_match_level)
@@ -124,16 +122,12 @@ class RuleEngine:
         valid_compliance = {e.value for e in ComplianceLevel}
         compliance_val = _enum_value(output.standard_compliance_level)
         if compliance_val not in valid_compliance:
-            errors.append(
-                f"无效的合规等级: {compliance_val}，合法值: {valid_compliance}"
-            )
+            errors.append(f"无效的合规等级: {compliance_val}，合法值: {valid_compliance}")
 
         valid_conclusion = {e.value for e in ReviewConclusion}
         conclusion_val = _enum_value(output.review_conclusion)
         if conclusion_val not in valid_conclusion:
-            errors.append(
-                f"无效的审核结论: {conclusion_val}，合法值: {valid_conclusion}"
-            )
+            errors.append(f"无效的审核结论: {conclusion_val}，合法值: {valid_conclusion}")
 
     def _validate_text_fields(
         self,
@@ -202,37 +196,24 @@ class RuleEngine:
         if conclusion == ReviewConclusion.PASS.value:
             # 照片显示隐患仍存在 → 硬性不通过
             if photo == PhotoMatchLevel.UNMATCHED.value:
-                errors.append(
-                    "图片比对为 unmatched（缺陷仍存在或整改明显不到位）时评审判定不能为 通过"
-                )
+                errors.append("图片比对为 unmatched（缺陷仍存在或整改明显不到位）时评审判定不能为 通过")
 
             # 措施无效（仅有空话）→ 硬性不通过
             if quality == MeasureQualityLevel.INADEQUATE.value:
-                errors.append(
-                    "措施有效性为 inadequate（无具体操作、逻辑上无法消除隐患）时评审判定不能为 通过"
-                )
+                errors.append("措施有效性为 inadequate（无具体操作、逻辑上无法消除隐患）时评审判定不能为 通过")
 
             # 无照片但文字描述可能具体可信 → 降级为 warning
             if photo == PhotoMatchLevel.NO_PHOTOS.value:
-                warnings.append(
-                    "无整改后图片但判定为通过，请确认文字描述足够具体可信以支撑判定"
-                )
+                warnings.append("无整改后图片但判定为通过，请确认文字描述足够具体可信以支撑判定")
 
             # 标准不合规但其他维度可接受 → 降级为 warning（标准合规是参考维度）
             if compliance == ComplianceLevel.NON_COMPLIANT.value:
-                warnings.append(
-                    "标准合规为 non_compliant 但判定为通过，请确认不合规项不构成安全底线问题"
-                )
+                warnings.append("标准合规为 non_compliant 但判定为通过，请确认不合规项不构成安全底线问题")
 
         # 如果图片匹配且措施有效但结论为不通过，给出 warning
-        if (
-            photo == PhotoMatchLevel.MATCHED.value
-            and conclusion == ReviewConclusion.FAIL.value
-        ):
+        if photo == PhotoMatchLevel.MATCHED.value and conclusion == ReviewConclusion.FAIL.value:
             if quality == MeasureQualityLevel.ADEQUATE.value:
-                warnings.append(
-                    "图片匹配且措施有效但判定为不通过，请确认驳回理由是否充分"
-                )
+                warnings.append("图片匹配且措施有效但判定为不通过，请确认驳回理由是否充分")
 
     def _check_relevance(
         self,
@@ -245,20 +226,14 @@ class RuleEngine:
         # 简单关键词重叠检测
         desc_words = set(desc.replace("，", " ").replace("、", " ").split())
         review_words = set(
-            (output.review_comments + output.photo_match_analysis)
-            .replace("，", " ")
-            .replace("、", " ")
-            .split()
+            (output.review_comments + output.photo_match_analysis).replace("，", " ").replace("、", " ").split()
         )
 
         if desc_words and review_words:
             overlap = desc_words & review_words
             overlap_ratio = len(overlap) / len(desc_words) if desc_words else 0
             if overlap_ratio < 0.05:
-                warnings.append(
-                    f"输出与原始隐患描述关键词重叠率仅 {overlap_ratio:.0%}，"
-                    f"可能存在理解偏差"
-                )
+                warnings.append(f"输出与原始隐患描述关键词重叠率仅 {overlap_ratio:.0%}，可能存在理解偏差")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

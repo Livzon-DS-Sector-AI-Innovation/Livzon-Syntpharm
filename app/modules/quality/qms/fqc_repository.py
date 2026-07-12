@@ -1,6 +1,7 @@
 """FQC (Finished Product Quality Control) inspection repository"""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -27,7 +28,8 @@ class FQCInspectionRepository:
         result = await self.session.execute(
             select(FQCInspection).where(
                 and_(
-                    FQCInspection.id == inspection_id, FQCInspection.is_deleted == False
+                    FQCInspection.id == inspection_id,
+                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
                 )
             )
         )
@@ -39,7 +41,7 @@ class FQCInspectionRepository:
             select(FQCInspection).where(
                 and_(
                     FQCInspection.inspection_no == inspection_no,
-                    FQCInspection.is_deleted == False,
+                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
                 )
             )
         )
@@ -52,39 +54,24 @@ class FQCInspectionRepository:
         limit: int = 20,
     ) -> tuple[list[FQCInspection], int]:
         """获取FQC检验单列表"""
-        query = select(FQCInspection).where(FQCInspection.is_deleted == False)
+        query = select(FQCInspection).where(not FQCInspection.is_deleted)  # type: ignore[arg-type]
 
         if filters.inspection_no:
-            query = query.where(
-                FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
-            )
+            query = query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
         if filters.batch_no:
             query = query.where(FQCInspection.batch_no.ilike(f"%{filters.batch_no}%"))
         if filters.product_code:
-            query = query.where(
-                FQCInspection.product_code.ilike(f"%{filters.product_code}%")
-            )
+            query = query.where(FQCInspection.product_code.ilike(f"%{filters.product_code}%"))
         if filters.product_name:
-            query = query.where(
-                FQCInspection.product_name.ilike(f"%{filters.product_name}%")
-            )
+            query = query.where(FQCInspection.product_name.ilike(f"%{filters.product_name}%"))
         if filters.production_workshop:
-            query = query.where(
-                FQCInspection.production_workshop.ilike(
-                    f"%{filters.production_workshop}%"
-                )
-            )
+            query = query.where(FQCInspection.production_workshop.ilike(f"%{filters.production_workshop}%"))
         if filters.status:
             query = query.where(FQCInspection.status == filters.status.value)
         if filters.inspection_conclusion:
-            query = query.where(
-                FQCInspection.inspection_conclusion
-                == filters.inspection_conclusion.value
-            )
+            query = query.where(FQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
         if filters.release_status:
-            query = query.where(
-                FQCInspection.release_status == filters.release_status.value
-            )
+            query = query.where(FQCInspection.release_status == filters.release_status.value)
         if filters.batch_locked is not None:
             query = query.where(FQCInspection.batch_locked == filters.batch_locked)
         if filters.start_date:
@@ -93,62 +80,35 @@ class FQCInspectionRepository:
             query = query.where(FQCInspection.inspection_date <= filters.end_date)
 
         # Count query
-        count_query = select(FQCInspection.id).where(FQCInspection.is_deleted == False)
+        count_query = select(FQCInspection.id).where(not FQCInspection.is_deleted)  # type: ignore[arg-type]
         if filters.inspection_no:
-            count_query = count_query.where(
-                FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%")
-            )
+            count_query = count_query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
         if filters.batch_no:
-            count_query = count_query.where(
-                FQCInspection.batch_no.ilike(f"%{filters.batch_no}%")
-            )
+            count_query = count_query.where(FQCInspection.batch_no.ilike(f"%{filters.batch_no}%"))
         if filters.product_code:
-            count_query = count_query.where(
-                FQCInspection.product_code.ilike(f"%{filters.product_code}%")
-            )
+            count_query = count_query.where(FQCInspection.product_code.ilike(f"%{filters.product_code}%"))
         if filters.product_name:
-            count_query = count_query.where(
-                FQCInspection.product_name.ilike(f"%{filters.product_name}%")
-            )
+            count_query = count_query.where(FQCInspection.product_name.ilike(f"%{filters.product_name}%"))
         if filters.production_workshop:
-            count_query = count_query.where(
-                FQCInspection.production_workshop.ilike(
-                    f"%{filters.production_workshop}%"
-                )
-            )
+            count_query = count_query.where(FQCInspection.production_workshop.ilike(f"%{filters.production_workshop}%"))
         if filters.status:
-            count_query = count_query.where(
-                FQCInspection.status == filters.status.value
-            )
+            count_query = count_query.where(FQCInspection.status == filters.status.value)
         if filters.inspection_conclusion:
-            count_query = count_query.where(
-                FQCInspection.inspection_conclusion
-                == filters.inspection_conclusion.value
-            )
+            count_query = count_query.where(FQCInspection.inspection_conclusion == filters.inspection_conclusion.value)
         if filters.release_status:
-            count_query = count_query.where(
-                FQCInspection.release_status == filters.release_status.value
-            )
+            count_query = count_query.where(FQCInspection.release_status == filters.release_status.value)
         if filters.batch_locked is not None:
-            count_query = count_query.where(
-                FQCInspection.batch_locked == filters.batch_locked
-            )
+            count_query = count_query.where(FQCInspection.batch_locked == filters.batch_locked)
         if filters.start_date:
-            count_query = count_query.where(
-                FQCInspection.inspection_date >= filters.start_date
-            )
+            count_query = count_query.where(FQCInspection.inspection_date >= filters.start_date)
         if filters.end_date:
-            count_query = count_query.where(
-                FQCInspection.inspection_date <= filters.end_date
-            )
+            count_query = count_query.where(FQCInspection.inspection_date <= filters.end_date)
 
         count_result = await self.session.execute(count_query)
         total = len(count_result.all())
 
         # Order and paginate
-        query = (
-            query.order_by(FQCInspection.created_at.desc()).offset(skip).limit(limit)
-        )
+        query = query.order_by(FQCInspection.created_at.desc()).offset(skip).limit(limit)
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
@@ -164,7 +124,7 @@ class FQCInspectionRepository:
             .where(
                 and_(
                     FQCInspection.inspection_no.like(f"{prefix}%"),
-                    FQCInspection.is_deleted == False,
+                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
                 )
             )
             .order_by(FQCInspection.inspection_no.desc())
@@ -189,7 +149,7 @@ class FQCInspectionRepository:
             .where(
                 and_(
                     FQCInspection.report_no.like(f"{prefix}%"),
-                    FQCInspection.is_deleted == False,
+                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
                     FQCInspection.report_no.isnot(None),
                 )
             )
@@ -219,22 +179,20 @@ class FQCInspectionItemRepository:
             select(FQCInspectionItem).where(
                 and_(
                     FQCInspectionItem.id == item_id,
-                    FQCInspectionItem.is_deleted == False,
+                    not FQCInspectionItem.is_deleted,  # type: ignore[arg-type]
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_by_inspection_id(
-        self, inspection_id: UUID
-    ) -> list[FQCInspectionItem]:
+    async def get_by_inspection_id(self, inspection_id: UUID) -> list[FQCInspectionItem]:
         """根据检验单ID获取明细"""
         result = await self.session.execute(
             select(FQCInspectionItem)
             .where(
                 and_(
                     FQCInspectionItem.fqc_inspection_id == inspection_id,
-                    FQCInspectionItem.is_deleted == False,
+                    not FQCInspectionItem.is_deleted,  # type: ignore[arg-type]
                 )
             )
             .order_by(FQCInspectionItem.item_no)
@@ -244,7 +202,7 @@ class FQCInspectionItemRepository:
     async def create_bulk(
         self,
         inspection_id: UUID,
-        items_data: list[dict],
+        items_data: list[dict[str, Any]],
         created_by: UUID | None = None,
     ) -> list[FQCInspectionItem]:
         """批量创建明细"""
@@ -280,16 +238,14 @@ class FQCApprovalRecordRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_inspection_id(
-        self, inspection_id: UUID
-    ) -> list[FQCApprovalRecord]:
+    async def get_by_inspection_id(self, inspection_id: UUID) -> list[FQCApprovalRecord]:
         """根据检验单ID获取审批记录"""
         result = await self.session.execute(
             select(FQCApprovalRecord)
             .where(
                 and_(
                     FQCApprovalRecord.fqc_inspection_id == inspection_id,
-                    FQCApprovalRecord.is_deleted == False,
+                    not FQCApprovalRecord.is_deleted,  # type: ignore[arg-type]
                 )
             )
             .order_by(FQCApprovalRecord.approval_level)

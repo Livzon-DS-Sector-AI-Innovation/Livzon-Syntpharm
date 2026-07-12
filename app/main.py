@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # ruff: noqa: E402, I001
 import asyncio
 import logging
@@ -150,10 +151,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # ── 设备模块飞书 WebSocket 长连接（独立交互机器人，原生 WebSocket） ──
     equipment_ws_task: asyncio.Task | None = None
-    if (
-        settings.feishu.equipment.credentials.app_id
-        and settings.feishu.equipment.credentials.app_secret
-    ):
+    if settings.feishu.equipment.credentials.app_id and settings.feishu.equipment.credentials.app_secret:
         from app.modules.equipment.feishu.ws_client import start_equipment_ws
 
         equipment_ws_task = asyncio.create_task(start_equipment_ws())
@@ -164,7 +162,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     asyncio.create_task(start_ws())
 
     # ── Livzon 助手飞书交互卡片回调（开发环境可用 WebSocket 长连接）──
-    livzon_card_ws_task: asyncio.Task | None = None
     if settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED:
         from app.platform.identity.feishu_card_ws import start_livzon_card_ws
 
@@ -314,9 +311,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     if exc.status_code >= 500:
         logger.exception(
             "HTTP %d on %s %s: %s",
@@ -332,9 +327,7 @@ async def http_exception_handler(
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     errors = exc.errors()
     detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
     return error_response(

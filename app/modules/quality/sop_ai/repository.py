@@ -5,6 +5,7 @@
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,16 +29,12 @@ class SopAiConfigRepository:
 
     async def get_by_key(self, config_key: str) -> SopAiConfig | None:
         """根据键获取配置"""
-        result = await self.session.execute(
-            select(SopAiConfig).where(SopAiConfig.config_key == config_key)
-        )
+        result = await self.session.execute(select(SopAiConfig).where(SopAiConfig.config_key == config_key))
         return result.scalars().first()
 
     async def get_all(self) -> list[SopAiConfig]:
         """获取所有配置"""
-        result = await self.session.execute(
-            select(SopAiConfig).order_by(SopAiConfig.created_at.desc())
-        )
+        result = await self.session.execute(select(SopAiConfig).order_by(SopAiConfig.created_at.desc()))
         return list(result.scalars().all())
 
     async def create(
@@ -87,7 +84,7 @@ class SopAiConfigRepository:
         """创建或更新配置"""
         config = await self.get_by_key(config_key)
         if config:
-            return await self.update(config_key, config_value, description, operator)
+            return await self.update(config_key, config_value, description, operator)  # type: ignore[return-value]
         return await self.create(config_key, config_value, description, operator)
 
 
@@ -99,16 +96,12 @@ class SopAiCheckMainRepository:
 
     async def get_by_id(self, id: str) -> SopAiCheckMain | None:
         """根据ID获取记录"""
-        result = await self.session.execute(
-            select(SopAiCheckMain).where(SopAiCheckMain.id == id)
-        )
+        result = await self.session.execute(select(SopAiCheckMain).where(SopAiCheckMain.id == id))
         return result.scalars().first()
 
     async def get_by_file_code(self, file_code: str) -> SopAiCheckMain | None:
         """根据文件编号获取记录"""
-        result = await self.session.execute(
-            select(SopAiCheckMain).where(SopAiCheckMain.file_code == file_code)
-        )
+        result = await self.session.execute(select(SopAiCheckMain).where(SopAiCheckMain.file_code == file_code))
         return result.scalars().first()
 
     async def list(
@@ -144,9 +137,7 @@ class SopAiCheckMainRepository:
         )
 
         # 统计语句
-        count_query = (
-            select(func.count()).select_from(SopAiCheckMain).where(where_clause)
-        )
+        count_query = select(func.count()).select_from(SopAiCheckMain).where(where_clause)
 
         result = await self.session.execute(query)
         total_result = await self.session.execute(count_query)
@@ -224,9 +215,7 @@ class SopAiCheckProblemRepository:
 
     async def get_by_id(self, id: str) -> SopAiCheckProblem | None:
         """根据ID获取问题"""
-        result = await self.session.execute(
-            select(SopAiCheckProblem).where(SopAiCheckProblem.id == id)
-        )
+        result = await self.session.execute(select(SopAiCheckProblem).where(SopAiCheckProblem.id == id))
         return result.scalars().first()
 
     async def get_by_main_id(self, main_id: str) -> list[SopAiCheckProblem]:
@@ -271,7 +260,7 @@ class SopAiCheckProblemRepository:
 
     async def create_batch(
         self,
-        problems_data: list[dict],
+        problems_data: list[dict[str, Any]],
     ) -> list[SopAiCheckProblem]:
         """批量创建问题"""
         problems = []
@@ -312,20 +301,14 @@ class SopAiCheckProblemRepository:
             await self.session.flush()
         return problem
 
-    async def count_by_main_id(self, main_id: str) -> dict:
+    async def count_by_main_id(self, main_id: str) -> dict[str, Any]:
         """统计问题数量"""
         result = await self.session.execute(
             select(
                 func.count().label("total"),
-                func.sum(
-                    func.case((SopAiCheckProblem.risk_level == "high", 1), else_=0)
-                ).label("high"),
-                func.sum(
-                    func.case((SopAiCheckProblem.risk_level == "medium", 1), else_=0)
-                ).label("medium"),
-                func.sum(
-                    func.case((SopAiCheckProblem.risk_level == "low", 1), else_=0)
-                ).label("low"),
+                func.sum(func.case((SopAiCheckProblem.risk_level == "high", 1), else_=0)).label("high"),
+                func.sum(func.case((SopAiCheckProblem.risk_level == "medium", 1), else_=0)).label("medium"),
+                func.sum(func.case((SopAiCheckProblem.risk_level == "low", 1), else_=0)).label("low"),
             ).where(SopAiCheckProblem.main_id == main_id)
         )
         row = result.first()

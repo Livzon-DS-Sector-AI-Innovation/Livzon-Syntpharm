@@ -46,9 +46,7 @@ def _register_failure_code_routes(
         ),
     ) -> JSONResponse:
         codes = await service.get_failure_codes(db, model_class)
-        return success_response(
-            data=[FailureCodeResponse.model_validate(c) for c in codes]
-        )
+        return success_response(data=[FailureCodeResponse.model_validate(c) for c in codes])
 
     @router.get(f"/{path}/{{code_id}}", summary=f"查询单个{summary_prefix}")
     async def get_one(

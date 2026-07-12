@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Equipment API integration tests."""
 
 import uuid

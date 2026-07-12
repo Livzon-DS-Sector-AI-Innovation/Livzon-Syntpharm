@@ -17,9 +17,7 @@ async def create_product(db: AsyncSession, data: dict[str, Any]) -> CpvProduct:
     return product
 
 
-async def get_product_by_id(
-    db: AsyncSession, product_id: uuid.UUID
-) -> CpvProduct | None:
+async def get_product_by_id(db: AsyncSession, product_id: uuid.UUID) -> CpvProduct | None:
     """根据ID获取产品"""
     result = await db.execute(
         select(CpvProduct).where(

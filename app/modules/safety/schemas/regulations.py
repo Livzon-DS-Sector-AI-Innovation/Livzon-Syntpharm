@@ -16,12 +16,8 @@ class OperationRegulationBase(BaseModel):
     regulation_no: str = Field(..., max_length=64, description="操规编号")
     regulation_name: str = Field(..., max_length=255, description="操规名称")
     document_path: str | None = Field(None, max_length=500, description="操规文档路径")
-    document_original_name: str | None = Field(
-        None, max_length=255, description="文档原始文件名"
-    )
-    position: str | None = Field(
-        None, max_length=100, description="岗位（达托/达巴，逗号分隔）"
-    )
+    document_original_name: str | None = Field(None, max_length=255, description="文档原始文件名")
+    position: str | None = Field(None, max_length=100, description="岗位（达托/达巴，逗号分隔）")
     notes: str | None = Field(None, description="备注")
 
 
@@ -37,9 +33,7 @@ class OperationRegulationUpdate(BaseModel):
     regulation_no: str | None = Field(None, max_length=64, description="操规编号")
     regulation_name: str | None = Field(None, max_length=255, description="操规名称")
     document_path: str | None = Field(None, max_length=500, description="操规文档路径")
-    document_original_name: str | None = Field(
-        None, max_length=255, description="文档原始文件名"
-    )
+    document_original_name: str | None = Field(None, max_length=255, description="文档原始文件名")
     position: str | None = Field(None, max_length=100, description="岗位")
     notes: str | None = Field(None, description="备注")
     content: str | None = Field(None, description="标准化 Markdown 内容")
@@ -52,9 +46,7 @@ class OperationRegulationResponse(OperationRegulationBase):
     id: uuid.UUID
     content: str | None = Field(None, description="标准化 Markdown 内容")
     status: str = Field("draft", description="操规状态")
-    source_document_path: str | None = Field(
-        None, max_length=500, description="原始上传文件路径"
-    )
+    source_document_path: str | None = Field(None, max_length=500, description="原始上传文件路径")
     created_at: datetime
     updated_at: datetime
 
@@ -71,18 +63,14 @@ class RegulationRevisionBase(BaseModel):
     revision_no: str = Field(..., max_length=64, description="修订编号")
     regulation_id: uuid.UUID = Field(..., description="关联操规ID")
     regulation_name: str = Field(..., max_length=255, description="安全操规名称")
-    old_document_path: str | None = Field(
-        None, max_length=500, description="旧文档路径"
-    )
+    old_document_path: str | None = Field(None, max_length=500, description="旧文档路径")
     reviser: uuid.UUID | None = Field(None, description="修订人")
     reviser_name: str | None = Field(None, max_length=100, description="修订人姓名")
     revision_time: datetime = Field(..., description="修订时间")
     revision_type: RevisionType = Field(RevisionType.MANUAL, description="修订类型")
     revision_opinion: str | None = Field(None, description="修订意见/内容")
     revision_scope: str | None = Field(None, max_length=100, description="修订范围")
-    new_document_path: str | None = Field(
-        None, max_length=500, description="新文档路径"
-    )
+    new_document_path: str | None = Field(None, max_length=500, description="新文档路径")
     notes: str | None = Field(None, description="备注")
 
 
@@ -104,9 +92,7 @@ class RegulationRevisionUpdate(BaseModel):
     revision_opinion: str | None = Field(None, description="修订意见/内容")
     revision_scope: str | None = Field(None, max_length=100, description="修订范围")
     review_opinion: str | None = Field(None, max_length=32, description="审核意见")
-    new_document_path: str | None = Field(
-        None, max_length=500, description="新文档路径"
-    )
+    new_document_path: str | None = Field(None, max_length=500, description="新文档路径")
     notes: str | None = Field(None, description="备注")
 
 
@@ -150,9 +136,7 @@ class RevisionScopeIdentifyRequest(BaseModel):
 class RevisionScopeIdentifyResponse(BaseModel):
     """AI 识别修订范围响应"""
 
-    scope: str = Field(
-        ..., description="识别的修订范围（逗号分隔: process/safety_requirement）"
-    )
+    scope: str = Field(..., description="识别的修订范围（逗号分隔: process/safety_requirement）")
     reasoning: str = Field(..., description="识别依据说明")
 
 

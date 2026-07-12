@@ -10,11 +10,12 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def load_synonyms():
+def load_synonyms() -> Any:
     """Load solvent synonym database."""
     try:
         from app.modules.research.ich_service import DATA_DIR
@@ -28,7 +29,7 @@ def load_synonyms():
     return {}
 
 
-def build_solvent_index(ich_data, synonyms):
+def build_solvent_index(ich_data, synonyms) -> Any:  # type: ignore[no-untyped-def]
     """
     Build a searchable index of solvents from ICH data and synonyms.
 
@@ -85,14 +86,14 @@ def build_solvent_index(ich_data, synonyms):
         if canonical_lower in index:
             for alias in alias_list:
                 alias_lower = alias.lower()
-                index[canonical_lower]["aliases"].append(alias_lower)
+                index[canonical_lower]["aliases"].append(alias_lower)  # type: ignore[union-attr]
                 if alias_lower not in index:
                     index[alias_lower] = index[canonical_lower]
 
     return index
 
 
-def classify_solvents(solvents, solvent_index):
+def classify_solvents(solvents, solvent_index) -> Any:  # type: ignore[no-untyped-def]
     """
     Classify LLM-extracted solvents against ICH database.
 
@@ -133,9 +134,7 @@ def classify_solvents(solvents, solvent_index):
                 classified.append(
                     {
                         "solvent": ich_data["canonical"],
-                        "original_name": solvent_entry.get(
-                            "original_name", solvent_name
-                        ),
+                        "original_name": solvent_entry.get("original_name", solvent_name),
                         "matched_as": solvent_name,
                         "class": ich_data["class"],
                         "pde": ich_data.get("pde"),
@@ -149,13 +148,9 @@ def classify_solvents(solvents, solvent_index):
                 classified.append(
                     {
                         "solvent": solvent_name,
-                        "original_name": solvent_entry.get(
-                            "original_name", solvent_name
-                        ),
+                        "original_name": solvent_entry.get("original_name", solvent_name),
                         "matched_as": solvent_name,
-                        "class": llm_class.lower().replace(
-                            " ", ""
-                        ),  # "Class 3" -> "class3"
+                        "class": llm_class.lower().replace(" ", ""),  # "Class 3" -> "class3"
                         "pde": None,
                         "limit": None,
                         "purpose": solvent_entry.get("purpose", "unknown"),
@@ -169,9 +164,7 @@ def classify_solvents(solvents, solvent_index):
                 classified.append(
                     {
                         "solvent": ich_data["canonical"],
-                        "original_name": solvent_entry.get(
-                            "original_name", solvent_name
-                        ),
+                        "original_name": solvent_entry.get("original_name", solvent_name),
                         "matched_as": solvent_name,
                         "class": ich_data["class"],
                         "pde": ich_data.get("pde"),
@@ -185,9 +178,7 @@ def classify_solvents(solvents, solvent_index):
                 classified.append(
                     {
                         "solvent": solvent_name,
-                        "original_name": solvent_entry.get(
-                            "original_name", solvent_name
-                        ),
+                        "original_name": solvent_entry.get("original_name", solvent_name),
                         "matched_as": solvent_name,
                         "class": "unknown",
                         "pde": None,
@@ -201,7 +192,7 @@ def classify_solvents(solvents, solvent_index):
     return classified
 
 
-def analyze_steps(llm_data, solvent_index):
+def analyze_steps(llm_data, solvent_index) -> Any:  # type: ignore[no-untyped-def]
     """
     Analyze LLM-extracted solvents and classify against ICH database.
 
@@ -246,11 +237,9 @@ def analyze_steps(llm_data, solvent_index):
     }
 
 
-def main():
+def main() -> Any:
     if len(sys.argv) < 3:
-        logger.info(
-            "Usage: solvent_match.py --llm <llm_analysis_json> <ich_json> [output_json]"
-        )
+        logger.info("Usage: solvent_match.py --llm <llm_analysis_json> <ich_json> [output_json]")
         logger.info("  llm_analysis_json: Output from llm_extract.py")
         logger.info("  ich_json: ICH Q3C data (data/ich-q3c-full.json)")
         logger.info("  output_json: Output path (optional, defaults to stdout)")

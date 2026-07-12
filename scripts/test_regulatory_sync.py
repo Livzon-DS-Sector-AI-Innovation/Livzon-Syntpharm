@@ -47,9 +47,7 @@ async def check_prerequisites() -> tuple[DataSource, DataChannel] | None:
     async with async_session_factory() as db:
         # 检查表是否存在
         try:
-            await db.execute(
-                text("SELECT 1 FROM regulatory_tracker.data_sources LIMIT 1")
-            )
+            await db.execute(text("SELECT 1 FROM regulatory_tracker.data_sources LIMIT 1"))
         except Exception as e:
             logger.error(f"数据库表不存在或未创建: {e}")
             logger.error("请先执行: .venv/bin/alembic upgrade head")
@@ -63,9 +61,7 @@ async def check_prerequisites() -> tuple[DataSource, DataChannel] | None:
             return None
 
         # 检查栏目
-        channel = await repo.get_channel_by_code(
-            db, source.id, "cde_domestic_guideline"
-        )
+        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
         if not channel:
             logger.error("cde_domestic_guideline 栏目不存在，请先执行 seed")
             return None
@@ -123,9 +119,7 @@ async def show_db_stats():
     async with async_session_factory() as db:
         # 文档数量
         source = await repo.get_data_source_by_code(db, "CDE")
-        channel = await repo.get_channel_by_code(
-            db, source.id, "cde_domestic_guideline"
-        )
+        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
         doc_count = await repo.count_documents(db, source.id, channel.id)
 
         # 同步任务数量
@@ -168,10 +162,7 @@ async def show_db_stats():
         if docs:
             logger.info(f"\n最新 {len(docs)} 条法规:")
             for doc in docs:
-                logger.info(
-                    f"  [{doc.publish_date}] {doc.title[:60]} | "
-                    f"{doc.status_text} | {doc.classification}"
-                )
+                logger.info(f"  [{doc.publish_date}] {doc.title[:60]} | {doc.status_text} | {doc.classification}")
 
 
 async def main():

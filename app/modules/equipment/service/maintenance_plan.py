@@ -93,7 +93,7 @@ async def create_maintenance_plan(
 
     plan = await repo.create_maintenance_plan(db, plan_data)
     # 创建后 re-fetch 加载关联数据
-    return await repo.get_maintenance_plan_by_id(db, plan.id)
+    return await repo.get_maintenance_plan_by_id(db, plan.id)  # type: ignore[return-value]
 
 
 async def get_maintenance_plan_by_id(
@@ -151,9 +151,7 @@ async def update_maintenance_plan(
     if "last_maintenance_date" in update_data and last_date is None:
         update_data["next_maintenance_date"] = None
     elif frequency and frequency_unit and last_date:
-        update_data["next_maintenance_date"] = _calculate_next_maintenance_date(
-            last_date, frequency, frequency_unit
-        )
+        update_data["next_maintenance_date"] = _calculate_next_maintenance_date(last_date, frequency, frequency_unit)
 
     result = await repo.update_maintenance_plan(db, plan_id, update_data)
     if not result:
@@ -193,7 +191,7 @@ async def generate_due_work_orders(
     today = date_type.today()
 
     # 查询所有到期的启用计划
-    due_plans = await repo.get_maintenance_plans_due(db, today)
+    due_plans = await repo.get_maintenance_plans_due(db, today)  # type: ignore[call-arg]
 
     created_count = 0
     skipped_count = 0
@@ -211,9 +209,7 @@ async def generate_due_work_orders(
         # 确定目标设备列表
         if plan.category_id:
             # category 模式：查询分类下所有可用设备
-            equipment_ids = await repo.get_equipment_ids_by_category(
-                db, plan.category_id
-            )
+            equipment_ids = await repo.get_equipment_ids_by_category(db, plan.category_id)
             if not equipment_ids:
                 logger.info(
                     "维护计划 %s (%s) 的分类下无可用设备，跳过",

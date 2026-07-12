@@ -4,6 +4,7 @@
 """
 
 import uuid
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,17 +31,13 @@ async def get_equipments_by_category(
     category_id: uuid.UUID,
 ) -> list[EquipmentResponse]:
     """获取指定分类的设备列表（供其他模块调用）"""
-    equipments, _ = await service.get_equipments(db, category_id=category_id)
+    equipments, _ = await service.get_equipments(db, category_id=category_id)  # type: ignore[call-arg]
     result = []
     for e in equipments:
         resp = EquipmentResponse.model_validate(e)
         links = getattr(e, "category_links", []) or []
         resp.category_ids = [link.category_id for link in links if not link.is_deleted]
-        names = [
-            link.category.name
-            for link in links
-            if not link.is_deleted and link.category
-        ]
+        names = [link.category.name for link in links if not link.is_deleted and link.category]
         resp.category_names = "、".join(names) if names else None
         result.append(resp)
     return result
@@ -51,7 +48,7 @@ async def get_equipments_by_location(
     location_id: uuid.UUID,
 ) -> list[EquipmentResponse]:
     """获取指定位置的设备列表（供其他模块调用）"""
-    equipments, _ = await service.get_equipments(db, location_id=location_id)
+    equipments, _ = await service.get_equipments(db, location_id=location_id)  # type: ignore[call-arg]
     return [EquipmentResponse.model_validate(e) for e in equipments]
 
 
@@ -63,7 +60,7 @@ async def update_equipment_status(
     """更新设备状态（供其他模块调用）"""
     from app.modules.equipment.schemas import EquipmentUpdate
 
-    equipment = await service.update_equipment(
+    equipment = await service.update_equipment(  # type: ignore[call-arg]
         db, equipment_id, EquipmentUpdate(status=status)
     )
     return EquipmentResponse.model_validate(equipment)
@@ -97,7 +94,7 @@ async def list_personnel(
             role = await service.get_role_by_code(db, code)
             if role:
                 role_ids.append(role.id)
-    result = await service.list_personnel(
+    result = await service.list_personnel(  # type: ignore[call-arg]
         db,
         role_ids=role_ids,
         is_active=is_active,
@@ -136,7 +133,7 @@ async def get_role_by_code(db: AsyncSession, code: str) -> RoleResponse | None:
 # ── 调度器公共接口 ──
 
 
-def get_inspection_schedule_generator():
+def get_inspection_schedule_generator() -> Any:
     """获取巡检计划调度生成器（供其他模块注册调度任务）"""
     from app.modules.equipment.scheduled import InspectionScheduleGenerator
 

@@ -80,12 +80,8 @@ def main():
         print(f"✓ {migration_file}: Single schema '{schema}' (OK)")
         sys.exit(0)
     else:
-        print(
-            f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}"
-        )
-        print(
-            "\nError: A migration should only touch tables within one module's schema."
-        )
+        print(f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}")
+        print("\nError: A migration should only touch tables within one module's schema.")
         print("If this migration includes changes from other modules, please:")
         print("  1. Discard this migration: rm " + migration_file)
         print("  2. Re-generate with --include-object filtering, or")

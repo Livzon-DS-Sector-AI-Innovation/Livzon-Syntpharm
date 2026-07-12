@@ -3,6 +3,7 @@
 import os
 import uuid
 from io import BytesIO
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -29,9 +30,7 @@ async def upload_work_order_images(
     ),
 ) -> JSONResponse:
     images = await service.upload_images(db, work_order_id, files)
-    return success_response(
-        data=[WorkOrderImageResponse.model_validate(img) for img in images]
-    )
+    return success_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
 
 @router.get("/{work_order_id}/images", summary="获取工单图片列表")
@@ -43,20 +42,18 @@ async def list_work_order_images(
     ),
 ) -> JSONResponse:
     images = await service.get_work_order_images(db, work_order_id)
-    return success_response(
-        data=[WorkOrderImageResponse.model_validate(img) for img in images]
-    )
+    return success_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
 
 @router.get("/{work_order_id}/images/{image_id}/file", summary="查看工单图片文件")
-async def serve_work_order_image(
+async def get(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     ctx: EquipmentAccessContext = Depends(
         require_equipment_access("equipment:work_order:read"),
     ),
-):
+) -> Any:
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
 

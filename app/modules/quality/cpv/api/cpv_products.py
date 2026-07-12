@@ -144,9 +144,7 @@ async def get_parameters(
 
     parameters = await service.get_parameters(db, product_id, type)
 
-    return success_response(
-        data=[CpvParameterResponse.model_validate(p) for p in parameters]
-    )
+    return success_response(data=[CpvParameterResponse.model_validate(p) for p in parameters])
 
 
 @router.post("/products/{product_id}/parameters", summary="新增参数")
@@ -286,9 +284,7 @@ async def get_statistics(
 ) -> JSONResponse:
     """获取统计数据（批次总数、均值、标准差、CPK、异常数）"""
 
-    stats = await service.get_statistics(
-        db, product_id, parameter_id, batch_no, start_date, end_date
-    )
+    stats = await service.get_statistics(db, product_id, parameter_id, batch_no, start_date, end_date)
 
     return success_response(data=stats.model_dump())
 
@@ -305,8 +301,6 @@ async def get_trend(
 ) -> JSONResponse:
     """获取趋势图数据"""
 
-    trend = await service.get_trend_data(
-        db, product_id, parameter_id, batch_no, start_date, end_date
-    )
+    trend = await service.get_trend_data(db, product_id, parameter_id, batch_no, start_date, end_date)
 
     return success_response(data=trend.model_dump())

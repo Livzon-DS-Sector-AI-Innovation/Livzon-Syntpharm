@@ -29,14 +29,12 @@ from app.modules.equipment.schemas import (
 router = APIRouter()
 
 
-async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
+async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:  # type: ignore[no-untyped-def]
     """将 ORM Equipment 转为响应对象，填充多分类信息及部门信息"""
     resp = EquipmentResponse.model_validate(equipment)
     links = getattr(equipment, "category_links", []) or []
     resp.category_ids = [link.category_id for link in links if not link.is_deleted]
-    names = [
-        link.category.name for link in links if not link.is_deleted and link.category
-    ]
+    names = [link.category.name for link in links if not link.is_deleted and link.category]
     resp.category_names = "、".join(names) if names else None
     resp.location_name = equipment.location.name if equipment.location else None
     # 填充部门信息
@@ -50,9 +48,7 @@ async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
                 resp.responsible_person_id = dept_info.get("leader_id")
     # 负责人名称：如果独立设置了 responsible_person_id，从用户表查找
     if equipment.responsible_person_id and db:
-        resp.responsible_person_name = await repo.get_user_name_by_id(
-            db, equipment.responsible_person_id
-        )
+        resp.responsible_person_name = await repo.get_user_name_by_id(db, equipment.responsible_person_id)
     return resp
 
 
@@ -82,13 +78,9 @@ async def get_equipment_categories(
     """获取设备分类列表"""
     if tree:
         categories = await service.get_equipment_category_tree(db, ctx)
-        return success_response(
-            data=[EquipmentCategoryTree.model_validate(c) for c in categories]
-        )
+        return success_response(data=[EquipmentCategoryTree.model_validate(c) for c in categories])
     categories = await service.get_equipment_categories(db, parent_id, ctx)
-    return success_response(
-        data=[EquipmentCategoryResponse.model_validate(c) for c in categories]
-    )
+    return success_response(data=[EquipmentCategoryResponse.model_validate(c) for c in categories])
 
 
 @router.get("/categories/{category_id}", summary="获取设备分类详情")
@@ -157,13 +149,9 @@ async def get_locations(
     """获取位置列表"""
     if tree:
         locations = await service.get_location_tree(db, ctx)
-        return success_response(
-            data=[LocationTree.model_validate(loc) for loc in locations]
-        )
+        return success_response(data=[LocationTree.model_validate(loc) for loc in locations])
     locations = await service.get_locations(db, parent_id, ctx)
-    return success_response(
-        data=[LocationResponse.model_validate(loc) for loc in locations]
-    )
+    return success_response(data=[LocationResponse.model_validate(loc) for loc in locations])
 
 
 @router.get("/locations/{location_id}", summary="获取位置详情")
@@ -335,7 +323,10 @@ async def download_import_template(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={
-            "Content-Disposition": "attachment; filename*=UTF-8''%E8%AE%BE%E5%A4%87%E5%8F%B0%E8%B4%A6%E5%AF%BC%E5%85%A5%E6%A8%A1%E6%9D%BF.xlsx"
+            "Content-Disposition": (
+                "attachment; "
+                "filename*=UTF-8''%E8%AE%BE%E5%A4%87%E5%8F%B0%E8%B4%A6%E5%AF%BC%E5%85%A5%E6%A8%A1%E6%9D%BF.xlsx"
+            ),
         },
     )
 

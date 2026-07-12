@@ -7,7 +7,7 @@ V1 实现：顺序执行（在后台线程中）
 """
 
 import logging
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from app.modules.registration.regulatory_tracker.models.regulatory_document import (
@@ -36,7 +36,7 @@ class SequentialAIWorkflow:
     未来可替换为队列实现。
     """
 
-    def __init__(self, session_factory):
+    def __init__(self, session_factory) -> Any:  # type: ignore[misc,no-untyped-def]
         self.session_factory = session_factory
 
     async def submit_documents(self, document_ids: list[UUID]) -> None:
@@ -61,11 +61,7 @@ class SequentialAIWorkflow:
                     # 查询文档
                     from sqlalchemy import select
 
-                    result = await session.execute(
-                        select(RegulatoryDocument).where(
-                            RegulatoryDocument.id == doc_id
-                        )
-                    )
+                    result = await session.execute(select(RegulatoryDocument).where(RegulatoryDocument.id == doc_id))
                     document = result.scalar_one_or_none()
 
                     if not document:

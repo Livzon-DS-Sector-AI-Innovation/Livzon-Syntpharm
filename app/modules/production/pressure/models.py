@@ -1,6 +1,7 @@
 """Pressure differential inspection ORM models."""
 
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -29,17 +30,13 @@ class PointMapping(BaseModel):
         {"schema": "production"},
     )
 
-    point_id: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="位点编号，如 PD-0101"
-    )
+    point_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="位点编号，如 PD-0101")
     area: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         comment="区域：无菌区/精洗区/配液区/走廊/更衣室/其他",
     )
-    standard_pressure: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="标准压差值 (Pa)"
-    )
+    standard_pressure: Mapped[int] = mapped_column(Integer, nullable=False, comment="标准压差值 (Pa)")
 
 
 class PressureRecord(BaseModel):
@@ -55,19 +52,11 @@ class PressureRecord(BaseModel):
         {"schema": "production"},
     )
 
-    point_id: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="位点编号"
-    )
+    point_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="位点编号")
     area: Mapped[str] = mapped_column(String(50), nullable=False, comment="区域")
-    pressure_value: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="压差值 (Pa)"
-    )
-    standard_pressure: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="标准压差值"
-    )
-    record_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, comment="记录时间"
-    )
+    pressure_value: Mapped[int] = mapped_column(Integer, nullable=False, comment="压差值 (Pa)")
+    standard_pressure: Mapped[int] = mapped_column(Integer, nullable=False, comment="标准压差值")
+    record_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, comment="记录时间")
     input_type: Mapped[str] = mapped_column(
         String(20), nullable=False, default="manual", comment="录入方式: manual/ocr"
     )
@@ -77,22 +66,12 @@ class PressureRecord(BaseModel):
         default="pending",
         comment="审核状态: pending/approved/rejected",
     )
-    reject_reason: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="驳回原因"
-    )
-    image_url: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="OCR 上传图片地址"
-    )
+    reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True, comment="驳回原因")
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True, comment="OCR 上传图片地址")
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
-    creator: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="记录人"
-    )
-    batch_id: Mapped[str | None] = mapped_column(
-        String(36), nullable=True, comment="批次 ID（同一批提交的记录共享）"
-    )
-    time_slot: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="时段标签，如 08:00、14:00"
-    )
+    creator: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="记录人")
+    batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True, comment="批次 ID（同一批提交的记录共享）")
+    time_slot: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="时段标签，如 08:00、14:00")
 
 
 class OcrTask(BaseModel):
@@ -111,18 +90,10 @@ class OcrTask(BaseModel):
         comment="任务状态: pending/processing/completed/failed/cancelled/submitted",
     )
     image_url: Mapped[str] = mapped_column(Text, nullable=False, comment="图片地址")
-    result: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, comment="OCR 识别结果 JSON"
-    )
-    error_message: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="错误信息"
-    )
-    batch_id: Mapped[str | None] = mapped_column(
-        String(36), nullable=True, comment="提交后生成的批次 ID"
-    )
-    creator: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="创建人"
-    )
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="OCR 识别结果 JSON")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="错误信息")
+    batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True, comment="提交后生成的批次 ID")
+    creator: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="创建人")
 
 
 class DataMaster(BaseModel):
@@ -137,24 +108,14 @@ class DataMaster(BaseModel):
     )
 
     record_date: Mapped[date] = mapped_column(Date, nullable=False, comment="记录日期")
-    material_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="物料名称"
-    )
-    spec_model: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="规格型号"
-    )
-    quantity: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0, comment="数量"
-    )
+    material_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="物料名称")
+    spec_model: Mapped[str] = mapped_column(String(255), nullable=False, comment="规格型号")
+    quantity: Mapped[float] = mapped_column(Float, nullable=False, default=0, comment="数量")
     unit: Mapped[str] = mapped_column(String(50), nullable=False, comment="单位")
     supplier: Mapped[str] = mapped_column(String(255), nullable=False, comment="供应商")
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
-    source: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="manual", comment="来源: manual/ocr"
-    )
-    creator_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="创建人姓名"
-    )
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="manual", comment="来源: manual/ocr")
+    creator_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="创建人姓名")
 
 
 class Notification(BaseModel):
@@ -167,20 +128,10 @@ class Notification(BaseModel):
         {"schema": "production"},
     )
 
-    type: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="通知类型: ocr_completed/ocr_failed"
-    )
+    type: Mapped[str] = mapped_column(String(50), nullable=False, comment="通知类型: ocr_completed/ocr_failed")
     title: Mapped[str] = mapped_column(String(255), nullable=False, comment="标题")
     message: Mapped[str] = mapped_column(Text, nullable=False, comment="消息内容")
-    is_read: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, comment="是否已读"
-    )
-    target_user_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="目标用户 ID"
-    )
-    related_id: Mapped[str | None] = mapped_column(
-        String(36), nullable=True, comment="关联实体 ID"
-    )
-    related_type: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, comment="关联实体类型: ocr_task"
-    )
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, comment="是否已读")
+    target_user_id: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="目标用户 ID")
+    related_id: Mapped[str | None] = mapped_column(String(36), nullable=True, comment="关联实体 ID")
+    related_type: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="关联实体类型: ocr_task")

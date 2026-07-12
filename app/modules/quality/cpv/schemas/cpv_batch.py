@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -33,9 +33,6 @@ class CpvBatchWideResponse(BaseModel):
     production_date: date
     data_type: str
     source: str
-    parameters: dict[
-        str, dict
-    ]  # {param_name: {value, is_abnormal, lower_limit, upper_limit}}
-    has_abnormal: bool = False
+    parameters: dict[str, dict[str, Any]]  # {param_name: {value, is_abnormal, lower_limit, upper_limit}}
 
     model_config = {"from_attributes": True}

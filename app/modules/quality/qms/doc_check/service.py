@@ -83,9 +83,7 @@ class DocCheckService:
         }
         return await self.repo.create_config(config_data)
 
-    async def update_config(
-        self, config_id: uuid.UUID, data: DocCheckConfigUpdate
-    ) -> Any | None:
+    async def update_config(self, config_id: uuid.UUID, data: DocCheckConfigUpdate) -> Any | None:
         """更新配置"""
         update_data = {}
         if data.config_value is not None:
@@ -104,7 +102,7 @@ class DocCheckService:
         status: str | None = None,
         doc_type: str | None = None,
         operator: str | None = None,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         """获取校验列表"""
         return await self.repo.get_checks(
             skip=skip,
@@ -152,16 +150,14 @@ class DocCheckService:
         # 如果有文档内容，保存到result_summary
         if doc_content:
             await self.repo.update_check(
-                check.id,
+                check.id,  # type: ignore[arg-type]
                 {
-                    "result_summary": doc_content[:10000]
-                    if doc_content
-                    else None,  # 限制长度
+                    "result_summary": doc_content[:10000] if doc_content else None,  # 限制长度
                 },
             )
 
         # 返回完整数据
-        return await self.repo.get_check_by_id(check.id)
+        return await self.repo.get_check_by_id(check.id)  # type: ignore[arg-type]
 
     async def execute_check(
         self,
@@ -188,9 +184,9 @@ class DocCheckService:
 
             # 构建用户消息
             user_message = self._build_check_prompt(
-                check.file_type,
+                check.file_type,  # type: ignore[arg-type]
                 check.file_name or "",
-                check.doc_content,
+                check.doc_content,  # type: ignore[attr-defined]
             )
 
             # 调用 AI
@@ -210,15 +206,13 @@ class DocCheckService:
             # 更新主表
             update_data = {
                 "status": result.get("status", CheckStatus.COMPLETED.value),
-                "check_result": json.dumps(
-                    result.get("check_result", {}), ensure_ascii=False
-                ),
+                "check_result": json.dumps(result.get("check_result", {}), ensure_ascii=False),
                 "ai_suggestion": result.get("ai_suggestion"),
             }
 
             # 计算向量（若 pgvector 可用则存储，否则降级）
             try:
-                vector = self.repo.compute_simple_vector(check.doc_content)
+                vector = self.repo.compute_simple_vector(check.doc_content)  # type: ignore[attr-defined]
                 update_data["content_vector"] = vector
                 update_data["vector_storage_type"] = "text"
             except Exception as e:
@@ -250,12 +244,8 @@ class DocCheckService:
                     problems_data.append(
                         {
                             "problem_no": prob.get("problem_no", i),
-                            "category": prob.get(
-                                "category", ProblemCategory.CONTENT.value
-                            ),
-                            "severity": prob.get(
-                                "severity", ProblemSeverity.WARNING.value
-                            ),
+                            "category": prob.get("category", ProblemCategory.CONTENT.value),
+                            "severity": prob.get("severity", ProblemSeverity.WARNING.value),
                             "title": prob.get("title", ""),
                             "description": prob.get("description", ""),
                             "location": prob.get("location"),
@@ -266,8 +256,7 @@ class DocCheckService:
                 await self.repo.create_problems_bulk(check_id, problems_data)
 
             logger.info(
-                f"文档校验完成: file_code={check.file_code}, "
-                f"problem_count={problem_count}, latency_ms={latency_ms}"
+                f"文档校验完成: file_code={check.file_code}, problem_count={problem_count}, latency_ms={latency_ms}"
             )
 
             # 返回更新后的数据
@@ -285,9 +274,7 @@ class DocCheckService:
             )
             raise
 
-    async def update_check(
-        self, check_id: uuid.UUID, data: DocCheckUpdate
-    ) -> Any | None:
+    async def update_check(self, check_id: uuid.UUID, data: DocCheckUpdate) -> Any | None:
         """更新校验任务"""
         check = await self.repo.get_check_by_id(check_id)
         if not check:
@@ -302,10 +289,7 @@ class DocCheckService:
             ]:
                 return await self.repo.update_check(check_id, {"status": data.status})
             # 确认通过：completed -> confirmed
-            if (
-                data.status == "confirmed"
-                and check.status == CheckStatus.COMPLETED.value
-            ):
+            if data.status == "confirmed" and check.status == CheckStatus.COMPLETED.value:
                 return await self.repo.update_check(check_id, {"status": data.status})
             # 其他状态更新需要验证
             if check.status != CheckStatus.PENDING.value:
@@ -350,14 +334,12 @@ class DocCheckService:
         doc_hash: str | None = None,
     ) -> list[Any]:
         """获取向量缓存"""
-        return await self.repo.get_vector_cache(doc_type=doc_type, doc_hash=doc_hash)
+        return await self.repo.get_vector_cache(doc_type=doc_type, doc_hash=doc_hash)  # type: ignore[attr-defined,no-any-return]
 
-    async def get_vector_cache_by_doc(
-        self, doc_type: str, doc_content: str
-    ) -> Any | None:
+    async def get_vector_cache_by_doc(self, doc_type: str, doc_content: str) -> Any | None:
         """根据文档获取向量缓存"""
         doc_hash = self.repo.compute_doc_hash(doc_content)
-        return await self.repo.get_vector_cache_by_doc(doc_type, doc_hash)
+        return await self.repo.get_vector_cache_by_doc(doc_type, doc_hash)  # type: ignore[attr-defined]
 
     # ============ 辅助方法 ============
 
@@ -372,19 +354,15 @@ class DocCheckService:
         config = await self.repo.get_config_by_key("system_prompt")
         if config and config.config_value:
             try:
-                return json.loads(config.config_value).get(
+                return json.loads(config.config_value).get(  # type: ignore[no-any-return]
                     "prompt", self.DEFAULT_SYSTEM_PROMPT
                 )
             except Exception:
-                logger.exception(
-                    "Failed to parse system prompt config JSON, falling back to default"
-                )
+                logger.exception("Failed to parse system prompt config JSON, falling back to default")
                 pass
         return self.DEFAULT_SYSTEM_PROMPT
 
-    def _build_check_prompt(
-        self, doc_type: str, doc_title: str, doc_content: str
-    ) -> str:
+    def _build_check_prompt(self, doc_type: str, doc_title: str, doc_content: str) -> str:
         """构建校��提示词"""
         return f"""请审核以下{doc_type}文档：
 
@@ -400,11 +378,9 @@ class DocCheckService:
         try:
             # 尝试直接解析 JSON
             result = json.loads(ai_response)
-            return result
+            return result  # type: ignore[no-any-return]
         except Exception:
-            logger.exception(
-                "Failed to directly parse AI response as JSON, attempting regex extraction"
-            )
+            logger.exception("Failed to directly parse AI response as JSON, attempting regex extraction")
             pass
 
         try:
@@ -414,11 +390,9 @@ class DocCheckService:
             json_match = re.search(r"\{.*\}", ai_response, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
-                return result
+                return result  # type: ignore[no-any-return]
         except Exception:
-            logger.exception(
-                "Failed to extract and parse JSON from AI response using regex"
-            )
+            logger.exception("Failed to extract and parse JSON from AI response using regex")
             pass
 
         # 解析失败，返回错误结果

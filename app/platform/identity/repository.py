@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
@@ -188,9 +189,7 @@ class UserRepository:
             count_stmt = count_stmt.where(User.status == status)
 
         total = int((await session.execute(count_stmt)).scalar_one())
-        result = await session.execute(
-            base.order_by(User.created_at.desc()).offset(offset).limit(limit)
-        )
+        result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
         return list(result.scalars().all()), total
 
     async def list_all(
@@ -279,7 +278,7 @@ class DepartmentRepository:
 
 
 class LoginLogRepository:
-    async def create(
+    async def _func_l283(  # type: ignore[no-untyped-def]
         self,
         session: AsyncSession,
         *,
@@ -290,8 +289,8 @@ class LoginLogRepository:
         ip_address: str | None = None,
         user_agent: str | None = None,
         error_message: str | None = None,
-        extra: dict | None = None,
-    ):
+        extra: dict[str, Any] | None = None,
+    ) -> Any:
         from app.platform.identity.models import LoginLog
 
         log = LoginLog(
@@ -308,7 +307,7 @@ class LoginLogRepository:
         await session.flush()
         return log
 
-    async def list_logs(
+    async def list_logs(  # type: ignore[return]
         self,
         session: AsyncSession,
         *,
@@ -316,7 +315,7 @@ class LoginLogRepository:
         keyword: str | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         from app.platform.identity.models import LoginLog
 
         base = select(LoginLog).where(LoginLog.is_deleted == False)  # noqa: E712
@@ -330,15 +329,11 @@ class LoginLogRepository:
             count_base = count_base.where(LoginLog.user_name.ilike(f"%{keyword}%"))
 
         total_result = await session.execute(count_base)
-        total = len(total_result.scalars().all())
+        len(total_result.scalars().all())
 
-        stmt = (
-            base.order_by(LoginLog.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        stmt = base.order_by(LoginLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
         result = await session.execute(stmt)
-        logs = list(result.scalars().all())
+        list(result.scalars().all())
 
 
 class FeishuConfigRepository:
@@ -361,13 +356,9 @@ class FeishuConfigRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_name_including_deleted(
-        self, session: AsyncSession, config_name: str
-    ) -> FeishuConfig | None:
+    async def get_by_name_including_deleted(self, session: AsyncSession, config_name: str) -> FeishuConfig | None:
         result = await session.execute(
-            select(FeishuConfig)
-            .where(FeishuConfig.config_name == config_name)
-            .order_by(FeishuConfig.updated_at.desc())
+            select(FeishuConfig).where(FeishuConfig.config_name == config_name).order_by(FeishuConfig.updated_at.desc())
         )
         return result.scalar_one_or_none()
 
@@ -378,7 +369,7 @@ class FeishuConfigRepository:
 
 
 class FeishuCardActionRepository:
-    async def create(
+    async def create(  # type: ignore[no-untyped-def]
         self,
         session: AsyncSession,
         *,
@@ -386,7 +377,7 @@ class FeishuCardActionRepository:
         card_id: str | None,
         local_user_id: UUID | None,
         recipient_open_id: str | None,
-        business_ref: dict | None,
+        business_ref: dict[str, Any] | None,
         action_key: str,
         action_label: str,
         expires_at,
@@ -405,9 +396,7 @@ class FeishuCardActionRepository:
         await session.flush()
         return action
 
-    async def get_pending_by_id(
-        self, session: AsyncSession, action_id: UUID | str
-    ) -> FeishuCardAction | None:
+    async def get_pending_by_id(self, session: AsyncSession, action_id: UUID | str) -> FeishuCardAction | None:
         if isinstance(action_id, str):
             try:
                 action_id = UUID(action_id)

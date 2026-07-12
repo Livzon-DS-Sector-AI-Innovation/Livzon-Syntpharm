@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class InstrumentStatus(str, enum.Enum):
+class InstrumentStatus(enum.StrEnum):
     """仪器状态"""
 
     DRAFT = "draft"  # 草稿
@@ -21,21 +21,21 @@ class InstrumentStatus(str, enum.Enum):
     INACTIVE = "inactive"  # 已停用
 
 
-class CalibrationMethod(str, enum.Enum):
+class CalibrationMethod(enum.StrEnum):
     """校准方式"""
 
     EXTERNAL = "external"  # 外委校准
     INTERNAL = "internal"  # 内部校准
 
 
-class CalibrationCycleUnit(str, enum.Enum):
+class CalibrationCycleUnit(enum.StrEnum):
     """校准周期单位"""
 
     MONTH = "month"  # 月
     YEAR = "year"  # 年
 
 
-class IQStatus(str, enum.Enum):
+class IQStatus(enum.StrEnum):
     """IQ确认状态"""
 
     PENDING = "pending"  # 待确认
@@ -43,7 +43,7 @@ class IQStatus(str, enum.Enum):
     NOT_REQUIRED = "not_required"  # 不需要
 
 
-class OQStatus(str, enum.Enum):
+class OQStatus(enum.StrEnum):
     """OQ确认状态"""
 
     PENDING = "pending"  # 待确认
@@ -51,7 +51,7 @@ class OQStatus(str, enum.Enum):
     NOT_REQUIRED = "not_required"  # 不需要
 
 
-class InstrumentCategory(str, enum.Enum):
+class InstrumentCategory(enum.StrEnum):
     """仪器分类"""
 
     PHYSICOCHEMICAL = "physicochemical"  # 理化
@@ -62,7 +62,7 @@ class InstrumentCategory(str, enum.Enum):
     OTHER = "other"  # 其他
 
 
-class CalibrationResult(str, enum.Enum):
+class CalibrationResult(enum.StrEnum):
     """校准结论"""
 
     QUALIFIED = "qualified"  # 合格
@@ -70,7 +70,7 @@ class CalibrationResult(str, enum.Enum):
     LIMITED = "limited"  # 限用
 
 
-class RecordStatus(str, enum.Enum):
+class RecordStatus(enum.StrEnum):
     """校准记录状态"""
 
     ACTIVE = "active"  # 已启用/有效
@@ -81,14 +81,14 @@ class RecordStatus(str, enum.Enum):
     COMPLETED = "completed"  # 已完成
 
 
-class ApprovalType(str, enum.Enum):
+class ApprovalType(enum.StrEnum):
     """审批类型"""
 
     INSTRUMENT = "instrument"  # 仪器档案审批
     RECORD = "record"  # 校准记录审批
 
 
-class ApprovalStatus(str, enum.Enum):
+class ApprovalStatus(enum.StrEnum):
     """审批状态"""
 
     PENDING = "pending"  # 待审批

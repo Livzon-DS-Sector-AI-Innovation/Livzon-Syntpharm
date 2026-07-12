@@ -64,7 +64,7 @@ class DeviationReporterReminderService:
         """获取未完成的偏差任务"""
         result = await self.session.execute(
             text("""
-                SELECT 
+                SELECT
                     id, deviation_no, theme, status, reporter,
                     reporter_feishu_open_id, deviation_type, urgency_level, created_at
                 FROM qms.qms_deviation
@@ -107,11 +107,9 @@ class DeviationReporterReminderService:
 
         return deviations
 
-    def _group_by_reporter(
-        self, deviations: list[dict[str, Any]]
-    ) -> dict[str, list[dict[str, Any]]]:
+    def _group_by_reporter(self, deviations: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         """按填报人分组"""
-        grouped = {}
+        grouped = {}  # type: ignore[var-annotated]
         for d in deviations:
             open_id = d["reporter_open_id"]
             if open_id not in grouped:
@@ -146,7 +144,7 @@ class DeviationReporterReminderService:
         }
         return type_labels.get(deviation_type, deviation_type or "未知")
 
-    async def _send_urge_reminder(
+    async def _send_urge_reminder(  # type: ignore[no-untyped-def]
         self,
         client: FeishuClient,
         reporter_open_id: str,
@@ -160,7 +158,7 @@ class DeviationReporterReminderService:
         for i, d in enumerate(deviations[:5], 1):  # 最多显示5条
             status_label = self._get_status_label(d["status"])
             remaining = d.get("remaining_days", 0)
-            deviation_list_md += f"{i}. **{d['deviation_no']}** - {d['theme'][:20]}...\n   当前状态：{status_label} | 剩余完成天数：{remaining}天\n"
+            deviation_list_md += f"{i}. **{d['deviation_no']}** - {d['theme'][:20]}...\n   当前状态：{status_label} | 剩余完成天数：{remaining}天\n"  # noqa: E501
 
         if count > 5:
             deviation_list_md += f"\n...还有 {count - 5} 条偏差任务待处理"
@@ -175,9 +173,7 @@ class DeviationReporterReminderService:
 
         card_content = {
             "config": {"wide_screen_mode": True},
-            "elements": [
-                {"tag": "div", "text": {"tag": "lark_md", "content": content}}
-            ],
+            "elements": [{"tag": "div", "text": {"tag": "lark_md", "content": content}}],
         }
 
         await client.send_card_message(
@@ -189,12 +185,12 @@ class DeviationReporterReminderService:
         logger.info(f"已发送督促提醒给 {reporter_open_id}，共 {count} 条待处理任务")
 
 
-def send_completion_notification(
+def send_completion_notification(  # type: ignore[no-untyped-def]
     session: AsyncSession, reporter_open_id: str, deviation_no: str, theme: str
 ):
     """发送任务完成通知（供偏差完成时调用）"""
 
-    async def _send():
+    async def _send():  # type: ignore[no-untyped-def]
         feishu_config = await get_feishu_config_from_db()
         if not feishu_config or not feishu_config.get("app_id"):
             logger.warning("飞书机器人配置未启用，跳过完成通知")
@@ -212,9 +208,7 @@ def send_completion_notification(
 
         card_content = {
             "config": {"wide_screen_mode": True},
-            "elements": [
-                {"tag": "div", "text": {"tag": "lark_md", "content": content}}
-            ],
+            "elements": [{"tag": "div", "text": {"tag": "lark_md", "content": content}}],
         }
 
         await client.send_card_message(
@@ -225,4 +219,4 @@ def send_completion_notification(
 
         logger.info(f"已发送完成通知给 {reporter_open_id}，偏差单 {deviation_no}")
 
-    spawn_task(_send())
+    spawn_task(_send())  # type: ignore[no-untyped-call]

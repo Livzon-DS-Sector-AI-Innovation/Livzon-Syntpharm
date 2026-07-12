@@ -15,12 +15,8 @@ class AgentSession(BaseModel):
 
     user_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    status: Mapped[str] = mapped_column(
-        String(32), default="active", server_default="active"
-    )
-    context: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default=text("'{}'")
-    )
+    status: Mapped[str] = mapped_column(String(32), default="active", server_default="active")
+    context: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'"))
 
 
 class AgentMessage(BaseModel):
@@ -30,9 +26,7 @@ class AgentMessage(BaseModel):
     session_id: Mapped[uuid.UUID] = mapped_column(index=True)
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    message_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default=text("'{}'")
-    )
+    message_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'"))
 
 
 class AgentToolCall(BaseModel):
@@ -41,15 +35,9 @@ class AgentToolCall(BaseModel):
 
     session_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     operation: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
-    status: Mapped[str] = mapped_column(
-        String(32), default="started", server_default="started"
-    )
-    request_payload: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default=text("'{}'")
-    )
-    response_payload: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
+    status: Mapped[str] = mapped_column(String(32), default="started", server_default="started")
+    request_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'"))
+    response_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -64,22 +52,12 @@ class AgentConfirmation(BaseModel):
     user_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     operation: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     summary: Mapped[str] = mapped_column(String(500), nullable=False)
-    risk_level: Mapped[str] = mapped_column(
-        String(32), default="medium", server_default="medium"
-    )
-    status: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending"
-    )
-    request_payload: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=dict, server_default=text("'{}'")
-    )
+    risk_level: Mapped[str] = mapped_column(String(32), default="medium", server_default="medium")
+    status: Mapped[str] = mapped_column(String(32), default="pending", server_default="pending")
+    request_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'"))
     result_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    executed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class AgentSkill(BaseModel):
@@ -92,16 +70,10 @@ class AgentSkill(BaseModel):
     name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    trigger_keywords: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default=text("'[]'")
-    )
+    trigger_keywords: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default=text("'[]'"))
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(32), default="active", server_default="active", index=True
-    )
-    is_builtin: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false"
-    )
+    status: Mapped[str] = mapped_column(String(32), default="active", server_default="active", index=True)
+    is_builtin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
@@ -113,22 +85,14 @@ class AgentWorkflow(BaseModel):
     session_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(
-        String(32), default="enabled", server_default="enabled", index=True
-    )
-    trigger_phrases: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default=text("'[]'")
-    )
-    steps: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default=text("'[]'")
-    )
+    status: Mapped[str] = mapped_column(String(32), default="enabled", server_default="enabled", index=True)
+    trigger_phrases: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default=text("'[]'"))
+    steps: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default=text("'[]'"))
     source_skill: Mapped[str | None] = mapped_column(String(120), nullable=True)
     source_request: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_run_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     last_run_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    last_run_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class AgentWorkflowRun(BaseModel):
@@ -138,20 +102,10 @@ class AgentWorkflowRun(BaseModel):
     workflow_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
     session_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
-    status: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending", index=True
-    )
+    status: Mapped[str] = mapped_column(String(32), default="pending", server_default="pending", index=True)
     current_step: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    steps_snapshot: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default=text("'[]'")
-    )
-    step_results: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, default=list, server_default=text("'[]'")
-    )
+    steps_snapshot: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default=text("'[]'"))
+    step_results: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default=text("'[]'"))
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    finished_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

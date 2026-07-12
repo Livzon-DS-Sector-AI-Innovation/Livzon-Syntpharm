@@ -6,6 +6,7 @@ Prefix: /api/v1/quality/static-data/
 
 import io
 from datetime import date
+from typing import Any
 
 import openpyxl
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
@@ -15,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.service import StaticDataService
 
@@ -28,7 +29,7 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> StaticDataService:
 
 def _user_id(current_user: CurrentUser | None = Depends(get_current_user)) -> int:
     """Get current user ID"""
-    return current_user.id if current_user else 0
+    return current_user.id if current_user else 0  # type: ignore[return-value]
 
 
 # ========== 字典接口（固定选项） ==========
@@ -123,7 +124,7 @@ DICT_OPTIONS = {
 
 
 @router.get("/dict/{dict_type}", summary="Get dictionary options by type")
-async def get_dict_options(dict_type: str):
+async def get_dict_options(dict_type: str) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
         return ApiResponse(data=DICT_OPTIONS[dict_type])
@@ -131,7 +132,7 @@ async def get_dict_options(dict_type: str):
 
 
 @router.get("/storage-condition/options", summary="Get storage condition options")
-async def get_storage_condition_options(db: AsyncSession = Depends(get_db)):
+async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> Any:
     """Get storage condition options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -143,32 +144,26 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)):
         .order_by(StorageCondition.id)
     )
     items = result.scalars().all()
-    return ApiResponse(
-        data=[{"label": x.cond_name, "value": x.cond_code} for x in items]
-    )
+    return ApiResponse(data=[{"label": x.cond_name, "value": x.cond_code} for x in items])
 
 
 @router.get("/unit/options", summary="Get unit options")
-async def get_unit_options(db: AsyncSession = Depends(get_db)):
+async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
     """Get unit options for dropdown selection"""
     from sqlalchemy import and_, select
 
     from app.modules.quality.qms.static_data.models import Unit
 
-    result = await db.execute(
-        select(Unit).where(and_(Unit.del_flag == 0, Unit.status == 0)).order_by(Unit.id)
-    )
+    result = await db.execute(select(Unit).where(and_(Unit.del_flag == 0, Unit.status == 0)).order_by(Unit.id))
     items = result.scalars().all()
-    return ApiResponse(
-        data=[{"label": x.unit_name, "value": x.unit_code} for x in items]
-    )
+    return ApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
 
 
 # ========== Template Download ==========
 
 
 @router.get("/hplc-reference/template", summary="Download HPLC reference template")
-async def download_hplc_reference_template():
+async def download_hplc_reference_template() -> Any:
     """Download Excel template for HPLC reference substance import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -206,9 +201,7 @@ async def download_hplc_reference_template():
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = Font(bold=True)
-        cell.fill = PatternFill(
-            start_color="CCE5FF", end_color="CCE5FF", fill_type="solid"
-        )
+        cell.fill = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
         cell.alignment = Alignment(wrap_text=True)
 
     # Sample row
@@ -253,28 +246,22 @@ async def download_hplc_reference_template():
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": "attachment; filename=hplc_reference_template.xlsx"
-        },
+        headers={"Content-Disposition": "attachment; filename=hplc_reference_template.xlsx"},
     )
 
 
 # ========== Batch Import ==========
 
 
-@router.post(
-    "/hplc-reference/batch-import", summary="Batch import HPLC reference substances"
-)
-async def batch_import_hplc_reference(
+@router.post("/hplc-reference/batch-import", summary="Batch import HPLC reference substances")
+async def handler(
     file: UploadFile = File(...),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     """Import HPLC reference substances from Excel file"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(
-            code=400, message="Please upload an Excel file (.xlsx or .xls)"
-        )
+        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
 
     try:
         contents = await file.read()
@@ -317,9 +304,7 @@ async def batch_import_hplc_reference(
         error_count = 0
         errors = []
 
-        for row_num, row in enumerate(
-            ws.iter_rows(min_row=2, values_only=True), start=2
-        ):
+        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if not row[0] or not row[1]:  # Skip empty rows
                 continue
 
@@ -357,9 +342,7 @@ async def batch_import_hplc_reference(
                     data[field] = value
 
             try:
-                await service.create_hplc_reference(
-                    s.HplcReferenceCreate(**data), user_id
-                )
+                await service.create_hplc_reference(s.HplcReferenceCreate(**data), user_id)
                 success_count += 1
             except Exception as e:
                 error_count += 1
@@ -369,9 +352,7 @@ async def batch_import_hplc_reference(
         if errors:
             message += f"\nErrors: {'; '.join(errors[:5])}"
 
-        return ApiResponse(
-            message=message, data={"success": success_count, "failed": error_count}
-        )
+        return ApiResponse(message=message, data={"success": success_count, "failed": error_count})
     except Exception as e:
         return ApiResponse(code=500, message=f"Import failed: {str(e)}")
 
@@ -380,7 +361,7 @@ async def batch_import_hplc_reference(
 
 
 @router.get("/hplc-reference", summary="List HPLC reference substances")
-async def list_hplc_reference(
+async def get(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     ref_code: str | None = Query(None, description="Reference code"),
@@ -389,7 +370,7 @@ async def list_hplc_reference(
     ref_status: int | None = Query(None, description="Status"),
     has_coa: bool | None = Query(None, description="Has COA"),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     skip = (page - 1) * page_size
     items, total = await service.list_hplc_reference(
         skip,
@@ -406,10 +387,10 @@ async def list_hplc_reference(
     )
 
 
-@router.get("/hplc-reference/need-recal", summary="查询需要复标的对照品")
-async def get_hplc_references_need_recal(
+@router.get("/hplc-reference/need-recal", summary="查询需要复标的对照品")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
     return ApiResponse(
@@ -418,11 +399,11 @@ async def get_hplc_references_need_recal(
     )
 
 
-@router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")
-async def get_hplc_reference(
+@router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     obj = await service.get_hplc_reference(id)
     if not obj:
         return ApiResponse(code=404, message="Record not found")
@@ -430,11 +411,11 @@ async def get_hplc_reference(
 
 
 @router.post("/hplc-reference", summary="Create HPLC reference substance")
-async def create_hplc_reference(
+async def post(
     data: s.HplcReferenceCreate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.create_hplc_reference(data, user_id)
         return ApiResponse(
@@ -446,14 +427,14 @@ async def create_hplc_reference(
 
 
 @router.put("/hplc-reference/{id}", summary="Update HPLC reference substance")
-async def update_hplc_reference(
+async def put(
     id: int,
     data: s.HplcReferenceUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
-        obj = await service.update_hplc_reference(id, data, user_id)
+        obj = await service.update_hplc_reference(id, data, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Updated successfully",
@@ -463,10 +444,10 @@ async def update_hplc_reference(
 
 
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
-async def delete_hplc_reference(
+async def delete(
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     try:
         await service.delete_hplc_reference(id)
         return ApiResponse(message="Deleted successfully")
@@ -474,20 +455,18 @@ async def delete_hplc_reference(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/hplc-reference/{id}/adjust-quantity", summary="Adjust HPLC reference quantity"
 )
-async def adjust_hplc_reference_quantity(
+async def handler(  # noqa: F811
     id: int,
-    quantity_change: int = Body(
-        ..., embed=True, description="Quantity change (positive = in, negative = out)"
-    ),
+    quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
     service: StaticDataService = Depends(_get_service),
-    current_user: dict = Depends(get_current_user),
-):
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> Any:
     try:
         user_id = current_user.get("id", 0) if current_user else 0
-        obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)
+        obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Quantity adjusted",
@@ -496,8 +475,8 @@ async def adjust_hplc_reference_quantity(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")
-async def use_hplc_reference(
+@router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     id: int,
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
@@ -505,12 +484,12 @@ async def use_hplc_reference(
     usage_purpose: str | None = Body(None, embed=True, description="领用用途/项目"),
     remark: str | None = Body(None, embed=True, description="备注"),
     service: StaticDataService = Depends(_get_service),
-    current_user: dict = Depends(get_current_user),
-):
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> Any:
     """领用对照品，扣减剩余量并记录领用历史"""
     try:
         user_id = current_user.get("id", 0) if current_user else 0
-        obj, usage_log = await service.use_hplc_reference(
+        obj, usage_log = await service.use_hplc_reference(  # type: ignore[attr-defined]
             id,
             usage_amount,
             usage_unit,
@@ -530,18 +509,16 @@ async def use_hplc_reference(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")
-async def get_hplc_reference_usage_history(
+@router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     """查询指定对照品的领用历史记录"""
     skip = (page - 1) * page_size
-    items, total = await service.list_hplc_reference_usage(
-        ref_id=id, skip=skip, limit=page_size
-    )
+    items, total = await service.list_hplc_reference_usage(ref_id=id, skip=skip, limit=page_size)
     return ApiResponse(
         data=[s.HplcReferenceUsageResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
@@ -551,20 +528,18 @@ async def get_hplc_reference_usage_history(
 # ========== 5. Chromatography Column ==========
 
 
-@router.get("/chrom-column", summary="List chromatography columns")
-async def list_chrom_column(
+@router.get("/chrom-column", summary="List chromatography columns")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     col_code: str | None = Query(None, description="Column code"),
     col_type: str | None = Query(None, description="Column type"),
     manufacturer: str | None = Query(None, description="Manufacturer"),
     spec: str | None = Query(None, description="Specification"),
-    col_status: int | None = Query(
-        None, description="Status: 0-active 1-waiting_clean 2-sealed 3-scrapped"
-    ),
+    col_status: int | None = Query(None, description="Status: 0-active 1-waiting_clean 2-sealed 3-scrapped"),
     column_category: int | None = Query(None, description="Category: 0-HPLC 1-GC"),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     skip = (page - 1) * page_size
     items, total = await service.list_chrom_column(
         skip,
@@ -583,7 +558,7 @@ async def list_chrom_column(
 
 
 @router.get("/chrom-column/template", summary="Download chromatography column template")
-async def download_chrom_column_template():
+async def download_chrom_column_template() -> Any:
     """Download Excel template for chromatography column import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -614,9 +589,7 @@ async def download_chrom_column_template():
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = Font(bold=True)
-        cell.fill = PatternFill(
-            start_color="D6E4FF", end_color="D6E4FF", fill_type="solid"
-        )
+        cell.fill = PatternFill(start_color="D6E4FF", end_color="D6E4FF", fill_type="solid")
         cell.alignment = Alignment(wrap_text=True, horizontal="center")
 
     sample_data = [
@@ -650,9 +623,7 @@ async def download_chrom_column_template():
     for col, header in enumerate(headers, 1):
         cell = ws2.cell(row=1, column=col, value=header)
         cell.font = Font(bold=True)
-        cell.fill = PatternFill(
-            start_color="FFE4B5", end_color="FFE4B5", fill_type="solid"
-        )
+        cell.fill = PatternFill(start_color="FFE4B5", end_color="FFE4B5", fill_type="solid")
         cell.alignment = Alignment(wrap_text=True, horizontal="center")
 
     for col in range(1, len(headers) + 1):
@@ -665,25 +636,21 @@ async def download_chrom_column_template():
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": "attachment; filename=chromatography_column_template.xlsx"
-        },
+        headers={"Content-Disposition": "attachment; filename=chromatography_column_template.xlsx"},
     )
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/chrom-column/batch-import", summary="Batch import chromatography columns"
 )
-async def batch_import_chrom_column(
+async def handler(  # noqa: F811
     file: UploadFile = File(...),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     """Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(
-            code=400, message="Please upload an Excel file (.xlsx or .xls)"
-        )
+        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
 
     try:
         contents = await file.read()
@@ -735,9 +702,7 @@ async def batch_import_chrom_column(
 
             headers = [cell.value for cell in ws[1]]
 
-            for row_num, row in enumerate(
-                ws.iter_rows(min_row=2, values_only=True), start=2
-            ):
+            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):
                     continue
 
@@ -772,73 +737,65 @@ async def batch_import_chrom_column(
                     elif field == "particle_size":
                         spec_parts.append(f" {value}μm")
                     elif field == "col_type":
-                        data["col_type"] = str(value).strip()
+                        data["col_type"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "col_code":
-                        data["col_code"] = str(value).strip()
+                        data["col_code"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "serial_no":
-                        data["serial_no"] = str(value).strip()
+                        data["serial_no"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "location":
-                        data["location"] = str(value).strip()
+                        data["location"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "storage_cond_code":
-                        data["storage_cond_code"] = str(value).strip()
+                        data["storage_cond_code"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "apply_method":
-                        data["apply_method"] = str(value).strip()
+                        data["apply_method"] = str(value).strip()  # type: ignore[assignment]
                     elif field == "purchase_date":
                         if isinstance(value, date):
-                            data["purchase_date"] = value
+                            data["purchase_date"] = value  # type: ignore[assignment]
                         elif isinstance(value, (int, float)):
                             try:
                                 from datetime import timedelta
 
                                 base = date(1899, 12, 30)
-                                data["purchase_date"] = base + timedelta(
+                                data["purchase_date"] = base + timedelta(  # type: ignore[assignment]
                                     days=int(value)
                                 )
                             except (ValueError, TypeError, OverflowError):
                                 pass
-                        elif (
-                            isinstance(value, str)
-                            and value.strip()
-                            and value.strip() != "/"
-                        ):
+                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
                             try:
                                 v = value.strip()
                                 if len(v) == 8 and v.isdigit():
-                                    data["purchase_date"] = date(
+                                    data["purchase_date"] = date(  # type: ignore[assignment]
                                         int(v[:4]), int(v[4:6]), int(v[6:8])
                                     )
                                 else:
-                                    data["purchase_date"] = date.fromisoformat(
+                                    data["purchase_date"] = date.fromisoformat(  # type: ignore[assignment]
                                         v.replace("/", "-").split()[0]
                                     )
                             except (ValueError, IndexError, AttributeError):
                                 pass
                     elif field == "use_start_date":
                         if isinstance(value, date):
-                            data["use_start_date"] = value
+                            data["use_start_date"] = value  # type: ignore[assignment]
                         elif isinstance(value, (int, float)):
                             try:
                                 from datetime import timedelta
 
                                 base = date(1899, 12, 30)
-                                data["use_start_date"] = base + timedelta(
+                                data["use_start_date"] = base + timedelta(  # type: ignore[assignment]
                                     days=int(value)
                                 )
                             except (ValueError, TypeError, OverflowError):
                                 pass
-                        elif (
-                            isinstance(value, str)
-                            and value.strip()
-                            and value.strip() != "/"
-                        ):
+                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
                             try:
                                 v = value.strip()
                                 if len(v) == 8 and v.isdigit():
-                                    data["use_start_date"] = date(
+                                    data["use_start_date"] = date(  # type: ignore[assignment]
                                         int(v[:4]), int(v[4:6]), int(v[6:8])
                                     )
                                 else:
-                                    data["use_start_date"] = date.fromisoformat(
+                                    data["use_start_date"] = date.fromisoformat(  # type: ignore[assignment]
                                         v.replace("/", "-").split()[0]
                                     )
                             except (ValueError, IndexError, AttributeError):
@@ -859,39 +816,33 @@ async def batch_import_chrom_column(
                         else:
                             data["col_status"] = 0
                     elif field == "remark":
-                        data["remark"] = str(value).strip()
+                        data["remark"] = str(value).strip()  # type: ignore[assignment]
 
                 if manufacturer_parts:
-                    data["manufacturer"] = " ".join(manufacturer_parts)
+                    data["manufacturer"] = " ".join(manufacturer_parts)  # type: ignore[assignment]
                 if spec_parts:
-                    data["spec"] = "".join(spec_parts).replace("*", "×")
+                    data["spec"] = "".join(spec_parts).replace("*", "×")  # type: ignore[assignment]
 
                 if (
-                    "col_code" not in data
-                    or not data["col_code"]
-                    or data["col_code"] == "/"
+                    "col_code" not in data or not data["col_code"] or data["col_code"] == "/"  # type: ignore[comparison-overlap]
                 ):
                     error_count += 1
                     errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
                     continue
                 if "col_type" not in data or not data["col_type"]:
                     error_count += 1
-                    errors.append(
-                        f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型"
-                    )
+                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
                     continue
                 if "manufacturer" not in data or not data["manufacturer"]:
-                    data["manufacturer"] = "未知"
+                    data["manufacturer"] = "未知"  # type: ignore[assignment]
                 if (
-                    "serial_no" not in data
-                    or not data["serial_no"]
-                    or data["serial_no"] == "/"
+                    "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/"  # type: ignore[comparison-overlap]
                 ):
                     data["serial_no"] = data["col_code"]
                 if "location" not in data or not data["location"]:
-                    data["location"] = "未指定"
+                    data["location"] = "未指定"  # type: ignore[assignment]
                 if "storage_cond_code" not in data or not data["storage_cond_code"]:
-                    data["storage_cond_code"] = "ROOM_TEMP"
+                    data["storage_cond_code"] = "ROOM_TEMP"  # type: ignore[assignment]
                 if "max_use_times" not in data:
                     data["max_use_times"] = 100
                 if "col_status" not in data:
@@ -900,20 +851,16 @@ async def batch_import_chrom_column(
                     if "use_start_date" in data:
                         data["purchase_date"] = data["use_start_date"]
                     else:
-                        data["purchase_date"] = date.today()
+                        data["purchase_date"] = date.today()  # type: ignore[assignment]
                 if "spec" not in data or not data["spec"]:
-                    data["spec"] = "未指定"
+                    data["spec"] = "未指定"  # type: ignore[assignment]
 
                 try:
-                    await service.create_chrom_column(
-                        s.ChromColumnCreate(**data), user_id
-                    )
+                    await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
                     success_count += 1
                 except Exception as e:
                     error_count += 1
-                    errors.append(
-                        f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}"
-                    )
+                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
 
         message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
         if errors:
@@ -929,23 +876,23 @@ async def batch_import_chrom_column(
         return ApiResponse(code=500, message=f"导入失败: {str(e)}")
 
 
-@router.get("/chrom-column/{id}", summary="Get chromatography column by ID")
-async def get_chrom_column(
+@router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     obj = await service.get_chrom_column(id)
     if not obj:
         return ApiResponse(code=404, message="Record not found")
     return ApiResponse(data=s.ChromColumnResponse.model_validate(obj))
 
 
-@router.post("/chrom-column", summary="Create chromatography column")
-async def create_chrom_column(
+@router.post("/chrom-column", summary="Create chromatography column")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     data: s.ChromColumnCreate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.create_chrom_column(data, user_id)
         return ApiResponse(
@@ -956,15 +903,15 @@ async def create_chrom_column(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.put("/chrom-column/{id}", summary="Update chromatography column")
-async def update_chrom_column(
+@router.put("/chrom-column/{id}", summary="Update chromatography column")  # type: ignore[no-redef]
+async def put(  # noqa: F811
     id: int,
     data: s.ChromColumnUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
-        obj = await service.update_chrom_column(id, data, user_id)
+        obj = await service.update_chrom_column(id, data, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Updated successfully",
@@ -973,11 +920,11 @@ async def update_chrom_column(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/chrom-column/{id}", summary="Delete chromatography column")
-async def delete_chrom_column(
+@router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     try:
         await service.delete_chrom_column(id)
         return ApiResponse(message="Deleted successfully")
@@ -985,19 +932,17 @@ async def delete_chrom_column(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post(
+@router.post(  # type: ignore[no-redef]
     "/chrom-column/{id}/increment-usage", summary="Increment column usage count"
 )
-async def increment_chrom_column_usage(
+async def handler(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.increment_chrom_column_usage(id, user_id)
-        return ApiResponse(
-            data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented"
-        )
+        return ApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
@@ -1005,8 +950,8 @@ async def increment_chrom_column_usage(
 # ========== 6. Medium (培养基) ==========
 
 
-@router.get("/medium", summary="List medium")
-async def list_medium(
+@router.get("/medium", summary="List medium")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     medium_code: str | None = Query(None, description="Medium code"),
@@ -1016,7 +961,7 @@ async def list_medium(
     verify_status: str | None = Query(None, description="Verify status"),
     status: int | None = Query(None, description="Status: 0-active 1-inactive"),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     skip = (page - 1) * page_size
     items, total = await service.list_medium(
         skip,
@@ -1034,54 +979,50 @@ async def list_medium(
     )
 
 
-@router.get("/medium/{id}", summary="Get medium by ID")
-async def get_medium(
+@router.get("/medium/{id}", summary="Get medium by ID")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     obj = await service.get_medium(id)
     if not obj:
         return ApiResponse(code=404, message="Medium not found")
     return ApiResponse(data=s.MediumResponse.model_validate(obj))
 
 
-@router.post("/medium", summary="Create medium")
-async def create_medium(
+@router.post("/medium", summary="Create medium")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     data: s.MediumCreate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.create_medium(data, user_id)
-        return ApiResponse(
-            data=s.MediumResponse.model_validate(obj), message="Medium created"
-        )
+        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
 
-@router.put("/medium/{id}", summary="Update medium")
-async def update_medium(
+@router.put("/medium/{id}", summary="Update medium")  # type: ignore[no-redef]
+async def put(  # noqa: F811
     id: int,
     data: s.MediumUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.update_medium(id, data, user_id)
-        return ApiResponse(
-            data=s.MediumResponse.model_validate(obj), message="Medium updated"
-        )
+        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/medium/{id}", summary="Delete medium")
-async def delete_medium(
+@router.delete("/medium/{id}", summary="Delete medium")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         await service.delete_medium(id)
         return ApiResponse(message="Medium deleted")
@@ -1089,20 +1030,16 @@ async def delete_medium(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")
-async def adjust_medium_stock(
+@router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     id: int,
-    quantity: int = Body(
-        ..., embed=True, description="Quantity change (positive or negative)"
-    ),
+    quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.adjust_medium_stock(id, quantity, user_id)
-        return ApiResponse(
-            data=s.MediumResponse.model_validate(obj), message="Stock adjusted"
-        )
+        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
@@ -1110,21 +1047,17 @@ async def adjust_medium_stock(
 # ========== 7. Standard (标准品) ==========
 
 
-@router.get("/standard", summary="List standards")
-async def list_standard(
+@router.get("/standard", summary="List standards")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     std_code: str | None = Query(None, description="Standard code"),
     std_name: str | None = Query(None, description="Standard name"),
-    std_type: str | None = Query(
-        None, description="Type: national/working/international"
-    ),
+    std_type: str | None = Query(None, description="Type: national/working/international"),
     manufacturer: str | None = Query(None, description="Manufacturer"),
-    std_status: int | None = Query(
-        None, description="Status: 0-active 1-used_up 2-expired 3-scrapped"
-    ),
+    std_status: int | None = Query(None, description="Status: 0-active 1-used_up 2-expired 3-scrapped"),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     skip = (page - 1) * page_size
     items, total = await service.list_standard(
         skip,
@@ -1141,54 +1074,50 @@ async def list_standard(
     )
 
 
-@router.get("/standard/{id}", summary="Get standard by ID")
-async def get_standard(
+@router.get("/standard/{id}", summary="Get standard by ID")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     obj = await service.get_standard(id)
     if not obj:
         return ApiResponse(code=404, message="Standard not found")
     return ApiResponse(data=s.StandardResponse.model_validate(obj))
 
 
-@router.post("/standard", summary="Create standard")
-async def create_standard(
+@router.post("/standard", summary="Create standard")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     data: s.StandardCreate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.create_standard(data, user_id)
-        return ApiResponse(
-            data=s.StandardResponse.model_validate(obj), message="Standard created"
-        )
+        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
 
-@router.put("/standard/{id}", summary="Update standard")
-async def update_standard(
+@router.put("/standard/{id}", summary="Update standard")  # type: ignore[no-redef]
+async def put(  # noqa: F811
     id: int,
     data: s.StandardUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.update_standard(id, data, user_id)
-        return ApiResponse(
-            data=s.StandardResponse.model_validate(obj), message="Standard updated"
-        )
+        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/standard/{id}", summary="Delete standard")
-async def delete_standard(
+@router.delete("/standard/{id}", summary="Delete standard")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         await service.delete_standard(id)
         return ApiResponse(message="Standard deleted")
@@ -1196,20 +1125,16 @@ async def delete_standard(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")
-async def adjust_standard_quantity(
+@router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     id: int,
-    quantity: int = Body(
-        ..., embed=True, description="Quantity change (positive or negative)"
-    ),
+    quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         obj = await service.adjust_standard_quantity(id, quantity, user_id)
-        return ApiResponse(
-            data=s.StandardResponse.model_validate(obj), message="Quantity adjusted"
-        )
+        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
     except ValueError as e:
         return ApiResponse(code=400, message=str(e))
 
@@ -1217,15 +1142,15 @@ async def adjust_standard_quantity(
 # ========== 8. Storage Condition (贮存条件) ==========
 
 
-@router.get("/storage-condition", summary="List storage conditions")
-async def list_storage_condition(
+@router.get("/storage-condition", summary="List storage conditions")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     cond_code: str | None = Query(None, description="Condition code"),
     cond_name: str | None = Query(None, description="Condition name"),
     status: int | None = Query(None, description="Status: 0-enabled 1-disabled"),
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     skip = (page - 1) * page_size
     items, total = await service.list_storage_condition(
         skip,
@@ -1240,25 +1165,25 @@ async def list_storage_condition(
     )
 
 
-@router.get("/storage-condition/{id}", summary="Get storage condition by ID")
-async def get_storage_condition(
+@router.get("/storage-condition/{id}", summary="Get storage condition by ID")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-):
+) -> Any:
     obj = await service.get_storage_condition(id)
     if not obj:
         return ApiResponse(code=404, message="Storage condition not found")
     return ApiResponse(data=s.StorageConditionResponse.model_validate(obj))
 
 
-@router.post("/storage-condition", summary="Create storage condition")
-async def create_storage_condition(
+@router.post("/storage-condition", summary="Create storage condition")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     data: s.StorageConditionCreate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
-        obj = await service.create_storage_condition(data, user_id)
+        obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition created",
@@ -1267,15 +1192,15 @@ async def create_storage_condition(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.put("/storage-condition/{id}", summary="Update storage condition")
-async def update_storage_condition(
+@router.put("/storage-condition/{id}", summary="Update storage condition")  # type: ignore[no-redef]
+async def put(  # noqa: F811
     id: int,
     data: s.StorageConditionUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
-        obj = await service.update_storage_condition(id, data, user_id)
+        obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition updated",
@@ -1284,12 +1209,12 @@ async def update_storage_condition(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/storage-condition/{id}", summary="Delete storage condition")
-async def delete_storage_condition(
+@router.delete("/storage-condition/{id}", summary="Delete storage condition")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
-):
+) -> Any:
     try:
         await service.delete_storage_condition(id)
         return ApiResponse(message="Storage condition deleted")

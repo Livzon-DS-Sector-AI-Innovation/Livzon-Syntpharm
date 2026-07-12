@@ -108,30 +108,18 @@ class HplcReferenceBase(BaseModel):
     ref_code: str = Field(..., max_length=50, description="Reference code")
     ref_name: str = Field(..., max_length=200, description="Reference name")
     project_name: str | None = Field(None, max_length=100, description="Project")
-    internal_batch: str | None = Field(
-        None, max_length=50, description="Internal batch"
-    )
+    internal_batch: str | None = Field(None, max_length=50, description="Internal batch")
     cas_no: str | None = Field(None, max_length=50, description="CAS number")
     cat_no: str | None = Field(None, max_length=50, description="Catalog number")
-    manufacturer_batch: str | None = Field(
-        None, max_length=50, description="Manufacturer batch"
-    )
+    manufacturer_batch: str | None = Field(None, max_length=50, description="Manufacturer batch")
     manufacturer: str | None = Field(None, max_length=200, description="Manufacturer")
-    spec: str | None = Field(
-        None, max_length=50, description="Specification per bottle (e.g., 100mg)"
-    )
-    spec_unit: str | None = Field(
-        None, max_length=10, description="Specification unit (mg/g)"
-    )
+    spec: str | None = Field(None, max_length=50, description="Specification per bottle (e.g., 100mg)")
+    spec_unit: str | None = Field(None, max_length=10, description="Specification unit (mg/g)")
     quantity: int | None = Field(None, description="Quantity (bottle count)")
     total_amount: float | None = Field(None, description="Total amount (mg/g)")
     remaining_amount: float | None = Field(None, description="Remaining amount (mg/g)")
-    remaining_unit: str | None = Field(
-        "mg", max_length=10, description="Remaining amount unit"
-    )
-    recal_threshold: float | None = Field(
-        None, description="Recalibration threshold (mg/g)"
-    )
+    remaining_unit: str | None = Field("mg", max_length=10, description="Remaining amount unit")
+    recal_threshold: float | None = Field(None, description="Recalibration threshold (mg/g)")
     need_recal: bool = Field(False, description="Need recalibration flag")
     purity: float | None = Field(None, description="Purity %")
     content: float | None = Field(None, description="Content %")
@@ -142,15 +130,11 @@ class HplcReferenceBase(BaseModel):
     recal_cycle_days: int | None = Field(None, description="Recalibration cycle")
     open_date: date | None = Field(None, description="Opening date")
     open_expire_days: int | None = Field(None, description="Opening validity days")
-    storage_cond_code: str | None = Field(
-        None, max_length=50, description="Storage condition"
-    )
+    storage_cond_code: str | None = Field(None, max_length=50, description="Storage condition")
     location: str | None = Field(None, max_length=100, description="Location")
     has_coa: bool = Field(False, description="Has COA")
     handover_no: str | None = Field(None, max_length=100, description="Handover number")
-    ref_status: int = Field(
-        0, description="Status: 0-active 1-used 2-expired 3-scrapped"
-    )
+    ref_status: int = Field(0, description="Status: 0-active 1-used 2-expired 3-scrapped")
     remark: str | None = Field(None, description="Remark")
     attach_file: str | None = Field(None, description="Attachments")
 
@@ -212,9 +196,7 @@ class HplcReferenceUsageBase(BaseModel):
     ref_id: int = Field(..., description="Reference substance ID")
     usage_amount: float = Field(..., description="Usage amount (mg/g)")
     usage_unit: str = Field("mg", max_length=10, description="Usage unit")
-    usage_person: str | None = Field(
-        None, max_length=100, description="Person who used"
-    )
+    usage_person: str | None = Field(None, max_length=100, description="Person who used")
     usage_purpose: str | None = Field(None, max_length=200, description="Usage purpose")
     usage_date: date | None = Field(None, description="Usage date")
     remark: str | None = Field(None, description="Remark")
@@ -253,17 +235,11 @@ class ChromColumnBase(BaseModel):
     use_start_date: date | None = Field(None, description="Start using date")
     max_use_times: int = Field(..., description="Max allowed usage times")
     used_times: int = Field(0, description="Used times")
-    storage_cond_code: str = Field(
-        ..., max_length=50, description="Storage condition code"
-    )
+    storage_cond_code: str = Field(..., max_length=50, description="Storage condition code")
     location: str = Field(..., max_length=100, description="Storage location")
-    col_status: int = Field(
-        0, description="0-active 1-waiting_clean 2-sealed 3-scrapped"
-    )
+    col_status: int = Field(0, description="0-active 1-waiting_clean 2-sealed 3-scrapped")
     column_category: int = Field(0, description="0-HPLC 1-GC")
-    apply_method: str | None = Field(
-        None, max_length=500, description="Applicable test method"
-    )
+    apply_method: str | None = Field(None, max_length=500, description="Applicable test method")
     attach_file: str | None = Field(None, description="Attachments")
     remark: str | None = Field(None, max_length=500, description="Remark")
 
@@ -315,14 +291,10 @@ class MediumBase(BaseModel):
     manufacturer: str = Field(..., max_length=100, description="Manufacturer")
     batch_no: str = Field(..., max_length=50, description="Batch number")
     spec: str = Field(..., max_length=100, description="Specification")
-    storage_cond_code: str = Field(
-        ..., max_length=50, description="Storage condition code"
-    )
+    storage_cond_code: str = Field(..., max_length=50, description="Storage condition code")
     expire_date: date = Field(..., description="Expiration date")
     verify_status: str = Field(..., max_length=20, description="Verification status")
-    config_method: str | None = Field(
-        None, max_length=500, description="Configuration method"
-    )
+    config_method: str | None = Field(None, max_length=500, description="Configuration method")
     stock_num: int = Field(0, description="Stock quantity")
     unit_code: str = Field(..., max_length=20, description="Unit code")
     min_stock: int = Field(0, description="Minimum stock")
@@ -374,13 +346,9 @@ class StandardBase(BaseModel):
 
     std_code: str = Field(..., max_length=50, description="Standard code (unique)")
     std_name: str = Field(..., max_length=200, description="Standard name")
-    std_type: str = Field(
-        ..., max_length=30, description="Type: national/working/international"
-    )
+    std_type: str = Field(..., max_length=30, description="Type: national/working/international")
     cas_no: str | None = Field(None, max_length=50, description="CAS number")
-    manufacturer: str | None = Field(
-        None, max_length=200, description="Source/Manufacturer"
-    )
+    manufacturer: str | None = Field(None, max_length=200, description="Source/Manufacturer")
     batch_no: str = Field(..., max_length=50, description="Batch number")
     spec: str | None = Field(None, max_length=100, description="Specification")
     purity: float | None = Field(None, description="Purity %")
@@ -390,13 +358,9 @@ class StandardBase(BaseModel):
     min_stock: int = Field(0, description="Minimum stock alert")
     produce_date: date | None = Field(None, description="Production date")
     expire_date: date | None = Field(None, description="Expiration date")
-    storage_cond_code: str = Field(
-        ..., max_length=50, description="Storage condition code"
-    )
+    storage_cond_code: str = Field(..., max_length=50, description="Storage condition code")
     location: str | None = Field(None, max_length=100, description="Storage location")
-    test_item: str | None = Field(
-        None, max_length=200, description="Associated test item"
-    )
+    test_item: str | None = Field(None, max_length=200, description="Associated test item")
     std_status: int = Field(0, description="0-active 1-used_up 2-expired 3-scrapped")
     attach_file: str | None = Field(None, description="Attachments")
     remark: str | None = Field(None, max_length=500, description="Remark")

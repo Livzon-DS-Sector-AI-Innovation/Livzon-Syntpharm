@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.modules.safety.ai_hazard_identification.script3_inherent_risk.schemas import (
     LEC_SCORING_GUIDE,
     RISK_LEVEL_TABLE,
@@ -138,7 +140,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     return "\n\n".join(sections)
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回脚本5的 DB 种子配置。"""
     return {
         "script_number": 5,

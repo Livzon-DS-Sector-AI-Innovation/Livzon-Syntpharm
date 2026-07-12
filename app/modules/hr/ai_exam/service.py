@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from io import BytesIO
+from typing import Any
 
 import httpx
 from docx import Document as DocxDocument
@@ -13,7 +14,7 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 
-def _extract_docx_content(file_bytes: bytes) -> dict:
+def _extract_docx_content(file_bytes: bytes) -> dict[str, Any]:
     """Parse docx file, return {full_text, bold_texts}."""
     doc = DocxDocument(BytesIO(file_bytes))
     all_paragraphs: list[str] = []
@@ -43,21 +44,19 @@ def _extract_docx_content(file_bytes: bytes) -> dict:
     return {"full_text": "\n".join(all_paragraphs), "bold_texts": bold_texts}
 
 
-def _extract_text_content(file_bytes: bytes) -> dict:
+def _extract_text_content(file_bytes: bytes) -> dict[str, Any]:
     text = file_bytes.decode("utf-8", errors="ignore")
     return {"full_text": text, "bold_texts": []}
 
 
-def _parse_file(file_bytes: bytes, filename: str) -> dict:
+def _parse_file(file_bytes: bytes, filename: str) -> dict[str, Any]:
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext in ("docx", "doc"):
         return _extract_docx_content(file_bytes)
     return _extract_text_content(file_bytes)
 
 
-def _build_prompt(
-    full_text: str, bold_texts: list[str], config: dict | None = None
-) -> str:
+def _build_prompt(full_text: str, bold_texts: list[str], config: dict[str, Any] | None = None) -> str:
     """Build AI prompt with configurable question types and counts."""
     if config:
         choice_count = config.get("choice_count", 5)
@@ -68,17 +67,14 @@ def _build_prompt(
 
     bold_hint = ""
     if bold_texts:
-        bold_hint = (
-            "\n\n【重点关注】以下内容在原文件中被加粗标记，请优先作为考点出题：\n"
-            + "\n".join(f"  - {t}" for t in bold_texts[:20])
+        bold_hint = "\n\n【重点关注】以下内容在原文件中被加粗标记，请优先作为考点出题：\n" + "\n".join(
+            f"  - {t}" for t in bold_texts[:20]
         )
 
     req_lines = []
     i = 1
     if choice_count > 0:
-        req_lines.append(
-            f"{i}. 出 {choice_count} 道单选题（每道 4 个选项 A/B/C/D，只有一个正确答案）"
-        )
+        req_lines.append(f"{i}. 出 {choice_count} 道单选题（每道 4 个选项 A/B/C/D，只有一个正确答案）")
         i += 1
     if tf_count > 0:
         req_lines.append(f"{i}. 出 {tf_count} 道判断题（正确/错误）")
@@ -95,12 +91,12 @@ def _build_prompt(
     json_parts = []
     if choice_count > 0:
         json_parts.append(
-            '"choice_questions": [{"question": "...", "options": [{"label": "A", "text": "..."}, {"label": "B", "text": "..."}, {"label": "C", "text": "..."}, {"label": "D", "text": "..."}], "answer": "A"}]'
+            '"choice_questions": [{"question": "...", "options": ['
+            '{"label": "A", "text": "..."}, {"label": "B", "text": "..."}, '
+            '{"label": "C", "text": "..."}, {"label": "D", "text": "..."}], "answer": "A"}]'
         )
     if tf_count > 0:
-        json_parts.append(
-            '"true_false_questions": [{"question": "...", "answer": "正确"}]'
-        )
+        json_parts.append('"true_false_questions": [{"question": "...", "answer": "正确"}]')
     if qa_count > 0:
         json_parts.append('"qa_questions": [{"question": "...", "answer": "参考答案"}]')
 
@@ -116,9 +112,7 @@ def _build_prompt(
 {full_text[:8000]}{bold_hint}"""
 
 
-async def generate_exam(
-    file_bytes: bytes, filename: str, config: dict | None = None
-) -> dict:
+async def generate_exam(file_bytes: bytes, filename: str, config: dict[str, Any] | None = None) -> dict[str, Any]:
     """Generate exam questions from uploaded file."""
     content = _parse_file(file_bytes, filename)
     if not content["full_text"].strip():
@@ -134,7 +128,7 @@ async def generate_exam(
     )
 
     settings = get_settings()
-    api_key = settings.HR_AI_API_KEY
+    api_key = settings.HR_AI_API_KEY  # type: ignore[attr-defined]
     if not api_key:
         raise ValueError("HR_AI_API_KEY 未配置，无法调用 AI")
 
@@ -148,7 +142,7 @@ async def generate_exam(
                 "Content-Type": "application/json",
             },
             json={
-                "model": settings.HR_AI_MODEL,
+                "model": settings.HR_AI_MODEL,  # type: ignore[attr-defined]
                 "messages": [
                     {
                         "role": "system",
@@ -177,10 +171,10 @@ async def generate_exam(
     for i, q in enumerate(result.get("qa_questions", [])):
         q["number"] = i + 1
 
-    return result
+    return result  # type: ignore[no-any-return]
 
 
-def export_exam(data: dict) -> BytesIO:
+def export_exam(data: dict[str, Any]) -> BytesIO:
     """Export exam questions as a Word document."""
     from docx import Document
     from docx.shared import Pt

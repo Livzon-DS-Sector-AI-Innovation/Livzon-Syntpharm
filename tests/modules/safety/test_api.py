@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Smoke tests for safety module API endpoints."""
 
 import pytest

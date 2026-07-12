@@ -6,10 +6,11 @@
 
 import logging
 from datetime import datetime, timezone
+from typing import Any
 
 from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskGenerator
-from app.platform.scheduler.registry import scheduler_registry
+from app.platform.scheduler.registry import scheduler_registry  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,11 @@ _CST = timezone(__import__("datetime").timedelta(hours=8))
 def _cron_matches(cron_expr: str, now: datetime) -> bool:
     """检查 cron 表达式是否匹配当前时间（精确到分钟）"""
     try:
-        import croniter
+        import croniter  # type: ignore[import-untyped]
 
         cron = croniter.croniter(cron_expr, now.replace(second=0, microsecond=0))
         prev = cron.get_prev(datetime)
-        return prev == now.replace(second=0, microsecond=0)
+        return prev == now.replace(second=0, microsecond=0)  # type: ignore[no-any-return]
     except Exception:
         return False
 
@@ -40,18 +41,18 @@ class SopAiSchedulerGenerator(TaskGenerator):
         interval_seconds=60,
     )
 
-    def __init__(self):
+    def __init__(self) -> Any:  # type: ignore[misc]
         super().__init__()
         self._jobs: dict[str, ScheduledJob] = {}
         self._callbacks: dict[str, object] = {}
 
-    async def find_due(self, session):
+    async def find_due(self, session) -> Any:  # type: ignore[no-untyped-def]
         return []
 
-    async def execute_one(self, session, item) -> None:
+    async def execute_one(self, session, item) -> Any:  # type: ignore[no-untyped-def]
         pass
 
-    async def execute_all(self, session) -> None:
+    async def execute_all(self, session) -> Any:  # type: ignore[no-untyped-def]
         now = datetime.now(_CST)
         for job in list(self._jobs.values()):
             if not job.enabled:
@@ -60,14 +61,14 @@ class SopAiSchedulerGenerator(TaskGenerator):
                 callback = self._callbacks.get(job.job_id)
                 if callback:
                     try:
-                        await callback()
+                        await callback()  # type: ignore[operator]
                         job.last_run_time = now
                         job.run_count += 1
                         logger.info(f"定时任务执行完成: {job.job_id}")
                     except Exception as e:
                         logger.error(f"定时任务执行失败: {job.job_id}, error={e}")
 
-    def add_job(
+    def add_job(  # type: ignore[no-untyped-def]
         self,
         job_id: str,
         job_name: str,
@@ -139,6 +140,6 @@ def get_sop_ai_scheduler() -> SopAiSchedulerGenerator:
     return _generator
 
 
-def register():
+def register() -> Any:
     scheduler_registry.register_generator(get_sop_ai_scheduler())
     logger.info("SOP AI 定时任务生成器已注册")

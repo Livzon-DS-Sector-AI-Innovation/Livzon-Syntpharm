@@ -95,7 +95,9 @@ NATURAL_QUERY_PARSE_PROMPT = """## 用户输入
 - is_critical: true/false
 
 ## 映射规则
-- 作业类型：动火作业→hot_work, 受限空间→confined_space, 高处作业→height_work, 临时用电→temporary_electricity, 盲板抽堵→blind_plate, 动土作业→excavation, 起重吊装→lifting, 断路作业→road_breaking
+- 作业类型：动火作业→hot_work, 受限空间→confined_space, 高处作业→height_work, \
+临时用电→temporary_electricity, 盲板抽堵→blind_plate, 动土作业→excavation, \
+起重吊装→lifting, 断路作业→road_breaking
 - 风险等级：一级/重大→level_1, 二级/较大→level_2, 三级/一般→level_3, 四级/低→level_4
 - 作业级别：特级→special, 一级→grade1, 二级→grade2
 
@@ -192,9 +194,7 @@ class SpecialOperationReportService:
         """获取报备详情"""
         return await self.repo.get_special_operation_report_by_id(report_id)
 
-    async def create_report(
-        self, data: SpecialOperationReportCreate
-    ) -> SpecialOperationReport:
+    async def create_report(self, data: SpecialOperationReportCreate) -> SpecialOperationReport:
         """创建报备"""
         item = await self.repo.create_special_operation_report(data.model_dump())
         await self._audit("create", "special_operation_report", resource_id=item.id)
@@ -207,25 +207,19 @@ class SpecialOperationReportService:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_special_operation_report(report_id, update_data)
         if item:
-            await self._audit(
-                "update", "special_operation_report", resource_id=report_id
-            )
+            await self._audit("update", "special_operation_report", resource_id=report_id)
         return item
 
     async def delete_report(self, report_id: uuid.UUID) -> bool:
         """删除报备"""
         result = await self.repo.delete_special_operation_report(report_id)
         if result:
-            await self._audit(
-                "delete", "special_operation_report", resource_id=report_id
-            )
+            await self._audit("delete", "special_operation_report", resource_id=report_id)
         return result
 
     # ── 工作流 ──
 
-    async def submit_report(
-        self, report_id: uuid.UUID
-    ) -> SpecialOperationReport | None:
+    async def submit_report(self, report_id: uuid.UUID) -> SpecialOperationReport | None:
         """提交报备（草稿→已提交），并自动判定是否为关键作业"""
         report = await self.repo.get_special_operation_report_by_id(report_id)
         if not report or report.status != "draft":
@@ -243,9 +237,7 @@ class SpecialOperationReportService:
             },
         )
 
-    async def approve_report(
-        self, report_id: uuid.UUID
-    ) -> SpecialOperationReport | None:
+    async def approve_report(self, report_id: uuid.UUID) -> SpecialOperationReport | None:
         """审批报备（已提交→已审批）"""
         report = await self.repo.get_special_operation_report_by_id(report_id)
         if not report or report.status != "submitted":
@@ -255,9 +247,7 @@ class SpecialOperationReportService:
             {"status": "approved", "approved_at": datetime.now()},
         )
 
-    async def reject_report(
-        self, report_id: uuid.UUID, reason: str
-    ) -> SpecialOperationReport | None:
+    async def reject_report(self, report_id: uuid.UUID, reason: str) -> SpecialOperationReport | None:
         """驳回报备（已提交→已驳回）"""
         report = await self.repo.get_special_operation_report_by_id(report_id)
         if not report or report.status != "submitted":
@@ -293,11 +283,9 @@ class SpecialOperationReportService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
 
-        return await create_ai_service("text")
+        return await create_ai_service("text")  # type: ignore[no-any-return]
 
-    async def _identify_critical(
-        self, report: "SpecialOperationReport"
-    ) -> tuple[bool, str | None]:
+    async def _identify_critical(self, report: "SpecialOperationReport") -> tuple[bool, str | None]:
         """判定报备是否为关键作业（AI 优先，失败时基于规则 fallback）"""
         try:
             ai = await self._get_ai_service()
@@ -306,11 +294,9 @@ class SpecialOperationReportService:
             logger.warning("AI 关键作业判定失败，使用规则 fallback: %s", e)
             return self._rule_based_identify_critical(report)
 
-    async def _ai_identify_critical(
-        self, ai: "AIService", report: "SpecialOperationReport"
-    ) -> tuple[bool, str | None]:
+    async def _ai_identify_critical(self, ai: "AIService", report: "SpecialOperationReport") -> tuple[bool, str | None]:
         """使用 AI 判定关键作业（提示词由工作流配置提供）"""
-        OP_TYPE_LABELS = {
+        op_type_labels = {
             "hot_work": "动火作业",
             "confined_space": "受限空间",
             "height_work": "高处作业",
@@ -320,7 +306,7 @@ class SpecialOperationReportService:
             "lifting": "起重吊装",
             "road_breaking": "断路作业",
         }
-        op_label = OP_TYPE_LABELS.get(report.operation_type, report.operation_type)
+        op_label = op_type_labels.get(report.operation_type, report.operation_type)
 
         context = (
             f"作业类型：{op_label}\n"
@@ -349,9 +335,7 @@ class SpecialOperationReportService:
         result = json.loads(response_text)
         return result.get("is_critical", False), result.get("reason")
 
-    def _rule_based_identify_critical(
-        self, report: "SpecialOperationReport"
-    ) -> tuple[bool, str | None]:
+    def _rule_based_identify_critical(self, report: "SpecialOperationReport") -> tuple[bool, str | None]:
         """基于规则的 fallback 关键作业判定"""
         high_risk_types = {"hot_work", "confined_space", "height_work", "lifting"}
         critical_reasons: list[str] = []
@@ -370,9 +354,7 @@ class SpecialOperationReportService:
             "grade1",
         ):
             if not critical_reasons:
-                critical_reasons.append(
-                    f"{report.operation_type} 作业类型属于高风险作业"
-                )
+                critical_reasons.append(f"{report.operation_type} 作业类型属于高风险作业")
 
         if critical_reasons:
             return True, "；".join(critical_reasons)
@@ -409,17 +391,15 @@ class SpecialOperationReportService:
             is_critical=is_critical,
         )
 
-    async def get_ledger_stats(
-        self, status_list: list[str] | None = None
-    ) -> list[dict]:
+    async def get_ledger_stats(self, status_list: list[str] | None = None) -> list[dict[str, Any]]:
         """获取台账统计"""
         return await self.repo.get_special_operation_ledger_stats(status_list)
 
     # ── AI 导出 ──
 
-    async def parse_natural_query(self, natural_query: str) -> dict:
+    async def parse_natural_query(self, natural_query: str) -> dict[str, Any]:
         """使用 AI 将自然语言筛选条件解析为结构化参数（提示词由工作流配置提供）"""
-        OP_TYPE_LABELS = {
+        op_type_labels = {
             "动火作业": "hot_work",
             "受限空间": "confined_space",
             "高处作业": "height_work",
@@ -446,8 +426,8 @@ class SpecialOperationReportService:
             # 验证 operation_type 值
             if result.get("operation_type"):
                 op_type = result["operation_type"]
-                if op_type in OP_TYPE_LABELS:
-                    result["operation_type"] = OP_TYPE_LABELS[op_type]
+                if op_type in op_type_labels:
+                    result["operation_type"] = op_type_labels[op_type]
             # 清除 None 值
             return {k: v for k, v in result.items() if v is not None}
         except Exception as e:
@@ -487,7 +467,7 @@ class SpecialOperationReportService:
             is_critical=is_critical,
         )
 
-        OP_TYPE_LABELS = {
+        op_type_labels = {
             "hot_work": "动火作业",
             "confined_space": "受限空间",
             "height_work": "高处作业",
@@ -497,13 +477,13 @@ class SpecialOperationReportService:
             "lifting": "起重吊装",
             "road_breaking": "断路作业",
         }
-        OP_LEVEL_LABELS = {
+        op_level_labels = {
             "special": "特级",
             "grade1": "一级",
             "grade2": "二级",
             "not_applicable": "不涉及",
         }
-        STATUS_LABELS = {
+        status_labels = {
             "draft": "草稿",
             "submitted": "审批中",
             "approved": "已审批",
@@ -516,12 +496,8 @@ class SpecialOperationReportService:
 
         # 标题样式
         header_font = Font(name="微软雅黑", bold=True, size=11, color="FFFFFF")
-        header_fill = PatternFill(
-            start_color="5645D4", end_color="5645D4", fill_type="solid"
-        )
-        header_alignment = Alignment(
-            horizontal="center", vertical="center", wrap_text=True
-        )
+        header_fill = PatternFill(start_color="5645D4", end_color="5645D4", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell_font = Font(name="微软雅黑", size=10)
         cell_alignment = Alignment(vertical="center", wrap_text=True)
         thin_border = Border(
@@ -530,9 +506,7 @@ class SpecialOperationReportService:
             top=Side(style="thin", color="D9D9D9"),
             bottom=Side(style="thin", color="D9D9D9"),
         )
-        critical_fill = PatternFill(
-            start_color="FDE0EC", end_color="FDE0EC", fill_type="solid"
-        )
+        critical_fill = PatternFill(start_color="FDE0EC", end_color="FDE0EC", fill_type="solid")
 
         # 表头
         headers = [
@@ -565,21 +539,17 @@ class SpecialOperationReportService:
             values = [
                 row_idx - 1,
                 item.report_no or "",
-                OP_TYPE_LABELS.get(item.operation_type, item.operation_type or ""),
-                OP_LEVEL_LABELS.get(item.operation_level, item.operation_level or ""),
+                op_type_labels.get(item.operation_type, item.operation_type or ""),
+                op_level_labels.get(item.operation_level, item.operation_level or ""),
                 item.location or "",
                 item.work_description or "",
                 item.department or "",
-                item.planned_start_time.strftime("%Y-%m-%d %H:%M")
-                if item.planned_start_time
-                else "",
-                item.planned_end_time.strftime("%Y-%m-%d %H:%M")
-                if item.planned_end_time
-                else "",
+                item.planned_start_time.strftime("%Y-%m-%d %H:%M") if item.planned_start_time else "",
+                item.planned_end_time.strftime("%Y-%m-%d %H:%M") if item.planned_end_time else "",
                 item.applicant_name or "",
                 item.approver_name or "",
                 item.approved_at.strftime("%Y-%m-%d %H:%M") if item.approved_at else "",
-                STATUS_LABELS.get(item.status, item.status or ""),
+                status_labels.get(item.status, item.status or ""),
                 "是" if item.is_critical else "否",
                 item.is_critical_reason or "",
                 item.notes or "",
@@ -596,9 +566,7 @@ class SpecialOperationReportService:
         # 列宽
         col_widths = [6, 14, 10, 8, 14, 24, 12, 16, 16, 8, 8, 16, 8, 10, 28, 20]
         for col_idx, width in enumerate(col_widths, 1):
-            ws.column_dimensions[
-                openpyxl.utils.get_column_letter(col_idx)
-            ].width = width
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = width
 
         # 冻结首行
         ws.freeze_panes = "A2"

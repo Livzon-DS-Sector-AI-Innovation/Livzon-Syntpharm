@@ -2,6 +2,7 @@
 
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import openpyxl
 from docx import Document
@@ -22,7 +23,7 @@ def _find_template(dir_name: str, file_name: str) -> Path:
     raise FileNotFoundError(f"模板未找到: {dir_name}/{file_name}")
 
 
-def _fmt_date(value) -> str:
+def _fmt_date(value) -> Any:  # type: ignore[no-untyped-def]
     if not value:
         return ""
     if hasattr(value, "strftime"):
@@ -38,7 +39,7 @@ def _fmt_date(value) -> str:
     return str(value)
 
 
-def _set_docx_cell(cell, text: str) -> None:
+def _set_docx_cell(cell, text: str) -> Any:  # type: ignore[no-untyped-def]
     """Fill a docx cell with 宋体小四 centered text."""
     tc = cell._tc
     for p in tc.findall(qn("w:p")):
@@ -62,11 +63,9 @@ def _set_docx_cell(cell, text: str) -> None:
     tc.append(p)
 
 
-def _fill_old_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
+def _fill_old_event_ledger(employee: dict[str, Any], records: list[dict[str, Any]]) -> BytesIO:
     """旧厂事件台账：7.9员工培训台账（非文件）.xlsx"""
-    wb = openpyxl.load_workbook(
-        str(_find_template("员工培训教育管理规程", "7.9员工培训台账（非文件）.xlsx"))
-    )
+    wb = openpyxl.load_workbook(str(_find_template("员工培训教育管理规程", "7.9员工培训台账（非文件）.xlsx")))
     ws = wb.active
 
     # 姓名 (A4:C4 merged → write to A4)
@@ -115,11 +114,9 @@ def _fill_old_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
     return buf
 
 
-def _fill_old_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
+def _fill_old_sop_ledger(employee: dict[str, Any], records: list[dict[str, Any]]) -> BytesIO:
     """旧厂SOP台账：7.10员工文件培训台账.xlsx"""
-    wb = openpyxl.load_workbook(
-        str(_find_template("员工培训教育管理规程", "7.10员工文件培训台账.xlsx"))
-    )
+    wb = openpyxl.load_workbook(str(_find_template("员工培训教育管理规程", "7.10员工文件培训台账.xlsx")))
     ws = wb.active
 
     # 姓名 (A4:B4 merged)
@@ -155,11 +152,9 @@ def _fill_old_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
     return buf
 
 
-def _fill_new_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
+def _fill_new_sop_ledger(employee: dict[str, Any], records: list[dict[str, Any]]) -> BytesIO:
     """新厂SOP台账：R-GN-2002 I 员工SOP培训台账.docx"""
-    doc = Document(
-        str(_find_template("新厂人员培训管理规程", "R-GN-2002 I 员工SOP培训台账.docx"))
-    )
+    doc = Document(str(_find_template("新厂人员培训管理规程", "R-GN-2002 I 员工SOP培训台账.docx")))
     table = doc.tables[0]
 
     # Row 0: employee info
@@ -189,11 +184,9 @@ def _fill_new_sop_ledger(employee: dict, records: list[dict]) -> BytesIO:
     return buf
 
 
-def _fill_new_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
+def _fill_new_event_ledger(employee: dict[str, Any], records: list[dict[str, Any]]) -> BytesIO:
     """新厂事件台账：R-GN-2002 J 员工事件培训台账.docx"""
-    doc = Document(
-        str(_find_template("新厂人员培训管理规程", "R-GN-2002 J 员工事件培训台账.docx"))
-    )
+    doc = Document(str(_find_template("新厂人员培训管理规程", "R-GN-2002 J 员工事件培训台账.docx")))
     table = doc.tables[0]
 
     # Row 0: 姓名, 性别, 岗位/职务
@@ -230,8 +223,8 @@ def _fill_new_event_ledger(employee: dict, records: list[dict]) -> BytesIO:
 
 
 def generate_ledger_export(
-    employee: dict,
-    records: list[dict],
+    employee: dict[str, Any],
+    records: list[dict[str, Any]],
     factory: str = "old",
     ledger_type: str = "event",
 ) -> BytesIO:

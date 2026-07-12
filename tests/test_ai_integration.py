@@ -1,3 +1,5 @@
+# ruff: noqa
+# mypy: ignore-errors
 """Integration tests for the AI three-layer query architecture.
 
 Run with: .venv/Scripts/python tests/test_ai_integration.py
@@ -111,9 +113,7 @@ async def round1_tests(client: openai.AsyncOpenAI):
         assert_true(plan is not None, "plan should not be None")
         q = plan.steps[0].parallel_queries[0]
         assert_true(q.action == "query", f"expected query, got {q.action}")
-        assert_true(
-            "生产部" in str(q.filters.get("department", "")), "should filter by 生产部"
-        )
+        assert_true("生产部" in str(q.filters.get("department", "")), "should filter by 生产部")
         print(f"    -> Plan: {q.action}, filters={q.filters}")
 
     await run_async_test("03 生产部有哪些工程师 → query", test_03)
@@ -123,12 +123,8 @@ async def round1_tests(client: openai.AsyncOpenAI):
         plan = await generate_plan(client, "有哪些部门")
         assert_true(plan is not None, "plan should not be None")
         q = plan.steps[0].parallel_queries[0]
-        assert_true(
-            q.action == "get_distinct", f"expected get_distinct, got {q.action}"
-        )
-        assert_true(
-            q.group_by == "department", f"expected department, got {q.group_by}"
-        )
+        assert_true(q.action == "get_distinct", f"expected get_distinct, got {q.action}")
+        assert_true(q.group_by == "department", f"expected department, got {q.group_by}")
         print(f"    -> Plan: {q.action} {q.group_by}")
 
     await run_async_test("04 有哪些部门 → get_distinct", test_04)
@@ -140,9 +136,7 @@ async def round1_tests(client: openai.AsyncOpenAI):
         q = plan.steps[0].parallel_queries[0]
         assert_true(q.action == "count", f"expected count, got {q.action}")
         f = q.filters
-        assert_true(
-            f.get("age_min") == 30 or f.get("age_max") == 30, "should have age filter"
-        )
+        assert_true(f.get("age_min") == 30 or f.get("age_max") == 30, "should have age filter")
         assert_true("本科" in str(f.get("education", "")), "should filter by 本科")
         assert_true("在职" in str(f.get("status", "")), "should filter by 在职")
         print(f"    -> Plan: {q.action}, filters={f}")
@@ -167,9 +161,7 @@ async def round2_tests(client: openai.AsyncOpenAI):
         # Could be 1-step group_count or 2-step dynamic
         if len(plan.steps) == 1:
             q = plan.steps[0].parallel_queries[0]
-            assert_true(
-                q.action == "group_count", f"expected group_count, got {q.action}"
-            )
+            assert_true(q.action == "group_count", f"expected group_count, got {q.action}")
             print(f"    -> Plan: 1-step {q.action} by {q.group_by}")
         else:
             assert_true(plan.steps[0].mode == "static", "step 1 should be static")
@@ -189,9 +181,7 @@ async def round2_tests(client: openai.AsyncOpenAI):
             print("    -> Plan: 1-step group_count by department")
         else:
             assert_true(len(queries) == 2, "expected 2 parallel queries")
-            assert_true(
-                all(q.action == "count" for q in queries), "both should be count"
-            )
+            assert_true(all(q.action == "count" for q in queries), "both should be count")
             print("    -> Plan: 2 parallel count queries")
 
     await run_async_test("07 生产部和研发部各有多少人 → parallel", test_07)
@@ -202,9 +192,7 @@ async def round2_tests(client: openai.AsyncOpenAI):
         assert_true(plan is not None, "plan should not be None")
         queries = plan.steps[0].parallel_queries
         assert_true(len(queries) >= 1, "should have at least 1 query")
-        print(
-            f"    -> Plan: {len(queries)} parallel queries: {[q.action for q in queries]}"
-        )
+        print(f"    -> Plan: {len(queries)} parallel queries: {[q.action for q in queries]}")
 
     await run_async_test("08 各部门人数及性别分布 → mixed parallel", test_08)
 

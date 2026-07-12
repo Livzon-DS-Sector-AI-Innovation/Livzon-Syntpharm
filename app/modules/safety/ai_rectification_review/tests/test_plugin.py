@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.modules.safety.ai_rectification_review.prompts import (
@@ -63,7 +65,7 @@ def make_input(
     )
 
 
-def make_output(**overrides) -> RectificationReviewOutput:
+def make_output(**overrides) -> Any:
     data = {**VALID_OUTPUT_DICT, **overrides}
     return RectificationReviewOutput(**data)
 
@@ -76,22 +78,20 @@ def make_output(**overrides) -> RectificationReviewOutput:
 class MockAIService:
     """模拟 AI 服务，返回预设输出。"""
 
-    def __init__(self, return_dict: dict | None = None, should_fail: bool = False):
+    def __init__(self, return_dict: dict[str, Any] | None = None, should_fail: bool = False):
         self.return_dict = return_dict or VALID_OUTPUT_DICT
         self.should_fail = should_fail
-        self.last_messages: list | None = None
-        self.last_expected_keys: list | None = None
+        self.last_messages: list[Any] | None = None
+        self.last_expected_keys: list[Any] | None = None
 
-    async def chat_parsed(self, messages, expected_keys, temperature=0.05):
+    async def chat_parsed(self, messages, expected_keys, temperature=0.05) -> Any:
         if self.should_fail:
             raise RuntimeError("Mock AI failure")
         self.last_messages = messages
         self.last_expected_keys = expected_keys
         return dict(self.return_dict)
 
-    async def chat_vision_parsed(
-        self, text_prompt, image_urls, expected_keys, temperature=0.05
-    ):
+    async def chat_vision_parsed(self, text_prompt, image_urls, expected_keys, temperature=0.05):
         if self.should_fail:
             raise RuntimeError("Mock AI failure")
         self.last_expected_keys = expected_keys
@@ -106,7 +106,7 @@ class MockAIService:
 class TestSchemas:
     """输入/输出数据模型验证。"""
 
-    def test_input_minimal(self):
+    def test_input_minimal(self) -> Any:
         """最小输入创建成功。"""
         inp = make_input("防爆电箱堵头缺失", "已加装防爆堵头")
         assert inp.original_description == "防爆电箱堵头缺失"
@@ -114,7 +114,7 @@ class TestSchemas:
         assert inp.original_defect_photos == []
         assert inp.rectification_photos == []
 
-    def test_input_full(self):
+    def test_input_full(self) -> Any:
         """完整输入应包含所有字段。"""
         inp = make_input(
             original_description="防爆电箱堵头缺失",
@@ -137,7 +137,7 @@ class TestSchemas:
         assert len(inp.rectification_photos) == 1
         assert inp.ai_rectification_suggestion["immediate"] == "断电并安装堵头"
 
-    def test_output_valid(self):
+    def test_output_valid(self) -> Any:
         """有效输出创建成功。"""
         out = make_output()
         assert out.review_conclusion == ReviewConclusion.PASS
@@ -145,7 +145,7 @@ class TestSchemas:
         assert out.measure_quality_level == MeasureQualityLevel.ADEQUATE
         assert out.standard_compliance_level == ComplianceLevel.COMPLIANT
 
-    def test_enum_rejection(self):
+    def test_enum_rejection(self) -> Any:
         """非法枚举值应被拒绝。"""
         with pytest.raises(ValueError):
             RectificationReviewOutput(
@@ -155,7 +155,7 @@ class TestSchemas:
                 }
             )
 
-    def test_config_defaults(self):
+    def test_config_defaults(self) -> Any:
         """配置默认值。"""
         config = PluginConfig()
         assert config.temperature == 0.05
@@ -172,31 +172,31 @@ class TestSchemas:
 class TestPrompts:
     """Prompt 模板和辅助函数验证。"""
 
-    def test_system_role_not_empty(self):
+    def test_system_role_not_empty(self) -> Any:
         assert len(SYSTEM_ROLE) > 100
         assert "安全审核" in SYSTEM_ROLE
 
-    def test_work_rules_has_four_sections(self):
+    def test_work_rules_has_four_sections(self) -> Any:
         assert "### 1. 图片比对规则" in WORK_RULES
         assert "### 2. 措施有效性评估规则" in WORK_RULES
         assert "### 3. 标准合规评估规则" in WORK_RULES
         assert "### 4. 综合评审判定规则" in WORK_RULES
 
-    def test_output_format_has_all_keys(self):
+    def test_output_format_has_all_keys(self) -> Any:
         for key in get_expected_keys():
             assert key in OUTPUT_FORMAT, f"Missing key in OUTPUT_FORMAT: {key}"
 
-    def test_expected_keys(self):
+    def test_expected_keys(self) -> Any:
         keys = get_expected_keys()
         assert len(keys) == 8
         assert "photo_match_analysis" in keys
         assert "review_conclusion" in keys
 
-    def test_critical_constraints_not_empty(self):
+    def test_critical_constraints_not_empty(self) -> Any:
         assert len(CRITICAL_CONSTRAINTS) > 100
         assert "不通过" in CRITICAL_CONSTRAINTS
 
-    def test_context_text_basic(self):
+    def test_context_text_basic(self) -> Any:
         ctx = build_context_text(
             original_description="防爆电箱堵头缺失",
             department="生产部",
@@ -206,7 +206,7 @@ class TestPrompts:
         assert "生产部" in ctx
         assert "unsafe_condition" in ctx
 
-    def test_context_text_with_ai_suggestion(self):
+    def test_context_text_with_ai_suggestion(self) -> Any:
         ctx = build_context_text(
             original_description="测试",
             key_defect="关键缺陷描述",
@@ -221,7 +221,7 @@ class TestPrompts:
         assert "短期整改" in ctx
         assert "长期预防" in ctx
 
-    def test_reply_context_with_photos(self):
+    def test_reply_context_with_photos(self) -> Any:
         ctx = build_reply_context_text(
             rectification_reply="已修复",
             has_photos=True,
@@ -229,7 +229,7 @@ class TestPrompts:
         assert "已修复" in ctx
         assert "整改后现场照片" in ctx
 
-    def test_reply_context_without_photos(self):
+    def test_reply_context_without_photos(self) -> Any:
         ctx = build_reply_context_text(
             rectification_reply="已修复",
             has_photos=False,
@@ -237,7 +237,7 @@ class TestPrompts:
         assert "已修复" in ctx
         assert "未提供整改后现场照片" in ctx
 
-    def test_full_prompt_text_mode(self):
+    def test_full_prompt_text_mode(self) -> Any:
         prompt = build_full_prompt(
             context="原始隐患上下文",
             reply_context="整改回复上下文",
@@ -248,7 +248,7 @@ class TestPrompts:
         assert "整改回复上下文" in prompt
         assert WORK_RULES in prompt
 
-    def test_full_prompt_with_knowledge(self):
+    def test_full_prompt_with_knowledge(self) -> Any:
         prompt = build_full_prompt(
             context="原始隐患上下文",
             reply_context="整改回复上下文",
@@ -263,7 +263,7 @@ class TestPrompts:
         rules_pos = prompt.index(WORK_RULES)
         assert kb_pos < rules_pos
 
-    def test_full_prompt_with_fewshot(self):
+    def test_full_prompt_with_fewshot(self) -> Any:
         prompt = build_full_prompt(
             context="原始隐患上下文",
             reply_context="整改回复上下文",
@@ -273,7 +273,7 @@ class TestPrompts:
         assert "参考示例" in prompt
         assert "防爆电箱" in prompt  # 第一个 few-shot 示例
 
-    def test_db_seed_config(self):
+    def test_db_seed_config(self) -> Any:
         config = get_db_seed_config()
         assert config["module_code"] == "hazard"
         assert config["workflow_name"] == "AI整改初审"
@@ -291,17 +291,17 @@ class TestPrompts:
 class TestRuleEngine:
     """规则引擎验证。"""
 
-    def setup_method(self):
+    def setup_method(self) -> Any:
         self.engine = RuleEngine()
 
-    def test_valid_output_passes(self):
+    def test_valid_output_passes(self) -> Any:
         inp = make_input("防爆电箱堵头缺失", "已加装堵头")
         out = make_output()
         result = self.engine.validate(inp, out)
         assert result.is_valid
         assert len(result.errors) == 0
 
-    def test_invalid_enum_detected(self):
+    def test_invalid_enum_detected(self) -> Any:
         inp = make_input()
         # 使用 model_construct 绕过 Pydantic 验证来测试规则引擎的枚举校验
         out = RectificationReviewOutput.model_construct(
@@ -313,23 +313,21 @@ class TestRuleEngine:
         result = self.engine.validate(inp, out)
         assert not result.is_valid
 
-    def test_short_photo_analysis(self):
+    def test_short_photo_analysis(self) -> Any:
         inp = make_input()
         out = make_output(photo_match_analysis="太短")
         result = self.engine.validate(inp, out)
         assert not result.is_valid
         assert any("图片比对分析" in e for e in result.errors)
 
-    def test_short_review_comments(self):
+    def test_short_review_comments(self) -> Any:
         inp = make_input()
-        out = RectificationReviewOutput.model_construct(
-            **{**VALID_OUTPUT_DICT, "review_comments": ""}
-        )
+        out = RectificationReviewOutput.model_construct(**{**VALID_OUTPUT_DICT, "review_comments": ""})
         result = self.engine.validate(inp, out)
         assert not result.is_valid
         assert any("AI初审结果" in e for e in result.errors)
 
-    def test_no_photos_pass_allowed_with_warning(self):
+    def test_no_photos_pass_allowed_with_warning(self) -> Any:
         """无照片 + 通过 → 允许（但产生 warning）。"""
         inp = make_input()
         out = make_output(
@@ -340,7 +338,7 @@ class TestRuleEngine:
         assert result.is_valid  # 降级为 warning，不阻断
         assert any("无整改后图片" in w for w in result.warnings)
 
-    def test_inadequate_quality_pass_blocked(self):
+    def test_inadequate_quality_pass_blocked(self) -> Any:
         """措施不合格 + 通过 → 错误。"""
         inp = make_input()
         out = make_output(
@@ -350,7 +348,7 @@ class TestRuleEngine:
         result = self.engine.validate(inp, out)
         assert not result.is_valid
 
-    def test_unmatched_pass_blocked(self):
+    def test_unmatched_pass_blocked(self) -> Any:
         """图片不匹配 + 通过 → 错误（硬性：照片显示隐患仍存在）。"""
         inp = make_input()
         out = make_output(
@@ -361,7 +359,7 @@ class TestRuleEngine:
         assert not result.is_valid
         assert any("unmatched" in e for e in result.errors)
 
-    def test_non_compliant_pass_allowed_with_warning(self):
+    def test_non_compliant_pass_allowed_with_warning(self) -> Any:
         """不合规 + 通过 → 允许（但产生 warning，标准合规是参考维度）。"""
         inp = make_input()
         out = make_output(
@@ -372,7 +370,7 @@ class TestRuleEngine:
         assert result.is_valid  # 降级为 warning，不阻断
         assert any("non_compliant" in w for w in result.warnings)
 
-    def test_banned_phrase_warning(self):
+    def test_banned_phrase_warning(self) -> Any:
         """泛泛表述检测。"""
         inp = make_input()
         out = make_output(
@@ -381,7 +379,7 @@ class TestRuleEngine:
         result = self.engine.validate(inp, out)
         assert len(result.warnings) > 0
 
-    def test_relevance_warning(self):
+    def test_relevance_warning(self) -> Any:
         """输入输出不相关检测。"""
         inp = make_input(original_description="防爆电箱堵头缺失 积尘严重")
         out = make_output(
@@ -401,12 +399,12 @@ class TestRuleEngine:
 class TestAutoCorrect:
     """auto_correct 函数验证。"""
 
-    def test_strips_whitespace(self):
+    def test_strips_whitespace(self) -> Any:
         out = make_output(photo_match_analysis="  有内容但前后有空格  ")
         corrected = auto_correct(out)
         assert corrected.photo_match_analysis == "有内容但前后有空格"
 
-    def test_fills_empty_fields(self):
+    def test_fills_empty_fields(self) -> Any:
         # 使用 model_construct 绕过 Pydantic 验证以测试空字符串回填
         out = RectificationReviewOutput.model_construct(
             **{
@@ -419,7 +417,7 @@ class TestAutoCorrect:
         assert len(corrected.photo_match_analysis) > 0
         assert len(corrected.measure_quality_assessment) > 0
 
-    def test_fills_empty_review_comments(self):
+    def test_fills_empty_review_comments(self) -> Any:
         out = RectificationReviewOutput.model_construct(
             **{
                 **VALID_OUTPUT_DICT,
@@ -440,7 +438,7 @@ class TestIntegration:
     """插件集成测试（使用 Mock AI 服务）。"""
 
     @pytest.fixture
-    def plugin(self):
+    def plugin(self) -> Any:
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
         )
@@ -448,7 +446,7 @@ class TestIntegration:
         return AIRectificationReviewer(MockAIService())
 
     @pytest.mark.asyncio
-    async def test_basic_review(self, plugin):
+    async def test_basic_review(self, plugin) -> Any:
         """基本审核流程。"""
         inp = make_input("防爆电箱堵头缺失", "已加装防爆堵头并用密封胶固定")
         result = await plugin.review(inp)
@@ -456,7 +454,7 @@ class TestIntegration:
         assert result.photo_match_level == PhotoMatchLevel.MATCHED
 
     @pytest.mark.asyncio
-    async def test_vision_routing(self):
+    async def test_vision_routing(self) -> Any:
         """有图片时走视觉模式。"""
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
@@ -473,7 +471,7 @@ class TestIntegration:
         assert result.review_conclusion == ReviewConclusion.PASS
 
     @pytest.mark.asyncio
-    async def test_ai_failure_raises(self):
+    async def test_ai_failure_raises(self) -> Any:
         """AI 调用失败应抛出 ReviewError。"""
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
@@ -488,7 +486,7 @@ class TestIntegration:
             await plugin.review(inp)
 
     @pytest.mark.asyncio
-    async def test_batch_review(self):
+    async def test_batch_review(self) -> Any:
         """批量审核。"""
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
@@ -504,7 +502,7 @@ class TestIntegration:
         assert all(r.review_conclusion == ReviewConclusion.PASS for r in results)
 
     @pytest.mark.asyncio
-    async def test_vision_fallback_to_text(self):
+    async def test_vision_fallback_to_text(self) -> Any:
         """vision 不可用时降级为纯文本。"""
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
@@ -512,7 +510,7 @@ class TestIntegration:
 
         # Mock 无 chat_vision_parsed 方法 → 自动降级
         class TextOnlyMock:
-            async def chat_parsed(self, messages, expected_keys, temperature=0.05):
+            async def chat_parsed(self, messages, expected_keys, temperature=0.05) -> Any:
                 return dict(VALID_OUTPUT_DICT)
 
         plugin = AIRectificationReviewer(TextOnlyMock())
@@ -525,7 +523,7 @@ class TestIntegration:
         assert result.review_conclusion == ReviewConclusion.PASS
 
     @pytest.mark.asyncio
-    async def test_prompt_includes_context(self):
+    async def test_prompt_includes_context(self) -> Any:
         """验证 prompt 包含了输入上下文。"""
         from app.modules.safety.ai_rectification_review.plugin import (
             AIRectificationReviewer,
@@ -550,10 +548,10 @@ class TestIntegration:
 class TestQualityBenchmarks:
     """验证所有 few-shot 示例都能通过规则引擎验证。"""
 
-    def setup_method(self):
+    def setup_method(self) -> Any:
         self.engine = RuleEngine()
 
-    def test_fewshot_1_passes(self):
+    def test_fewshot_1_passes(self) -> Any:
         """示例1（通过）通过验证。"""
         ex = FEWSHOT_EXAMPLES[0]
         out = RectificationReviewOutput(**ex["output"])
@@ -561,7 +559,7 @@ class TestQualityBenchmarks:
         result = self.engine.validate(inp, out)
         assert result.is_valid, f"Errors: {result.errors}"
 
-    def test_fewshot_2_passes(self):
+    def test_fewshot_2_passes(self) -> Any:
         """示例2（不通过）通过验证。"""
         ex = FEWSHOT_EXAMPLES[1]
         out = RectificationReviewOutput(**ex["output"])
@@ -569,7 +567,7 @@ class TestQualityBenchmarks:
         result = self.engine.validate(inp, out)
         assert result.is_valid, f"Errors: {result.errors}"
 
-    def test_fewshot_3_passes(self):
+    def test_fewshot_3_passes(self) -> Any:
         """示例3（不通过，无照片）通过验证。"""
         ex = FEWSHOT_EXAMPLES[2]
         out = RectificationReviewOutput(**ex["output"])
@@ -577,7 +575,7 @@ class TestQualityBenchmarks:
         result = self.engine.validate(inp, out)
         assert result.is_valid, f"Errors: {result.errors}"
 
-    def test_fewshot_4_passes(self):
+    def test_fewshot_4_passes(self) -> Any:
         """示例4（通过，附改进建议）通过验证。"""
         ex = FEWSHOT_EXAMPLES[3]
         out = RectificationReviewOutput(**ex["output"])

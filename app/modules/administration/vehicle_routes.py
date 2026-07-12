@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends
@@ -7,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import success_response
-from app.modules.administration.schemas import (
+from app.modules.administration.schemas import (  # type: ignore[attr-defined]
     VehicleCreate,
     VehicleResponse,
     VehicleUpdate,
@@ -23,12 +24,12 @@ def get_vehicle_service(session: AsyncSession = Depends(get_db)) -> VehicleServi
 
 
 @router.get("/vehicles", summary="车辆列表")
-async def list_vehicles(
+async def get(
     keyword: str | None = None,
     status: str | None = None,
     page_params: PageParams = Depends(),
     service: VehicleService = Depends(get_vehicle_service),
-):
+) -> Any:
     vehicles, total = await service.list_vehicles(
         keyword=keyword,
         status=status,
@@ -49,10 +50,10 @@ async def list_vehicles(
 
 
 @router.post("/vehicles", summary="创建车辆")
-async def create_vehicle(
+async def post(
     payload: VehicleCreate,
     service: VehicleService = Depends(get_vehicle_service),
-):
+) -> Any:
     vehicle = await service.create_vehicle(payload)
     return success_response(
         data=VehicleResponse.model_validate(vehicle).model_dump(mode="json"),
@@ -61,24 +62,24 @@ async def create_vehicle(
     )
 
 
-@router.get("/vehicles/{vehicle_id}", summary="车辆详情")
-async def get_vehicle(
+@router.get("/vehicles/{vehicle_id}", summary="车辆详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     vehicle_id: str,
     service: VehicleService = Depends(get_vehicle_service),
-):
-    vehicle = await service.get_vehicle(vehicle_id)
+) -> Any:
+    vehicle = await service.get_vehicle(vehicle_id)  # type: ignore[arg-type]
     return success_response(
         data=VehicleResponse.model_validate(vehicle).model_dump(mode="json"),
     )
 
 
 @router.put("/vehicles/{vehicle_id}", summary="更新车辆")
-async def update_vehicle(
+async def put(
     vehicle_id: str,
     payload: VehicleUpdate,
     service: VehicleService = Depends(get_vehicle_service),
-):
-    vehicle = await service.update_vehicle(vehicle_id, payload)
+) -> Any:
+    vehicle = await service.update_vehicle(vehicle_id, payload)  # type: ignore[arg-type]
     return success_response(
         data=VehicleResponse.model_validate(vehicle).model_dump(mode="json"),
         message="车辆更新成功",
@@ -86,16 +87,16 @@ async def update_vehicle(
 
 
 @router.delete("/vehicles/{vehicle_id}", summary="删除车辆")
-async def delete_vehicle(
+async def delete(
     vehicle_id: str,
     service: VehicleService = Depends(get_vehicle_service),
-):
-    await service.delete_vehicle(vehicle_id)
+) -> Any:
+    await service.delete_vehicle(vehicle_id)  # type: ignore[arg-type]
     return success_response(message="车辆删除成功")
 
 
 @router.get("/vehicles/template/download", summary="下载车辆导入模板")
-async def download_vehicle_template():
+async def download_vehicle_template() -> Any:
     """提供车辆批量导入模板下载."""
     template_path = os.path.join(
         os.path.dirname(__file__),
@@ -119,9 +120,7 @@ async def download_vehicle_template():
         ws.title = "车辆导入模板"
 
         # 样式定义
-        header_fill = PatternFill(
-            start_color="4472C4", end_color="4472C4", fill_type="solid"
-        )
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True, size=11)
         header_align = Alignment(horizontal="center", vertical="center")
         thin_border = Border(
@@ -144,9 +143,7 @@ async def download_vehicle_template():
             "说明：请按以下格式填写数据，带 * 的为必填项。图片列支持填写图片URL或留空（导入后可在页面单独上传）。"
         )
         ws["A2"].font = Font(size=10, color="666666")
-        ws["A2"].alignment = Alignment(
-            horizontal="left", vertical="center", wrap_text=True
-        )
+        ws["A2"].alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
         ws.row_dimensions[2].height = 35
 
         # 列标题

@@ -85,9 +85,7 @@ async def submit_inspection(
     try:
         await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     task = await get_task_by_no(db, task_no)
     if not task:
@@ -100,9 +98,7 @@ async def submit_inspection(
     try:
         eq = await _resolve_equipment(db, equipment)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
     equipment_uuid = eq.id
 
     task_uuid = task.id
@@ -127,9 +123,7 @@ async def submit_inspection(
         if result == "异常" and not item.get("actual_value") and not item.get("remark"):
             return ToolResult(
                 content=f"提交失败：检查项「{item_name}」结果为【异常】，必须填写实际值（actual_value）或备注（remark）。",
-                structured_content={
-                    "error": f"异常项缺少 actual_value/remark：{item_name}"
-                },
+                structured_content={"error": f"异常项缺少 actual_value/remark：{item_name}"},
                 is_error=True,
             )
 
@@ -363,9 +357,7 @@ async def submit_inspection_photos(
     try:
         await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     task = await get_task_by_no(db, task_no)
     if not task:
@@ -387,9 +379,7 @@ async def submit_inspection_photos(
     try:
         eq = await _resolve_equipment(db, equipment)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     task_uuid = task.id
     equipment_uuid = eq.id
@@ -422,8 +412,7 @@ async def submit_inspection_photos(
     if success_count == 0:
         reason_lines = [d["reason"] for d in failed_details]
         return ToolResult(
-            content=f"上传失败：{failed_count} 张照片全部未能保存。\n"
-            + "\n".join(f"  · {r}" for r in reason_lines),
+            content=f"上传失败：{failed_count} 张照片全部未能保存。\n" + "\n".join(f"  · {r}" for r in reason_lines),
             structured_content={
                 "success": False,
                 "task_no": task.task_no,
@@ -483,9 +472,7 @@ async def list_inspection_tasks(
     if status:
         valid_statuses = {"待执行", "执行中", "已完成", "已关闭"}
         if status not in valid_statuses:
-            raise ValueError(
-                f"无效的任务状态 '{status}'，可选值：{' / '.join(valid_statuses)}"
-            )
+            raise ValueError(f"无效的任务状态 '{status}'，可选值：{' / '.join(valid_statuses)}")
 
     tasks, _total = await get_inspection_tasks(
         db,
@@ -512,10 +499,7 @@ async def list_inspection_tasks(
         name_map = await get_equipment_names_by_ids(db, list(all_eq_ids))
         no_map = await get_equipment_nos_by_ids(db, list(all_eq_ids))
         for r in need_enrich:
-            names = [
-                name_map.get(uuid.UUID(eid), eid[:8] + "…")
-                for eid in r["equipment_ids"]
-            ]
+            names = [name_map.get(uuid.UUID(eid), eid[:8] + "…") for eid in r["equipment_ids"]]
             nos = [no_map.get(uuid.UUID(eid), "") for eid in r["equipment_ids"]]
             if names:
                 r["equipment_name"] = "、".join(names[:3])
@@ -531,11 +515,7 @@ async def list_inspection_tasks(
     else:
         lines = [f"{user.name} 共有 {len(result)} 个巡检任务："]
         for t in result:
-            eq_label = (
-                t["equipment_name"]
-                or t.get("equipment_no", "")
-                or f"{t['equipment_count']}台设备"
-            )
+            eq_label = t["equipment_name"] or t.get("equipment_no", "") or f"{t['equipment_count']}台设备"
             route_label = f"路线「{t['route_name']}」" if t["route_name"] else ""
             lines.append(
                 f"- [{t['status']}] {t['task_no']} "
@@ -578,9 +558,7 @@ async def update_inspection_task(
     try:
         user = await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     if action not in ("start", "complete", "close"):
         return ToolResult(
@@ -691,9 +669,7 @@ async def get_inspection_task_progress(
                     {
                         "equipment_id": str(eq.equipment_id),
                         "equipment_name": eq.equipment.name if eq.equipment else "",
-                        "equipment_no": eq.equipment.equipment_no
-                        if eq.equipment
-                        else "",
+                        "equipment_no": eq.equipment.equipment_no if eq.equipment else "",
                         "location_name": loc.location.name if loc.location else "",
                         "sort_order": eq.sort_order,
                     }
@@ -705,9 +681,7 @@ async def get_inspection_task_progress(
             if eid_str not in eq_ids:
                 eq_ids.append(eid_str)
 
-        name_map = await get_equipment_names_by_ids(
-            db, [uuid.UUID(eid) for eid in eq_ids]
-        )
+        name_map = await get_equipment_names_by_ids(db, [uuid.UUID(eid) for eid in eq_ids])
         no_map = await get_equipment_nos_by_ids(db, [uuid.UUID(eid) for eid in eq_ids])
         for eid_str in eq_ids:
             equipments.append(
@@ -723,8 +697,8 @@ async def get_inspection_task_progress(
     completed_ids = await get_task_equipment_completed_ids(db, task_uuid)
     completed_set = {str(cid) for cid in completed_ids}
 
-    for eq in equipments:
-        eq["checked"] = eq["equipment_id"] in completed_set
+    for eq in equipments:  # type: ignore[assignment]
+        eq["checked"] = eq["equipment_id"] in completed_set  # type: ignore[index]
 
     pending = [eq for eq in equipments if not eq["checked"]]
     checked = [eq for eq in equipments if eq["checked"]]
@@ -736,15 +710,15 @@ async def get_inspection_task_progress(
     ]
     if pending:
         lines.append("待检设备：")
-        for eq in pending:
-            loc = f"（{eq['location_name']}）" if eq.get("location_name") else ""
-            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""
-            lines.append(f"  - {eq['equipment_name']}{no}{loc}  [{eq['equipment_id']}]")
+        for eq in pending:  # type: ignore[assignment]
+            loc = f"（{eq['location_name']}）" if eq.get("location_name") else ""  # type: ignore[assignment,attr-defined,index]  # type: ignore[assignment,attr-defined,index]
+            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
+            lines.append(f"  - {eq['equipment_name']}{no}{loc}  [{eq['equipment_id']}]")  # type: ignore[index]
     if checked:
         lines.append("已检设备：")
-        for eq in checked:
-            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""
-            lines.append(f"  - {eq['equipment_name']}{no}  [{eq['equipment_id']}]")
+        for eq in checked:  # type: ignore[assignment]
+            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
+            lines.append(f"  - {eq['equipment_name']}{no}  [{eq['equipment_id']}]")  # type: ignore[index]
     content = "\n".join(lines)
 
     return ToolResult(
@@ -793,9 +767,7 @@ async def get_inspection_check_items(
     try:
         await resolve_user(db, operator_id)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     task = await get_task_by_no(db, task_no)
     if not task:
@@ -808,9 +780,7 @@ async def get_inspection_check_items(
     try:
         eq = await _resolve_equipment(db, equipment)
     except ValueError as e:
-        return ToolResult(
-            content=str(e), structured_content={"error": str(e)}, is_error=True
-        )
+        return ToolResult(content=str(e), structured_content={"error": str(e)}, is_error=True)
 
     from app.modules.equipment.service.ai.service import _get_inspection_items
 
@@ -834,13 +804,9 @@ async def get_inspection_check_items(
             f"设备 {eq.equipment_no}（{eq.name}）的检查项（共 {len(item_dicts)} 项）：",
         ]
         for item in item_dicts:
-            std = (
-                f"（标准：{item['expected_result']}）"
-                if item["expected_result"]
-                else ""
-            )
+            std = f"（标准：{item['expected_result']}）" if item["expected_result"] else ""
             tpl = f" [{item['template_name']}]" if item["template_name"] else ""
-            lines.append(f"{item['sort_order'] + 1}. {item['item_name']}{std}{tpl}")
+            lines.append(f"{item['sort_order'] + 1}. {item['item_name']}{std}{tpl}")  # type: ignore[operator]
         content = "\n".join(lines)
 
     return ToolResult(

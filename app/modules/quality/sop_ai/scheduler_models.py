@@ -5,6 +5,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -20,7 +21,7 @@ class ScheduledJob:
     last_run_time: datetime | None = None
     run_count: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "job_id": self.job_id,
@@ -28,11 +29,7 @@ class ScheduledJob:
             "cron_expression": self.cron_expression,
             "file_pattern": self.file_pattern,
             "enabled": self.enabled,
-            "next_run_time": self.next_run_time.isoformat()
-            if self.next_run_time
-            else None,
-            "last_run_time": self.last_run_time.isoformat()
-            if self.last_run_time
-            else None,
+            "next_run_time": self.next_run_time.isoformat() if self.next_run_time else None,
+            "last_run_time": self.last_run_time.isoformat() if self.last_run_time else None,
             "run_count": self.run_count,
         }

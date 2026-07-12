@@ -34,9 +34,7 @@ class LLMConfigModel(BaseModel):
     __tablename__ = "llm_configs"
     __table_args__ = {"schema": "core", "comment": "LLM configuration table"}
 
-    config_name: Mapped[str] = mapped_column(
-        String(128), nullable=False, comment="Configuration name"
-    )
+    config_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="Configuration name")
     config_type: Mapped[str] = mapped_column(
         String(20),
         default="text",
@@ -44,15 +42,9 @@ class LLMConfigModel(BaseModel):
         nullable=False,
         comment="Config type: text (text model) / vision (vision model)",
     )
-    api_base_url: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="API base URL"
-    )
-    encrypted_api_key: Mapped[str] = mapped_column(
-        String(1000), nullable=False, comment="Encrypted API key"
-    )
-    model_name: Mapped[str] = mapped_column(
-        String(128), nullable=False, comment="Model name"
-    )
+    api_base_url: Mapped[str] = mapped_column(String(500), nullable=False, comment="API base URL")
+    encrypted_api_key: Mapped[str] = mapped_column(String(1000), nullable=False, comment="Encrypted API key")
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="Model name")
     temperature: Mapped[float] = mapped_column(
         Float, default=0.1, server_default="0.1", nullable=False, comment="Temperature"
     )
@@ -102,7 +94,7 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
                 select(LLMConfigModel).where(
                     LLMConfigModel.is_active,
                     LLMConfigModel.config_type == config_type,
-                    not LLMConfigModel.is_deleted,
+                    not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
                 )
             )
             config = result.scalar_one_or_none()
@@ -162,6 +154,4 @@ async def get_config(config_type: str = "text") -> LLMConfigData:
     if config:
         return config
 
-    raise LLMConfigError(
-        "LLM not configured. Set LLM_API_KEY in .env.local or configure via admin UI."
-    )
+    raise LLMConfigError("LLM not configured. Set LLM_API_KEY in .env.local or configure via admin UI.")

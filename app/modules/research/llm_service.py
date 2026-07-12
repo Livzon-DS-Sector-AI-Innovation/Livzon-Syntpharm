@@ -1,14 +1,15 @@
 """LLM 服务模块 - 使用 core.llm 统一客户端"""
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
-from app.core.llm import llm_client
-from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
+from app.core.llm import llm_client  # noqa: E402
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError  # noqa: E402
 
 
-async def call_llm(prompt: str, system_prompt: str = "") -> dict:
+async def call_llm(prompt: str, system_prompt: str = "") -> dict[str, Any]:
     """调用 LLM API - 使用 core.llm 统一客户端"""
     messages = []
     if system_prompt:
@@ -53,7 +54,7 @@ def build_q3d_prompt(text: str) -> str:
 """
 
 
-def build_q3c_prompt(steps: list[dict]) -> str:
+def build_q3c_prompt(steps: list[dict[str, Any]]) -> str:
     """构建 Q3C 溶剂识别 prompt (skill's version with ICH Q3C database)"""
 
     # ICH Q3C Solvent Database
@@ -275,14 +276,14 @@ def build_q3c_prompt(steps: list[dict]) -> str:
     return prompt
 
 
-async def extract_elements_with_llm(text: str) -> list[dict]:
+async def extract_elements_with_llm(text: str) -> list[dict[str, Any]]:
     """使用 LLM 从文本中提取元素"""
     prompt = build_q3d_prompt(text)
     result = await call_llm(prompt)
-    return result.get("elements", [])
+    return result.get("elements", [])  # type: ignore[no-any-return]
 
 
-async def extract_solvents_with_llm(steps: list[dict]) -> dict:
+async def extract_solvents_with_llm(steps: list[dict[str, Any]]) -> dict[str, Any]:
     """使用 LLM 从工艺步骤中提取溶剂并分类 (skill's version)
 
     Args:

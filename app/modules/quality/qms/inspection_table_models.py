@@ -1,6 +1,7 @@
 """原料检验数据表模型"""
 
 import uuid
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -29,16 +30,12 @@ class InspectionTable(BaseModel):
     )
 
     # 表基本信息
-    table_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True, comment="数据表名称"
-    )
-    table_description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="数据表描述"
-    )
+    table_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, comment="数据表名称")
+    table_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="数据表描述")
 
     # 列配置（JSONB）- 定义表头
     # 格式: [{"key": "col1", "label": "列1", "type": "text", "width": 120, "required": false}]
-    columns_config: Mapped[dict] = mapped_column(
+    columns_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'[]'"), comment="列配置"
     )
 
@@ -46,12 +43,8 @@ class InspectionTable(BaseModel):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
 
     # Word 模板
-    template_path: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="Word模板路径"
-    )
-    template_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="Word模板名称"
-    )
+    template_path: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="Word模板路径")
+    template_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Word模板名称")
 
     # 关联数据行
     rows: Mapped[list["InspectionTableRow"]] = relationship(
@@ -69,7 +62,7 @@ class InspectionTableRow(BaseModel):
     )
 
     # 覆盖基类的 id 为整数类型（数据库中是自增整数）
-    id: Mapped[int] = mapped_column(
+    id: Mapped[int] = mapped_column(  # type: ignore[assignment]
         Integer,
         primary_key=True,
         autoincrement=True,
@@ -85,7 +78,7 @@ class InspectionTableRow(BaseModel):
 
     # 行数据（JSONB）- 存储每个单元格的值
     # 格式: {"col1": "value1", "col2": "value2"}
-    row_data: Mapped[dict] = mapped_column(
+    row_data: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'"), comment="行数据"
     )
 
@@ -93,6 +86,4 @@ class InspectionTableRow(BaseModel):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, comment="排序序号")
 
     # 关联
-    table: Mapped["InspectionTable"] = relationship(
-        "InspectionTable", back_populates="rows"
-    )
+    table: Mapped["InspectionTable"] = relationship("InspectionTable", back_populates="rows")

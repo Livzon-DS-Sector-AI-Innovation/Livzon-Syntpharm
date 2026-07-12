@@ -4,6 +4,7 @@ Database access layer for static data tables.
 """
 
 from datetime import date
+from typing import Any
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,25 +39,17 @@ class StaticDataRepository:
     ) -> tuple[list[HplcReference], int]:
         """List HPLC reference substances with filters"""
         query = select(HplcReference).where(HplcReference.del_flag == 0)
-        count_query = select(func.count(HplcReference.id)).where(
-            HplcReference.del_flag == 0
-        )
+        count_query = select(func.count(HplcReference.id)).where(HplcReference.del_flag == 0)
 
         if ref_code:
             query = query.where(HplcReference.ref_code.like(f"%{ref_code}%"))
-            count_query = count_query.where(
-                HplcReference.ref_code.like(f"%{ref_code}%")
-            )
+            count_query = count_query.where(HplcReference.ref_code.like(f"%{ref_code}%"))
         if ref_name:
             query = query.where(HplcReference.ref_name.like(f"%{ref_name}%"))
-            count_query = count_query.where(
-                HplcReference.ref_name.like(f"%{ref_name}%")
-            )
+            count_query = count_query.where(HplcReference.ref_name.like(f"%{ref_name}%"))
         if project_name:
             query = query.where(HplcReference.project_name.like(f"%{project_name}%"))
-            count_query = count_query.where(
-                HplcReference.project_name.like(f"%{project_name}%")
-            )
+            count_query = count_query.where(HplcReference.project_name.like(f"%{project_name}%"))
         if ref_status is not None:
             query = query.where(HplcReference.ref_status == ref_status)
             count_query = count_query.where(HplcReference.ref_status == ref_status)
@@ -77,22 +70,18 @@ class StaticDataRepository:
     async def get_hplc_reference(self, id: int) -> HplcReference | None:
         """Get single HPLC reference substance by ID"""
         result = await self.db.execute(
-            select(HplcReference).where(
-                and_(HplcReference.id == id, HplcReference.del_flag == 0)
-            )
+            select(HplcReference).where(and_(HplcReference.id == id, HplcReference.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
     async def get_hplc_reference_by_code(self, ref_code: str) -> HplcReference | None:
         """Get HPLC reference substance by code"""
         result = await self.db.execute(
-            select(HplcReference).where(
-                and_(HplcReference.ref_code == ref_code, HplcReference.del_flag == 0)
-            )
+            select(HplcReference).where(and_(HplcReference.ref_code == ref_code, HplcReference.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
-    async def create_hplc_reference(self, data: dict) -> HplcReference:
+    async def create_hplc_reference(self, data: dict[str, Any]) -> HplcReference:
         """Create new HPLC reference substance"""
         obj = HplcReference(**data)
         self.db.add(obj)
@@ -108,7 +97,7 @@ class StaticDataRepository:
         # 阈值 > 0 且剩余量 <= 阈值 时标记需要复标；否则清除标记
         obj.need_recal = threshold > 0 and remaining <= threshold
 
-    async def update_hplc_reference(self, id: int, data: dict) -> HplcReference | None:
+    async def update_hplc_reference(self, id: int, data: dict[str, Any]) -> HplcReference | None:
         """Update HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -131,9 +120,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def adjust_hplc_reference_quantity(
-        self, id: int, quantity_change: int
-    ) -> HplcReference | None:
+    async def adjust_hplc_reference_quantity(self, id: int, quantity_change: int) -> HplcReference | None:
         """Adjust HPLC reference quantity (positive = in, negative = out)"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -168,12 +155,10 @@ class StaticDataRepository:
         current_remaining = float(obj.remaining_amount or obj.total_amount or 0)
         new_remaining = current_remaining - usage_amount
         if new_remaining < 0:
-            raise ValueError(
-                f"剩余量不足: 当前 {current_remaining}{usage_unit}, 需领用 {usage_amount}{usage_unit}"
-            )
+            raise ValueError(f"剩余量不足: 当前 {current_remaining}{usage_unit}, 需领用 {usage_amount}{usage_unit}")
 
         # 更新剩余量
-        obj.remaining_amount = new_remaining
+        obj.remaining_amount = new_remaining  # type: ignore[assignment]
         obj.remaining_unit = usage_unit
 
         # 重算 need_recal 标记（剩余量恢复到阈值以上时自动清除）
@@ -211,9 +196,7 @@ class StaticDataRepository:
     ) -> tuple[list[HplcReferenceUsage], int]:
         """查询领用记录"""
         query = select(HplcReferenceUsage).where(HplcReferenceUsage.del_flag == 0)
-        count_query = select(func.count(HplcReferenceUsage.id)).where(
-            HplcReferenceUsage.del_flag == 0
-        )
+        count_query = select(func.count(HplcReferenceUsage.id)).where(HplcReferenceUsage.del_flag == 0)
 
         if ref_id:
             query = query.where(HplcReferenceUsage.ref_id == ref_id)
@@ -258,9 +241,7 @@ class StaticDataRepository:
     ) -> tuple[list[ChromColumn], int]:
         """List chromatography columns with filters"""
         query = select(ChromColumn).where(ChromColumn.del_flag == 0)
-        count_query = select(func.count(ChromColumn.id)).where(
-            ChromColumn.del_flag == 0
-        )
+        count_query = select(func.count(ChromColumn.id)).where(ChromColumn.del_flag == 0)
 
         if col_code:
             query = query.where(ChromColumn.col_code.like(f"%{col_code}%"))
@@ -270,9 +251,7 @@ class StaticDataRepository:
             count_query = count_query.where(ChromColumn.col_type.like(f"%{col_type}%"))
         if manufacturer:
             query = query.where(ChromColumn.manufacturer.like(f"%{manufacturer}%"))
-            count_query = count_query.where(
-                ChromColumn.manufacturer.like(f"%{manufacturer}%")
-            )
+            count_query = count_query.where(ChromColumn.manufacturer.like(f"%{manufacturer}%"))
         if spec:
             query = query.where(ChromColumn.spec.like(f"%{spec}%"))
             count_query = count_query.where(ChromColumn.spec.like(f"%{spec}%"))
@@ -281,9 +260,7 @@ class StaticDataRepository:
             count_query = count_query.where(ChromColumn.col_status == col_status)
         if column_category is not None:
             query = query.where(ChromColumn.column_category == column_category)
-            count_query = count_query.where(
-                ChromColumn.column_category == column_category
-            )
+            count_query = count_query.where(ChromColumn.column_category == column_category)
 
         query = query.order_by(ChromColumn.id.desc()).offset(skip).limit(limit)
 
@@ -297,23 +274,17 @@ class StaticDataRepository:
 
     async def get_chrom_column(self, id: int) -> ChromColumn | None:
         """Get single chromatography column by ID"""
-        result = await self.db.execute(
-            select(ChromColumn).where(
-                and_(ChromColumn.id == id, ChromColumn.del_flag == 0)
-            )
-        )
+        result = await self.db.execute(select(ChromColumn).where(and_(ChromColumn.id == id, ChromColumn.del_flag == 0)))
         return result.scalar_one_or_none()
 
     async def get_chrom_column_by_code(self, col_code: str) -> ChromColumn | None:
         """Get chromatography column by code"""
         result = await self.db.execute(
-            select(ChromColumn).where(
-                and_(ChromColumn.col_code == col_code, ChromColumn.del_flag == 0)
-            )
+            select(ChromColumn).where(and_(ChromColumn.col_code == col_code, ChromColumn.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
-    async def create_chrom_column(self, data: dict) -> ChromColumn:
+    async def create_chrom_column(self, data: dict[str, Any]) -> ChromColumn:
         """Create new chromatography column"""
         obj = ChromColumn(**data)
         self.db.add(obj)
@@ -321,7 +292,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_chrom_column(self, id: int, data: dict) -> ChromColumn | None:
+    async def update_chrom_column(self, id: int, data: dict[str, Any]) -> ChromColumn | None:
         """Update chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -380,9 +351,7 @@ class StaticDataRepository:
             count_query = count_query.where(Medium.medium_type == medium_type)
         if manufacturer:
             query = query.where(Medium.manufacturer.like(f"%{manufacturer}%"))
-            count_query = count_query.where(
-                Medium.manufacturer.like(f"%{manufacturer}%")
-            )
+            count_query = count_query.where(Medium.manufacturer.like(f"%{manufacturer}%"))
         if verify_status:
             query = query.where(Medium.verify_status == verify_status)
             count_query = count_query.where(Medium.verify_status == verify_status)
@@ -402,21 +371,17 @@ class StaticDataRepository:
 
     async def get_medium(self, id: int) -> Medium | None:
         """Get single medium by ID"""
-        result = await self.db.execute(
-            select(Medium).where(and_(Medium.id == id, Medium.del_flag == 0))
-        )
+        result = await self.db.execute(select(Medium).where(and_(Medium.id == id, Medium.del_flag == 0)))
         return result.scalar_one_or_none()
 
     async def get_medium_by_code(self, medium_code: str) -> Medium | None:
         """Get medium by code"""
         result = await self.db.execute(
-            select(Medium).where(
-                and_(Medium.medium_code == medium_code, Medium.del_flag == 0)
-            )
+            select(Medium).where(and_(Medium.medium_code == medium_code, Medium.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
-    async def create_medium(self, data: dict) -> Medium:
+    async def create_medium(self, data: dict[str, Any]) -> Medium:
         """Create new medium"""
         obj = Medium(**data)
         self.db.add(obj)
@@ -424,7 +389,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_medium(self, id: int, data: dict) -> Medium | None:
+    async def update_medium(self, id: int, data: dict[str, Any]) -> Medium | None:
         """Update medium"""
         obj = await self.get_medium(id)
         if not obj:
@@ -484,9 +449,7 @@ class StaticDataRepository:
             count_query = count_query.where(Standard.std_type == std_type)
         if manufacturer:
             query = query.where(Standard.manufacturer.like(f"%{manufacturer}%"))
-            count_query = count_query.where(
-                Standard.manufacturer.like(f"%{manufacturer}%")
-            )
+            count_query = count_query.where(Standard.manufacturer.like(f"%{manufacturer}%"))
         if std_status is not None:
             query = query.where(Standard.std_status == std_status)
             count_query = count_query.where(Standard.std_status == std_status)
@@ -503,21 +466,17 @@ class StaticDataRepository:
 
     async def get_standard(self, id: int) -> Standard | None:
         """Get single standard by ID"""
-        result = await self.db.execute(
-            select(Standard).where(and_(Standard.id == id, Standard.del_flag == 0))
-        )
+        result = await self.db.execute(select(Standard).where(and_(Standard.id == id, Standard.del_flag == 0)))
         return result.scalar_one_or_none()
 
     async def get_standard_by_code(self, std_code: str) -> Standard | None:
         """Get standard by code"""
         result = await self.db.execute(
-            select(Standard).where(
-                and_(Standard.std_code == std_code, Standard.del_flag == 0)
-            )
+            select(Standard).where(and_(Standard.std_code == std_code, Standard.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
-    async def create_standard(self, data: dict) -> Standard:
+    async def create_standard(self, data: dict[str, Any]) -> Standard:
         """Create new standard"""
         obj = Standard(**data)
         self.db.add(obj)
@@ -525,7 +484,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_standard(self, id: int, data: dict) -> Standard | None:
+    async def update_standard(self, id: int, data: dict[str, Any]) -> Standard | None:
         """Update standard"""
         obj = await self.get_standard(id)
         if not obj:
@@ -570,20 +529,14 @@ class StaticDataRepository:
     ) -> tuple[list[StorageCondition], int]:
         """List storage conditions with filters"""
         query = select(StorageCondition).where(StorageCondition.del_flag == 0)
-        count_query = select(func.count(StorageCondition.id)).where(
-            StorageCondition.del_flag == 0
-        )
+        count_query = select(func.count(StorageCondition.id)).where(StorageCondition.del_flag == 0)
 
         if cond_code:
             query = query.where(StorageCondition.cond_code.like(f"%{cond_code}%"))
-            count_query = count_query.where(
-                StorageCondition.cond_code.like(f"%{cond_code}%")
-            )
+            count_query = count_query.where(StorageCondition.cond_code.like(f"%{cond_code}%"))
         if cond_name:
             query = query.where(StorageCondition.cond_name.like(f"%{cond_name}%"))
-            count_query = count_query.where(
-                StorageCondition.cond_name.like(f"%{cond_name}%")
-            )
+            count_query = count_query.where(StorageCondition.cond_name.like(f"%{cond_name}%"))
         if status is not None:
             query = query.where(StorageCondition.status == status)
             count_query = count_query.where(StorageCondition.status == status)
@@ -601,15 +554,11 @@ class StaticDataRepository:
     async def get_storage_condition(self, id: int) -> StorageCondition | None:
         """Get single storage condition by ID"""
         result = await self.db.execute(
-            select(StorageCondition).where(
-                and_(StorageCondition.id == id, StorageCondition.del_flag == 0)
-            )
+            select(StorageCondition).where(and_(StorageCondition.id == id, StorageCondition.del_flag == 0))
         )
         return result.scalar_one_or_none()
 
-    async def get_storage_condition_by_code(
-        self, cond_code: str
-    ) -> StorageCondition | None:
+    async def get_storage_condition_by_code(self, cond_code: str) -> StorageCondition | None:
         """Get storage condition by code"""
         result = await self.db.execute(
             select(StorageCondition).where(
@@ -621,7 +570,7 @@ class StaticDataRepository:
         )
         return result.scalar_one_or_none()
 
-    async def create_storage_condition(self, data: dict) -> StorageCondition:
+    async def create_storage_condition(self, data: dict[str, Any]) -> StorageCondition:
         """Create new storage condition"""
         obj = StorageCondition(**data)
         self.db.add(obj)
@@ -629,9 +578,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_storage_condition(
-        self, id: int, data: dict
-    ) -> StorageCondition | None:
+    async def update_storage_condition(self, id: int, data: dict[str, Any]) -> StorageCondition | None:
         """Update storage condition"""
         obj = await self.get_storage_condition(id)
         if not obj:

@@ -165,7 +165,7 @@ class BasePlugin[TInput: BaseModel, TOutput: BaseModel](ABC):
         ...
 
     @abstractmethod
-    def _parse_output(self, raw: dict) -> TOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> TOutput:
         """将 AI 返回的字典解析为强类型 Output。"""
         ...
 
@@ -190,7 +190,7 @@ class BasePlugin[TInput: BaseModel, TOutput: BaseModel](ABC):
     # 内部方法
     # ═══════════════════════════════════════════════════════════
 
-    async def _call_ai(self, input_data: TInput) -> dict:
+    async def _call_ai(self, input_data: TInput) -> dict[str, Any]:
         """调用文本 AI 服务。
 
         组装 4 段式 prompt → 调用 AI → 返回解析后的 dict。
@@ -206,7 +206,7 @@ class BasePlugin[TInput: BaseModel, TOutput: BaseModel](ABC):
         ]
 
         try:
-            return await self.ai_service.chat_parsed(
+            return await self.ai_service.chat_parsed(  # type: ignore[no-any-return]
                 messages=messages,
                 expected_keys=self._get_expected_keys(),
                 temperature=self.config.temperature,

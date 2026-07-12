@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for inspection anomaly auto work-order creation and close-task gating."""
 
 import uuid
@@ -33,13 +34,11 @@ def _mock_notifications():
     """Mock all Feishu notification calls so tests don't hit external APIs."""
     with (
         patch(
-            "app.modules.equipment.service.inspection_notification."
-            "send_inspection_start_notification",
+            "app.modules.equipment.service.inspection_notification.send_inspection_start_notification",
             new_callable=AsyncMock,
         ),
         patch(
-            "app.modules.equipment.service.inspection_notification."
-            "send_work_order_notification",
+            "app.modules.equipment.service.inspection_notification.send_work_order_notification",
             new_callable=AsyncMock,
         ),
     ):
@@ -79,9 +78,7 @@ async def department(db_session: AsyncSession, leader: User) -> Department:
 
 
 @pytest.fixture
-async def equipment_with_dept(
-    db_session: AsyncSession, department: Department
-) -> Equipment:
+async def equipment_with_dept(db_session: AsyncSession, department: Department) -> Equipment:
     location = Location(name="一车间", code=f"WS-{uuid.uuid4().hex[:6]}")
     db_session.add(location)
     await db_session.flush()
@@ -122,9 +119,7 @@ async def template_with_items(db_session: AsyncSession) -> InspectionTemplate:
     return tpl
 
 
-async def _get_template_items(
-    db: AsyncSession, template_id: uuid.UUID
-) -> list[InspectionTemplateItem]:
+async def _get_template_items(db: AsyncSession, template_id: uuid.UUID) -> list[InspectionTemplateItem]:
     """Helper: fetch template items for building record dicts."""
     result = await db.execute(
         select(InspectionTemplateItem).where(
@@ -190,9 +185,7 @@ async def test_submit_with_anomaly_creates_work_order(
     assert len(created) == 2
 
     # 应创建一个异常处理工单
-    pending = await get_pending_work_orders_by_inspection_task(
-        db_session, inspection_task.id
-    )
+    pending = await get_pending_work_orders_by_inspection_task(db_session, inspection_task.id)
     assert len(pending) == 1
     wo = pending[0]
     assert wo.order_type == "异常处理"
@@ -227,9 +220,7 @@ async def test_submit_all_normal_no_work_order(
     )
     assert len(created) == 2
 
-    pending = await get_pending_work_orders_by_inspection_task(
-        db_session, inspection_task.id
-    )
+    pending = await get_pending_work_orders_by_inspection_task(db_session, inspection_task.id)
     assert len(pending) == 0
 
 
@@ -263,9 +254,7 @@ async def test_duplicate_work_order_not_created(
     )
 
     # 应只有一个工单
-    pending = await get_pending_work_orders_by_inspection_task(
-        db_session, inspection_task.id
-    )
+    pending = await get_pending_work_orders_by_inspection_task(db_session, inspection_task.id)
     assert len(pending) == 1
 
 
@@ -323,9 +312,7 @@ async def test_close_succeeds_after_work_order_closed(
 
     # 直接将工单状态设为"已关闭"（测试关注点是 close_task 的行为）
     await db_session.execute(
-        update(WorkOrder)
-        .where(WorkOrder.inspection_task_id == inspection_task.id)
-        .values(status="已关闭")
+        update(WorkOrder).where(WorkOrder.inspection_task_id == inspection_task.id).values(status="已关闭")
     )
     await db_session.flush()
 

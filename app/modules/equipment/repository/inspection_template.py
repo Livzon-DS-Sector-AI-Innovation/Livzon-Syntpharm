@@ -53,9 +53,7 @@ async def get_inspection_template_by_id(
         )
     )
     if ctx:
-        query = apply_equipment_scope(
-            query, ctx, InspectionTemplate.created_by, mode="user_id"
-        )
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
     result = await db.execute(query)
     return result.scalar_one_or_none()
 
@@ -75,9 +73,7 @@ async def get_inspection_template_by_name(
         )
     )
     if ctx:
-        query = apply_equipment_scope(
-            query, ctx, InspectionTemplate.created_by, mode="user_id"
-        )
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
     result = await db.execute(query)
     return result.scalar_one_or_none()
 
@@ -98,21 +94,15 @@ async def get_inspection_templates(
         .where(InspectionTemplate.is_deleted == False)  # noqa: E712
     )
     if equipment_category_id:
-        query = query.where(
-            InspectionTemplate.equipment_category_id == equipment_category_id
-        )
+        query = query.where(InspectionTemplate.equipment_category_id == equipment_category_id)
     if is_active is not None:
         query = query.where(InspectionTemplate.is_active == is_active)
     if keyword:
         query = query.where(InspectionTemplate.name.ilike(f"%{keyword}%"))
     if ctx:
-        query = apply_equipment_scope(
-            query, ctx, InspectionTemplate.created_by, mode="user_id"
-        )
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(InspectionTemplate.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(InspectionTemplate.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 

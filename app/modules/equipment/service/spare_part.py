@@ -81,9 +81,7 @@ async def update_spare_part(
     update_data = data.model_dump(exclude_unset=True)
 
     if "code" in update_data:
-        code_exists = await repo.exists_spare_part_by_code(
-            db, update_data["code"], exclude_id=spare_part_id
-        )
+        code_exists = await repo.exists_spare_part_by_code(db, update_data["code"], exclude_id=spare_part_id)
         if code_exists:
             raise DuplicateException("备件编码", update_data["code"])
 
@@ -157,11 +155,9 @@ async def outbound_stock(
     stock = await get_stock_by_spare_part_id(db, spare_part_id)
 
     if stock.current_qty < quantity:
-        raise AppException(
-            message=f"库存不足，当前库存 {stock.current_qty}，出库数量 {quantity}"
-        )
+        raise AppException(message=f"库存不足，当前库存 {stock.current_qty}，出库数量 {quantity}")
 
-    stock = await repo.update_stock_qty(db, spare_part_id, -quantity)
+    stock = await repo.update_stock_qty(db, spare_part_id, -quantity)  # type: ignore[assignment]
     if not stock:
         raise NotFoundException("库存记录", str(spare_part_id))
 
@@ -195,7 +191,7 @@ async def adjust_stock(
     diff = data.new_qty - stock.current_qty
 
     if diff != 0:
-        stock = await repo.update_stock_qty(db, spare_part_id, diff)
+        stock = await repo.update_stock_qty(db, spare_part_id, diff)  # type: ignore[assignment]
         if not stock:
             raise NotFoundException("库存记录", str(spare_part_id))
 

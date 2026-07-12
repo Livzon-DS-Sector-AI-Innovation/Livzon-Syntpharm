@@ -2,6 +2,7 @@ import logging
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,9 +17,7 @@ def _get_env_file() -> str:
     if not env_path.exists():
         env_path = _PROJECT_ROOT / ".env"
     env_file = str(env_path)
-    logging.getLogger(__name__).debug(
-        "Loading environment variables from: %s", env_file
-    )
+    logging.getLogger(__name__).debug("Loading environment variables from: %s", env_file)
     return env_file
 
 
@@ -148,7 +147,7 @@ class Settings(BaseSettings):
 
     @field_validator("DEBUG", mode="before")
     @classmethod
-    def coerce_debug_bool(cls, v):
+    def coerce_debug_bool(cls, v) -> Any:  # type: ignore[no-untyped-def]
         """兼容 VS Code 等注入的非布尔值（如 DEBUG=release）。"""
         if isinstance(v, bool):
             return v
@@ -231,6 +230,13 @@ class Settings(BaseSettings):
 
     # MCP — AI Agent 认证
     MCP_AGENT_API_KEYS: str = ""
+
+    # Livzon Agent (Hermes)
+    HERMES_AGENT_URL: str = ""
+    HERMES_AGENT_TOKEN: str = ""
+
+    # HR Bitable
+    HR_BITABLE_APP_TOKEN: str = ""
 
     # API
     API_V1_PREFIX: str = "/api/v1"

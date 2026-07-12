@@ -1,6 +1,7 @@
 """飞书机器人客户端 - 支持从数据库配置获取凭证"""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -45,7 +46,7 @@ class FeishuClient:
         receive_id: str,
         msg_type: str,
         content: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """发送消息"""
 
         token = await self.get_tenant_access_token()
@@ -65,20 +66,16 @@ class FeishuClient:
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                url, params=params, json=payload, headers=headers
-            )
+            response = await client.post(url, params=params, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
 
             if data.get("code") != 0:
                 raise ValueError(f"发送消息失败: {data.get('msg')}")
 
-            return data
+            return data  # type: ignore[no-any-return]
 
-    async def send_text_message(
-        self, receive_id_type: str, receive_id: str, text: str
-    ) -> dict:
+    async def send_text_message(self, receive_id_type: str, receive_id: str, text: str) -> dict[str, Any]:
         """发送文本消息"""
         return await self.send_message(
             receive_id_type=receive_id_type,
@@ -88,8 +85,8 @@ class FeishuClient:
         )
 
     async def send_card_message(
-        self, receive_id_type: str, receive_id: str, card_content: dict
-    ) -> dict:
+        self, receive_id_type: str, receive_id: str, card_content: dict[str, Any]
+    ) -> dict[str, Any]:
         """发送卡片消息"""
         import json
 
@@ -103,7 +100,9 @@ class FeishuClient:
         )
 
     async def get_user_by_mobile_or_email(
-        self, mobile: str = None, email: str = None
+        self,
+        mobile: str = None,  # type: ignore[assignment]
+        email: str = None,  # type: ignore[assignment]
     ) -> str | None:
         """通过手机号或邮箱获取用户的 open_id
 
@@ -135,7 +134,7 @@ class FeishuClient:
                 if data.get("code") == 0:
                     user_list = data.get("data", {}).get("user_list", [])
                     if user_list and user_list[0].get("user_id"):
-                        return user_list[0].get("user_id")
+                        return user_list[0].get("user_id")  # type: ignore[no-any-return]
 
             # 再尝试邮箱
             if email:
@@ -151,13 +150,11 @@ class FeishuClient:
                 if data.get("code") == 0:
                     user_list = data.get("data", {}).get("user_list", [])
                     if user_list and user_list[0].get("user_id"):
-                        return user_list[0].get("user_id")
+                        return user_list[0].get("user_id")  # type: ignore[no-any-return]
 
         return None
 
-    async def get_contact_users(
-        self, department_id: str = "0", page_size: int = 100
-    ) -> list:
+    async def get_contact_users(self, department_id: str = "0", page_size: int = 100) -> list[Any]:
         """获取通讯录用户列表
 
         Args:
@@ -188,7 +185,7 @@ class FeishuClient:
                 if page_token:
                     params["page_token"] = page_token
 
-                response = await client.get(url, headers=headers, params=params)
+                response = await client.get(url, headers=headers, params=params)  # type: ignore[arg-type]
                 response.raise_for_status()
                 data = response.json()
 
@@ -204,9 +201,7 @@ class FeishuClient:
                             "en_name": user.get("en_name"),
                             "email": user.get("email"),
                             "mobile": user.get("mobile"),
-                            "avatar": user.get("avatar", {}).get("avatar_72")
-                            if user.get("avatar")
-                            else None,
+                            "avatar": user.get("avatar", {}).get("avatar_72") if user.get("avatar") else None,
                             "department_ids": user.get("department_ids"),
                         }
                     )
@@ -219,7 +214,7 @@ class FeishuClient:
 
         return users
 
-    async def get_departments(self, parent_department_id: str = "0") -> list:
+    async def get_departments(self, parent_department_id: str = "0") -> list[Any]:
         """获取部门列表"""
         token = await self.get_tenant_access_token()
         url = f"{self.BASE_URL}/contact/v3/departments"
@@ -242,7 +237,7 @@ class FeishuClient:
                 if page_token:
                     params["page_token"] = page_token
 
-                response = await client.get(url, headers=headers, params=params)
+                response = await client.get(url, headers=headers, params=params)  # type: ignore[arg-type]
                 response.raise_for_status()
                 data = response.json()
 
@@ -266,7 +261,7 @@ class FeishuClient:
 
         return departments
 
-    def invalidate_token(self):
+    def invalidate_token(self) -> Any:
         """使 token 失效，下次请求会重新获取"""
         self._tenant_access_token = None
 
@@ -278,8 +273,8 @@ async def send_feishu_card_from_config(
     receive_id_type: str = "chat_id",
     title: str = "",
     content: str = "",
-    actions: list = None,
-) -> dict:
+    actions: list[Any] = None,  # type: ignore[assignment]
+) -> dict[str, Any]:
     """从数据库配置发送飞书卡片消息
 
     如果 app_id 和 app_secret 为空，则使用环境变量中的配置
@@ -295,9 +290,7 @@ async def send_feishu_card_from_config(
         app_secret = getattr(settings, "FEISHU_APP_SECRET", None)
 
         if not app_id or not app_secret:
-            raise ValueError(
-                "飞书配置未设置，请在提醒配置中填写 AppID 和 AppSecret，或设置环境变量"
-            )
+            raise ValueError("飞书配置未设置，请在提醒配置中填写 AppID 和 AppSecret，或设置环境变量")
         client = FeishuClient(app_id, app_secret)
 
     card_elements = [
@@ -328,7 +321,7 @@ async def send_feishu_card_from_config(
                     ],
                 }
             )
-        card_elements.extend(action_elements)
+        card_elements.extend(action_elements)  # type: ignore[arg-type]
 
     card_content = {
         "config": {"wide_screen_mode": True},

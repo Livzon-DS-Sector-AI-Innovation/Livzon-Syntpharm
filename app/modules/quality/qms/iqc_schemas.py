@@ -2,21 +2,21 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 # ========== Enums ==========
-class SourceType(str, Enum):
+class SourceType(StrEnum):
     """来源类型"""
 
     PURCHASE_INBOUND = "purchase_inbound"  # 采购到货
     SUPPLIER_DELIVERY = "supplier_delivery"  # 供应商直送
 
 
-class MaterialCategory(str, Enum):
+class MaterialCategory(StrEnum):
     """物料类别"""
 
     RAW_MATERIAL = "raw_material"  # 原料药
@@ -24,7 +24,7 @@ class MaterialCategory(str, Enum):
     PACKAGING_MATERIAL = "packaging_material"  # 包装材料
 
 
-class InspectionStatus(str, Enum):
+class InspectionStatus(StrEnum):
     """检验单状态"""
 
     DRAFT = "draft"  # 草稿
@@ -35,7 +35,7 @@ class InspectionStatus(str, Enum):
     REJECTED = "rejected"  # 驳回
 
 
-class InspectionConclusion(str, Enum):
+class InspectionConclusion(StrEnum):
     """检验结论"""
 
     QUALIFIED = "qualified"  # 合格
@@ -43,7 +43,7 @@ class InspectionConclusion(str, Enum):
     CONDITIONAL = "conditional"  # 条件合格
 
 
-class ItemResult(str, Enum):
+class ItemResult(StrEnum):
     """单项判定"""
 
     PASS = "pass"  # 合格
@@ -51,7 +51,7 @@ class ItemResult(str, Enum):
     NA = "na"  # 不适用
 
 
-class ApprovalStatus(str, Enum):
+class ApprovalStatus(StrEnum):
     """审批状态"""
 
     PENDING = "pending"  # 待审批
@@ -133,18 +133,14 @@ class IQCInspectionBase(BaseModel):
     standard_version: str | None = Field(None, description="标准版本")
 
     # 检验结论
-    inspection_conclusion: InspectionConclusion | None = Field(
-        None, description="检验结论"
-    )
+    inspection_conclusion: InspectionConclusion | None = Field(None, description="检验结论")
     remark: str | None = Field(None, description="备注")
 
 
 class IQCInspectionCreate(IQCInspectionBase):
     """创建IQC检验单"""
 
-    items: list[IQCInspectionItemCreate] = Field(
-        default_factory=list, description="检验明细"
-    )
+    items: list[IQCInspectionItemCreate] = Field(default_factory=list, description="检验明细")
 
 
 class IQCInspectionUpdate(BaseModel):
