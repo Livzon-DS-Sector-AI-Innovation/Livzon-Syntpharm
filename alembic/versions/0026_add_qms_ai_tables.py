@@ -1,6 +1,6 @@
 """add qms ai tables
 
-Revision ID: 4d47f5fcff05
+Revision ID: 0026_add_qms_ai_tables
 Revises: 0026
 Create Date: 2026-07-09 12:32:22.408587
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0027_add_qms_ai_tables'
-down_revision: Union[str, None] = '0026_add_sop_ai_tables'
+revision: str = '0026_add_qms_ai_tables'
+down_revision: Union[str, None] = '0025_add_sop_ai_tables'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

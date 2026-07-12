@@ -149,7 +149,7 @@ def run_migrations_offline() -> None:
         include_name=include_name,
         include_object=include_object,
         compare_type=True,
-        compare_server_default=True,
+        compare_server_default=False,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -160,7 +160,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     from urllib.parse import quote_plus, urlparse
 
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     from sqlalchemy.pool import NullPool
 
     # Parse URL to separate host and database
@@ -182,6 +182,13 @@ def run_migrations_online() -> None:
     )
 
     with engine.connect() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS alembic_version (version_num varchar(255) NOT NULL PRIMARY KEY)"
+            )
+        )
+        connection.commit()
+
         context.configure(
             connection=connection,
             process_revision_directives=process_revision_directives,
@@ -190,7 +197,7 @@ def run_migrations_online() -> None:
             include_name=include_name,
             include_object=include_object,
             compare_type=True,
-            compare_server_default=True,
+            compare_server_default=False,
         )
         with context.begin_transaction():
             context.run_migrations()

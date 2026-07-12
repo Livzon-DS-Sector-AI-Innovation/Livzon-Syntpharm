@@ -3,16 +3,16 @@
 当飞书 WebSocket 事件竞态导致并发 INSERT 时，此索引在数据库层面兜底。
 Migration moved from safety/migrations/versions/ to standard alembic/versions/.
 
-Revision ID: 0029_safety_feishu_record_id_unique
-Revises: 0028_add_regulatory_tracker_tables
+Revision ID: 0028_safety_feishu_record_id_unique
+Revises: 0027_add_regulatory_tracker_tables
 """
 
 from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0029_safety_feishu_record_id_unique"
-down_revision: str | tuple[str, ...] | None = "0028_add_regulatory_tracker_tables"
+revision: str = "0028_safety_feishu_record_id_unique"
+down_revision: str | tuple[str, ...] | None = "0027_add_regulatory_tracker_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,6 +1,6 @@
 """add instrument calibration tables
 
-Revision ID: 0024_add_instrument_calibration_tables
+Revision ID: 0023_add_instrument_calibration_tables
 Revises: 0024_add_quality_module_tables
 Create Date: 2026-07-09 08:34:59.207350
 """
@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0024_add_instrument_calibration_tables'
-down_revision: Union[str, None] = '0023_add_quality_module_tables'
+revision: str = '0023_add_instrument_calibration_tables'
+down_revision: Union[str, None] = '0022_add_quality_module_tables'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

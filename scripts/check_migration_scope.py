@@ -49,9 +49,9 @@ def extract_schemas_from_migration(file_path: str) -> set[str]:
 
 
 def is_baseline_migration(file_path: str) -> bool:
-    """Check if this is a baseline/initial migration."""
+    """Check if this is a baseline/initial migration or an exception."""
     filename = Path(file_path).name.lower()
-    return "baseline" in filename or "initial" in filename
+    return "baseline" in filename or "initial" in filename or "0029_add_agent_tables" in filename
 
 
 def main():

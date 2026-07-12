@@ -1,6 +1,6 @@
 """add regulatory tracker tables
 
-Revision ID: 91e48d30b8c7
+Revision ID: 0027_add_regulatory_tracker_tables
 Revises: 0027
 Create Date: 2026-07-10 00:49:38.145049
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0028_add_regulatory_tracker_tables'
-down_revision: Union[str, None] = '0027_add_qms_ai_tables'
+revision: str = '0027_add_regulatory_tracker_tables'
+down_revision: Union[str, None] = '0026_add_qms_ai_tables'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
