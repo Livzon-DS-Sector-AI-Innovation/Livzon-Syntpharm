@@ -234,6 +234,59 @@
         }
       }
     },
+    "/api/v1/identity/auth/test-login": {
+      "post": {
+        "tags": [
+          "\u8ba4\u8bc1",
+          "\u8ba4\u8bc1"
+        ],
+        "summary": "E2E \u6d4b\u8bd5\u767b\u5f55\uff08\u4ec5\u5f00\u53d1/\u6d4b\u8bd5\u73af\u5883\uff09",
+        "description": "Return a JWT for the e2e test user. Requires APP_ENV=development/test + X-E2E-Secret header.",
+        "operationId": "test_login_api_v1_identity_auth_test_login_post",
+        "parameters": [
+          {
+            "name": "X-E2E-Secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-E2E-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Test Login Api V1 Identity Auth Test Login Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/identity/auth/login": {
       "get": {
         "tags": [
