@@ -22,7 +22,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.shared.base_model import Base, BaseModel
+from app.shared.base_model import BaseModel
 
 
 class CheckStatus(StrEnum):
@@ -103,7 +103,7 @@ class SopAiConfig(BaseModel):
         return f"<SopAiConfig {self.config_key}>"
 
 
-class SopAiCheckMain(Base):
+class SopAiCheckMain(BaseModel):
     """SOP AI 校验主表
 
     存储每次校验任务的元信息和汇总结果。
@@ -111,11 +111,11 @@ class SopAiCheckMain(Base):
 
     __tablename__ = "sop_ai_check_main"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))  # type: ignore[assignment]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True, server_default=None)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True, server_default=None)
-    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)  # type: ignore[assignment]
+    updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)  # type: ignore[assignment]
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     file_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     file_name: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -4,10 +4,10 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import CurrentUser, get_current_user
+from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.deviation_schemas import (
     BatchLockRequest,
     ClosingCreate,
@@ -25,15 +25,6 @@ from app.modules.quality.qms.deviation_service import (
     DeviationService,
     InvestigationService,
 )
-
-
-class ApiResponse(BaseModel):
-    """统一响应格式"""
-
-    code: int = 200
-    message: str = "Success"
-    data: dict[str, Any] | list[Any] | None = None
-
 
 router = APIRouter(prefix="/deviation", tags=["偏差管理"])
 
@@ -728,7 +719,7 @@ async def delete(
         result = await service.delete_deviation(deviation_id)
         if not result:
             raise ValueError("偏差不存在")
-        return {"message": "删除成功"}
+        return success_response(message="删除成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

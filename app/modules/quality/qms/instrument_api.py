@@ -10,12 +10,12 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
-from pydantic import BaseModel
 from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.response import ApiResponse
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
     # Approval
@@ -42,14 +42,6 @@ from app.modules.quality.qms.instrument_service import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class ApiResponse(BaseModel):
-    """统一响应格式"""
-
-    code: int = 200
-    message: str = "Success"
-    data: dict[str, Any] | list[Any] | None = None
 
 
 router = APIRouter(prefix="/instrument", tags=["仪器校准管理"])

@@ -49,3 +49,16 @@ register_background_worker(
     start=_start_safety_scheduler,
     stop=_stop_safety_scheduler,
 )
+
+
+async def _start_safety_catch_up() -> Any:
+    """Recover unprocessed Bitable records on startup."""
+    from app.modules.safety.feishu.catch_up import recover_unprocessed_records
+
+    await recover_unprocessed_records()
+
+
+register_background_worker(
+    name="safety.catch_up",
+    start=_start_safety_catch_up,
+)

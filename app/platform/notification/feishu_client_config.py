@@ -286,8 +286,8 @@ async def send_feishu_card_from_config(
     else:
         # 使用环境变量中的配置
         settings = get_settings()
-        app_id = getattr(settings, "FEISHU_APP_ID", None)
-        app_secret = getattr(settings, "FEISHU_APP_SECRET", None)
+        app_id = settings.feishu.platform.app_id
+        app_secret = settings.feishu.platform.app_secret
 
         if not app_id or not app_secret:
             raise ValueError("飞书配置未设置，请在提醒配置中填写 AppID 和 AppSecret，或设置环境变量")

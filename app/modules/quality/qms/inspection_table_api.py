@@ -7,20 +7,14 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from pydantic import BaseModel
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
+from app.core.exceptions import AppException, NotFoundException
+from app.core.response import ApiResponse
 
 logger = logging.getLogger(__name__)
-
-
-class ApiResponse(BaseModel):
-    """统一响应格式"""
-
-    code: int = 200
-    message: str = "Success"
-    data: dict[str, Any] | list[Any] | None = None
 
 
 class CreateTableRequest(BaseModel):
@@ -104,11 +98,11 @@ async def post(
         logger.info(f"Parsed JSON: {data}")
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
+        raise AppException(status_code=400, message=f"Invalid JSON: {e}")
 
     # 手动验证数据
     if "table_name" not in data:
-        raise HTTPException(status_code=400, detail="Missing required field: table_name")
+        raise AppException(status_code=400, message="Missing required field: table_name")
 
     service = InspectionTableService(session)
 
@@ -120,7 +114,7 @@ async def post(
         )
         return ApiResponse(data=table)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
 
 @router.get("/{table_id}", summary="获取数据表详情")  # type: ignore[no-redef]
@@ -135,7 +129,7 @@ async def get(  # noqa: F811
     table = await service.get_table(table_id)
 
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     return ApiResponse(data=table)
 
@@ -164,7 +158,7 @@ async def put(
     table = await service.update_table(table_id, update_data)
 
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     return ApiResponse(data=table)
 
@@ -181,7 +175,7 @@ async def delete(
     success = await service.delete_table(table_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     return ApiResponse(message="删除成功")
 
@@ -204,7 +198,7 @@ async def post(  # noqa: F811
         row = await service.add_row(table_id, request.row_data)
         return ApiResponse(data=row)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
 
 @router.put("/{table_id}/rows/{row_id}", summary="更新数据行")  # type: ignore[no-redef]
@@ -221,7 +215,7 @@ async def put(  # noqa: F811
     row = await service.update_row(row_id, request.row_data)
 
     if not row:
-        raise HTTPException(status_code=404, detail="数据行不存在")
+        raise NotFoundException(resource="数据行不存在")
 
     return ApiResponse(data=row)
 
@@ -239,7 +233,7 @@ async def delete(  # noqa: F811
     success = await service.delete_row(row_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="数据行不存在")
+        raise NotFoundException(resource="数据行不存在")
 
     return ApiResponse(message="删除成功")
 
@@ -263,7 +257,7 @@ async def post(  # noqa: F811
         return ApiResponse(data={"rows": saved_rows})
     except Exception as e:
         logger.error(f"Batch save error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")
+        raise AppException(status_code=500, message=f"保存失败: {str(e)}")
 
 
 # ============ AI 识别 API ============
@@ -283,7 +277,7 @@ async def post(  # noqa: F811
     table = await service.get_table(table_id)
 
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     table.get("columns_config", [])
 
@@ -316,12 +310,12 @@ async def post(  # noqa: F811
     table = await service.get_table(table_id)
 
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     columns_config = table.get("columns_config", [])
 
     if not columns_config:
-        raise HTTPException(status_code=400, detail="该数据表没有配置列，请先编辑表头配置")
+        raise AppException(status_code=400, message="该数据表没有配置列，请先编辑表头配置")
 
     # 保存上传的文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -389,7 +383,7 @@ async def post(  # noqa: F811
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse AI response as JSON: {e}")
             logger.error(f"Raw response: {result}")
-            raise HTTPException(status_code=500, detail=f"AI返回格式解析失败: {str(e)}")
+            raise AppException(status_code=500, message=f"AI返回格式解析失败: {str(e)}")
 
         return ApiResponse(
             data={
@@ -400,7 +394,7 @@ async def post(  # noqa: F811
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
 
 @router.post("/{table_id}/recognize/multiple", summary="多图片上传并识别")  # type: ignore[no-redef]
@@ -422,15 +416,15 @@ async def post(  # noqa: F811
     table = await service.get_table(table_id)
 
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     columns_config = table.get("columns_config", [])
 
     if not columns_config:
-        raise HTTPException(status_code=400, detail="该数据表没有配置列，请先编辑表头配置")
+        raise AppException(status_code=400, message="该数据表没有配置列，请先编辑表头配置")
 
     if not files:
-        raise HTTPException(status_code=400, detail="请上传至少一张图片")
+        raise AppException(status_code=400, message="请上传至少一张图片")
 
     # 保存上传的文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -514,7 +508,7 @@ async def post(  # noqa: F811
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse AI response as JSON: {e}")
             logger.error(f"Raw response: {result}")
-            raise HTTPException(status_code=500, detail=f"AI返回格式解析失败: {str(e)}")
+            raise AppException(status_code=500, message=f"AI返回格式解析失败: {str(e)}")
 
         return ApiResponse(
             data={
@@ -526,13 +520,13 @@ async def post(  # noqa: F811
 
     except ValueError as e:
         logger.error(f"ValueError in multiple recognition: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
     except Exception as e:
         logger.error(f"Unexpected error in multiple recognition: {e}")
         import traceback
 
         logger.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
+        raise AppException(status_code=500, message=f"服务器内部错误: {str(e)}")
 
 
 # ============ Word 模板管理 API ============
@@ -553,13 +547,13 @@ async def post(  # noqa: F811
 
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件")
+        raise AppException(status_code=400, message="仅支持 .docx 或 .doc 格式的Word文件")
 
     # 获取数据表
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     # 保存模板文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -605,7 +599,7 @@ async def delete(  # noqa: F811
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     # 删除文件
     if table.get("template_path"):
@@ -639,23 +633,23 @@ async def get(  # noqa: F811
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     # 获取行数据
     row = await service.get_row(row_id)
     if not row or str(row.get("table_id")) != str(table_id):
-        raise HTTPException(status_code=404, detail="数据行不存在")
+        raise NotFoundException(resource="数据行不存在")
 
     # 检查是否有模板
     if not table.get("template_path"):
-        raise HTTPException(status_code=400, detail="该数据表未设置Word模板，请先上传模板")
+        raise AppException(status_code=400, message="该数据表未设置Word模板，请先上传模板")
 
     # 读取模板
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     template_path = backend_dir / table["template_path"].lstrip("/")
 
     if not template_path.exists():
-        raise HTTPException(status_code=500, detail="模板文件不存在，请重新上传")
+        raise AppException(status_code=500, message="模板文件不存在，请重新上传")
 
     # 复制模板
     import tempfile
@@ -725,11 +719,11 @@ async def get(  # noqa: F811
     service = InspectionTableService(session)
     table = await service.get_table(table_id)
     if not table:
-        raise HTTPException(status_code=404, detail="数据表不存在")
+        raise NotFoundException(resource="数据表不存在")
 
     # 检查是否有模板
     if not table.get("template_path"):
-        raise HTTPException(status_code=400, detail="该数据表未设置Word模板，请先上传模板")
+        raise AppException(status_code=400, message="该数据表未设置Word模板，请先上传模板")
 
     # 获取要导出的行
     if row_ids:
@@ -743,14 +737,14 @@ async def get(  # noqa: F811
         rows = await service.get_rows_by_table(table_id)
 
     if not rows:
-        raise HTTPException(status_code=400, detail="没有可导出的数据")
+        raise AppException(status_code=400, message="没有可导出的数据")
 
     # 读取模板
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     template_path = backend_dir / table["template_path"].lstrip("/")
 
     if not template_path.exists():
-        raise HTTPException(status_code=500, detail="模板文件不存在，请重新上传")
+        raise AppException(status_code=500, message="模板文件不存在，请重新上传")
 
     # 创建临时目录存放导出文件
     temp_dir = Path(tempfile.mkdtemp())

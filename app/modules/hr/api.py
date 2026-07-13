@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
 from app.modules.hr.schemas import (
@@ -299,6 +300,7 @@ async def update_employee(  # type: ignore[no-untyped-def]
 @router.delete("/employees/{employee_id}", summary="删除员工")
 async def delete_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: CurrentUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     await service.delete_employee(employee_id)
@@ -636,7 +638,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
                 await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
                 await service.repo.session.flush()
         except Exception:
-            pass
+            logger.exception("unexpected error in feishu open_id lookup for employee %s", li_employee.employee_number)
 
     if not open_id:
         raise HTTPException(status_code=400, detail="李文兆缺少飞书 open_id 且无法实时获取")
@@ -2829,17 +2831,27 @@ async def save_prejob_template(  # type: ignore[no-untyped-def]
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
 SETTING_KEYS = [
-    "FEISHU_APP_ID",
-    "FEISHU_APP_SECRET",
-    "FEISHU_VEHICLE_APP_ID",
-    "FEISHU_VEHICLE_APP_SECRET",
-    "FEISHU_TRAINING_APP_ID",
-    "FEISHU_TRAINING_APP_SECRET",
+    "FEISHU__PLATFORM__APP_ID",
+    "FEISHU__PLATFORM__APP_SECRET",
+    "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
+    "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
+    "FEISHU__TRAINING__CREDENTIALS__APP_ID",
+    "FEISHU__TRAINING__CREDENTIALS__APP_SECRET",
     "AI_BASE_URL",
     "AI_API_KEY",
     "AI_MODEL",
-    "AILY_APP_ID",
+    "FEISHU__AILY_APP_ID",
 ]
+
+
+def _get_setting_value(settings, key: str) -> str:
+    parts = key.lower().split("__")
+    value = settings
+    for part in parts:
+        value = getattr(value, part, None)
+        if value is None:
+            return ""
+    return str(value) if value else ""
 
 
 @router.get("/system-settings", summary="获取系统设置")
@@ -2855,7 +2867,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = db_settings.get(key) or getattr(_settings, key, "")
+        val = db_settings.get(key) or _get_setting_value(_settings, key)
         result[key] = val
 
     return success_response(data=result)

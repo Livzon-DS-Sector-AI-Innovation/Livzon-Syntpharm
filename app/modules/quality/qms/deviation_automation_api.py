@@ -13,7 +13,6 @@ from fastapi import (
     Depends,
     File,
     Form,
-    HTTPException,
     UploadFile,
 )
 from pydantic import BaseModel
@@ -21,15 +20,10 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.exceptions import AppException, NotFoundException
+from app.core.response import ApiResponse
 
 logger = logging.getLogger(__name__)
-
-
-class ApiResponse(BaseModel):
-    code: int = 200
-    message: str = "Success"
-    data: dict | list | None = None
-
 
 router = APIRouter(prefix="/deviation-automation", tags=["偏差报告自动化"])
 
@@ -132,7 +126,7 @@ async def create_sop_rule(
     result = await db.execute(select(SOPRule).where(SOPRule.sop_code == rule.sop_code))
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="该SOP编号已存在，请重新填写")
+        raise AppException(status_code=400, message="该SOP编号已存在，请重新填写")
 
     new_rule = SOPRule(
         sop_code=rule.sop_code,
@@ -175,7 +169,7 @@ async def migrate_sop_file_path(
         return ApiResponse(message="迁移成功，sop_file_path 字段已添加")
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"迁移失败: {str(e)}")
+        raise AppException(status_code=500, message=f"迁移失败: {str(e)}")
 
 
 @router.put("/sop-rules/{rule_id}", summary="编辑SOP规则")
@@ -188,14 +182,14 @@ async def update_sop_rule(
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     # 检查编号唯一性（如果修改了编号）
     if rule.sop_code and rule.sop_code != db_rule.sop_code:
         result = await db.execute(select(SOPRule).where(SOPRule.sop_code == rule.sop_code))
         existing = result.scalar_one_or_none()
         if existing:
-            raise HTTPException(status_code=400, detail="该SOP编号已存在，请重新填写")
+            raise AppException(status_code=400, message="该SOP编号已存在，请重新填写")
 
     # 更新字段
     update_data = rule.model_dump(exclude_unset=True)
@@ -219,7 +213,7 @@ async def toggle_sop_rule_status(
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     db_rule.status = status
     db_rule.update_time = datetime.now()
@@ -237,7 +231,7 @@ async def delete_sop_rule(
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     await db.delete(db_rule)
     await db.flush()
@@ -321,21 +315,21 @@ async def upload_sop_file(
 
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(status_code=400, detail="仅支持doc、docx格式文件")
+        raise AppException(status_code=400, message="仅支持doc、docx格式文件")
 
     # 检查规则是否存在
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     # 读取文件内容
     content = await file.read()
     if len(content) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="文件超出大小限制，请压缩后重试")
+        raise AppException(status_code=400, message="文件超出大小限制，请压缩后重试")
 
     if len(content) == 0:
-        raise HTTPException(status_code=400, detail="文件为空或已损坏")
+        raise AppException(status_code=400, message="文件为空或已损坏")
 
     # 保存文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -388,10 +382,10 @@ async def ai_parse_sop_file(
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     if not db_rule.sop_file_path:
-        raise HTTPException(status_code=400, detail="请先上传SOP文件")
+        raise AppException(status_code=400, message="请先上传SOP文件")
 
     try:
         # 读取文件内容
@@ -399,7 +393,7 @@ async def ai_parse_sop_file(
         file_path = backend_dir / db_rule.sop_file_path.lstrip("/")
 
         if not file_path.exists():
-            raise HTTPException(status_code=500, detail="SOP文件不存在")
+            raise AppException(status_code=500, message="SOP文件不存在")
 
         with open(file_path, "rb") as f:
             text_result = mammoth.extract_raw_text(f)
@@ -507,7 +501,7 @@ SOP文档内容：
         import traceback
 
         logger.error(f"AI解析SOP文件失败: {e}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"AI解析失败: {str(e)}")
+        raise AppException(status_code=500, message=f"AI解析失败: {str(e)}")
 
 
 @router.get("/sop-rules/{rule_id}/download", summary="下载SOP原文件")
@@ -521,16 +515,16 @@ async def download_sop_file(
     result = await db.execute(select(SOPRule).where(SOPRule.id == rule_id))
     db_rule = result.scalar_one_or_none()
     if not db_rule:
-        raise HTTPException(status_code=404, detail="规则不存在")
+        raise NotFoundException(resource="规则不存在")
 
     if not db_rule.sop_file_path:
-        raise HTTPException(status_code=404, detail="SOP文件不存在")
+        raise NotFoundException(resource="SOP文件不存在")
 
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     file_path = backend_dir / db_rule.sop_file_path.lstrip("/")
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException(resource="文件不存在")
 
     return FileResponse(
         path=str(file_path),
@@ -559,7 +553,7 @@ async def create_dev_task(
     result = await db.execute(select(DevTask).where(DevTask.deviation_no == task.deviation_no))
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="该偏差编号已存在，请重新填写")
+        raise AppException(status_code=400, message="该偏差编号已存在，请重新填写")
 
     new_task = DevTask(
         deviation_no=task.deviation_no,
@@ -650,7 +644,7 @@ async def get_dev_task(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     return ApiResponse(
         data={
@@ -679,7 +673,7 @@ async def update_task_status(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     task.task_status = status
     task.update_time = datetime.now()
@@ -702,7 +696,7 @@ async def update_ai_result(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     # 检查内容格式
     content = data.ai_result.strip()
@@ -728,7 +722,11 @@ async def update_ai_result(
             sop_rules = sop_result.scalars().all()
             sop_context = "\n\n".join(
                 [
-                    f"[{r.sop_code}] {r.sop_full_name}\n版本: {r.sop_version}\n业务标签: {r.business_tag or '无'}\n标准限值: {r.standard_limit or '无'}\n标准语句: {r.standard_sentence or '无'}\n"
+                    f"[{r.sop_code}] {r.sop_full_name}\n"
+                    f"版本: {r.sop_version}\n"
+                    f"业务标签: {r.business_tag or '无'}\n"
+                    f"标准限值: {r.standard_limit or '无'}\n"
+                    f"标准语句: {r.standard_sentence or '无'}\n"
                     for r in sop_rules
                 ]
             )
@@ -823,21 +821,21 @@ async def upload_and_parse_word(
 
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(status_code=400, detail="仅支持doc、docx格式文件")
+        raise AppException(status_code=400, message="仅支持doc、docx格式文件")
 
     # 验证文件大小 (20MB)
     content = await file.read()
     if len(content) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="文件超出大小限制，请压缩后重试")
+        raise AppException(status_code=400, message="文件超出大小限制，请压缩后重试")
 
     if len(content) == 0:
-        raise HTTPException(status_code=400, detail="文件为空或已损坏，请检查文件后重新上传")
+        raise AppException(status_code=400, message="文件为空或已损坏，请检查文件后重新上传")
 
     # 检查任务是否存在
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     # 保存文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -858,7 +856,7 @@ async def upload_and_parse_word(
             html_content = result.value
             messages = [msg.message for msg in result.messages]
     except Exception:
-        raise HTTPException(status_code=400, detail="文件无法解析，请检查文件后重新上传")
+        raise AppException(status_code=400, message="文件无法解析，请检查文件后重新上传")
 
     # 提取纯文本
     try:
@@ -931,10 +929,10 @@ async def trigger_ai_process(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     if not task.original_file_path:
-        raise HTTPException(status_code=400, detail="请先上传原始文件")
+        raise AppException(status_code=400, message="请先上传原始文件")
 
     # 更新状态为AI处理中
     task.task_status = 2  # AI处理中
@@ -947,7 +945,7 @@ async def trigger_ai_process(
         original_path = backend_dir / task.original_file_path.lstrip("/")
 
         if not original_path.exists():
-            raise HTTPException(status_code=500, detail="原始文件不存在")
+            raise AppException(status_code=500, message="原始文件不存在")
 
         with open(original_path, "rb") as f:
             text_result = mammoth.extract_raw_text(f)
@@ -1072,7 +1070,7 @@ SOP规则库：
         task.task_status = 1  # 恢复待处理状态
         task.update_time = datetime.now()
         await db.flush()
-        raise HTTPException(status_code=500, detail="AI解析失败，请稍后重试")
+        raise AppException(status_code=500, message="AI解析失败，请稍后重试")
 
 
 def _parse_ai_result(ai_result: str) -> dict:
@@ -1419,10 +1417,10 @@ async def get_task_preview(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     if not task.ai_result:
-        raise HTTPException(status_code=400, detail="请先进行AI处理")
+        raise AppException(status_code=400, message="请先进行AI处理")
 
     try:
         # 检查是否已经是HTML格式（contenteditable编辑后可能以<meta>开头）
@@ -1454,11 +1452,11 @@ async def get_task_preview(
                 backend_dir = Path(__file__).resolve().parent.parent.parent.parent
 
                 if not task.original_file_path:
-                    raise HTTPException(status_code=400, detail="原始文件不存在，无法自动恢复")
+                    raise AppException(status_code=400, message="原始文件不存在，无法自动恢复")
 
                 original_path = backend_dir / task.original_file_path.lstrip("/")
                 if not original_path.exists():
-                    raise HTTPException(status_code=500, detail="原始文件不存在")
+                    raise AppException(status_code=500, message="原始文件不存在")
 
                 with open(original_path, "rb") as f:
                     text_result = mammoth.extract_raw_text(f)  # noqa: F821
@@ -1469,7 +1467,11 @@ async def get_task_preview(
                 sop_rules = sop_result.scalars().all()
                 sop_context = "\n\n".join(
                     [
-                        f"[{r.sop_code}] {r.sop_full_name}\n版本: {r.sop_version}\n业务标签: {r.business_tag or '无'}\n标准限值: {r.standard_limit or '无'}\n标准语句: {r.standard_sentence or '无'}\n"
+                        f"[{r.sop_code}] {r.sop_full_name}\n"
+                        f"版本: {r.sop_version}\n"
+                        f"业务标签: {r.business_tag or '无'}\n"
+                        f"标准限值: {r.standard_limit or '无'}\n"
+                        f"标准语句: {r.standard_sentence or '无'}\n"
                         for r in sop_rules
                     ]
                 )
@@ -1556,7 +1558,8 @@ SOP规则库：
                         "html_content": html_lib.escape(
                             f'<div style="font-family:Times New Roman;font-size:12pt;padding:20px;">'
                             f'<p style="color:#666;">预览数据格式异常，已自动重新处理。</p>'
-                            f'<pre style="white-space:pre-wrap;word-wrap:break-word;">{html_lib.escape(task.ai_result[:2000])}...</pre>'
+                            f'<pre style="white-space:pre-wrap;word-wrap:break-word;">'
+                            f"{html_lib.escape(task.ai_result[:2000])}...</pre>"
                             f"</div>"
                         ),
                         "plain_content": f"<div><p>预览数据格式异常</p><pre>{task.ai_result[:2000]}...</pre></div>",
@@ -1587,7 +1590,7 @@ SOP规则库：
 
     except Exception as e:
         logger.error(f"生成预览失败: {e}")
-        raise HTTPException(status_code=500, detail=f"生成预览失败: {str(e)}")
+        raise AppException(status_code=500, message=f"生成预览失败: {str(e)}")
 
 
 @router.post("/tasks/{task_id}/generate-standard", summary="生成标准Word文件")
@@ -1616,10 +1619,10 @@ async def generate_standard_docx(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     if not task.ai_result:
-        raise HTTPException(status_code=400, detail="请先进行AI处理")
+        raise AppException(status_code=400, message="请先进行AI处理")
 
     try:
         # 解析AI返回的JSON数据
@@ -1633,14 +1636,14 @@ async def generate_standard_docx(
             logger.warning(f"AI返回数据格式错误，自动重新处理: {e}")
 
             if not task.original_file_path:
-                raise HTTPException(status_code=400, detail="原始文件不存在，无法重新处理")
+                raise AppException(status_code=400, message="原始文件不存在，无法重新处理")
 
             # 读取原始文件
             backend_dir = Path(__file__).resolve().parent.parent.parent.parent
             original_path = backend_dir / task.original_file_path.lstrip("/")
 
             if not original_path.exists():
-                raise HTTPException(status_code=500, detail="原始文件不存在")
+                raise AppException(status_code=500, message="原始文件不存在")
 
             with open(original_path, "rb") as f:
                 text_result = mammoth.extract_raw_text(f)
@@ -1651,7 +1654,11 @@ async def generate_standard_docx(
             sop_rules = sop_result.scalars().all()
             sop_context = "\n\n".join(
                 [
-                    f"[{r.sop_code}] {r.sop_full_name}\n版本: {r.sop_version}\n业务标签: {r.business_tag or '无'}\n标准限值: {r.standard_limit or '无'}\n标准语句: {r.standard_sentence or '无'}\n"
+                    f"[{r.sop_code}] {r.sop_full_name}\n"
+                    f"版本: {r.sop_version}\n"
+                    f"业务标签: {r.business_tag or '无'}\n"
+                    f"标准限值: {r.standard_limit or '无'}\n"
+                    f"标准语句: {r.standard_sentence or '无'}\n"
                     for r in sop_rules
                 ]
             )
@@ -1738,12 +1745,12 @@ SOP规则库：
         active_template = template_result.scalar_one_or_none()
 
         if not active_template or not active_template.file_path:
-            raise HTTPException(status_code=500, detail="未找到启用的报告模板，请在模板管理中启用模板")
+            raise AppException(status_code=500, message="未找到启用的报告模板，请在模板管理中启用模板")
 
         template_path = backend_dir / active_template.file_path.lstrip("/")
 
         if not template_path.exists():
-            raise HTTPException(status_code=500, detail=f"模板文件不存在: {active_template.name}")
+            raise AppException(status_code=500, message=f"模板文件不存在: {active_template.name}")
 
         # 打开模板文件（保留原始格式，包括字体、字号、边距等）
         doc = Document(str(template_path))
@@ -1911,11 +1918,11 @@ SOP规则库：
             },
         )
 
-    except HTTPException:
+    except AppException:
         raise
     except Exception as e:
         logger.error(f"生成标准文件失败: {e}")
-        raise HTTPException(status_code=500, detail=f"生成标准文件失败: {str(e)}")
+        raise AppException(status_code=500, message=f"生成标准文件失败: {str(e)}")
 
 
 # ============ 文件下载 ============
@@ -1932,16 +1939,16 @@ async def download_original_file(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     if not task.original_file_path:
-        raise HTTPException(status_code=404, detail="原始文件不存在")
+        raise NotFoundException(resource="原始文件不存在")
 
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     file_path = backend_dir / task.original_file_path.lstrip("/")
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException(resource="文件不存在")
 
     return FileResponse(
         path=str(file_path),
@@ -1961,16 +1968,16 @@ async def download_standard_file(
     result = await db.execute(select(DevTask).where(DevTask.task_id == task_id))
     task = result.scalar_one_or_none()
     if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException(resource="任务不存在")
 
     if not task.standard_file_path:
-        raise HTTPException(status_code=404, detail="标准报告文件不存在")
+        raise NotFoundException(resource="标准报告文件不存在")
 
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     file_path = backend_dir / task.standard_file_path.lstrip("/")
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException(resource="文件不存在")
 
     return FileResponse(
         path=str(file_path),
@@ -1989,7 +1996,7 @@ async def create_sop_rule(  # noqa: F811
     result = await db.execute(select(SOPRule).where(SOPRule.sop_code == rule.sop_code))
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="该SOP编号已存在，请重新填写")
+        raise AppException(status_code=400, message="该SOP编号已存在，请重新填写")
 
     new_rule = SOPRule(
         sop_code=rule.sop_code,
@@ -2105,7 +2112,7 @@ async def update_template(
     result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     db_template = result.scalar_one_or_none()
     if not db_template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     update_data = template.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -2127,13 +2134,13 @@ async def upload_template_file(
     """上传模板文件"""
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(status_code=400, detail="仅支持doc、docx格式文件")
+        raise AppException(status_code=400, message="仅支持doc、docx格式文件")
 
     # 检查模板是否存在
     result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     db_template = result.scalar_one_or_none()
     if not db_template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     # 保存文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -2174,16 +2181,16 @@ async def download_template_file(
     result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     template = result.scalar_one_or_none()
     if not template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     if not template.file_path:
-        raise HTTPException(status_code=404, detail="模板文件不存在")
+        raise NotFoundException(resource="模板文件不存在")
 
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
     file_path = backend_dir / template.file_path.lstrip("/")
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException(resource="文件不存在")
 
     return FileResponse(
         path=str(file_path),
@@ -2201,7 +2208,7 @@ async def delete_template(
     result = await db.execute(select(ReportTemplate).where(ReportTemplate.id == template_id))
     template = result.scalar_one_or_none()
     if not template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     await db.delete(template)
     await db.flush()

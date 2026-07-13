@@ -15,18 +15,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+from app.core.config import get_settings
+
 logger = logging.getLogger(__name__)
 
+settings = get_settings()
+
 # ── Known LibreOffice install locations ────────────────────────────────────
-_CUSTOM_SOFFICE = os.environ.get("SOFFICE_PATH", "")
 _SOFFICE_CANDIDATES: list[str] = []
-if _CUSTOM_SOFFICE:
-    _SOFFICE_CANDIDATES = [_CUSTOM_SOFFICE]
+if settings.SOFFICE_PATH:
+    _SOFFICE_CANDIDATES = [settings.SOFFICE_PATH]
 if sys.platform == "win32":
-    _SOFFICE_CANDIDATES += [
-        r"C:\Program Files\LibreOffice\program\soffice.exe",
-        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-    ]
+    _SOFFICE_CANDIDATES += settings.SOFFICE_FALLBACK_PATHS
 else:
     _SOFFICE_CANDIDATES += [
         "soffice",

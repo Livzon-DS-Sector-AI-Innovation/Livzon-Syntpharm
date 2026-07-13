@@ -3,11 +3,12 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
+from app.core.exceptions import AppException, NotFoundException
+from app.core.response import ApiResponse
 from app.core.storage import save_upload_file
 from app.modules.quality.qms.material_report_schemas import (
     ReportCreate,
@@ -20,15 +21,6 @@ from app.modules.quality.qms.material_report_service import (
     MaterialReportService,
     ReportTemplateService,
 )
-
-
-class ApiResponse(BaseModel):
-    """统一响应格式"""
-
-    code: int = 200
-    message: str = "Success"
-    data: dict[str, Any] | list[Any] | None = None
-
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
@@ -109,7 +101,7 @@ async def get(  # noqa: F811
     report = await service.get_report(report_id)
 
     if not report:
-        raise HTTPException(status_code=404, detail="报告单不存在")
+        raise NotFoundException(resource="报告单不存在")
 
     return ApiResponse(data=report)
 
@@ -125,7 +117,7 @@ async def put(
     report = await service.update_report(report_id, data)
 
     if not report:
-        raise HTTPException(status_code=404, detail="报告单不存在")
+        raise NotFoundException(resource="报告单不存在")
 
     return ApiResponse(data=report)
 
@@ -140,7 +132,7 @@ async def delete(
     success = await service.delete_report(report_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="报告单不存在")
+        raise NotFoundException(resource="报告单不存在")
 
     return ApiResponse(message="删除成功")
 
@@ -157,7 +149,7 @@ async def post(  # noqa: F811
     # 检查报告单是否存在
     report = await service.get_report(report_id)
     if not report:
-        raise HTTPException(status_code=404, detail="报告单不存在")
+        raise NotFoundException(resource="报告单不存在")
 
     items = await service.save_items(report_id, data)
     return ApiResponse(data={"items": items})
@@ -174,7 +166,7 @@ async def post(  # noqa: F811
     try:
         content = await service.generate_report(report_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
     # 获取报告单信息用于文件名
     report = await service.get_report(report_id)
@@ -198,7 +190,7 @@ async def post(  # noqa: F811
     try:
         report = await service.submit_report(report_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
     return ApiResponse(data=report)
 
@@ -243,7 +235,7 @@ async def post(  # noqa: F811
     """上传Word模板"""
     # 验证文件类型
     if not file.filename.endswith((".docx", ".doc")):  # type: ignore[union-attr]
-        raise HTTPException(status_code=400, detail="仅支持Word文档(.docx, .doc)")
+        raise AppException(status_code=400, message="仅支持Word文档(.docx, .doc)")
 
     # 保存文件
     file_url = await save_upload_file(file, sub_dir="report-templates")
@@ -291,7 +283,7 @@ async def get(  # noqa: F811
     template = await service.get_template(template_id)
 
     if not template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     return ApiResponse(data=template)
 
@@ -307,7 +299,7 @@ async def put(  # noqa: F811
     template = await service.update_template(template_id, data)
 
     if not template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     return ApiResponse(data=template)
 
@@ -322,7 +314,7 @@ async def delete(  # noqa: F811
     success = await service.delete_template(template_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     return ApiResponse(message="删除成功")
 
@@ -337,7 +329,7 @@ async def get(  # noqa: F811
     result = await service.parse_template(template_id)
 
     if not result:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException(resource="模板不存在")
 
     return ApiResponse(data=result)
 
@@ -359,7 +351,7 @@ async def post(  # noqa: F811
     # 检查报告单是否存在
     report = await service.get_report(report_id)
     if not report:
-        raise HTTPException(status_code=404, detail="报告单不存在")
+        raise NotFoundException(resource="报告单不存在")
 
     try:
         result = await service.upload_image_and_recognize(
@@ -370,7 +362,7 @@ async def post(  # noqa: F811
         )
         return ApiResponse(data=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppException(status_code=400, message=str(e))
 
 
 @router.get("/{report_id}/images", summary="获取报告单图片列表")  # type: ignore[no-redef]

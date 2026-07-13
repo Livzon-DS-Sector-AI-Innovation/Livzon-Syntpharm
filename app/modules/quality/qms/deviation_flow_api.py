@@ -774,7 +774,12 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
                     render_template(qa_template["title_template"], common_vars)
                     content = render_template(qa_template["content_template"], common_vars)
                 else:
-                    content = f"**偏差单 {deviation_no} 已提交「{status_label}」状态，请及时跟进！**\n\n**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n**紧急等级：** {get_level_label(urgency_level)}\n**填报人：** {reporter or '未知'}\n\n请登录系统查看详情并跟进。"
+                    content = (
+                        f"**偏差单 {deviation_no} 已提交「{status_label}」状态，请及时跟进！**\n\n"
+                        f"**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n"
+                        f"**紧急等级：** {get_level_label(urgency_level)}\n"
+                        f"**填报人：** {reporter or '未知'}\n\n请登录系统查看详情并跟进。"
+                    )
 
                 card_content = {
                     "config": {"wide_screen_mode": True},
@@ -797,7 +802,12 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
                     render_template(leader_template["title_template"], common_vars)
                     content = render_template(leader_template["content_template"], common_vars)
                 else:
-                    content = f"**偏差单 {deviation_no} 已提交「{status_label}」状态，请知悉！**\n\n**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n**紧急等级：** {get_level_label(urgency_level)}\n**填报人：** {reporter or '未知'}\n\n请登录系统查看详情。"
+                    content = (
+                        f"**偏差单 {deviation_no} 已提交「{status_label}」状态，请知悉！**\n\n"
+                        f"**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n"
+                        f"**紧急等级：** {get_level_label(urgency_level)}\n"
+                        f"**填报人：** {reporter or '未知'}\n\n请登录系统查看详情。"
+                    )
 
                 card_content = {
                     "config": {"wide_screen_mode": True},
@@ -820,7 +830,11 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
                     render_template(reporter_template["title_template"], common_vars)
                     content = render_template(reporter_template["content_template"], common_vars)
                 else:
-                    content = f"**您提交的偏差单 {deviation_no} 已提交「{status_label}」状态！**\n\n**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n**紧急等级：** {get_level_label(urgency_level)}\n\n请登录系统查看进度。"
+                    content = (
+                        f"**您提交的偏差单 {deviation_no} 已提交「{status_label}」状态！**\n\n"
+                        f"**偏差主题：** {theme}\n**偏差类型：** {get_type_label(deviation_type)}\n"
+                        f"**紧急等级：** {get_level_label(urgency_level)}\n\n请登录系统查看进度。"
+                    )
 
                 card_content = {
                     "config": {"wide_screen_mode": True},

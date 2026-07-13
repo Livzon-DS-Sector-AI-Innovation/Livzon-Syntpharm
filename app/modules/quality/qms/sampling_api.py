@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.sampling_schemas import (
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
@@ -127,7 +127,7 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_order(order_id, user_id)
-        return {"message": "删除成功"}
+        return success_response(message="删除成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

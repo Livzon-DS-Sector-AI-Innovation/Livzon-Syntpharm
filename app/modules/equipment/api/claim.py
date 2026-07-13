@@ -1,6 +1,5 @@
 """抢单 API 路由."""
 
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -9,13 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.events import event_bus
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.integrations.feishu.contact import is_department_member
-from app.platform.integrations.feishu.message import send_claim_notification
 
 router = APIRouter()
 
@@ -43,7 +43,15 @@ async def claim_work_order(  # type: ignore[no-untyped-def]
 
     wo = await service.claim_work_order(db, work_order_id, ctx.user.id)  # type: ignore[arg-type]
 
-    asyncio.ensure_future(send_claim_notification(wo.work_order_no, ctx.user.name))
+    spawn_task(
+        event_bus.publish(
+            "equipment.work_order.claimed",
+            {
+                "work_order_no": wo.work_order_no,
+                "user_name": ctx.user.name,
+            },
+        )
+    )
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

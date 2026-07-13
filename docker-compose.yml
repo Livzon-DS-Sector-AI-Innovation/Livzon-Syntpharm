@@ -16,9 +16,9 @@ services:
       DATABASE_URL: ${APP_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/dazah}
       REDIS_URL: ${APP_REDIS_URL:-redis://redis:6379/0}
       AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-7}
-      FEISHU_APP_ID: ${FEISHU_APP_ID}
-      FEISHU_APP_SECRET: ${FEISHU_APP_SECRET}
-      FEISHU_REDIRECT_URI: ${FEISHU_REDIRECT_URI:-http://localhost:8000/api/v1/identity/auth/callback}
+      FEISHU__PLATFORM__APP_ID: ${FEISHU__PLATFORM__APP_ID}
+      FEISHU__PLATFORM__APP_SECRET: ${FEISHU__PLATFORM__APP_SECRET}
+      FEISHU__PLATFORM__REDIRECT_URI: ${FEISHU__PLATFORM__REDIRECT_URI:-http://localhost:8000/api/v1/identity/auth/callback}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       EDBO_SERVICE_URL: http://edbo-service:8000
       JWT_EXPIRE_SECONDS: ${JWT_EXPIRE_SECONDS:-86400}

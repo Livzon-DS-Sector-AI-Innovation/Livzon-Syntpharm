@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.service import StaticDataService
 

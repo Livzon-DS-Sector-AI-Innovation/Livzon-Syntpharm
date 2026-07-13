@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.modules.equipment import events  # noqa: F401 — register event bus subscriptions
 from app.modules.equipment.api import router
 from app.shared.lifecycle import register_background_worker
 

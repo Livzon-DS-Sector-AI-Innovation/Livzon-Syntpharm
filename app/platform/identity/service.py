@@ -231,7 +231,7 @@ async def _effective_feishu_credentials(
     stored = await _feishu_config_repo.get_active(db)
 
     app_id = (
-        (payload.app_id if payload else None) or (stored.app_id if stored else None) or settings.FEISHU_APP_ID  # type: ignore[attr-defined]
+        (payload.app_id if payload else None) or (stored.app_id if stored else None) or settings.feishu.platform.app_id
     )
     encrypted_secret = stored.encrypted_app_secret if stored else ""
     try:
@@ -240,20 +240,20 @@ async def _effective_feishu_credentials(
             if payload and payload.app_secret
             else decrypt_secret(encrypted_secret)
             if encrypted_secret
-            else settings.FEISHU_APP_SECRET  # type: ignore[attr-defined]
+            else settings.feishu.platform.app_secret
         )
     except RuntimeError as exc:
         raise _secret_runtime_error(exc) from exc
     root_id = (
         (payload.sync_root_department_id if payload else None)
         or (stored.sync_root_department_id if stored else None)
-        or settings.FEISHU_SYNC_ROOT_DEPT_ID  # type: ignore[attr-defined]
+        or settings.feishu.platform.sync_root_dept_id
         or "0"
     )
     member_id = (
         (payload.sync_member_department_id if payload else None)
         or (stored.sync_member_department_id if stored else None)
-        or settings.FEISHU_SYNC_MEMBER_DEPT_ID  # type: ignore[attr-defined]
+        or settings.feishu.platform.sync_member_dept_id
         or root_id
     )
     if not app_id or not app_secret:

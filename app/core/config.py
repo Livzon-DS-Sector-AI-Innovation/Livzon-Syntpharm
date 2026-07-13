@@ -238,6 +238,22 @@ class Settings(BaseSettings):
     # HR Bitable
     HR_BITABLE_APP_TOKEN: str = ""
 
+    # Font
+    CJK_FONT_PATH: str = ""
+    CJK_FONT_FALLBACK_PATHS: list[str] = [
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    ]
+
+    # LibreOffice
+    SOFFICE_PATH: str = ""
+    SOFFICE_FALLBACK_PATHS: list[str] = [
+        "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+        "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+    ]
+
     # API
     API_V1_PREFIX: str = "/api/v1"
 

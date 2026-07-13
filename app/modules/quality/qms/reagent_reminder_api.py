@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.response import success_response
 from app.modules.quality.qms.reagent_reminder_service import ReagentReminderService
 from app.platform.database import get_db_session
 
@@ -45,7 +46,7 @@ async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
     config = await service.get_config()
 
     if not config:
-        return {"code": 200, "message": "success", "data": None}
+        return success_response(message="success", data=None)
 
     return {
         "code": 200,
@@ -138,7 +139,7 @@ async def get(  # noqa: F811
     config = await service.get_item_reminder_config(reagent_name)
 
     if config:
-        return {"code": 200, "message": "success", "data": config}
+        return success_response(message="success", data=config)
     else:
         # 默认返回启用状态
         return {

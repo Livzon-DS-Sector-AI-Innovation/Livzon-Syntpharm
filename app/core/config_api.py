@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config_model import ModuleSetting
 from app.core.database import get_db
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse
 from app.platform.identity.deps import get_current_user
 
 router = APIRouter(prefix="/module-settings", tags=["Module Settings"])

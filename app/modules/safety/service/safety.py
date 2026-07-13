@@ -10,6 +10,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.storage import delete_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.ai_prompts import (
@@ -1604,25 +1605,20 @@ class SafetyService:
         )
 
         # 字体注册 - 跨平台支持
-        import os
-
         from reportlab.pdfbase import pdfmetrics  # type: ignore[import-untyped]
         from reportlab.pdfbase.ttfonts import TTFont  # type: ignore[import-untyped]
+
+        settings = get_settings()
 
         _font_name = "Helvetica"
         _font_name_bold = "Helvetica-Bold"
 
-        # 字体查找路径列表（Linux 优先，Windows 备选）
-        _font_candidates = [
-            # Linux paths
-            ("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", "WenQuanYi"),
-            ("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf", "DroidSans"),
-            ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK"),
-            ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", "NotoSansCJK"),
-        ]
-        custom_font = os.environ.get("CJK_FONT_PATH", "")
-        if custom_font:
-            _font_candidates.insert(0, (custom_font, "CustomCJK"))
+        _font_candidates: list[tuple[str, str]] = []
+        if settings.CJK_FONT_PATH:
+            _font_candidates.append((settings.CJK_FONT_PATH, "CustomCJK"))
+        for font_path_str in settings.CJK_FONT_FALLBACK_PATHS:
+            alias = Path(font_path_str).stem
+            _font_candidates.append((font_path_str, alias))
 
         for font_path, font_alias in _font_candidates:
             if os.path.exists(font_path):

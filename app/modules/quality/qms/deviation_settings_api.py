@@ -371,8 +371,10 @@ async def post(  # noqa: F811
     await session.execute(
         text("""
             INSERT INTO qms.qms_deviation_reminder_rules
-            (id, deviation_type, urgency_level, auto_reminder, reminder_time, message_template, created_at)
-            VALUES (:id, :deviation_type, :urgency_level, :auto_reminder, :reminder_time, :message_template, :created_at)
+            (id, deviation_type, urgency_level, auto_reminder,
+             reminder_time, message_template, created_at)
+            VALUES (:id, :deviation_type, :urgency_level, :auto_reminder,
+                    :reminder_time, :message_template, :created_at)
         """),
         {
             "id": id,
@@ -505,8 +507,12 @@ async def post(  # noqa: F811
     await session.execute(
         text("""
             INSERT INTO qms.qms_deviation_auto_trigger
-            (id, trigger_type, trigger_condition, is_enabled, notify_qa, notify_leader, notify_reporter, custom_message, created_at)
-            VALUES (:id, :trigger_type, :trigger_condition, :is_enabled, :notify_qa, :notify_leader, :notify_reporter, :custom_message, :created_at)
+            (id, trigger_type, trigger_condition, is_enabled,
+             notify_qa, notify_leader, notify_reporter,
+             custom_message, created_at)
+            VALUES (:id, :trigger_type, :trigger_condition, :is_enabled,
+                    :notify_qa, :notify_leader, :notify_reporter,
+                    :custom_message, :created_at)
         """),
         {
             "id": id,
@@ -643,8 +649,10 @@ async def post(  # noqa: F811
     await session.execute(
         text("""
             INSERT INTO qms.qms_deviation_message_template
-            (id, template_type, template_name, title_template, content_template, is_default, is_active, created_at)
-            VALUES (:id, :template_type, :template_name, :title_template, :content_template, :is_default, TRUE, :created_at)
+            (id, template_type, template_name, title_template,
+             content_template, is_default, is_active, created_at)
+            VALUES (:id, :template_type, :template_name, :title_template,
+                    :content_template, :is_default, TRUE, :created_at)
         """),
         {
             "id": id,
@@ -672,7 +680,9 @@ async def put(  # noqa: F811
     if request.is_default:
         await session.execute(
             text(
-                "UPDATE qms.qms_deviation_message_template SET is_default = FALSE WHERE template_type = :template_type AND id != :id"
+                "UPDATE qms.qms_deviation_message_template "
+                "SET is_default = FALSE "
+                "WHERE template_type = :template_type AND id != :id"
             ),
             {"template_type": request.template_type, "id": id},
         )

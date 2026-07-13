@@ -1,6 +1,5 @@
 """维修工单 API 路由."""
 
-import asyncio
 import logging
 import uuid
 from typing import Any
@@ -10,7 +9,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.events import event_bus
 from app.core.response import paginated_response, success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import (
@@ -26,37 +27,6 @@ from app.modules.equipment.schemas import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-async def _notify_start(wo) -> Any:  # type: ignore[no-untyped-def]
-    """网页点击开始执行时，飞书通知维修人。非关键路径。"""
-    try:
-        if not wo.assignee:
-            return
-        from app.modules.equipment.feishu.notification import send_user_card
-
-        user = wo.assignee
-        if not user.feishu_user_id:
-            return
-
-        eq_name = wo.equipment.name if wo.equipment else ""
-        title = f"🔧 开始维修 - {wo.work_order_no}"
-        lines = [
-            f"**工单编号：**{wo.work_order_no}",
-            f"**关联设备：**{eq_name}",
-            f"**工单类型：**{wo.order_type}",
-            f"**优先级：**{wo.priority}",
-            "",
-            "维修已开始，请尽快完成维修并提交。",
-        ]
-        content = "\n".join(lines)
-        await send_user_card(
-            open_id=user.feishu_user_id,
-            title=title,
-            content=content,
-        )
-    except Exception:
-        logger.exception("开始维修通知异常: %s", wo.work_order_no)
 
 
 def _to_response(wo) -> Any:  # type: ignore[no-untyped-def]
@@ -191,8 +161,28 @@ async def start_work_order(
     ),
 ) -> JSONResponse:
     wo = await service.start_work_order(db, work_order_id, ctx)
-    # 网页点击开始时飞书通知维修人（非关键路径）
-    asyncio.ensure_future(_notify_start(wo))
+    if wo.assignee and wo.assignee.feishu_user_id:
+        eq_name = wo.equipment.name if wo.equipment else ""
+        title = f"🔧 开始维修 - {wo.work_order_no}"
+        lines = [
+            f"**工单编号：**{wo.work_order_no}",
+            f"**关联设备：**{eq_name}",
+            f"**工单类型：**{wo.order_type}",
+            f"**优先级：**{wo.priority}",
+            "",
+            "维修已开始，请尽快完成维修并提交。",
+        ]
+        content = "\n".join(lines)
+        spawn_task(
+            event_bus.publish(
+                "equipment.work_order.started",
+                {
+                    "open_id": wo.assignee.feishu_user_id,
+                    "title": title,
+                    "content": content,
+                },
+            )
+        )
     return success_response(data=_to_response(wo))
 
 

@@ -5,22 +5,15 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
+
+from app.core.exceptions import AppException, NotFoundException
+from app.core.response import ApiResponse
 
 logger = logging.getLogger(__name__)
 
-
-class ApiResponse(BaseModel):
-    """统一响应格式"""
-
-    code: int = 200
-    message: str = "Success"
-    data: dict[str, Any] | list[Any] | None = None
-
-
 router = APIRouter(prefix="/deviation-report", tags=["偏差报告"])
-
 
 # ============ Word 模板上传 API ============
 
@@ -36,7 +29,7 @@ async def post(
 
     # 验证文件类型
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
-        raise HTTPException(status_code=400, detail="仅支持 .docx 或 .doc 格式的Word文件")
+        raise AppException(status_code=400, message="仅支持 .docx 或 .doc 格式的Word文件")
 
     # 保存上传的文件
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -72,7 +65,7 @@ async def post(
         )
     except Exception as e:
         logger.error(f"文档解析失败: {e}")
-        raise HTTPException(status_code=500, detail=f"文档解析失败: {str(e)}")
+        raise AppException(status_code=500, message=f"文档解析失败: {str(e)}")
 
 
 @router.post("/save", summary="保存HTML内容为Word")  # type: ignore[no-redef]
@@ -92,7 +85,7 @@ async def post(  # noqa: F811
     original_path = uploads_dir / file_id
 
     if not original_path.exists():
-        raise HTTPException(status_code=404, detail="原始文件不存在，请重新上传")
+        raise NotFoundException(resource="原始文件不存在，请重新上传")
 
     # 创建新的 Word 文档
     doc = Document(original_path)
@@ -155,7 +148,7 @@ async def get(
     file_path = uploads_dir / file_id
 
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException(resource="文件不存在")
 
     return FileResponse(
         path=str(file_path),
@@ -256,4 +249,4 @@ async def post(  # noqa: F811
         return ApiResponse(message="优化成功", data={"optimized_text": result})
     except Exception as e:
         logger.error(f"AI优化失败: {e}")
-        raise HTTPException(status_code=500, detail=f"AI优化失败: {str(e)}")
+        raise AppException(status_code=500, message=f"AI优化失败: {str(e)}")

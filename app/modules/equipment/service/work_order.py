@@ -1,6 +1,5 @@
 """Work order service: state machine, business logic."""
 
-import asyncio
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -9,7 +8,9 @@ from typing import Any
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import event_bus
 from app.core.exceptions import AppException, NotFoundException
+from app.core.tasks import spawn_task
 from app.modules.equipment import repository as repo
 from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models import WorkOrder
@@ -120,13 +121,16 @@ async def create_work_order(
             result = await repo.get_work_order_by_id(db, work_order.id)
             # 飞书通知设备责任人（异步，非关键路径）
             if equipment.responsible_person_id:
-                asyncio.ensure_future(
-                    _notify_new_work_order(
-                        responsible_person_id=equipment.responsible_person_id,
-                        work_order_no=wo_no,
-                        equipment_name=equipment.name,
-                        order_type=data.order_type,
-                        priority=data.priority,
+                spawn_task(
+                    event_bus.publish(
+                        "equipment.work_order.created",
+                        {
+                            "responsible_person_id": equipment.responsible_person_id,
+                            "work_order_no": wo_no,
+                            "equipment_name": equipment.name,
+                            "order_type": data.order_type,
+                            "priority": data.priority,
+                        },
                     )
                 )
             return result  # type: ignore[return-value]
@@ -177,13 +181,16 @@ async def assign_work_order(
 
     # 飞书通知被指派人
     equipment = wo.equipment
-    asyncio.ensure_future(
-        _notify_assignment(
-            assignee_id=assignee_id,
-            work_order_no=wo.work_order_no,
-            equipment_name=equipment.name if equipment else "",
-            order_type=wo.order_type,
-            priority=wo.priority,
+    spawn_task(
+        event_bus.publish(
+            "equipment.work_order.assigned",
+            {
+                "assignee_id": assignee_id,
+                "work_order_no": wo.work_order_no,
+                "equipment_name": equipment.name if equipment else "",
+                "order_type": wo.order_type,
+                "priority": wo.priority,
+            },
         )
     )
 
@@ -242,20 +249,22 @@ async def complete_work_order(
         equipment = wo.equipment
         feishu_uid = getattr(responsible, "feishu_user_id", None) if responsible else None
         if feishu_uid:
-            # 收集图片存储路径（直接传 DB 中 file_path，notification 层无需反推）
             img_paths: list[str] = []
             for img in wo.images or []:
                 img_paths.append(img.file_path)
-            asyncio.ensure_future(
-                _notify_verification(
-                    feishu_user_id=feishu_uid,
-                    work_order_no=wo.work_order_no,
-                    equipment_name=equipment.name if equipment else "",
-                    assignee_name=wo.assignee.name if wo.assignee else "",
-                    priority=wo.priority,
-                    repair_detail=wo.repair_detail or "",
-                    work_order_id=str(wo.id),
-                    image_paths=img_paths,
+            spawn_task(
+                event_bus.publish(
+                    "equipment.work_order.verification_needed",
+                    {
+                        "feishu_user_id": feishu_uid,
+                        "work_order_no": wo.work_order_no,
+                        "equipment_name": equipment.name if equipment else "",
+                        "assignee_name": wo.assignee.name if wo.assignee else "",
+                        "priority": wo.priority,
+                        "repair_detail": wo.repair_detail or "",
+                        "work_order_id": str(wo.id),
+                        "image_paths": img_paths,
+                    },
                 )
             )
 
@@ -561,12 +570,15 @@ async def verify_work_order(
         assignee = wo.assignee
         feishu_uid = getattr(assignee, "feishu_user_id", None)
         if feishu_uid:
-            asyncio.ensure_future(
-                _notify_rejection(
-                    feishu_user_id=feishu_uid,
-                    work_order_no=wo.work_order_no,
-                    equipment_name=wo.equipment.name if wo.equipment else "",
-                    remark=data.remark or "",
+            spawn_task(
+                event_bus.publish(
+                    "equipment.work_order.rejected",
+                    {
+                        "feishu_user_id": feishu_uid,
+                        "work_order_no": wo.work_order_no,
+                        "equipment_name": wo.equipment.name if wo.equipment else "",
+                        "remark": data.remark or "",
+                    },
                 )
             )
 

@@ -133,11 +133,11 @@ def get_feishu_client() -> FeishuClient:
     global _feishu_client
     if _feishu_client is None:
         settings = get_settings()
-        app_id = getattr(settings, "FEISHU_APP_ID", None)
-        app_secret = getattr(settings, "FEISHU_APP_SECRET", None)
+        app_id = settings.feishu.platform.app_id
+        app_secret = settings.feishu.platform.app_secret
 
         if not app_id or not app_secret:
-            raise ValueError("飞书配置未设置，请设置 FEISHU_APP_ID 和 FEISHU_APP_SECRET 环境变量")
+            raise ValueError("飞书配置未设置，请设置 FEISHU__PLATFORM__APP_ID 和 FEISHU__PLATFORM__APP_SECRET 环境变量")
 
         _feishu_client = FeishuClient(app_id, app_secret)
 

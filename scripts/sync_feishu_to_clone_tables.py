@@ -5,7 +5,7 @@ Usage:
     cd dazah-backend
     uv run python scripts/sync_feishu_to_clone_tables.py
 
-Requires FEISHU_APP_ID and FEISHU_APP_SECRET in environment.
+Requires FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET in environment.
 """
 
 import asyncio
@@ -553,7 +553,12 @@ async def main():
 
 
 if __name__ == "__main__":
-    if not os.getenv("FEISHU_APP_ID") or not os.getenv("FEISHU_APP_SECRET"):
-        print("[!] Please set FEISHU_APP_ID and FEISHU_APP_SECRET")
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    app_id = settings.feishu.platform.app_id
+    app_secret = settings.feishu.platform.app_secret
+    if not app_id or not app_secret:
+        print("[!] Please set FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET")
         sys.exit(1)
     asyncio.run(main())

@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse
 from app.modules.safety.feishu.event_client import get_ws_status, restart_ws
 
 feishu_router = APIRouter()

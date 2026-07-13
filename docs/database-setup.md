@@ -160,11 +160,11 @@ uv run uvicorn app.main:app --reload
 员工数据（`employees` 表）目前通过**飞书多维表格同步**拉取，需要配置以下环境变量：
 
 ```env
-FEISHU_APP_ID=你的飞书应用ID
-FEISHU_APP_SECRET=你的飞书应用密钥
-FEISHU_BITABLE_APP_TOKEN=多维表格应用Token
-FEISHU_BITABLE_EMPLOYEE_TABLE_ID=员工表ID
-FEISHU_BITABLE_DEPARTMENT_TABLE_ID=部门表ID
+FEISHU__PLATFORM__APP_ID=你的飞书应用ID
+FEISHU__PLATFORM__APP_SECRET=你的飞书应用密钥
+FEISHU__HR_BITABLE__APP_TOKEN=多维表格应用Token
+FEISHU__HR_BITABLE__EMPLOYEE_TABLE_ID=员工表ID
+FEISHU__HR_BITABLE__DEPARTMENT_TABLE_ID=部门表ID
 ```
 
 配置完成后，调用同步接口即可导入员工数据。

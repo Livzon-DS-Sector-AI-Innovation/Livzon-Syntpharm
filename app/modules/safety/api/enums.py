@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse
 from app.modules.safety.schemas import (
     ABNORMALITY_STATUS_OPTIONS,
     ACCIDENT_LEVEL_OPTIONS,
