@@ -1369,6 +1369,29 @@ def generate_jwt(user: User) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
 
+async def get_or_create_e2e_user(db: AsyncSession) -> User:
+    """Get or create the e2e test user. Only called in dev/test environments."""
+    user = await _repo.get_by_feishu_open_id(db, "test-user-e2e")
+    if user:
+        user.status = "active"
+        user.role = "admin"
+        return user
+
+    user = User(
+        name="E2E Test User",
+        username="e2e-test-user",
+        feishu_open_id="test-user-e2e",
+        feishu_user_id="test-user-e2e",
+        role="admin",
+        status="active",
+        auth_source="e2e-test",
+        email="e2e-test@dazah.local",
+    )
+    db.add(user)
+    await db.flush()
+    return user
+
+
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
     if user is None or not verify_password(password, user.password_hash):

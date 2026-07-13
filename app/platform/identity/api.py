@@ -1,7 +1,8 @@
 import logging
+import os
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +30,28 @@ sync_router = APIRouter(prefix="/sync", tags=["飞书同步"])
 
 
 # ── Auth (SSO) ──────────────────────────────────────────────────────
+
+
+@auth_router.post("/test-login", summary="E2E 测试登录（仅开发/测试环境）")
+async def test_login(
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    x_e2e_secret: str | None = Header(None, alias="X-E2E-Secret"),
+):
+    """Return a JWT for the e2e test user. Requires APP_ENV=development/test + X-E2E-Secret header."""
+    if settings.APP_ENV not in ("development", "test", "e2e"):
+        raise HTTPException(status_code=404)
+
+    expected_secret = os.getenv("E2E_AUTH_SECRET", "dazah-e2e-secret-2024")
+    if x_e2e_secret != expected_secret:
+        raise HTTPException(status_code=404)
+
+    from app.platform.identity.service import generate_jwt, get_or_create_e2e_user
+
+    user = await get_or_create_e2e_user(db)
+    await db.commit()
+    token = generate_jwt(user)
+    return {"token": token, "user": {"id": str(user.id), "name": user.name}}
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
