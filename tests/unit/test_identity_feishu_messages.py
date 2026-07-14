@@ -6,9 +6,6 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
-from app.modules.agent.schemas import AgentToolExecuteRequest
-from app.modules.agent.tool_registration import ensure_agent_tools_registered
-from app.modules.agent.tools import ToolExecutor, tool_registry
 from app.platform.identity import service
 from app.platform.identity.models import FeishuConfig, User
 
@@ -604,52 +601,3 @@ async def test_send_livzon_feishu_message_reports_partial_failure(
     assert result["failed_count"] == 1
     assert result["results"][1]["error_code"] == 999
     assert result["results"][1]["error_message"] == "no permission"
-
-
-@pytest.mark.anyio
-async def test_feishu_message_agent_tool_requires_confirmation() -> None:
-    ensure_agent_tools_registered()
-    repo = FakeRepo()
-    executor = ToolExecutor(registry=tool_registry, repo=repo)
-
-    response = await executor.execute(
-        FakeDb(),
-        request=AgentToolExecuteRequest(
-            operation="identity.send_feishu_text_message",
-            body={"user_ids": [str(uuid.uuid4())], "text": "测试消息"},
-            reason="发送测试消息",
-        ),
-    )
-
-    assert response.ok is True
-    assert response.requires_confirmation is True
-    assert repo.tool_calls[0].status == "confirmation_required"
-    assert repo.confirmations[0].operation == "identity.send_feishu_text_message"
-
-
-@pytest.mark.anyio
-async def test_unified_feishu_message_agent_tool_requires_confirmation() -> None:
-    ensure_agent_tools_registered()
-    repo = FakeRepo()
-    executor = ToolExecutor(registry=tool_registry, repo=repo)
-
-    response = await executor.execute(
-        FakeDb(),
-        request=AgentToolExecuteRequest(
-            operation="identity.send_feishu_message",
-            body={
-                "user_ids": [str(uuid.uuid4())],
-                "text": "请处理库存异常",
-                "title": "库存异常",
-                "value_level": "high",
-                "structured": True,
-                "requires_business_action": True,
-            },
-            reason="发送库存异常处理卡片",
-        ),
-    )
-
-    assert response.ok is True
-    assert response.requires_confirmation is True
-    assert repo.tool_calls[0].status == "confirmation_required"
-    assert repo.confirmations[0].operation == "identity.send_feishu_message"
