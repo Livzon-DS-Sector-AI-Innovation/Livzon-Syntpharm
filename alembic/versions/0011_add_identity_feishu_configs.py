@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0011_add_identity_feishu_configs"
-down_revision: str | None = "0010_update_workflow_skill_batch_guard"
+down_revision: str | None = "0008_add_procurement_suppliers"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

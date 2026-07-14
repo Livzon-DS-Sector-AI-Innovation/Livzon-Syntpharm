@@ -14,8 +14,6 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-# Ensure platform models are registered in SQLAlchemy metadata
-import app.modules.agent.models  # noqa: F401
 import app.platform.audit.models  # noqa: F401
 
 # Ensure platform models are registered in SQLAlchemy metadata
@@ -47,12 +45,10 @@ logging.getLogger("websockets").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # ── MCP 服务初始化（模块级别，确保 lifespan 可合并）──
-from app.modules.agent.tool_registration import ensure_agent_tools_registered  # noqa: E402
 from app.modules.equipment import mcp_tools  # noqa: E402, F401 — 触发 @mcp.tool() 注册
 from app.platform.mcp.middleware import build_mcp_middleware  # noqa: E402
 from app.platform.mcp.server import get_mcp_app  # noqa: E402
 
-ensure_agent_tools_registered()
 mcp_middleware = build_mcp_middleware()
 mcp_asgi = get_mcp_app(path="/", middleware=mcp_middleware)
 
