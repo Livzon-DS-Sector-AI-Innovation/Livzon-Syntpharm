@@ -339,7 +339,9 @@ class WarehouseService:
         keyword: str | None = None,
         enabled: bool | None = None,
     ) -> list[WarehouseFeishuTable]:
-        await self._get_active_feishu_config_or_raise()
+        config = await self._get_active_feishu_config_or_none()
+        if not config:
+            return []
         self._validate_optional_domain(business_domain)
         return await self.repo.list_feishu_tables(
             business_domain=business_domain,
@@ -823,6 +825,12 @@ class WarehouseService:
         if not config:
             raise AppException(message="请先启用仓储飞书配置")
         return config
+
+    async def _get_active_feishu_config_or_none(self) -> WarehouseFeishuConfig | None:
+        try:
+            return await self.repo.get_active_feishu_config()
+        except SQLAlchemyError:
+            return None
 
     async def _get_table_by_id_or_raise(self, table_pk: UUID) -> WarehouseFeishuTable:
         try:
