@@ -29,7 +29,7 @@ class IQCInspectionRepository:
             select(IQCInspection).where(
                 and_(
                     IQCInspection.id == inspection_id,
-                    not IQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IQCInspection.is_deleted,
                 )
             )
         )
@@ -41,7 +41,7 @@ class IQCInspectionRepository:
             select(IQCInspection).where(
                 and_(
                     IQCInspection.inspection_no == inspection_no,
-                    not IQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IQCInspection.is_deleted,
                 )
             )
         )
@@ -54,7 +54,7 @@ class IQCInspectionRepository:
         limit: int = 20,
     ) -> tuple[list[IQCInspection], int]:
         """获取IQC检验单列表"""
-        query = select(IQCInspection).where(not IQCInspection.is_deleted)  # type: ignore[arg-type]
+        query = select(IQCInspection).where(~IQCInspection.is_deleted)
 
         if filters.material_code:
             query = query.where(IQCInspection.material_code.ilike(f"%{filters.material_code}%"))
@@ -76,7 +76,7 @@ class IQCInspectionRepository:
             query = query.where(IQCInspection.inspection_date <= filters.end_date)
 
         # Count query
-        count_query = select(IQCInspection.id).where(not IQCInspection.is_deleted)  # type: ignore[arg-type]
+        count_query = select(IQCInspection.id).where(~IQCInspection.is_deleted)
         if filters.material_code:
             count_query = count_query.where(IQCInspection.material_code.ilike(f"%{filters.material_code}%"))
         if filters.material_name:
@@ -116,7 +116,7 @@ class IQCInspectionRepository:
             .where(
                 and_(
                     IQCInspection.inspection_no.like(f"{prefix}%"),
-                    not IQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IQCInspection.is_deleted,
                 )
             )
             .order_by(IQCInspection.inspection_no.desc())
@@ -145,7 +145,7 @@ class IQCInspectionItemRepository:
             select(IQCInspectionItem).where(
                 and_(
                     IQCInspectionItem.id == item_id,
-                    not IQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~IQCInspectionItem.is_deleted,
                 )
             )
         )
@@ -158,7 +158,7 @@ class IQCInspectionItemRepository:
             .where(
                 and_(
                     IQCInspectionItem.iqc_inspection_id == inspection_id,
-                    not IQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~IQCInspectionItem.is_deleted,
                 )
             )
             .order_by(IQCInspectionItem.item_no)
@@ -206,7 +206,7 @@ class IQCApprovalRecordRepository:
             .where(
                 and_(
                     IQCApprovalRecord.iqc_inspection_id == inspection_id,
-                    not IQCApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~IQCApprovalRecord.is_deleted,
                 )
             )
             .order_by(IQCApprovalRecord.approval_level)

@@ -29,7 +29,7 @@ class IPQCInspectionRepository:
             select(IPQCInspection).where(
                 and_(
                     IPQCInspection.id == inspection_id,
-                    not IPQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCInspection.is_deleted,
                 )
             )
         )
@@ -41,7 +41,7 @@ class IPQCInspectionRepository:
             select(IPQCInspection).where(
                 and_(
                     IPQCInspection.inspection_no == inspection_no,
-                    not IPQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCInspection.is_deleted,
                 )
             )
         )
@@ -54,7 +54,7 @@ class IPQCInspectionRepository:
         limit: int = 20,
     ) -> tuple[list[IPQCInspection], int]:
         """获取IPQC检验单列表"""
-        query = select(IPQCInspection).where(not IPQCInspection.is_deleted)  # type: ignore[arg-type]
+        query = select(IPQCInspection).where(~IPQCInspection.is_deleted)
 
         if filters.inspection_no:
             query = query.where(IPQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
@@ -78,9 +78,7 @@ class IPQCInspectionRepository:
             query = query.where(IPQCInspection.inspection_date <= filters.end_date)
 
         # Count query
-        count_query = select(IPQCInspection.id).where(
-            not IPQCInspection.is_deleted  # type: ignore[arg-type]
-        )
+        count_query = select(IPQCInspection.id).where(~IPQCInspection.is_deleted)
         if filters.inspection_no:
             count_query = count_query.where(IPQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
         if filters.batch_no:
@@ -122,7 +120,7 @@ class IPQCInspectionRepository:
             .where(
                 and_(
                     IPQCInspection.inspection_no.like(f"{prefix}%"),
-                    not IPQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCInspection.is_deleted,
                 )
             )
             .order_by(IPQCInspection.inspection_no.desc())
@@ -151,7 +149,7 @@ class IPQCInspectionItemRepository:
             select(IPQCInspectionItem).where(
                 and_(
                     IPQCInspectionItem.id == item_id,
-                    not IPQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCInspectionItem.is_deleted,
                 )
             )
         )
@@ -164,7 +162,7 @@ class IPQCInspectionItemRepository:
             .where(
                 and_(
                     IPQCInspectionItem.ipqc_inspection_id == inspection_id,
-                    not IPQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCInspectionItem.is_deleted,
                 )
             )
             .order_by(IPQCInspectionItem.item_no)
@@ -215,7 +213,7 @@ class IPQCApprovalRecordRepository:
             .where(
                 and_(
                     IPQCApprovalRecord.ipqc_inspection_id == inspection_id,
-                    not IPQCApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~IPQCApprovalRecord.is_deleted,
                 )
             )
             .order_by(IPQCApprovalRecord.approval_level)

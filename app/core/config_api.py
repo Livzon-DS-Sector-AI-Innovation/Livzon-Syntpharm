@@ -96,7 +96,7 @@ async def get(  # noqa: F811
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            not ModuleSetting.is_deleted,
+            ~ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()
@@ -131,7 +131,7 @@ async def put(  # type: ignore[no-untyped-def]
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            not ModuleSetting.is_deleted,  # type: ignore[arg-type]
+            ~ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()
@@ -171,7 +171,7 @@ async def post(  # type: ignore[no-untyped-def]
         select(ModuleSetting).where(
             ModuleSetting.module == data.module,
             ModuleSetting.key == data.key,
-            not ModuleSetting.is_deleted,  # type: ignore[arg-type]
+            ~ModuleSetting.is_deleted,
         )
     )
     existing = result.scalar_one_or_none()
@@ -218,7 +218,7 @@ async def delete(  # type: ignore[no-untyped-def]
         select(ModuleSetting).where(
             ModuleSetting.module == module,
             ModuleSetting.key == key,
-            not ModuleSetting.is_deleted,  # type: ignore[arg-type]
+            ~ModuleSetting.is_deleted,
         )
     )
     setting = result.scalar_one_or_none()

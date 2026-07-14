@@ -172,6 +172,7 @@ run_lint() {
 run_typecheck() {
     echo ""
     echo "=== Mypy Type Check ==="
+    rm -rf .mypy_cache
     if ! uv run mypy app tests; then
         log_error "Mypy type check failed!"
         FAILED=1

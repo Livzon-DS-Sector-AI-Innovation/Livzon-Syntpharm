@@ -23,7 +23,7 @@ async def get_drugs(db: AsyncSession) -> list[Drug]:
     query = (
         select(Drug)
         .where(Drug.is_deleted == False)  # noqa: E712
-        .options(selectinload(Drug.nodes.and_(not DrugNode.is_deleted)))
+        .options(selectinload(Drug.nodes.and_(~DrugNode.is_deleted)))
         .order_by(Drug.created_at)
     )
     result = await db.execute(query)
@@ -35,7 +35,7 @@ async def get_drug_by_id(db: AsyncSession, drug_id: uuid.UUID) -> Drug | None:
     query = (
         select(Drug)
         .where(Drug.id == drug_id, Drug.is_deleted == False)  # noqa: E712
-        .options(selectinload(Drug.nodes.and_(not DrugNode.is_deleted)))
+        .options(selectinload(Drug.nodes.and_(~DrugNode.is_deleted)))
     )
     result = await db.execute(query)
     return result.scalar_one_or_none()

@@ -72,7 +72,7 @@ class DocCheckRepository:
         operator: str | None = None,
     ) -> tuple[list[SopAiCheckMain], int]:
         """获取校验列表"""
-        query = select(SopAiCheckMain).where(not SopAiCheckMain.is_deleted)
+        query = select(SopAiCheckMain).where(~SopAiCheckMain.is_deleted)
 
         if status:
             query = query.where(SopAiCheckMain.status == status)
@@ -81,7 +81,7 @@ class DocCheckRepository:
         if operator:
             query = query.where(SopAiCheckMain.operator == operator)
 
-        count_query = select(func.count(SopAiCheckMain.id)).where(not SopAiCheckMain.is_deleted)
+        count_query = select(func.count(SopAiCheckMain.id)).where(~SopAiCheckMain.is_deleted)
         if status:
             count_query = count_query.where(SopAiCheckMain.status == status)
         if doc_type:
@@ -102,7 +102,7 @@ class DocCheckRepository:
             .options(selectinload(SopAiCheckMain.problems))
             .where(
                 SopAiCheckMain.id == check_id,
-                not SopAiCheckMain.is_deleted,
+                ~SopAiCheckMain.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -115,7 +115,7 @@ class DocCheckRepository:
             .options(selectinload(SopAiCheckMain.problems))
             .where(
                 SopAiCheckMain.check_no == check_no,  # type: ignore[attr-defined]
-                not SopAiCheckMain.is_deleted,
+                ~SopAiCheckMain.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -140,7 +140,7 @@ class DocCheckRepository:
             update(SopAiCheckMain)
             .where(
                 SopAiCheckMain.id == check_id,
-                not SopAiCheckMain.is_deleted,
+                ~SopAiCheckMain.is_deleted,
             )
             .values(**data)
             .returning(SopAiCheckMain)
@@ -154,7 +154,7 @@ class DocCheckRepository:
             update(SopAiCheckMain)
             .where(
                 SopAiCheckMain.id == check_id,
-                not SopAiCheckMain.is_deleted,
+                ~SopAiCheckMain.is_deleted,
             )
             .values(is_deleted=True)
         )
@@ -169,7 +169,7 @@ class DocCheckRepository:
             select(SopAiCheckProblem)
             .where(
                 SopAiCheckProblem.check_main_id == check_main_id,  # type: ignore[attr-defined]
-                not SopAiCheckProblem.is_deleted,
+                ~SopAiCheckProblem.is_deleted,
             )
             .order_by(SopAiCheckProblem.problem_no)  # type: ignore[attr-defined]
         )

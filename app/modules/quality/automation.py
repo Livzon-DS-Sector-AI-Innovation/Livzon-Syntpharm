@@ -54,7 +54,7 @@ async def check_overdue_deviations(db: AsyncSession) -> list[dict[str, Any]]:
     """Find deviations that have exceeded their step deadline."""
     query = select(Deviation).where(
         and_(
-            not Deviation.is_deleted,  # type: ignore[arg-type]
+            ~Deviation.is_deleted,
             Deviation.status.in_(PENDING_STATUSES),
             Deviation.status_updated_at.isnot(None),
         )
@@ -103,7 +103,7 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict[
     # Get all production workshops
     workshop_query = select(DepartmentContact).where(
         and_(
-            not DepartmentContact.is_deleted,  # type: ignore[arg-type]
+            ~DepartmentContact.is_deleted,
             DepartmentContact.is_production_workshop,
         )
     )

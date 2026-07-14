@@ -253,7 +253,7 @@ async def get_rd_project_by_id(db: AsyncSession, project_id: uuid.UUID) -> RdPro
     result = await db.execute(
         select(RdProject).where(
             RdProject.id == project_id,
-            not RdProject.is_deleted,
+            ~RdProject.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -293,7 +293,7 @@ async def get_milestones_by_project(db: AsyncSession, project_id: uuid.UUID) -> 
         select(RdMilestone)
         .where(
             RdMilestone.project_id == project_id,
-            not RdMilestone.is_deleted,
+            ~RdMilestone.is_deleted,
         )
         .order_by(RdMilestone.planned_date.asc())
     )
@@ -305,7 +305,7 @@ async def get_milestone_by_id(db: AsyncSession, milestone_id: uuid.UUID) -> RdMi
     result = await db.execute(
         select(RdMilestone).where(
             RdMilestone.id == milestone_id,
-            not RdMilestone.is_deleted,
+            ~RdMilestone.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -339,7 +339,7 @@ async def get_stages_by_project(db: AsyncSession, project_id: uuid.UUID) -> list
         select(RdStageRecord)
         .where(
             RdStageRecord.project_id == project_id,
-            not RdStageRecord.is_deleted,
+            ~RdStageRecord.is_deleted,
         )
         .order_by(RdStageRecord.version.desc())
     )
@@ -351,7 +351,7 @@ async def get_stage_by_id(db: AsyncSession, record_id: uuid.UUID) -> RdStageReco
     result = await db.execute(
         select(RdStageRecord).where(
             RdStageRecord.id == record_id,
-            not RdStageRecord.is_deleted,
+            ~RdStageRecord.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -385,7 +385,7 @@ async def get_tracks_by_project(db: AsyncSession, project_id: uuid.UUID) -> list
         select(RdResearchTrack)
         .where(
             RdResearchTrack.project_id == project_id,
-            not RdResearchTrack.is_deleted,
+            ~RdResearchTrack.is_deleted,
         )
         .order_by(RdResearchTrack.created_at.desc())
     )
@@ -397,7 +397,7 @@ async def get_track_by_id(db: AsyncSession, track_id: uuid.UUID) -> RdResearchTr
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,
+            ~RdResearchTrack.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -431,7 +431,7 @@ async def get_findings_by_track(db: AsyncSession, track_id: uuid.UUID) -> list[R
         select(RdResearchFinding)
         .where(
             RdResearchFinding.track_id == track_id,
-            not RdResearchFinding.is_deleted,
+            ~RdResearchFinding.is_deleted,
         )
         .order_by(RdResearchFinding.version.desc())
     )
@@ -443,7 +443,7 @@ async def get_finding_by_id(db: AsyncSession, finding_id: uuid.UUID) -> RdResear
     result = await db.execute(
         select(RdResearchFinding).where(
             RdResearchFinding.id == finding_id,
-            not RdResearchFinding.is_deleted,
+            ~RdResearchFinding.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -485,7 +485,7 @@ async def get_pilot_studies_by_project(db: AsyncSession, project_id: uuid.UUID) 
         select(RdPilotStudy)
         .where(
             RdPilotStudy.project_id == project_id,
-            not RdPilotStudy.is_deleted,
+            ~RdPilotStudy.is_deleted,
         )
         .order_by(RdPilotStudy.created_at.desc())
     )
@@ -497,7 +497,7 @@ async def get_pilot_study_by_id(db: AsyncSession, study_id: uuid.UUID) -> RdPilo
     result = await db.execute(
         select(RdPilotStudy).where(
             RdPilotStudy.id == study_id,
-            not RdPilotStudy.is_deleted,
+            ~RdPilotStudy.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -531,7 +531,7 @@ async def get_validations_by_project(db: AsyncSession, project_id: uuid.UUID) ->
         select(RdProcessValidation)
         .where(
             RdProcessValidation.project_id == project_id,
-            not RdProcessValidation.is_deleted,
+            ~RdProcessValidation.is_deleted,
         )
         .order_by(RdProcessValidation.created_at.desc())
     )
@@ -543,7 +543,7 @@ async def get_validation_by_id(db: AsyncSession, validation_id: uuid.UUID) -> Rd
     result = await db.execute(
         select(RdProcessValidation).where(
             RdProcessValidation.id == validation_id,
-            not RdProcessValidation.is_deleted,
+            ~RdProcessValidation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -579,7 +579,7 @@ async def get_filings_by_project(db: AsyncSession, project_id: uuid.UUID) -> lis
         select(RdRegistrationFiling)
         .where(
             RdRegistrationFiling.project_id == project_id,
-            not RdRegistrationFiling.is_deleted,
+            ~RdRegistrationFiling.is_deleted,
         )
         .order_by(RdRegistrationFiling.created_at.desc())
     )
@@ -591,7 +591,7 @@ async def get_filing_by_id(db: AsyncSession, filing_id: uuid.UUID) -> RdRegistra
     result = await db.execute(
         select(RdRegistrationFiling).where(
             RdRegistrationFiling.id == filing_id,
-            not RdRegistrationFiling.is_deleted,
+            ~RdRegistrationFiling.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -740,7 +740,7 @@ async def get_experiment_logs_by_project(db: AsyncSession, project_id: uuid.UUID
         select(RdExperimentLog)
         .where(
             RdExperimentLog.project_id == project_id,
-            not RdExperimentLog.is_deleted,
+            ~RdExperimentLog.is_deleted,
         )
         .order_by(RdExperimentLog.created_at.desc())
     )
@@ -754,7 +754,7 @@ async def get_experiment_log_by_id(db: AsyncSession, log_id: uuid.UUID) -> Any:
     result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.id == log_id,
-            not RdExperimentLog.is_deleted,
+            ~RdExperimentLog.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -788,7 +788,7 @@ async def delete_experiment_log(db: AsyncSession, log_id: uuid.UUID, user_id: uu
     result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.id == log_id,
-            not RdExperimentLog.is_deleted,
+            ~RdExperimentLog.is_deleted,
         )
     )
     log = result.scalar_one_or_none()
@@ -810,7 +810,7 @@ async def get_reports_by_project(db: AsyncSession, project_id: uuid.UUID) -> lis
         select(RdReport)
         .where(
             RdReport.project_id == project_id,
-            not RdReport.is_deleted,
+            ~RdReport.is_deleted,
         )
         .order_by(RdReport.created_at.desc())
     )
@@ -824,7 +824,7 @@ async def get_report_by_id(db: AsyncSession, report_id: uuid.UUID) -> Any:
     result = await db.execute(
         select(RdReport).where(
             RdReport.id == report_id,
-            not RdReport.is_deleted,
+            ~RdReport.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -858,7 +858,7 @@ async def delete_report(db: AsyncSession, report_id: uuid.UUID, user_id: uuid.UU
     result = await db.execute(
         select(RdReport).where(
             RdReport.id == report_id,
-            not RdReport.is_deleted,
+            ~RdReport.is_deleted,
         )
     )
     report = result.scalar_one_or_none()
@@ -880,7 +880,7 @@ async def get_initiations_by_project(db: AsyncSession, project_id: uuid.UUID) ->
         select(RdInitiation)
         .where(
             RdInitiation.project_id == project_id,
-            not RdInitiation.is_deleted,
+            ~RdInitiation.is_deleted,
         )
         .order_by(RdInitiation.created_at.desc())
     )
@@ -894,7 +894,7 @@ async def get_initiation_by_id(db: AsyncSession, initiation_id: uuid.UUID) -> An
     result = await db.execute(
         select(RdInitiation).where(
             RdInitiation.id == initiation_id,
-            not RdInitiation.is_deleted,
+            ~RdInitiation.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -928,7 +928,7 @@ async def delete_initiation(db: AsyncSession, initiation_id: uuid.UUID, user_id:
     result = await db.execute(
         select(RdInitiation).where(
             RdInitiation.id == initiation_id,
-            not RdInitiation.is_deleted,
+            ~RdInitiation.is_deleted,
         )
     )
     initiation = result.scalar_one_or_none()
@@ -950,7 +950,7 @@ async def get_conclusion_versions(db: AsyncSession, track_id: uuid.UUID) -> list
         select(RdTrackConclusionVersion)
         .where(
             RdTrackConclusionVersion.track_id == track_id,
-            not RdTrackConclusionVersion.is_deleted,
+            ~RdTrackConclusionVersion.is_deleted,
         )
         .order_by(RdTrackConclusionVersion.version.desc())
     )
@@ -976,7 +976,7 @@ async def get_latest_conclusion_version(db: AsyncSession, track_id: uuid.UUID) -
         select(RdTrackConclusionVersion)
         .where(
             RdTrackConclusionVersion.track_id == track_id,
-            not RdTrackConclusionVersion.is_deleted,
+            ~RdTrackConclusionVersion.is_deleted,
         )
         .order_by(RdTrackConclusionVersion.version.desc())
         .limit(1)
@@ -997,7 +997,7 @@ async def get_deliverable_templates(
     from app.modules.research.models import RdDeliverableTemplate
 
     query = select(RdDeliverableTemplate).where(
-        not RdDeliverableTemplate.is_deleted,
+        ~RdDeliverableTemplate.is_deleted,
     )
     if stage:
         query = query.where(RdDeliverableTemplate.stage == stage)
@@ -1017,7 +1017,7 @@ async def get_deliverable_template_by_id(db: AsyncSession, template_id: uuid.UUI
     result = await db.execute(
         select(RdDeliverableTemplate).where(
             RdDeliverableTemplate.id == template_id,
-            not RdDeliverableTemplate.is_deleted,
+            ~RdDeliverableTemplate.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -1053,7 +1053,7 @@ async def delete_deliverable_template(
     result = await db.execute(
         select(RdDeliverableTemplate).where(
             RdDeliverableTemplate.id == template_id,
-            not RdDeliverableTemplate.is_deleted,
+            ~RdDeliverableTemplate.is_deleted,
         )
     )
     template = result.scalar_one_or_none()

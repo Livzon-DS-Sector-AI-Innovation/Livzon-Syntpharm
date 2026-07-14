@@ -75,7 +75,7 @@ async def get_rd_project(db: AsyncSession, project_id: UUID) -> RdProject:
     result = await db.execute(
         select(RdProject).where(
             RdProject.id == project_id,
-            not RdProject.is_deleted,  # type: ignore[arg-type]
+            ~RdProject.is_deleted,
         )
     )
     project = result.scalar_one_or_none()
@@ -268,7 +268,7 @@ async def get_milestones(db: AsyncSession, project_id: UUID) -> list[RdMilestone
     """获取项目的里程碑列表"""
     result = await db.execute(
         select(RdMilestone)
-        .where(RdMilestone.project_id == project_id, not RdMilestone.is_deleted)  # type: ignore[arg-type]
+        .where(RdMilestone.project_id == project_id, ~RdMilestone.is_deleted)
         .order_by(RdMilestone.planned_date)
     )
     return list(result.scalars().all())
@@ -284,7 +284,7 @@ async def update_milestone(
     result = await db.execute(
         select(RdMilestone).where(
             RdMilestone.id == milestone_id,
-            not RdMilestone.is_deleted,  # type: ignore[arg-type]
+            ~RdMilestone.is_deleted,
         )
     )
     milestone = result.scalar_one_or_none()
@@ -328,7 +328,7 @@ async def get_stage_records(db: AsyncSession, project_id: UUID) -> list[RdStageR
     """获取项目的阶段记录列表"""
     result = await db.execute(
         select(RdStageRecord)
-        .where(RdStageRecord.project_id == project_id, not RdStageRecord.is_deleted)  # type: ignore[arg-type]
+        .where(RdStageRecord.project_id == project_id, ~RdStageRecord.is_deleted)
         .order_by(RdStageRecord.created_at)
     )
     return list(result.scalars().all())
@@ -344,7 +344,7 @@ async def update_stage_record(
     result = await db.execute(
         select(RdStageRecord).where(
             RdStageRecord.id == record_id,
-            not RdStageRecord.is_deleted,  # type: ignore[arg-type]
+            ~RdStageRecord.is_deleted,
         )
     )
     record = result.scalar_one_or_none()
@@ -391,7 +391,7 @@ async def get_research_tracks(db: AsyncSession, project_id: UUID) -> list[RdRese
         select(RdResearchTrack)
         .where(
             RdResearchTrack.project_id == project_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
         .order_by(RdResearchTrack.created_at)
     )
@@ -408,7 +408,7 @@ async def update_research_track(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
     track = result.scalar_one_or_none()
@@ -437,7 +437,7 @@ async def create_research_finding(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
     track = result.scalar_one_or_none()
@@ -463,7 +463,7 @@ async def get_research_findings(db: AsyncSession, track_id: UUID) -> list[RdRese
         select(RdResearchFinding)
         .where(
             RdResearchFinding.track_id == track_id,
-            not RdResearchFinding.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchFinding.is_deleted,
         )
         .order_by(RdResearchFinding.created_at)
     )
@@ -480,7 +480,7 @@ async def update_research_finding(
     result = await db.execute(
         select(RdResearchFinding).where(
             RdResearchFinding.id == finding_id,
-            not RdResearchFinding.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchFinding.is_deleted,
         )
     )
     finding = result.scalar_one_or_none()
@@ -512,7 +512,7 @@ async def publish_conclusion_version(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
     track = result.scalar_one_or_none()
@@ -1112,9 +1112,7 @@ async def generate_report_with_ai(
     )
 
     # 1. 获取项目信息
-    project_result = await db.execute(
-        select(RdProject).where(RdProject.id == project_id, not RdProject.is_deleted)  # type: ignore[arg-type]
-    )
+    project_result = await db.execute(select(RdProject).where(RdProject.id == project_id, ~RdProject.is_deleted))
     project = project_result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
@@ -1133,7 +1131,7 @@ async def generate_report_with_ai(
     tracks_result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.project_id == project_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
     tracks = tracks_result.scalars().all()
@@ -1144,7 +1142,7 @@ async def generate_report_with_ai(
         findings_result = await db.execute(
             select(RdResearchFinding).where(
                 RdResearchFinding.track_id == track.id,
-                not RdResearchFinding.is_deleted,  # type: ignore[arg-type]
+                ~RdResearchFinding.is_deleted,
             )
         )
         findings = findings_result.scalars().all()
@@ -1167,7 +1165,7 @@ async def generate_report_with_ai(
     experiments_result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.project_id == project_id,
-            not RdExperimentLog.is_deleted,  # type: ignore[arg-type]
+            ~RdExperimentLog.is_deleted,
         )
     )
     experiments = experiments_result.scalars().all()

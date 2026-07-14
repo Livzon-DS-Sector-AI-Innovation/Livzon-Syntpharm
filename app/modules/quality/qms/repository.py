@@ -35,7 +35,7 @@ class QualityRepository:
         is_effective: bool | None = None,
     ) -> tuple[list[InspectionStandard], int]:
         """获取检验标准列表"""
-        query = select(InspectionStandard).where(not InspectionStandard.is_deleted)
+        query = select(InspectionStandard).where(~InspectionStandard.is_deleted)
 
         if status:
             query = query.where(InspectionStandard.status == status)
@@ -52,7 +52,7 @@ class QualityRepository:
         if is_effective is not None:
             query = query.where(InspectionStandard.status == "effective") if is_effective else query
 
-        count_query = select(func.count(InspectionStandard.id)).where(not InspectionStandard.is_deleted)
+        count_query = select(func.count(InspectionStandard.id)).where(~InspectionStandard.is_deleted)
         if status:
             count_query = count_query.where(InspectionStandard.status == status)
         if material_code:
@@ -80,7 +80,7 @@ class QualityRepository:
             )
             .where(
                 InspectionStandard.id == standard_id,
-                not InspectionStandard.is_deleted,
+                ~InspectionStandard.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -94,7 +94,7 @@ class QualityRepository:
             .where(
                 InspectionStandard.material_code == material_code,
                 InspectionStandard.version == version,
-                not InspectionStandard.is_deleted,
+                ~InspectionStandard.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -106,7 +106,7 @@ class QualityRepository:
             select(InspectionStandard.version)
             .where(
                 InspectionStandard.material_code == material_code,
-                not InspectionStandard.is_deleted,
+                ~InspectionStandard.is_deleted,
             )
             .order_by(InspectionStandard.created_at.desc())
             .limit(1)
@@ -128,7 +128,7 @@ class QualityRepository:
             update(InspectionStandard)
             .where(
                 InspectionStandard.id == standard_id,
-                not InspectionStandard.is_deleted,
+                ~InspectionStandard.is_deleted,
             )
             .values(**data)
             .returning(InspectionStandard)
@@ -142,7 +142,7 @@ class QualityRepository:
             update(InspectionStandard)
             .where(
                 InspectionStandard.id == standard_id,
-                not InspectionStandard.is_deleted,
+                ~InspectionStandard.is_deleted,
             )
             .values(is_deleted=True)
         )
@@ -180,7 +180,7 @@ class QualityRepository:
             select(InspectionStandardItem)
             .where(
                 InspectionStandardItem.standard_id == standard_id,
-                not InspectionStandardItem.is_deleted,
+                ~InspectionStandardItem.is_deleted,
             )
             .order_by(InspectionStandardItem.item_no)
         )
@@ -226,7 +226,7 @@ class QualityRepository:
             select(StandardApprovalRecord)
             .where(
                 StandardApprovalRecord.standard_id == standard_id,
-                not StandardApprovalRecord.is_deleted,
+                ~StandardApprovalRecord.is_deleted,
             )
             .order_by(StandardApprovalRecord.approval_level)
         )
@@ -248,7 +248,7 @@ class QualityRepository:
             .where(
                 StandardApprovalRecord.standard_id == standard_id,
                 StandardApprovalRecord.approval_status == "pending",
-                not StandardApprovalRecord.is_deleted,
+                ~StandardApprovalRecord.is_deleted,
             )
             .order_by(StandardApprovalRecord.approval_level)
         )
@@ -261,7 +261,7 @@ class QualityRepository:
             update(StandardApprovalRecord)
             .where(
                 StandardApprovalRecord.id == record_id,
-                not StandardApprovalRecord.is_deleted,
+                ~StandardApprovalRecord.is_deleted,
             )
             .values(**data)
             .returning(StandardApprovalRecord)

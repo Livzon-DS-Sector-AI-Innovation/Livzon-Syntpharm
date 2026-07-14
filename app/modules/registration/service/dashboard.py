@@ -21,7 +21,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,  # type: ignore[arg-type]
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status == "approved",
         )
     )
@@ -32,7 +32,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationCertificate)
         .where(
-            not RegistrationCertificate.is_deleted,  # type: ignore[arg-type]
+            ~RegistrationCertificate.is_deleted,
             RegistrationCertificate.status.in_(("valid", "expiring")),
         )
     )
@@ -43,7 +43,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,  # type: ignore[arg-type]
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status.in_(SUBMITTED_STATUSES),
         )
     )
@@ -54,7 +54,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,  # type: ignore[arg-type]
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status.notin_(TERMINAL_STATUSES),
         )
     )

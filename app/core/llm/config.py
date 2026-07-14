@@ -94,7 +94,7 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
                 select(LLMConfigModel).where(
                     LLMConfigModel.is_active,
                     LLMConfigModel.config_type == config_type,
-                    not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+                    ~LLMConfigModel.is_deleted,
                 )
             )
             config = result.scalar_one_or_none()

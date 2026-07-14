@@ -26,9 +26,7 @@ class StabilityStudyRepository:
     async def get_by_id(self, study_id: UUID) -> StabilityStudy | None:
         """根据ID获取稳定性试验"""
         result = await self.session.execute(
-            select(StabilityStudy).where(
-                and_(StabilityStudy.id == study_id, not StabilityStudy.is_deleted)  # type: ignore[arg-type]
-            )
+            select(StabilityStudy).where(and_(StabilityStudy.id == study_id, ~StabilityStudy.is_deleted))
         )
         return result.scalar_one_or_none()
 
@@ -38,7 +36,7 @@ class StabilityStudyRepository:
             select(StabilityStudy).where(
                 and_(
                     StabilityStudy.study_no == study_no,
-                    not StabilityStudy.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityStudy.is_deleted,
                 )
             )
         )
@@ -51,7 +49,7 @@ class StabilityStudyRepository:
         limit: int = 20,
     ) -> tuple[list[StabilityStudy], int]:
         """获取稳定性试验列表"""
-        query = select(StabilityStudy).where(not StabilityStudy.is_deleted)  # type: ignore[arg-type]
+        query = select(StabilityStudy).where(~StabilityStudy.is_deleted)
 
         if filters.study_no:
             query = query.where(StabilityStudy.study_no.ilike(f"%{filters.study_no}%"))
@@ -71,9 +69,7 @@ class StabilityStudyRepository:
             query = query.where(StabilityStudy.end_date <= filters.end_date)
 
         # Count query
-        count_query = select(StabilityStudy.id).where(
-            not StabilityStudy.is_deleted  # type: ignore[arg-type]
-        )
+        count_query = select(StabilityStudy.id).where(~StabilityStudy.is_deleted)
         if filters.study_no:
             count_query = count_query.where(StabilityStudy.study_no.ilike(f"%{filters.study_no}%"))
         if filters.product_code:
@@ -106,7 +102,7 @@ class StabilityStudyRepository:
             .where(
                 and_(
                     StabilityStudy.study_no.like(f"{prefix}%"),
-                    not StabilityStudy.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityStudy.is_deleted,
                 )
             )
             .order_by(StabilityStudy.study_no.desc())
@@ -135,7 +131,7 @@ class StabilitySampleNodeRepository:
             select(StabilitySampleNode).where(
                 and_(
                     StabilitySampleNode.id == node_id,
-                    not StabilitySampleNode.is_deleted,  # type: ignore[arg-type]
+                    ~StabilitySampleNode.is_deleted,
                 )
             )
         )
@@ -148,7 +144,7 @@ class StabilitySampleNodeRepository:
             .where(
                 and_(
                     StabilitySampleNode.stability_study_id == study_id,
-                    not StabilitySampleNode.is_deleted,  # type: ignore[arg-type]
+                    ~StabilitySampleNode.is_deleted,
                 )
             )
             .order_by(StabilitySampleNode.node_no)
@@ -167,8 +163,8 @@ class StabilitySampleNodeRepository:
                     StabilitySampleNode.planned_date <= future_date,
                     StabilitySampleNode.planned_date >= datetime.now(),
                     StabilitySampleNode.status == "pending",
-                    not StabilitySampleNode.reminder_sent,  # type: ignore[arg-type]
-                    not StabilitySampleNode.is_deleted,  # type: ignore[arg-type]
+                    ~StabilitySampleNode.reminder_sent,
+                    ~StabilitySampleNode.is_deleted,
                 )
             )
             .order_by(StabilitySampleNode.planned_date)
@@ -208,7 +204,7 @@ class StabilityInspectionRepository:
             select(StabilityInspection).where(
                 and_(
                     StabilityInspection.id == inspection_id,
-                    not StabilityInspection.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspection.is_deleted,
                 )
             )
         )
@@ -220,7 +216,7 @@ class StabilityInspectionRepository:
             select(StabilityInspection).where(
                 and_(
                     StabilityInspection.inspection_no == inspection_no,
-                    not StabilityInspection.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspection.is_deleted,
                 )
             )
         )
@@ -233,7 +229,7 @@ class StabilityInspectionRepository:
             .where(
                 and_(
                     StabilityInspection.study_id == study_id,
-                    not StabilityInspection.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspection.is_deleted,
                 )
             )
             .order_by(StabilityInspection.node_month)
@@ -246,7 +242,7 @@ class StabilityInspectionRepository:
             select(StabilityInspection).where(
                 and_(
                     StabilityInspection.sample_node_id == node_id,
-                    not StabilityInspection.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspection.is_deleted,
                 )
             )
         )
@@ -259,17 +255,13 @@ class StabilityInspectionRepository:
         limit: int = 20,
     ) -> tuple[list[StabilityInspection], int]:
         """获取检验记录列表"""
-        query = select(StabilityInspection).where(
-            not StabilityInspection.is_deleted  # type: ignore[arg-type]
-        )
+        query = select(StabilityInspection).where(~StabilityInspection.is_deleted)
 
         if study_id:
             query = query.where(StabilityInspection.study_id == study_id)
 
         # Count query
-        count_query = select(StabilityInspection.id).where(
-            not StabilityInspection.is_deleted  # type: ignore[arg-type]
-        )
+        count_query = select(StabilityInspection.id).where(~StabilityInspection.is_deleted)
         if study_id:
             count_query = count_query.where(StabilityInspection.study_id == study_id)
 
@@ -292,7 +284,7 @@ class StabilityInspectionRepository:
             .where(
                 and_(
                     StabilityInspection.inspection_no.like(f"{prefix}%"),
-                    not StabilityInspection.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspection.is_deleted,
                 )
             )
             .order_by(StabilityInspection.inspection_no.desc())
@@ -321,7 +313,7 @@ class StabilityInspectionItemRepository:
             select(StabilityInspectionItem).where(
                 and_(
                     StabilityInspectionItem.id == item_id,
-                    not StabilityInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspectionItem.is_deleted,
                 )
             )
         )
@@ -334,7 +326,7 @@ class StabilityInspectionItemRepository:
             .where(
                 and_(
                     StabilityInspectionItem.stability_inspection_id == inspection_id,
-                    not StabilityInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityInspectionItem.is_deleted,
                 )
             )
             .order_by(StabilityInspectionItem.item_no)
@@ -384,7 +376,7 @@ class StabilityApprovalRecordRepository:
             .where(
                 and_(
                     StabilityApprovalRecord.study_id == study_id,
-                    not StabilityApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityApprovalRecord.is_deleted,
                 )
             )
             .order_by(StabilityApprovalRecord.approval_level)
@@ -398,7 +390,7 @@ class StabilityApprovalRecordRepository:
             .where(
                 and_(
                     StabilityApprovalRecord.inspection_id == inspection_id,
-                    not StabilityApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~StabilityApprovalRecord.is_deleted,
                 )
             )
             .order_by(StabilityApprovalRecord.approval_level)

@@ -40,7 +40,7 @@ class InstrumentRepository:
             select(InstrumentCalibration).where(
                 and_(
                     InstrumentCalibration.id == instrument_id,
-                    not InstrumentCalibration.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibration.is_deleted,
                 )
             )
         )
@@ -52,7 +52,7 @@ class InstrumentRepository:
             select(InstrumentCalibration).where(
                 and_(
                     InstrumentCalibration.instrument_no == instrument_no,
-                    not InstrumentCalibration.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibration.is_deleted,
                 )
             )
         )
@@ -90,9 +90,7 @@ class InstrumentRepository:
     ) -> tuple[list[InstrumentCalibration], int]:
         """带筛选条件的列表查询"""
         # 构建基础查询
-        query = select(InstrumentCalibration).where(
-            not InstrumentCalibration.is_deleted  # type: ignore[arg-type]
-        )
+        query = select(InstrumentCalibration).where(~InstrumentCalibration.is_deleted)
 
         # 添加筛选条件
         if instrument_no:
@@ -135,7 +133,7 @@ class InstrumentRepository:
         result = await self.session.execute(
             select(InstrumentCalibration).where(
                 and_(
-                    not InstrumentCalibration.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibration.is_deleted,
                     InstrumentCalibration.is_active,
                     InstrumentCalibration.id.in_(subquery),
                 )
@@ -255,7 +253,7 @@ class CalibrationRecordRepository:
             select(InstrumentCalibrationRecord).where(
                 and_(
                     InstrumentCalibrationRecord.id == record_id,
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                 )
             )
         )
@@ -267,7 +265,7 @@ class CalibrationRecordRepository:
             select(InstrumentCalibrationRecord).where(
                 and_(
                     InstrumentCalibrationRecord.calibration_no == calibration_no,
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                 )
             )
         )
@@ -307,9 +305,7 @@ class CalibrationRecordRepository:
     ) -> tuple[list[InstrumentCalibrationRecord], int]:
         """带筛选条件的列表查询"""
         # 构建基础查询
-        query = select(InstrumentCalibrationRecord).where(
-            not InstrumentCalibrationRecord.is_deleted  # type: ignore[arg-type]
-        )
+        query = select(InstrumentCalibrationRecord).where(~InstrumentCalibrationRecord.is_deleted)
 
         # 添加筛选条件
         if instrument_id:
@@ -363,7 +359,7 @@ class CalibrationRecordRepository:
             .where(
                 and_(
                     InstrumentCalibrationRecord.instrument_id == instrument_id,
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                     InstrumentCalibrationRecord.calibration_result == "qualified",  # 只查询合格记录
                 )
             )
@@ -388,7 +384,7 @@ class CalibrationRecordRepository:
             )
             .where(
                 and_(
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                     InstrumentCalibrationRecord.calibration_result == "qualified",
                 )
             )
@@ -409,7 +405,7 @@ class CalibrationRecordRepository:
             )
             .where(
                 and_(
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                     InstrumentCalibrationRecord.calibration_result == "qualified",
                     InstrumentCalibrationRecord.valid_until.isnot(None),
                     InstrumentCalibrationRecord.valid_until >= now,
@@ -433,7 +429,7 @@ class CalibrationRecordRepository:
             )
             .where(
                 and_(
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                     InstrumentCalibrationRecord.calibration_result == "qualified",
                 )
             )
@@ -454,7 +450,7 @@ class CalibrationRecordRepository:
             )
             .where(
                 and_(
-                    not InstrumentCalibrationRecord.is_deleted,  # type: ignore[arg-type]
+                    ~InstrumentCalibrationRecord.is_deleted,
                     InstrumentCalibrationRecord.calibration_result == "qualified",
                     InstrumentCalibrationRecord.valid_until.isnot(None),
                     InstrumentCalibrationRecord.valid_until < now,

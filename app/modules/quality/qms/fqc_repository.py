@@ -29,7 +29,7 @@ class FQCInspectionRepository:
             select(FQCInspection).where(
                 and_(
                     FQCInspection.id == inspection_id,
-                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspection.is_deleted,
                 )
             )
         )
@@ -41,7 +41,7 @@ class FQCInspectionRepository:
             select(FQCInspection).where(
                 and_(
                     FQCInspection.inspection_no == inspection_no,
-                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspection.is_deleted,
                 )
             )
         )
@@ -54,7 +54,7 @@ class FQCInspectionRepository:
         limit: int = 20,
     ) -> tuple[list[FQCInspection], int]:
         """获取FQC检验单列表"""
-        query = select(FQCInspection).where(not FQCInspection.is_deleted)  # type: ignore[arg-type]
+        query = select(FQCInspection).where(~FQCInspection.is_deleted)
 
         if filters.inspection_no:
             query = query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
@@ -80,7 +80,7 @@ class FQCInspectionRepository:
             query = query.where(FQCInspection.inspection_date <= filters.end_date)
 
         # Count query
-        count_query = select(FQCInspection.id).where(not FQCInspection.is_deleted)  # type: ignore[arg-type]
+        count_query = select(FQCInspection.id).where(~FQCInspection.is_deleted)
         if filters.inspection_no:
             count_query = count_query.where(FQCInspection.inspection_no.ilike(f"%{filters.inspection_no}%"))
         if filters.batch_no:
@@ -124,7 +124,7 @@ class FQCInspectionRepository:
             .where(
                 and_(
                     FQCInspection.inspection_no.like(f"{prefix}%"),
-                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspection.is_deleted,
                 )
             )
             .order_by(FQCInspection.inspection_no.desc())
@@ -149,7 +149,7 @@ class FQCInspectionRepository:
             .where(
                 and_(
                     FQCInspection.report_no.like(f"{prefix}%"),
-                    not FQCInspection.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspection.is_deleted,
                     FQCInspection.report_no.isnot(None),
                 )
             )
@@ -179,7 +179,7 @@ class FQCInspectionItemRepository:
             select(FQCInspectionItem).where(
                 and_(
                     FQCInspectionItem.id == item_id,
-                    not FQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspectionItem.is_deleted,
                 )
             )
         )
@@ -192,7 +192,7 @@ class FQCInspectionItemRepository:
             .where(
                 and_(
                     FQCInspectionItem.fqc_inspection_id == inspection_id,
-                    not FQCInspectionItem.is_deleted,  # type: ignore[arg-type]
+                    ~FQCInspectionItem.is_deleted,
                 )
             )
             .order_by(FQCInspectionItem.item_no)
@@ -245,7 +245,7 @@ class FQCApprovalRecordRepository:
             .where(
                 and_(
                     FQCApprovalRecord.fqc_inspection_id == inspection_id,
-                    not FQCApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~FQCApprovalRecord.is_deleted,
                 )
             )
             .order_by(FQCApprovalRecord.approval_level)

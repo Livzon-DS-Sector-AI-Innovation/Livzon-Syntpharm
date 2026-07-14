@@ -640,7 +640,7 @@ async def put(  # noqa: F811
     result = await db.execute(
         select(DocCheckProblem).where(
             DocCheckProblem.id == problem_id,
-            not DocCheckProblem.is_deleted,
+            ~DocCheckProblem.is_deleted,
         )
     )
     problem = result.scalar_one_or_none()
@@ -690,7 +690,7 @@ async def put(  # noqa: F811
             update(DocCheckProblem)
             .where(
                 DocCheckProblem.id == uuid.UUID(problem_id),
-                not DocCheckProblem.is_deleted,
+                ~DocCheckProblem.is_deleted,
             )
             .values(
                 handle_status=handle_status,

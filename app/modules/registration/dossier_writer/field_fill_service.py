@@ -31,7 +31,7 @@ class FieldFillService:
             select(FieldMapping)
             .where(
                 FieldMapping.chapter_code == chapter_code,
-                not FieldMapping.is_deleted,  # type: ignore[arg-type]
+                ~FieldMapping.is_deleted,
             )
             .order_by(FieldMapping.sort_order)
         )

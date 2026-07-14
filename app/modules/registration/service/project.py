@@ -22,7 +22,7 @@ async def get_projects(db: AsyncSession) -> list[RegistrationProject]:
 async def get_project(db: AsyncSession, project_id: uuid.UUID) -> RegistrationProject:
     stmt = select(RegistrationProject).where(
         RegistrationProject.id == project_id,
-        not RegistrationProject.is_deleted,  # type: ignore[arg-type]
+        ~RegistrationProject.is_deleted,
     )
     result = await db.execute(stmt)
     project = result.scalar_one_or_none()

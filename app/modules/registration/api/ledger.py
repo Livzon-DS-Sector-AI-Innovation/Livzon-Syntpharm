@@ -559,7 +559,7 @@ async def get(  # noqa: F811
     for drug in drugs:
         # 获取节点信息
         node_stmt = (
-            select(DrugNode).where(DrugNode.drug_id == drug.id, not DrugNode.is_deleted).order_by(DrugNode.node_index)
+            select(DrugNode).where(DrugNode.drug_id == drug.id, ~DrugNode.is_deleted).order_by(DrugNode.node_index)
         )
         node_result = await db.execute(node_stmt)
         nodes = node_result.scalars().all()

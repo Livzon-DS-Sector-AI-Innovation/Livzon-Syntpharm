@@ -1090,7 +1090,7 @@ async def get_route(
     result = await db.execute(
         select(RouteDevelopment).where(
             RouteDevelopment.id == route_id,
-            not RouteDevelopment.is_deleted,  # type: ignore[arg-type]
+            ~RouteDevelopment.is_deleted,
         )
     )
 
@@ -1105,7 +1105,7 @@ async def get_route(
         select(RouteExperiment)
         .where(
             RouteExperiment.route_id == str(route.id),
-            not RouteExperiment.is_deleted,  # type: ignore[arg-type]
+            ~RouteExperiment.is_deleted,
         )
         .order_by(RouteExperiment.experiment_date.desc())
     )
@@ -1209,7 +1209,7 @@ async def update_route(
     result = await db.execute(
         select(RouteDevelopment).where(
             RouteDevelopment.id == route_id,
-            not RouteDevelopment.is_deleted,  # type: ignore[arg-type]
+            ~RouteDevelopment.is_deleted,
         )
     )
 
@@ -1307,7 +1307,7 @@ async def create_experiment(
         .select_from(RouteExperiment)
         .where(
             RouteExperiment.route_id == route_id,
-            not RouteExperiment.is_deleted,  # type: ignore[arg-type]
+            ~RouteExperiment.is_deleted,
         )
     )
 
@@ -1355,7 +1355,7 @@ async def update_experiment(
     result = await db.execute(
         select(RouteExperiment).where(
             RouteExperiment.id == exp_id,
-            not RouteExperiment.is_deleted,  # type: ignore[arg-type]
+            ~RouteExperiment.is_deleted,
         )
     )
 
@@ -1409,7 +1409,7 @@ async def delete_experiment(
     result = await db.execute(
         select(RouteExperiment).where(
             RouteExperiment.id == exp_id,
-            not RouteExperiment.is_deleted,  # type: ignore[arg-type]
+            ~RouteExperiment.is_deleted,
         )
     )
 
@@ -2804,7 +2804,7 @@ async def delete_research_track(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
 
@@ -2835,7 +2835,7 @@ async def delete_research_finding(
     result = await db.execute(
         select(RdResearchFinding).where(
             RdResearchFinding.id == finding_id,
-            not RdResearchFinding.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchFinding.is_deleted,
         )
     )
 
@@ -2871,7 +2871,7 @@ async def get_track_detail(
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.id == track_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
 
@@ -3046,7 +3046,7 @@ async def export_tracks_csv(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(RdResearchTrack).where(
             RdResearchTrack.project_id == project_id,
-            not RdResearchTrack.is_deleted,  # type: ignore[arg-type]
+            ~RdResearchTrack.is_deleted,
         )
     )
 
@@ -3117,7 +3117,7 @@ async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(RdExperimentLog).where(
             RdExperimentLog.project_id == project_id,
-            not RdExperimentLog.is_deleted,  # type: ignore[arg-type]
+            ~RdExperimentLog.is_deleted,
         )
     )
 
@@ -3250,9 +3250,7 @@ async def get_stats_overview(
     # 交付物统计
 
     total_deliverables = await db.execute(
-        select(func.count(RdStageDeliverable.id)).where(
-            not RdStageDeliverable.is_deleted  # type: ignore[arg-type]
-        )
+        select(func.count(RdStageDeliverable.id)).where(~RdStageDeliverable.is_deleted)
     )
 
     total_deliverables = total_deliverables.scalar() or 0  # type: ignore[assignment]

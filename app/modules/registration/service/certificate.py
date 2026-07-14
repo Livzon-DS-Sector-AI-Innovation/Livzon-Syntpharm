@@ -25,7 +25,7 @@ async def get_certificates(db: AsyncSession) -> list[RegistrationCertificate]:
 async def get_certificate(db: AsyncSession, certificate_id: uuid.UUID) -> RegistrationCertificate:
     stmt = select(RegistrationCertificate).where(
         RegistrationCertificate.id == certificate_id,
-        not RegistrationCertificate.is_deleted,  # type: ignore[arg-type]
+        ~RegistrationCertificate.is_deleted,
     )
     result = await db.execute(stmt)
     cert = result.scalar_one_or_none()

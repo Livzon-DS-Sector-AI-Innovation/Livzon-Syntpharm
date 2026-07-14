@@ -477,7 +477,7 @@ class DossierService:
         stmt = select(AssetCategory).where(
             and_(
                 AssetCategory.chapter_code == chapter_code,
-                not AssetCategory.is_deleted,  # type: ignore[arg-type]
+                ~AssetCategory.is_deleted,
             )
         )
         result = await self.db.execute(stmt)
@@ -854,7 +854,7 @@ class DossierService:
             stmt = select(FieldMapping).where(
                 FieldMapping.chapter_code == config["chapter_code"],  # type: ignore[index]
                 FieldMapping.field_name == config["field_name"],  # type: ignore[index]
-                not FieldMapping.is_deleted,  # type: ignore[arg-type]
+                ~FieldMapping.is_deleted,
             )
             result = await self.db.execute(stmt)
             existing = result.scalar_one_or_none()
@@ -875,7 +875,7 @@ class DossierService:
             stmt = select(AssetCategory).where(  # type: ignore[assignment]
                 AssetCategory.chapter_code == config["chapter_code"],  # type: ignore[index]
                 AssetCategory.category_name == config["category_name"],  # type: ignore[index]
-                not AssetCategory.is_deleted,  # type: ignore[arg-type]
+                ~AssetCategory.is_deleted,
             )
             result = await self.db.execute(stmt)
             existing = result.scalar_one_or_none()

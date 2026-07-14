@@ -27,9 +27,7 @@ class SamplingOrderRepository:
     async def get_by_id(self, order_id: UUID) -> SamplingOrder | None:
         """根据ID获取取样单"""
         result = await self.session.execute(
-            select(SamplingOrder).where(
-                and_(SamplingOrder.id == order_id, not SamplingOrder.is_deleted)  # type: ignore[arg-type]
-            )
+            select(SamplingOrder).where(and_(SamplingOrder.id == order_id, ~SamplingOrder.is_deleted))
         )
         return result.scalar_one_or_none()
 
@@ -39,7 +37,7 @@ class SamplingOrderRepository:
             select(SamplingOrder).where(
                 and_(
                     SamplingOrder.order_no == order_no,
-                    not SamplingOrder.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingOrder.is_deleted,
                 )
             )
         )
@@ -52,7 +50,7 @@ class SamplingOrderRepository:
         limit: int = 20,
     ) -> tuple[list[SamplingOrder], int]:
         """获取取样单列表"""
-        query = select(SamplingOrder).where(not SamplingOrder.is_deleted)  # type: ignore[arg-type]
+        query = select(SamplingOrder).where(~SamplingOrder.is_deleted)
 
         if filters.material_code:
             query = query.where(SamplingOrder.material_code.ilike(f"%{filters.material_code}%"))
@@ -109,7 +107,7 @@ class SamplingOrderRepository:
             .where(
                 and_(
                     SamplingOrder.order_no.like(f"{prefix}%"),
-                    not SamplingOrder.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingOrder.is_deleted,
                 )
             )
             .order_by(SamplingOrder.order_no.desc())
@@ -138,7 +136,7 @@ class SamplingOrderItemRepository:
             select(SamplingOrderItem).where(
                 and_(
                     SamplingOrderItem.id == item_id,
-                    not SamplingOrderItem.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingOrderItem.is_deleted,
                 )
             )
         )
@@ -151,7 +149,7 @@ class SamplingOrderItemRepository:
             .where(
                 and_(
                     SamplingOrderItem.sampling_order_id == sampling_order_id,
-                    not SamplingOrderItem.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingOrderItem.is_deleted,
                 )
             )
             .order_by(SamplingOrderItem.item_no)
@@ -176,9 +174,7 @@ class SampleRetentionLedgerRepository:
         limit: int = 20,
     ) -> tuple[list[SampleRetentionLedger], int]:
         """获取留样台账列表"""
-        query = select(SampleRetentionLedger).where(
-            not SampleRetentionLedger.is_deleted  # type: ignore[arg-type]
-        )
+        query = select(SampleRetentionLedger).where(~SampleRetentionLedger.is_deleted)
 
         if filters.material_code:
             query = query.where(SampleRetentionLedger.material_code.ilike(f"%{filters.material_code}%"))
@@ -218,7 +214,7 @@ class SampleRetentionLedgerRepository:
             select(SampleRetentionLedger).where(
                 and_(
                     SampleRetentionLedger.sampling_order_id == sampling_order_id,
-                    not SampleRetentionLedger.is_deleted,  # type: ignore[arg-type]
+                    ~SampleRetentionLedger.is_deleted,
                 )
             )
         )
@@ -238,7 +234,7 @@ class SamplingApprovalRecordRepository:
             .where(
                 and_(
                     SamplingApprovalRecord.sampling_order_id == sampling_order_id,
-                    not SamplingApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingApprovalRecord.is_deleted,
                 )
             )
             .order_by(SamplingApprovalRecord.approval_level)
@@ -253,7 +249,7 @@ class SamplingApprovalRecordRepository:
                 and_(
                     SamplingApprovalRecord.approver_role == approver_role,
                     SamplingApprovalRecord.approval_status == "pending",
-                    not SamplingApprovalRecord.is_deleted,  # type: ignore[arg-type]
+                    ~SamplingApprovalRecord.is_deleted,
                 )
             )
             .order_by(SamplingApprovalRecord.created_at)

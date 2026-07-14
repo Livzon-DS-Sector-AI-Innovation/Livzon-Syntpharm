@@ -112,7 +112,7 @@ async def post(  # type: ignore[no-untyped-def]
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == data.config_type,
-                not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+                ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
             )
             .values(is_active=False)
         )
@@ -161,7 +161,7 @@ async def get(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )
     config = result.scalar_one_or_none()
@@ -196,7 +196,7 @@ async def put(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )
     config = result.scalar_one_or_none()
@@ -211,7 +211,7 @@ async def put(  # type: ignore[no-untyped-def]
             .where(
                 LLMConfigModel.config_type == config.config_type,
                 LLMConfigModel.id != config.id,
-                not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+                ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
             )
             .values(is_active=False)
         )
@@ -257,7 +257,7 @@ async def delete(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            not LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )
     config = result.scalar_one_or_none()

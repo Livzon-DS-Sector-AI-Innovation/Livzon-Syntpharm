@@ -27,7 +27,7 @@ async def get_module_setting(module: str, key: str, default: str = "") -> str:
             select(ModuleSetting).where(
                 ModuleSetting.module == module,
                 ModuleSetting.key == key,
-                not ModuleSetting.is_deleted,  # type: ignore[arg-type]
+                ~ModuleSetting.is_deleted,
             )
         )
         setting = result.scalar_one_or_none()

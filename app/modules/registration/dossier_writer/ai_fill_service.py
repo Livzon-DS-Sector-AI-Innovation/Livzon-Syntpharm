@@ -44,7 +44,7 @@ class AIFillService:
             .where(
                 and_(
                     AssetCategory.chapter_code == chapter_code,
-                    not AssetCategory.is_deleted,  # type: ignore[arg-type]
+                    ~AssetCategory.is_deleted,
                 )
             )
             .order_by(AssetCategory.sort_order)
@@ -70,7 +70,7 @@ class AIFillService:
             .where(
                 and_(
                     FieldMapping.chapter_code == chapter_code,
-                    not FieldMapping.is_deleted,  # type: ignore[arg-type]
+                    ~FieldMapping.is_deleted,
                 )
             )
             .order_by(FieldMapping.sort_order)
@@ -88,7 +88,7 @@ class AIFillService:
             .where(
                 and_(
                     ChapterAsset.chapter_id == chapter_id,
-                    not ChapterAsset.is_deleted,  # type: ignore[arg-type]
+                    ~ChapterAsset.is_deleted,
                 )
             )
         )
@@ -959,7 +959,7 @@ class AIFillService:
                 and_(
                     AssetCategory.chapter_code == chapter.chapter_code,
                     AssetCategory.category_type == "image_appendix",
-                    not AssetCategory.is_deleted,  # type: ignore[arg-type]
+                    ~AssetCategory.is_deleted,
                 )
             )
             cat_result = await self.db.execute(cat_stmt)

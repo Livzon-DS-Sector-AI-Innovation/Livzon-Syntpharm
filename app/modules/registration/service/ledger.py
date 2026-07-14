@@ -210,7 +210,7 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
         select(func.count(func.distinct(OverseasApproval.issuing_authority)))
         .select_from(OverseasApproval)
         .where(
-            not OverseasApproval.is_deleted,
+            ~OverseasApproval.is_deleted,
             OverseasApproval.issuing_authority.isnot(None),
         )
     )

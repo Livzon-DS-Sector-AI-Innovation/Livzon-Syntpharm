@@ -530,7 +530,7 @@ async def get(  # noqa: F811
         select(FieldFillResult)
         .where(
             FieldFillResult.chapter_id == chapter_id,
-            not FieldFillResult.is_deleted,  # type: ignore[arg-type]
+            ~FieldFillResult.is_deleted,
         )
         .order_by(FieldFillResult.created_at.desc())
     )
@@ -721,7 +721,7 @@ async def get(  # noqa: F811
         and_(
             FieldMapping.chapter_code == chapter_code,
             FieldMapping.appendix_slot.isnot(None),
-            not FieldMapping.is_deleted,  # type: ignore[arg-type]
+            ~FieldMapping.is_deleted,
         )
     )
     result = await db.execute(stmt)

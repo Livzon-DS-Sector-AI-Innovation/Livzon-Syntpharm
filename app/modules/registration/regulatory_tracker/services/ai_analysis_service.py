@@ -735,7 +735,7 @@ async def analyze_new_documents(
 
     stmt = select(RegulatoryDocument).where(
         and_(
-            not RegulatoryDocument.is_deleted,  # type: ignore[arg-type]
+            ~RegulatoryDocument.is_deleted,
             RegulatoryDocument.ai_analysis_status is None,  # type: ignore[arg-type]
         )
     )

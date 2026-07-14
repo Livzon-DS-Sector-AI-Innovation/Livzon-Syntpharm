@@ -1039,7 +1039,7 @@ async def post(  # noqa: F811
                         .options(selectinload(InstrumentCalibrationRecord.instrument))
                         .where(
                             and_(
-                                not InstrumentCalibrationRecord.is_deleted,
+                                ~InstrumentCalibrationRecord.is_deleted,
                                 InstrumentCalibrationRecord.status == "active",
                                 InstrumentCalibrationRecord.valid_until.isnot(None),
                                 InstrumentCalibrationRecord.valid_until < now,
