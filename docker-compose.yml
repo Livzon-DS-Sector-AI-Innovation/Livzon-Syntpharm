@@ -1,5 +1,6 @@
 services:
   app:
+    restart: unless-stopped
     profiles:
       - app
     build: .
@@ -33,7 +34,11 @@ services:
       - ./app:/app/app
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini:ro
-    command: .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+      - ./storage:/app/storage
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./uv.lock:/app/uv.lock:ro
+    command: >
+      sh -c "uv sync --frozen --no-dev && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"
 
   db:
     image: postgres:17
@@ -67,6 +72,7 @@ services:
       retries: 5
 
   edbo-service:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: edbo_service/Dockerfile

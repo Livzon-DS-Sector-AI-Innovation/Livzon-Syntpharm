@@ -15,7 +15,6 @@ README*
 LICENSE
 docs/
 tests/
-seed/
 scripts/
 *.log
 .env*

@@ -43,7 +43,7 @@ class AIFillService:
             .where(
                 and_(
                     AssetCategory.chapter_code == chapter_code,
-                    not AssetCategory.is_deleted,
+                    ~AssetCategory.is_deleted,
                 )
             )
             .order_by(AssetCategory.sort_order)
@@ -69,7 +69,7 @@ class AIFillService:
             .where(
                 and_(
                     FieldMapping.chapter_code == chapter_code,
-                    not FieldMapping.is_deleted,
+                    ~FieldMapping.is_deleted,
                 )
             )
             .order_by(FieldMapping.sort_order)
@@ -78,18 +78,26 @@ class AIFillService:
         return list(result.scalars().all())
 
     async def get_chapter_assets(self, chapter_id: uuid.UUID) -> list[ChapterAsset]:
-        """获取章节的素材列表（附带分类名称）"""
-        from .field_models import AssetCategory
+        """获取章节已选择使用的素材列表（附带分类名称）
+        
+        只返回 chapter_asset_usages 中 is_selected=true 的素材。
+        包括自有素材和继承自父级的素材。
+        """
+        from .field_models import AssetCategory, ChapterAssetUsage
 
         stmt = (
             select(ChapterAsset, AssetCategory.category_name)
-            .outerjoin(AssetCategory, ChapterAsset.category_id == AssetCategory.id)
-            .where(
+            .join(
+                ChapterAssetUsage,
                 and_(
-                    ChapterAsset.chapter_id == chapter_id,
-                    not ChapterAsset.is_deleted,
-                )
+                    ChapterAssetUsage.asset_id == ChapterAsset.id,
+                    ChapterAssetUsage.chapter_id == chapter_id,
+                    ChapterAssetUsage.is_selected == True,
+                    ~ChapterAssetUsage.is_deleted,
+                ),
             )
+            .outerjoin(AssetCategory, ChapterAsset.category_id == AssetCategory.id)
+            .where(~ChapterAsset.is_deleted)
         )
         result = await self.db.execute(stmt)
         assets = []
@@ -207,13 +215,17 @@ class AIFillService:
 
             # 提取素材文本
             asset_texts = {}
+            asset_errors = []
             for asset in category_assets:
                 file_path = Path(asset.file_path)
                 extracted = self.extractor.extract(file_path)
                 if extracted.get("text"):
                     asset_texts[asset.original_filename] = extracted["text"]
+                elif extracted.get("error"):
+                    asset_errors.append(f"{asset.original_filename}: {extracted['error']}")
 
             if not asset_texts:
+                error_detail = "; ".join(asset_errors) if asset_errors else "所有素材均无法提取文本"
                 for m in non_table_fields:
                     results.append(
                         {
@@ -221,7 +233,7 @@ class AIFillService:
                             "field_type": m.field_type,
                             "value": None,
                             "confidence": 0.0,
-                            "source": "素材文本提取失败",
+                            "source": f"素材文本提取失败: {error_detail}",
                             "field_mapping_id": str(m.id),
                             "source_category": m.source_category,
                         }
@@ -295,10 +307,45 @@ class AIFillService:
                 }
             )
 
+        # 检查是否有任何字段成功提取到值
+        successful_fields = [r for r in results if r.get("value") is not None and r.get("confidence", 0) > 0]
+        failed_fields = [r for r in results if r.get("value") is None or r.get("confidence", 0) == 0]
+        
+        # 如果所有字段都失败，返回失败状态
+        if not successful_fields and failed_fields:
+            # 收集所有错误信息
+            error_sources = set()
+            for r in failed_fields:
+                source = r.get("source", "")
+                if "素材文本提取失败" in source:
+                    error_sources.add(source)
+                elif "AI 提取失败" in source:
+                    error_sources.add(source)
+                elif "分类" in source and "下无素材" in source:
+                    error_sources.add(source)
+            
+            error_message = "素材解析失败：" + "；".join(list(error_sources)[:3])  # 最多显示3个错误
+            if len(error_sources) > 3:
+                error_message += f"等 {len(error_sources)} 个错误"
+            
+            return {
+                "success": False,
+                "message": error_message,
+                "fields": results,
+                "error_details": {
+                    "total_fields": len(results),
+                    "failed_fields": len(failed_fields),
+                    "errors": list(error_sources),
+                },
+            }
+        
+        # 有部分成功
         return {
             "success": True,
-            "message": f"提取完成: {len(results)} 个字段",
+            "message": f"提取完成: {len(successful_fields)}/{len(results)} 个字段",
             "fields": results,
+            "partial_success": len(failed_fields) > 0,
+            "failed_count": len(failed_fields),
         }
 
     async def confirm_and_fill(
@@ -987,7 +1034,7 @@ class AIFillService:
                 and_(
                     AssetCategory.chapter_code == chapter.chapter_code,
                     AssetCategory.category_type == "image_appendix",
-                    not AssetCategory.is_deleted,
+                    ~AssetCategory.is_deleted,
                 )
             )
             cat_result = await self.db.execute(cat_stmt)

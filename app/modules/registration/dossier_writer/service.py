@@ -168,6 +168,7 @@ class DossierService:
             # 更新已有记录
             existing.file_path = str(file_path)
             existing.file_size = len(file_content)
+            existing.is_deleted = False  # 确保模板未被删除
             await self.db.flush()
             template = existing
         else:
@@ -515,7 +516,7 @@ class DossierService:
         stmt = select(AssetCategory).where(
             and_(
                 AssetCategory.chapter_code == chapter_code,
-                not AssetCategory.is_deleted,
+                ~AssetCategory.is_deleted,
             )
         )
         result = await self.db.execute(stmt)
@@ -582,6 +583,15 @@ class DossierService:
         )
         asset = await self.repo.create_asset(asset)
 
+        # 自动创建 usage 记录（own, is_selected=true）
+        await self.repo.create_asset_usage(
+            product_dossier_id=chapter.product_dossier_id,
+            chapter_id=chapter_id,
+            asset_id=asset.id,
+            usage_type="own",
+            is_selected=True,
+        )
+
         # 更新章节状态
         await self.repo.update_chapter(chapter_id, has_assets=True)
         await self.db.commit()
@@ -591,6 +601,74 @@ class DossierService:
     async def list_chapter_assets(self, chapter_id: UUID) -> list[ChapterAsset]:
         """获取章节素材列表"""
         return await self.repo.list_assets(chapter_id)
+
+    async def get_available_assets(self, chapter_id: UUID) -> list[dict]:
+        """获取章节的可用素材（自有 + 继承自父级）及使用状态
+        
+        返回格式：
+        [
+            {
+                "asset": ChapterAsset,
+                "usage": ChapterAssetUsage | None,
+                "is_inherited": bool,
+                "is_selected": bool,
+                "parent_chapter_code": str | None,
+            }
+        ]
+        """
+        return await self.repo.get_available_assets_with_usage(chapter_id)
+
+    async def toggle_asset_usage(
+        self, chapter_id: UUID, asset_id: UUID, is_selected: bool
+    ) -> dict:
+        """切换素材的使用状态
+        
+        如果 usage 记录不存在且 is_selected=true，创建新记录。
+        如果 usage 记录已存在，更新 is_selected。
+        """
+        chapter = await self.repo.get_chapter(chapter_id)
+        if not chapter:
+            raise ValueError(f"章节不存在: {chapter_id}")
+
+        asset = await self.repo.get_asset(asset_id)
+        if not asset:
+            raise ValueError(f"素材不存在: {asset_id}")
+
+        # 检查素材是否属于当前章节或祖先章节
+        ancestor_ids = await self.repo.get_ancestor_chapter_ids(chapter_id)
+        valid_chapter_ids = [chapter_id] + ancestor_ids
+        if asset.chapter_id not in valid_chapter_ids:
+            raise ValueError("素材不属于当前章节或其父级章节")
+
+        usage = await self.repo.get_asset_usage(chapter_id, asset_id)
+        
+        if usage:
+            # 更新已有记录
+            await self.repo.update_asset_usage(usage.id, is_selected)
+            await self.db.commit()
+            return {"usage_id": str(usage.id), "is_selected": is_selected}
+        elif is_selected:
+            # 创建新记录
+            is_inherited = asset.chapter_id != chapter_id
+            usage_type = "inherited" if is_inherited else "own"
+            new_usage = await self.repo.create_asset_usage(
+                product_dossier_id=chapter.product_dossier_id,
+                chapter_id=chapter_id,
+                asset_id=asset_id,
+                usage_type=usage_type,
+                is_selected=True,
+            )
+            await self.db.commit()
+            return {"usage_id": str(new_usage.id), "is_selected": True}
+        else:
+            # is_selected=false 但没有 usage 记录，无需操作
+            return {"usage_id": None, "is_selected": False}
+
+    async def get_selected_assets_for_chapter(
+        self, chapter_id: UUID
+    ) -> list[ChapterAsset]:
+        """获取章节已选择使用的素材（用于章节更新、AI填充等）"""
+        return await self.repo.get_selected_assets_for_chapter(chapter_id)
 
     async def delete_asset(self, asset_id: UUID) -> bool:
         """删除素材"""
@@ -602,6 +680,9 @@ class DossierService:
         file_path = Path(asset.file_path)
         if file_path.exists():
             file_path.unlink()
+
+        # 删除关联的 usage 记录
+        await self.repo.delete_usages_for_asset(asset_id)
 
         # 删除记录
         await self.repo.delete_asset(asset_id)
@@ -877,20 +958,40 @@ class DossierService:
     async def init_chapter_ai_config(self, chapter_code: str) -> dict[str, Any]:
         """初始化章节的 AI 配置（FieldMapping + AssetCategory）
 
-        从 scripts/seed_s6_ai_config.py 中的种子数据初始化，不再使用硬编码配置。
+        从种子数据文件初始化，不再使用硬编码配置。
         如果该章节已有配置，跳过不重复创建。
+        
+        支持的章节：
+        - 3.2.S.6 包装系统 (seed_data.py)
+        - 3.2.S.7.1/7.2/7.3 稳定性 (seed_data_s7.py)
         """
-        # 加载种子数据
-        from scripts.seed_s6_ai_config import S6_ASSET_CATEGORIES, S6_FIELD_MAPPINGS
+        # 根据章节代码选择种子数据源
+        if chapter_code.startswith("3.2.S.6"):
+            from .seed_data import S6_ASSET_CATEGORIES, S6_FIELD_MAPPINGS
+            all_categories = S6_ASSET_CATEGORIES
+            all_mappings = S6_FIELD_MAPPINGS
+        elif chapter_code.startswith("3.2.S.7"):
+            from .seed_data_s7 import (
+                S7_1_ASSET_CATEGORIES, S7_1_FIELD_MAPPINGS,
+                S7_2_ASSET_CATEGORIES, S7_2_FIELD_MAPPINGS,
+                S7_3_ASSET_CATEGORIES, S7_3_FIELD_MAPPINGS,
+            )
+            all_categories = S7_1_ASSET_CATEGORIES + S7_2_ASSET_CATEGORIES + S7_3_ASSET_CATEGORIES
+            all_mappings = S7_1_FIELD_MAPPINGS + S7_2_FIELD_MAPPINGS + S7_3_FIELD_MAPPINGS
+        else:
+            return {
+                "success": False,
+                "message": f"不支持的章节: {chapter_code}",
+            }
 
         from .field_models import AssetCategory, FieldMapping
 
         # 只处理指定章节的配置
         field_configs = [
-            c for c in S6_FIELD_MAPPINGS if c.get("chapter_code") == chapter_code
+            c for c in all_mappings if c.get("chapter_code") == chapter_code
         ]
         category_configs = [
-            c for c in S6_ASSET_CATEGORIES if c.get("chapter_code") == chapter_code
+            c for c in all_categories if c.get("chapter_code") == chapter_code
         ]
 
         if not field_configs and not category_configs:
@@ -907,7 +1008,7 @@ class DossierService:
             stmt = select(FieldMapping).where(
                 FieldMapping.chapter_code == config["chapter_code"],
                 FieldMapping.field_name == config["field_name"],
-                not FieldMapping.is_deleted,
+                ~FieldMapping.is_deleted,
             )
             result = await self.db.execute(stmt)
             existing = result.scalar_one_or_none()
@@ -928,7 +1029,7 @@ class DossierService:
             stmt = select(AssetCategory).where(
                 AssetCategory.chapter_code == config["chapter_code"],
                 AssetCategory.category_name == config["category_name"],
-                not AssetCategory.is_deleted,
+                ~AssetCategory.is_deleted,
             )
             result = await self.db.execute(stmt)
             existing = result.scalar_one_or_none()

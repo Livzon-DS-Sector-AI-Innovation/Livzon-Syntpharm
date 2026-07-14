@@ -297,7 +297,10 @@ async def list_assets(
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """获取章节素材列表"""
+    """获取章节自有素材列表（不含继承素材）
+    
+    如需获取包含继承素材的完整列表，请使用 /available-assets 接口。
+    """
     service = DossierService(db)
     assets = await service.list_chapter_assets(chapter_id)
     return success_response(
@@ -537,6 +540,37 @@ async def init_s6_field_mappings(
     return success_response(data=result, message=result["message"])
 
 
+@router.post("/field-mappings/init-s7", response_model=dict)
+async def init_s7_field_mappings(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """初始化 S.7 稳定性模块的字段映射配置（从 seed_data_s7.py）
+    
+    初始化 S.7.1、S.7.2、S.7.3 三个子章节的：
+    - asset_categories（素材分类）
+    - field_mappings（字段映射）
+    """
+    from .service import DossierService
+
+    service = DossierService(db)
+    
+    # 初始化三个子章节
+    results = []
+    for chapter_code in ["3.2.S.7.1", "3.2.S.7.2", "3.2.S.7.3"]:
+        result = await service.init_chapter_ai_config(chapter_code)
+        results.append({
+            "chapter_code": chapter_code,
+            "success": result["success"],
+            "message": result["message"],
+        })
+    
+    return success_response(
+        data={"chapters": results},
+        message="S.7 稳定性模块初始化完成"
+    )
+
+
 @router.get("/chapters/{chapter_id}/fill-results", response_model=dict)
 async def get_fill_results(
     current_user: CurrentUser,
@@ -549,7 +583,7 @@ async def get_fill_results(
         select(FieldFillResult)
         .where(
             FieldFillResult.chapter_id == chapter_id,
-            not FieldFillResult.is_deleted,
+            ~FieldFillResult.is_deleted,
         )
         .order_by(FieldFillResult.created_at.desc())
     )
@@ -601,13 +635,22 @@ async def ai_preview_extraction(
     if not dossier:
         return error_response(message="品种资料不存在", status_code=404)
 
-    service = AIFillService(db)
-    result = await service.preview_extraction(dossier, chapter)
-
-    if not result["success"]:
-        return error_response(message=result["message"])
-
-    return success_response(data=result, message=result["message"])
+    try:
+        service = AIFillService(db)
+        result = await service.preview_extraction(dossier, chapter)
+        return success_response(data=result, message=result.get("message", "完成"))
+    except Exception as e:
+        # 记录完整错误日志
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"AI 解析失败: {error_detail}")
+        
+        # 返回 JSON 错误响应
+        return error_response(
+            message=f"AI解析失败：{str(e)}",
+            status_code=500,
+            detail={"error_type": type(e).__name__, "error_detail": str(e)}
+        )
 
 
 @router.post("/chapters/{chapter_id}/ai-confirm", response_model=dict)
@@ -641,10 +684,7 @@ async def ai_confirm_and_fill(
     service = AIFillService(db)
     result = await service.confirm_and_fill(dossier, chapter, user_confirmed_fields)
 
-    if not result["success"]:
-        return error_response(message=result["message"])
-
-    return success_response(data=result, message=result["message"])
+    return success_response(data=result, message=result.get("message", "完成"))
 
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=dict)
@@ -740,7 +780,7 @@ async def get_appendix_slots(
         and_(
             FieldMapping.chapter_code == chapter_code,
             FieldMapping.appendix_slot.isnot(None),
-            not FieldMapping.is_deleted,
+            ~FieldMapping.is_deleted,
         )
     )
     result = await db.execute(stmt)
@@ -748,3 +788,84 @@ async def get_appendix_slots(
 
     slots = sorted(set(m.appendix_slot for m in mappings if m.appendix_slot))
     return success_response(data=slots, message="获取成功")
+
+
+# ====== Asset Usage (素材使用管理) ======
+
+
+@router.get("/chapters/{chapter_id}/available-assets", response_model=dict)
+async def list_available_assets(
+    current_user: CurrentUser,
+    chapter_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取章节的可用素材列表（自有 + 继承自父级）及使用状态
+    
+    返回每个素材的：
+    - 基本信息（id, filename, file_type 等）
+    - is_inherited: 是否继承自父级章节
+    - is_selected: 是否已选择用于本章节
+    - parent_chapter_code: 继承来源的章节编号（仅继承素材有）
+    """
+    service = DossierService(db)
+    available = await service.get_available_assets(chapter_id)
+    
+    result = []
+    for item in available:
+        asset = item["asset"]
+        result.append({
+            "id": str(asset.id),
+            "chapter_id": str(asset.chapter_id),
+            "original_filename": asset.original_filename,
+            "file_path": asset.file_path,
+            "file_type": asset.file_type,
+            "file_size": asset.file_size,
+            "uploaded_at": asset.uploaded_at.isoformat() if asset.uploaded_at else None,
+            "category_id": str(asset.category_id) if asset.category_id else None,
+            "is_inherited": item["is_inherited"],
+            "is_selected": item["is_selected"],
+            "parent_chapter_code": item["parent_chapter_code"],
+        })
+    
+    return success_response(data=result, message="获取成功")
+
+
+@router.patch("/chapters/{chapter_id}/asset-usages/{asset_id}", response_model=dict)
+async def toggle_asset_usage(
+    current_user: CurrentUser,
+    chapter_id: UUID,
+    asset_id: UUID,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    """切换素材的使用状态（勾选/取消勾选）
+    
+    body: {"is_selected": true/false}
+    """
+    is_selected = body.get("is_selected")
+    if is_selected is None:
+        raise HTTPException(status_code=400, detail="缺少 is_selected 参数")
+    
+    service = DossierService(db)
+    try:
+        result = await service.toggle_asset_usage(chapter_id, asset_id, is_selected)
+        return success_response(data=result, message="更新成功")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/chapters/{chapter_id}/selected-assets", response_model=dict)
+async def list_selected_assets(
+    current_user: CurrentUser,
+    chapter_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """获取章节已选择使用的素材列表（is_selected=true）
+    
+    用于章节更新、AI 填充等操作前查看将要使用的素材。
+    """
+    service = DossierService(db)
+    assets = await service.get_selected_assets_for_chapter(chapter_id)
+    return success_response(
+        data=[AssetResponse.model_validate(a) for a in assets], message="获取成功"
+    )
