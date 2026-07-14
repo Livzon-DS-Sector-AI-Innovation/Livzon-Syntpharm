@@ -33,3 +33,5 @@ class ExamExportRequest(BaseModel):
     assessment_date: str = ""
     choice_questions: list[ChoiceQuestion] = []
     true_false_questions: list[TrueFalseQuestion] = []
+    multi_choice_questions: list[ChoiceQuestion] = []
+    fill_blank_questions: list[TrueFalseQuestion] = []

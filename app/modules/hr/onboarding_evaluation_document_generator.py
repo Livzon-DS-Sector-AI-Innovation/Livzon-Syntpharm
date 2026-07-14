@@ -19,9 +19,7 @@ def _find_new_template() -> Path:
     candidates = [
         Path("新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
         Path("../新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "新厂人员培训管理规程"
-        / NEW_TEMPLATE_NAME,
+        Path(__file__).resolve().parent.parent.parent.parent / "新厂人员培训管理规程" / NEW_TEMPLATE_NAME,
     ]
     for p in candidates:
         if p.exists():
@@ -29,16 +27,16 @@ def _find_new_template() -> Path:
     raise FileNotFoundError(f"模板文件未找到: {NEW_TEMPLATE_NAME}")
 
 
-def _cell_border():
+def _cell_border() -> Any:
     thin = Side(style="thin")
     return Border(left=thin, right=thin, top=thin, bottom=thin)
 
 
-def _center_align():
+def _center_align() -> Any:
     return Alignment(horizontal="center", vertical="center", wrap_text=True)
 
 
-def _left_align():
+def _left_align() -> Any:
     return Alignment(horizontal="left", vertical="center", wrap_text=True)
 
 
@@ -133,11 +131,7 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
     ws["E6"].alignment = _center_align()
     ws["E6"].border = _cell_border()
     ws["E6"].font = Font(bold=True)
-    reg_date_str = (
-        data.regularization_date.strftime("%Y-%m-%d")
-        if data.regularization_date
-        else ""
-    )
+    reg_date_str = data.regularization_date.strftime("%Y-%m-%d") if data.regularization_date else ""
     ws["F6"] = reg_date_str
     ws["F6"].alignment = _center_align()
     ws["F6"].border = _cell_border()
@@ -157,9 +151,7 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
     for i in range(6):
         row = 8 + i
         ws.merge_cells(f"A{row}:F{row}")
-        content = (
-            data.assessment_contents[i] if i < len(data.assessment_contents) else ""
-        )
+        content = data.assessment_contents[i] if i < len(data.assessment_contents) else ""
         ws[f"A{row}"] = content
         ws[f"A{row}"].alignment = _left_align()
         ws[f"A{row}"].border = _cell_border()
@@ -190,9 +182,7 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
     ws.merge_cells("A16:F16")
     position = data.assigned_position or "____"
     agree_str = "☑" if data.is_qualified is True else "□"
-    ws["A16"] = (
-        f" {agree_str}经考核该员工培训期表现优秀/确认，同意该员工正式上岗，担任{position}岗位。"
-    )
+    ws["A16"] = f" {agree_str}经考核该员工培训期表现优秀/确认，同意该员工正式上岗，担任{position}岗位。"
     ws["A16"].alignment = _left_align()
     ws["A16"].border = _cell_border()
     for col in ["B", "C", "D", "E", "F"]:
@@ -216,7 +206,7 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
         "实操": "□理论 ☑实操 □现场",
         "现场": "□理论 □实操 ☑现场",
     }
-    method_str = method_map.get(data.assessment_method, "□理论 □实操 □现场")
+    method_str = method_map.get(data.assessment_method, "□理论 □实操 □现场")  # type: ignore[arg-type]
     ws["A18"] = f" 考核方式：{method_str}"
     ws["A18"].alignment = _left_align()
     ws["A18"].border = _cell_border()
@@ -226,12 +216,8 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
 
     # R19: 部门负责人签名 / 日期
     ws.merge_cells("A19:F19")
-    sig_date = (
-        data.signature_date.strftime("%Y年%m月%d日") if data.signature_date else ""
-    )
-    ws["A19"] = (
-        f" 部门负责人签名：{data.dept_manager_signature or ''}                   日期：{sig_date}"
-    )
+    sig_date = data.signature_date.strftime("%Y年%m月%d日") if data.signature_date else ""
+    ws["A19"] = f" 部门负责人签名：{data.dept_manager_signature or ''}                   日期：{sig_date}"
     ws["A19"].alignment = _left_align()
     ws["A19"].border = _cell_border()
     for col in ["B", "C", "D", "E", "F"]:
@@ -266,13 +252,7 @@ def _generate_old(data: OnboardingEvaluationInput) -> BytesIO:
     for i, (title, name, agree) in enumerate(approvals):
         row = 22 + i
         ws.merge_cells(f"A{row}:B{row}")
-        agree_str = (
-            "☑同意  □不同意"
-            if agree is True
-            else "□同意  ☑不同意"
-            if agree is False
-            else "□同意  □不同意"
-        )
+        agree_str = "☑同意  □不同意" if agree is True else "□同意  ☑不同意" if agree is False else "□同意  □不同意"
         ws[f"A{row}"] = agree_str
         ws[f"A{row}"].alignment = _center_align()
         ws[f"A{row}"].border = _cell_border()
@@ -352,9 +332,7 @@ def generate_onboarding_evaluation(data: Any, factory: str = "old") -> BytesIO:
             employee_name=data.name,
             employee_number=data.employee_number,
             gender=data.gender,
-            department_position=f"{data.department}/{data.position}"
-            if data.department or data.position
-            else None,
+            department_position=f"{data.department}/{data.position}" if data.department or data.position else None,
             hire_date=data.hire_date,
         )
         return _generate_old(input_data)

@@ -1,6 +1,7 @@
 """Safety AI 模型工厂."""
 
 import logging
+from typing import Any
 
 from app.shared.config_reader import get_module_setting
 
@@ -11,29 +12,19 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════
 
 
-async def _get_ai_config() -> dict:
+async def _get_ai_config() -> dict[str, Any]:
     """读取 AI 模型配置，从数据库读取，不提供硬编码默认值。"""
     _text_key = await get_module_setting("safety", "SAFETY_AI_TEXT_API_KEY", "")
     _vision_key = await get_module_setting("safety", "SAFETY_AI_VISION_API_KEY", "")
     if not _text_key:
-        raise RuntimeError(
-            "配置 SAFETY_AI_TEXT_API_KEY 未配置，无法初始化 AI 文本模型。"
-            "请在管理界面中配置该参数。"
-        )
+        raise RuntimeError("配置 SAFETY_AI_TEXT_API_KEY 未配置，无法初始化 AI 文本模型。请在管理界面中配置该参数。")
     if not _vision_key:
-        raise RuntimeError(
-            "配置 SAFETY_AI_VISION_API_KEY 未配置，无法初始化 AI 视觉模型。"
-            "请在管理界面中配置该参数。"
-        )
+        raise RuntimeError("配置 SAFETY_AI_VISION_API_KEY 未配置，无法初始化 AI 视觉模型。请在管理界面中配置该参数。")
     return {
         "text": {
             "api_key": _text_key,
-            "base_url": await get_module_setting(
-                "safety", "SAFETY_AI_TEXT_BASE_URL", "https://api.deepseek.com"
-            ),
-            "model": await get_module_setting(
-                "safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash"
-            ),
+            "base_url": await get_module_setting("safety", "SAFETY_AI_TEXT_BASE_URL", "https://api.deepseek.com"),
+            "model": await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash"),
             "temperature": 0.1,
             "timeout": 120,
         },
@@ -44,16 +35,14 @@ async def _get_ai_config() -> dict:
                 "SAFETY_AI_VISION_BASE_URL",
                 "https://dashscope.aliyuncs.com/compatible-mode/v1",
             ),
-            "model": await get_module_setting(
-                "safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max"
-            ),
+            "model": await get_module_setting("safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max"),
             "temperature": 0.1,
             "timeout": 120,
         },
     }
 
 
-async def create_ai_service(config_type: str = "text"):
+async def create_ai_service(config_type: str = "text") -> Any:
     """创建 AI 服务实例（从数据库读取配置）。
 
     config_type: "text"（文本模型）或 "vision"（视觉模型）

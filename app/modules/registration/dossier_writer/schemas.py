@@ -12,12 +12,8 @@ class ProductDossierBase(BaseModel):
     product_name: str = Field(..., max_length=200, description="品种名称")
     sterile_type: str = Field(..., max_length=50, description="无菌/非无菌")
     manufacturer: str = Field(..., max_length=300, description="生产商")
-    template_original_product_name: str | None = Field(
-        None, max_length=200, description="模板原品种名称"
-    )
-    template_original_manufacturer: str | None = Field(
-        None, max_length=300, description="模板原生产商"
-    )
+    template_original_product_name: str | None = Field(None, max_length=200, description="模板原品种名称")
+    template_original_manufacturer: str | None = Field(None, max_length=300, description="模板原生产商")
 
 
 class ProductDossierCreate(ProductDossierBase):
@@ -175,9 +171,7 @@ class ParseResultResponse(BaseModel):
 class ExportRequest(BaseModel):
     """导出请求"""
 
-    chapter_ids: list[UUID] | None = Field(
-        None, description="指定章节ID列表，为空则导出全部"
-    )
+    chapter_ids: list[UUID] | None = Field(None, description="指定章节ID列表，为空则导出全部")
     format: str = Field("docx", description="导出格式: docx/pdf")
 
 

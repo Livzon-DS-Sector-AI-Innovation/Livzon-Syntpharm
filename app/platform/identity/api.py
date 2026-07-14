@@ -1,13 +1,15 @@
 import logging
+import os
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
+from app.core.jobs import spawn_task
 from app.core.response import success_response
-from app.core.tasks import spawn_task
 from app.platform.identity.deps import CurrentUser
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
@@ -28,6 +30,28 @@ sync_router = APIRouter(prefix="/sync", tags=["飞书同步"])
 
 
 # ── Auth (SSO) ──────────────────────────────────────────────────────
+
+
+@auth_router.post("/test-login", summary="E2E 测试登录（仅开发/测试环境）")
+async def test_login(
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    x_e2e_secret: str | None = Header(None, alias="X-E2E-Secret"),
+) -> dict[str, Any]:
+    """Return a JWT for the e2e test user. Requires APP_ENV=development/test + X-E2E-Secret header."""
+    if settings.APP_ENV not in ("development", "test", "e2e"):
+        raise HTTPException(status_code=404)
+
+    expected_secret = os.getenv("E2E_AUTH_SECRET", "dazah-e2e-secret-2024")
+    if x_e2e_secret != expected_secret:
+        raise HTTPException(status_code=404)
+
+    from app.platform.identity.service import generate_jwt, get_or_create_e2e_user
+
+    user = await get_or_create_e2e_user(db)
+    await db.commit()
+    token = generate_jwt(user)
+    return {"token": token, "user": {"id": str(user.id), "name": user.name}}
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
@@ -158,15 +182,13 @@ async def get_me(
 
 
 def _build_department_tree(
-    depts: list,
+    depts: list[Any],
     parent_id: str | None = None,
 ) -> list[DepartmentTreeNode]:
     """递归构建部门树。"""
     result: list[DepartmentTreeNode] = []
     for d in depts:
-        if d.parent_feishu_department_id == parent_id or (
-            parent_id is None and not d.parent_feishu_department_id
-        ):
+        if d.parent_feishu_department_id == parent_id or (parent_id is None and not d.parent_feishu_department_id):
             node = DepartmentTreeNode(
                 id=d.id,
                 feishu_department_id=d.feishu_department_id,
@@ -264,7 +286,7 @@ async def trigger_sync_departments(
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")
+    spawn_task(sync_departments(root_id), name="identity.sync_departments")  # type: ignore[arg-type]
     logger.info("Department sync triggered for root=%s", root_id)
     return success_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id},
@@ -285,7 +307,7 @@ async def trigger_sync_members(
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")
+    spawn_task(sync_members(target_id), name="identity.sync_members")  # type: ignore[arg-type]
     logger.info("Member sync triggered for target=%s", target_id)
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id},

@@ -33,20 +33,12 @@ class RouteLocation(BaseModel):
         {"schema": "equipment"},
     )
 
-    route_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("equipment.inspection_routes.id"), comment="路线ID"
-    )
-    location_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("equipment.locations.id"), comment="地点ID"
-    )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, default=0, server_default="0", comment="地点巡检顺序"
-    )
+    route_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("equipment.inspection_routes.id"), comment="路线ID")
+    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("equipment.locations.id"), comment="地点ID")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0", comment="地点巡检顺序")
 
     # 关系
-    route: Mapped[InspectionRoute] = relationship(
-        "InspectionRoute", back_populates="locations_rel"
-    )
+    route: Mapped[InspectionRoute] = relationship("InspectionRoute", back_populates="locations_rel")
     equipments: Mapped[list[RouteLocationEquipment]] = relationship(
         "RouteLocationEquipment",
         back_populates="route_location",
@@ -78,17 +70,11 @@ class RouteLocationEquipment(BaseModel):
     route_location_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("equipment.route_locations.id"), comment="线路地点ID"
     )
-    equipment_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("equipment.equipments.id"), comment="设备ID"
-    )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, default=0, server_default="0", comment="地点内设备顺序"
-    )
+    equipment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("equipment.equipments.id"), comment="设备ID")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0", comment="地点内设备顺序")
 
     # 关系
-    route_location: Mapped[RouteLocation] = relationship(
-        "RouteLocation", back_populates="equipments"
-    )
+    route_location: Mapped[RouteLocation] = relationship("RouteLocation", back_populates="equipments")
     equipment: Mapped[Equipment] = relationship("Equipment")
     templates_rel: Mapped[list[RouteEquipmentTemplate]] = relationship(
         "RouteEquipmentTemplate",

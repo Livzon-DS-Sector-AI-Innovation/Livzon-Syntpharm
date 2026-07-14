@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests verifying authentication enforcement on protected vs public endpoints.
 
 Uses ``anonymous_client`` (no user) to confirm that:

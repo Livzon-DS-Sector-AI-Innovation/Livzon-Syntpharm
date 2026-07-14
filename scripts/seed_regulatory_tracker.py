@@ -7,10 +7,10 @@ import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.modules.regulatory_tracker.models import DataChannel, DataSource
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
-from app.modules.regulatory_tracker.models import DataChannel, DataSource
 
 # Import identity models first to resolve FK references
 from app.platform.identity.models import User  # noqa: F401
@@ -21,12 +21,8 @@ async def seed_regulatory_tracker():
 
     async with async_session_factory() as session:
         # Check if already seeded (check NMPA too)
-        result_cde = await session.execute(
-            select(DataSource).where(DataSource.code == "CDE")
-        )
-        result_nmpa = await session.execute(
-            select(DataSource).where(DataSource.code == "NMPA")
-        )
+        result_cde = await session.execute(select(DataSource).where(DataSource.code == "CDE"))
+        result_nmpa = await session.execute(select(DataSource).where(DataSource.code == "NMPA"))
         has_cde = result_cde.scalar_one_or_none()
         has_nmpa = result_nmpa.scalar_one_or_none()
 
@@ -59,12 +55,8 @@ async def seed_regulatory_tracker():
                 enabled=True,
             )
             session.add(cde_guideline_channel)
-            print(
-                f"✅ Created data channel: cde_domestic_guideline (id={cde_guideline_channel.id})"
-            )
-            created.append(
-                f"CDE source={cde_source.id} channel={cde_guideline_channel.id}"
-            )
+            print(f"✅ Created data channel: cde_domestic_guideline (id={cde_guideline_channel.id})")
+            created.append(f"CDE source={cde_source.id} channel={cde_guideline_channel.id}")
 
         # ── NMPA ──
         if not has_nmpa:
@@ -90,9 +82,7 @@ async def seed_regulatory_tracker():
             )
             session.add(nmpa_baxx_channel)
             print(f"✅ Created data channel: nmpa_baxx (id={nmpa_baxx_channel.id})")
-            created.append(
-                f"NMPA source={nmpa_source.id} channel={nmpa_baxx_channel.id}"
-            )
+            created.append(f"NMPA source={nmpa_source.id} channel={nmpa_baxx_channel.id}")
 
         await session.commit()
         print("\n✅ Seed completed successfully")

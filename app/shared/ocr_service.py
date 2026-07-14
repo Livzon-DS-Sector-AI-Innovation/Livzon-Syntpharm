@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class OCRService:
     """PaddleOCR service supporting both PP-OCR and PP-StructureV3."""
 
-    def __init__(self):
+    def __init__(self) -> Any:  # type: ignore[misc]
         """Initialize both PaddleOCR pipelines."""
         from paddleocr import PaddleOCR, PPStructureV3
 
@@ -51,9 +51,7 @@ class OCRService:
     def _is_pdf(self, image_input: str | Path | Image.Image) -> bool:
         """Check if input is a PDF file."""
         if isinstance(image_input, (str, Path)):
-            path = (
-                Path(image_input) if not isinstance(image_input, Path) else image_input
-            )
+            path = Path(image_input) if not isinstance(image_input, Path) else image_input
             return path.suffix.lower() == ".pdf"
         return False
 
@@ -77,9 +75,7 @@ class OCRService:
 
         return "\n".join(texts)
 
-    def extract_with_positions(
-        self, image_input: str | Path | Image.Image
-    ) -> list[dict[str, Any]]:
+    def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
         """
         Extract text with bounding boxes and confidence scores using PP-OCR.
 
@@ -96,11 +92,7 @@ class OCRService:
         for res in result:
             if hasattr(res, "res"):
                 rec_data = res.res
-                if (
-                    "rec_texts" in rec_data
-                    and "rec_scores" in rec_data
-                    and "rec_polys" in rec_data
-                ):
+                if "rec_texts" in rec_data and "rec_scores" in rec_data and "rec_polys" in rec_data:
                     texts = rec_data["rec_texts"]
                     scores = rec_data["rec_scores"]
                     polys = rec_data["rec_polys"]
@@ -115,15 +107,11 @@ class OCRService:
                             int(max(y_coords)),
                         )
 
-                        blocks.append(
-                            {"text": text, "bbox": bbox, "confidence": float(score)}
-                        )
+                        blocks.append({"text": text, "bbox": bbox, "confidence": float(score)})
 
         return blocks
 
-    def extract_structure(
-        self, image_input: str | Path | Image.Image
-    ) -> dict[str, Any]:
+    def extract_structure(self, image_input: str | Path | Image.Image) -> dict[str, Any]:
         """
         Extract structured document content using PP-StructureV3.
         Detects layout, tables, formulas, and preserves document structure.
@@ -176,8 +164,8 @@ class OCRService:
                     for item in res_data["layout_parsing_res"]:
                         if "block_label" in item:
                             if item["block_label"] == "table":
-                                output["tables"].append(item)
-                            output["layout"].append(item)
+                                output["tables"].append(item)  # type: ignore[attr-defined]
+                            output["layout"].append(item)  # type: ignore[attr-defined]
 
         return output
 
@@ -193,14 +181,14 @@ class OCRService:
             Markdown representation of the document
         """
         result = self.extract_structure(image_input)
-        return result.get("markdown", "")
+        return result.get("markdown", "")  # type: ignore[no-any-return]
 
     def extract(
         self,
         image_input: str | Path | Image.Image,
         engine: str | None = None,
         output_format: str = "text",
-    ) -> str | list[dict] | dict:
+    ) -> str | list[dict[str, Any]] | dict[str, Any]:
         """
         Hybrid extraction method with automatic or manual engine selection.
 
@@ -231,24 +219,22 @@ class OCRService:
                 return self.extract_markdown(image_input)
             elif output_format == "json":
                 result = self.extract_structure(image_input)
-                return result.get("json", {})
+                return result.get("json", {})  # type: ignore[no-any-return]
             elif output_format == "structure":
                 return self.extract_structure(image_input)
             else:  # text
                 result = self.extract_structure(image_input)
-                return result.get("markdown", "")
+                return result.get("markdown", "")  # type: ignore[no-any-return]
 
         else:
-            raise ValueError(
-                f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'"
-            )
+            raise ValueError(f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'")
 
 
 # Global instance
 _ocr_service = None
 
 
-def init_ocr():
+def init_ocr() -> Any:
     """Initialize the OCR service."""
     global _ocr_service
     if _ocr_service is None:

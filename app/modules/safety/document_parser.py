@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ def get_chapter7_from_content(content: str) -> str | None:
     return content[start_pos:].strip()
 
 
-def parse_chapter7_stages(content: str) -> list[dict]:
+def parse_chapter7_stages(content: str) -> list[dict[str, Any]]:
     """解析 Chapter 7（生产工艺流程）中的工艺阶段。
 
     每个 `## 阶段名称` 是一个工艺阶段，可包含：
@@ -153,7 +154,7 @@ def parse_chapter7_stages(content: str) -> list[dict]:
         logger.debug("未找到 Chapter 7 生产工艺流程")
         return []
 
-    stages: list[dict] = []
+    stages: list[dict[str, Any]] = []
 
     # 按 ## 分割为各工艺阶段（跳过 Chapter 7 标题行本身）
     # 匹配 ## 标题行
@@ -171,9 +172,7 @@ def parse_chapter7_stages(content: str) -> list[dict]:
 
         # 该阶段的内容范围：从当前 ## 标题到下一个 ## 标题
         section_start = match.start()
-        section_end = (
-            stage_matches[i + 1].start() if i + 1 < len(stage_matches) else len(ch7)
-        )
+        section_end = stage_matches[i + 1].start() if i + 1 < len(stage_matches) else len(ch7)
         section_text = ch7[section_start:section_end].strip()
 
         # 解析安全要求子节

@@ -1,6 +1,7 @@
 """Quality database queries live here."""
 
 from datetime import date, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import asc, desc, func, select
@@ -22,9 +23,7 @@ class LabelVerificationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_video_file_key(
-        self, video_file_key: str
-    ) -> LabelVerification | None:
+    async def get_by_video_file_key(self, video_file_key: str) -> LabelVerification | None:
         """根据视频文件 key 查询（用于去重）"""
         result = await self.session.execute(
             select(LabelVerification).where(
@@ -64,9 +63,7 @@ class LabelVerificationRepository:
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0
 
-        sort_column = getattr(
-            LabelVerification, sort_by, LabelVerification.verification_time
-        )
+        sort_column = getattr(LabelVerification, sort_by, LabelVerification.verification_time)
         order_func = desc if sort_order == "desc" else asc
         stmt = stmt.order_by(order_func(sort_column))
         stmt = stmt.offset((page - 1) * page_size).limit(page_size)
@@ -89,7 +86,7 @@ class LabelVerificationRepository:
         verification.is_deleted = True
         await self.session.flush()
 
-    async def get_statistics(self) -> dict:
+    async def get_statistics(self) -> dict[str, Any]:
         """获取标签复核统计数据"""
         base_filter = LabelVerification.is_deleted.is_(False)
         today = date.today()
@@ -97,9 +94,7 @@ class LabelVerificationRepository:
         month_start = today.replace(day=1)
 
         # 总数
-        total_result = await self.session.execute(
-            select(func.count()).where(base_filter)
-        )
+        total_result = await self.session.execute(select(func.count()).where(base_filter))
         total = total_result.scalar() or 0
 
         # 全部一致/存在差异

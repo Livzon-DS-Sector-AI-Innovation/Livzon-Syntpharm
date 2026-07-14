@@ -1,5 +1,6 @@
 """Dossier Writer database queries."""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -17,9 +18,7 @@ class DossierRepository:
 
     # ====== Product Dossier ======
 
-    async def check_duplicate(
-        self, product_name: str, manufacturer: str, sterile_type: str
-    ) -> ProductDossier | None:
+    async def check_duplicate(self, product_name: str, manufacturer: str, sterile_type: str) -> ProductDossier | None:
         """检查是否存在相同的品种资料"""
         stmt = select(ProductDossier).where(
             and_(
@@ -48,16 +47,10 @@ class DossierRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_product_dossiers(
-        self, skip: int = 0, limit: int = 100
-    ) -> tuple[list[ProductDossier], int]:
+    async def list_product_dossiers(self, skip: int = 0, limit: int = 100) -> tuple[list[ProductDossier], int]:
         """获取品种资料列表"""
         # 查询总数
-        count_stmt = (
-            select(func.count())
-            .select_from(ProductDossier)
-            .where(~ProductDossier.is_deleted)
-        )
+        count_stmt = select(func.count()).select_from(ProductDossier).where(~ProductDossier.is_deleted)
         total_result = await self.db.execute(count_stmt)
         total = total_result.scalar() or 0
 
@@ -74,7 +67,7 @@ class DossierRepository:
         items = list(result.scalars().all())
         return items, total
 
-    async def update_product_dossier(
+    async def update_product_dossier(  # type: ignore[no-untyped-def]
         self, dossier_id: UUID, **kwargs
     ) -> ProductDossier | None:
         """更新品种资料"""
@@ -104,9 +97,7 @@ class DossierRepository:
         await self.db.flush()
         return template
 
-    async def get_template_by_filename(
-        self, dossier_id: UUID, filename: str
-    ) -> DossierTemplate | None:
+    async def get_template_by_filename(self, dossier_id: UUID, filename: str) -> DossierTemplate | None:
         """根据文件名查找模板（用于覆盖更新），返回最新的一条"""
         stmt = (
             select(DossierTemplate)
@@ -147,9 +138,7 @@ class DossierRepository:
 
     async def delete_chapters_by_dossier(self, dossier_id: UUID) -> int:
         """删除品种的所有章节"""
-        stmt = select(DossierChapter).where(
-            DossierChapter.product_dossier_id == dossier_id
-        )
+        stmt = select(DossierChapter).where(DossierChapter.product_dossier_id == dossier_id)
         result = await self.db.execute(stmt)
         chapters = result.scalars().all()
         count = len(chapters)
@@ -172,14 +161,12 @@ class DossierRepository:
     async def get_chapter(self, chapter_id: UUID) -> DossierChapter | None:
         """获取章节详情"""
         stmt = (
-            select(DossierChapter)
-            .where(DossierChapter.id == chapter_id)
-            .options(selectinload(DossierChapter.assets))
+            select(DossierChapter).where(DossierChapter.id == chapter_id).options(selectinload(DossierChapter.assets))
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_chapter(self, chapter_id: UUID, **kwargs) -> DossierChapter | None:
+    async def update_chapter(self, chapter_id: UUID, **kwargs) -> Any:  # type: ignore[no-untyped-def]
         """更新章节"""
         chapter = await self.get_chapter(chapter_id)
         if not chapter:
@@ -192,11 +179,7 @@ class DossierRepository:
 
     async def count_chapters(self, dossier_id: UUID) -> int:
         """统计章节数量"""
-        stmt = (
-            select(func.count())
-            .select_from(DossierChapter)
-            .where(DossierChapter.product_dossier_id == dossier_id)
-        )
+        stmt = select(func.count()).select_from(DossierChapter).where(DossierChapter.product_dossier_id == dossier_id)
         result = await self.db.execute(stmt)
         return result.scalar() or 0
 
@@ -210,11 +193,7 @@ class DossierRepository:
 
     async def list_assets(self, chapter_id: UUID) -> list[ChapterAsset]:
         """获取章节素材列表"""
-        stmt = (
-            select(ChapterAsset)
-            .where(ChapterAsset.chapter_id == chapter_id)
-            .order_by(ChapterAsset.uploaded_at)
-        )
+        stmt = select(ChapterAsset).where(ChapterAsset.chapter_id == chapter_id).order_by(ChapterAsset.uploaded_at)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -235,10 +214,6 @@ class DossierRepository:
 
     async def count_assets(self, chapter_id: UUID) -> int:
         """统计章节素材数量"""
-        stmt = (
-            select(func.count())
-            .select_from(ChapterAsset)
-            .where(ChapterAsset.chapter_id == chapter_id)
-        )
+        stmt = select(func.count()).select_from(ChapterAsset).where(ChapterAsset.chapter_id == chapter_id)
         result = await self.db.execute(stmt)
         return result.scalar() or 0

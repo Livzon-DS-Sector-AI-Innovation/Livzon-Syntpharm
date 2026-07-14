@@ -21,12 +21,7 @@ from app.platform.integrations.ai.document_parser import DocumentParser
 logger = logging.getLogger(__name__)
 
 # 上传文件存储目录
-UPLOADS_DIR = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "uploads"
-    / "safety"
-    / "knowledge"
-)
+UPLOADS_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "uploads" / "safety" / "knowledge"
 
 # 飞书 Drive API
 FEISHU_DRIVE_BASE = "https://open.feishu.cn/open-apis/drive/v1"
@@ -171,7 +166,7 @@ class DocumentLoader:
                 if resp.status_code == 200:
                     data = resp.json()
                     if data.get("code") == 0:
-                        return data.get("data", {})
+                        return data.get("data", {})  # type: ignore[no-any-return]
                 logger.warning(
                     "获取文件元信息失败: file_token=%s status=%s body=%s",
                     file_token,
@@ -252,4 +247,5 @@ class DocumentLoader:
         try:
             return content.decode("utf-8", errors="replace")
         except Exception:
+            logger.exception("Failed to decode content as UTF-8")
             return ""

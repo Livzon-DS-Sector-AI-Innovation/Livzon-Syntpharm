@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Environment module placeholder tests."""
 
 from __future__ import annotations

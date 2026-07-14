@@ -23,12 +23,8 @@ class FailureCodeCreate(BaseModel):
 class FailureCodeUpdate(BaseModel):
     """更新故障代码请求"""
 
-    code: str | None = Field(
-        default=None, min_length=1, max_length=50, description="代码"
-    )
-    name: str | None = Field(
-        default=None, min_length=1, max_length=100, description="名称"
-    )
+    code: str | None = Field(default=None, min_length=1, max_length=50, description="代码")
+    name: str | None = Field(default=None, min_length=1, max_length=100, description="名称")
     description: str | None = Field(default=None, description="描述")
     sort_order: int | None = Field(default=None, ge=0, description="排序")
     is_active: bool | None = Field(default=None, description="是否启用")

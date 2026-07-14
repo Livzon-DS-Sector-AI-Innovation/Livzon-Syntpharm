@@ -6,9 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-CertificateType = Literal[
-    "domestic_approval", "overseas_registration", "wc", "copp", "gmp", "other"
-]
+CertificateType = Literal["domestic_approval", "overseas_registration", "wc", "copp", "gmp", "other"]
 CertificateStatus = Literal["valid", "expiring", "expired", "pending"]
 
 

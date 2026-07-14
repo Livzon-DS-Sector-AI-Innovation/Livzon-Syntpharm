@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for equipment repository layer."""
 
 from typing import Any
@@ -21,9 +22,7 @@ def sample_category_data() -> dict[str, Any]:
     }
 
 
-async def test_create_equipment_category(
-    db_session: AsyncSession, sample_category_data: dict[str, Any]
-) -> None:
+async def test_create_equipment_category(db_session: AsyncSession, sample_category_data: dict[str, Any]) -> None:
     """测试创建设备分类"""
     category = await create_equipment_category(db_session, sample_category_data)
     assert category.name == "反应釜"
@@ -31,9 +30,7 @@ async def test_create_equipment_category(
     assert category.id is not None
 
 
-async def test_get_equipment_category_by_id(
-    db_session: AsyncSession, sample_category_data: dict[str, Any]
-) -> None:
+async def test_get_equipment_category_by_id(db_session: AsyncSession, sample_category_data: dict[str, Any]) -> None:
     """测试根据ID获取设备分类"""
     category = await create_equipment_category(db_session, sample_category_data)
     result = await get_equipment_category_by_id(db_session, category.id)

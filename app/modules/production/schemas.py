@@ -477,9 +477,7 @@ class MaterialBalanceUpdate(BaseModel):
     output_qty: float | None = Field(None, ge=0, description="产出总量")
     loss_qty: float | None = Field(None, description="损耗总量")
     balance_rate: float | None = Field(None, ge=0, le=100, description="平衡率(%)")
-    min_balance_rate: float | None = Field(
-        None, ge=0, le=100, description="最低平衡率(%)"
-    )
+    min_balance_rate: float | None = Field(None, ge=0, le=100, description="最低平衡率(%)")
     notes: str | None = Field(None, description="备注")
 
 

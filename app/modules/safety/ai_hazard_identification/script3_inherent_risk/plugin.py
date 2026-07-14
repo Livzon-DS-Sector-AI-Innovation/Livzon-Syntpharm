@@ -65,7 +65,7 @@ class InherentRiskAssessor(BasePlugin[InherentRiskInput, InherentRiskOutput]):
     def _get_expected_keys(self) -> list[str]:
         return EXPECTED_KEYS
 
-    def _parse_output(self, raw: dict) -> InherentRiskOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> InherentRiskOutput:
         try:
             lec_raw = raw.get("lec", {})
             if not isinstance(lec_raw, dict):

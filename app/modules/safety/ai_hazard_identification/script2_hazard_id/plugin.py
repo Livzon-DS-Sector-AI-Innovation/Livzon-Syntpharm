@@ -63,7 +63,7 @@ class HazardIdentifier(BasePlugin[HazardIdInput, HazardIdOutput]):
     def _get_expected_keys(self) -> list[str]:
         return EXPECTED_KEYS
 
-    def _parse_output(self, raw: dict) -> HazardIdOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> HazardIdOutput:
         try:
             return HazardIdOutput(
                 hazard_type=raw.get("hazard_type", "待人工确认"),

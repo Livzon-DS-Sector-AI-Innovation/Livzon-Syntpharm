@@ -21,19 +21,11 @@ class DataChannel(BaseModel):
         nullable=False,
         comment="所属数据源ID",
     )
-    code: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="栏目编码，如 cde_domestic_guideline"
-    )
+    code: Mapped[str] = mapped_column(String(100), nullable=False, comment="栏目编码，如 cde_domestic_guideline")
     name: Mapped[str] = mapped_column(String(200), nullable=False, comment="栏目名称")
-    list_url: Mapped[str | None] = mapped_column(
-        String(1000), nullable=True, comment="列表页URL"
-    )
-    adapter_name: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="适配器名称"
-    )
-    enabled: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true", comment="是否启用"
-    )
+    list_url: Mapped[str | None] = mapped_column(String(1000), nullable=True, comment="列表页URL")
+    adapter_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="适配器名称")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否启用")
 
     # Relationships
     source = relationship("DataSource", back_populates="channels")

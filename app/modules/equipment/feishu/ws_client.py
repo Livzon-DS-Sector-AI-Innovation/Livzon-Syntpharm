@@ -9,6 +9,7 @@ import json
 import logging
 import ssl
 import uuid
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -87,12 +88,12 @@ def _build_ping_frame(service_id: int) -> bytes:
     frame.method = FrameType.CONTROL.value
     frame.SeqID = 0
     frame.LogID = 0
-    return frame.SerializeToString()
+    return frame.SerializeToString()  # type: ignore[no-any-return]
 
 
-async def _ping_loop(ws, service_id: int) -> None:
+async def _ping_loop(ws, service_id: int) -> Any:  # type: ignore[no-untyped-def]
     """定期发送 protobuf PING 帧保持连接。"""
-    while not _stop.is_set():
+    while not _stop.is_set():  # type: ignore[union-attr]
         try:
             ping_data = _build_ping_frame(service_id)
             await ws.send(ping_data)
@@ -101,13 +102,13 @@ async def _ping_loop(ws, service_id: int) -> None:
             logger.warning("设备机器人 PING 失败: %s", e)
             return
         try:
-            await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)
+            await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)  # type: ignore[union-attr]
             return
         except TimeoutError:
             pass
 
 
-def _build_ack_frame(frame, biz_rt: int) -> bytes:
+def _build_ack_frame(frame, biz_rt: int) -> Any:  # type: ignore[no-untyped-def]
     """构建 DATA 帧的 ACK 回复。"""
     from lark_oapi.ws.const import HEADER_BIZ_RT
 
@@ -199,7 +200,7 @@ async def start_equipment_ws() -> None:
     logger.info("设备机器人 WebSocket 客户端已停止")
 
 
-async def _handle_binary_message(ws, message: bytes) -> None:
+async def _handle_binary_message(ws, message: bytes) -> Any:  # type: ignore[no-untyped-def]
     """处理 protobuf 帧（区分 CONTROL 和 DATA）。"""
     try:
         from lark_oapi.ws.client import _get_by_key
@@ -252,7 +253,7 @@ async def _handle_binary_message(ws, message: bytes) -> None:
         )
 
 
-async def _dispatch_event(event: dict) -> None:
+async def _dispatch_event(event: dict[str, Any]) -> None:
     """解析事件并分发给设备模块事件处理器。"""
     try:
         header = event.get("header", {})
@@ -279,7 +280,7 @@ async def _dispatch_event(event: dict) -> None:
         )
 
 
-async def _handle_message_event(event_data: dict) -> None:
+async def _handle_message_event(event_data: dict[str, Any]) -> None:
     """处理 im.message.receive_v1 事件。"""
     message = event_data.get("message", {})
     sender = event_data.get("sender", {})
@@ -346,7 +347,7 @@ async def _handle_message_event(event_data: dict) -> None:
         logger.info("忽略非图片/文本消息: type=%s", msg_type)
 
 
-async def _handle_card_action_event(event_data: dict) -> None:
+async def _handle_card_action_event(event_data: dict[str, Any]) -> None:
     """处理 card.action.trigger 事件（验收卡片按钮点击）。
 
     直接在 ws_client 内完成验收逻辑，不委托 handler.py 避免循环 import。
@@ -398,6 +399,7 @@ async def _handle_card_action_event(event_data: dict) -> None:
 
         from app.core.database import async_session_factory
         from app.modules.equipment import repository as repo
+        from app.modules.equipment.deps import EquipmentAccessContext
         from app.modules.equipment.feishu.notification import send_user_card
         from app.modules.equipment.schemas import WorkOrderVerify
         from app.modules.equipment.service.work_order import verify_work_order
@@ -438,18 +440,18 @@ async def _handle_card_action_event(event_data: dict) -> None:
                     open_id=open_id,
                     title="⚠️ 无法验收",
                     receive_id_type="open_id",
-                    content=f"工单 **{wo.work_order_no}** 当前为「{wo.status}」，"
-                    "只有「待验收」才可操作。",
+                    content=f"工单 **{wo.work_order_no}** 当前为「{wo.status}」，只有「待验收」才可操作。",
                 )
                 return
 
             label = "验收通过" if result == "合格" else "退回"
             verify_data = WorkOrderVerify(
-                result=result,  # type: ignore[arg-type]
+                result=result,
                 remark=f"通过飞书卡片{label}",
             )
             try:
-                await verify_work_order(db, wo.id, user.id, verify_data)
+                ctx = EquipmentAccessContext(user=user, data_scope="all")
+                await verify_work_order(db, wo.id, ctx, verify_data)
                 await db.commit()
             except Exception as e:
                 logger.exception("飞书卡片验收失败: %s", e)
@@ -494,9 +496,7 @@ async def _handle_card_action_event(event_data: dict) -> None:
                     PatchMessageRequest.builder()
                     .message_id(open_message_id)
                     .request_body(
-                        PatchMessageRequestBody.builder()
-                        .content(json.dumps(updated_card, ensure_ascii=False))
-                        .build()
+                        PatchMessageRequestBody.builder().content(json.dumps(updated_card, ensure_ascii=False)).build()
                     )
                     .build()
                 )
@@ -610,7 +610,7 @@ async def _handle_text_command(
         return
 
     # ── 1. 巡检路由 ──
-    _INSPECTION_COMMANDS = {
+    _inspection_commands = {
         "开始",
         "开始巡检",
         "start",
@@ -651,11 +651,7 @@ async def _handle_text_command(
     }
 
     session = await get_session(open_id)
-    is_inspection_cmd = (
-        text in _INSPECTION_COMMANDS
-        or text.startswith("修改")
-        or text.startswith("修正")
-    )
+    is_inspection_cmd = text in _inspection_commands or text.startswith("修改") or text.startswith("修正")
 
     if session or is_inspection_cmd:
         from app.modules.equipment.service.inspection_feishu import (

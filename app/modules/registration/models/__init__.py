@@ -1,4 +1,5 @@
 """Registration module models."""
+# ruff: noqa: F401
 
 from app.modules.registration.models.authorization import (
     AuthorizationLetter,
@@ -45,3 +46,22 @@ __all__ = [
     "ValidationAuditTask",
     "WcCertificate",
 ]
+
+# Regulatory tracker models
+from app.modules.registration.regulatory_tracker.models import (
+    DataChannel,
+    DataSource,
+    RegulatoryDocument,
+    SyncJob,
+    SyncJobPage,
+)
+
+__all__.extend(
+    [
+        "DataChannel",
+        "DataSource",
+        "RegulatoryDocument",
+        "SyncJob",
+        "SyncJobPage",
+    ]
+)

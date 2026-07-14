@@ -25,35 +25,23 @@ class RegistrationCertificate(BaseModel):
         {"schema": "registration"},
     )
 
-    product_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="品种名称"
-    )
-    market: Mapped[str] = mapped_column(
-        String(128), nullable=False, comment="国家/市场"
-    )
+    product_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="品种名称")
+    market: Mapped[str] = mapped_column(String(128), nullable=False, comment="国家/市场")
     certificate_type: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
         comment="证书类型：domestic_approval/overseas_registration/wc/copp/gmp/other",
     )
-    certificate_no: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="证书编号"
-    )
-    approved_at: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="获批日期"
-    )
-    valid_until: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="有效期至"
-    )
+    certificate_no: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="证书编号")
+    approved_at: Mapped[date | None] = mapped_column(Date, nullable=True, comment="获批日期")
+    valid_until: Mapped[date | None] = mapped_column(Date, nullable=True, comment="有效期至")
     status: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
         server_default="valid",
         comment="证书状态：valid/expiring/expired/pending",
     )
-    file_path: Mapped[str | None] = mapped_column(
-        String(512), nullable=True, comment="证书文件路径"
-    )
+    file_path: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="证书文件路径")
     related_project_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), nullable=True, comment="关联注册项目ID"
     )

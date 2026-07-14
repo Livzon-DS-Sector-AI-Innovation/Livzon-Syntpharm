@@ -1,7 +1,9 @@
 """Regulatory Tracker API routes V4 - 系统分类支持。"""
+# ruff: noqa: N803  # API query params use camelCase for frontend compatibility
 
 import uuid
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
@@ -18,12 +20,14 @@ from app.modules.registration.regulatory_tracker.schemas import (
 from app.modules.registration.regulatory_tracker.services.classification_service import (
     get_category_display_name,
 )
-from app.modules.registration.regulatory_tracker.utils.excel_export import generate_regulatory_excel
+from app.modules.registration.regulatory_tracker.utils.excel_export import (
+    generate_regulatory_excel,
+)
 
 router = APIRouter()
 
 
-def _extract_impact_data(doc) -> dict:
+def _extract_impact_data(doc) -> Any:  # type: ignore[no-untyped-def]
     """从文档中提取影响评估数据。"""
     from app.modules.registration.regulatory_tracker.services.ai_analysis_service import (
         score_to_impact_level,
@@ -61,7 +65,7 @@ def _extract_impact_data(doc) -> dict:
 
 
 @router.get("/regulatory-tracker/dashboard", summary="Dashboard 工作台数据")
-async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(get_db)) -> Any:
     """
     返回 Dashboard 工作台数据：
     - 今日新增统计（总数、高影响数、一般法规数）
@@ -91,11 +95,7 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
 
         # 从 ai_key_points 提取法规类型
         key_points = doc.ai_key_points or {}
-        regulation_type = (
-            key_points.get("regulation_type", "")
-            if isinstance(key_points, dict)
-            else ""
-        )
+        regulation_type = key_points.get("regulation_type", "") if isinstance(key_points, dict) else ""
 
         priority_documents.append(
             {
@@ -103,16 +103,12 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
                 "title": doc.title,
                 "sourceName": source.name if source else None,
                 "regulationType": regulation_type,
-                "publishDate": doc.publish_date.isoformat()
-                if doc.publish_date
-                else None,
+                "publishDate": doc.publish_date.isoformat() if doc.publish_date else None,
                 "aiSummary": doc.ai_summary,
                 "aiRelevanceScore": doc.ai_relevance_score,
                 "aiKeyPoints": doc.ai_key_points,
                 "documentCategory": doc.document_category,
-                "documentCategoryName": get_category_display_name(
-                    doc.document_category or "general"
-                ),
+                "documentCategoryName": get_category_display_name(doc.document_category or "general"),
                 "originalUrl": doc.original_url,
                 "impactLevel": impact_data["impact_level"],
             }
@@ -143,7 +139,7 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
 
 
 @router.get("/regulatory-tracker/summary", summary="法规追踪统计摘要")
-async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
+async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_db)) -> Any:
     stats = await repo.get_summary_stats(db)
     return {
         "code": 200,
@@ -156,7 +152,7 @@ async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_
 
 
 @router.get("/regulatory-documents", summary="法规文档列表")
-async def list_documents(
+async def get(
     current_user: CurrentUser,
     keyword: str | None = Query(None, description="关键词搜索"),
     publishDateFrom: date | None = Query(None, description="发布日期起始"),
@@ -164,12 +160,8 @@ async def list_documents(
     statusText: str | None = Query(None, description="状态筛选"),
     classification: str | None = Query(None, description="分类筛选"),
     isNew: bool | None = Query(None, description="是否新增"),
-    impactLevel: str | None = Query(
-        None, description="影响等级筛选: high/medium/low/none/unanalyzed"
-    ),
-    documentCategory: str | None = Query(
-        None, description="系统分类筛选: attention/general/archive/failed"
-    ),
+    impactLevel: str | None = Query(None, description="影响等级筛选: high/medium/low/none/unanalyzed"),
+    documentCategory: str | None = Query(None, description="系统分类筛选: attention/general/archive/failed"),
     notificationRequired: bool | None = Query(None, description="是否需要通知"),
     sourceId: uuid.UUID | None = Query(None, description="数据源 ID"),
     channelId: uuid.UUID | None = Query(None, description="栏目 ID"),
@@ -181,7 +173,7 @@ async def list_documents(
     page: int = Query(1, ge=1, description="页码"),
     pageSize: int = Query(20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """获取法规文档列表，支持多种筛选条件、排序和分页。"""
     documents, total = await repo.get_documents_with_filters(
         db=db,
@@ -215,35 +207,25 @@ async def list_documents(
                 "channelId": str(doc.channel_id),
                 "documentId": doc.document_id,
                 "title": doc.title,
-                "publishDate": doc.publish_date.isoformat()
-                if doc.publish_date
-                else None,
+                "publishDate": doc.publish_date.isoformat() if doc.publish_date else None,
                 "statusText": doc.status_text,
                 "classification": doc.classification,
                 "originalUrl": doc.original_url,
                 "isNew": doc.is_new,
                 "isRead": doc.is_read,
-                "firstFoundAt": doc.first_found_at.isoformat()
-                if doc.first_found_at
-                else None,
-                "lastCheckedAt": doc.last_checked_at.isoformat()
-                if doc.last_checked_at
-                else None,
+                "firstFoundAt": doc.first_found_at.isoformat() if doc.first_found_at else None,
+                "lastCheckedAt": doc.last_checked_at.isoformat() if doc.last_checked_at else None,
                 "createdAt": doc.created_at.isoformat() if doc.created_at else None,
                 "aiSummary": doc.ai_summary,
                 "aiKeyPoints": doc.ai_key_points,
                 "aiRelevanceScore": doc.ai_relevance_score,
-                "aiAnalyzedAt": doc.ai_analyzed_at.isoformat()
-                if doc.ai_analyzed_at
-                else None,
+                "aiAnalyzedAt": doc.ai_analyzed_at.isoformat() if doc.ai_analyzed_at else None,
                 "aiAnalysisStatus": doc.ai_analysis_status,
                 "impact_level": impact_data["impact_level"],
                 "impact_score": impact_data["impact_score"],
                 "notification_required": impact_data["notification_required"],
                 "documentCategory": doc.document_category,
-                "documentCategoryName": get_category_display_name(
-                    doc.document_category or "general"
-                ),
+                "documentCategoryName": get_category_display_name(doc.document_category or "general"),
             }
         )
 
@@ -263,10 +245,10 @@ async def list_documents(
 # ============ 法规文档详情 ============
 
 
-@router.get("/regulatory-documents/{doc_id}/detail", summary="法规文档详情")
-async def get_document_detail(
+@router.get("/regulatory-documents/{doc_id}/detail", summary="法规文档详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)
-):
+) -> Any:
     """获取法规文档详情，包含来源和栏目名称。"""
     doc_detail = await repo.get_document_detail(db, doc_id)
     if not doc_detail:
@@ -290,9 +272,7 @@ async def get_document_detail(
     doc_detail["relatedDocuments"] = related_docs
 
     # 添加系统分类显示名称
-    doc_detail["documentCategoryName"] = get_category_display_name(
-        doc_detail.get("documentCategory") or "general"
-    )
+    doc_detail["documentCategoryName"] = get_category_display_name(doc_detail.get("documentCategory") or "general")
 
     return success_response(doc_detail)
 
@@ -300,8 +280,8 @@ async def get_document_detail(
 # ============ 法规文档导出 ============
 
 
-@router.get("/regulatory-documents/export", summary="导出法规文档为 Excel")
-async def export_documents(
+@router.get("/regulatory-documents/export", summary="导出法规文档为 Excel")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     current_user: CurrentUser,
     format: str = Query("xlsx", description="导出格式: xlsx"),
     keyword: str | None = Query(None),
@@ -311,7 +291,7 @@ async def export_documents(
     classification: str | None = Query(None),
     isNew: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """导出法规文档为 Excel 文件。"""
     documents, _ = await repo.get_documents_with_filters(
         db=db,
@@ -330,9 +310,7 @@ async def export_documents(
         return StreamingResponse(
             excel_file,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": "attachment; filename=regulatory_documents.xlsx"
-            },
+            headers={"Content-Disposition": "attachment; filename=regulatory_documents.xlsx"},
         )
     else:
         return error_response("不支持的导出格式", status_code=400)
@@ -342,9 +320,7 @@ async def export_documents(
 
 
 @router.patch("/regulatory-documents/{doc_id}/read", summary="标记文档为已读")
-async def mark_document_read(
-    current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)
-):
+async def patch(current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """标记单个文档为已读"""
     doc = await repo.get_document_by_id(db, doc_id)
     if not doc:
@@ -356,11 +332,11 @@ async def mark_document_read(
 
 
 @router.post("/regulatory-documents/batch-read", summary="批量标记文档已读")
-async def batch_mark_read(
+async def post(
     current_user: CurrentUser,
     request: BatchReadRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """批量标记文档为已读"""
     count = await repo.batch_mark_read(db, request.documentIds)
     await db.commit()
@@ -370,13 +346,13 @@ async def batch_mark_read(
 # ============ 同步任务触发 ============
 
 
-@router.post("/sync-jobs/trigger", summary="手动触发同步任务")
-async def trigger_sync_job(
+@router.post("/sync-jobs/trigger", summary="手动触发同步任务")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     current_user: CurrentUser,
     request: SyncTriggerRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """手动触发数据源同步任务（后台异步执行，含自动 AI 分析）"""
     source = await repo.get_data_source_by_code(db, request.sourceCode)
     if not source:
@@ -403,9 +379,11 @@ async def trigger_sync_job(
 
     # 后台执行同步（不阻塞响应）
     # AI 分析现在在 sync_service 中自动执行
-    from app.modules.registration.regulatory_tracker.services.sync_service import run_sync_job
+    from app.modules.registration.regulatory_tracker.services.sync_service import (
+        run_sync_job,
+    )
 
-    async def _run_sync(current_user: CurrentUser):
+    async def _run_sync(current_user: CurrentUser) -> Any:
         from app.core.database import async_session_factory
 
         async with async_session_factory() as session:
@@ -435,13 +413,13 @@ async def trigger_sync_job(
 # ============ 同步任务列表 ============
 
 
-@router.get("/sync-jobs", summary="同步任务列表")
-async def list_sync_jobs(
+@router.get("/sync-jobs", summary="同步任务列表")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     current_user: CurrentUser,
     page: int = Query(1, ge=1),
     pageSize: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     """获取同步任务日志列表"""
     jobs, total = await repo.get_sync_jobs_list(db=db, page=page, page_size=pageSize)
 

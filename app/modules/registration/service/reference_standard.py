@@ -19,12 +19,7 @@ from app.modules.registration.schemas import (
 logger = logging.getLogger(__name__)
 
 # 模板文件路径（相对于模块目录）
-TEMPLATE_PATH = (
-    Path(__file__).parent.parent
-    / "dui-zhao-pin-shuo-ming-biao"
-    / "assets"
-    / "对照物质说明表模板.docx"
-)
+TEMPLATE_PATH = Path(__file__).parent.parent / "dui-zhao-pin-shuo-ming-biao" / "assets" / "对照物质说明表模板.docx"
 
 
 def _get_upload_dir() -> Path:

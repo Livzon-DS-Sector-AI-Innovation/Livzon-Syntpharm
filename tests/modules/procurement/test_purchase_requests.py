@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -76,9 +77,7 @@ class FakePurchaseRequestRepository:
         if status:
             records = [record for record in records if record.status == status]
         if keyword:
-            records = [
-                record for record in records if keyword in record.request_department
-            ]
+            records = [record for record in records if keyword in record.request_department]
         return records[(page - 1) * page_size : page * page_size], len(records)
 
     async def list_requests_by_approval(
@@ -93,23 +92,14 @@ class FakePurchaseRequestRepository:
     ):
         matching_ids = []
         for request_id, approvals in self.approvals.items():
-            if any(
-                approval.approval_role == approval_role and approval.result == result
-                for approval in approvals
-            ):
+            if any(approval.approval_role == approval_role and approval.result == result for approval in approvals):
                 matching_ids.append(request_id)
 
-        records = [
-            self.requests[request_id]
-            for request_id in matching_ids
-            if request_id in self.requests
-        ]
+        records = [self.requests[request_id] for request_id in matching_ids if request_id in self.requests]
         if category:
             records = [record for record in records if record.category == category]
         if keyword:
-            records = [
-                record for record in records if keyword in record.request_department
-            ]
+            records = [record for record in records if keyword in record.request_department]
         return records[(page - 1) * page_size : page * page_size], len(records)
 
     async def list_purchase_order_lines(
@@ -158,9 +148,7 @@ class FakePurchaseRequestRepository:
         approval.id = uuid.uuid4()
         approval.created_at = datetime.now(UTC)
         approval.updated_at = approval.created_at
-        self.approvals.setdefault(uuid.UUID(approval.purchase_request_id), []).append(
-            approval
-        )
+        self.approvals.setdefault(uuid.UUID(approval.purchase_request_id), []).append(approval)
         return approval
 
 
@@ -262,12 +250,8 @@ async def test_purchase_request_amount_and_two_step_approval_flow() -> None:
             result=PurchaseApprovalResult.approved,
         ),
     )
-    assert (
-        department_approved.status == PurchaseRequestStatus.pending_responsible_leader
-    )
-    assert department_approved.approvals[0].approval_role == (
-        PurchaseApprovalRole.department_head
-    )
+    assert department_approved.status == PurchaseRequestStatus.pending_responsible_leader
+    assert department_approved.approvals[0].approval_role == (PurchaseApprovalRole.department_head)
 
     leader_approved = await procurement_service.approve_purchase_request(
         FakeDb(),
@@ -347,10 +331,7 @@ async def test_purchase_request_role_approval_views() -> None:
 
     assert department_completed_total == 1
     assert department_completed[0].id == created.id
-    assert (
-        department_completed[0].status
-        == PurchaseRequestStatus.pending_responsible_leader
-    )
+    assert department_completed[0].status == PurchaseRequestStatus.pending_responsible_leader
     assert leader_pending_total == 1
     assert leader_pending[0].id == created.id
 

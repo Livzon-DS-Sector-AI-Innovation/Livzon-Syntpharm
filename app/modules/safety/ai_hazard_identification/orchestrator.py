@@ -160,7 +160,7 @@ class HazardIdentificationOrchestrator:
                             )
                         elif reg.document_path:
                             try:
-                                from app.modules.safety.ai_hazard_identification.script1_attachment.plugin import (
+                                from app.modules.safety.ai_hazard_identification.script1_attachment.plugin import (  # type: ignore[attr-defined]
                                     DocumentParser,
                                 )
 
@@ -349,7 +349,7 @@ class HazardIdentificationOrchestrator:
     # Plugin 工厂
     # ═══════════════════════════════════════════════════════════
 
-    def _get_plugin(self, script_number: int, knowledge_context: str | None):
+    def _get_plugin(self, script_number: int, knowledge_context: str | None) -> Any:
         """获取对应脚本的 Plugin 实例（工厂方法）。
 
         每个 Plugin 在构造时注入：
@@ -380,9 +380,7 @@ class HazardIdentificationOrchestrator:
                 ControlMeasureExtractor,
             )
 
-            return ControlMeasureExtractor(
-                self.ai_service, self.config, knowledge_context
-            )
+            return ControlMeasureExtractor(self.ai_service, self.config, knowledge_context)
         elif script_number == 5:
             from app.modules.safety.ai_hazard_identification.script5_residual_risk.plugin import (
                 ResidualRiskAssessor,
@@ -394,9 +392,7 @@ class HazardIdentificationOrchestrator:
                 RecommendationGenerator,
             )
 
-            return RecommendationGenerator(
-                self.ai_service, self.config, knowledge_context
-            )
+            return RecommendationGenerator(self.ai_service, self.config, knowledge_context)
         elif script_number == 7:
             from app.modules.safety.ai_hazard_identification.script7_post_risk.plugin import (
                 PostMeasureAssessor,
@@ -547,7 +543,7 @@ class HazardIdentificationOrchestrator:
         if all(v is not None for v in (l_val, e_val, c_val)):
             # 兜底计算 D = L × E × C
             if update_data.get(d_key) is None:
-                update_data[d_key] = l_val * e_val * c_val
+                update_data[d_key] = l_val * e_val * c_val  # type: ignore[operator]
 
             # 兜底风险等级映射
             if update_data.get(level_key) is None:
@@ -560,15 +556,9 @@ class HazardIdentificationOrchestrator:
             if script_number == 3:
                 for rl in RISK_LEVELS:
                     if rl["key"] == update_data.get(level_key):
-                        if (
-                            "control_level" not in update_data
-                            or update_data["control_level"] is None
-                        ):
+                        if "control_level" not in update_data or update_data["control_level"] is None:
                             update_data["control_level"] = rl["control_level"]
-                        if (
-                            "responsible_person" not in update_data
-                            or update_data["responsible_person"] is None
-                        ):
+                        if "responsible_person" not in update_data or update_data["responsible_person"] is None:
                             update_data["responsible_person"] = rl["responsible_person"]
                         break
 

@@ -63,6 +63,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from .config import (
     HAZARD_COLUMN_MAPPING,
@@ -109,7 +110,7 @@ __all__ = [
 
 
 async def fill_and_export(
-    data: list[dict],
+    data: list[dict[str, Any]],
     template_path: str | Path,
     output_dir: str | Path | None = None,
     *,
@@ -157,7 +158,7 @@ async def fill_and_export(
 
 
 def fill_template(
-    data: list[dict],
+    data: list[dict[str, Any]],
     template_path: str | Path,
     output_path: str | Path,
     *,
@@ -188,13 +189,13 @@ def inspect_template(
     return TemplateInspector().inspect(template_path, column_mapping=column_mapping)
 
 
-def quick_export(
-    data: list[dict],
+def quick_export(  # type: ignore[no-untyped-def]
+    data: list[dict[str, Any]],
     template: str | Path,
     output: str | Path,
     *,
     column_mapping: dict[str, str] | None = None,
-    title_resolver: Callable[[list[dict]], str] | None = None,
+    title_resolver: Callable[[list[dict[str, Any]]], str] | None = None,
     risk_label_column: str = "",
     sequence_column: int = 1,
     page_setup: PageSetup | None = None,

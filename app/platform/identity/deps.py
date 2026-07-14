@@ -1,7 +1,7 @@
 from typing import Annotated
 
 import jwt
-from fastapi import Cookie, Depends, Request
+from fastapi import Cookie, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -39,12 +39,39 @@ async def get_current_user(
     except jwt.InvalidTokenError:
         return None
 
-    open_id: str | None = payload.get("open_id")
-    if not open_id:
+    repo = UserRepository()
+    user: User | None = None
+
+    subject: str | None = payload.get("sub")
+    if subject:
+        user = await repo.get_by_id(db, subject)  # type: ignore[arg-type]
+
+    if user is None:
+        open_id: str | None = payload.get("open_id")
+        if open_id:
+            user = await repo.get_by_feishu_open_id(db, open_id)
+
+    if user is None or user.status == "disabled":
         return None
 
-    repo = UserRepository()
-    return await repo.get_by_feishu_open_id(db, open_id)
+    return user
 
 
 CurrentUser = Annotated[User | None, Depends(get_current_user)]
+
+
+async def require_current_user(current_user: CurrentUser) -> User:
+    if current_user is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login required")
+    return current_user
+
+
+async def require_admin(current_user: CurrentUser) -> User:
+    user = await require_current_user(current_user)
+    if user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin required")
+    return user
+
+
+RequiredUser = Annotated[User, Depends(require_current_user)]
+AdminUser = Annotated[User, Depends(require_admin)]

@@ -6,6 +6,7 @@ This stub remains to satisfy the import in app/main.py lifespan.
 
 import asyncio
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ stop_scheduled_task_flag = asyncio.Event()
 TICK_INTERVAL = 30
 
 
-async def scheduled_task_loop():
+async def scheduled_task_loop() -> Any:
     """Main scheduler loop stub — no-op after scheduled tasks removal.
 
     Launched in the FastAPI lifespan, runs until stop_scheduled_task_flag is set.
@@ -25,9 +26,7 @@ async def scheduled_task_loop():
 
     while not stop_scheduled_task_flag.is_set():
         try:
-            await asyncio.wait_for(
-                stop_scheduled_task_flag.wait(), timeout=TICK_INTERVAL
-            )
+            await asyncio.wait_for(stop_scheduled_task_flag.wait(), timeout=TICK_INTERVAL)
         except TimeoutError:
             pass  # Normal tick timeout, loop continues
 

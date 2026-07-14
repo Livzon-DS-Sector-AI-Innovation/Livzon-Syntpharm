@@ -6,6 +6,8 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 
+from app.core.redis import cache_get, cache_set
+
 OPEN_API_BASE_URL = "https://open.feishu.cn/open-apis"
 FEISHU_BITABLE_RECORD_CHANGED_EVENT = "feishu.bitable_record_changed"
 
@@ -47,8 +49,8 @@ def parse_bitable_url(value: str | None) -> BitableReference:
 
     return BitableReference(
         app_token=app_token,
-        table_id=(query.get("table") or [None])[0],
-        view_id=(query.get("view") or [None])[0],
+        table_id=(query.get("table") or [None])[0],  # type: ignore[list-item]
+        view_id=(query.get("view") or [None])[0],  # type: ignore[list-item]
     )
 
 
@@ -96,10 +98,23 @@ def normalize_table_id(value: str | None) -> str | None:
     return table_match.group(1) if table_match else text
 
 
-async def get_tenant_access_token(app_id: str, app_secret: str) -> str:
+async def get_tenant_access_token(
+    app_id: str,
+    app_secret: str,
+    *,
+    cache_key: str | None = None,
+) -> str:
     """Get tenant_access_token from explicit app credentials."""
     if not app_id or not app_secret:
         raise RuntimeError("App ID 或 App Secret 未配置")
+
+    if cache_key:
+        try:
+            cached = await cache_get(f"feishu:tenant_access_token:{cache_key}")
+            if cached:
+                return cached
+        except Exception:
+            pass
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -116,7 +131,13 @@ async def get_tenant_access_token(app_id: str, app_secret: str) -> str:
     if not token:
         raise RuntimeError("tenant_access_token 响应为空")
 
-    return token
+    if cache_key:
+        try:
+            await cache_set(f"feishu:tenant_access_token:{cache_key}", token, ex=6600)
+        except Exception:
+            pass
+
+    return token  # type: ignore[no-any-return]
 
 
 async def test_bitable_table_with_token(

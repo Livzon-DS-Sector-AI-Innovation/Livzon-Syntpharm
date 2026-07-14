@@ -24,13 +24,9 @@ async def maintenance_plan_loop() -> None:
     选择 00:05 而非 00:00 是为了避开飞书成员同步（00:00）的执行窗口，
     减少并发数据库连接压力。
     """
-    enabled = await get_module_setting_bool(
-        "equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True
-    )
+    enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
     if not enabled:
-        logger.info(
-            "维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动"
-        )
+        logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
     logger.info("维护计划自动生成任务已启动（每天 00:05 CST）")
@@ -73,7 +69,7 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:
+        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 

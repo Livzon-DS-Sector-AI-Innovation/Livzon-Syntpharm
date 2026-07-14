@@ -51,6 +51,17 @@ class HazardLevelEnum(StrEnum):
     MAJOR = "major"  # 重大隐患
 
 
+class DefectSubstanceEnum(StrEnum):
+    """缺陷实质评估 — 3 个枚举值
+
+    用于控制 AI 过度推断：区分直接安全风险与形式/管理瑕疵。
+    """
+
+    SUBSTANTIVE = "substantive"  # 实质缺陷：直接造成安全风险，推断链 ≤2 步
+    PROCEDURAL = "procedural"  # 形式瑕疵：管理/文档/标签/临时放置，不直接构成物理威胁
+    UNCERTAIN = "uncertain"  # 不确定：信息不足，需人工判断
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 输入模型
 # ═══════════════════════════════════════════════════════════════════════════
@@ -59,20 +70,14 @@ class HazardLevelEnum(StrEnum):
 class HazardIdentificationInput(BaseModel):
     """AI 隐患识别输入 — 对应设计方案 2.1 节"""
 
-    hazard_id: uuid.UUID | None = Field(
-        None, description="关联隐患记录 ID（无记录时可为空，用于独立测试）"
-    )
+    hazard_id: uuid.UUID | None = Field(None, description="关联隐患记录 ID（无记录时可为空，用于独立测试）")
     hazard_no: str | None = Field(None, description="隐患编号")
-    description: str = Field(
-        ..., min_length=1, max_length=2000, description="人工填写的隐患描述文本"
-    )
+    description: str = Field(..., min_length=1, max_length=2000, description="人工填写的隐患描述文本")
     department: str | None = Field(None, description="责任部门")
     location: str | None = Field(None, description="地点/部位")
     discovered_by_name: str | None = Field(None, description="检查人员姓名")
     discovered_at: datetime | None = Field(None, description="检查日期")
-    defect_photos: list[str] = Field(
-        default_factory=list, description="缺陷图片列表（本地路径 / URL / data URI）"
-    )
+    defect_photos: list[str] = Field(default_factory=list, description="缺陷图片列表（本地路径 / URL / data URI）")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -103,25 +108,25 @@ class HazardIdentificationOutput(BaseModel):
         description="隐患描述（AI）— 基于图片+文本综合分析的结构化描述",
     )
     hazard_type: HazardTypeEnum = Field(..., description="隐患分类（AI）— 4 枚举")
-    hazard_category: HazardCategoryEnum = Field(
-        ..., description="隐患类别（AI）— 13 枚举"
-    )
+    hazard_category: HazardCategoryEnum = Field(..., description="隐患类别（AI）— 13 枚举")
     hazard_level: HazardLevelEnum = Field(..., description="隐患级别（AI）— 3 枚举")
 
     # ── 整改建议 ──
-    rectification_suggestion: RectificationSuggestion = Field(
-        ..., description="整改建议（AI）— 三分级"
-    )
+    rectification_suggestion: RectificationSuggestion = Field(..., description="整改建议（AI）— 三分级")
 
     # ── 判定依据 ──
-    major_hazard_basis: str = Field(
-        ..., min_length=5, description="隐患判定依据（AI）— 引用具体法规标准条文"
+    major_hazard_basis: str = Field(..., min_length=5, description="隐患判定依据（AI）— 引用具体法规标准条文")
+
+    # ── 缺陷实质评估（v2：控制过度推断）──
+    defect_substance: DefectSubstanceEnum = Field(..., description="缺陷实质评估 — 区分实质性安全风险与形式/管理瑕疵")
+    defect_substance_reasoning: str = Field(
+        ...,
+        min_length=10,
+        description="缺陷实质评估理由 — 推断链长度分析、每步是物理必然还是概率假设",
     )
 
     # ── 置信度（可选，用于质量评估）──
-    confidence: float | None = Field(
-        None, ge=0.0, le=1.0, description="AI 识别置信度（0-1）"
-    )
+    confidence: float | None = Field(None, ge=0.0, le=1.0, description="AI 识别置信度（0-1）")
     reasoning: str | None = Field(None, description="AI 推理过程简述（用于审计和调试）")
 
 
@@ -141,15 +146,9 @@ class ValidationResult(BaseModel):
 class PluginConfig(BaseModel):
     """插件运行时配置"""
 
-    temperature: float = Field(
-        0.05, ge=0.0, le=1.0, description="AI 温度参数（低值保证可复现性）"
-    )
+    temperature: float = Field(0.05, ge=0.0, le=1.0, description="AI 温度参数（低值保证可复现性）")
     max_tokens: int = Field(4096, ge=512, le=16384, description="最大输出 token 数")
     enable_vision: bool = Field(True, description="是否启用多模态视觉分析")
-    enable_reasoning: bool = Field(
-        False, description="是否请求 AI 输出推理过程（增加 token 消耗）"
-    )
-    enable_knowledge: bool = Field(
-        True, description="是否启用法规知识库注入（RAG-lite）"
-    )
+    enable_reasoning: bool = Field(False, description="是否请求 AI 输出推理过程（增加 token 消耗）")
+    enable_knowledge: bool = Field(True, description="是否启用法规知识库注入（RAG-lite）")
     strict_mode: bool = Field(True, description="严格模式：规则验证失败时抛出异常")

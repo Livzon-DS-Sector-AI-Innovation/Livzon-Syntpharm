@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 
 from app.shared.schemas import ApiResponse
 
+__all__ = ["ApiResponse", "success_response", "error_response", "paginated_response"]
+
 
 def success_response(
     data: Any = None,
@@ -19,6 +21,7 @@ def error_response(
     message: str = "请求错误",
     detail: Any = None,
     status_code: int = 400,
+    request_id: str | None = None,
 ) -> JSONResponse:
     body: dict[str, Any] = {
         "code": status_code,
@@ -26,6 +29,8 @@ def error_response(
     }
     if detail:
         body["detail"] = detail
+    if request_id:
+        body["request_id"] = request_id
     return JSONResponse(content=body, status_code=status_code)
 
 

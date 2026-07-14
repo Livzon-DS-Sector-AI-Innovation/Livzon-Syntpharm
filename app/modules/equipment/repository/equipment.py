@@ -7,12 +7,14 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models import (
     Equipment,
     EquipmentCategory,
     EquipmentCategoryLink,
     Location,
 )
+from app.modules.equipment.service.data_scope import apply_equipment_scope
 from app.platform.identity.models import Department, User
 
 
@@ -26,12 +28,15 @@ async def exists_category_by_code(
     db: AsyncSession,
     code: str,
     exclude_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
 ) -> bool:
-    """Check if category code exists."""
+    """Check if category code exists, optionally scoped to a department."""
     query = select(EquipmentCategory.id).where(
         EquipmentCategory.code == code,
         EquipmentCategory.is_deleted == False,  # noqa: E712
     )
+    if department_id is not None:
+        query = query.where(EquipmentCategory.department_id == department_id)
     if exclude_id:
         query = query.where(EquipmentCategory.id != exclude_id)
     result = await db.execute(query.limit(1))
@@ -42,12 +47,15 @@ async def exists_location_by_code(
     db: AsyncSession,
     code: str,
     exclude_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
 ) -> bool:
-    """Check if location code exists."""
+    """Check if location code exists, optionally scoped to a department."""
     query = select(Location.id).where(
         Location.code == code,
         Location.is_deleted == False,  # noqa: E712
     )
+    if department_id is not None:
+        query = query.where(Location.department_id == department_id)
     if exclude_id:
         query = query.where(Location.id != exclude_id)
     result = await db.execute(query.limit(1))
@@ -82,11 +90,15 @@ async def get_equipment_category_by_id(
 async def get_equipment_categories(
     db: AsyncSession,
     parent_id: uuid.UUID | None = None,
+    ctx: EquipmentAccessContext | None = None,
 ) -> list[EquipmentCategory]:
-    """获取设备分类列表"""
+    """获取设备分类列表，可按部门范围过滤"""
     query = select(EquipmentCategory).where(
         EquipmentCategory.is_deleted == False  # noqa: E712
     )
+    # 部门范围过滤
+    if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
+        query = query.where(EquipmentCategory.department_id.in_(ctx.visible_department_ids))
     if parent_id is not None:
         query = query.where(EquipmentCategory.parent_id == parent_id)
     else:
@@ -96,19 +108,24 @@ async def get_equipment_categories(
     return list(result.scalars().all())
 
 
-async def get_equipment_category_tree(db: AsyncSession) -> list[EquipmentCategory]:
-    """获取设备分类树形结构"""
-    result = await db.execute(
+async def get_equipment_category_tree(
+    db: AsyncSession,
+    ctx: EquipmentAccessContext | None = None,
+) -> list[EquipmentCategory]:
+    """获取设备分类树形结构，可按部门范围过滤"""
+    query = (
         select(EquipmentCategory)
         .where(EquipmentCategory.is_deleted == False)  # noqa: E712
         .options(selectinload(EquipmentCategory.children))
         .order_by(EquipmentCategory.code)
     )
+    # 部门范围过滤
+    if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
+        query = query.where(EquipmentCategory.department_id.in_(ctx.visible_department_ids))
+    result = await db.execute(query)
     categories = list(result.scalars().all())
 
-    category_map: dict[uuid.UUID, EquipmentCategory] = {
-        cat.id: cat for cat in categories
-    }
+    category_map: dict[uuid.UUID, EquipmentCategory] = {cat.id: cat for cat in categories}
     for category in categories:
         category.children = []
     root_categories: list[EquipmentCategory] = []
@@ -182,9 +199,13 @@ async def get_location_by_id(
 async def get_locations(
     db: AsyncSession,
     parent_id: uuid.UUID | None = None,
+    ctx: EquipmentAccessContext | None = None,
 ) -> list[Location]:
-    """获取位置列表"""
+    """获取位置列表，可按部门范围过滤"""
     query = select(Location).where(Location.is_deleted == False)  # noqa: E712
+    # 部门范围过滤
+    if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
+        query = query.where(Location.department_id.in_(ctx.visible_department_ids))
     if parent_id is not None:
         query = query.where(Location.parent_id == parent_id)
     else:
@@ -194,14 +215,21 @@ async def get_locations(
     return list(result.scalars().all())
 
 
-async def get_location_tree(db: AsyncSession) -> list[Location]:
-    """获取位置树形结构"""
-    result = await db.execute(
+async def get_location_tree(
+    db: AsyncSession,
+    ctx: EquipmentAccessContext | None = None,
+) -> list[Location]:
+    """获取位置树形结构，可按部门范围过滤"""
+    query = (
         select(Location)
         .where(Location.is_deleted == False)  # noqa: E712
         .options(selectinload(Location.children))
         .order_by(Location.code)
     )
+    # 部门范围过滤
+    if ctx and not ctx.is_unrestricted and ctx.visible_department_ids:
+        query = query.where(Location.department_id.in_(ctx.visible_department_ids))
+    result = await db.execute(query)
     locations = list(result.scalars().all())
 
     location_map: dict[uuid.UUID, Location] = {loc.id: loc for loc in locations}
@@ -295,18 +323,6 @@ async def create_equipment(
     # 提取 category_ids，不传给 Equipment 构造
     cids = category_ids or data.pop("category_ids", [])
 
-    # 清理同 equipment_no 的已软删除记录，避免重复添加→删除→添加→删除时违反唯一约束
-    equipment_no = data.get("equipment_no")
-    if equipment_no:
-        deleted_result = await db.execute(
-            select(Equipment).where(
-                Equipment.equipment_no == equipment_no,
-                Equipment.is_deleted == True,  # noqa: E712
-            )
-        )
-        for old in deleted_result.scalars().all():
-            await db.delete(old)
-
     equipment = Equipment(**data)
     db.add(equipment)
     await db.flush()
@@ -320,19 +336,15 @@ async def create_equipment(
     await db.flush()
 
     # eager re-fetch
-    return await _refetch_equipment(db, equipment.id)
+    return await _refetch_equipment(db, equipment.id)  # type: ignore[return-value]
 
 
-async def _refetch_equipment(
-    db: AsyncSession, equipment_id: uuid.UUID
-) -> Equipment | None:
+async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equipment | None:
     """eager re-fetch 设备及关联"""
     result = await db.execute(
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(Equipment.id == equipment_id, Equipment.is_deleted == False)  # noqa: E712
@@ -348,9 +360,7 @@ async def get_equipment_by_id(
     result = await db.execute(
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(
@@ -377,6 +387,7 @@ async def get_equipment_by_no(
 
 async def get_equipments(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     category_id: uuid.UUID | None = None,
     location_id: uuid.UUID | None = None,
     department_id: uuid.UUID | None = None,
@@ -389,13 +400,14 @@ async def get_equipments(
     query = (
         select(Equipment)
         .options(
-            selectinload(Equipment.category_links).selectinload(
-                EquipmentCategoryLink.category
-            ),
+            selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
         .where(Equipment.is_deleted == False)  # noqa: E712
     )
+
+    # 数据范围过滤
+    query = apply_equipment_scope(query, ctx, Equipment.department_id, "department_id")
 
     if category_id:
         category_ids = await _get_category_child_ids(db, category_id)
@@ -422,9 +434,7 @@ async def get_equipments(
         )
 
     # 获取总数
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(Equipment.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(Equipment.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
@@ -467,9 +477,7 @@ async def update_equipment(
             )
         )
         existing_links = list(all_existing_result.scalars().all())
-        existing_by_cid: dict[uuid.UUID, EquipmentCategoryLink] = {
-            link.category_id: link for link in existing_links
-        }
+        existing_by_cid: dict[uuid.UUID, EquipmentCategoryLink] = {link.category_id: link for link in existing_links}
 
         new_cid_set = set(cids)
 
@@ -486,9 +494,7 @@ async def update_equipment(
         # 创建新的关联（之前不存在的分类）
         for cid in cids:
             if cid not in existing_by_cid:
-                db.add(
-                    EquipmentCategoryLink(equipment_id=equipment_id, category_id=cid)
-                )
+                db.add(EquipmentCategoryLink(equipment_id=equipment_id, category_id=cid))
 
         await db.flush()
 
@@ -571,24 +577,41 @@ async def get_max_equipment_no_by_category(
     return result.scalar_one_or_none()
 
 
-async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
-    """获取设备统计"""
+async def get_equipment_statistics(
+    db: AsyncSession,
+    ctx: EquipmentAccessContext,
+) -> dict[str, Any]:
+    """获取设备统计（按数据范围过滤）"""
     # 总数
-    total_result = await db.execute(
-        select(func.count()).where(Equipment.is_deleted == False)  # noqa: E712
+    total_query = select(func.count()).where(
+        Equipment.is_deleted == False  # noqa: E712
     )
+    total_query = apply_equipment_scope(
+        total_query,
+        ctx,
+        Equipment.department_id,
+        "department_id",
+    )
+    total_result = await db.execute(total_query)
     total = total_result.scalar() or 0
 
     # 按状态统计
-    status_result = await db.execute(
+    status_query = (
         select(Equipment.status, func.count())
         .where(Equipment.is_deleted == False)  # noqa: E712
         .group_by(Equipment.status)
     )
+    status_query = apply_equipment_scope(
+        status_query,
+        ctx,
+        Equipment.department_id,
+        "department_id",
+    )
+    status_result = await db.execute(status_query)
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（通过联结表）
-    category_result = await db.execute(
+    category_query = (
         select(
             EquipmentCategory.name,
             func.count(func.distinct(EquipmentCategoryLink.equipment_id)),
@@ -596,7 +619,8 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
         .select_from(EquipmentCategoryLink)
         .join(Equipment, Equipment.id == EquipmentCategoryLink.equipment_id)
         .join(
-            EquipmentCategory, EquipmentCategory.id == EquipmentCategoryLink.category_id
+            EquipmentCategory,
+            EquipmentCategory.id == EquipmentCategoryLink.category_id,
         )
         .where(
             Equipment.is_deleted == False,  # noqa: E712
@@ -604,15 +628,29 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
         )
         .group_by(EquipmentCategory.name)
     )
+    category_query = apply_equipment_scope(
+        category_query,
+        ctx,
+        Equipment.department_id,
+        "department_id",
+    )
+    category_result = await db.execute(category_query)
     by_category = {row[0]: row[1] for row in category_result.all()}
 
     # 按位置统计
-    location_result = await db.execute(
+    location_query = (
         select(Location.name, func.count())
         .join(Equipment, Equipment.location_id == Location.id)
         .where(Equipment.is_deleted == False)  # noqa: E712
         .group_by(Location.name)
     )
+    location_query = apply_equipment_scope(
+        location_query,
+        ctx,
+        Equipment.department_id,
+        "department_id",
+    )
+    location_result = await db.execute(location_query)
     by_location = {row[0]: row[1] for row in location_result.all()}
 
     return {
@@ -645,9 +683,7 @@ async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
     return [dict(row._mapping) for row in rows]
 
 
-async def get_department_info(
-    db: AsyncSession, department_id: uuid.UUID
-) -> dict[str, Any] | None:
+async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dict[str, Any] | None:
     """获取单个部门信息（含负责人姓名和 leader_id）"""
     query = (
         select(
@@ -670,9 +706,7 @@ async def get_department_info(
     return dict(row._mapping)
 
 
-async def get_department_leader_user_id(
-    db: AsyncSession, department_id: uuid.UUID
-) -> uuid.UUID | None:
+async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UUID) -> uuid.UUID | None:
     """获取部门负责人的 User.id（UUID），通过 feishu_open_id 关联"""
     from app.platform.identity.models import Department, User
 

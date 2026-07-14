@@ -22,9 +22,7 @@ class SpecialOperationPersonnelBase(BaseModel):
     issuing_authority: str | None = Field(None, max_length=200, description="发证机关")
     issue_date: datetime | None = Field(None, description="发证日期")
     expiry_date: datetime | None = Field(None, description="有效期至")
-    certificate_file_path: str | None = Field(
-        None, max_length=500, description="证书文件路径"
-    )
+    certificate_file_path: str | None = Field(None, max_length=500, description="证书文件路径")
     qualification_scope: str | None = Field(None, description="资质范围")
     notes: str | None = Field(None, description="备注")
 
@@ -46,9 +44,7 @@ class SpecialOperationPersonnelUpdate(BaseModel):
     issuing_authority: str | None = Field(None, max_length=200, description="发证机关")
     issue_date: datetime | None = Field(None, description="发证日期")
     expiry_date: datetime | None = Field(None, description="有效期至")
-    certificate_file_path: str | None = Field(
-        None, max_length=500, description="证书文件路径"
-    )
+    certificate_file_path: str | None = Field(None, max_length=500, description="证书文件路径")
     qualification_scope: str | None = Field(None, description="资质范围")
     status: PersonnelStatus | None = Field(None, description="状态")
     notes: str | None = Field(None, description="备注")

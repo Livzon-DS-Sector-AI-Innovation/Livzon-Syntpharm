@@ -12,28 +12,18 @@ class InspectionTemplateItemCreate(BaseModel):
 
     item_name: str = Field(..., max_length=200, description="检查项名称")
     item_description: str | None = Field(default=None, description="检查项说明")
-    expected_result: str | None = Field(
-        default=None, max_length=200, description="预期结果/标准值"
-    )
-    check_method: str | None = Field(
-        default=None, max_length=100, description="检查方法"
-    )
+    expected_result: str | None = Field(default=None, max_length=200, description="预期结果/标准值")
+    check_method: str | None = Field(default=None, max_length=100, description="检查方法")
     sort_order: int = Field(default=0, ge=0, description="排序序号")
 
 
 class InspectionTemplateItemUpdate(BaseModel):
     """更新巡检模板检查项请求"""
 
-    item_name: str | None = Field(
-        default=None, max_length=200, description="检查项名称"
-    )
+    item_name: str | None = Field(default=None, max_length=200, description="检查项名称")
     item_description: str | None = Field(default=None, description="检查项说明")
-    expected_result: str | None = Field(
-        default=None, max_length=200, description="预期结果/标准值"
-    )
-    check_method: str | None = Field(
-        default=None, max_length=100, description="检查方法"
-    )
+    expected_result: str | None = Field(default=None, max_length=200, description="预期结果/标准值")
+    check_method: str | None = Field(default=None, max_length=100, description="检查方法")
     sort_order: int | None = Field(default=None, ge=0, description="排序序号")
 
 
@@ -58,12 +48,8 @@ class InspectionTemplateCreate(BaseModel):
 
     name: str = Field(..., max_length=200, description="模板名称")
     description: str | None = Field(default=None, description="模板描述")
-    equipment_category_id: uuid.UUID | None = Field(
-        default=None, description="适用设备分类ID"
-    )
-    items: list[InspectionTemplateItemCreate] = Field(
-        default_factory=list, description="检查项列表"
-    )
+    equipment_category_id: uuid.UUID | None = Field(default=None, description="适用设备分类ID")
+    items: list[InspectionTemplateItemCreate] = Field(default_factory=list, description="检查项列表")
 
 
 class InspectionTemplateUpdate(BaseModel):
@@ -71,9 +57,7 @@ class InspectionTemplateUpdate(BaseModel):
 
     name: str | None = Field(default=None, max_length=200, description="模板名称")
     description: str | None = Field(default=None, description="模板描述")
-    equipment_category_id: uuid.UUID | None = Field(
-        default=None, description="适用设备分类ID"
-    )
+    equipment_category_id: uuid.UUID | None = Field(default=None, description="适用设备分类ID")
     is_active: bool | None = Field(default=None, description="是否启用")
 
 
@@ -115,9 +99,7 @@ class InspectionRecordItem(BaseModel):
 class InspectionCompleteRequest(BaseModel):
     """巡检完成请求（提交所有检查项结果）"""
 
-    records: list[InspectionRecordItem] = Field(
-        ..., min_length=1, description="检查项结果列表"
-    )
+    records: list[InspectionRecordItem] = Field(..., min_length=1, description="检查项结果列表")
 
 
 class InspectionRecordResponse(BaseModel):

@@ -20,27 +20,11 @@ class WcCertificate(BaseModel):
         {"schema": "registration"},
     )
 
-    product_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="品名"
-    )
-    certificate_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="证书名称"
-    )
-    batch_no: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="批件号（通知书编号）"
-    )
-    issuing_authority: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="国家/发证机关"
-    )
-    issue_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="发证日期"
-    )
-    valid_until: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="证书有效期至"
-    )
-    product_scope: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="产品范围"
-    )
-    is_expired: Mapped[str | None] = mapped_column(
-        String(8), nullable=True, comment="证书是否过期"
-    )
+    product_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="品名")
+    certificate_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="证书名称")
+    batch_no: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="批件号（通知书编号）")
+    issuing_authority: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="国家/发证机关")
+    issue_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="发证日期")
+    valid_until: Mapped[date | None] = mapped_column(Date, nullable=True, comment="证书有效期至")
+    product_scope: Mapped[str | None] = mapped_column(Text, nullable=True, comment="产品范围")
+    is_expired: Mapped[str | None] = mapped_column(String(8), nullable=True, comment="证书是否过期")

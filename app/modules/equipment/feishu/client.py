@@ -42,12 +42,10 @@ async def get_equipment_tenant_token(client: lark.Client) -> str:
     )
     resp = await client.auth.v3.tenant_access_token.ainternal(req)
     if not resp.success():
-        raise RuntimeError(
-            f"设备机器人 token 获取失败: code={resp.code}, msg={resp.msg}"
-        )
+        raise RuntimeError(f"设备机器人 token 获取失败: code={resp.code}, msg={resp.msg}")
     if resp.raw and resp.raw.content:
         data = json.loads(resp.raw.content.decode("utf-8"))
         token = data.get("tenant_access_token", "")
         if token:
-            return token
+            return token  # type: ignore[no-any-return]
     raise RuntimeError("设备机器人 token 响应为空")

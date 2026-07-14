@@ -61,9 +61,7 @@ def load_user_mapping(path: str | None) -> dict[str, str]:
         return json.load(f)
 
 
-async def import_deviations(
-    conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]
-) -> int:
+async def import_deviations(conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]) -> int:
     """Import deviation.csv to quality.deviations."""
     reader = csv.DictReader(io.StringIO(csv_data))
 
@@ -145,9 +143,7 @@ async def import_deviations(
     return count
 
 
-async def import_capas(
-    conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]
-) -> int:
+async def import_capas(conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]) -> int:
     """Import capa.csv to quality.capas."""
     reader = csv.DictReader(io.StringIO(csv_data))
 
@@ -190,10 +186,7 @@ async def import_capas(
             q_head_approver_id = UUID(user_mapping[row["q_head_approver"]])
 
         evaluation_confirmer_id = None
-        if (
-            row.get("evaluation_confirmer")
-            and row["evaluation_confirmer"] in user_mapping
-        ):
+        if row.get("evaluation_confirmer") and row["evaluation_confirmer"] in user_mapping:
             evaluation_confirmer_id = UUID(user_mapping[row["evaluation_confirmer"]])
 
         created_by = None
@@ -258,9 +251,7 @@ async def import_capas(
     return count
 
 
-async def import_department_contacts(
-    conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]
-) -> int:
+async def import_department_contacts(conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]) -> int:
     """Import department_contact.csv to quality.department_contacts."""
     reader = csv.DictReader(io.StringIO(csv_data))
 
@@ -325,9 +316,7 @@ async def import_department_contacts(
     return count
 
 
-async def import_weekly_confirmations(
-    conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]
-) -> int:
+async def import_weekly_confirmations(conn: asyncpg.Connection, csv_data: str, user_mapping: dict[str, str]) -> int:
     """Import department_weekly_confirmation.csv to quality.department_weekly_confirmations."""
     reader = csv.DictReader(io.StringIO(csv_data))
 
@@ -424,15 +413,11 @@ async def main():
             print(f"  → {dept_count} rows")
 
             print("Importing weekly confirmations...")
-            weekly_count = await import_weekly_confirmations(
-                conn, weekly_csv, user_mapping
-            )
+            weekly_count = await import_weekly_confirmations(conn, weekly_csv, user_mapping)
             print(f"  → {weekly_count} rows")
 
         print("\n✓ Migration completed successfully!")
-        print(
-            f"  Total: {dev_count + capa_count + dept_count + weekly_count} rows imported"
-        )
+        print(f"  Total: {dev_count + capa_count + dept_count + weekly_count} rows imported")
 
     except Exception as e:
         print(f"\n✗ Migration failed: {e}")

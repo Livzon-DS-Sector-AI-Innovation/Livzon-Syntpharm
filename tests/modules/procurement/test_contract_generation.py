@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 from datetime import date
@@ -92,6 +93,7 @@ EXPECTED_FIRST_TABLE_ROWS = {
 
 def _payload(category: ContractCategory) -> ContractGenerateRequest:
     common = dict(
+        title="自动化测试采购合同",
         contract_date=date(2026, 6, 27),
         delivery_date=date(2026, 7, 15),
         delivery_terms="2026年07月15日前一次性交付至买方仓库",
@@ -347,9 +349,7 @@ def test_generate_contract_fills_template_without_leftovers(
     text = _all_text(doc)
 
     assert filename.endswith(".docx")
-    assert media_type == (
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    assert media_type == ("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     assert _red_groups(doc) == []
     assert len(doc.tables[0].rows) == EXPECTED_FIRST_TABLE_ROWS[category]
     assert [value for value in _expected_values(payload) if value not in text] == []
@@ -359,10 +359,7 @@ def test_generate_contract_fills_template_without_leftovers(
         summary_start = len(payload.items) + 1
         for row_index in range(summary_start, summary_start + 3):
             for cell in doc.tables[0].rows[row_index].cells[:3]:
-                assert all(
-                    paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
-                    for paragraph in cell.paragraphs
-                )
+                assert all(paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER for paragraph in cell.paragraphs)
 
     if category is ContractCategory.consumables:
         seller_contact_text = doc.tables[1].rows[3].cells[0].text

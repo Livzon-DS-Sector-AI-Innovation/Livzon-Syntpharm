@@ -17,18 +17,10 @@ class ValidationAuditTask(BaseModel):
         {"schema": "registration"},
     )
 
-    task_name: Mapped[str] = mapped_column(
-        String(300), nullable=False, comment="任务名称"
-    )
-    product_name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="品种名称"
-    )
-    method_name: Mapped[str] = mapped_column(
-        String(300), nullable=False, comment="方法名称"
-    )
-    source_company: Mapped[str] = mapped_column(
-        String(300), nullable=False, comment="来源公司"
-    )
+    task_name: Mapped[str] = mapped_column(String(300), nullable=False, comment="任务名称")
+    product_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="品种名称")
+    method_name: Mapped[str] = mapped_column(String(300), nullable=False, comment="方法名称")
+    source_company: Mapped[str] = mapped_column(String(300), nullable=False, comment="来源公司")
     audit_mode: Mapped[str] = mapped_column(
         String(30), nullable=False, comment="审核模式: protocol/report/protocol_report"
     )
@@ -41,27 +33,13 @@ class ValidationAuditTask(BaseModel):
     conclusion: Mapped[str | None] = mapped_column(
         String(30), nullable=True, comment="审核结论: pass/conditional_pass/fail"
     )
-    risk_level: Mapped[str | None] = mapped_column(
-        String(30), nullable=True, comment="风险等级: high/medium/low"
-    )
-    serious_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="严重问题数"
-    )
-    general_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="一般问题数"
-    )
-    suggestion_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="建议优化数"
-    )
-    compliant_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="合规项数"
-    )
-    non_compliant_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="不合规项数"
-    )
-    report_path: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="审核报告文件路径"
-    )
+    risk_level: Mapped[str | None] = mapped_column(String(30), nullable=True, comment="风险等级: high/medium/low")
+    serious_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="严重问题数")
+    general_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="一般问题数")
+    suggestion_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="建议优化数")
+    compliant_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="合规项数")
+    non_compliant_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="不合规项数")
+    report_path: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="审核报告文件路径")
 
 
 class ValidationAuditFile(BaseModel):
@@ -73,30 +51,18 @@ class ValidationAuditFile(BaseModel):
         {"schema": "registration"},
     )
 
-    task_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）"
-    )
-    file_type: Mapped[str] = mapped_column(
-        String(30), nullable=False, comment="文件类型: protocol/report/attachment"
-    )
-    original_filename: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="原始文件名"
-    )
-    file_path: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="文件存储路径"
-    )
-    file_size: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0", comment="文件大小(字节)"
-    )
+    task_id: Mapped[str] = mapped_column(UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）")
+    file_type: Mapped[str] = mapped_column(String(30), nullable=False, comment="文件类型: protocol/report/attachment")
+    original_filename: Mapped[str] = mapped_column(String(500), nullable=False, comment="原始文件名")
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False, comment="文件存储路径")
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", comment="文件大小(字节)")
     parse_status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
         server_default="pending",
         comment="解析状态: pending/parsing/completed/failed",
     )
-    parsed_text: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="解析后的文本内容"
-    )
+    parsed_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="解析后的文本内容")
 
 
 class ValidationAuditIssue(BaseModel):
@@ -109,34 +75,16 @@ class ValidationAuditIssue(BaseModel):
         {"schema": "registration"},
     )
 
-    task_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）"
-    )
-    file_id: Mapped[str | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, comment="文件ID（逻辑关联）"
-    )
-    issue_no: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="问题编号，如 P001"
-    )
-    dimension: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="所属维度"
-    )
-    check_item: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="检查项"
-    )
+    task_id: Mapped[str] = mapped_column(UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）")
+    file_id: Mapped[str | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="文件ID（逻辑关联）")
+    issue_no: Mapped[str] = mapped_column(String(20), nullable=False, comment="问题编号，如 P001")
+    dimension: Mapped[str] = mapped_column(String(100), nullable=False, comment="所属维度")
+    check_item: Mapped[str] = mapped_column(String(200), nullable=False, comment="检查项")
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="问题描述")
-    suggestion: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="修改建议"
-    )
-    issue_type: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="问题类型: serious/general/suggestion"
-    )
-    page_no: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="所在页码"
-    )
-    evidence_text: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="证据原文"
-    )
+    suggestion: Mapped[str | None] = mapped_column(Text, nullable=True, comment="修改建议")
+    issue_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="问题类型: serious/general/suggestion")
+    page_no: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="所在页码")
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="证据原文")
 
 
 class ValidationAuditReport(BaseModel):
@@ -148,21 +96,11 @@ class ValidationAuditReport(BaseModel):
         {"schema": "registration"},
     )
 
-    task_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）"
-    )
-    report_title: Mapped[str] = mapped_column(
-        String(500), nullable=False, comment="报告标题"
-    )
-    report_markdown: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="报告 Markdown 内容"
-    )
-    report_file_path: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="报告文件路径"
-    )
-    version: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="1", comment="报告版本"
-    )
+    task_id: Mapped[str] = mapped_column(UUID(as_uuid=True), nullable=False, comment="任务ID（逻辑关联）")
+    report_title: Mapped[str] = mapped_column(String(500), nullable=False, comment="报告标题")
+    report_markdown: Mapped[str | None] = mapped_column(Text, nullable=True, comment="报告 Markdown 内容")
+    report_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="报告文件路径")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1", comment="报告版本")
 
 
 class ValidationAuditKnowledgeBase(BaseModel):
@@ -174,27 +112,13 @@ class ValidationAuditKnowledgeBase(BaseModel):
         {"schema": "registration"},
     )
 
-    dimension: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="所属维度"
-    )
-    check_item: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="检查项"
-    )
-    issue_type: Mapped[str] = mapped_column(
-        String(20), nullable=False, comment="问题类型: serious/general/suggestion"
-    )
-    description_template: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="问题描述模板"
-    )
-    suggestion_template: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="修改建议模板"
-    )
-    frequency: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="1", comment="出现频次"
-    )
-    related_product: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="涉及品种"
-    )
+    dimension: Mapped[str] = mapped_column(String(100), nullable=False, comment="所属维度")
+    check_item: Mapped[str] = mapped_column(String(200), nullable=False, comment="检查项")
+    issue_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="问题类型: serious/general/suggestion")
+    description_template: Mapped[str | None] = mapped_column(Text, nullable=True, comment="问题描述模板")
+    suggestion_template: Mapped[str | None] = mapped_column(Text, nullable=True, comment="修改建议模板")
+    frequency: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1", comment="出现频次")
+    related_product: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="涉及品种")
     source_task_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="来源任务ID（逻辑关联）"
     )

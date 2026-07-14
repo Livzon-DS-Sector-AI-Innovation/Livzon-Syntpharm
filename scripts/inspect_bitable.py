@@ -4,7 +4,7 @@ Usage:
     cd dazah-backend
     uv run python scripts/inspect_bitable.py > scripts/inspect_result.txt
 
-Requires FEISHU_APP_ID and FEISHU_APP_SECRET in environment.
+Requires FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET in environment.
 """
 
 import asyncio
@@ -186,9 +186,7 @@ async def inspect_table():
         out("\n  [OK] All expected fields are present in the new table.")
 
     if extra:
-        out(
-            f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):"
-        )
+        out(f"\n  [+] Extra fields in new table ({len(extra)} fields not used by code):")
         for name in sorted(extra):
             out(f"      - {name}")
     else:
@@ -242,8 +240,10 @@ async def inspect_table():
 
 
 if __name__ == "__main__":
-    if not os.getenv("FEISHU_APP_ID") or not os.getenv("FEISHU_APP_SECRET"):
-        print("[!] Please set FEISHU_APP_ID and FEISHU_APP_SECRET")
+    app_id = _settings.feishu.platform.app_id
+    app_secret = _settings.feishu.platform.app_secret
+    if not app_id or not app_secret:
+        print("[!] Please set FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET")
         sys.exit(1)
 
     result = asyncio.run(inspect_table())

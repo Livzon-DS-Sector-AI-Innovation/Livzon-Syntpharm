@@ -15,12 +15,8 @@ MaintenancePlanStatus = Literal["启用", "停用", "已完成"]
 class MaintenancePlanCreate(BaseModel):
     """创建维护计划请求"""
 
-    equipment_id: uuid.UUID | None = Field(
-        default=None, description="设备ID（与 category_id 二选一）"
-    )
-    category_id: uuid.UUID | None = Field(
-        default=None, description="设备分类ID（与 equipment_id 二选一）"
-    )
+    equipment_id: uuid.UUID | None = Field(default=None, description="设备ID（与 category_id 二选一）")
+    category_id: uuid.UUID | None = Field(default=None, description="设备分类ID（与 equipment_id 二选一）")
     plan_name: str = Field(..., max_length=200, description="计划名称")
     plan_type: MaintenancePlanType = Field(default="预防性维护", description="计划类型")
     frequency: int = Field(..., ge=1, description="维护频率数值")

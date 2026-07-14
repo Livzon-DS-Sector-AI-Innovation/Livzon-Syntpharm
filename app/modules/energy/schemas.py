@@ -15,16 +15,12 @@ CollectStatus = Literal["success", "partial", "failed"]
 
 class EnergyDeviceConfigCreate(BaseModel):
     platform_code: str = Field(..., min_length=1, max_length=50, description="平台标识")
-    platform_device_code: str = Field(
-        ..., min_length=1, max_length=100, description="三方平台设备编码"
-    )
+    platform_device_code: str = Field(..., min_length=1, max_length=100, description="三方平台设备编码")
     device_name: str = Field(..., min_length=1, max_length=200, description="设备名称")
     energy_type: EnergyType = Field(..., description="能源类型")
     api_endpoint: str = Field(default="", max_length=500, description="API 路径")
     workshop: str = Field(..., min_length=1, max_length=100, description="所属车间")
-    production_line: str | None = Field(
-        default=None, max_length=100, description="所属产线"
-    )
+    production_line: str | None = Field(default=None, max_length=100, description="所属产线")
     monitor_level: MonitorLevel = Field(default="normal", description="监控等级")
     unit: str = Field(..., min_length=1, max_length=20, description="计量单位")
     collection_interval: int = Field(default=60, ge=1, description="采集间隔(分钟)")
@@ -120,15 +116,9 @@ class CollectLogDetailResponse(BaseModel):
     success_count: int
     error_message: str | None
     created_at: datetime
-    devices: list[CollectLogDeviceDetail] = Field(
-        default_factory=list, description="设备数据详情列表"
-    )
-    time_range_start: datetime | None = Field(
-        default=None, description="数据覆盖起始时间"
-    )
-    time_range_end: datetime | None = Field(
-        default=None, description="数据覆盖结束时间"
-    )
+    devices: list[CollectLogDeviceDetail] = Field(default_factory=list, description="设备数据详情列表")
+    time_range_start: datetime | None = Field(default=None, description="数据覆盖起始时间")
+    time_range_end: datetime | None = Field(default=None, description="数据覆盖结束时间")
 
 
 class CollectTriggerRequest(BaseModel):
@@ -150,9 +140,7 @@ AlertRecordStatus = Literal["pending", "processed", "ignored"]
 
 class EnergyAlertRuleCreate(BaseModel):
     rule_name: str = Field(..., min_length=1, max_length=200, description="规则名称")
-    rule_description: str | None = Field(
-        default=None, max_length=500, description="规则描述"
-    )
+    rule_description: str | None = Field(default=None, max_length=500, description="规则描述")
     energy_type: EnergyType = Field(..., description="能源类型")
     monitor_metric: MonitorMetric = Field(..., description="监控指标")
     threshold_type: ThresholdType = Field(..., description="阈值类型")
@@ -230,6 +218,4 @@ class EnergyAlertRecordResponse(BaseModel):
 
 class AlertRecordProcessRequest(BaseModel):
     status: Literal["processed", "ignored"] = Field(..., description="处理结果")
-    process_note: str | None = Field(
-        default=None, max_length=500, description="处理备注"
-    )
+    process_note: str | None = Field(default=None, max_length=500, description="处理备注")

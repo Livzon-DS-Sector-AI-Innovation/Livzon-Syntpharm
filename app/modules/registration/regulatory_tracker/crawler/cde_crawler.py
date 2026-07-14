@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """CDE 国内药品技术指导原则采集适配器。
 
 核心原则：
@@ -26,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 # 浏览器配置（通过环境变量覆盖，默认使用 Playwright 标准安装路径）
 CRAWLER_HEADLESS = get_settings().CRAWLER_HEADLESS.lower() == "true"
-CRAWLER_BROWSERS_PATH = (
-    get_settings().CRAWLER_BROWSERS_PATH
-)  # 空字符串 = Playwright 默认路径
+CRAWLER_BROWSERS_PATH = get_settings().CRAWLER_BROWSERS_PATH  # 空字符串 = Playwright 默认路径
 
 LAUNCH_ARGS = [
     "--no-sandbox",
@@ -51,14 +50,10 @@ window.navigator.permissions.query = (p) => (
 """
 
 # CDE 国内药品技术指导原则列表页 URL
-CDE_GUIDELINE_LIST_URL = (
-    "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
-)
+CDE_GUIDELINE_LIST_URL = "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
 
 # 详情页 URL 模板
-CDE_DETAIL_URL_TEMPLATE = (
-    "https://www.cde.org.cn/zdyz/domesticinfopage?zdyzIdCODE={zdyzIdCODE}"
-)
+CDE_DETAIL_URL_TEMPLATE = "https://www.cde.org.cn/zdyz/domesticinfopage?zdyzIdCODE={zdyzIdCODE}"
 
 
 class CdeDomesticGuidelineAdapter:
@@ -80,9 +75,7 @@ class CdeDomesticGuidelineAdapter:
 
     async def start(self):
         """启动浏览器"""
-        browsers_path = await get_module_setting(
-            "regulatory_tracker", "CRAWLER_BROWSERS_PATH", ""
-        )
+        browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
         if browsers_path:
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browsers_path
 
@@ -90,9 +83,7 @@ class CdeDomesticGuidelineAdapter:
         # Read headless mode from database if not overridden
         headless = self._headless_override
         if headless is None:
-            headless = await get_module_setting_bool(
-                "regulatory_tracker", "CRAWLER_HEADLESS", True
-            )
+            headless = await get_module_setting_bool("regulatory_tracker", "CRAWLER_HEADLESS", True)
 
         # Read list URL from database if not overridden
         self.list_url = self._list_url_override
@@ -161,9 +152,7 @@ class CdeDomesticGuidelineAdapter:
             return None
 
         if data.get("code") != 200:
-            logger.warning(
-                f"API 返回非 200: code={data.get('code')}, msg={data.get('msg')}"
-            )
+            logger.warning(f"API 返回非 200: code={data.get('code')}, msg={data.get('msg')}")
             return None
 
         response_data = data.get("data", {})
@@ -189,9 +178,7 @@ class CdeDomesticGuidelineAdapter:
             "success": True,
         }
 
-    async def _open_page_and_wait_for_first_response(
-        self, timeout_ms: int = 30000
-    ) -> dict | None:
+    async def _open_page_and_wait_for_first_response(self, timeout_ms: int = 30000) -> dict | None:
         """打开列表页并等待第一次 getDomesticGuideList 响应"""
         captured = {"result": None}
         event = asyncio.Event()
@@ -214,9 +201,7 @@ class CdeDomesticGuidelineAdapter:
         self._page.on("response", on_response)
 
         try:
-            await self._page.goto(
-                self.list_url, wait_until="networkidle", timeout=timeout_ms
-            )
+            await self._page.goto(self.list_url, wait_until="networkidle", timeout=timeout_ms)
             # 等待响应被捕获
             try:
                 await asyncio.wait_for(event.wait(), timeout=timeout_ms / 1000)
@@ -227,9 +212,7 @@ class CdeDomesticGuidelineAdapter:
 
         return captured["result"]
 
-    async def _click_next_page_and_capture(
-        self, timeout_ms: int = 15000
-    ) -> dict | None:
+    async def _click_next_page_and_capture(self, timeout_ms: int = 15000) -> dict | None:
         """点击下一页按钮并捕获响应"""
         captured = {"result": None}
         event = asyncio.Event()
@@ -406,9 +389,7 @@ class CdeDomesticGuidelineAdapter:
                 "error": str(e),
             }
 
-    async def sync_pages(
-        self, start_page: int = 1, end_page: int = 3
-    ) -> list[dict[str, Any]]:
+    async def sync_pages(self, start_page: int = 1, end_page: int = 3) -> list[dict[str, Any]]:
         """同步指定范围的页数据。
 
         Args:

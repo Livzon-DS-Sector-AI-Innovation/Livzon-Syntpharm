@@ -56,9 +56,7 @@ class OhHealthExamService:
         keyword: str | None = None,
     ) -> tuple[list[OhHealthExam], int]:
         """获取体检列表"""
-        return await self.repo.get_health_exams(
-            skip, limit, status, exam_type, department, keyword
-        )
+        return await self.repo.get_health_exams(skip, limit, status, exam_type, department, keyword)
 
     async def get_exam(self, exam_id: uuid.UUID) -> OhHealthExam | None:
         """获取体检详情"""
@@ -111,9 +109,7 @@ class OhHealthExamService:
 
     # ── JSON 子记录操作 ──
 
-    async def add_exam_item(
-        self, exam_id: uuid.UUID, item: dict
-    ) -> OhHealthExam | None:
+    async def add_exam_item(self, exam_id: uuid.UUID, item: dict[str, Any]) -> OhHealthExam | None:
         """追加体检项目"""
         exam = await self.repo.get_health_exam_by_id(exam_id)
         if not exam:
@@ -122,9 +118,7 @@ class OhHealthExamService:
         items.append(item)
         return await self.repo.update_health_exam(exam_id, {"exam_items": items})
 
-    async def update_exam_item(
-        self, exam_id: uuid.UUID, index: int, data: dict
-    ) -> OhHealthExam | None:
+    async def update_exam_item(self, exam_id: uuid.UUID, index: int, data: dict[str, Any]) -> OhHealthExam | None:
         """更新体检项目"""
         exam = await self.repo.get_health_exam_by_id(exam_id)
         if not exam:
@@ -135,9 +129,7 @@ class OhHealthExamService:
         items[index] = {**items[index], **data}
         return await self.repo.update_health_exam(exam_id, {"exam_items": items})
 
-    async def remove_exam_item(
-        self, exam_id: uuid.UUID, index: int
-    ) -> OhHealthExam | None:
+    async def remove_exam_item(self, exam_id: uuid.UUID, index: int) -> OhHealthExam | None:
         """删除体检项目"""
         exam = await self.repo.get_health_exam_by_id(exam_id)
         if not exam:
@@ -171,8 +163,7 @@ class OhHealthExamService:
             records.append(
                 {
                     "abnormality_desc": (
-                        f"员工 {exam.employee_name} 体检结论为「{label}」"
-                        + (f"，备注: {remarks}" if remarks else "")
+                        f"员工 {exam.employee_name} 体检结论为「{label}」" + (f"，备注: {remarks}" if remarks else "")
                     ),
                     "corrective_action": "",
                     "responsible_person": "",
@@ -186,18 +177,14 @@ class OhHealthExamService:
 
         return await self.repo.update_health_exam(exam_id, update_data)
 
-    async def add_abnormality_record(
-        self, exam_id: uuid.UUID, item: dict
-    ) -> OhHealthExam | None:
+    async def add_abnormality_record(self, exam_id: uuid.UUID, item: dict[str, Any]) -> OhHealthExam | None:
         """追加异常处置记录"""
         exam = await self.repo.get_health_exam_by_id(exam_id)
         if not exam:
             return None
         records = list(exam.abnormality_records or [])
         records.append(item)
-        return await self.repo.update_health_exam(
-            exam_id, {"abnormality_records": records}
-        )
+        return await self.repo.update_health_exam(exam_id, {"abnormality_records": records})
 
     async def update_abnormality_record_status(
         self, exam_id: uuid.UUID, index: int, status: str
@@ -212,9 +199,7 @@ class OhHealthExamService:
         records[index] = {**records[index], "status": status}
         if status == "closed":
             records[index]["completed_at"] = datetime.now().isoformat()
-        return await self.repo.update_health_exam(
-            exam_id, {"abnormality_records": records}
-        )
+        return await self.repo.update_health_exam(exam_id, {"abnormality_records": records})
 
 
 # ==================== 定时任务 Service ====================

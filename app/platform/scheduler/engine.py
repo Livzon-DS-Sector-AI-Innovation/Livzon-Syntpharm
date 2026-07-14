@@ -6,6 +6,7 @@ import asyncio
 import logging
 import time as _time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
@@ -113,7 +114,7 @@ class SchedulerEngine:
             if not getattr(settings, task.settings_toggle_key, True):
                 return
 
-        now = datetime.now().astimezone()
+        now = datetime.now(ZoneInfo(task.schedule.timezone))
         last = self._last_run.get(task.name)
         if not is_due(task.schedule, last, now):
             return
@@ -150,7 +151,7 @@ class SchedulerEngine:
             if not getattr(settings, gen.settings_toggle_key, True):
                 return
 
-        now = datetime.now().astimezone()
+        now = datetime.now(ZoneInfo(gen.schedule.timezone))
         last = self._last_run.get(gen.name)
         if not is_due(gen.schedule, last, now):
             return
@@ -178,11 +179,13 @@ class SchedulerEngine:
                             gen.name,
                             gen.timeout_seconds,
                         )
+                        await session.rollback()
                     except Exception:
                         logger.exception(
                             "Generator '%s' item failed",
                             gen.name,
                         )
+                        await session.rollback()
 
                 await session.commit()
                 logger.debug(

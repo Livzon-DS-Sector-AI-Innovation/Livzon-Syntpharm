@@ -1,3 +1,5 @@
+# ruff: noqa
+# mypy: ignore-errors
 """S.6 包装系统 AI 填充配置种子数据"""
 
 import asyncio
@@ -9,7 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
-from app.modules.registration.dossier_writer.field_models import AssetCategory, FieldMapping
+from app.modules.registration.dossier_writer.field_models import (
+    AssetCategory,
+    FieldMapping,
+)
 
 S6_ASSET_CATEGORIES = [
     {
@@ -255,15 +260,11 @@ S6_FIELD_MAPPINGS = [
 async def seed():
     async with async_session_factory() as db:
         # 清理旧的 S.6 配置
-        old_mappings = await db.execute(
-            select(FieldMapping).where(FieldMapping.chapter_code == "3.2.S.6")
-        )
+        old_mappings = await db.execute(select(FieldMapping).where(FieldMapping.chapter_code == "3.2.S.6"))
         for m in old_mappings.scalars().all():
             await db.delete(m)
 
-        old_categories = await db.execute(
-            select(AssetCategory).where(AssetCategory.chapter_code == "3.2.S.6")
-        )
+        old_categories = await db.execute(select(AssetCategory).where(AssetCategory.chapter_code == "3.2.S.6"))
         for c in old_categories.scalars().all():
             await db.delete(c)
 
@@ -280,9 +281,7 @@ async def seed():
             db.add(fm)
 
         await db.commit()
-        print(
-            f"✓ S.6 种子数据写入完成: {len(S6_ASSET_CATEGORIES)} 个素材分类, {len(S6_FIELD_MAPPINGS)} 个字段映射"
-        )
+        print(f"✓ S.6 种子数据写入完成: {len(S6_ASSET_CATEGORIES)} 个素材分类, {len(S6_FIELD_MAPPINGS)} 个字段映射")
 
 
 if __name__ == "__main__":

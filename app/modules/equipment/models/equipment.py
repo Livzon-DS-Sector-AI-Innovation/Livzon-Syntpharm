@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -11,7 +12,6 @@ from sqlalchemy import (
     Index,
     String,
     Text,
-    UniqueConstraint,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,11 +24,11 @@ class EquipmentCategory(BaseModel):
 
     __tablename__ = "equipment_categories"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 code 唯一性检查
-        # 解决软删除后同名 code 无法再次删除的问题
+        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
         Index(
-            "uq_equipment_categories_code",
+            "uq_equipment_categories_code_dept",
             "code",
+            "department_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -37,14 +37,15 @@ class EquipmentCategory(BaseModel):
 
     name: Mapped[str] = mapped_column(String(100), comment="分类名称")
     code: Mapped[str] = mapped_column(String(50), comment="分类代码")
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+    )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.equipment_categories.id"),
         nullable=True,
         comment="父分类ID",
     )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="分类描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="分类描述")
 
     # 关系
     parent: Mapped["EquipmentCategory | None"] = relationship(
@@ -63,10 +64,11 @@ class Location(BaseModel):
 
     __tablename__ = "locations"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 code 唯一性检查
+        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
         Index(
-            "uq_locations_code",
+            "uq_locations_code_dept",
             "code",
+            "department_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -75,14 +77,15 @@ class Location(BaseModel):
 
     name: Mapped[str] = mapped_column(String(100), comment="位置名称")
     code: Mapped[str] = mapped_column(String(50), comment="位置代码")
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+    )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.locations.id"),
         nullable=True,
         comment="父位置ID",
     )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="位置描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="位置描述")
 
     # 关系
     parent: Mapped["Location | None"] = relationship(
@@ -101,10 +104,13 @@ class EquipmentCategoryLink(BaseModel):
 
     __tablename__ = "equipment_category_links"
     __table_args__ = (
-        UniqueConstraint(
+        # 部分唯一索引：仅对未删除的记录做设备+分类唯一性检查
+        Index(
+            "uq_equipment_category_links",
             "equipment_id",
             "category_id",
-            name="uq_equipment_category_links",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
         ),
         {"schema": "equipment"},
     )
@@ -119,9 +125,7 @@ class EquipmentCategoryLink(BaseModel):
     )
 
     # 关系
-    equipment: Mapped["Equipment"] = relationship(
-        "Equipment", back_populates="category_links"
-    )
+    equipment: Mapped["Equipment"] = relationship("Equipment", back_populates="category_links")
     category: Mapped["EquipmentCategory"] = relationship("EquipmentCategory")
 
 
@@ -130,8 +134,12 @@ class Equipment(BaseModel):
 
     __tablename__ = "equipments"
     __table_args__ = (
-        UniqueConstraint(
-            "equipment_no", "is_deleted", name="uq_equipments_equipment_no"
+        # 部分唯一索引：仅对未删除的记录做 equipment_no 唯一性检查
+        Index(
+            "uq_equipments_equipment_no",
+            "equipment_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
         ),
         CheckConstraint(
             "status IN ('在用', '备用', '维修中', '停用', '报废')",
@@ -155,44 +163,22 @@ class Equipment(BaseModel):
         default="在用",
         comment="设备状态：在用/备用/维修中/停用/报废",
     )
-    model: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="设备型号"
-    )
-    specification: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="设备规格"
-    )
-    manufacturer: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="制造商"
-    )
-    supplier: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="供应商"
-    )
-    production_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="出厂日期"
-    )
-    commissioning_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="投用日期"
-    )
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="设备描述"
-    )
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备型号")
+    specification: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="设备规格")
+    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="制造商")
+    supplier: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="供应商")
+    production_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="出厂日期")
+    commissioning_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="投用日期")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="设备描述")
     importance: Mapped[str] = mapped_column(
         String(10),
         default="低",
         comment="设备重要性：高/中/低",
     )
-    warranty_expire_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="保修到期日"
-    )
-    asset_value: Mapped[float | None] = mapped_column(
-        nullable=True, comment="资产原值（元）"
-    )
-    depreciation_years: Mapped[int | None] = mapped_column(
-        nullable=True, comment="折旧年限"
-    )
-    technical_params: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True, comment="技术参数（JSON）"
-    )
+    warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
+    asset_value: Mapped[float | None] = mapped_column(nullable=True, comment="资产原值（元）")
+    depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
+    technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )

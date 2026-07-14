@@ -21,39 +21,25 @@ class KnowledgeCard(BaseModel):
     """
 
     document_title: str = Field(..., description="文档标题")
-    document_category: str = Field(
-        ..., description="分类: laws_regulations / standards / management_systems"
-    )
-    priority: str = Field(
-        ..., description="优先级: P0(必须注入) / P1(空间充裕时注入) / P2(按需注入)"
-    )
+    document_category: str = Field(..., description="分类: laws_regulations / standards / management_systems")
+    priority: str = Field(..., description="优先级: P0(必须注入) / P1(空间充裕时注入) / P2(按需注入)")
 
     # ── 与 6 个 AI 输出字段对应的知识内容 ──
 
-    hazard_type_definitions: str | None = Field(
-        None, description="→ hazard_type: 隐患分类（人/物/环/管）的原文定义"
-    )
+    hazard_type_definitions: str | None = Field(None, description="→ hazard_type: 隐患分类（人/物/环/管）的原文定义")
     hazard_category_criteria: str | None = Field(
         None, description="→ hazard_category: 13 类隐患类别的判定标准和典型场景"
     )
-    hazard_level_criteria: str | None = Field(
-        None, description="→ hazard_level: 重大/较大/一般隐患的分级标准原文"
-    )
-    key_defect_examples: str | None = Field(
-        None, description="→ key_defect: 典型缺陷描述范例"
-    )
+    hazard_level_criteria: str | None = Field(None, description="→ hazard_level: 重大/较大/一般隐患的分级标准原文")
+    key_defect_examples: str | None = Field(None, description="→ key_defect: 典型缺陷描述范例")
     rectification_requirements: str | None = Field(
         None, description="→ rectification_suggestion: 整改措施要求和防护标准"
     )
-    legal_basis_clauses: str | None = Field(
-        None, description="→ major_hazard_basis: 可直接引用的法规条文"
-    )
+    legal_basis_clauses: str | None = Field(None, description="→ major_hazard_basis: 可直接引用的法规条文")
 
     # ── 元数据 ──
 
-    full_document_ref: str | None = Field(
-        None, description="完整文档的存储引用（knowledge_articles.id 或文件路径）"
-    )
+    full_document_ref: str | None = Field(None, description="完整文档的存储引用（knowledge_articles.id 或文件路径）")
     extracted_at: str | None = Field(None, description="知识卡片提取时间（ISO 格式）")
     version: int = Field(1, description="知识卡片版本号")
 

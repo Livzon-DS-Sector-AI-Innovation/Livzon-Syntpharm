@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +20,10 @@ logger = logging.getLogger(__name__)
 _MAPPING_PATH = Path(__file__).parent / "bitable_open_ids.json"
 
 # ── 内存缓存 ──────────────────────────────────────────────
-_data: dict[str, dict] | None = None  # lazy load
+_data: dict[str, dict[str, Any]] | None = None  # lazy load
 
 
-def _load() -> dict[str, dict]:
+def _load() -> dict[str, dict[str, Any]]:
     """延迟加载映射数据，构建 {user_id: {name, bitable_open_id, email}} 索引。"""
     global _data
     if _data is not None:
@@ -78,13 +79,13 @@ def get_bitable_open_id(
     if user_id:
         entry = mapping.get(user_id.strip())
         if entry:
-            return entry["bitable_open_id"]
+            return entry["bitable_open_id"]  # type: ignore[no-any-return]
 
     # 策略 2：name 精确匹配
     if name:
         for uid, entry in mapping.items():
             if entry["name"] == name.strip():
-                return entry["bitable_open_id"]
+                return entry["bitable_open_id"]  # type: ignore[no-any-return]
 
     # 策略 3：回退
     if fallback_to_identity:
@@ -123,7 +124,7 @@ def get_bitable_person_value(
     user_id: str | None = None,
     name: str | None = None,
     fallback_to_identity: str | None = None,
-) -> list[dict] | None:
+) -> list[dict[str, Any]] | None:
     """构造 Bitable person 字段写入值。
 
     Returns:

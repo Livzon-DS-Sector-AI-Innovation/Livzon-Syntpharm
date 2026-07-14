@@ -1,4 +1,5 @@
 """Equipment module schemas."""
+# ruff: noqa: F401
 
 from app.modules.equipment.schemas.calibration import (
     CalibrationPlanCreate,
@@ -17,10 +18,12 @@ from app.modules.equipment.schemas.equipment import (
     EquipmentCategoryUpdate,
     EquipmentCreate,
     EquipmentImportance,
+    EquipmentImportResponse,
     EquipmentResponse,
     EquipmentStatistics,
     EquipmentStatus,
     EquipmentUpdate,
+    ImportRowError,
     LocationCreate,
     LocationResponse,
     LocationTree,
@@ -145,6 +148,9 @@ __all__ = [
     "EquipmentUpdate",
     "EquipmentResponse",
     "EquipmentStatistics",
+    "EquipmentImportance",
+    "EquipmentImportResponse",
+    "ImportRowError",
     # failure code
     "FailureCodeType",
     "FailureCodeCreate",

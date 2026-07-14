@@ -51,7 +51,7 @@ class AssetExtractor:
         return {
             "paragraphs": paragraphs,
             "tables": tables,
-            "full_text": "\n".join([p["text"] for p in paragraphs]),
+            "full_text": "\n".join([p["text"] for p in paragraphs]),  # type: ignore[misc]
         }
 
     @staticmethod
@@ -70,7 +70,7 @@ class AssetExtractor:
             all_text = []
             for page_num, image in enumerate(images):
                 text = ocr_service.extract(image, output_format="text")
-                all_text.append({"page": page_num + 1, "text": text.strip()})
+                all_text.append({"page": page_num + 1, "text": text.strip()})  # type: ignore[union-attr]
 
             return {
                 "pages": all_text,
@@ -111,7 +111,7 @@ class AssetExtractor:
         return None
 
     @staticmethod
-    def extract_table_value(tables: list[dict], field_name: str) -> str | None:
+    def extract_table_value(tables: list[dict[str, Any]], field_name: str) -> str | None:
         """从表格中提取字段值"""
         for table in tables:
             for row in table["data"]:
@@ -120,7 +120,7 @@ class AssetExtractor:
                     if field_name in cell and i + 1 < len(row):
                         value = row[i + 1].strip()
                         if value:
-                            return value
+                            return value  # type: ignore[no-any-return]
         return None
 
 
@@ -128,9 +128,9 @@ class ContentFiller:
     """内容填充器 - 将提取的值填充到模板中"""
 
     @staticmethod
-    def fill_paragraph_text(doc: Document, keyword: str, value: str) -> bool:
+    def fill_paragraph_text(doc: Document, keyword: str, value: str) -> bool:  # type: ignore[valid-type]
         """在段落中查找关键词后的冒号位置并填充值"""
-        for para in doc.paragraphs:
+        for para in doc.paragraphs:  # type: ignore[attr-defined]
             if keyword in para.text:
                 # 查找冒号位置
                 text = para.text
@@ -150,9 +150,9 @@ class ContentFiller:
         return False
 
     @staticmethod
-    def fill_table_cell(doc: Document, field_name: str, value: str) -> bool:
+    def fill_table_cell(doc: Document, field_name: str, value: str) -> bool:  # type: ignore[valid-type]
         """填充表格中指定字段的值"""
-        for table in doc.tables:
+        for table in doc.tables:  # type: ignore[attr-defined]
             for row in table.rows:
                 cells = list(row.cells)
                 for i, cell in enumerate(cells):
@@ -174,10 +174,12 @@ class ContentFiller:
 
     @staticmethod
     def insert_image_at_placeholder(
-        doc: Document, placeholder: str, image_path: Path
+        doc: Document,  # type: ignore[valid-type]
+        placeholder: str,
+        image_path: Path,
     ) -> bool:
         """在占位符位置插入图片"""
-        for para in doc.paragraphs:
+        for para in doc.paragraphs:  # type: ignore[attr-defined]
             if placeholder in para.text:
                 # 清空段落
                 for run in para.runs:

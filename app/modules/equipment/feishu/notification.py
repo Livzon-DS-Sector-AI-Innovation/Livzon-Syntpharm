@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ async def send_user_card(
     open_id: str,
     title: str,
     content: str,
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
     receive_id_type: str = "user_id",
 ) -> bool:
     """使用设备机器人发送卡片消息给单个用户（DM）。
@@ -62,7 +63,7 @@ async def send_user_card(
             ],
         }
         if elements:
-            card["elements"].extend(elements)
+            card["elements"].extend(elements)  # type: ignore[attr-defined]
 
         card_json = json.dumps(card, ensure_ascii=False)
 
@@ -133,7 +134,7 @@ async def _upload_image_to_feishu(
                             len(image_data),
                             image_key,
                         )
-                        return image_key
+                        return image_key  # type: ignore[no-any-return]
                 logger.warning("飞书图片上传失败: %s", data)
             else:
                 logger.warning(
@@ -175,7 +176,7 @@ async def send_verification_card(
         token = await get_equipment_tenant_token(client)
 
         # 构建卡片 elements
-        elements: list[dict] = []
+        elements: list[dict[str, Any]] = []
 
         # 基本信息
         info_lines = [
@@ -214,7 +215,7 @@ async def send_verification_card(
             )
 
             # 上传图片到飞书（最多3张，避免卡片过大）
-            img_elements: list[dict] = []
+            img_elements: list[dict[str, Any]] = []
             for idx, img_path in enumerate(image_paths[:3]):
                 try:
                     from app.core.storage import get_object

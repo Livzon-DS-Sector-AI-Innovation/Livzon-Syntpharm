@@ -1,5 +1,6 @@
 """Supplementary reply API routes."""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Query, UploadFile
@@ -20,7 +21,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> SupplementaryReplySe
 
 
 @router.post("/generate", summary="生成发补回复文档")
-async def generate_supplementary_reply(
+async def post(
     notice: UploadFile,
     template: UploadFile | None = None,
     drug_name: str | None = Form(None, description="药品名称（可选，默认从PDF提取）"),
@@ -29,7 +30,7 @@ async def generate_supplementary_reply(
     company_name: str | None = Form(None, description="申请人/公司名称（可选）"),
     remarks: str | None = Form(None, description="备注"),
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     notice_data = await notice.read()
     notice_file_name = notice.filename or "CDE通知函.pdf"
 
@@ -58,11 +59,11 @@ async def generate_supplementary_reply(
 
 
 @router.get("", summary="发补回复记录列表")
-async def list_supplementary_replies(
+async def get(
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     replies, total = await service.list_replies(
         drug_name=drug_name,
         page=page_params.page,
@@ -77,20 +78,20 @@ async def list_supplementary_replies(
     )
 
 
-@router.get("/{reply_id}", summary="发补回复记录详情")
-async def get_supplementary_reply(
+@router.get("/{reply_id}", summary="发补回复记录详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     reply_id: UUID,
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     reply = await service.get_reply(reply_id)
     return success_response(data=reply.model_dump(mode="json"))
 
 
-@router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")
-async def get_supplementary_reply_download_url(
+@router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     reply_id: UUID,
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     reply_model = await service.repo.get_by_id(reply_id)
     if not reply_model:
         raise NotFoundException("发补回复记录", str(reply_id))
@@ -99,16 +100,14 @@ async def get_supplementary_reply_download_url(
     if not file_path.exists():
         raise NotFoundException("发补回复文件")
 
-    return success_response(
-        data={"url": f"/api/v1/registration/supplementary-replies/{reply_id}/download"}
-    )
+    return success_response(data={"url": f"/api/v1/registration/supplementary-replies/{reply_id}/download"})
 
 
-@router.get("/{reply_id}/download", summary="下载生成的发补回复文件")
-async def download_supplementary_reply(
+@router.get("/{reply_id}/download", summary="下载生成的发补回复文件")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     reply_id: UUID,
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     reply_model = await service.repo.get_by_id(reply_id)
     if not reply_model:
         raise NotFoundException("发补回复记录", str(reply_id))
@@ -125,9 +124,9 @@ async def download_supplementary_reply(
 
 
 @router.delete("/{reply_id}", summary="删除发补回复记录")
-async def delete_supplementary_reply(
+async def delete(
     reply_id: UUID,
     service: SupplementaryReplyService = Depends(get_service),
-):
+) -> Any:
     await service.delete_reply(reply_id)
     return success_response(message="发补回复记录删除成功")

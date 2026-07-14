@@ -9,9 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.registration.models.reference_substance import ReferenceSubstance
 
 
-async def create_reference_substance(
-    db: AsyncSession, data: dict[str, Any]
-) -> ReferenceSubstance:
+async def create_reference_substance(db: AsyncSession, data: dict[str, Any]) -> ReferenceSubstance:
     """创建对照品记录"""
     substance = ReferenceSubstance(**data)
     db.add(substance)
@@ -30,9 +28,7 @@ async def get_reference_substances(db: AsyncSession) -> list[ReferenceSubstance]
     return list(result.scalars().all())
 
 
-async def get_reference_substance_by_id(
-    db: AsyncSession, substance_id: uuid.UUID
-) -> ReferenceSubstance | None:
+async def get_reference_substance_by_id(db: AsyncSession, substance_id: uuid.UUID) -> ReferenceSubstance | None:
     """根据ID获取对照品记录"""
     query = select(ReferenceSubstance).where(
         ReferenceSubstance.id == substance_id,

@@ -1,3 +1,4 @@
+# ruff: noqa
 """Batch sync Feishu open_id for all employees with mobile numbers."""
 
 import asyncio
@@ -41,9 +42,7 @@ async def main():
         employees_new = result.mappings().all()
 
         all_employees = list(employees_old) + list(employees_new)
-        print(
-            f"Total employees: {len(all_employees)} (old: {len(employees_old)}, new: {len(employees_new)})"
-        )
+        print(f"Total employees: {len(all_employees)} (old: {len(employees_old)}, new: {len(employees_new)})")
 
         # 3. 分批获取 open_id（每批 50 个）
         im = FeishuIM()
@@ -67,14 +66,10 @@ async def main():
             for emp in batch:
                 open_id = mapping.get(emp.phone) if emp.phone else None
                 # 判断是 old 还是 new 表
-                table = (
-                    "hr.employees_old" if emp in employees_old else "hr.employees_new"
-                )
+                table = "hr.employees_old" if emp in employees_old else "hr.employees_new"
                 if open_id:
                     await session.execute(
-                        text(
-                            f"UPDATE {table} SET feishu_open_id = :open_id WHERE id = :id"
-                        ),
+                        text(f"UPDATE {table} SET feishu_open_id = :open_id WHERE id = :id"),
                         {"open_id": open_id, "id": str(emp.id)},
                     )
                     updated += 1

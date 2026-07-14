@@ -35,9 +35,9 @@ FORMULA_FIELDS = {"年龄", "工作年限", "厂龄", "司龄", "入职月份", 
 def _extract_text(value: Any) -> str:
     """Extract plain text from Feishu text-field array format."""
     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
-        return value[0].get("text", "")
+        return value[0].get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, dict) and "text" in value:
-        return value.get("text", "")
+        return value.get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, str):
         return value
     return str(value) if value is not None else ""
@@ -50,9 +50,9 @@ def _extract_number(value: Any) -> int | float | None:
     if isinstance(value, dict) and "value" in value:
         v = value["value"]
         if isinstance(v, list) and len(v) > 0:
-            return v[0]
+            return v[0]  # type: ignore[no-any-return]
     if isinstance(value, list) and len(value) > 0:
-        return value[0]
+        return value[0]  # type: ignore[no-any-return]
     return None
 
 
@@ -117,7 +117,7 @@ class EmployeeBitableDataSource:
     async def _create(self, fields: dict[str, Any]) -> str:
         """Create raw record, return record_id."""
         record = await self.client.create_record(self.table_id, fields)
-        return record.get("record_id", "")
+        return record.get("record_id", "")  # type: ignore[no-any-return]
 
     async def _update(self, record_id: str, fields: dict[str, Any]) -> None:
         await self.client.update_record(self.table_id, record_id, fields)
@@ -148,13 +148,9 @@ class EmployeeBitableDataSource:
         items = await self._search(filter_str=filter_str, page_size=page_size)
         return [EmployeeRecord.from_api(item) for item in items]
 
-    async def find_by_employee_number(
-        self, employee_number: str
-    ) -> "EmployeeRecord | None":
+    async def find_by_employee_number(self, employee_number: str) -> "EmployeeRecord | None":
         """Find single employee by employee number (工号)."""
-        items = await self._search(
-            filter_str=f'CurrentValue.[工号] = "{employee_number}"'
-        )
+        items = await self._search(filter_str=f'CurrentValue.[工号] = "{employee_number}"')
         if not items:
             return None
         return EmployeeRecord.from_api(items[0])
@@ -301,9 +297,7 @@ class EmployeeRecord:
         self.major: str = _extract_text(fields.get("专业"))
 
         # Career
-        self.qualifications: list[str] = _extract_multi_select(
-            fields.get("职称／职业资格")
-        )
+        self.qualifications: list[str] = _extract_multi_select(fields.get("职称／职业资格"))
         self.qualification_type: str = fields.get("职称类型", "")
         self.classification: str = fields.get("分类", "")
         self.status: str = fields.get("统计类别", "")
@@ -326,9 +320,7 @@ class EmployeeRecord:
 
         # Other
         self.training_id: str = _extract_text(fields.get("培训档案编号"))
-        self.transfer_history: str = _extract_text(
-            fields.get("异动（含曾经工作部门、岗位)")
-        )
+        self.transfer_history: str = _extract_text(fields.get("异动（含曾经工作部门、岗位)"))
         self.remarks: list[str] = _extract_multi_select(fields.get("备注"))
 
         # Formula / computed (read-only)
@@ -392,18 +384,10 @@ class EmployeeRecord:
             "classification": self.classification,
             "status": self.status,
             "contract_type": self.contract_type,
-            "work_start_date": self.work_start_date.isoformat()
-            if self.work_start_date
-            else None,
-            "factory_entry_date": self.factory_entry_date.isoformat()
-            if self.factory_entry_date
-            else None,
-            "livo_entry_date": self.livo_entry_date.isoformat()
-            if self.livo_entry_date
-            else None,
-            "graduation_date": self.graduation_date.isoformat()
-            if self.graduation_date
-            else None,
+            "work_start_date": self.work_start_date.isoformat() if self.work_start_date else None,
+            "factory_entry_date": self.factory_entry_date.isoformat() if self.factory_entry_date else None,
+            "livo_entry_date": self.livo_entry_date.isoformat() if self.livo_entry_date else None,
+            "graduation_date": self.graduation_date.isoformat() if self.graduation_date else None,
             "bank_account": self.bank_account,
             "emergency_contact_phone": self.emergency_contact_phone,
             "emergency_contact": self.emergency_contact,

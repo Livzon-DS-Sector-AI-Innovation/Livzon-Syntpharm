@@ -11,14 +11,14 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import select
-
-from app.core.database import async_session_factory
 from app.modules.regulatory_tracker.models import (
     DataChannel,
     DataSource,
     RegulatoryDocument,
 )
+from sqlalchemy import select
+
+from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 
@@ -47,18 +47,14 @@ async def seed_regulatory_documents():
 
     async with async_session_factory() as session:
         # 验证 source 和 channel 存在
-        source = await session.execute(
-            select(DataSource).where(DataSource.id == source_id)
-        )
+        source = await session.execute(select(DataSource).where(DataSource.id == source_id))
         source = source.scalar_one_or_none()
 
         if not source:
             print("❌ 数据源不存在，请先执行 seed_regulatory_tracker.py")
             return
 
-        channel = await session.execute(
-            select(DataChannel).where(DataChannel.id == channel_id)
-        )
+        channel = await session.execute(select(DataChannel).where(DataChannel.id == channel_id))
         channel = channel.scalar_one_or_none()
 
         if not channel:

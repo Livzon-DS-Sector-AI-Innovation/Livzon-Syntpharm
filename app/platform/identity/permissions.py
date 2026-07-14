@@ -1,6 +1,6 @@
 """Simplified permission control - all logged-in users have same permissions."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, status
 
@@ -8,7 +8,7 @@ from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User
 
 
-def require_login():
+def require_login() -> Any:
     """Dependency: require user to be logged in."""
 
     async def dependency(current_user: User | None = Depends(get_current_user)) -> User:

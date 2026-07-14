@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 CDE 有头浏览器探测脚本
@@ -78,11 +79,7 @@ def probe():
                 "timestamp": datetime.now().isoformat(),
             }
             report["captured_requests"].append(entry)
-            rtype = (
-                "API"
-                if request.resource_type in ("xhr", "fetch")
-                else request.resource_type[:3].upper()
-            )
+            rtype = "API" if request.resource_type in ("xhr", "fetch") else request.resource_type[:3].upper()
             print(f"   [REQ {rtype}] {request.method} {url[:130]}")
 
     def on_response(response):
@@ -111,9 +108,7 @@ def probe():
                                 if isinstance(v, list):
                                     entry[f"field_{k}_len"] = len(v)
                                     if v and isinstance(v[0], dict):
-                                        entry[f"field_{k}_item_keys"] = list(
-                                            v[0].keys()
-                                        )
+                                        entry[f"field_{k}_item_keys"] = list(v[0].keys())
                                 else:
                                     entry[f"field_{k}"] = v
                         entry["body_preview"] = body[:3000]
@@ -164,9 +159,7 @@ def probe():
         title = page.title()
         url = page.url
         cookies = context.cookies()
-        print(
-            f"   [{(i + 1) * 2}s] title='{title}' url={url[:80]} cookies={len(cookies)}"
-        )
+        print(f"   [{(i + 1) * 2}s] title='{title}' url={url[:80]} cookies={len(cookies)}")
 
         if title and len(title) > 2:
             print(f"   ✅ 页面标题出现: {title}")
@@ -190,11 +183,7 @@ def probe():
         for c in cookies
     ]
     for c in report["cookies_after"]:
-        exp = (
-            datetime.fromtimestamp(c["expires"]).isoformat()
-            if c["expires"] > 0
-            else "Session"
-        )
+        exp = datetime.fromtimestamp(c["expires"]).isoformat() if c["expires"] > 0 else "Session"
         print(f"   {c['name']} @ {c['domain']} expires={exp}")
 
     # Step 5: 如果 WAF 通过了但 API 还没触发，等待更久或滚动触发
@@ -259,9 +248,7 @@ def probe():
                 if "records" in data:
                     report["api_data"]["field_records_len"] = len(data["records"])
                     if data["records"]:
-                        report["api_data"]["field_records_item_keys"] = list(
-                            data["records"][0].keys()
-                        )
+                        report["api_data"]["field_records_item_keys"] = list(data["records"][0].keys())
                         report["api_data"]["first_record"] = data["records"][0]
                 for k in ("total", "pages", "current"):
                     if k in data:
@@ -317,9 +304,7 @@ def main():
             if "field_total" in report["api_data"]:
                 print(f"    total: {report['api_data']['field_total']}")
             if "first_record" in report["api_data"]:
-                print(
-                    f"    首条记录: {json.dumps(report['api_data']['first_record'], ensure_ascii=False)[:300]}"
-                )
+                print(f"    首条记录: {json.dumps(report['api_data']['first_record'], ensure_ascii=False)[:300]}")
 
     if report["errors"]:
         print("\n  错误:")

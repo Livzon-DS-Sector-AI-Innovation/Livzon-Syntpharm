@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 CDE 页面驱动采集脚本
@@ -135,20 +136,10 @@ def main():
                             if isinstance(jd.get("data"), dict)
                             else jd.get("records", [])
                         )
-                        total = (
-                            jd.get("data", {}).get("total")
-                            if isinstance(jd.get("data"), dict)
-                            else jd.get("total")
-                        )
-                        pages = (
-                            jd.get("data", {}).get("pages")
-                            if isinstance(jd.get("data"), dict)
-                            else jd.get("pages")
-                        )
+                        total = jd.get("data", {}).get("total") if isinstance(jd.get("data"), dict) else jd.get("total")
+                        pages = jd.get("data", {}).get("pages") if isinstance(jd.get("data"), dict) else jd.get("pages")
                         current = (
-                            jd.get("data", {}).get("current")
-                            if isinstance(jd.get("data"), dict)
-                            else jd.get("current")
+                            jd.get("data", {}).get("current") if isinstance(jd.get("data"), dict) else jd.get("current")
                         )
                         capture["records_count"] = len(records)
                         capture["total"] = total
@@ -162,9 +153,7 @@ def main():
                     else:
                         capture["success"] = False
                         capture["msg"] = jd.get("msg") if jd else "non-JSON"
-                        print(
-                            f"\n   ⚠️ getDomesticGuideList page={page_num} | msg={capture.get('msg')}"
-                        )
+                        print(f"\n   ⚠️ getDomesticGuideList page={page_num} | msg={capture.get('msg')}")
 
                     guide_list_responses.append(capture)
 
@@ -211,16 +200,10 @@ def main():
     print(f"   已捕获 getDomesticGuideList 响应: {len(guide_list_responses)}")
 
     # 也检查其他 API
-    other_apis = [
-        r for r in output["all_api_responses"] if "getDomesticGuideList" not in r["url"]
-    ]
+    other_apis = [r for r in output["all_api_responses"] if "getDomesticGuideList" not in r["url"]]
     print(f"   其他 API 响应: {len(other_apis)}")
     for r in other_apis:
-        url_short = (
-            r["url"].split("?")[0].split("/")[-1]
-            if "?" in r["url"]
-            else r["url"].split("/")[-1]
-        )
+        url_short = r["url"].split("?")[0].split("/")[-1] if "?" in r["url"] else r["url"].split("/")[-1]
         print(f"      {r['status']} {url_short[:60]} keys={r.get('json_keys', 'N/A')}")
 
     # Step 5: 如果首页没有触发 getDomesticGuideList，尝试点击相关 tab/链接
@@ -243,9 +226,7 @@ def main():
         }""")
         print(f"   找到 {len(links)} 个可交互元素:")
         for l in links[:20]:
-            print(
-                f"      <{l['tag']}> '{l['text']}' class='{l['class'][:40]}' href='{l['href'][:60]}'"
-            )
+            print(f"      <{l['tag']}> '{l['text']}' class='{l['class'][:40]}' href='{l['href'][:60]}'")
 
         # 尝试点击包含"指导原则"或"国内"的元素
         clicked = False
@@ -322,9 +303,7 @@ def main():
 
     print(f"   找到 {len(pagination_info)} 个分页相关元素:")
     for p in pagination_info[:10]:
-        print(
-            f"      [{p['selector']}] <{p['tag']}> '{p['text']}' visible={p['visible']}"
-        )
+        print(f"      [{p['selector']}] <{p['tag']}> '{p['text']}' visible={p['visible']}")
 
     # 尝试点击下一页
     len(guide_list_responses)
@@ -428,18 +407,10 @@ def main():
         first_ids = set()
         second_ids = set()
         if successful_pages[0].get("records"):
-            first_ids = {
-                r.get("zdyzIdCODE") or r.get("id") or r.get("title")
-                for r in successful_pages[0]["records"]
-            }
+            first_ids = {r.get("zdyzIdCODE") or r.get("id") or r.get("title") for r in successful_pages[0]["records"]}
         if successful_pages[1].get("records"):
-            second_ids = {
-                r.get("zdyzIdCODE") or r.get("id") or r.get("title")
-                for r in successful_pages[1]["records"]
-            }
-        output["pagination_works"] = (
-            len(first_ids) > 0 and len(second_ids) > 0 and first_ids != second_ids
-        )
+            second_ids = {r.get("zdyzIdCODE") or r.get("id") or r.get("title") for r in successful_pages[1]["records"]}
+        output["pagination_works"] = len(first_ids) > 0 and len(second_ids) > 0 and first_ids != second_ids
     elif len(successful_pages) == 1:
         output["pagination_works"] = "only_page1_captured"
     else:
@@ -452,9 +423,7 @@ def main():
             "name": c["name"],
             "domain": c["domain"],
             "expires": c.get("expires", -1),
-            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat()
-            if c.get("expires", 0) > 0
-            else "Session",
+            "expires_human": datetime.fromtimestamp(c["expires"]).isoformat() if c.get("expires", 0) > 0 else "Session",
             "httpOnly": c.get("httpOnly", False),
         }
         for c in cookies
@@ -495,9 +464,7 @@ def _print_summary(output):
         status = "✅" if p["success"] else "❌"
         print(f"\n  [{status}] Page {p['page_num']}:")
         print(f"      HTTP: {p['http_status']}")
-        print(
-            f"      MmEwMD: {'有' if p['mmewmd_present'] else '无'} (长度: {p.get('mmewmd_length', 0)})"
-        )
+        print(f"      MmEwMD: {'有' if p['mmewmd_present'] else '无'} (长度: {p.get('mmewmd_length', 0)})")
         if p["success"]:
             print(f"      records: {p['records_count']} 条")
             print(f"      total: {p['total']}")
@@ -515,9 +482,7 @@ def _print_summary(output):
         print(f"      {c['name']} @ {c['domain']} expires={c['expires_human']}")
 
     # 其他 API
-    other = [
-        r for r in output["all_api_responses"] if "getDomesticGuideList" not in r["url"]
-    ]
+    other = [r for r in output["all_api_responses"] if "getDomesticGuideList" not in r["url"]]
     if other:
         print(f"\n  其他 API 响应 ({len(other)} 个):")
         for r in other:
@@ -530,9 +495,7 @@ def _print_summary(output):
                     if isinstance(data_val, list):
                         print(f"         data: list[{len(data_val)}]")
                         if data_val and isinstance(data_val[0], dict):
-                            print(
-                                f"         首条: {data_val[0].get('title', 'N/A')[:60]}"
-                            )
+                            print(f"         首条: {data_val[0].get('title', 'N/A')[:60]}")
 
 
 if __name__ == "__main__":

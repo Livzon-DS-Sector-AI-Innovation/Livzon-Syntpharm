@@ -4,12 +4,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-import subprocess
-import tempfile
-from pathlib import Path
-from typing import Any
+import subprocess  # noqa: E402
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any  # noqa: E402
 
-from docx import Document
+from docx import Document  # noqa: E402
 
 
 class AssetTextExtractor:
@@ -69,7 +69,7 @@ class AssetTextExtractor:
                     }
                 )
 
-            full_text = "\n".join(p["text"] for p in paragraphs)
+            full_text = "\n".join(p["text"] for p in paragraphs)  # type: ignore[misc]
             return {"text": full_text, "paragraphs": paragraphs, "tables": tables}
         except Exception as e:
             return {"text": "", "error": f"docx 提取失败: {str(e)}"}
@@ -120,7 +120,7 @@ class AssetTextExtractor:
                     text = page.extract_text() or ""
                     page_texts.append({"page": i + 1, "text": text.strip()})
 
-                full_text = "\n\n".join(p["text"] for p in page_texts)
+                full_text = "\n\n".join(p["text"] for p in page_texts)  # type: ignore[misc]
                 if full_text.strip():
                     return {
                         "text": full_text,
@@ -128,9 +128,7 @@ class AssetTextExtractor:
                         "page_texts": page_texts,
                     }
         except Exception:
-            logger.warning(
-                "PDF extraction with pdfplumber failed, falling back to PaddleOCR"
-            )
+            logger.warning("PDF extraction with pdfplumber failed, falling back to PaddleOCR")
 
         # 回退到 PaddleOCR PP-StructureV3（对扫描件更好，保持结构）
         try:
@@ -158,19 +156,13 @@ class AssetTextExtractor:
         """从纯文本文件提取"""
         try:
             text = file_path.read_text(encoding="utf-8", errors="replace")
-            paragraphs = [
-                {"index": i, "text": line}
-                for i, line in enumerate(text.splitlines())
-                if line.strip()
-            ]
+            paragraphs = [{"index": i, "text": line} for i, line in enumerate(text.splitlines()) if line.strip()]
             return {"text": text, "paragraphs": paragraphs, "tables": []}
         except Exception as e:
             return {"text": "", "error": f"文本提取失败: {str(e)}"}
 
     @staticmethod
-    def pdf_page_to_image(
-        file_path: Path, page_number: int, dpi: int = 200
-    ) -> Path | None:
+    def pdf_page_to_image(file_path: Path, page_number: int, dpi: int = 200) -> Path | None:
         """将 PDF 指定页转为图片，返回图片路径"""
         try:
             from pdf2image import convert_from_path

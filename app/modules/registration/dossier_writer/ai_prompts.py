@@ -16,8 +16,7 @@ def build_extract_fields_prompt(
         product_name: 品种名称
     """
     field_desc = "\n".join(
-        f"  - {f['field_name']}: {f.get('extraction_prompt', '从素材中提取此字段的值')}"
-        for f in fields
+        f"  - {f['field_name']}: {f.get('extraction_prompt', '从素材中提取此字段的值')}" for f in fields
     )
 
     asset_desc = ""
@@ -78,9 +77,7 @@ def build_split_pages_prompt(
         truncated = p["text"][:500] if len(p["text"]) > 500 else p["text"]
         pages_desc += f"\n--- 第 {p['page']} 页 ---\n{truncated}\n"
 
-    appendix_desc = (
-        ", ".join(available_appendix_slots) if available_appendix_slots else "无"
-    )
+    appendix_desc = ", ".join(available_appendix_slots) if available_appendix_slots else "无"
 
     return [
         {

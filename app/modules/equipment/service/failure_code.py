@@ -51,13 +51,9 @@ async def update_failure_code(
 ) -> FailureCodeModel:
     """更新故障代码"""
     await get_failure_code_by_id(db, model_class, code_id)
-    if data.code is not None and await repo.exists_failure_code_by_code(
-        db, model_class, data.code, exclude_id=code_id
-    ):
+    if data.code is not None and await repo.exists_failure_code_by_code(db, model_class, data.code, exclude_id=code_id):
         raise DuplicateException("故障代码", data.code)
-    result = await repo.update_failure_code(
-        db, model_class, code_id, data.model_dump(exclude_unset=True)
-    )
+    result = await repo.update_failure_code(db, model_class, code_id, data.model_dump(exclude_unset=True))
     if not result:
         raise NotFoundException("故障代码", str(code_id))
     return result

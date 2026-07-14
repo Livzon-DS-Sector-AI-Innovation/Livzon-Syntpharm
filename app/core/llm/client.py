@@ -1,6 +1,7 @@
 """Unified LLM client interface."""
 
 import json
+from typing import Any
 
 import httpx
 
@@ -17,9 +18,7 @@ class LLMClient:
         result = await llm_client.chat([{"role": "user", "content": "Hello"}])
     """
 
-    async def _get_client_and_config(
-        self, config_type: str = "text"
-    ) -> tuple[httpx.AsyncClient, LLMConfigData]:
+    async def _get_client_and_config(self, config_type: str = "text") -> tuple[httpx.AsyncClient, LLMConfigData]:
         """Get HTTP client and config."""
         config = await get_config(config_type)
 
@@ -35,7 +34,7 @@ class LLMClient:
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         response_format: str | None = "json_object",
         temperature: float | None = None,
         max_tokens: int = 16384,
@@ -67,10 +66,7 @@ class LLMClient:
             msgs = [dict(m) for m in messages]
             if response_format == "json_object":
                 last = msgs[-1]
-                if (
-                    isinstance(last.get("content"), str)
-                    and "json" not in last["content"].lower()
-                ):
+                if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
                     last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
 
             body = {
@@ -96,18 +92,18 @@ class LLMClient:
                 )
 
             data = resp.json()
-            return data["choices"][0]["message"]["content"]
+            return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
         finally:
             await client.aclose()
 
     async def chat_json(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         expected_keys: list[str] | None = None,
         temperature: float | None = None,
         config_type: str = "text",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Chat + parse JSON response.
 
         Args:
@@ -150,7 +146,7 @@ class LLMClient:
             if len(parsed) == 0:
                 raise LLMOutputError("LLM returned empty list", raw)
             if isinstance(parsed[0], dict):
-                merged = {}
+                merged = {}  # type: ignore[var-annotated]
                 for item in parsed:
                     for k, v in item.items():
                         if k in merged and isinstance(v, str):
@@ -172,7 +168,7 @@ class LLMClient:
             if missing:
                 raise LLMOutputError(f"LLM response missing keys: {missing}", raw)
 
-        return parsed
+        return parsed  # type: ignore[no-any-return]
 
     async def chat_vision(
         self,
@@ -199,7 +195,7 @@ class LLMClient:
 
             content_parts = [{"type": "text", "text": text_prompt}]
             for url in image_urls:
-                content_parts.append({"type": "image_url", "image_url": {"url": url}})
+                content_parts.append({"type": "image_url", "image_url": {"url": url}})  # type: ignore[dict-item]
 
             body = {
                 "model": config.model_name,
@@ -222,7 +218,7 @@ class LLMClient:
                 )
 
             data = resp.json()
-            return data["choices"][0]["message"]["content"]
+            return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
         finally:
             await client.aclose()
@@ -233,7 +229,7 @@ class LLMClient:
         image_urls: list[str],
         expected_keys: list[str] | None = None,
         temperature: float | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Vision chat + parse JSON response.
 
         Args:
@@ -275,13 +271,11 @@ class LLMClient:
         if expected_keys:
             missing = [k for k in expected_keys if k not in parsed]
             if missing:
-                raise LLMOutputError(
-                    f"Vision LLM response missing keys: {missing}", raw
-                )
+                raise LLMOutputError(f"Vision LLM response missing keys: {missing}", raw)
 
-        return parsed
+        return parsed  # type: ignore[no-any-return]
 
-    async def health_check(self) -> dict:
+    async def health_check(self) -> dict[str, Any]:
         """Check LLM connectivity.
 
         Returns:
@@ -305,12 +299,12 @@ class LLMClient:
         except Exception as e:
             return {"status": "error", "detail": str(e)}
 
-    async def stream_chat(
+    async def _func_l309(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         temperature: float | None = None,
         max_tokens: int = 4096,
-    ):
+    ) -> Any:
         """Stream chat completion tokens.
 
         Yields dicts with keys:

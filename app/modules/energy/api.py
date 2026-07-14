@@ -44,10 +44,7 @@ alert_record_router = APIRouter()
 async def list_platforms(
     user: User = Depends(require_login()),
 ) -> JSONResponse:
-    data = [
-        {"code": code, "name": adapter.platform_name}
-        for code, adapter in ADAPTERS.items()
-    ]
+    data = [{"code": code, "name": adapter.platform_name} for code, adapter in ADAPTERS.items()]
     return success_response(data)
 
 
@@ -152,9 +149,7 @@ async def list_energy_data(
 
 @data_router.get("/statistics", summary="能耗统计")
 async def get_energy_statistics(
-    group_by: str = Query(
-        default="workshop", description="分组维度: workshop/production_line/device"
-    ),
+    group_by: str = Query(default="workshop", description="分组维度: workshop/production_line/device"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),

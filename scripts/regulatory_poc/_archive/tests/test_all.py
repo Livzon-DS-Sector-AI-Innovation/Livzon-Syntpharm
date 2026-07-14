@@ -1,3 +1,4 @@
+# ruff: noqa
 """法规自动监控可行性 POC 测试脚本
 测试 9 个来源网站的可抓取性，输出 feasibility_sample.json 和 feasibility_report.md
 """
@@ -67,11 +68,7 @@ def test_nmpa():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select("ul.list li")
-            or soup.select(".listCon li")
-            or soup.select(".zx_list li")
-        )
+        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select(".zx_list li")
         if not items:
             items = soup.select("li")
         samples = []
@@ -113,9 +110,7 @@ def test_nmpa():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -146,9 +141,7 @@ def test_cde():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
-        )
+        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -188,9 +181,7 @@ def test_cde():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -221,9 +212,7 @@ def test_cfdi():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
-        )
+        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -263,9 +252,7 @@ def test_cfdi():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -299,9 +286,7 @@ def test_chp():
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
         # 尝试找公告/通知栏目
-        items = (
-            soup.select(".news-list li") or soup.select(".list li") or soup.select("li")
-        )
+        items = soup.select(".news-list li") or soup.select(".list li") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -343,9 +328,7 @@ def test_chp():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -376,9 +359,7 @@ def test_gdpa():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
-        )
+        items = soup.select("ul.list li") or soup.select(".listCon li") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -420,9 +401,7 @@ def test_gdpa():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -453,11 +432,7 @@ def test_fda():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select("li.views-row")
-            or soup.select(".view-content li")
-            or soup.select("li")
-        )
+        items = soup.select("li.views-row") or soup.select(".view-content li") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -467,11 +442,7 @@ def test_fda():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.fda.gov", a.get("href", ""))
-            date_span = (
-                item.select_one("time")
-                or item.select_one(".date")
-                or item.select_one("span")
-            )
+            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
             pub_date = date_span.get_text(strip=True) if date_span else ""
             samples.append(
                 {
@@ -503,9 +474,7 @@ def test_fda():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -536,11 +505,7 @@ def test_ema():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select(".ecl-content-item")
-            or soup.select("article")
-            or soup.select("li")
-        )
+        items = soup.select(".ecl-content-item") or soup.select("article") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -550,11 +515,7 @@ def test_ema():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.ema.europa.eu", a.get("href", ""))
-            date_span = (
-                item.select_one("time")
-                or item.select_one(".ecl-date-block")
-                or item.select_one("span")
-            )
+            date_span = item.select_one("time") or item.select_one(".ecl-date-block") or item.select_one("span")
             pub_date = date_span.get_text(strip=True) if date_span else ""
             samples.append(
                 {
@@ -586,9 +547,7 @@ def test_ema():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -629,11 +588,7 @@ def test_edqm():
             if len(title) < 10:
                 continue
             link = urljoin("https://www.edqm.eu", a.get("href", ""))
-            date_span = (
-                item.select_one("time")
-                or item.select_one(".date")
-                or item.select_one("span")
-            )
+            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
             pub_date = date_span.get_text(strip=True) if date_span else ""
             samples.append(
                 {
@@ -665,9 +620,7 @@ def test_edqm():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -698,11 +651,7 @@ def test_ich():
         resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
         status = resp.status_code
         soup = BeautifulSoup(resp.text, "lxml")
-        items = (
-            soup.select(".node--type-guideline")
-            or soup.select("article")
-            or soup.select("li")
-        )
+        items = soup.select(".node--type-guideline") or soup.select("article") or soup.select("li")
         samples = []
         for item in items[:3]:
             a = item.select_one("a")
@@ -712,11 +661,7 @@ def test_ich():
             if len(title) < 5:
                 continue
             link = urljoin("https://www.ich.org", a.get("href", ""))
-            date_span = (
-                item.select_one("time")
-                or item.select_one(".date")
-                or item.select_one("span")
-            )
+            date_span = item.select_one("time") or item.select_one(".date") or item.select_one("span")
             pub_date = date_span.get_text(strip=True) if date_span else ""
             samples.append(
                 {
@@ -748,9 +693,7 @@ def test_ich():
                 False,
                 False,
                 True,
-                ["httpx", "BeautifulSoup"]
-                if samples
-                else ["Playwright", "BeautifulSoup"],
+                ["httpx", "BeautifulSoup"] if samples else ["Playwright", "BeautifulSoup"],
             )
         )
     except Exception as e:
@@ -795,9 +738,7 @@ def generate_report():
         report += f"- **需要JS渲染**: {'是' if r['needs_js_rendering'] else '否'}\n"
         report += f"- **需要登录**: {'是' if r['needs_login'] else '否'}\n"
         report += f"- **验证码**: {'是' if r['has_captcha'] else '否'}\n"
-        report += (
-            f"- **附件可下载**: {'是' if r['attachments_downloadable'] else '待验证'}\n"
-        )
+        report += f"- **附件可下载**: {'是' if r['attachments_downloadable'] else '待验证'}\n"
         report += f"- **推荐技术栈**: {', '.join(r['recommended_tech_stack'])}\n"
         if r["issues"]:
             report += f"- **问题**: {'; '.join(r['issues'])}\n"
@@ -849,16 +790,12 @@ if __name__ == "__main__":
     test_ich()
 
     # 保存 JSON 结果
-    with open(
-        "scripts/regulatory_poc/feasibility_sample.json", "w", encoding="utf-8"
-    ) as f:
+    with open("scripts/regulatory_poc/feasibility_sample.json", "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
     # 生成报告
     report = generate_report()
-    with open(
-        "scripts/regulatory_poc/feasibility_report.md", "w", encoding="utf-8"
-    ) as f:
+    with open("scripts/regulatory_poc/feasibility_report.md", "w", encoding="utf-8") as f:
         f.write(report)
 
     print("\n" + "=" * 60)

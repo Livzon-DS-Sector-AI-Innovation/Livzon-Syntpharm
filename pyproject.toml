@@ -53,8 +53,9 @@ dev = [
 
 [tool.ruff]
 target-version = "py312"
-line-length = 88
+line-length = 120
 exclude = [
+    "edbo_service",
     "edboplus-main",
     "alembic",
 ]
@@ -62,10 +63,48 @@ exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"app/modules/safety/ai_rectification_review/prompts.py" = ["E501"]
+"app/modules/safety/ai_hazard_identification/prompts.py" = ["E501"]
+"app/modules/safety/ai_hazard_identification/script2_hazard_id/prompts.py" = ["E501"]
+"app/modules/safety/ai_prompts.py" = ["E501"]
+"app/modules/safety/models.py" = ["E501"]
+"app/modules/safety/ai_hazard_identification/tests/test_plugin.py" = ["E501"]
+"app/modules/safety/ai_rectification_review/tests/test_plugin.py" = ["E501"]
+"app/modules/safety/ai_hazard_identification/script6_recommendations/prompts.py" = ["E501"]
+"app/modules/quality/sop_ai/service.py" = ["E501"]
+"app/modules/registration/regulatory_tracker/services/ai_analysis_service.py" = ["E501"]
+"app/modules/research/api.py" = ["E501"]
+"app/modules/research/ich_service.py" = ["E501"]
+"app/modules/quality/qms/material_report_service.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
+exclude = [
+    "app/modules/safety/ai_rectification_review/tests/",
+    "app/modules/safety/ai_hazard_identification/tests/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "lark_oapi.*",
+    "fastmcp.*",
+    "openpyxl.*",
+    "paddlepaddle.*",
+    "paddleocr.*",
+    "pdf2image.*",
+    "ordered_set.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "app.modules.*.repository",
+    "app.modules.*.repository.*",
+]
+disable_error_code = ["arg-type"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

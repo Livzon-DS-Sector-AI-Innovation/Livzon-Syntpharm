@@ -1,3 +1,4 @@
+# ruff: noqa
 #!/usr/bin/env python3
 """
 CDE 反检测浏览器探测脚本
@@ -136,9 +137,7 @@ def probe():
                                 if isinstance(v, list):
                                     entry[f"field_{k}_len"] = len(v)
                                     if v and isinstance(v[0], dict):
-                                        entry[f"field_{k}_item_keys"] = list(
-                                            v[0].keys()
-                                        )
+                                        entry[f"field_{k}_item_keys"] = list(v[0].keys())
                                 else:
                                     entry[f"field_{k}"] = v
                         entry["body_preview"] = body[:5000]
@@ -181,9 +180,7 @@ def probe():
         title = page.title()
         cookies = context.cookies()
         content_len = len(page.content())
-        print(
-            f"   [{(i + 1) * 2}s] title='{title[:40]}' cookies={len(cookies)} content={content_len}"
-        )
+        print(f"   [{(i + 1) * 2}s] title='{title[:40]}' cookies={len(cookies)} content={content_len}")
 
         if title and len(title.strip()) > 2:
             print(f"   ✅ WAF 通过! 标题: {title}")
@@ -194,9 +191,7 @@ def probe():
         if content_len > 5000 and i > 3:
             # 检查是否有列表元素
             try:
-                has_list = page.evaluate(
-                    "() => document.querySelectorAll('a[href]').length > 10"
-                )
+                has_list = page.evaluate("() => document.querySelectorAll('a[href]').length > 10")
                 if has_list:
                     print(f"   ✅ 检测到列表内容! content={content_len}")
                     waf_passed = True
@@ -225,9 +220,7 @@ def probe():
             info["expires_human"] = datetime.fromtimestamp(c["expires"]).isoformat()
         report["cookies"].append(info)
         exp = info.get("expires_human", "Session")
-        print(
-            f"   {c['name']} @ {c['domain']} expires={exp} httpOnly={info['httpOnly']}"
-        )
+        print(f"   {c['name']} @ {c['domain']} expires={exp} httpOnly={info['httpOnly']}")
 
     # Step 5: 如果 WAF 通过，等待 API 或手动触发
     if waf_passed:
@@ -267,9 +260,7 @@ def probe():
                         return {error: e.message};
                     }
                 }""")
-                print(
-                    f"   Fetch: status={fetch_result.get('status')} is_json={fetch_result.get('is_json')}"
-                )
+                print(f"   Fetch: status={fetch_result.get('status')} is_json={fetch_result.get('is_json')}")
                 if fetch_result.get("is_json"):
                     data = fetch_result["data"]
                     print(f"   ✅ JSON! keys: {list(data.keys())}")
@@ -284,9 +275,7 @@ def probe():
                     if "records" in data:
                         report["api_data"]["field_records_len"] = len(data["records"])
                         if data["records"]:
-                            report["api_data"]["field_records_item_keys"] = list(
-                                data["records"][0].keys()
-                            )
+                            report["api_data"]["field_records_item_keys"] = list(data["records"][0].keys())
                             report["api_data"]["first_record"] = data["records"][0]
                     for k in ("total", "pages", "current"):
                         if k in data:
@@ -315,16 +304,12 @@ def probe():
             print(f"   Page2: status={p2.get('status')} is_json={p2.get('is_json')}")
             if p2.get("is_json") and p2.get("data"):
                 d2 = p2["data"]
-                print(
-                    f"   ✅ 第二页! current={d2.get('current')} records={len(d2.get('records', []))}"
-                )
+                print(f"   ✅ 第二页! current={d2.get('current')} records={len(d2.get('records', []))}")
                 report["pagination_data"] = {
                     "page2_current": d2.get("current"),
                     "page2_total": d2.get("total"),
                     "page2_records_len": len(d2.get("records", [])),
-                    "page2_first_record": d2.get("records", [{}])[0]
-                    if d2.get("records")
-                    else None,
+                    "page2_first_record": d2.get("records", [{}])[0] if d2.get("records") else None,
                 }
         except Exception as e:
             print(f"   异常: {e}")
@@ -405,9 +390,7 @@ def main():
             if "field_total" in ad:
                 print(f"    total: {ad['field_total']}")
             if "first_record" in ad:
-                print(
-                    f"    首条: {json.dumps(ad['first_record'], ensure_ascii=False)[:300]}"
-                )
+                print(f"    首条: {json.dumps(ad['first_record'], ensure_ascii=False)[:300]}")
 
     if report["pagination_data"]:
         pd = report["pagination_data"]
@@ -415,9 +398,7 @@ def main():
         print(f"    Page2 current: {pd.get('page2_current')}")
         print(f"    Page2 records: {pd.get('page2_records_len')}")
         if pd.get("page2_first_record"):
-            print(
-                f"    Page2 首条: {json.dumps(pd['page2_first_record'], ensure_ascii=False)[:200]}"
-            )
+            print(f"    Page2 首条: {json.dumps(pd['page2_first_record'], ensure_ascii=False)[:200]}")
 
     if report["detail_page_data"]:
         dd = report["detail_page_data"]

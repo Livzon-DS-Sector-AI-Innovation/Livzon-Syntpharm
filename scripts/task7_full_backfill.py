@@ -1,3 +1,4 @@
+# ruff: noqa
 """Task7 全量 AI 回填：对所有待回填法规执行 AI 分析。
 
 使用方法：
@@ -31,13 +32,13 @@ sys.path.insert(0, _project_root)
 
 import argparse
 
-from sqlalchemy import and_, func, select
-
-from app.core.database import async_session_factory
 from app.modules.regulatory_tracker.models.regulatory_document import RegulatoryDocument
 from app.modules.regulatory_tracker.services.ai_analysis_service import (
     analyze_and_update,
 )
+from sqlalchemy import and_, func, select
+
+from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 logging.basicConfig(
@@ -122,9 +123,7 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
             total_success = prev.get("total_success", 0)
             total_failed = prev.get("total_failed", 0)
             total_skipped = prev.get("total_skipped", 0)
-            logger.info(
-                f"恢复进度: 已完成={total_success}, 失败={total_failed}, 跳过={total_skipped}"
-            )
+            logger.info(f"恢复进度: 已完成={total_success}, 失败={total_failed}, 跳过={total_skipped}")
 
     if dry_run:
         logger.info("=== DRY RUN 模式：仅统计待处理数量，不执行分析 ===")
@@ -163,9 +162,7 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
 
                 doc_start = time.time()
                 doc_num = total_success + total_failed + total_skipped + i
-                logger.info(
-                    f"[{doc_num}] ({i}/{len(documents)}) 分析: {doc.title[:50]}..."
-                )
+                logger.info(f"[{doc_num}] ({i}/{len(documents)}) 分析: {doc.title[:50]}...")
 
                 try:
                     success = await analyze_and_update(db, doc)
@@ -228,9 +225,7 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     logger.info("=" * 60)
-    logger.info(
-        f"全量回填结束: 成功={total_success} 失败={total_failed} 跳过={total_skipped}"
-    )
+    logger.info(f"全量回填结束: 成功={total_success} 失败={total_failed} 跳过={total_skipped}")
     logger.info(f"总耗时: {total_elapsed:.0f}s ({total_elapsed / 3600:.1f}h)")
     if _stop_requested:
         logger.info("（因停止信号退出，重新运行即可续跑）")
@@ -242,15 +237,11 @@ async def full_backfill(batch_size: int = 20, dry_run: bool = False):
 
 def main():
     parser = argparse.ArgumentParser(description="Task7 全量 AI 回填")
-    parser.add_argument(
-        "--batch-size", type=int, default=20, help="每批处理数量 (default: 20)"
-    )
+    parser.add_argument("--batch-size", type=int, default=20, help="每批处理数量 (default: 20)")
     parser.add_argument("--dry-run", action="store_true", help="仅统计，不执行分析")
     args = parser.parse_args()
 
-    report = asyncio.run(
-        full_backfill(batch_size=args.batch_size, dry_run=args.dry_run)
-    )
+    report = asyncio.run(full_backfill(batch_size=args.batch_size, dry_run=args.dry_run))
     sys.exit(0 if report else 1)
 
 

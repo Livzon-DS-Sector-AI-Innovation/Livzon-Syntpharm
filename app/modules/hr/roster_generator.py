@@ -4,14 +4,18 @@ import re
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 
-TEMPLATE = Path("/Users/chenjiangyue/Downloads/花名册-模板.docx")
+from app.core.config import get_settings
+
+TEMPLATE = Path(get_settings().UPLOAD_DIR) / "templates" / "花名册-模板.docx"
 
 
 def generate_roster_sync(
-    employees: list[tuple], department: str | None = None
+    employees: list[tuple[Any, ...]],
+    department: str | None = None,
 ) -> BytesIO:
     """同步生成花名册。employees: list of (name, department, gender, education, hire_date, status)"""
     if not TEMPLATE.exists():
@@ -77,8 +81,8 @@ def generate_roster_sync(
     return _save(doc)
 
 
-def _save(doc: Document) -> BytesIO:
+def _save(doc: Document) -> BytesIO:  # type: ignore[valid-type]
     buf = BytesIO()
-    doc.save(buf)
+    doc.save(buf)  # type: ignore[attr-defined]
     buf.seek(0)
     return buf

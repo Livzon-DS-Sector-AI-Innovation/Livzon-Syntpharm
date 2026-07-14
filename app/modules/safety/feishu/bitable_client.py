@@ -5,27 +5,25 @@
 """
 
 import logging
-from pathlib import Path
 from typing import Any
 
 import httpx
-from dotenv import load_dotenv
 
 from app.core.config import get_settings
 from app.modules.safety.feishu.client import get_safety_tenant_token
 
 logger = logging.getLogger(__name__)
 
-# 安全模块独立读取 .env 中的 Bitable 配置（不经过全局 config.py）
-_env_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
-_app_env = get_settings().APP_ENV
-_env_path = _env_dir / f".env.{_app_env}"
-if _env_path.exists():
-    load_dotenv(_env_path, override=True)
+BITABLE_BASE = "https://open.feishu.cn/open-apis/bitable/v1"
 
-import os
-SAFETY_BITABLE_APP_TOKEN = os.getenv("SAFETY_FEISHU_BITABLE_APP_TOKEN", "")
-SAFETY_BITABLE_HAZARD_TABLE_ID = os.getenv("SAFETY_FEISHU_BITABLE_HAZARD_TABLE_ID", "")
+
+def _get_bitable_app_token() -> str:
+    return get_settings().feishu.safety.bitable_app_token
+
+
+def _get_bitable_hazard_table_id() -> str:
+    return get_settings().feishu.safety.hazard_table_id
+
 
 BITABLE_BASE = "https://open.feishu.cn/open-apis/bitable/v1"
 
@@ -38,8 +36,8 @@ class SafetyBitableClient:
         app_token: str | None = None,
         table_id: str | None = None,
     ) -> None:
-        self.app_token = app_token or SAFETY_BITABLE_APP_TOKEN
-        self.table_id = table_id or SAFETY_BITABLE_HAZARD_TABLE_ID
+        self.app_token = app_token or _get_bitable_app_token()
+        self.table_id = table_id or _get_bitable_hazard_table_id()
 
     def _record_url(self, table_id: str | None = None, record_id: str = "") -> str:
         tid = table_id or self.table_id
@@ -85,7 +83,7 @@ class SafetyBitableClient:
                 len(fields),
                 list(fields.keys())[:10],
             )
-            return fields
+            return fields  # type: ignore[no-any-return]
 
     async def update_record(
         self,
@@ -136,9 +134,7 @@ class SafetyBitableClient:
         import asyncio
 
         token = await self._token()
-        base_url = (
-            f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
-        )
+        base_url = f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
 
         async def _try_download(url: str) -> bytes | None:
             last_error = None
@@ -209,7 +205,7 @@ class SafetyBitableClient:
 
         token = await self._token()
 
-        async def _try(headers: dict | None = None) -> bytes | None:
+        async def _try(headers: dict[str, Any] | None = None) -> bytes | None:
             h = headers if headers is not None else {}
             last_error = None
             for attempt in range(3):
@@ -244,9 +240,7 @@ class SafetyBitableClient:
                             if attempt < 2:
                                 await asyncio.sleep(2**attempt)
                             continue
-                        if ct.startswith("application/json") or ct.startswith(
-                            "text/html"
-                        ):
+                        if ct.startswith("application/json") or ct.startswith("text/html"):
                             text = content[:500].decode(errors="replace")
                             logger.warning(
                                 "Bitable URL 返回非文件内容(ct=%s): url=%s... body=%s (attempt %d/3)",
@@ -430,7 +424,7 @@ class SafetyBitableClient:
             if data.get("code") != 0:
                 logger.error("Bitable list_fields 失败: %s", data.get("msg"))
                 return []
-            return data.get("data", {}).get("items", [])
+            return data.get("data", {}).get("items", [])  # type: ignore[no-any-return]
 
     async def create_field(
         self,
@@ -473,7 +467,7 @@ class SafetyBitableClient:
                 field_name,
                 field.get("field_id"),
             )
-            return field
+            return field  # type: ignore[no-any-return]
 
     async def update_field(
         self,
@@ -516,4 +510,4 @@ class SafetyBitableClient:
                 return {}
             field = data.get("data", {}).get("field", {})
             logger.info("Bitable update_field 成功: field_id=%s", field_id)
-            return field
+            return field  # type: ignore[no-any-return]

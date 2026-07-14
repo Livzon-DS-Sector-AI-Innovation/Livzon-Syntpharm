@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 系统角色定义
 # ═══════════════════════════════════════════════════════════════════════════
@@ -35,6 +37,28 @@ WORK_RULES = """## 工作规则
 你的任务不是检查整改回复是否符合文档规范（量化标准/时间节点/责任主体等），而是判断隐患是否得到了实质性解决。
 
 上方的「法规知识库」提供了相关法规标准原文摘要，用于辅助判断整改措施是否满足安全底线要求。
+
+### 0. 缺陷实质重评估（v2 — 基于回复反推缺陷是否实质）
+
+在评估整改质量之前，先阅读整改回复，判断一个前置问题：**这个缺陷本身是不是实质性的安全风险？**
+
+许多时候，责任人不会直接说"无需整改"，但他们回复的内容会揭示真相。你需要从回复中反向推断：
+
+**识别「非实质缺陷」的典型信号**：
+- **误放置/未归位**：回复提到"新员工阅读后未放回""临时放置""当场纠正""已归位"——缺陷本质是收纳问题，非设备/制度缺陷
+- **正式版本存在**：回复提到"正式版本已存在""已签发版本在X处""原文件在X处"——意味着原始 AI 判定过度（把文档放置当作文档管理失控）
+- **设备已停用/区域已废弃**：回复提到"该设备已停用""该区域不再使用"——缺陷对象本身已不构成风险
+- **当场已纠正**：回复提到"现场立即纠正""当场已处理""发现即整改"——问题在发现时已解决，不存在持续风险
+- **合规替代方案存在**：回复提到"实际采用X方式""等效于Y标准"——通过替代方式满足安全要求
+
+**如果识别的信号指向非实质缺陷**：后续的照片/措施/合规维度降低审查严格度：
+- 不要求整改后照片
+- 不要求量化/时间/责任人
+- 回复只需合理解释即可，不因形式不完备而驳回
+
+**如果识别的信号强烈指向实质缺陷已修复**：按正常标准审查。
+
+**输出**：在 `defect_reassessment` 中说明判断，在 `defect_reassessment_level` 中标明 `substantive` / `procedural` / `over_identified`。
 
 ### 1. 图片比对规则（首要证据维度）
 
@@ -92,16 +116,23 @@ WORK_RULES = """## 工作规则
 
 ### 4. 综合评审判定规则
 
-根据以上 3 个维度的结果，做出通过/不通过判定。核心问题是：**该隐患是否已被有效消除？**
+根据缺陷重评估（步骤0）和 3 个审查维度的结果，做出三选一判定。
+
+**判定为「无需整改」的条件**：
+- 缺陷重评估（步骤0）识别到明确信号表明缺陷为非实质/过度识别（defect_reassessment_level = procedural 或 over_identified），且
+- 回复提供了合理解释（不要求照片、不要求量化标准）
+- 注意：无需整改 ≠ 忽略缺陷。它意味着缺陷本身不构成实质性安全风险，但仍需 L3 检查人员现场闭环确认
 
 **判定为「通过」的条件（必须同时满足）**：
+- 缺陷重评估为 substantive（缺陷是实质性的）
 - 图片比对为 matched 或 partial_match（有图片证据表明缺陷已修复），或无图片但文字描述具体可信
 - 措施有效性为 adequate 或 basic（措施逻辑上能消除隐患）
 
 **判定为「不通过」的条件（满足任意一条即为不通过）**：
+- 缺陷重评估为 substantive（缺陷是实质性的），且：
 - 图片比对为 unmatched（图片证据表明缺陷仍然存在、整改明显不到位）
-- 措施有效性为 inadequate（仅有空话、无具体操作、逻辑上无法消除隐患）
-- 无整改后图片且文字描述笼统空泛，无法判断整改是否真实执行
+- 或措施有效性为 inadequate（仅有空话、无具体操作、逻辑上无法消除隐患）
+- 或无整改后图片且文字描述笼统空泛，无法判断整改是否真实执行
 
 **核心原则**：
 - **实效优先**：关注隐患是否被消除，而非整改报告是否符合文档规范
@@ -120,7 +151,7 @@ CRITICAL_CONSTRAINTS = """## ⚠️ 关键约束
 2. **标准合规引用必须来自「法规知识库」中实际存在的条文**，格式为 `[法规/标准名称]第X条：'条文内容'`。若知识库中无对应条文，注明"知识库中无相关条款"
 3. **无整改后图片时 photo_match_level 必须设为 no_photos**。此时需根据文字描述的质量判断：描述具体可信 → 仍可通过；描述笼统空泛 → 不通过
 4. **实效优先于形式**：不因缺少量化标准、时间节点、责任主体等形式要素而判定整改不合格。只要措施逻辑上能消除隐患，即应认可
-5. **不得以"建议"等模糊词语代替明确结论** — review_conclusion 必须是明确的 通过 或 不通过
+5. **不得以"建议"等模糊词语代替明确结论** — review_conclusion 必须是明确的 通过 / 不通过 / 无需整改
 6. **知识库内容优先于你自己的知识**：即使你认为知识库内容不完整或与你的理解不同，也必须以知识库内容为准"""
 
 
@@ -133,14 +164,16 @@ OUTPUT_FORMAT = """## 输出格式
 严格按以下 JSON 格式输出，不要输出任何其他内容（不要输出 markdown 代码块标记）：
 
 {
-  "photo_match_analysis": "before/after 图片对比分析（≥50字）：具体描述缺陷部位修复痕迹、遗留问题、覆盖完整性",
+  "defect_reassessment": "基于整改回复的缺陷实质重评估（≥10字）：回复揭示了什么？缺陷是实质安全风险还是形式瑕疵/过度识别？",
+  "defect_reassessment_level": "substantive | procedural | over_identified",
+  "photo_match_analysis": "before/after 图片对比分析（≥50字）：具体描述缺陷部位修复痕迹、遗留问题、覆盖完整性。若缺陷重评估为非实质，此字段可简述为'缺陷非实质，无照片要求'",
   "photo_match_level": "matched | partial_match | unmatched | no_photos",
-  "measure_quality_assessment": "措施有效性评估（≥50字）：措施是否具体可执行、逻辑上能否消除隐患、是否存在空泛表述",
+  "measure_quality_assessment": "措施有效性评估（≥50字）：措施是否具体可执行、逻辑上能否消除隐患。若缺陷重评估为非实质，此字段可简述回复是否合理解释了实际情况",
   "measure_quality_level": "adequate | basic | inadequate",
-  "standard_compliance": "标准合规评估（≥30字）：引用法规知识库中的具体条文，评估是否满足安全底线要求（参考维度，轻微偏差不影响最终判定）",
+  "standard_compliance": "标准合规评估（≥30字）：引用法规知识库中的具体条文。若缺陷重评估为非实质，可注明'缺陷非实质，标准合规不适用'",
   "standard_compliance_level": "compliant | basically_compliant | non_compliant",
-  "review_conclusion": "通过 | 不通过",
-  "review_comments": "通过 | 不通过"
+  "review_conclusion": "通过 | 不通过 | 无需整改",
+  "review_comments": "通过 | 不通过 | 无需整改"
 }"""
 
 
@@ -302,8 +335,40 @@ FEWSHOT_EXAMPLES = [
             "measure_quality_level": "basic",
             "standard_compliance": "对照法规知识库：（1）GB 30871-2022第4.7条要求审批手续齐全、安全措施全部落实——整改后票证签章已齐全、安全措施已逐项核验；（2）《安全生产法》第四十六条要求安排专门人员进行现场安全管理——监护人李工已到场确认。整改措施满足当前隐患的合规要求。",
             "standard_compliance_level": "basically_compliant",
+            "defect_reassessment": "缺陷为动火作业票签章缺失，属于实质性安全管理缺陷——签章空白直接导致无监管动火，存在现实的火灾/爆炸风险。整改回复描述了具体的补签、核查和清理动作，缺陷属于实质性安全风险，已有效整改",
+            "defect_reassessment_level": "substantive",
             "review_conclusion": "通过",
             "review_comments": "通过",
+        },
+    },
+    # 示例5：缺陷非实质（文档放置不当）— 无需整改（v2 新增）
+    {
+        "scenario": "操作规程打印版未签章 — 回复揭示为非实质收纳问题",
+        "input": {
+            "original_description": "车间操作规程现场放置的为打印版本，非正式签发版本，未加盖签发章",
+            "key_defect": "现场放置的《岗位安全操作规程》为打印版本，未加盖签发章且无正式签发人签字，属于非正式签发版本",
+            "hazard_type": "management_defect",
+            "hazard_category": "documentation",
+            "hazard_level": "general",
+            "ai_rectification_suggestion": {
+                "corrective": "立即停止使用该打印版操作规程...",
+                "preventive": "修订《安全生产管理制度》中关于操作规程管理章节...",
+            },
+            "rectification_reply": "新员工阅读后未及时放回原处，已要求就近阅读，及时归位",
+            "defect_substance": "procedural",
+            "defect_substance_reasoning": "从观察到安全后果的推断链：打印版未签章→(假设1)正式版本可能不存在→(假设2)人员执行错误内容→...推断链共5步，后4步均为概率假设。缺陷本质是'文件未放在正确位置'的收纳问题",
+        },
+        "output": {
+            "defect_reassessment": "整改回复揭示：'新员工阅读后未及时放回原处，已要求就近阅读，及时归位'——正式签发的操作规程实际存在，这只是新员工读完没放回去的收纳问题。原始AI识别从'打印版未签章'推断到'内容权威性丧失→操作错误→安全事故'，推断链过长、每步均为概率假设，属于过度识别。缺陷本质是5S收纳问题，不构成实质性安全风险",
+            "defect_reassessment_level": "over_identified",
+            "photo_match_analysis": "缺陷非实质，无需整改后照片比对。回复已合理解释实际情况（新员工未归位，已纠正）",
+            "photo_match_level": "no_photos",
+            "measure_quality_assessment": "缺陷本质为收纳问题，非实质性安全风险。回复内容合理解释了实际情况（新员工阅读后未放回→已要求归位），逻辑自洽，无需按实质缺陷标准要求量化/时间/责任人",
+            "measure_quality_level": "adequate",
+            "standard_compliance": "缺陷非实质，GB/T 13861-2022 文档管理条款针对的是文档内容缺失/过期等实质缺陷。本缺陷为文件放置不当，标准合规维度不适用",
+            "standard_compliance_level": "basically_compliant",
+            "review_conclusion": "无需整改",
+            "review_comments": "无需整改",
         },
     },
 ]
@@ -321,7 +386,7 @@ def build_context_text(
     hazard_category: str | None = None,
     hazard_level: str | None = None,
     department: str | None = None,
-    ai_rectification_suggestion: dict | None = None,
+    ai_rectification_suggestion: dict[str, Any] | None = None,
 ) -> str:
     """构建原始隐患上下文文本（纯文本模式）。"""
 
@@ -413,12 +478,8 @@ def build_full_prompt(
         prompt += "\n\n" + FEWSHOT_MARKER
         for i, ex in enumerate(FEWSHOT_EXAMPLES, 1):
             prompt += f"\n\n**示例{i}：{ex['scenario']}**\n"
-            prompt += (
-                f"输入：{_json.dumps(ex['input'], ensure_ascii=False, indent=2)}\n"
-            )
-            prompt += (
-                f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
-            )
+            prompt += f"输入：{_json.dumps(ex['input'], ensure_ascii=False, indent=2)}\n"
+            prompt += f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
 
     return prompt
 
@@ -426,6 +487,8 @@ def build_full_prompt(
 def get_expected_keys() -> list[str]:
     """返回 AI 输出 JSON 必须包含的字段列表。"""
     return [
+        "defect_reassessment",
+        "defect_reassessment_level",
         "photo_match_analysis",
         "photo_match_level",
         "measure_quality_assessment",
@@ -437,7 +500,7 @@ def get_expected_keys() -> list[str]:
     ]
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回用于写入 ai_workflow_configs 表的种子配置。"""
     return {
         "module_code": "hazard",

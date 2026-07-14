@@ -1,16 +1,19 @@
 """Equipment personnel repository."""
 
 import uuid
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models.personnel import (
     EquipmentPersonnel,
     EquipmentPersonnelCategory,
     EquipmentPersonnelRole,
     EquipmentRole,
 )
+from app.modules.equipment.service.data_scope import apply_equipment_scope
 
 # ── 角色 Repository ──
 
@@ -93,9 +96,7 @@ async def soft_delete_role(db: AsyncSession, role: EquipmentRole) -> None:
 # ── 人员 Repository ──
 
 
-async def get_personnel_by_user_id(
-    db: AsyncSession, user_id: uuid.UUID
-) -> EquipmentPersonnel | None:
+async def get_personnel_by_user_id(db: AsyncSession, user_id: uuid.UUID) -> EquipmentPersonnel | None:
     result = await db.execute(
         select(EquipmentPersonnel).where(
             EquipmentPersonnel.user_id == user_id,
@@ -105,9 +106,7 @@ async def get_personnel_by_user_id(
     return result.scalar_one_or_none()
 
 
-async def get_personnel_by_id(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> EquipmentPersonnel | None:
+async def get_personnel_by_id(db: AsyncSession, personnel_id: uuid.UUID) -> EquipmentPersonnel | None:
     result = await db.execute(
         select(EquipmentPersonnel).where(
             EquipmentPersonnel.id == personnel_id,
@@ -119,6 +118,7 @@ async def get_personnel_by_id(
 
 async def list_personnel(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     *,
     role_ids: list[uuid.UUID] | None = None,
     is_active: bool | None = None,
@@ -135,6 +135,20 @@ async def list_personnel(
         .where(
             EquipmentPersonnel.is_deleted == False,  # noqa: E712
         )
+    )
+
+    # 数据范围过滤
+    stmt = apply_equipment_scope(
+        stmt,
+        ctx,
+        EquipmentPersonnel.department,
+        "personnel_dept",
+    )
+    count_stmt = apply_equipment_scope(
+        count_stmt,
+        ctx,
+        EquipmentPersonnel.department,
+        "personnel_dept",
     )
 
     if is_active is not None:
@@ -167,9 +181,7 @@ async def list_personnel(
     return list(result.scalars().all()), total
 
 
-async def list_all_personnel_by_user_ids(
-    db: AsyncSession, user_ids: list[uuid.UUID]
-) -> list[EquipmentPersonnel]:
+async def list_all_personnel_by_user_ids(db: AsyncSession, user_ids: list[uuid.UUID]) -> list[EquipmentPersonnel]:
     """按 user_id 列表查询，用于飞书批量刷新"""
     result = await db.execute(
         select(EquipmentPersonnel).where(
@@ -207,9 +219,7 @@ async def add_personnel_roles(
     return records
 
 
-async def get_personnel_roles(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> list[EquipmentRole]:
+async def get_personnel_roles(db: AsyncSession, personnel_id: uuid.UUID) -> list[EquipmentRole]:
     """获取人员的角色列表"""
     result = await db.execute(
         select(EquipmentRole)
@@ -226,9 +236,7 @@ async def get_personnel_roles(
     return list(result.scalars().all())
 
 
-async def soft_delete_personnel_roles(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> None:
+async def soft_delete_personnel_roles(db: AsyncSession, personnel_id: uuid.UUID) -> None:
     """软删除某人员的所有角色关联"""
     result = await db.execute(
         select(EquipmentPersonnelRole).where(
@@ -248,7 +256,7 @@ async def soft_delete_personnel_roles(
 async def add_personnel_categories(
     db: AsyncSession,
     personnel_id: uuid.UUID,
-    items: list[dict],  # [{"role_id": ..., "category_id": ...}]
+    items: list[dict[str, Any]],  # [{"role_id": ..., "category_id": ...}]
 ) -> list[EquipmentPersonnelCategory]:
     records: list[EquipmentPersonnelCategory] = []
     for item in items:
@@ -289,9 +297,7 @@ async def get_personnel_categories_batch(
     return list(result.scalars().all())
 
 
-async def get_personnel_categories(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> list[EquipmentPersonnelCategory]:
+async def get_personnel_categories(db: AsyncSession, personnel_id: uuid.UUID) -> list[EquipmentPersonnelCategory]:
     result = await db.execute(
         select(EquipmentPersonnelCategory).where(
             EquipmentPersonnelCategory.personnel_id == personnel_id,
@@ -301,9 +307,7 @@ async def get_personnel_categories(
     return list(result.scalars().all())
 
 
-async def soft_delete_personnel_categories(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> None:
+async def soft_delete_personnel_categories(db: AsyncSession, personnel_id: uuid.UUID) -> None:
     result = await db.execute(
         select(EquipmentPersonnelCategory).where(
             EquipmentPersonnelCategory.personnel_id == personnel_id,
@@ -323,8 +327,8 @@ async def get_candidates(
     db: AsyncSession,
     role_ids: list[uuid.UUID],
     category_id: uuid.UUID | None = None,
-) -> list[dict]:
-    """按角色查找可分配人员，支持设备分类过滤"""
+) -> list[dict[str, Any]]:
+    """按角色编码查找可分配人员，支持设备分类过滤"""
     base = (
         select(
             EquipmentPersonnel,
@@ -351,7 +355,7 @@ async def get_candidates(
     result = await db.execute(base)
     rows = result.all()
 
-    candidates: dict[uuid.UUID, dict] = {}
+    candidates: dict[uuid.UUID, dict[str, Any]] = {}
     for personnel, role in rows:
         pid = personnel.id
         if pid not in candidates:
@@ -363,9 +367,7 @@ async def get_candidates(
                 "feishu_open_id": personnel.feishu_open_id,
                 "roles": [],
             }
-        candidates[pid]["roles"].append(
-            {"id": role.id, "name": role.name, "code": role.code, "scope": role.scope}
-        )
+        candidates[pid]["roles"].append({"id": role.id, "name": role.name, "code": role.code, "scope": role.scope})
 
     if category_id is not None:
         # 查所有有分类约束的人员
@@ -385,7 +387,7 @@ async def get_candidates(
         )
         matched = {(r.personnel_id, r.role_id) for r in matched_result.scalars().all()}
 
-        filtered: dict[uuid.UUID, dict] = {}
+        filtered: dict[uuid.UUID, dict[str, Any]] = {}
         for pid, info in candidates.items():
             if pid not in constrained_ids:
                 # 无约束 → 入选

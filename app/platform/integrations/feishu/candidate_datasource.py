@@ -22,18 +22,14 @@ _settings = get_settings()
 def _extract_text(value: Any) -> str:
     """Extract plain text from Feishu text-field array format."""
     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
-        return value[0].get("text", "")
+        return value[0].get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, dict):
         if "text" in value:
-            return value.get("text", "")
-        if (
-            "value" in value
-            and isinstance(value["value"], list)
-            and len(value["value"]) > 0
-        ):
+            return value.get("text", "")  # type: ignore[no-any-return]
+        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
             inner = value["value"][0]
             if isinstance(inner, dict) and "text" in inner:
-                return inner.get("text", "")
+                return inner.get("text", "")  # type: ignore[no-any-return]
             return str(inner)
     if isinstance(value, str):
         return value
@@ -47,7 +43,7 @@ def _extract_single_select(value: Any) -> str:
     return str(value) if value is not None else ""
 
 
-def _extract_attachments(value: Any) -> list[dict]:
+def _extract_attachments(value: Any) -> list[dict[str, Any]]:
     """Extract attachment array from Feishu attachment field."""
     if isinstance(value, list):
         return [dict(item) for item in value if isinstance(item, dict)]
@@ -61,8 +57,8 @@ class CandidateBitableDataSource:
     """Candidate datasource backed by Feishu Bitable."""
 
     def __init__(self) -> None:
-        app_token = _settings.feishu.hr_bitable.candidate_app_token
-        table_id = _settings.feishu.hr_bitable.candidate_table_id
+        app_token = _settings.FEISHU_BITABLE_CANDIDATE_APP_TOKEN  # type: ignore[attr-defined]
+        table_id = _settings.FEISHU_BITABLE_CANDIDATE_TABLE_ID  # type: ignore[attr-defined]
         self._ds = BitableDataSource(app_token=app_token, table_id=table_id)
         self.client = self._ds.client
         self.table_id = table_id
@@ -85,9 +81,7 @@ class CandidateBitableDataSource:
             record_id=record_id,
             fields={"推荐等级": level},
         )
-        logger.info(
-            "Updated recommendation level in Feishu: %s -> %s", record_id, level
-        )
+        logger.info("Updated recommendation level in Feishu: %s -> %s", record_id, level)
 
     async def update(self, record_id: str, fields: dict[str, Any]) -> None:
         """Update candidate fields in Feishu Bitable."""
@@ -105,13 +99,13 @@ class CandidateBitableDataSource:
         logger.info("Created candidate record in Feishu: %s", record_id)
         return record_id
 
-    async def upload_resume(self, file_bytes: bytes, filename: str) -> dict:
+    async def upload_resume(self, file_bytes: bytes, filename: str) -> dict[str, Any]:
         """Upload a resume PDF to Feishu Drive and return file metadata."""
         data = await self.client.upload_file(
             file_bytes=file_bytes,
             filename=filename,
-            parent_type="bitable_file",
-            parent_node=self._ds.app_token,
+            parent_type="bitable_file",  # type: ignore[arg-type]
+            parent_node=self._ds.app_token,  # type: ignore[arg-type]
         )
         logger.info("Uploaded resume to Feishu Drive: %s", data.get("file_token"))
         return data
@@ -132,7 +126,7 @@ class CandidateBitableDataSource:
         items = data.get("tmp_download_urls", [])
         if not items:
             raise RuntimeError("No download URL returned from Feishu Drive API")
-        return items[0].get("tmp_download_url", "")
+        return items[0].get("tmp_download_url", "")  # type: ignore[no-any-return]
 
 
 class CandidateRecord:
@@ -154,17 +148,13 @@ class CandidateRecord:
         self.major: str = _extract_text(fields.get("专业"))
 
         # AI report
-        self.match_report: str = _extract_text(
-            fields.get("候选人匹配度报告-AI.输出结果")
-        )
+        self.match_report: str = _extract_text(fields.get("候选人匹配度报告-AI.输出结果"))
 
         # Recommendation level
         self.recommendation_level: str = _extract_single_select(fields.get("推荐等级"))
 
         # Resume attachments
-        self.resume_attachments: list[dict] = _extract_attachments(
-            fields.get("简历 PDF")
-        )
+        self.resume_attachments: list[dict[str, Any]] = _extract_attachments(fields.get("简历 PDF"))
 
     @classmethod
     def from_api(cls, raw: dict[str, Any]) -> "CandidateRecord":

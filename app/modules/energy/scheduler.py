@@ -43,9 +43,7 @@ def _get_target_hours_since(last_collected_at: datetime | None) -> list[datetime
     if last_collected_at is None:
         return [latest_hour]
 
-    start = last_collected_at.replace(minute=0, second=0, microsecond=0) + timedelta(
-        hours=1
-    )
+    start = last_collected_at.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     if start > latest_hour:
         return []
 
@@ -88,9 +86,7 @@ async def _do_collect(
 
     for target_hour in target_hours:
         try:
-            collect_results = await adapter.fetch_energy_data(
-                device_codes, target_hour, api_endpoint
-            )
+            collect_results = await adapter.fetch_energy_data(device_codes, target_hour, api_endpoint)
         except NotImplementedError:
             logger.debug("平台 %s 适配器尚未实现，跳过自动采集", platform_code)
             return
@@ -140,26 +136,18 @@ async def energy_collection_loop() -> None:
     每 TICK_INTERVAL 秒检查一次，对到达 collection_interval 的设备触发采集。
     支持补采：若设备上次采集时间距今超过 collection_interval，补采缺失的整点数据。
     """
-    if not await get_module_setting_bool(
-        "energy", "ENERGY_AUTO_COLLECT_ENABLED", False
-    ):
-        logger.info(
-            "能耗自动采集已通过配置关闭（ENERGY_AUTO_COLLECT_ENABLED=false），跳过启动"
-        )
+    if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
+        logger.info("能耗自动采集已通过配置关闭（ENERGY_AUTO_COLLECT_ENABLED=false），跳过启动")
         return
 
     logger.info("能耗自动采集任务已启动（间隔=%d秒）", TICK_INTERVAL)
 
     while not stop_energy_collection_flag.is_set():
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not await get_module_setting_bool(
-            "energy", "ENERGY_AUTO_COLLECT_ENABLED", False
-        ):
+        if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
             logger.debug("能耗自动采集已关闭，跳过本轮 tick")
             try:
-                await asyncio.wait_for(
-                    stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL
-                )
+                await asyncio.wait_for(stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL)
             except TimeoutError:
                 pass
             continue
@@ -169,9 +157,7 @@ async def energy_collection_loop() -> None:
                 platforms = await repo.get_distinct_enabled_platforms(db)
 
                 for platform_code in platforms:
-                    devices = await repo.get_enabled_devices_by_platform(
-                        db, platform_code
-                    )
+                    devices = await repo.get_enabled_devices_by_platform(db, platform_code)
                     if not devices:
                         continue
 
@@ -185,9 +171,7 @@ async def energy_collection_loop() -> None:
                             devices_due.append(device)
                         else:
                             ref_time = latest.collected_at
-                            elapsed = (
-                                datetime.now(CST) - ref_time
-                            ).total_seconds() / 60
+                            elapsed = (datetime.now(CST) - ref_time).total_seconds() / 60
                             if elapsed >= device.collection_interval:
                                 devices_due.append(device)
                                 if oldest_last is None or ref_time < oldest_last:
@@ -216,9 +200,7 @@ async def energy_collection_loop() -> None:
 
         # 等待下一次 tick
         try:
-            await asyncio.wait_for(
-                stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL
-            )
+            await asyncio.wait_for(stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL)
         except TimeoutError:
             pass
 

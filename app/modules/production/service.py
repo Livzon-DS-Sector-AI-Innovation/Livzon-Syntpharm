@@ -76,16 +76,12 @@ class ProductionService:
         batch_data = data.model_dump()
         return await self.repo.create_batch(batch_data)
 
-    async def update_batch(
-        self, batch_id: uuid.UUID, data: BatchUpdate
-    ) -> Batch | None:
+    async def update_batch(self, batch_id: uuid.UUID, data: BatchUpdate) -> Batch | None:
         """更新批次"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_batch(batch_id, update_data)
 
-    async def update_batch_status(
-        self, batch_id: uuid.UUID, data: BatchStatusUpdate
-    ) -> Batch | None:
+    async def update_batch_status(self, batch_id: uuid.UUID, data: BatchStatusUpdate) -> Batch | None:
         """更新批次状态"""
         batch = await self.repo.get_batch_by_id(batch_id)
         if not batch:
@@ -100,17 +96,17 @@ class ProductionService:
             BatchStatus.CANCELLED: [],
         }
 
-        if data.status not in valid_transitions.get(batch.status, []):
+        if data.status not in valid_transitions.get(batch.status, []):  # type: ignore[call-overload]
             raise ValueError(
-                f"无效的状态转换: {batch.status.value} -> {data.status.value}"
+                f"无效的状态转换: {batch.status.value} -> {data.status.value}"  # type: ignore[attr-defined]
             )
 
         # 处理状态变更的副作用
         update_data: dict[str, Any] = {"status": data.status}
 
-        if data.status == BatchStatus.IN_PROGRESS and not batch.start_time:
+        if data.status == BatchStatus.IN_PROGRESS and not batch.start_time:  # type: ignore[comparison-overlap]
             update_data["start_time"] = datetime.now()
-        elif data.status == BatchStatus.COMPLETED:
+        elif data.status == BatchStatus.COMPLETED:  # type: ignore[comparison-overlap]
             update_data["end_time"] = datetime.now()
 
         return await self.repo.update_batch(batch_id, update_data)
@@ -125,16 +121,12 @@ class ProductionService:
         """获取批次物料列表"""
         return await self.repo.get_batch_materials(batch_id)
 
-    async def add_batch_material(
-        self, batch_id: uuid.UUID, data: dict[str, Any]
-    ) -> BatchMaterial:
+    async def add_batch_material(self, batch_id: uuid.UUID, data: dict[str, Any]) -> BatchMaterial:
         """添加批次物料"""
         data["batch_id"] = batch_id
         return await self.repo.create_batch_material(data)
 
-    async def update_batch_material(
-        self, material_id: uuid.UUID, data: dict[str, Any]
-    ) -> BatchMaterial | None:
+    async def update_batch_material(self, material_id: uuid.UUID, data: dict[str, Any]) -> BatchMaterial | None:
         """更新批次物料"""
         return await self.repo.update_batch_material(material_id, data)
 
@@ -163,9 +155,7 @@ class ProductionService:
         plan_data = data.model_dump()
         return await self.repo.create_plan(plan_data)
 
-    async def update_plan(
-        self, plan_id: uuid.UUID, data: ProductionPlanUpdate
-    ) -> ProductionPlan | None:
+    async def update_plan(self, plan_id: uuid.UUID, data: ProductionPlanUpdate) -> ProductionPlan | None:
         """更新生产计划"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_plan(plan_id, update_data)
@@ -206,9 +196,7 @@ class ProductionService:
         task_data = data.model_dump()
         return await self.repo.create_task(task_data)
 
-    async def update_task(
-        self, task_id: uuid.UUID, data: PlanTaskUpdate
-    ) -> PlanTask | None:
+    async def update_task(self, task_id: uuid.UUID, data: PlanTaskUpdate) -> PlanTask | None:
         """更新计划任务"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_task(task_id, update_data)
@@ -238,9 +226,7 @@ class ProductionService:
         spec_data = data.model_dump()
         return await self.repo.create_process_spec(spec_data)
 
-    async def update_process_spec(
-        self, spec_id: uuid.UUID, data: ProcessSpecUpdate
-    ) -> ProcessSpec | None:
+    async def update_process_spec(self, spec_id: uuid.UUID, data: ProcessSpecUpdate) -> ProcessSpec | None:
         """更新工艺规程"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_process_spec(spec_id, update_data)
@@ -300,9 +286,7 @@ class ProductionService:
         step_data = data.model_dump()
         return await self.repo.create_process_step(step_data)
 
-    async def update_process_step(
-        self, step_id: uuid.UUID, data: ProcessStepUpdate
-    ) -> ProcessStep | None:
+    async def update_process_step(self, step_id: uuid.UUID, data: ProcessStepUpdate) -> ProcessStep | None:
         """更新工艺步骤"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await self.repo.update_process_step(step_id, update_data)
@@ -317,9 +301,7 @@ class ProductionService:
         """获取工艺参数列表"""
         return await self.repo.get_parameters_by_step(step_id)
 
-    async def create_process_parameter(
-        self, data: ProcessParameterCreate
-    ) -> ProcessParameter:
+    async def create_process_parameter(self, data: ProcessParameterCreate) -> ProcessParameter:
         """创建工艺参数"""
         param_data = data.model_dump()
         return await self.repo.create_process_parameter(param_data)
@@ -330,15 +312,11 @@ class ProductionService:
 
     # ============ ProductionRecord Operations ============
 
-    async def get_records(
-        self, batch_id: uuid.UUID, skip: int = 0, limit: int = 100
-    ) -> list[ProductionRecord]:
+    async def get_records(self, batch_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[ProductionRecord]:
         """获取生产记录列表"""
         return await self.repo.get_records_by_batch(batch_id, skip, limit)
 
-    async def create_production_record(
-        self, data: ProductionRecordCreate
-    ) -> ProductionRecord:
+    async def create_production_record(self, data: ProductionRecordCreate) -> ProductionRecord:
         """创建生产记录"""
         record_data = data.model_dump()
         record = await self.repo.create_production_record(record_data)
@@ -377,7 +355,7 @@ class ProductionService:
                 try:
                     import json
 
-                    params = json.loads(r.parameters)
+                    params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         total_input += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
@@ -390,7 +368,7 @@ class ProductionService:
                 try:
                     import json
 
-                    params = json.loads(r.parameters)
+                    params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         total_output += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
@@ -439,7 +417,7 @@ class ProductionService:
                 try:
                     import json
 
-                    params = json.loads(r.parameters)
+                    params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         record_input += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
@@ -448,7 +426,7 @@ class ProductionService:
                 try:
                     import json
 
-                    params = json.loads(r.parameters)
+                    params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         record_output += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
@@ -487,13 +465,9 @@ class ProductionService:
         else:
             return await self.repo.create_material_balance(balance_data)
 
-    async def update_material_balance(
-        self, batch_id: uuid.UUID, data: dict[str, Any]
-    ) -> MaterialBalance | None:
+    async def update_material_balance(self, batch_id: uuid.UUID, data: dict[str, Any]) -> MaterialBalance | None:
         """更新物料平衡"""
         # 重新计算平衡
         if "input_qty" in data or "output_qty" in data:
-            return await self.calculate_material_balance(
-                batch_id, data.get("min_balance_rate", 95.0)
-            )
+            return await self.calculate_material_balance(batch_id, data.get("min_balance_rate", 95.0))
         return await self.repo.update_material_balance(batch_id, data)

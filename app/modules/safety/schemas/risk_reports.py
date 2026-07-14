@@ -38,18 +38,14 @@ class SpecialOperationReportBase(BaseModel):
     report_no: str = Field(..., max_length=64, description="报备编号")
     permit_id: uuid.UUID | None = Field(None, description="关联作业票ID")
     operation_type: OperationType = Field(..., description="作业类型")
-    operation_level: OperationLevel = Field(
-        OperationLevel.GRADE2, description="作业级别"
-    )
+    operation_level: OperationLevel = Field(OperationLevel.GRADE2, description="作业级别")
     department: str | None = Field(None, max_length=100, description="报备部门")
     location: str | None = Field(None, max_length=255, description="作业地点")
     equipment_tag: str | None = Field(None, max_length=100, description="设备位号")
     work_description: str | None = Field(None, description="作业内容描述")
     planned_start_time: datetime | None = Field(None, description="计划开始时间")
     planned_end_time: datetime | None = Field(None, description="计划结束时间")
-    work_leader_name: str | None = Field(
-        None, max_length=100, description="作业负责人姓名"
-    )
+    work_leader_name: str | None = Field(None, max_length=100, description="作业负责人姓名")
     operator_names: str | None = Field(None, description="作业人员姓名（逗号分隔）")
     guardian_name: str | None = Field(None, max_length=100, description="监护人姓名")
     risk_level: str | None = Field(None, max_length=20, description="风险等级")
@@ -57,9 +53,7 @@ class SpecialOperationReportBase(BaseModel):
     emergency_equipment: str | None = Field(None, description="应急消防器材")
     gas_analysis: str | None = Field(None, description="气体分析结果")
     risk_assessment: str | None = Field(None, description="风险评估描述")
-    applicant_name: str | None = Field(
-        None, max_length=100, description="报备申请人姓名"
-    )
+    applicant_name: str | None = Field(None, max_length=100, description="报备申请人姓名")
     approver_name: str | None = Field(None, max_length=100, description="审批人姓名")
     notes: str | None = Field(None, description="备注")
     is_critical: bool = Field(False, description="是否关键作业")
@@ -85,9 +79,7 @@ class SpecialOperationReportUpdate(BaseModel):
     work_description: str | None = Field(None, description="作业内容描述")
     planned_start_time: datetime | None = Field(None, description="计划开始时间")
     planned_end_time: datetime | None = Field(None, description="计划结束时间")
-    work_leader_name: str | None = Field(
-        None, max_length=100, description="作业负责人姓名"
-    )
+    work_leader_name: str | None = Field(None, max_length=100, description="作业负责人姓名")
     operator_names: str | None = Field(None, description="作业人员姓名")
     guardian_name: str | None = Field(None, max_length=100, description="监护人姓名")
     risk_level: str | None = Field(None, max_length=20, description="风险等级")
@@ -95,9 +87,7 @@ class SpecialOperationReportUpdate(BaseModel):
     emergency_equipment: str | None = Field(None, description="应急消防器材")
     gas_analysis: str | None = Field(None, description="气体分析结果")
     risk_assessment: str | None = Field(None, description="风险评估描述")
-    applicant_name: str | None = Field(
-        None, max_length=100, description="报备申请人姓名"
-    )
+    applicant_name: str | None = Field(None, max_length=100, description="报备申请人姓名")
     approver_name: str | None = Field(None, max_length=100, description="审批人姓名")
     status: ReportStatus | None = Field(None, description="状态")
     notes: str | None = Field(None, description="备注")
@@ -140,9 +130,7 @@ class SetCriticalRequest(BaseModel):
 class LedgerExportRequest(BaseModel):
     """台账导出请求 — AI自然语言筛选"""
 
-    natural_query: str | None = Field(
-        None, description="自然语言筛选条件，例如「导出上月所有特级动火作业」"
-    )
+    natural_query: str | None = Field(None, description="自然语言筛选条件，例如「导出上月所有特级动火作业」")
     operation_type: str | None = Field(None, description="作业类型")
     operation_level: str | None = Field(None, description="作业级别")
     risk_level: str | None = Field(None, description="风险等级")
@@ -173,19 +161,13 @@ class LedgerExportParsedFilters(BaseModel):
 class HazardLedgerExportRequest(BaseModel):
     """危险源辨识台账导出请求 — AI自然语言筛选"""
 
-    natural_query: str | None = Field(
-        None, description="自然语言筛选条件，例如「上月所有重大风险记录」"
-    )
+    natural_query: str | None = Field(None, description="自然语言筛选条件，例如「上月所有重大风险记录」")
     department: str | None = Field(None, description="部门")
     position: str | None = Field(None, description="岗位")
-    risk_level: str | None = Field(
-        None, description="风险等级: level_1/level_2/level_3/level_4"
-    )
+    risk_level: str | None = Field(None, description="风险等级: level_1/level_2/level_3/level_4")
     date_from: str | None = Field(None, description="创建时间起 YYYY-MM-DD")
     date_to: str | None = Field(None, description="创建时间止 YYYY-MM-DD")
-    keyword: str | None = Field(
-        None, description="关键词搜索（编号/部门/岗位/作业活动）"
-    )
+    keyword: str | None = Field(None, description="关键词搜索（编号/部门/岗位/作业活动）")
 
 
 class HazardLedgerExportParsedFilters(BaseModel):
@@ -239,24 +221,18 @@ class DailyRiskReportBase(BaseModel):
         description="报备类型: regular(常规作业) / non_regular(非常规作业)",
     )
     department: str | None = Field(None, max_length=100, description="报备部门")
-    hazard_identification_id: uuid.UUID | None = Field(
-        None, description="关联危险源辨识ID"
-    )
+    hazard_identification_id: uuid.UUID | None = Field(None, description="关联危险源辨识ID")
     operation_description: str = Field(..., description="风险作业描述")
     operation_steps: str | None = Field(None, description="作业步骤")
     hazard_factors: str | None = Field(None, description="危险因素")
     risk_level: str | None = Field(None, max_length=20, description="风险等级")
     control_measures: str | None = Field(None, description="控制措施")
-    responsible_person: str | None = Field(
-        None, max_length=100, description="作业负责人"
-    )
+    responsible_person: str | None = Field(None, max_length=100, description="作业负责人")
     operator_count: int | None = Field(None, description="作业人数")
     location: str | None = Field(None, max_length=255, description="作业地点")
     planned_start_time: datetime | None = Field(None, description="计划开始时间")
     planned_end_time: datetime | None = Field(None, description="计划结束时间")
-    applicant_name: str | None = Field(
-        None, max_length=100, description="报备申请人姓名"
-    )
+    applicant_name: str | None = Field(None, max_length=100, description="报备申请人姓名")
     approver_name: str | None = Field(None, max_length=100, description="审批人姓名")
     notes: str | None = Field(None, description="备注")
 
@@ -272,28 +248,20 @@ class DailyRiskReportUpdate(BaseModel):
 
     report_no: str | None = Field(None, max_length=64, description="报备编号")
     report_date: datetime | None = Field(None, description="报备作业日期")
-    report_type: str | None = Field(
-        None, max_length=20, description="报备类型（创建后不可修改）"
-    )
+    report_type: str | None = Field(None, max_length=20, description="报备类型（创建后不可修改）")
     department: str | None = Field(None, max_length=100, description="报备部门")
-    hazard_identification_id: uuid.UUID | None = Field(
-        None, description="关联危险源辨识ID"
-    )
+    hazard_identification_id: uuid.UUID | None = Field(None, description="关联危险源辨识ID")
     operation_description: str | None = Field(None, description="风险作业描述")
     operation_steps: str | None = Field(None, description="作业步骤")
     hazard_factors: str | None = Field(None, description="危险因素")
     risk_level: str | None = Field(None, max_length=20, description="风险等级")
     control_measures: str | None = Field(None, description="控制措施")
-    responsible_person: str | None = Field(
-        None, max_length=100, description="作业负责人"
-    )
+    responsible_person: str | None = Field(None, max_length=100, description="作业负责人")
     operator_count: int | None = Field(None, description="作业人数")
     location: str | None = Field(None, max_length=255, description="作业地点")
     planned_start_time: datetime | None = Field(None, description="计划开始时间")
     planned_end_time: datetime | None = Field(None, description="计划结束时间")
-    applicant_name: str | None = Field(
-        None, max_length=100, description="报备申请人姓名"
-    )
+    applicant_name: str | None = Field(None, max_length=100, description="报备申请人姓名")
     approver_name: str | None = Field(None, max_length=100, description="审批人姓名")
     status: ReportStatus | None = Field(None, description="状态")
     notes: str | None = Field(None, description="备注")

@@ -1,7 +1,8 @@
 """Warehouse business workflows live here."""
-import logging
 
+import asyncio
 import hashlib
+import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -37,8 +38,13 @@ from app.modules.warehouse.schemas import (
     WarehouseFeishuTableSyncResult,
 )
 
+WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS = 300
+FIELD_FILTER_OPERATORS = {"contains", "eq", "ne", "gt", "gte", "lt", "lte"}
+NUMERIC_FIELD_FILTER_OPERATORS = {"gt", "gte", "lt", "lte"}
+
 
 logger = logging.getLogger(__name__)
+
 
 def _safe_number(value: float | int | None) -> float:
     if value is None:
@@ -236,9 +242,7 @@ class WarehouseService:
             )
         return self._to_feishu_config_response(config)
 
-    async def save_feishu_config(
-        self, data: WarehouseFeishuConfigUpsert
-    ) -> WarehouseFeishuConfigResponse:
+    async def save_feishu_config(self, data: WarehouseFeishuConfigUpsert) -> WarehouseFeishuConfigResponse:
         existing = await self.repo.get_any_feishu_config()
         legacy_token = self._legacy_app_token(data)
         if existing:
@@ -316,6 +320,7 @@ class WarehouseService:
                     )
                 )
             except Exception as exc:
+                logger.exception("读取表目录失败: domain=%s, app_token=%s", label, app_token)
                 steps.append(
                     WarehouseFeishuConnectivityStep(
                         name=f"{label}表目录",
@@ -334,7 +339,9 @@ class WarehouseService:
         keyword: str | None = None,
         enabled: bool | None = None,
     ) -> list[WarehouseFeishuTable]:
-        await self._get_active_feishu_config_or_raise()
+        config = await self._get_active_feishu_config_or_none()
+        if not config:
+            return []
         self._validate_optional_domain(business_domain)
         return await self.repo.list_feishu_tables(
             business_domain=business_domain,
@@ -348,14 +355,10 @@ class WarehouseService:
         for domain, app_token in self._config_app_tokens(config).items():
             client = self._build_feishu_client(config, app_token)
             raw_tables = await client.list_tables()
-            discovered.extend(
-                await self._save_discovered_feishu_tables(domain, app_token, raw_tables)
-            )
+            discovered.extend(await self._save_discovered_feishu_tables(domain, app_token, raw_tables))
         return discovered
 
-    async def set_feishu_table_enabled(
-        self, table_pk: UUID, is_enabled: bool
-    ) -> WarehouseFeishuTable:
+    async def set_feishu_table_enabled(self, table_pk: UUID, is_enabled: bool) -> WarehouseFeishuTable:
         table = await self._get_table_by_id_or_raise(table_pk)
         table.is_enabled = is_enabled
         table.sync_error = None
@@ -366,9 +369,7 @@ class WarehouseService:
             return await self._get_table_by_id_or_raise(table_pk)
         return table
 
-    async def set_feishu_tables_enabled(
-        self, table_pks: list[UUID], is_enabled: bool
-    ) -> list[WarehouseFeishuTable]:
+    async def set_feishu_tables_enabled(self, table_pks: list[UUID], is_enabled: bool) -> list[WarehouseFeishuTable]:
         if not table_pks:
             return []
 
@@ -400,14 +401,23 @@ class WarehouseService:
         *,
         keyword: str | None = None,
         field: str | None = None,
+        field_operator: str | None = None,
+        field_value: str | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> WarehouseFeishuRawRecordData:
+        field_operator, field_value = self._normalize_field_filter(
+            field=field,
+            field_operator=field_operator,
+            field_value=field_value,
+        )
         table = await self._get_table_by_id_or_raise(table_pk)
         return await self._get_records_for_table(
             table=table,
             keyword=keyword,
             field=field,
+            field_operator=field_operator,
+            field_value=field_value,
             page=page,
             page_size=page_size,
         )
@@ -419,9 +429,16 @@ class WarehouseService:
         table_id: UUID | None = None,
         keyword: str | None = None,
         field: str | None = None,
+        field_operator: str | None = None,
+        field_value: str | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> WarehouseFeishuRawRecordData:
+        field_operator, field_value = self._normalize_field_filter(
+            field=field,
+            field_operator=field_operator,
+            field_value=field_value,
+        )
         if table_id:
             table = await self._get_table_by_id_or_raise(table_id)
             if table.business_domain != business_domain:
@@ -431,13 +448,15 @@ class WarehouseService:
                 business_domain=business_domain,
                 enabled=True,
             )
-            table = tables[0] if tables else None
+            table = tables[0] if tables else None  # type: ignore[assignment]
         if not table:
             return WarehouseFeishuRawRecordData(fields=[], records=[], total=0)
         return await self._get_records_for_table(
             table=table,
             keyword=keyword,
             field=field,
+            field_operator=field_operator,
+            field_value=field_value,
             page=page,
             page_size=page_size,
         )
@@ -471,8 +490,7 @@ class WarehouseService:
 
         table.last_event_at = datetime.now(UTC)
         action_summary = ",".join(
-            f"{item.get('action') or 'unknown'}:{item.get('record_id') or ''}"
-            for item in actions[:20]
+            f"{item.get('action') or 'unknown'}:{item.get('record_id') or ''}" for item in actions[:20]
         )
         await redis_client.set(
             f"warehouse:feishu:last_event:{table.business_domain}",
@@ -482,8 +500,9 @@ class WarehouseService:
         try:
             await self._sync_feishu_table(config, table)
         except Exception as exc:
+            logger.exception("飞书表同步失败: table=%s", table.name)
             table.sync_status = "failed"
-            table.sync_error = str(exc)
+            table.sync_error = self._exception_message(exc)
             await self.repo.session.commit()
             return {
                 "matched": True,
@@ -539,106 +558,124 @@ class WarehouseService:
     async def _sync_feishu_table(
         self, config: WarehouseFeishuConfig, table: WarehouseFeishuTable
     ) -> WarehouseFeishuTableSyncResult:
+        table_pk = table.id
         table.sync_status = "syncing"
         table.sync_error = None
-        await self.repo.session.flush()
+        await self.repo.session.commit()
 
         try:
-            client = self._build_feishu_client(config, table.app_token)
-            raw_fields = await client.list_fields(table.table_id)
-            raw_records = await self._read_all_records(client, table.table_id)
-            now = datetime.now(UTC)
-
-            for item in raw_fields:
-                field = self._field_from_raw(item)
-                existing = await self.repo.get_feishu_field(
-                    table.business_domain,
-                    table.app_token,
-                    table.table_id,
-                    field.field_id,
-                )
-                payload = {
-                    "field_name": field.field_name,
-                    "field_type": field.type,
-                    "property": field.property,
-                    "last_synced_at": now,
-                    "is_deleted": False,
-                }
-                if existing:
-                    for key, value in payload.items():
-                        setattr(existing, key, value)
-                else:
-                    await self.repo.save_feishu_field(
-                        WarehouseFeishuField(
-                            business_domain=table.business_domain,
-                            app_token=table.app_token,
-                            table_id=table.table_id,
-                            field_id=field.field_id,
-                            **payload,
-                        )
-                    )
-
-            active_record_ids: set[str] = set()
-            for item in raw_records:
-                record = self._record_from_raw(item)
-                if not record.record_id:
-                    continue
-                active_record_ids.add(record.record_id)
-                existing = await self.repo.get_feishu_record(
-                    table.business_domain,
-                    table.app_token,
-                    table.table_id,
-                    record.record_id,
-                )
-                payload = {
-                    "fields": record.fields,
-                    "search_text": self._build_search_text(record.fields),
-                    "feishu_created_time": record.created_time,
-                    "feishu_last_modified_time": record.last_modified_time,
-                    "last_synced_at": now,
-                    "is_deleted": False,
-                }
-                if existing:
-                    for key, value in payload.items():
-                        setattr(existing, key, value)
-                else:
-                    await self.repo.save_feishu_record(
-                        WarehouseFeishuRecord(
-                            business_domain=table.business_domain,
-                            app_token=table.app_token,
-                            table_id=table.table_id,
-                            record_id=record.record_id,
-                            **payload,
-                        )
-                    )
-
-            await self.repo.mark_missing_feishu_records_deleted(
-                business_domain=table.business_domain,
-                app_token=table.app_token,
-                table_id=table.table_id,
-                active_record_ids=active_record_ids,
+            return await asyncio.wait_for(
+                self._sync_feishu_table_snapshot(config, table),
+                timeout=WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS,
             )
-
-            table.field_count = len(raw_fields)
-            table.record_count = len(active_record_ids)
-            table.last_synced_at = now
-            table.sync_status = "success"
-            table.sync_error = None
-            await self.repo.session.commit()
-            return WarehouseFeishuTableSyncResult(
-                table=self._to_table_response(table),
-                field_count=table.field_count,
-                record_count=table.record_count,
-            )
-        except Exception as exc:
+        except TimeoutError as exc:
+            await self.repo.session.rollback()
+            if table_pk:
+                table = await self._get_table_by_id_or_raise(table_pk)
             table.sync_status = "failed"
-            table.sync_error = str(exc)
+            table.sync_error = f"同步超过 {WAREHOUSE_FEISHU_TABLE_SYNC_TIMEOUT_SECONDS:g} 秒未完成，已自动标记失败"
+            await self.repo.session.commit()
+            raise AppException(message=table.sync_error) from exc
+        except Exception as exc:
+            await self.repo.session.rollback()
+            if table_pk:
+                table = await self._get_table_by_id_or_raise(table_pk)
+            table.sync_status = "failed"
+            table.sync_error = self._exception_message(exc)
             await self.repo.session.commit()
             raise
 
-    async def _read_all_records(
-        self, client: WarehouseFeishuClient, table_id: str
-    ) -> list[dict[str, Any]]:
+    async def _sync_feishu_table_snapshot(
+        self, config: WarehouseFeishuConfig, table: WarehouseFeishuTable
+    ) -> WarehouseFeishuTableSyncResult:
+        client = self._build_feishu_client(config, table.app_token)
+        raw_fields = await client.list_fields(table.table_id)
+        raw_records = await self._read_all_records(client, table.table_id)
+        now = datetime.now(UTC)
+
+        for item in raw_fields:
+            field = self._field_from_raw(item)
+            existing = await self.repo.get_feishu_field(
+                table.business_domain,
+                table.app_token,
+                table.table_id,
+                field.field_id,
+            )
+            payload = {
+                "field_name": field.field_name,
+                "field_type": field.type,
+                "property": field.property,
+                "last_synced_at": now,
+                "is_deleted": False,
+            }
+            if existing:
+                for key, value in payload.items():
+                    setattr(existing, key, value)
+            else:
+                await self.repo.save_feishu_field(
+                    WarehouseFeishuField(
+                        business_domain=table.business_domain,
+                        app_token=table.app_token,
+                        table_id=table.table_id,
+                        field_id=field.field_id,
+                        **payload,
+                    )
+                )
+
+        active_record_ids: set[str] = set()
+        for item in raw_records:
+            record = self._record_from_raw(item)
+            if not record.record_id:
+                continue
+            active_record_ids.add(record.record_id)
+            existing = await self.repo.get_feishu_record(  # type: ignore[assignment]
+                table.business_domain,
+                table.app_token,
+                table.table_id,
+                record.record_id,
+            )
+            payload = {
+                "fields": record.fields,
+                "search_text": self._build_search_text(record.fields),
+                "feishu_created_time": record.created_time,
+                "feishu_last_modified_time": record.last_modified_time,
+                "last_synced_at": now,
+                "is_deleted": False,
+            }
+            if existing:
+                for key, value in payload.items():
+                    setattr(existing, key, value)
+            else:
+                await self.repo.save_feishu_record(
+                    WarehouseFeishuRecord(
+                        business_domain=table.business_domain,
+                        app_token=table.app_token,
+                        table_id=table.table_id,
+                        record_id=record.record_id,
+                        **payload,
+                    )
+                )
+
+        await self.repo.mark_missing_feishu_records_deleted(
+            business_domain=table.business_domain,
+            app_token=table.app_token,
+            table_id=table.table_id,
+            active_record_ids=active_record_ids,
+        )
+
+        table.field_count = len(raw_fields)
+        table.record_count = len(active_record_ids)
+        table.last_synced_at = now
+        table.sync_status = "success"
+        table.sync_error = None
+        await self.repo.session.commit()
+        return WarehouseFeishuTableSyncResult(
+            table=self._to_table_response(table),
+            field_count=table.field_count,
+            record_count=table.record_count,
+        )
+
+    async def _read_all_records(self, client: WarehouseFeishuClient, table_id: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         page_token: str | None = None
         while True:
@@ -661,6 +698,8 @@ class WarehouseService:
         table: WarehouseFeishuTable,
         keyword: str | None,
         field: str | None,
+        field_operator: str | None,
+        field_value: str | None,
         page: int,
         page_size: int,
     ) -> WarehouseFeishuRawRecordData:
@@ -677,6 +716,8 @@ class WarehouseService:
             table_id=table.table_id,
             keyword=keyword,
             field=field,
+            field_operator=field_operator,
+            field_value=field_value,
             page=normalized_page,
             page_size=normalized_page_size,
         )
@@ -689,17 +730,13 @@ class WarehouseService:
             total=total,
         )
 
-    def _to_feishu_config_response(
-        self, config: WarehouseFeishuConfig
-    ) -> WarehouseFeishuConfigResponse:
+    def _to_feishu_config_response(self, config: WarehouseFeishuConfig) -> WarehouseFeishuConfigResponse:
         return WarehouseFeishuConfigResponse(
             id=config.id,
             config_name=config.config_name,
             app_id=config.app_id,
             finished_product_app_token=config.finished_product_app_token,
-            materials_packaging_app_token=(
-                config.materials_packaging_app_token or config.bitable_app_token
-            ),
+            materials_packaging_app_token=(config.materials_packaging_app_token or config.bitable_app_token),
             hardware_app_token=config.hardware_app_token,
             bitable_app_token=config.bitable_app_token,
             is_active=config.is_active,
@@ -710,9 +747,35 @@ class WarehouseService:
             updated_at=config.updated_at,
         )
 
-    async def _resolve_feishu_config(
-        self, data: WarehouseFeishuConfigUpsert | None
-    ) -> WarehouseFeishuConfig:
+    @staticmethod
+    def _normalize_field_filter(
+        *,
+        field: str | None,
+        field_operator: str | None,
+        field_value: str | None,
+    ) -> tuple[str | None, str | None]:
+        operator = (field_operator or "").strip() or None
+        value = (field_value or "").strip() or None
+
+        if not operator and value:
+            operator = "contains"
+        if not operator:
+            return None, None
+        if not field:
+            raise AppException(message="请选择要筛选的字段")
+        if operator not in FIELD_FILTER_OPERATORS:
+            raise AppException(message="字段筛选条件无效")
+        if value is None:
+            raise AppException(message="请填写字段筛选值")
+        if operator in NUMERIC_FIELD_FILTER_OPERATORS:
+            try:
+                float(value)
+            except ValueError as exc:
+                raise AppException(message="数值比较条件必须填写数字") from exc
+
+        return operator, value
+
+    async def _resolve_feishu_config(self, data: WarehouseFeishuConfigUpsert | None) -> WarehouseFeishuConfig:
         if data:
             if data.app_secret:
                 encrypted_secret = encrypt_secret(data.app_secret)
@@ -746,9 +809,7 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
 
@@ -758,14 +819,18 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书配置表不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
         if not config:
             raise AppException(message="请先启用仓储飞书配置")
         return config
+
+    async def _get_active_feishu_config_or_none(self) -> WarehouseFeishuConfig | None:
+        try:
+            return await self.repo.get_active_feishu_config()
+        except SQLAlchemyError:
+            return None
 
     async def _get_table_by_id_or_raise(self, table_pk: UUID) -> WarehouseFeishuTable:
         try:
@@ -773,9 +838,7 @@ class WarehouseService:
         except SQLAlchemyError as exc:
             raise AppException(
                 status_code=500,
-                message=(
-                    "仓储飞书表目录不可用，请先执行数据库迁移：alembic upgrade head"
-                ),
+                message=("仓储飞书表目录不可用，请先执行数据库迁移：alembic upgrade head"),
                 detail=str(exc.__class__.__name__),
             ) from exc
         if not table:
@@ -799,10 +862,9 @@ class WarehouseService:
 
         try:
             app_token = next(iter(self._config_app_tokens(config).values()), "")
-            token = await self._build_feishu_client(
-                config, app_token
-            ).get_tenant_access_token()
+            token = await self._build_feishu_client(config, app_token).get_tenant_access_token()
         except Exception as exc:
+            logger.exception("飞书 tenant_access_token 获取失败")
             steps.append(
                 WarehouseFeishuConnectivityStep(
                     name="应用凭证",
@@ -855,21 +917,14 @@ class WarehouseService:
     def _config_app_tokens(config: WarehouseFeishuConfig) -> dict[str, str]:
         tokens = {
             "finished_product": config.finished_product_app_token,
-            "materials_packaging": (
-                config.materials_packaging_app_token or config.bitable_app_token
-            ),
+            "materials_packaging": (config.materials_packaging_app_token or config.bitable_app_token),
             "hardware": config.hardware_app_token,
         }
         return {key: value for key, value in tokens.items() if value}
 
     @staticmethod
     def _legacy_app_token(data: WarehouseFeishuConfigUpsert) -> str:
-        return (
-            data.materials_packaging_app_token
-            or data.finished_product_app_token
-            or data.hardware_app_token
-            or ""
-        )
+        return data.materials_packaging_app_token or data.finished_product_app_token or data.hardware_app_token or ""
 
     @staticmethod
     def _validate_optional_domain(domain: str | None) -> None:
@@ -886,6 +941,13 @@ class WarehouseService:
             return mask_secret(decrypt_secret(encrypted_secret))
         except RuntimeError:
             return "****"
+
+    @staticmethod
+    def _exception_message(exc: Exception) -> str:
+        message = getattr(exc, "message", None)
+        if isinstance(message, str) and message:
+            return message
+        return str(exc)
 
     @staticmethod
     def _to_table_response(table: WarehouseFeishuTable) -> WarehouseFeishuTableResponse:
@@ -919,9 +981,7 @@ class WarehouseService:
             field_id=field_id,
             field_name=field_name,
             type=WarehouseService._safe_int(item.get("type")),
-            property=(
-                item.get("property") if isinstance(item.get("property"), dict) else None
-            ),
+            property=(item.get("property") if isinstance(item.get("property"), dict) else None),
         )
 
     @staticmethod
@@ -931,9 +991,7 @@ class WarehouseService:
             record_id=str(item.get("record_id") or ""),
             fields=fields,
             created_time=WarehouseService._safe_int(item.get("created_time")),
-            last_modified_time=WarehouseService._safe_int(
-                item.get("last_modified_time")
-            ),
+            last_modified_time=WarehouseService._safe_int(item.get("last_modified_time")),
         )
 
     @staticmethod

@@ -1,6 +1,7 @@
 """Authorization letter API routes."""
 
 import json
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Query, UploadFile
@@ -22,18 +23,18 @@ def get_service(session: AsyncSession = Depends(get_db)) -> AuthorizationLetterS
 
 
 @router.get("/products", summary="获取品种登记号对照表")
-async def list_products(service: AuthorizationLetterService = Depends(get_service)):
+async def list_products(service: AuthorizationLetterService = Depends(get_service)) -> Any:
     products = service.get_product_list()
     return success_response(data=[p.model_dump() for p in products])
 
 
 @router.get("", summary="授权书生成记录列表")
-async def list_authorization_letters(
+async def get(
     product_name: str | None = Query(None, description="产品名称搜索"),
     preparation_unit: str | None = Query(None, description="制剂单位搜索"),
     page_params: PageParams = Depends(),
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     letters, total = await service.list_letters(
         product_name=product_name,
         preparation_unit=preparation_unit,
@@ -50,7 +51,7 @@ async def list_authorization_letters(
 
 
 @router.post("/generate", summary="生成授权书")
-async def generate_authorization_letter(
+async def post(
     template: UploadFile,
     product_name: str = Form(..., description="产品名称"),
     registration_number: str = Form(..., description="登记号"),
@@ -63,7 +64,7 @@ async def generate_authorization_letter(
         description='替换规则 JSON，格式: [{"old": "原文本", "new": "新文本"}]',
     ),
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     template_data = await template.read()
     template_file_name = template.filename or "模板.doc"
 
@@ -90,25 +91,23 @@ async def generate_authorization_letter(
         template_file_name=template_file_name,
         template_placeholders=template_placeholders,
     )
-    return success_response(
-        data=letter.model_dump(mode="json"), message="授权书生成成功", status_code=201
-    )
+    return success_response(data=letter.model_dump(mode="json"), message="授权书生成成功", status_code=201)
 
 
-@router.get("/{letter_id}", summary="授权书记录详情")
-async def get_authorization_letter(
+@router.get("/{letter_id}", summary="授权书记录详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     letter_id: UUID,
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     letter = await service.get_letter(letter_id)
     return success_response(data=letter.model_dump(mode="json"))
 
 
-@router.get("/{letter_id}/download-url", summary="获取授权书文件下载URL")
-async def get_authorization_letter_download_url(
+@router.get("/{letter_id}/download-url", summary="获取授权书文件下载URL")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     letter_id: UUID,
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     letter_model = await service.repo.get_by_id(letter_id)
     if not letter_model:
         raise NotFoundException("授权书记录", str(letter_id))
@@ -117,16 +116,14 @@ async def get_authorization_letter_download_url(
     if not file_path.exists():
         raise NotFoundException("授权书文件")
 
-    return success_response(
-        data={"url": f"/api/v1/registration/authorization-letters/{letter_id}/download"}
-    )
+    return success_response(data={"url": f"/api/v1/registration/authorization-letters/{letter_id}/download"})
 
 
-@router.get("/{letter_id}/download", summary="下载生成的授权书文件")
-async def download_authorization_letter(
+@router.get("/{letter_id}/download", summary="下载生成的授权书文件")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     letter_id: UUID,
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     letter_model = await service.repo.get_by_id(letter_id)
     if not letter_model:
         raise NotFoundException("授权书记录", str(letter_id))
@@ -143,9 +140,9 @@ async def download_authorization_letter(
 
 
 @router.delete("/{letter_id}", summary="删除授权书记录")
-async def delete_authorization_letter(
+async def delete(
     letter_id: UUID,
     service: AuthorizationLetterService = Depends(get_service),
-):
+) -> Any:
     await service.delete_letter(letter_id)
     return success_response(message="授权书记录删除成功")

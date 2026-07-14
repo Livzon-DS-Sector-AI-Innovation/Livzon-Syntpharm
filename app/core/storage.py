@@ -18,12 +18,18 @@ from __future__ import annotations
 
 import logging
 from io import BytesIO
+from typing import TYPE_CHECKING
+
+from fastapi import UploadFile
+
+if TYPE_CHECKING:
+    from minio import Minio
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_client: Minio | None = None  # type: ignore[name-defined]
+_client: Minio | None = None
 _enabled: bool | None = None
 _known_buckets: set[str] = set()
 
@@ -45,7 +51,7 @@ def _init() -> None:
         )
 
 
-def _get_client() -> Minio | None:  # type: ignore[name-defined]
+def _get_client() -> Minio | None:
     _init()
     return _client if _enabled else None
 
@@ -92,7 +98,7 @@ def upload_object(
     return object_key
 
 
-def get_object(module: str, object_key: str) -> tuple[bytes, str] | None:  # type: ignore[name-defined]
+def get_object(module: str, object_key: str) -> tuple[bytes, str] | None:
     """读取对象，返回 (data, content_type)；不存在返回 None。"""
     client = _get_client()
     if client is None:
@@ -127,3 +133,79 @@ def delete_object(module: str, object_key: str) -> None:
 def is_enabled() -> bool:
     _init()
     return _enabled or False
+
+
+async def save_upload_file(file: UploadFile, sub_dir: str = "reagent-labels") -> str:
+    """保存单个上传文件到本地存储
+
+    Args:
+        file: 上传的文件
+        sub_dir: 子目录名称
+
+    Returns:
+        文件访问 URL 路径
+    """
+    import os
+    import uuid as _uuid
+
+    content = await file.read()
+    ext = os.path.splitext(file.filename or "")[1] or ".bin"
+    filename = f"{_uuid.uuid4()}{ext}"
+    dir_path = os.path.join("uploads", sub_dir)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, filename)
+    with open(file_path, "wb") as f:
+        f.write(content)
+    return f"/uploads/{sub_dir}/{filename}"
+
+
+async def save_upload_files(files: list[UploadFile], sub_dir: str = "reagent-labels") -> list[str]:
+    """保存多个上传的文件
+
+    Args:
+        files: 上传的文件列表
+        sub_dir: 子目录名称
+
+    Returns:
+        文件访问 URL 路径列表
+    """
+    urls = []
+    for file in files:
+        try:
+            url = await save_upload_file(file, sub_dir)
+            urls.append(url)
+        except Exception as e:
+            # 继续处理其他文件，记录错误
+            print(f"保存文件 {file.filename} 失败: {e}")
+            continue
+
+    return urls
+
+
+def delete_upload_file(file_url: str) -> bool:
+    """删除上传的文件
+
+    Args:
+        file_url: 文件访问 URL 路径
+
+    Returns:
+        是否删除成功
+    """
+    try:
+        # 将 URL 路径转换为实际文件路径
+        if file_url.startswith("/uploads/"):
+            file_path = file_url[9:]  # 去掉 "/uploads/"
+        else:
+            file_path = file_url
+
+        # 删除文件
+        import os
+
+        full_path = os.path.join("uploads", file_path)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+            return True
+        return False
+    except Exception as e:
+        print(f"删除文件失败: {e}")
+        return False

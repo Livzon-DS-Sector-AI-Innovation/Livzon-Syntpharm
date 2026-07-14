@@ -2,14 +2,15 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import paginated_response, success_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
+from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import (
     EquipmentCategoryCreate,
     EquipmentCategoryResponse,
@@ -24,20 +25,16 @@ from app.modules.equipment.schemas import (
     LocationTree,
     LocationUpdate,
 )
-from app.platform.identity.models import User
-from app.platform.identity.permissions import require_login
 
 router = APIRouter()
 
 
-async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
+async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:  # type: ignore[no-untyped-def]
     """将 ORM Equipment 转为响应对象，填充多分类信息及部门信息"""
     resp = EquipmentResponse.model_validate(equipment)
     links = getattr(equipment, "category_links", []) or []
     resp.category_ids = [link.category_id for link in links if not link.is_deleted]
-    names = [
-        link.category.name for link in links if not link.is_deleted and link.category
-    ]
+    names = [link.category.name for link in links if not link.is_deleted and link.category]
     resp.category_names = "、".join(names) if names else None
     resp.location_name = equipment.location.name if equipment.location else None
     # 填充部门信息
@@ -51,9 +48,7 @@ async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
                 resp.responsible_person_id = dept_info.get("leader_id")
     # 负责人名称：如果独立设置了 responsible_person_id，从用户表查找
     if equipment.responsible_person_id and db:
-        resp.responsible_person_name = await repo.get_user_name_by_id(
-            db, equipment.responsible_person_id
-        )
+        resp.responsible_person_name = await repo.get_user_name_by_id(db, equipment.responsible_person_id)
     return resp
 
 
@@ -62,10 +57,12 @@ async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:
 async def create_equipment_category(
     data: EquipmentCategoryCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:create"),
+    ),
 ) -> JSONResponse:
     """创建设备分类"""
-    category = await service.create_equipment_category(db, data)
+    category = await service.create_equipment_category(db, data, ctx)
     return success_response(data=EquipmentCategoryResponse.model_validate(category))
 
 
@@ -74,25 +71,25 @@ async def get_equipment_categories(
     parent_id: uuid.UUID | None = Query(None, description="父分类ID"),
     tree: bool = Query(False, description="是否返回树形结构"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取设备分类列表"""
     if tree:
-        categories = await service.get_equipment_category_tree(db)
-        return success_response(
-            data=[EquipmentCategoryTree.model_validate(c) for c in categories]
-        )
-    categories = await service.get_equipment_categories(db, parent_id)
-    return success_response(
-        data=[EquipmentCategoryResponse.model_validate(c) for c in categories]
-    )
+        categories = await service.get_equipment_category_tree(db, ctx)
+        return success_response(data=[EquipmentCategoryTree.model_validate(c) for c in categories])
+    categories = await service.get_equipment_categories(db, parent_id, ctx)
+    return success_response(data=[EquipmentCategoryResponse.model_validate(c) for c in categories])
 
 
 @router.get("/categories/{category_id}", summary="获取设备分类详情")
 async def get_equipment_category(
     category_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取设备分类详情"""
     category = await service.get_equipment_category_by_id(db, category_id)
@@ -104,10 +101,12 @@ async def update_equipment_category(
     category_id: uuid.UUID,
     data: EquipmentCategoryUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:update"),
+    ),
 ) -> JSONResponse:
     """更新设备分类"""
-    category = await service.update_equipment_category(db, category_id, data)
+    category = await service.update_equipment_category(db, category_id, data, ctx)
     return success_response(data=EquipmentCategoryResponse.model_validate(category))
 
 
@@ -115,10 +114,12 @@ async def update_equipment_category(
 async def delete_equipment_category(
     category_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:delete"),
+    ),
 ) -> JSONResponse:
     """删除设备分类"""
-    await service.delete_equipment_category(db, category_id)
+    await service.delete_equipment_category(db, category_id, ctx)
     return success_response(message="删除成功")
 
 
@@ -127,10 +128,12 @@ async def delete_equipment_category(
 async def create_location(
     data: LocationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:create"),
+    ),
 ) -> JSONResponse:
     """创建位置"""
-    location = await service.create_location(db, data)
+    location = await service.create_location(db, data, ctx)
     return success_response(data=LocationResponse.model_validate(location))
 
 
@@ -139,25 +142,25 @@ async def get_locations(
     parent_id: uuid.UUID | None = Query(None, description="父位置ID"),
     tree: bool = Query(False, description="是否返回树形结构"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取位置列表"""
     if tree:
-        locations = await service.get_location_tree(db)
-        return success_response(
-            data=[LocationTree.model_validate(loc) for loc in locations]
-        )
-    locations = await service.get_locations(db, parent_id)
-    return success_response(
-        data=[LocationResponse.model_validate(loc) for loc in locations]
-    )
+        locations = await service.get_location_tree(db, ctx)
+        return success_response(data=[LocationTree.model_validate(loc) for loc in locations])
+    locations = await service.get_locations(db, parent_id, ctx)
+    return success_response(data=[LocationResponse.model_validate(loc) for loc in locations])
 
 
 @router.get("/locations/{location_id}", summary="获取位置详情")
 async def get_location(
     location_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取位置详情"""
     location = await service.get_location_by_id(db, location_id)
@@ -169,10 +172,12 @@ async def update_location(
     location_id: uuid.UUID,
     data: LocationUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:update"),
+    ),
 ) -> JSONResponse:
     """更新位置"""
-    location = await service.update_location(db, location_id, data)
+    location = await service.update_location(db, location_id, data, ctx)
     return success_response(data=LocationResponse.model_validate(location))
 
 
@@ -180,10 +185,12 @@ async def update_location(
 async def delete_location(
     location_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:delete"),
+    ),
 ) -> JSONResponse:
     """删除位置"""
-    await service.delete_location(db, location_id)
+    await service.delete_location(db, location_id, ctx)
     return success_response(message="删除成功")
 
 
@@ -191,7 +198,9 @@ async def delete_location(
 @router.get("/departments", summary="获取部门列表（供设备表单下拉使用）")
 async def get_departments_list(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取可选部门列表，含部门名称和负责人姓名"""
     departments = await service.get_departments_for_select(db)
@@ -203,7 +212,9 @@ async def get_departments_list(
 async def create_equipment(
     data: EquipmentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:create"),
+    ),
 ) -> JSONResponse:
     """创建设备"""
     equipment = await service.create_equipment(db, data)
@@ -220,11 +231,21 @@ async def get_equipments(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取设备列表"""
     equipments, total = await service.get_equipments(
-        db, category_id, location_id, department_id, status, keyword, page, page_size
+        db,
+        ctx,
+        category_id,
+        location_id,
+        department_id,
+        status,
+        keyword,
+        page,
+        page_size,
     )
     equipment_responses = []
     for e in equipments:
@@ -240,10 +261,12 @@ async def get_equipments(
 @router.get("/equipments/statistics", summary="获取设备统计")
 async def get_equipment_statistics(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:stats:read"),
+    ),
 ) -> JSONResponse:
     """获取设备统计"""
-    stats = await service.get_equipment_statistics(db)
+    stats = await service.get_equipment_statistics(db, ctx)
     return success_response(data=EquipmentStatistics(**stats))
 
 
@@ -251,7 +274,9 @@ async def get_equipment_statistics(
 async def get_equipment(
     equipment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:read"),
+    ),
 ) -> JSONResponse:
     """获取设备详情"""
     equipment = await service.get_equipment_by_id(db, equipment_id)
@@ -263,10 +288,12 @@ async def update_equipment(
     equipment_id: uuid.UUID,
     data: EquipmentUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:update"),
+    ),
 ) -> JSONResponse:
     """更新设备"""
-    equipment = await service.update_equipment(db, equipment_id, data)
+    equipment = await service.update_equipment(db, equipment_id, data, ctx)
     return success_response(data=await _equipment_to_response(equipment, db))
 
 
@@ -274,8 +301,54 @@ async def update_equipment(
 async def delete_equipment(
     equipment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:delete"),
+    ),
 ) -> JSONResponse:
     """删除设备"""
-    await service.delete_equipment(db, equipment_id)
+    await service.delete_equipment(db, equipment_id, ctx)
     return success_response(message="删除成功")
+
+
+# ==================== Excel 导入 ====================
+@router.get("/equipments/import/template", summary="下载设备导入模板")
+async def download_import_template(
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:import"),
+    ),
+) -> StreamingResponse:
+    """下载设备台账 Excel 导入模板"""
+    buf = service.generate_template_bytes()
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": (
+                "attachment; "
+                "filename*=UTF-8''%E8%AE%BE%E5%A4%87%E5%8F%B0%E8%B4%A6%E5%AF%BC%E5%85%A5%E6%A8%A1%E6%9D%BF.xlsx"
+            ),
+        },
+    )
+
+
+@router.post("/equipments/import", summary="批量导入设备")
+async def import_equipments(
+    file: UploadFile = File(..., description="Excel 文件（.xlsx）"),
+    db: AsyncSession = Depends(get_db),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:asset:import"),
+    ),
+) -> JSONResponse:
+    """从 Excel 文件批量导入设备台账"""
+    if not file.filename or not file.filename.endswith(".xlsx"):
+        return JSONResponse(
+            status_code=400,
+            content={"message": "仅支持 .xlsx 格式的 Excel 文件"},
+        )
+    try:
+        file_bytes = await file.read()
+        result = await service.import_equipments_from_excel(db, file_bytes, ctx=ctx)
+        await db.commit()
+        return success_response(data=result.model_dump())
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"message": str(e)})

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for maintenance repository layer."""
 
 import uuid
@@ -59,9 +60,7 @@ def action_data() -> dict:
     }
 
 
-async def test_create_failure_code_symptom(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_create_failure_code_symptom(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试创建故障现象"""
     result = await create_failure_code(db_session, FailureSymptom, symptom_data)
     assert result.code == "NOISE"
@@ -69,27 +68,21 @@ async def test_create_failure_code_symptom(
     assert result.id is not None
 
 
-async def test_create_failure_code_cause(
-    db_session: AsyncSession, cause_data: dict
-) -> None:
+async def test_create_failure_code_cause(db_session: AsyncSession, cause_data: dict) -> None:
     """测试创建故障原因"""
     result = await create_failure_code(db_session, FailureCause, cause_data)
     assert result.code == "WEAR"
     assert result.name == "轴承磨损"
 
 
-async def test_create_failure_code_action(
-    db_session: AsyncSession, action_data: dict
-) -> None:
+async def test_create_failure_code_action(db_session: AsyncSession, action_data: dict) -> None:
     """测试创建维修措施"""
     result = await create_failure_code(db_session, FailureAction, action_data)
     assert result.code == "REPLACE"
     assert result.name == "更换部件"
 
 
-async def test_get_failure_code_by_id(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_get_failure_code_by_id(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试根据ID获取故障代码"""
     created = await create_failure_code(db_session, FailureSymptom, symptom_data)
     result = await get_failure_code_by_id(db_session, FailureSymptom, created.id)
@@ -109,19 +102,13 @@ async def test_get_failure_codes(
     db_session: AsyncSession,
 ) -> None:
     """测试获取故障代码列表"""
-    await create_failure_code(
-        db_session, FailureSymptom, {"code": "NOISE", "name": "异响"}
-    )
-    await create_failure_code(
-        db_session, FailureSymptom, {"code": "LEAK", "name": "泄漏"}
-    )
+    await create_failure_code(db_session, FailureSymptom, {"code": "NOISE", "name": "异响"})
+    await create_failure_code(db_session, FailureSymptom, {"code": "LEAK", "name": "泄漏"})
     codes = await get_failure_codes(db_session, FailureSymptom)
     assert len(codes) >= 2
 
 
-async def test_exists_failure_code_by_code(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_exists_failure_code_by_code(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试检查故障代码是否存在"""
     await create_failure_code(db_session, FailureSymptom, symptom_data)
     exists = await exists_failure_code_by_code(db_session, FailureSymptom, "NOISE")
@@ -130,34 +117,21 @@ async def test_exists_failure_code_by_code(
     assert not_exists is False
 
 
-async def test_exists_failure_code_by_code_exclude_id(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_exists_failure_code_by_code_exclude_id(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试排除自身检查故障代码是否存在"""
     created = await create_failure_code(db_session, FailureSymptom, symptom_data)
-    assert (
-        await exists_failure_code_by_code(
-            db_session, FailureSymptom, "NOISE", exclude_id=created.id
-        )
-        is False
-    )
+    assert await exists_failure_code_by_code(db_session, FailureSymptom, "NOISE", exclude_id=created.id) is False
 
 
-async def test_update_failure_code(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_update_failure_code(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试更新故障代码"""
     created = await create_failure_code(db_session, FailureSymptom, symptom_data)
-    updated = await update_failure_code(
-        db_session, FailureSymptom, created.id, {"name": "异常噪音"}
-    )
+    updated = await update_failure_code(db_session, FailureSymptom, created.id, {"name": "异常噪音"})
     assert updated is not None
     assert updated.name == "异常噪音"
 
 
-async def test_delete_failure_code(
-    db_session: AsyncSession, symptom_data: dict
-) -> None:
+async def test_delete_failure_code(db_session: AsyncSession, symptom_data: dict) -> None:
     """测试删除故障代码（软删除）"""
     created = await create_failure_code(db_session, FailureSymptom, symptom_data)
     result = await delete_failure_code(db_session, FailureSymptom, created.id)
@@ -194,10 +168,13 @@ async def test_create_work_order(db_session: AsyncSession) -> None:
 
     # 创建多分类关联
     from app.modules.equipment.models import EquipmentCategoryLink
-    db_session.add(EquipmentCategoryLink(
-        equipment_id=equipment.id,
-        category_id=category.id,
-    ))
+
+    db_session.add(
+        EquipmentCategoryLink(
+            equipment_id=equipment.id,
+            category_id=category.id,
+        )
+    )
     await db_session.flush()
 
     wo = await repo_create_work_order(

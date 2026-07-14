@@ -1,6 +1,8 @@
 """M3 CTD 标准目录结构定义"""
 
-M3_CHAPTERS: list[dict] = [
+from typing import Any
+
+M3_CHAPTERS: list[dict[str, Any]] = [
     # Level 1: 3.2
     {
         "code": "3.2",
@@ -241,7 +243,7 @@ M3_CHAPTERS: list[dict] = [
 ]
 
 
-def get_chapter_by_code(code: str) -> dict | None:
+def get_chapter_by_code(code: str) -> dict[str, Any] | None:
     """根据章节编号获取章节定义"""
     for ch in M3_CHAPTERS:
         if ch["code"] == code:
@@ -249,7 +251,7 @@ def get_chapter_by_code(code: str) -> dict | None:
     return None
 
 
-def get_children(parent_code: str) -> list[dict]:
+def get_children(parent_code: str) -> list[dict[str, Any]]:
     """获取指定父章节的子章节"""
     return [ch for ch in M3_CHAPTERS if ch["parent_code"] == parent_code]
 
@@ -271,7 +273,7 @@ def match_file_to_chapter(filename: str) -> str | None:
     for ch in M3_CHAPTERS:
         for alias in ch.get("aliases", []):
             if name == alias.lower():
-                return ch["code"]
+                return ch["code"]  # type: ignore[no-any-return]
 
     # 第二优先级：文件名包含别名
     best_match = None
@@ -283,13 +285,13 @@ def match_file_to_chapter(filename: str) -> str | None:
                 best_match = ch["code"]
                 best_match_len = len(alias_lower)
     if best_match:
-        return best_match
+        return best_match  # type: ignore[no-any-return]
 
     # 第三优先级：英文关键词匹配
     for ch in M3_CHAPTERS:
         for kw in ch.get("keywords", []):
             if kw.lower() in name.replace("_", " "):
-                return ch["code"]
+                return ch["code"]  # type: ignore[no-any-return]
 
     # 第四优先级：章节编号匹配 (支持 3-2-s-1-1, 3.2.s.1.1, 3_2_s_1_1 等格式)
     import re
@@ -303,6 +305,6 @@ def match_file_to_chapter(filename: str) -> str | None:
         # 查找匹配的章节
         for ch in M3_CHAPTERS:
             if ch["code"].upper() == normalized:
-                return ch["code"]
+                return ch["code"]  # type: ignore[no-any-return]
 
     return None

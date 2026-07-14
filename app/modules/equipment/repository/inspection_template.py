@@ -7,7 +7,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models import InspectionTemplate, InspectionTemplateItem
+from app.modules.equipment.service.data_scope import apply_equipment_scope
 
 
 async def create_inspection_template(
@@ -39,9 +41,10 @@ async def create_inspection_template(
 async def get_inspection_template_by_id(
     db: AsyncSession,
     template_id: uuid.UUID,
+    ctx: EquipmentAccessContext | None = None,
 ) -> InspectionTemplate | None:
     """根据ID获取巡检模板（含检查项）"""
-    result = await db.execute(
+    query = (
         select(InspectionTemplate)
         .options(selectinload(InspectionTemplate.items))
         .where(
@@ -49,6 +52,29 @@ async def get_inspection_template_by_id(
             InspectionTemplate.is_deleted == False,  # noqa: E712
         )
     )
+    if ctx:
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+
+
+async def get_inspection_template_by_name(
+    db: AsyncSession,
+    name: str,
+    ctx: EquipmentAccessContext | None = None,
+) -> InspectionTemplate | None:
+    """根据模板名称精确查找巡检模板（含检查项）"""
+    query = (
+        select(InspectionTemplate)
+        .options(selectinload(InspectionTemplate.items))
+        .where(
+            InspectionTemplate.name == name,
+            InspectionTemplate.is_deleted == False,  # noqa: E712
+        )
+    )
+    if ctx:
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
+    result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
@@ -59,6 +85,7 @@ async def get_inspection_templates(
     keyword: str | None = None,
     page: int = 1,
     page_size: int = 20,
+    ctx: EquipmentAccessContext | None = None,
 ) -> tuple[list[InspectionTemplate], int]:
     """获取巡检模板列表"""
     query = (
@@ -67,17 +94,15 @@ async def get_inspection_templates(
         .where(InspectionTemplate.is_deleted == False)  # noqa: E712
     )
     if equipment_category_id:
-        query = query.where(
-            InspectionTemplate.equipment_category_id == equipment_category_id
-        )
+        query = query.where(InspectionTemplate.equipment_category_id == equipment_category_id)
     if is_active is not None:
         query = query.where(InspectionTemplate.is_active == is_active)
     if keyword:
         query = query.where(InspectionTemplate.name.ilike(f"%{keyword}%"))
+    if ctx:
+        query = apply_equipment_scope(query, ctx, InspectionTemplate.created_by, mode="user_id")
 
-    count_query = select(func.count()).select_from(
-        query.with_only_columns(InspectionTemplate.id).subquery()
-    )
+    count_query = select(func.count()).select_from(query.with_only_columns(InspectionTemplate.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 

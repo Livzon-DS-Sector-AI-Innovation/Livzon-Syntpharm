@@ -106,6 +106,21 @@ DEFAULT_SETTINGS = [
         "string",
         "CDE guideline URL to track",
     ),
+    # Platform-level AI settings
+    (
+        "core",
+        "AI_VISION_MODEL",
+        "gpt-4o",
+        "string",
+        "Default model for vision tasks",
+    ),
+    (
+        "core",
+        "LLM_MODEL",
+        "deepseek-chat",
+        "string",
+        "Default model for LLM text tasks",
+    ),
 ]
 
 

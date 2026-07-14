@@ -10,13 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
 
-_session_ctx: contextvars.ContextVar[AsyncSession | None] = contextvars.ContextVar(
-    "mcp_db_session", default=None
-)
+_session_ctx: contextvars.ContextVar[AsyncSession | None] = contextvars.ContextVar("mcp_db_session", default=None)
 
-_user_ctx: contextvars.ContextVar[User | None] = contextvars.ContextVar(
-    "mcp_user", default=None
-)
+_user_ctx: contextvars.ContextVar[User | None] = contextvars.ContextVar("mcp_user", default=None)
+
+_agent_api_key_ctx: contextvars.ContextVar[str] = contextvars.ContextVar("mcp_agent_api_key", default="")
 
 
 def get_db() -> AsyncSession:
@@ -30,6 +28,19 @@ def get_db() -> AsyncSession:
 def get_user() -> User | None:
     """获取当前 MCP 请求的认证用户。"""
     return _user_ctx.get()
+
+
+def get_agent_api_key() -> str:
+    """获取当前 MCP 请求的 Agent API Key（掩码后 8 位）。"""
+    key = _agent_api_key_ctx.get()
+    if not key:
+        return ""
+    return key[:8] + "..." if len(key) > 8 else key
+
+
+def set_agent_api_key(api_key: str) -> None:
+    """设置当前 MCP 请求的 Agent API Key。"""
+    _agent_api_key_ctx.set(api_key)
 
 
 def set_context(

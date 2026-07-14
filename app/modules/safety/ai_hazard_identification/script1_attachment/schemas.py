@@ -20,12 +20,6 @@ class AttachmentInput(BaseModel):
 class AttachmentOutput(BaseModel):
     """脚本1 输出：基础作业活动信息（为危险源辨识提供依据）。"""
 
-    specific_activity: str = Field(
-        ..., description="具体作业活动及操作过程描述（做什么 + 怎么做）"
-    )
-    equipment_facilities: str = Field(
-        ..., description="涉及的主要设备设施（含规格型号、材质、容量等参数）"
-    )
-    raw_auxiliary_materials: str = Field(
-        ..., description="涉及的原辅料（含危化品、蒸汽、氮气、工艺用水等）"
-    )
+    specific_activity: str = Field(..., description="具体作业活动及操作过程描述（做什么 + 怎么做）")
+    equipment_facilities: str = Field(..., description="涉及的主要设备设施（含规格型号、材质、容量等参数）")
+    raw_auxiliary_materials: str = Field(..., description="涉及的原辅料（含危化品、蒸汽、氮气、工艺用水等）")

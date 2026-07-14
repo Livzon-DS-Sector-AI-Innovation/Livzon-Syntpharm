@@ -28,9 +28,7 @@ def main():
     if len(sys.argv) != 6:
         print(
             json.dumps(
-                {
-                    "error": "Usage: run_edbo.py <csv_path> <objectives_json> <modes_json> <batch_size> <save_prediction>"
-                }
+                {"error": "Usage: run_edbo.py <csv_path> <objectives_json> <modes_json> <batch_size> <save_prediction>"}
             )
         )
         sys.exit(1)

@@ -53,8 +53,7 @@ class HazardIdRuleEngine:
         if output.hazard_type and output.hazard_type.strip() != UNCONFIRMED:
             if output.hazard_type.strip() not in VALID_HAZARD_TYPES_6441:
                 errors.append(
-                    f"无效的危险类型 '{output.hazard_type}'，"
-                    f"必须在 GB 6441 的 14 类范围内: {VALID_HAZARD_TYPES_6441}"
+                    f"无效的危险类型 '{output.hazard_type}'，必须在 GB 6441 的 14 类范围内: {VALID_HAZARD_TYPES_6441}"
                 )
 
         # 2. 三个字段不能全部为「待人工确认」
@@ -76,10 +75,7 @@ class HazardIdRuleEngine:
                 errors.append(f"不规范行为描述过短（{len(behavior)}字），最少 10 字")
             for phrase in BANNED_PHRASES:
                 if phrase in behavior:
-                    errors.append(
-                        f"不规范行为包含泛泛表述: '{phrase}'，"
-                        f"请输出具体的不安全动作/状态描述"
-                    )
+                    errors.append(f"不规范行为包含泛泛表述: '{phrase}'，请输出具体的不安全动作/状态描述")
 
         # 4. 事故描述长度检查
         accident = (output.possible_accident or "").strip()
@@ -94,7 +90,7 @@ class HazardIdRuleEngine:
             and output.possible_accident.strip() != UNCONFIRMED
         ):
             # 简单的关键词映射检查
-            TYPE_ACCIDENT_KEYWORDS = {
+            type_accident_keywords = {
                 "灼烫": ["烫", "灼", "烧伤", "高温", "热", "酸", "碱", "腐蚀"],
                 "机械伤害": ["卷入", "夹", "挤压", "切割", "剪切", "旋转", "转动"],
                 "触电": ["电击", "触电", "漏电", "电"],
@@ -104,9 +100,7 @@ class HazardIdRuleEngine:
                 "容器爆炸": ["爆炸", "爆裂", "超压", "炸裂"],
                 "物体打击": ["砸", "打击", "飞溅", "落下", "坠落物"],
             }
-            expected_keywords = TYPE_ACCIDENT_KEYWORDS.get(
-                output.hazard_type.strip(), []
-            )
+            expected_keywords = type_accident_keywords.get(output.hazard_type.strip(), [])
             if expected_keywords:
                 match_found = any(kw in accident for kw in expected_keywords)
                 if not match_found:

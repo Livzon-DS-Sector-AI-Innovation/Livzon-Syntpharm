@@ -7,10 +7,12 @@ from sqlalchemy import String, cast, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.procurement.models import (
+    ContractRecord,
     InvoiceRecognitionRecord,
     PurchaseRequest,
     PurchaseRequestApproval,
     PurchaseRequestItem,
+    Supplier,
 )
 
 
@@ -36,9 +38,7 @@ class InvoiceRecognitionRepository:
         if duplicate_key:
             filters.append(InvoiceRecognitionRecord.duplicate_key == duplicate_key)
         if source_file_sha256:
-            filters.append(
-                InvoiceRecognitionRecord.source_file_sha256 == source_file_sha256
-            )
+            filters.append(InvoiceRecognitionRecord.source_file_sha256 == source_file_sha256)
         if not filters:
             return None
 
@@ -62,17 +62,13 @@ class InvoiceRecognitionRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[InvoiceRecognitionRecord], int]:
-        base_query = select(InvoiceRecognitionRecord).where(
-            InvoiceRecognitionRecord.is_deleted.is_(False)
-        )
+        base_query = select(InvoiceRecognitionRecord).where(InvoiceRecognitionRecord.is_deleted.is_(False))
         count_query = select(func.count(InvoiceRecognitionRecord.id)).where(
             InvoiceRecognitionRecord.is_deleted.is_(False)
         )
 
         if seller_name:
-            seller_filter = InvoiceRecognitionRecord.seller_name.ilike(
-                f"%{seller_name}%"
-            )
+            seller_filter = InvoiceRecognitionRecord.seller_name.ilike(f"%{seller_name}%")
             base_query = base_query.where(seller_filter)
             count_query = count_query.where(seller_filter)
         if invoice_number:
@@ -109,7 +105,7 @@ class InvoiceRecognitionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(stmt)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     async def batch_delete_records(self, record_ids: list[UUID]) -> int:
         if not record_ids:
@@ -124,7 +120,135 @@ class InvoiceRecognitionRepository:
             .values(is_deleted=True)
         )
         result = await self.session.execute(stmt)
-        return result.rowcount
+        return result.rowcount  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+
+
+class SupplierRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def replace_all(self, suppliers: list[Supplier]) -> int:
+        await self.session.execute(update(Supplier).where(Supplier.is_deleted.is_(False)).values(is_deleted=True))
+        if not suppliers:
+            await self.session.flush()
+            return 0
+
+        self.session.add_all(suppliers)
+        await self.session.flush()
+        return len(suppliers)
+
+    async def list_suppliers(
+        self,
+        *,
+        keyword: str | None = None,
+        supplier_name: str | None = None,
+        material_name: str | None = None,
+        purchase_category: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Supplier], int, list[str]]:
+        base_query = select(Supplier).where(Supplier.is_deleted.is_(False))
+        count_query = select(func.count(Supplier.id)).where(Supplier.is_deleted.is_(False))
+
+        if supplier_name:
+            supplier_filter = Supplier.supplier_name.ilike(f"%{supplier_name}%")
+            base_query = base_query.where(supplier_filter)
+            count_query = count_query.where(supplier_filter)
+        if material_name:
+            material_filter = Supplier.material_name.ilike(f"%{material_name}%")
+            base_query = base_query.where(material_filter)
+            count_query = count_query.where(material_filter)
+        if purchase_category:
+            category_filter = Supplier.purchase_category == purchase_category
+            base_query = base_query.where(category_filter)
+            count_query = count_query.where(category_filter)
+        if keyword:
+            like_pattern = f"%{keyword}%"
+            keyword_filter = or_(
+                Supplier.supplier_code.ilike(like_pattern),
+                Supplier.supplier_name.ilike(like_pattern),
+                Supplier.material_code.ilike(like_pattern),
+                Supplier.material_name.ilike(like_pattern),
+                Supplier.manufacturer_code.ilike(like_pattern),
+                Supplier.manufacturer_name.ilike(like_pattern),
+                Supplier.purchase_category.ilike(like_pattern),
+                Supplier.last_updated_by.ilike(like_pattern),
+                cast(Supplier.raw_data, String).ilike(like_pattern),
+            )
+            base_query = base_query.where(keyword_filter)
+            count_query = count_query.where(keyword_filter)
+
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar() or 0
+
+        result = await self.session.execute(
+            base_query.order_by(
+                Supplier.import_row_number.asc(),
+                Supplier.created_at.desc(),
+            )
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        suppliers = list(result.scalars().all())
+        columns = await self.get_latest_columns()
+        return suppliers, total, columns
+
+    async def get_latest_columns(self) -> list[str]:
+        result = await self.session.execute(
+            select(Supplier.import_columns)
+            .where(Supplier.is_deleted.is_(False))
+            .order_by(Supplier.created_at.desc(), Supplier.import_row_number.asc())
+            .limit(1)
+        )
+        columns = result.scalar_one_or_none()
+        return list(columns or [])
+
+
+class ContractRecordRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(self, record: ContractRecord) -> ContractRecord:
+        self.session.add(record)
+        await self.session.flush()
+        return record
+
+    async def get(self, record_id: UUID) -> ContractRecord | None:
+        result = await self.session.execute(
+            select(ContractRecord).where(
+                ContractRecord.id == record_id,
+                ContractRecord.is_deleted.is_(False),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_records(
+        self,
+        *,
+        keyword: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[ContractRecord], int]:
+        base_query = select(ContractRecord).where(ContractRecord.is_deleted.is_(False))
+        count_query = select(func.count(ContractRecord.id)).where(ContractRecord.is_deleted.is_(False))
+
+        if keyword:
+            like_pattern = f"%{keyword}%"
+            keyword_filter = or_(
+                ContractRecord.title.ilike(like_pattern),
+                ContractRecord.contract_number.ilike(like_pattern),
+                ContractRecord.seller_name.ilike(like_pattern),
+            )
+            base_query = base_query.where(keyword_filter)
+            count_query = count_query.where(keyword_filter)
+
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar() or 0
+
+        result = await self.session.execute(
+            base_query.order_by(ContractRecord.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        )
+        return list(result.scalars().all()), total
 
 
 class PurchaseRequestRepository:
@@ -185,12 +309,8 @@ class PurchaseRequestRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[PurchaseRequest], int]:
-        base_query = select(PurchaseRequest).where(
-            PurchaseRequest.is_deleted.is_(False)
-        )
-        count_query = select(func.count(PurchaseRequest.id)).where(
-            PurchaseRequest.is_deleted.is_(False)
-        )
+        base_query = select(PurchaseRequest).where(PurchaseRequest.is_deleted.is_(False))
+        count_query = select(func.count(PurchaseRequest.id)).where(PurchaseRequest.is_deleted.is_(False))
 
         if category:
             base_query = base_query.where(PurchaseRequest.category == category)
@@ -208,9 +328,7 @@ class PurchaseRequestRepository:
         total = total_result.scalar() or 0
 
         result = await self.session.execute(
-            base_query.order_by(PurchaseRequest.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
+            base_query.order_by(PurchaseRequest.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
         )
         return list(result.scalars().all()), total
 
@@ -224,9 +342,7 @@ class PurchaseRequestRepository:
         page: int | None = None,
         page_size: int | None = None,
     ) -> tuple[list[tuple[PurchaseRequest, PurchaseRequestItem]], int]:
-        request_item_match = PurchaseRequestItem.purchase_request_id == cast(
-            PurchaseRequest.id, String
-        )
+        request_item_match = PurchaseRequestItem.purchase_request_id == cast(PurchaseRequest.id, String)
         filters = [
             PurchaseRequest.is_deleted.is_(False),
             PurchaseRequestItem.is_deleted.is_(False),
@@ -278,9 +394,7 @@ class PurchaseRequestRepository:
         approval_subquery = (
             select(
                 PurchaseRequestApproval.purchase_request_id,
-                func.max(PurchaseRequestApproval.approval_time).label(
-                    "latest_approval_time"
-                ),
+                func.max(PurchaseRequestApproval.approval_time).label("latest_approval_time"),
             )
             .where(
                 PurchaseRequestApproval.is_deleted.is_(False),
@@ -290,10 +404,7 @@ class PurchaseRequestRepository:
             .group_by(PurchaseRequestApproval.purchase_request_id)
             .subquery()
         )
-        request_id_match = (
-            cast(PurchaseRequest.id, String(36))
-            == approval_subquery.c.purchase_request_id
-        )
+        request_id_match = cast(PurchaseRequest.id, String(36)) == approval_subquery.c.purchase_request_id
         base_query = (
             select(PurchaseRequest)
             .join(approval_subquery, request_id_match)

@@ -16,5 +16,5 @@ def get_ai_service() -> AIService:
     return AIService(
         api_key=settings.LLM_API_KEY or "",
         base_url=settings.LLM_BASE_URL or "https://api.deepseek.com",
-        model=settings.LLM_MODEL or "deepseek-chat",
+        model=settings.LLM_MODEL or "deepseek-chat",  # type: ignore[attr-defined]
     )

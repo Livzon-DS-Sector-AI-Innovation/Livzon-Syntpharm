@@ -1,8 +1,13 @@
 """千文 (Qwen) API 客户端 — OpenAI 兼容接口。"""
 
+import logging
+from typing import Any
+
 import httpx
 
 from app.shared.config_reader import get_module_setting
+
+logger = logging.getLogger(__name__)
 
 
 class QwenClient:
@@ -50,9 +55,7 @@ class QwenClient:
                 "https://dashscope.aliyuncs.com/compatible-mode/v1",
             )
         if model is None:
-            model = await get_module_setting(
-                "equipment", "EQUIPMENT_AI_MODEL", "qwen3.7-plus"
-            )
+            model = await get_module_setting("equipment", "EQUIPMENT_AI_MODEL", "qwen3.7-plus")
         if api_key is None:
             api_key = await get_module_setting("equipment", "EQUIPMENT_AI_API_KEY", "")
         return cls(timeout=timeout, base_url=base_url, model=model, api_key=api_key)
@@ -74,7 +77,7 @@ class QwenClient:
             user_prompt: 用户提示词
             temperature: 温度参数
         """
-        body: dict = {
+        body: dict[str, Any] = {
             "model": self._model,
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -83,9 +86,7 @@ class QwenClient:
                     "content": [
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{image_mime_type};base64,{image_base64}"
-                            },
+                            "image_url": {"url": f"data:{image_mime_type};base64,{image_base64}"},
                         },
                         {"type": "text", "text": user_prompt},
                     ],
@@ -111,7 +112,7 @@ class QwenClient:
             user_prompt: 用户提示词（含当前结果和修改说明）
             temperature: 温度参数
         """
-        body: dict = {
+        body: dict[str, Any] = {
             "model": self._model,
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -124,7 +125,7 @@ class QwenClient:
 
         return await self._request(body)
 
-    async def _request(self, body: dict) -> str:
+    async def _request(self, body: dict[str, Any]) -> str:
         """发送请求到千文 API，返回响应文本。"""
         resp = await self._client.post("/chat/completions", json=body)
         if resp.is_error:
@@ -133,12 +134,11 @@ class QwenClient:
                 err_data = resp.json()
                 detail = err_data.get("message", "") or str(err_data)
             except Exception:
+                logger.exception("Failed to parse error response JSON from Qwen API")
                 detail = resp.text[:500]
-            raise AIAnalysisError(
-                f"千文 API 返回错误 (HTTP {resp.status_code}): {detail}"
-            )
+            raise AIAnalysisError(f"千文 API 返回错误 (HTTP {resp.status_code}): {detail}")
         data = resp.json()
-        return data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
     async def close(self) -> None:
         await self._client.aclose()

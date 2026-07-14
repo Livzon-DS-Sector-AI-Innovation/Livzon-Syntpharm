@@ -6,10 +6,21 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, Date, DateTime, Index, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.platform.identity.models import User  # noqa: F401
 from app.shared.base_model import BaseModel
 
 
@@ -92,7 +103,7 @@ class InvoiceRecognitionRecord(BaseModel):
         JSONB,
         nullable=False,
         default=list,
-        server_default="[]",
+        server_default=text("'[]'"),
         comment="识别到的发票明细",
     )
     raw_text: Mapped[str] = mapped_column(
@@ -101,6 +112,185 @@ class InvoiceRecognitionRecord(BaseModel):
         default="",
         server_default="",
         comment="PDF 文本层原文",
+    )
+
+
+class Supplier(BaseModel):
+    """采购供应商清单。"""
+
+    __tablename__ = "suppliers"
+    __table_args__ = (
+        Index("ix_procurement_supplier_code", "supplier_code"),
+        Index("ix_procurement_supplier_name", "supplier_name"),
+        Index("ix_procurement_supplier_material_code", "material_code"),
+        Index("ix_procurement_supplier_material_name", "material_name"),
+        Index("ix_procurement_supplier_category", "purchase_category"),
+        Index("ix_procurement_supplier_updated_date", "last_updated_date"),
+        {"schema": "procurement"},
+    )
+
+    supplier_code: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="供应商代码",
+    )
+    supplier_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="供应商名称",
+    )
+    material_code: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="物料编码",
+    )
+    material_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="物料名称",
+    )
+    manufacturer_code: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="生产厂家编码",
+    )
+    manufacturer_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="生产厂家名称",
+    )
+    purchase_category: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="采购品类名称",
+    )
+    last_updated_by: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="最后更新人",
+    )
+    last_updated_date: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+        comment="最后更新日期",
+    )
+    import_file_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="导入文件名",
+    )
+    import_sheet_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="导入工作表",
+    )
+    import_row_number: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        comment="导入文件行号",
+    )
+    import_columns: Mapped[list[str]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+        comment="导入文件字段顺序",
+    )
+    raw_data: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+        comment="导入原始行数据",
+    )
+
+
+class ContractRecord(BaseModel):
+    """采购合同生成记录。"""
+
+    __tablename__ = "contract_records"
+    __table_args__ = (
+        Index("ix_procurement_contract_record_title", "title"),
+        Index("ix_procurement_contract_record_category", "category"),
+        Index("ix_procurement_contract_record_contract_number", "contract_number"),
+        Index("ix_procurement_contract_record_seller_name", "seller_name"),
+        Index("ix_procurement_contract_record_created_at", "created_at"),
+        {"schema": "procurement"},
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="合同标题",
+    )
+    category: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        comment="合同分类",
+    )
+    contract_number: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        comment="合同编号",
+    )
+    contract_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        comment="签订日期",
+    )
+    seller_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="卖方名称",
+    )
+    filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="合同文件名",
+    )
+    file_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        comment="合同文件路径或对象存储 key",
+    )
+    content_type: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="文件 MIME 类型",
+    )
+    file_size: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        comment="文件大小（字节）",
+    )
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+        comment="合同生成请求快照",
     )
 
 

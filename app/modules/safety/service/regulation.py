@@ -60,7 +60,8 @@ class RegulationService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.warning("Failed to delete file from MinIO: %s", file_path, exc_info=True)
+                    logger.exception("Failed to delete file from MinIO: %s", file_path)
+                    pass
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
@@ -77,15 +78,15 @@ class RegulationService:
         position: str | None = None,
         keyword: str | None = None,
         status: str | None = None,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         """获取操规列表"""
         return await self.repo.get_regulations(skip, limit, position, keyword, status)
 
-    async def get_regulation(self, regulation_id: uuid.UUID):
+    async def get_regulation(self, regulation_id: uuid.UUID) -> Any:
         """获取操规详情"""
         return await self.repo.get_regulation_by_id(regulation_id)
 
-    async def create_regulation(self, data) -> Any:
+    async def create_regulation(self, data) -> Any:  # type: ignore[no-untyped-def]
         """创建安全操作规程"""
 
         create_data = data.model_dump() if not isinstance(data, dict) else data
@@ -93,7 +94,7 @@ class RegulationService:
         await self._audit("create", "regulation", resource_id=item.id)
         return item
 
-    async def update_regulation(self, regulation_id: uuid.UUID, data) -> Any | None:
+    async def update_regulation(self, regulation_id: uuid.UUID, data) -> Any:  # type: ignore[no-untyped-def]
         """更新安全操作规程"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_regulation(regulation_id, update_data)
@@ -122,17 +123,15 @@ class RegulationService:
         revision_type: str | None = None,
         review_opinion: str | None = None,
         revision_scope: str | None = None,
-    ) -> tuple[list, int]:
+    ) -> tuple[list[Any], int]:
         """获取修订记录列表"""
-        return await self.repo.get_revisions(
-            skip, limit, regulation_id, revision_type, review_opinion, revision_scope
-        )
+        return await self.repo.get_revisions(skip, limit, regulation_id, revision_type, review_opinion, revision_scope)
 
-    async def get_revision(self, revision_id: uuid.UUID):
+    async def get_revision(self, revision_id: uuid.UUID) -> Any:
         """获取修订记录详情"""
         return await self.repo.get_revision_by_id(revision_id)
 
-    async def create_revision(self, data) -> Any:
+    async def create_revision(self, data) -> Any:  # type: ignore[no-untyped-def]
         """创建修订记录
 
         自动从安全操作规程表获取当前文档链接填入旧文档链接。
@@ -146,9 +145,7 @@ class RegulationService:
             "regulation_id": data.regulation_id,
             "regulation_name": reg.regulation_name,
             "old_document_path": reg.document_path,
-            "revision_type": data.revision_type.value
-            if hasattr(data.revision_type, "value")
-            else data.revision_type,
+            "revision_type": data.revision_type.value if hasattr(data.revision_type, "value") else data.revision_type,
             "revision_opinion": data.revision_opinion,
             "reviser": data.reviser,
             "reviser_name": data.reviser_name,
@@ -159,7 +156,7 @@ class RegulationService:
         await self._audit("create", "regulation_revision", resource_id=item.id)
         return item
 
-    async def update_revision(self, revision_id: uuid.UUID, data) -> Any | None:
+    async def update_revision(self, revision_id: uuid.UUID, data) -> Any:  # type: ignore[no-untyped-def]
         """更新修订记录"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         item = await self.repo.update_revision(revision_id, update_data)
@@ -224,7 +221,7 @@ class RegulationService:
     async def ai_revision_generate(
         self,
         revision_id: uuid.UUID,
-    ) -> dict | None:
+    ) -> dict[str, Any] | None:
         """AI 根据修订意见生成修订版本（不持久化，返回给用户确认）
 
         返回 {"generated_content": str} 供前端展示对比。
@@ -284,10 +281,7 @@ class RegulationService:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(generated_content)
 
-        doc_name = (
-            document_name
-            or f"{revision.regulation_name}_修订版_{int(datetime.now().timestamp())}.md"
-        )
+        doc_name = document_name or f"{revision.regulation_name}_修订版_{int(datetime.now().timestamp())}.md"
 
         # 更新修订记录
         await self.repo.update_revision(
@@ -324,9 +318,7 @@ class RegulationService:
 
         if not revision.revision_opinion:
             # 无修订意见，默认仅安全要求
-            await self.repo.update_revision(
-                revision_id, {"revision_scope": "safety_requirement"}
-            )
+            await self.repo.update_revision(revision_id, {"revision_scope": "safety_requirement"})
             await self.session.flush()
             return await self.repo.get_revision_by_id(revision_id)
 
@@ -350,7 +342,7 @@ class RegulationService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
 
-        return await create_ai_service("text")
+        return create_ai_service("text")  # type: ignore[return-value]
 
     async def _ai_identify_scope(
         self,
@@ -375,7 +367,8 @@ class RegulationService:
 - 安全要求（safety_requirement）：涉及安全措施、防护要求、警示标识、联锁装置、应急措施等
 
 请返回 JSON 格式：
-{{"scope": "process" 或 "safety_requirement" 或 "process,safety_requirement"（两者都有时逗号分隔）, "reasoning": "识别依据说明"}}"""
+{{"scope": "process" 或 "safety_requirement" 或 "process,safety_requirement"\
+（两者都有时逗号分隔）, "reasoning": "识别依据说明"}}"""
 
         try:
             ai = await self._get_ai_client()
@@ -390,7 +383,7 @@ class RegulationService:
                 expected_keys=["scope", "reasoning"],
             )
             await ai.close()
-            return result.get("scope", "safety_requirement")
+            return result.get("scope", "safety_requirement")  # type: ignore[no-any-return]
         except AIOutputError:
             logger.warning("AI 识别修订范围失败，默认标记为安全要求")
             return "safety_requirement"
@@ -449,7 +442,7 @@ class RegulationService:
         old_content: str,
         new_content: str,
         regulation_name: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """AI 识别新旧文档差异（人工修订时使用）"""
         prompt = f"""请对比以下安全操作规程的新旧版本，识别具体差异。
 
@@ -462,7 +455,8 @@ class RegulationService:
 {new_content}
 
 请输出 JSON 格式：
-{{"has_changes": true/false, "changes": [{{"section": "章节/条款号", "old_text": "旧内容摘要", "new_text": "新内容摘要", "change_type": "新增/修改/删除"}}], "summary": "差异摘要说明"}}"""
+{{"has_changes": true/false, "changes": [{{"section": "章节/条款号", "old_text": "旧内容摘要", \
+"new_text": "新内容摘要", "change_type": "新增/修改/删除"}}], "summary": "差异摘要说明"}}"""
 
         try:
             ai = await self._get_ai_client()
@@ -493,9 +487,7 @@ class RegulationService:
 
     # ==================== 文档上传处理 ====================
 
-    async def upload_regulation_document(
-        self, regulation_id: uuid.UUID, file_name: str, file_path: str
-    ) -> Any | None:
+    async def upload_regulation_document(self, regulation_id: uuid.UUID, file_name: str, file_path: str) -> Any | None:
         """上传操规文档并更新操规记录"""
         return await self.repo.update_regulation(
             regulation_id,
@@ -504,6 +496,77 @@ class RegulationService:
                 "document_original_name": file_name,
             },
         )
+
+    # ==================== 在线修订流程 ====================
+
+    async def revise_regulation(
+        self,
+        regulation_id: uuid.UUID,
+        content: str,
+        revision_opinion: str | None = None,
+        reviser_name: str | None = None,
+    ) -> dict[str, Any] | None:
+        """在线修订操规：保存内容并自动生成修订记录。
+
+        1. 获取当前操规，保存旧文档路径
+        2. 更新操规内容 + 状态为 reviewed
+        3. 自动生成修订编号并创建修订记录
+        4. 返回 regulation_id + revision_id + revision_no
+        """
+        regulation = await self.repo.get_regulation_by_id(regulation_id)
+        if not regulation:
+            return None
+
+        # 保存旧文档路径（用于修订记录）
+        old_doc_path = regulation.document_path
+
+        # 更新操规内容和状态
+        await self.repo.update_regulation(
+            regulation_id,
+            {
+                "content": content,
+                "status": "reviewed",
+            },
+        )
+
+        # 自动生成修订编号：REV-{操规编号}-{时间戳}
+        ts = datetime.now().strftime("%Y%m%d%H%M%S")
+        revision_no = f"REV-{regulation.regulation_no}-{ts}"
+
+        # 创建修订记录
+        revision_data = {
+            "revision_no": revision_no,
+            "regulation_id": regulation_id,
+            "regulation_name": regulation.regulation_name,
+            "old_document_path": old_doc_path,
+            "revision_type": "manual",
+            "revision_opinion": revision_opinion,
+            "reviser_name": reviser_name,
+            "revision_time": datetime.now(),
+            "review_opinion": "approved",  # 直接编辑即审核通过
+        }
+        revision = await self.repo.create_revision(revision_data)
+
+        await self._audit(
+            "revise",
+            "regulation",
+            resource_id=regulation_id,
+            extra={
+                "revision_id": str(revision.id),
+                "revision_no": revision_no,
+                "reviser_name": reviser_name,
+            },
+        )
+
+        await self.session.flush()
+
+        return {
+            "regulation_id": regulation_id,
+            "revision_id": revision.id,
+            "revision_no": revision_no,
+            "regulation_name": regulation.regulation_name,
+            "status": "reviewed",
+        }
 
 
 # ==================== AI 配置 Service ====================

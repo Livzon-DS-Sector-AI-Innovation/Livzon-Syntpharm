@@ -3,6 +3,7 @@
 from datetime import date, datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 from pydantic import BaseModel
@@ -26,11 +27,9 @@ class TrainingNotificationInput(BaseModel):
 
 def _find_template() -> Path:
     candidates = [
-        Path("员工培训教育管理规程/7.4培训通知书.docx"),
-        Path("../员工培训教育管理规程/7.4培训通知书.docx"),
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "员工培训教育管理规程"
-        / "7.4培训通知书.docx",
+        Path("assets/hr/7.4培训通知书.docx"),
+        Path("../assets/hr/7.4培训通知书.docx"),
+        Path(__file__).resolve().parent.parent.parent.parent / "assets/hr" / "7.4培训通知书.docx",
     ]
     for p in candidates:
         if p.exists():
@@ -38,7 +37,7 @@ def _find_template() -> Path:
     raise FileNotFoundError("模板文件未找到: 7.4培训通知书.docx")
 
 
-def _set_cell(cell, text: str) -> None:
+def _set_cell(cell, text: str) -> Any:  # type: ignore[no-untyped-def]
     """Set cell text, preserving first run's formatting."""
     first = None
     for p in cell.paragraphs:
@@ -82,9 +81,7 @@ def generate_training_notification(data: TrainingNotificationInput) -> BytesIO:
     _set_cell(table.rows[0].cells[1], " — ".join(topic_parts))
 
     # ── Row 1: 培训日期 | value | 课时 | value ──
-    _set_cell(
-        table.rows[1].cells[1], str(data.training_date) if data.training_date else ""
-    )
+    _set_cell(table.rows[1].cells[1], str(data.training_date) if data.training_date else "")
     _set_cell(
         table.rows[1].cells[3],
         _compute_hours(data.training_time_start, data.training_time_end),
@@ -121,9 +118,7 @@ def generate_training_notification(data: TrainingNotificationInput) -> BytesIO:
                 r.text = ""
     if len(doc.paragraphs) > 0:
         dept_name = data.issuer_department or data.department or ""
-        doc.paragraphs[0].runs[
-            0
-        ].text = f"部门/Dept：{dept_name}          签发人/ Issued by："
+        doc.paragraphs[0].runs[0].text = f"部门/Dept：{dept_name}          签发人/ Issued by："
     if len(doc.paragraphs) > 1:
         d = data.training_date
         doc.paragraphs[1].runs[0].text = f"{d.year}年{d.month:02d}月{d.day:02d}日"

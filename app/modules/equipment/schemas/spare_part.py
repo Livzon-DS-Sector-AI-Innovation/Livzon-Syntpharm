@@ -12,14 +12,10 @@ class SparePartCreate(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=50, description="备件编码")
     name: str = Field(..., min_length=1, max_length=200, description="备件名称")
-    specification: str | None = Field(
-        default=None, max_length=200, description="规格型号"
-    )
+    specification: str | None = Field(default=None, max_length=200, description="规格型号")
     unit: str = Field(..., min_length=1, max_length=20, description="计量单位")
     category: str | None = Field(default=None, max_length=50, description="备件分类")
-    default_supplier: str | None = Field(
-        default=None, max_length=200, description="默认供应商"
-    )
+    default_supplier: str | None = Field(default=None, max_length=200, description="默认供应商")
     unit_price: float | None = Field(default=None, ge=0, description="参考单价")
     is_active: bool = Field(default=True, description="是否启用")
 
@@ -27,22 +23,12 @@ class SparePartCreate(BaseModel):
 class SparePartUpdate(BaseModel):
     """更新备件请求"""
 
-    code: str | None = Field(
-        default=None, min_length=1, max_length=50, description="备件编码"
-    )
-    name: str | None = Field(
-        default=None, min_length=1, max_length=200, description="备件名称"
-    )
-    specification: str | None = Field(
-        default=None, max_length=200, description="规格型号"
-    )
-    unit: str | None = Field(
-        default=None, min_length=1, max_length=20, description="计量单位"
-    )
+    code: str | None = Field(default=None, min_length=1, max_length=50, description="备件编码")
+    name: str | None = Field(default=None, min_length=1, max_length=200, description="备件名称")
+    specification: str | None = Field(default=None, max_length=200, description="规格型号")
+    unit: str | None = Field(default=None, min_length=1, max_length=20, description="计量单位")
     category: str | None = Field(default=None, max_length=50, description="备件分类")
-    default_supplier: str | None = Field(
-        default=None, max_length=200, description="默认供应商"
-    )
+    default_supplier: str | None = Field(default=None, max_length=200, description="默认供应商")
     unit_price: float | None = Field(default=None, ge=0, description="参考单价")
     is_active: bool | None = Field(default=None, description="是否启用")
 

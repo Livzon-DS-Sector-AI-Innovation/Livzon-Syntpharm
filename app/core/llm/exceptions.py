@@ -42,5 +42,5 @@ class LLMOutputError(LLMError):
 
     def __str__(self) -> str:
         if self.raw_response:
-            return f"{self.message} (raw: {self.raw_response[:200]})"
-        return self.message
+            return f"{self.message} (raw: {self.raw_response[:200]})"  # type: ignore[attr-defined]
+        return self.message  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]

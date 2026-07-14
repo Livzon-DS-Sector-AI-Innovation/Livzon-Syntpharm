@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests for app.core.tasks spawn_task utility."""
 
 from __future__ import annotations
