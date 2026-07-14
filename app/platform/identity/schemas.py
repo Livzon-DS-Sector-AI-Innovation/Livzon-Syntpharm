@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-UserRole = Literal["admin", "user"]
 UserStatus = Literal["active", "disabled"]
 AuthSource = Literal["local", "feishu"]
 
@@ -29,8 +28,6 @@ class UserResponse(BaseModel):
     id: UUID
     name: str
     username: str | None = None
-    role: UserRole = "user"
-    status: UserStatus = "active"
     auth_source: AuthSource = "feishu"
     en_name: str | None = None
     email: str | None = None
@@ -47,7 +44,6 @@ class UserResponse(BaseModel):
     feishu_open_id: str | None = None
     feishu_union_id: str | None = None
     tenant_key: str | None = None
-    role: str = "member"  # type: ignore[no-redef]
 
     model_config = {"from_attributes": True}
 
@@ -81,7 +77,6 @@ class LocalUserCreate(BaseModel):
     employee_no: str | None = Field(None, max_length=64)
     department: str | None = Field(None, max_length=200)
     position: str | None = Field(None, max_length=200)
-    role: UserRole = "user"
     status: UserStatus = "active"
 
 
@@ -92,7 +87,6 @@ class UserManagementUpdate(BaseModel):
     employee_no: str | None = Field(None, max_length=64)
     department: str | None = Field(None, max_length=200)
     position: str | None = Field(None, max_length=200)
-    role: UserRole | None = None
     status: UserStatus | None = None
 
 
@@ -165,7 +159,6 @@ class PersonnelItem(BaseModel):
     avatar_middle: str | None = None
     avatar_big: str | None = None
     tenant_key: str | None = None
-    role: str = "member"
     feishu_department_ids: list[str] | None = None
 
     @field_validator("feishu_department_ids", mode="before")

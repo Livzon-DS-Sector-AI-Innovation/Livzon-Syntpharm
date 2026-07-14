@@ -119,7 +119,6 @@ class UserRepository:
         feishu_department_ids: str | None = None,
         username: str | None = None,
         password_hash: str | None = None,
-        role: str = "user",
         status: str = "active",
         auth_source: str = "feishu",
     ) -> User:
@@ -127,7 +126,6 @@ class UserRepository:
             name=name,
             username=username,
             password_hash=password_hash,
-            role=role,
             status=status,
             auth_source=auth_source,
             feishu_user_id=feishu_user_id,
@@ -156,7 +154,6 @@ class UserRepository:
         session: AsyncSession,
         *,
         keyword: str | None = None,
-        role: str | None = None,
         status: str | None = None,
         offset: int = 0,
         limit: int = 100,
@@ -181,9 +178,6 @@ class UserRepository:
             )
             base = base.where(filter_expr)
             count_stmt = count_stmt.where(filter_expr)
-        if role:
-            base = base.where(User.role == role)
-            count_stmt = count_stmt.where(User.role == role)
         if status:
             base = base.where(User.status == status)
             count_stmt = count_stmt.where(User.status == status)

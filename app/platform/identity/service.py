@@ -1307,19 +1307,6 @@ async def handle_oauth_callback(
             avatar_middle=avatar_middle,
             avatar_big=avatar_big,
             tenant_key=tenant_key,
-            role="admin"
-            if _matches_admin_whitelist(
-                User(
-                    name=name,
-                    feishu_user_id=user_id,
-                    feishu_open_id=open_id,
-                    email=email,
-                    enterprise_email=enterprise_email,
-                    mobile=mobile,
-                ),
-                get_settings().SSO_ADMIN_IDENTIFIERS,
-            )
-            else "user",
             status="active",
             auth_source="feishu",
         )
@@ -1340,7 +1327,7 @@ async def handle_oauth_callback(
         user.tenant_key = tenant_key or user.tenant_key
         user.auth_source = user.auth_source or "feishu"
         if _matches_admin_whitelist(user, get_settings().SSO_ADMIN_IDENTIFIERS):
-            user.role = "admin"
+            pass  # role column removed
         logger.info("Updated user: %s (open_id=%s)", user.name, open_id)
 
     if user.status == "disabled":
@@ -1361,7 +1348,6 @@ def generate_jwt(user: User) -> str:
         "sub": str(user.id),
         "open_id": user.feishu_open_id,
         "name": user.name,
-        "role": user.role,
         "auth_source": user.auth_source,
         "iat": now,
         "exp": now + timedelta(seconds=settings.JWT_EXPIRE_SECONDS),
@@ -1374,7 +1360,6 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
     user = await _repo.get_by_feishu_open_id(db, "test-user-e2e")
     if user:
         user.status = "active"
-        user.role = "admin"
         return user
 
     user = User(
@@ -1382,7 +1367,6 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
         username="e2e-test-user",
         feishu_open_id="test-user-e2e",
         feishu_user_id="test-user-e2e",
-        role="admin",
         status="active",
         auth_source="e2e-test",
         email="e2e-test@dazah.local",
@@ -1411,19 +1395,17 @@ async def bootstrap_local_users() -> None:
             settings.BOOTSTRAP_ADMIN_PASSWORD,
             settings.BOOTSTRAP_ADMIN_NAME,
             settings.BOOTSTRAP_ADMIN_EMAIL,
-            "admin",
         ),
         (
             settings.BOOTSTRAP_USER_USERNAME,
             settings.BOOTSTRAP_USER_PASSWORD,
             settings.BOOTSTRAP_USER_NAME,
             settings.BOOTSTRAP_USER_EMAIL,
-            "user",
         ),
     ]
 
     async with async_session_factory() as session:
-        for username, password, name, email, role in entries:
+        for username, password, name, email in entries:
             if not username or not password:
                 continue
             existing = await _repo.get_by_username(session, username)
@@ -1434,17 +1416,15 @@ async def bootstrap_local_users() -> None:
                     password_hash=hash_password(password),
                     name=name or username,
                     email=email or None,
-                    role=role,
                     status="active",
                     auth_source="local",
                 )
-                logger.info("Bootstrapped %s local user: %s", role, username)
+                logger.info("Bootstrapped local user: %s", username)
                 continue
 
             existing.password_hash = hash_password(password)
             existing.name = name or existing.name
             existing.email = email or existing.email
-            existing.role = role
             existing.status = "active"
             existing.auth_source = existing.auth_source or "local"
 
@@ -1460,7 +1440,6 @@ async def get_or_create_system_admin(db: AsyncSession) -> User:
             db,
             username=SYSTEM_ADMIN_USERNAME,
             name=SYSTEM_ADMIN_NAME,
-            role="admin",
             status="active",
             auth_source="local",
         )
@@ -1470,9 +1449,6 @@ async def get_or_create_system_admin(db: AsyncSession) -> User:
     changed = False
     if user.name != SYSTEM_ADMIN_NAME:
         user.name = SYSTEM_ADMIN_NAME
-        changed = True
-    if user.role != "admin":
-        user.role = "admin"
         changed = True
     if user.status != "active":
         user.status = "active"

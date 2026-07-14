@@ -32,7 +32,6 @@ class User(BaseModel):
     name: Mapped[str] = mapped_column(String(100))
     username: Mapped[str | None] = mapped_column(String(64), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
-    role: Mapped[str] = mapped_column(String(20), default="user", server_default="user")
     status: Mapped[str] = mapped_column(String(20), default="active", server_default="active")
     auth_source: Mapped[str] = mapped_column(String(20), default="feishu", server_default="feishu")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -53,9 +52,6 @@ class User(BaseModel):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     feishu_department_ids: Mapped[str | None] = mapped_column(Text, nullable=True, comment="飞书部门ID列表，JSON数组")
     external_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    role: Mapped[str] = mapped_column(  # type: ignore[no-redef]
-        String(50), default="member", comment="角色: admin/manager/member/viewer"
-    )
 
 
 class Department(BaseModel):
