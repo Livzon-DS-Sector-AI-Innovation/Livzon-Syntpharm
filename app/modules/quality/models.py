@@ -23,11 +23,11 @@ from app.modules.quality.qms.material_report_models import (
     ReportImage,
     ReportTemplate,
 )
-from app.modules.quality.qms.reagent_reminder_config import (
-    ReagentReminderConfig,
-)
 from app.modules.quality.qms.reagent_models import (
     ReagentQuality,
+)
+from app.modules.quality.qms.reagent_reminder_config import (
+    ReagentReminderConfig,
 )
 from app.modules.quality.qms.static_data.models import (
     ChromColumn,

@@ -1,6 +1,7 @@
 """Reagent Quality Models (试剂质量标准管理数据模型)"""
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Date, Float, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -17,7 +18,7 @@ class ReagentQuality(BaseModel):
         {"schema": "qms"},
     )
 
-    reagent_label_urls: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    reagent_label_urls: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     reagent_name: Mapped[str] = mapped_column(String(200))
     arrival_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
     production_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
