@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = '0030_alter_hr_json_columns'
-down_revision: Union[str, None] = '0029_add_agent_core_tables'
+down_revision: str | None = "0028_safety_feishu_record_id_unique"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
