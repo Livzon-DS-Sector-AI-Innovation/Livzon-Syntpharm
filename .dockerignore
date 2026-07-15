@@ -42,7 +42,6 @@ docs/
 
 # 测试和脚本
 tests/
-seed/
 scripts/
 
 # Docker 配置

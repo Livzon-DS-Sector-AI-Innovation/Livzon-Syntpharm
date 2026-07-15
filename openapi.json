@@ -68850,9 +68850,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Create Product Dossier",
         "description": "\u521b\u5efa\u54c1\u79cd\u8d44\u6599",
-        "operationId": "post_api_v1_registration_dossier_writer_products_post",
+        "operationId": "create_product_dossier_api_v1_registration_dossier_writer_products_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -68889,7 +68889,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Products Post"
+                  "title": "Response Create Product Dossier Api V1 Registration Dossier Writer Products Post"
                 }
               }
             }
@@ -68910,9 +68910,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "List Product Dossiers",
         "description": "\u83b7\u53d6\u54c1\u79cd\u8d44\u6599\u5217\u8868",
-        "operationId": "get_api_v1_registration_dossier_writer_products_get",
+        "operationId": "list_product_dossiers_api_v1_registration_dossier_writer_products_get",
         "parameters": [
           {
             "name": "skip",
@@ -68962,7 +68962,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Products Get"
+                  "title": "Response List Product Dossiers Api V1 Registration Dossier Writer Products Get"
                 }
               }
             }
@@ -68985,9 +68985,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Product Dossier",
         "description": "\u83b7\u53d6\u54c1\u79cd\u8d44\u6599\u8be6\u60c5",
-        "operationId": "get_api_v1_registration_dossier_writer_products__dossier_id__get",
+        "operationId": "get_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69024,7 +69024,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Products  Dossier Id  Get"
+                  "title": "Response Get Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Get"
                 }
               }
             }
@@ -69045,9 +69045,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Put",
+        "summary": "Update Product Dossier",
         "description": "\u66f4\u65b0\u54c1\u79cd\u8d44\u6599",
-        "operationId": "put_api_v1_registration_dossier_writer_products__dossier_id__put",
+        "operationId": "update_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__put",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69094,7 +69094,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Put Api V1 Registration Dossier Writer Products  Dossier Id  Put"
+                  "title": "Response Update Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Put"
                 }
               }
             }
@@ -69115,9 +69115,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Delete",
+        "summary": "Delete Product Dossier",
         "description": "\u5220\u9664\u54c1\u79cd\u8d44\u6599",
-        "operationId": "delete_api_v1_registration_dossier_writer_products__dossier_id__delete",
+        "operationId": "delete_product_dossier_api_v1_registration_dossier_writer_products__dossier_id__delete",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69154,7 +69154,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Delete Api V1 Registration Dossier Writer Products  Dossier Id  Delete"
+                  "title": "Response Delete Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Delete"
                 }
               }
             }
@@ -69177,9 +69177,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Upload Templates",
         "description": "\u6279\u91cf\u4e0a\u4f20\u6a21\u677f\u6587\u4ef6",
-        "operationId": "post_api_v1_registration_dossier_writer_products__dossier_id__templates_post",
+        "operationId": "upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69213,7 +69213,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
+                "$ref": "#/components/schemas/Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
               }
             }
           }
@@ -69226,7 +69226,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Products  Dossier Id  Templates Post"
+                  "title": "Response Upload Templates Api V1 Registration Dossier Writer Products  Dossier Id  Templates Post"
                 }
               }
             }
@@ -69249,9 +69249,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Parse Templates",
         "description": "\u89e3\u6790\u6a21\u677f\u751f\u6210\u7ae0\u8282\u6811",
-        "operationId": "post_api_v1_registration_dossier_writer_products__dossier_id__parse_post",
+        "operationId": "parse_templates_api_v1_registration_dossier_writer_products__dossier_id__parse_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69288,7 +69288,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Products  Dossier Id  Parse Post"
+                  "title": "Response Parse Templates Api V1 Registration Dossier Writer Products  Dossier Id  Parse Post"
                 }
               }
             }
@@ -69311,9 +69311,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Chapter Tree",
         "description": "\u83b7\u53d6\u7ae0\u8282\u6811",
-        "operationId": "get_api_v1_registration_dossier_writer_products__dossier_id__chapters_get",
+        "operationId": "get_chapter_tree_api_v1_registration_dossier_writer_products__dossier_id__chapters_get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69350,7 +69350,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Products  Dossier Id  Chapters Get"
+                  "title": "Response Get Chapter Tree Api V1 Registration Dossier Writer Products  Dossier Id  Chapters Get"
                 }
               }
             }
@@ -69373,9 +69373,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Chapter Detail",
         "description": "\u83b7\u53d6\u7ae0\u8282\u8be6\u60c5",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_id__get",
+        "operationId": "get_chapter_detail_api_v1_registration_dossier_writer_chapters__chapter_id__get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -69412,7 +69412,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Id  Get"
+                  "title": "Response Get Chapter Detail Api V1 Registration Dossier Writer Chapters  Chapter Id  Get"
                 }
               }
             }
@@ -69435,9 +69435,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Upload Asset",
         "description": "\u6279\u91cf\u4e0a\u4f20\u7ae0\u8282\u7d20\u6750",
-        "operationId": "post_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post",
+        "operationId": "upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -69471,7 +69471,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
+                "$ref": "#/components/schemas/Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
               }
             }
           }
@@ -69484,7 +69484,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Post"
+                  "title": "Response Upload Asset Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Post"
                 }
               }
             }
@@ -69505,9 +69505,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
-        "description": "\u83b7\u53d6\u7ae0\u8282\u7d20\u6750\u5217\u8868",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_id__assets_get",
+        "summary": "List Assets",
+        "description": "\u83b7\u53d6\u7ae0\u8282\u81ea\u6709\u7d20\u6750\u5217\u8868\uff08\u4e0d\u542b\u7ee7\u627f\u7d20\u6750\uff09\n\n\u5982\u9700\u83b7\u53d6\u5305\u542b\u7ee7\u627f\u7d20\u6750\u7684\u5b8c\u6574\u5217\u8868\uff0c\u8bf7\u4f7f\u7528 /available-assets \u63a5\u53e3\u3002",
+        "operationId": "list_assets_api_v1_registration_dossier_writer_chapters__chapter_id__assets_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -69544,7 +69544,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Get"
+                  "title": "Response List Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Get"
                 }
               }
             }
@@ -69567,9 +69567,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Delete",
+        "summary": "Delete Asset",
         "description": "\u5220\u9664\u7d20\u6750",
-        "operationId": "delete_api_v1_registration_dossier_writer_assets__asset_id__delete",
+        "operationId": "delete_asset_api_v1_registration_dossier_writer_assets__asset_id__delete",
         "parameters": [
           {
             "name": "asset_id",
@@ -69606,7 +69606,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Delete Api V1 Registration Dossier Writer Assets  Asset Id  Delete"
+                  "title": "Response Delete Asset Api V1 Registration Dossier Writer Assets  Asset Id  Delete"
                 }
               }
             }
@@ -69627,9 +69627,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Patch",
+        "summary": "Update Asset Category",
         "description": "\u66f4\u65b0\u7d20\u6750\u7684\u5206\u7c7b",
-        "operationId": "patch_api_v1_registration_dossier_writer_assets__asset_id__patch",
+        "operationId": "update_asset_category_api_v1_registration_dossier_writer_assets__asset_id__patch",
         "parameters": [
           {
             "name": "asset_id",
@@ -69678,7 +69678,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Patch Api V1 Registration Dossier Writer Assets  Asset Id  Patch"
+                  "title": "Response Update Asset Category Api V1 Registration Dossier Writer Assets  Asset Id  Patch"
                 }
               }
             }
@@ -69701,9 +69701,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Export Dossier",
         "description": "\u5bfc\u51fa\u54c1\u79cd\u8d44\u6599",
-        "operationId": "post_api_v1_registration_dossier_writer_products__dossier_id__export_post",
+        "operationId": "export_dossier_api_v1_registration_dossier_writer_products__dossier_id__export_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69750,7 +69750,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Products  Dossier Id  Export Post"
+                  "title": "Response Export Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Export Post"
                 }
               }
             }
@@ -69773,9 +69773,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Download Exported File",
         "description": "\u4e0b\u8f7d\u5bfc\u51fa\u7684\u6587\u4ef6",
-        "operationId": "get_api_v1_registration_dossier_writer_products__dossier_id__download_get",
+        "operationId": "download_exported_file_api_v1_registration_dossier_writer_products__dossier_id__download_get",
         "parameters": [
           {
             "name": "dossier_id",
@@ -69820,9 +69820,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Get Api V1 Registration Dossier Writer Products  Dossier Id  Download Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -69844,9 +69842,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Chapter Preview",
         "description": "\u83b7\u53d6\u7ae0\u8282\u9884\u89c8\u5185\u5bb9",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_id__preview_get",
+        "operationId": "get_chapter_preview_api_v1_registration_dossier_writer_chapters__chapter_id__preview_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -69883,7 +69881,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Id  Preview Get"
+                  "title": "Response Get Chapter Preview Api V1 Registration Dossier Writer Chapters  Chapter Id  Preview Get"
                 }
               }
             }
@@ -69906,9 +69904,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Chapter Docx File",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684 docx \u5de5\u4f5c\u526f\u672c\u6587\u4ef6\uff0c\u7528\u4e8e\u524d\u7aef docx-preview \u6e32\u67d3",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_id__docx_file_get",
+        "operationId": "get_chapter_docx_file_api_v1_registration_dossier_writer_chapters__chapter_id__docx_file_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -69942,9 +69940,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Id  Docx File Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -69966,9 +69962,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Match Assets To Chapters",
         "description": "\u667a\u80fd\u5339\u914d\u7d20\u6750\u5230\u7ae0\u8282",
-        "operationId": "post_api_v1_registration_dossier_writer_products__dossier_id__match_assets_post",
+        "operationId": "match_assets_to_chapters_api_v1_registration_dossier_writer_products__dossier_id__match_assets_post",
         "parameters": [
           {
             "name": "dossier_id",
@@ -70005,7 +70001,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Products  Dossier Id  Match Assets Post"
+                  "title": "Response Match Assets To Chapters Api V1 Registration Dossier Writer Products  Dossier Id  Match Assets Post"
                 }
               }
             }
@@ -70028,9 +70024,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Fill Chapter Fields",
         "description": "\u6267\u884c\u5b57\u6bb5\u586b\u5145 - \u4ece\u7d20\u6750\u63d0\u53d6\u5185\u5bb9\u5e76\u586b\u5145\u5230\u7ae0\u8282",
-        "operationId": "post_api_v1_registration_dossier_writer_chapters__chapter_id__fill_fields_post",
+        "operationId": "fill_chapter_fields_api_v1_registration_dossier_writer_chapters__chapter_id__fill_fields_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -70067,7 +70063,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Fields Post"
+                  "title": "Response Fill Chapter Fields Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Fields Post"
                 }
               }
             }
@@ -70090,9 +70086,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Field Mappings",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_code__field_mappings_get",
+        "operationId": "get_field_mappings_api_v1_registration_dossier_writer_chapters__chapter_code__field_mappings_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -70128,7 +70124,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Code  Field Mappings Get"
+                  "title": "Response Get Field Mappings Api V1 Registration Dossier Writer Chapters  Chapter Code  Field Mappings Get"
                 }
               }
             }
@@ -70151,9 +70147,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Init S6 Field Mappings",
         "description": "\u521d\u59cb\u5316 S.6 \u5305\u88c5\u7cfb\u7edf\u7684\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e\uff08\u4ece\u6570\u636e\u5e93 seed \u6570\u636e\uff09",
-        "operationId": "post_api_v1_registration_dossier_writer_field_mappings_init_s6_post",
+        "operationId": "init_s6_field_mappings_api_v1_registration_dossier_writer_field_mappings_init_s6_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -70180,7 +70176,59 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Field Mappings Init S6 Post"
+                  "title": "Response Init S6 Field Mappings Api V1 Registration Dossier Writer Field Mappings Init S6 Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/dossier-writer/field-mappings/init-s7": {
+      "post": {
+        "tags": [
+          "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
+        ],
+        "summary": "Init S7 Field Mappings",
+        "description": "\u521d\u59cb\u5316 S.7 \u7a33\u5b9a\u6027\u6a21\u5757\u7684\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e\uff08\u4ece seed_data_s7.py\uff09\n\n\u521d\u59cb\u5316 S.7.1\u3001S.7.2\u3001S.7.3 \u4e09\u4e2a\u5b50\u7ae0\u8282\u7684\uff1a\n- asset_categories\uff08\u7d20\u6750\u5206\u7c7b\uff09\n- field_mappings\uff08\u5b57\u6bb5\u6620\u5c04\uff09",
+        "operationId": "init_s7_field_mappings_api_v1_registration_dossier_writer_field_mappings_init_s7_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Init S7 Field Mappings Api V1 Registration Dossier Writer Field Mappings Init S7 Post"
                 }
               }
             }
@@ -70203,9 +70251,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Fill Results",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u586b\u5145\u7ed3\u679c",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_id__fill_results_get",
+        "operationId": "get_fill_results_api_v1_registration_dossier_writer_chapters__chapter_id__fill_results_get",
         "parameters": [
           {
             "name": "chapter_id",
@@ -70242,7 +70290,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Results Get"
+                  "title": "Response Get Fill Results Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Results Get"
                 }
               }
             }
@@ -70265,9 +70313,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Ai Preview Extraction",
         "description": "AI \u667a\u80fd\u89e3\u6790\u9884\u89c8\uff1a\u63d0\u53d6\u7d20\u6750\u4e2d\u7684\u5b57\u6bb5\u503c\uff08\u4e0d\u5199\u5165\u6587\u6863\uff09",
-        "operationId": "post_api_v1_registration_dossier_writer_chapters__chapter_id__ai_preview_post",
+        "operationId": "ai_preview_extraction_api_v1_registration_dossier_writer_chapters__chapter_id__ai_preview_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -70304,7 +70352,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Preview Post"
+                  "title": "Response Ai Preview Extraction Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Preview Post"
                 }
               }
             }
@@ -70327,9 +70375,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Ai Confirm And Fill",
         "description": "AI \u586b\u5145\u786e\u8ba4\uff1a\u7528\u6237\u786e\u8ba4\u540e\u5199\u5165\u6587\u6863",
-        "operationId": "post_api_v1_registration_dossier_writer_chapters__chapter_id__ai_confirm_post",
+        "operationId": "ai_confirm_and_fill_api_v1_registration_dossier_writer_chapters__chapter_id__ai_confirm_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -70378,7 +70426,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Confirm Post"
+                  "title": "Response Ai Confirm And Fill Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Confirm Post"
                 }
               }
             }
@@ -70401,9 +70449,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Asset Categories",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u7d20\u6750\u5206\u7c7b\u5217\u8868",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_code__asset_categories_get",
+        "operationId": "get_asset_categories_api_v1_registration_dossier_writer_chapters__chapter_code__asset_categories_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -70439,7 +70487,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Code  Asset Categories Get"
+                  "title": "Response Get Asset Categories Api V1 Registration Dossier Writer Chapters  Chapter Code  Asset Categories Get"
                 }
               }
             }
@@ -70462,9 +70510,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Split Preview",
         "description": "AI \u62c6\u5206\u9884\u89c8\uff1a\u8bc6\u522b\u591a\u9875 PDF \u6bcf\u9875\u7684\u7c7b\u578b",
-        "operationId": "post_api_v1_registration_dossier_writer_assets__asset_id__split_preview_post",
+        "operationId": "split_preview_api_v1_registration_dossier_writer_assets__asset_id__split_preview_post",
         "parameters": [
           {
             "name": "asset_id",
@@ -70513,7 +70561,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Assets  Asset Id  Split Preview Post"
+                  "title": "Response Split Preview Api V1 Registration Dossier Writer Assets  Asset Id  Split Preview Post"
                 }
               }
             }
@@ -70536,9 +70584,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Post",
+        "summary": "Split Confirm And Insert",
         "description": "AI \u62c6\u5206\u786e\u8ba4\uff1a\u5c06\u5404\u9875\u8f6c\u4e3a\u56fe\u7247\u63d2\u5165\u6a21\u677f",
-        "operationId": "post_api_v1_registration_dossier_writer_chapters__chapter_id__split_confirm_post",
+        "operationId": "split_confirm_and_insert_api_v1_registration_dossier_writer_chapters__chapter_id__split_confirm_post",
         "parameters": [
           {
             "name": "chapter_id",
@@ -70587,7 +70635,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Dossier Writer Chapters  Chapter Id  Split Confirm Post"
+                  "title": "Response Split Confirm And Insert Api V1 Registration Dossier Writer Chapters  Chapter Id  Split Confirm Post"
                 }
               }
             }
@@ -70610,9 +70658,9 @@
         "tags": [
           "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
         ],
-        "summary": "Get",
+        "summary": "Get Appendix Slots",
         "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u6240\u6709\u9644\u5f55\u4f4d\u7f6e\uff08\u4ece FieldMapping \u6c47\u603b\uff09",
-        "operationId": "get_api_v1_registration_dossier_writer_chapters__chapter_code__appendix_slots_get",
+        "operationId": "get_appendix_slots_api_v1_registration_dossier_writer_chapters__chapter_code__appendix_slots_get",
         "parameters": [
           {
             "name": "chapter_code",
@@ -70648,7 +70696,215 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Dossier Writer Chapters  Chapter Code  Appendix Slots Get"
+                  "title": "Response Get Appendix Slots Api V1 Registration Dossier Writer Chapters  Chapter Code  Appendix Slots Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/available-assets": {
+      "get": {
+        "tags": [
+          "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
+        ],
+        "summary": "List Available Assets",
+        "description": "\u83b7\u53d6\u7ae0\u8282\u7684\u53ef\u7528\u7d20\u6750\u5217\u8868\uff08\u81ea\u6709 + \u7ee7\u627f\u81ea\u7236\u7ea7\uff09\u53ca\u4f7f\u7528\u72b6\u6001\n\n\u8fd4\u56de\u6bcf\u4e2a\u7d20\u6750\u7684\uff1a\n- \u57fa\u672c\u4fe1\u606f\uff08id, filename, file_type \u7b49\uff09\n- is_inherited: \u662f\u5426\u7ee7\u627f\u81ea\u7236\u7ea7\u7ae0\u8282\n- is_selected: \u662f\u5426\u5df2\u9009\u62e9\u7528\u4e8e\u672c\u7ae0\u8282\n- parent_chapter_code: \u7ee7\u627f\u6765\u6e90\u7684\u7ae0\u8282\u7f16\u53f7\uff08\u4ec5\u7ee7\u627f\u7d20\u6750\u6709\uff09",
+        "operationId": "list_available_assets_api_v1_registration_dossier_writer_chapters__chapter_id__available_assets_get",
+        "parameters": [
+          {
+            "name": "chapter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chapter Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Available Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Available Assets Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/asset-usages/{asset_id}": {
+      "patch": {
+        "tags": [
+          "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
+        ],
+        "summary": "Toggle Asset Usage",
+        "description": "\u5207\u6362\u7d20\u6750\u7684\u4f7f\u7528\u72b6\u6001\uff08\u52fe\u9009/\u53d6\u6d88\u52fe\u9009\uff09\n\nbody: {\"is_selected\": true/false}",
+        "operationId": "toggle_asset_usage_api_v1_registration_dossier_writer_chapters__chapter_id__asset_usages__asset_id__patch",
+        "parameters": [
+          {
+            "name": "chapter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chapter Id"
+            }
+          },
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Asset Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Toggle Asset Usage Api V1 Registration Dossier Writer Chapters  Chapter Id  Asset Usages  Asset Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/dossier-writer/chapters/{chapter_id}/selected-assets": {
+      "get": {
+        "tags": [
+          "\u7533\u62a5\u8d44\u6599\u64b0\u5199"
+        ],
+        "summary": "List Selected Assets",
+        "description": "\u83b7\u53d6\u7ae0\u8282\u5df2\u9009\u62e9\u4f7f\u7528\u7684\u7d20\u6750\u5217\u8868\uff08is_selected=true\uff09\n\n\u7528\u4e8e\u7ae0\u8282\u66f4\u65b0\u3001AI \u586b\u5145\u7b49\u64cd\u4f5c\u524d\u67e5\u770b\u5c06\u8981\u4f7f\u7528\u7684\u7d20\u6750\u3002",
+        "operationId": "list_selected_assets_api_v1_registration_dossier_writer_chapters__chapter_id__selected_assets_get",
+        "parameters": [
+          {
+            "name": "chapter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chapter Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Selected Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Selected Assets Get"
                 }
               }
             }
@@ -74138,40 +74394,6 @@
         ],
         "title": "Body_post_api_v1_registration_authorization_letters_generate_post"
       },
-      "Body_post_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post": {
-        "properties": {
-          "files": {
-            "items": {
-              "type": "string",
-              "contentMediaType": "application/octet-stream"
-            },
-            "type": "array",
-            "title": "Files"
-          }
-        },
-        "type": "object",
-        "required": [
-          "files"
-        ],
-        "title": "Body_post_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
-      },
-      "Body_post_api_v1_registration_dossier_writer_products__dossier_id__templates_post": {
-        "properties": {
-          "files": {
-            "items": {
-              "type": "string",
-              "contentMediaType": "application/octet-stream"
-            },
-            "type": "array",
-            "title": "Files"
-          }
-        },
-        "type": "object",
-        "required": [
-          "files"
-        ],
-        "title": "Body_post_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
-      },
       "Body_post_api_v1_registration_ledger_copp_certificates_import_post": {
         "properties": {
           "file": {
@@ -74597,6 +74819,23 @@
         ],
         "title": "Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
       },
+      "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
+      },
       "Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post": {
         "properties": {
           "file": {
@@ -74654,6 +74893,23 @@
           "file"
         ],
         "title": "Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post"
+      },
+      "Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post"
       },
       "Body_upload_work_order_images_api_v1_equipment_maintenance_work_orders__work_order_id__images_post": {
         "properties": {

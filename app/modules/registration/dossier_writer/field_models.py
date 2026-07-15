@@ -157,3 +157,40 @@ class AssetPageSplit(BaseModel):
         default="pending",
         comment="状态: pending/confirmed/inserted/skipped",
     )
+
+
+class ChapterAssetUsage(BaseModel):
+    """章节素材使用关系表 - 记录章节实际使用了哪些素材"""
+
+    __tablename__ = "chapter_asset_usages"
+    __table_args__ = {"schema": "dossier_writer"}
+
+    product_dossier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.product_dossiers.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="品种资料ID",
+    )
+    chapter_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.dossier_chapters.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="章节ID",
+    )
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.chapter_assets.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="素材ID",
+    )
+    usage_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="使用类型: own/inherited",
+    )
+    is_selected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        server_default="true",
+        comment="是否实际用于本章节",
+    )

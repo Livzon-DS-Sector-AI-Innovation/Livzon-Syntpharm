@@ -27,6 +27,7 @@ from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
 )
 from app.platform.audit import AuditMiddleware
 from app.shared.ocr_service import init_ocr
+from app.shared.file_conversion import init_file_conversion
 
 settings = get_settings()
 
@@ -58,8 +59,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan — auto-start all registered background workers."""
     logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
 
-    # Initialize OCR service
-    init_ocr()
+    # Initialize OCR service in background (model loading is heavy)
+    asyncio.create_task(asyncio.to_thread(init_ocr))
+
+    # Initialize file conversion service (libreoffice CLI wrapper, no-op)
+    init_file_conversion()
 
     # Import all modules to trigger their __init__.py and register workers
     import app.modules.energy  # noqa: F401
@@ -68,6 +72,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     import app.modules.safety  # noqa: F401
     import app.platform.identity  # noqa: F401
     import app.platform.integrations.feishu  # noqa: F401
+
+    # Auto-seed required configuration data
+    from app.core.seed import run_seeds
+
+    await run_seeds()
 
     # Start all registered background workers
     from app.shared.lifecycle import get_all_workers

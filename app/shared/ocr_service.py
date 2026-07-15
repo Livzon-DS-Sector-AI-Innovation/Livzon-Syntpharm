@@ -5,6 +5,7 @@ with a hybrid approach that allows automatic or manual engine selection.
 """
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -232,19 +233,34 @@ class OCRService:
 
 # Global instance
 _ocr_service = None
+_ocr_lock = threading.Lock()
+_ocr_initializing = False
 
 
-def init_ocr() -> Any:
-    """Initialize the OCR service."""
-    global _ocr_service
-    if _ocr_service is None:
+def init_ocr() -> None:
+    """Initialize the OCR service (thread-safe)."""
+    global _ocr_service, _ocr_initializing
+    with _ocr_lock:
+        if _ocr_service is not None:
+            return
+        _ocr_initializing = True
+    try:
         logger.info("Initializing OCR service...")
-        _ocr_service = OCRService()
+        service = OCRService()
+        with _ocr_lock:
+            _ocr_service = service
+            _ocr_initializing = False
         logger.info("OCR service initialized successfully")
+    except Exception:
+        with _ocr_lock:
+            _ocr_initializing = False
+        logger.exception("Failed to initialize OCR service")
 
 
 def get_ocr_service() -> OCRService:
     """Get the OCR service instance."""
     if _ocr_service is None:
+        if _ocr_initializing:
+            raise RuntimeError("OCR service is still initializing (loading ML models). Please try again in a moment.")
         raise RuntimeError("OCR service not initialized. Call init_ocr() first.")
     return _ocr_service
