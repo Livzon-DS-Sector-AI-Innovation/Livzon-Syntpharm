@@ -19,11 +19,11 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.drop_table("role_data_scope_overrides", schema="permission")
-    op.drop_table("user_roles", schema="permission")
-    op.drop_table("role_permissions", schema="permission")
-    op.drop_table("permissions", schema="permission")
-    op.drop_table("roles", schema="permission")
+    op.execute("DROP TABLE IF EXISTS permission.role_data_scope_overrides CASCADE")
+    op.execute("DROP TABLE IF EXISTS permission.user_roles CASCADE")
+    op.execute("DROP TABLE IF EXISTS permission.role_permissions CASCADE")
+    op.execute("DROP TABLE IF EXISTS permission.permissions CASCADE")
+    op.execute("DROP TABLE IF EXISTS permission.roles CASCADE")
     op.execute("DROP SCHEMA IF EXISTS permission CASCADE")
 
 

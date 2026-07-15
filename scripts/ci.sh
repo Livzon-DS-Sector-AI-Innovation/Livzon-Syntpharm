@@ -209,7 +209,7 @@ run_alembic() {
     clean_db
 
     local HEAD_COUNT
-    HEAD_COUNT=$(uv run alembic heads 2>&1 | grep -c '->')
+    HEAD_COUNT=$(uv run alembic heads 2>&1 | grep -c '(head)')
     if [ "$HEAD_COUNT" -gt 1 ]; then
         log_error "Multiple alembic heads detected ($HEAD_COUNT)!"
         uv run alembic heads

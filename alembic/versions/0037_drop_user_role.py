@@ -10,7 +10,6 @@ Remove user.role column from identity.users.
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
 
 
 revision: str = "0037_drop_user_role"
@@ -20,8 +19,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.drop_column("users", "role", schema="identity")
+    op.execute("ALTER TABLE identity.users DROP COLUMN IF EXISTS role")
 
 
 def downgrade() -> None:
-    op.add_column("users", sa.Column("role", sa.String(20), server_default="user"), schema="identity")
+    pass
