@@ -98,6 +98,14 @@ class FeishuTrainingConfig(BaseModel):
     bitable_training_notification_table_id: str = ""
 
 
+class FeishuEnergyConfig(BaseModel):
+    """Energy module — uses platform app credentials for Bitable access."""
+
+    app_token: str = ""
+    workshop_table_id: str = ""
+    monthly_table_id: str = ""
+
+
 class FeishuProductConfig(BaseModel):
     """Production module — independent Feishu app + product/output Bitables."""
 
@@ -125,6 +133,7 @@ class FeishuSettings(BaseModel):
     vehicle: FeishuVehicleConfig = Field(default_factory=FeishuVehicleConfig)
     training: FeishuTrainingConfig = Field(default_factory=FeishuTrainingConfig)
     product: FeishuProductConfig = Field(default_factory=FeishuProductConfig)
+    energy: FeishuEnergyConfig = Field(default_factory=FeishuEnergyConfig)
     ai_query: FeishuAIQueryConfig = Field(default_factory=FeishuAIQueryConfig)
     aily_app_id: str = ""
 

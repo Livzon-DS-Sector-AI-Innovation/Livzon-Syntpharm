@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
@@ -18,6 +18,8 @@ from app.modules.energy.models import (
     EnergyCollectLog,
     EnergyData,
     EnergyDeviceConfig,
+    EnergyMonthlyRecord,
+    EnergyWorkshop,
 )
 from app.modules.energy.schemas import (
     AlertRecordProcessRequest,
@@ -26,6 +28,9 @@ from app.modules.energy.schemas import (
     EnergyAlertRuleUpdate,
     EnergyDeviceConfigCreate,
     EnergyDeviceConfigUpdate,
+    EnergyMonthlyRecordCreate,
+    EnergyWorkshopCreate,
+    EnergyWorkshopUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -301,7 +306,7 @@ async def get_overview(
     energy_type: str | None = None,
 ) -> dict[str, Any]:
     summary_rows = await repo.get_overview_summary(db, start_time, end_time)
-    summary: dict[str, float] = {"electricity": 0, "water": 0, "gas": 0}
+    summary: dict[str, float] = {"electricity": 0, "water": 0, "steam": 0, "natural_gas": 0}
     for row in summary_rows:
         et = row["energy_type"]
         if et in summary:
@@ -321,7 +326,8 @@ async def get_overview(
         "summary": {
             "total_electricity": summary["electricity"],
             "total_water": summary["water"],
-            "total_gas": summary["gas"],
+            "total_steam": summary["steam"],
+            "total_natural_gas": summary["natural_gas"],
         },
         "trend": trend_rows,
         "distribution": distribution_rows,
@@ -420,3 +426,139 @@ async def process_alert_record(
     )
     assert result is not None
     return result
+
+
+# ── 车间管理 ──
+
+
+async def create_workshop(db: AsyncSession, data: EnergyWorkshopCreate) -> EnergyWorkshop:
+    # 检查编码是否已存在
+    existing = await repo.get_workshop_by_code(db, data.code)
+    if existing:
+        raise DuplicateException("车间编码", data.code)
+    return await repo.create_workshop(db, data.model_dump())
+
+
+async def get_workshop(db: AsyncSession, workshop_id: UUID) -> EnergyWorkshop:
+    obj = await repo.get_workshop_by_id(db, workshop_id)
+    if obj is None:
+        raise NotFoundException("车间", str(workshop_id))
+    return obj
+
+
+async def list_workshops(
+    db: AsyncSession,
+    *,
+    category: str | None = None,
+    is_active: bool | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> tuple[list[EnergyWorkshop], int]:
+    return await repo.list_workshops(
+        db,
+        category=category,
+        is_active=is_active,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def update_workshop(db: AsyncSession, workshop_id: UUID, data: EnergyWorkshopUpdate) -> EnergyWorkshop:
+    existing = await repo.get_workshop_by_id(db, workshop_id)
+    if existing is None:
+        raise NotFoundException("车间", str(workshop_id))
+
+    update_data = data.model_dump(exclude_unset=True)
+
+    # 如果更新编码，检查是否冲突
+    if "code" in update_data:
+        code_existing = await repo.get_workshop_by_code(db, update_data["code"])
+        if code_existing and code_existing.id != workshop_id:
+            raise DuplicateException("车间编码", update_data["code"])
+
+    result = await repo.update_workshop(db, workshop_id, update_data)
+    assert result is not None
+    return result
+
+
+async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> None:
+    obj = await repo.get_workshop_by_id(db, workshop_id)
+    if obj is None:
+        raise NotFoundException("车间", str(workshop_id))
+    await repo.delete_workshop(db, workshop_id)
+
+
+# ── 月度记录 ──
+
+
+async def create_monthly_record(db: AsyncSession, data: EnergyMonthlyRecordCreate) -> EnergyMonthlyRecord:
+    # 验证车间是否存在
+    workshop = await repo.get_workshop_by_id(db, data.workshop_id)
+    if workshop is None:
+        raise NotFoundException("车间", str(data.workshop_id))
+    return await repo.create_monthly_record(db, data.model_dump())
+
+
+async def batch_create_monthly_records(
+    db: AsyncSession, records: list[EnergyMonthlyRecordCreate]
+) -> list[EnergyMonthlyRecord]:
+    # 验证所有车间是否存在
+    workshop_ids = {r.workshop_id for r in records}
+    for workshop_id in workshop_ids:
+        workshop = await repo.get_workshop_by_id(db, workshop_id)
+        if workshop is None:
+            raise NotFoundException("车间", str(workshop_id))
+
+    return await repo.batch_create_monthly_records(db, [r.model_dump() for r in records])
+
+
+async def list_monthly_records(
+    db: AsyncSession,
+    *,
+    workshop_id: UUID | None = None,
+    energy_type: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> tuple[list[EnergyMonthlyRecord], int]:
+    return await repo.list_monthly_records(
+        db,
+        workshop_id=workshop_id,
+        energy_type=energy_type,
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def get_monthly_record(db: AsyncSession, record_id: UUID) -> EnergyMonthlyRecord:
+    obj = await repo.get_monthly_record_by_id(db, record_id)
+    if obj is None:
+        raise NotFoundException("月度记录", str(record_id))
+    return obj
+
+
+async def delete_monthly_record(db: AsyncSession, record_id: UUID) -> None:
+    obj = await repo.get_monthly_record_by_id(db, record_id)
+    if obj is None:
+        raise NotFoundException("月度记录", str(record_id))
+    await repo.delete_monthly_record(db, record_id)
+
+
+async def get_monthly_summary(
+    db: AsyncSession,
+    workshop_id: UUID | None = None,
+    energy_type: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> dict[str, Any]:
+    """获取月度记录汇总，按能源类型分组统计总量"""
+    return await repo.get_monthly_summary(
+        db,
+        workshop_id=workshop_id,
+        energy_type=energy_type,
+        start_date=start_date,
+        end_date=end_date,
+    )
