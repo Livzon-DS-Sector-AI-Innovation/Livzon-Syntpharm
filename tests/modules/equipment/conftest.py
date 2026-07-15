@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.main import app
 from app.modules.equipment.deps import EquipmentAccessContext
+from app.core.database import get_db
 from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User
 
@@ -110,6 +111,7 @@ async def auth_client(
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
 
     # Mock the require_equipment_access to return our mock dependency
@@ -141,6 +143,7 @@ async def admin_client(
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
 
     # Mock the require_equipment_access to return our mock dependency
@@ -168,6 +171,7 @@ async def anonymous_client(
     async def _override_get_current_user() -> None:
         return None
 
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
