@@ -12,9 +12,9 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
+from app.core.database import get_db
 from app.main import app
 from app.modules.equipment.deps import EquipmentAccessContext
-from app.core.database import get_db
 from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User
 

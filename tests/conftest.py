@@ -51,7 +51,6 @@ def _make_user(
     return User(
         name=name,
         employee_no=employee_no,
-        
         feishu_open_id=feishu_open_id,
     )
 
@@ -114,7 +113,6 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Test User",
         "TEST-001",
-        
         feishu_open_id="test_open_id",
     )
     db_session.add(test_user)
@@ -137,7 +135,6 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Admin User",
         "ADMIN-001",
-        
         feishu_open_id="admin_open_id",
     )
     db_session.add(test_user)
