@@ -45,14 +45,13 @@ def _make_user(
     name: str,
     employee_no: str,
     *,
-    role: str = "member",
     feishu_open_id: str | None = None,
 ) -> User:
     """Create a transient User object (not persisted)."""
     return User(
         name=name,
         employee_no=employee_no,
-        role=role,
+        
         feishu_open_id=feishu_open_id,
     )
 
@@ -115,7 +114,7 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Test User",
         "TEST-001",
-        role="member",
+        
         feishu_open_id="test_open_id",
     )
     db_session.add(test_user)
@@ -138,7 +137,7 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Admin User",
         "ADMIN-001",
-        role="admin",
+        
         feishu_open_id="admin_open_id",
     )
     db_session.add(test_user)
