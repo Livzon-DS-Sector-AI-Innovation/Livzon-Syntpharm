@@ -38,15 +38,6 @@ def upgrade() -> None:
     schema='dossier_writer'
     )
 
-    # Fix production index names to match model (schema-qualified names)
-    op.drop_index('ix_product_outputs_product_id', table_name='product_outputs', schema='production')
-    op.drop_index('ix_product_outputs_production_date', table_name='product_outputs', schema='production')
-    op.drop_index('ix_product_outputs_workshop', table_name='product_outputs', schema='production')
-    op.create_index('ix_production_product_outputs_product_id', 'product_outputs', ['product_id'], unique=False, schema='production')
-    op.create_index('ix_production_product_outputs_workshop', 'product_outputs', ['workshop'], unique=False, schema='production')
-    op.drop_index('ix_products_workshop', table_name='products', schema='production')
-    op.create_index('ix_production_products_workshop', 'products', ['workshop'], unique=False, schema='production')
-
 
 def downgrade() -> None:
     op.drop_table('chapter_asset_usages', schema='dossier_writer')

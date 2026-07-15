@@ -28574,40 +28574,12 @@
         ],
         "summary": "\u83b7\u53d6\u5df2\u767b\u8bb0\u7684\u5e73\u53f0\u5217\u8868",
         "operationId": "list_platforms_api_v1_energy_platforms_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -28661,22 +28633,6 @@
               "title": "End Time"
             },
             "description": "\u7ed3\u675f\u65f6\u95f4(ISO\u683c\u5f0f)"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -28708,24 +28664,6 @@
         ],
         "summary": "\u65b0\u589e\u8bbe\u5907\u914d\u7f6e",
         "operationId": "create_device_config_api_v1_energy_devices_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -28880,22 +28818,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -28937,22 +28859,6 @@
               "format": "uuid",
               "title": "Config Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -28991,22 +28897,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -29056,22 +28946,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -29204,22 +29078,6 @@
               "default": 20,
               "title": "Page Size"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29303,22 +29161,6 @@
               "title": "End Time"
             },
             "description": "\u7ed3\u675f\u65f6\u95f4(ISO\u683c\u5f0f)"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29350,33 +29192,15 @@
         ],
         "summary": "\u624b\u52a8\u89e6\u53d1\u91c7\u96c6",
         "operationId": "trigger_collection_api_v1_energy_collect_trigger_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CollectTriggerRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -29466,22 +29290,6 @@
               "default": 20,
               "title": "Page Size"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29523,22 +29331,6 @@
               "format": "uuid",
               "title": "Log Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29570,24 +29362,6 @@
         ],
         "summary": "\u65b0\u589e\u9884\u8b66\u89c4\u5219",
         "operationId": "create_alert_rule_api_v1_energy_alerts_rules_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -29706,22 +29480,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29763,22 +29521,6 @@
               "format": "uuid",
               "title": "Rule Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -29817,22 +29559,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Rule Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -29882,22 +29608,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Rule Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -30047,22 +29757,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -30104,22 +29798,6 @@
               "format": "uuid",
               "title": "Record Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "requestBody": {
@@ -30131,6 +29809,808 @@
               }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/workshops": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u8f66\u95f4\u7ba1\u7406"
+        ],
+        "summary": "\u65b0\u589e\u8f66\u95f4",
+        "operationId": "create_workshop_api_v1_energy_workshops_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnergyWorkshopCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u8f66\u95f4\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u8f66\u95f4\u5217\u8868",
+        "operationId": "list_workshops_api_v1_energy_workshops_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5206\u7c7b",
+              "title": "Category"
+            },
+            "description": "\u5206\u7c7b"
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u662f\u5426\u542f\u7528",
+              "title": "Is Active"
+            },
+            "description": "\u662f\u5426\u542f\u7528"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 100,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/workshops/{workshop_id}": {
+      "get": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u8f66\u95f4\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u5355\u4e2a\u8f66\u95f4",
+        "operationId": "get_workshop_api_v1_energy_workshops__workshop_id__get",
+        "parameters": [
+          {
+            "name": "workshop_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workshop Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u8f66\u95f4\u7ba1\u7406"
+        ],
+        "summary": "\u4fee\u6539\u8f66\u95f4",
+        "operationId": "update_workshop_api_v1_energy_workshops__workshop_id__put",
+        "parameters": [
+          {
+            "name": "workshop_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workshop Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnergyWorkshopUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u8f66\u95f4\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u8f66\u95f4",
+        "operationId": "delete_workshop_api_v1_energy_workshops__workshop_id__delete",
+        "parameters": [
+          {
+            "name": "workshop_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workshop Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/monthly": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u65b0\u589e\u6708\u5ea6\u8bb0\u5f55",
+        "operationId": "create_monthly_record_api_v1_energy_monthly_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnergyMonthlyRecordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u67e5\u8be2\u6708\u5ea6\u8bb0\u5f55\u5217\u8868",
+        "operationId": "list_monthly_records_api_v1_energy_monthly_get",
+        "parameters": [
+          {
+            "name": "workshop_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8f66\u95f4ID",
+              "title": "Workshop Id"
+            },
+            "description": "\u8f66\u95f4ID"
+          },
+          {
+            "name": "energy_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u80fd\u6e90\u7c7b\u578b",
+              "title": "Energy Type"
+            },
+            "description": "\u80fd\u6e90\u7c7b\u578b"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5f00\u59cb\u65e5\u671f(YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "\u5f00\u59cb\u65e5\u671f(YYYY-MM-DD)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ed3\u675f\u65e5\u671f(YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "\u7ed3\u675f\u65e5\u671f(YYYY-MM-DD)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 100,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/monthly/batch": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u6279\u91cf\u65b0\u589e\u6708\u5ea6\u8bb0\u5f55",
+        "operationId": "batch_create_monthly_records_api_v1_energy_monthly_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnergyMonthlyRecordBatchCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/monthly/summary": {
+      "get": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u6708\u5ea6\u8bb0\u5f55\u6c47\u603b",
+        "operationId": "get_monthly_summary_api_v1_energy_monthly_summary_get",
+        "parameters": [
+          {
+            "name": "workshop_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8f66\u95f4ID",
+              "title": "Workshop Id"
+            },
+            "description": "\u8f66\u95f4ID"
+          },
+          {
+            "name": "energy_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u80fd\u6e90\u7c7b\u578b",
+              "title": "Energy Type"
+            },
+            "description": "\u80fd\u6e90\u7c7b\u578b"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5f00\u59cb\u65e5\u671f(YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "\u5f00\u59cb\u65e5\u671f(YYYY-MM-DD)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ed3\u675f\u65e5\u671f(YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "\u7ed3\u675f\u65e5\u671f(YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/monthly/{record_id}": {
+      "get": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u67e5\u8be2\u5355\u4e2a\u6708\u5ea6\u8bb0\u5f55",
+        "operationId": "get_monthly_record_api_v1_energy_monthly__record_id__get",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u5220\u9664\u6708\u5ea6\u8bb0\u5f55",
+        "operationId": "delete_monthly_record_api_v1_energy_monthly__record_id__delete",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/monthly/import/feishu": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406",
+          "\u6708\u5ea6\u8bb0\u5f55"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u80fd\u8017\u6570\u636e",
+        "operationId": "import_from_feishu_api_v1_energy_monthly_import_feishu_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuEnergyImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/sync/bitable": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6570\u636e",
+        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u548c\u6708\u5ea6\u8bb0\u5f55\u6570\u636e\u3002",
+        "operationId": "sync_from_bitable_api_v1_energy_sync_bitable_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/sync/bitable/workshops": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e",
+        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e\u3002",
+        "operationId": "sync_workshops_from_bitable_api_v1_energy_sync_bitable_workshops_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/sync/bitable/monthly": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u8bb0\u5f55",
+        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u80fd\u8017\u8bb0\u5f55\u3002",
+        "operationId": "sync_monthly_from_bitable_api_v1_energy_sync_bitable_monthly_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/sync/bitable/cross-import": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u6570\u636e",
+        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u80fd\u6e90\u6570\u636e\u3002\n\n\u8bf7\u6c42\u4f53:\n- year: \u5e74\u4efd\uff08\u5982 2026\uff09\n- \u6216 month: \u6708\u4efd\u8868\u540d\uff08\u5982 \"2026-06\"\uff09",
+        "operationId": "cross_import_from_bitable_api_v1_energy_sync_bitable_cross_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BitableCrossImportRequest"
+              }
+            }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -73721,6 +74201,40 @@
         "title": "BatchUpdate",
         "description": "\u66f4\u65b0\u6279\u6b21"
       },
+      "BitableCrossImportRequest": {
+        "properties": {
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2030.0,
+                "minimum": 2020.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year",
+            "description": "\u5e74\u4efd\uff0c\u5982 2026"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month",
+            "description": "\u6708\u4efd\uff0c\u5982 2026-06"
+          }
+        },
+        "type": "object",
+        "title": "BitableCrossImportRequest",
+        "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u8bf7\u6c42"
+      },
       "Body_analyze_ich_combined_api_v1_research_ich_analyze_post": {
         "properties": {
           "file": {
@@ -83993,7 +84507,8 @@
             "enum": [
               "electricity",
               "water",
-              "gas"
+              "steam",
+              "natural_gas"
             ],
             "title": "Energy Type",
             "description": "\u80fd\u6e90\u7c7b\u578b"
@@ -84160,7 +84675,8 @@
                 "enum": [
                   "electricity",
                   "water",
-                  "gas"
+                  "steam",
+                  "natural_gas"
                 ]
               },
               {
@@ -84369,7 +84885,8 @@
             "enum": [
               "electricity",
               "water",
-              "gas"
+              "steam",
+              "natural_gas"
             ],
             "title": "Energy Type",
             "description": "\u80fd\u6e90\u7c7b\u578b"
@@ -84505,7 +85022,8 @@
                 "enum": [
                   "electricity",
                   "water",
-                  "gas"
+                  "steam",
+                  "natural_gas"
                 ]
               },
               {
@@ -84612,6 +85130,247 @@
         },
         "type": "object",
         "title": "EnergyDeviceConfigUpdate"
+      },
+      "EnergyMonthlyRecordBatchCreate": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyMonthlyRecordCreate"
+            },
+            "type": "array",
+            "title": "Records",
+            "description": "\u8bb0\u5f55\u5217\u8868"
+          }
+        },
+        "type": "object",
+        "required": [
+          "records"
+        ],
+        "title": "EnergyMonthlyRecordBatchCreate",
+        "description": "\u6279\u91cf\u521b\u5efa\u6708\u5ea6\u8bb0\u5f55"
+      },
+      "EnergyMonthlyRecordCreate": {
+        "properties": {
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id",
+            "description": "\u8f66\u95f4ID"
+          },
+          "energy_type": {
+            "type": "string",
+            "enum": [
+              "electricity",
+              "water",
+              "steam",
+              "natural_gas"
+            ],
+            "title": "Energy Type",
+            "description": "\u80fd\u6e90\u7c7b\u578b"
+          },
+          "record_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Record Date",
+            "description": "\u8bb0\u5f55\u65e5\u671f"
+          },
+          "date_range_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range End",
+            "description": "\u65e5\u671f\u8303\u56f4\u7ed3\u675f"
+          },
+          "value": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Value",
+            "description": "\u80fd\u8017\u503c"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Unit",
+            "description": "\u8ba1\u91cf\u5355\u4f4d"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Source",
+            "description": "\u6570\u636e\u6765\u6e90",
+            "default": "feishu"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark",
+            "description": "\u5907\u6ce8"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workshop_id",
+          "energy_type",
+          "record_date",
+          "value",
+          "unit"
+        ],
+        "title": "EnergyMonthlyRecordCreate"
+      },
+      "EnergyWorkshopCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code",
+            "description": "\u8f66\u95f4\u7f16\u7801"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u8f66\u95f4\u540d\u79f0"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "workshop",
+              "position",
+              "support",
+              "utility"
+            ],
+            "title": "Category",
+            "description": "\u5206\u7c7b"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "\u7236\u7ea7\u8f66\u95f4ID"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "\u6392\u5e8f",
+            "default": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "\u662f\u5426\u542f\u7528",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category"
+        ],
+        "title": "EnergyWorkshopCreate"
+      },
+      "EnergyWorkshopUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "workshop",
+                  "position",
+                  "support",
+                  "utility"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "EnergyWorkshopUpdate"
       },
       "EquipmentCategoryCreate": {
         "properties": {
@@ -86700,6 +87459,46 @@
         "type": "object",
         "title": "FailureCodeUpdate",
         "description": "\u66f4\u65b0\u6545\u969c\u4ee3\u7801\u8bf7\u6c42"
+      },
+      "FeishuEnergyImportRequest": {
+        "properties": {
+          "spreadsheet_token": {
+            "type": "string",
+            "title": "Spreadsheet Token",
+            "description": "\u98de\u4e66\u7535\u5b50\u8868\u683c token"
+          },
+          "sheet_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet Id",
+            "description": "\u5de5\u4f5c\u8868 ID\uff0c\u4e3a\u7a7a\u5219\u53d6\u7b2c\u4e00\u4e2a"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Source",
+            "description": "\u6570\u636e\u6765\u6e90\u6807\u8bc6",
+            "default": "feishu"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "\u8bd5\u8fd0\u884c\uff0c\u53ea\u89e3\u6790\u4e0d\u5199\u5165",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "spreadsheet_token"
+        ],
+        "title": "FeishuEnergyImportRequest",
+        "description": "\u98de\u4e66\u8868\u683c\u5bfc\u5165\u8bf7\u6c42"
       },
       "HTTPValidationError": {
         "properties": {
