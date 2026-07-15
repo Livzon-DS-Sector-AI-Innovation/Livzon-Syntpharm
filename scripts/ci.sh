@@ -208,12 +208,29 @@ run_alembic() {
     ensure_postgres
     clean_db
 
+    local HEAD_COUNT
+    HEAD_COUNT=$(uv run alembic heads 2>&1 | grep -c '->')
+    if [ "$HEAD_COUNT" -gt 1 ]; then
+        log_error "Multiple alembic heads detected ($HEAD_COUNT)!"
+        uv run alembic heads
+        FAILED=1
+        return
+    fi
+    log_info "Single alembic head (OK)"
+
     if ! uv run alembic upgrade head; then
         log_error "Failed to apply migrations!"
         FAILED=1
         return
     fi
     log_info "Migrations applied successfully"
+
+    if ! uv run alembic current 2>&1; then
+        log_error "Failed to verify alembic current state!"
+        FAILED=1
+    else
+        log_info "Alembic current state verified"
+    fi
 
     if ! uv run alembic check 2>&1; then
         log_error "Model changes detected without corresponding Alembic migration!"
