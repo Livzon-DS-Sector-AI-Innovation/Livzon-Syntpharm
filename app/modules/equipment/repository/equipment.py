@@ -431,6 +431,7 @@ async def get_equipments(
         query = query.where(
             Equipment.equipment_no.ilike(f"%{escaped}%", escape="\\")
             | Equipment.name.ilike(f"%{escaped}%", escape="\\")
+            | Equipment.equipment_tag.ilike(f"%{escaped}%", escape="\\")
         )
 
     # 获取总数
@@ -610,32 +611,20 @@ async def get_equipment_statistics(
     status_result = await db.execute(status_query)
     by_status = {row[0]: row[1] for row in status_result.all()}
 
-    # 按分类统计（通过联结表）
-    category_query = (
-        select(
-            EquipmentCategory.name,
-            func.count(func.distinct(EquipmentCategoryLink.equipment_id)),
-        )
-        .select_from(EquipmentCategoryLink)
-        .join(Equipment, Equipment.id == EquipmentCategoryLink.equipment_id)
-        .join(
-            EquipmentCategory,
-            EquipmentCategory.id == EquipmentCategoryLink.category_id,
-        )
-        .where(
-            Equipment.is_deleted == False,  # noqa: E712
-            EquipmentCategoryLink.is_deleted == False,  # noqa: E712
-        )
-        .group_by(EquipmentCategory.name)
+    # 按设备分类统计（A/B/C）
+    class_query = (
+        select(Equipment.equipment_class, func.count())
+        .where(Equipment.is_deleted == False)  # noqa: E712
+        .group_by(Equipment.equipment_class)
     )
-    category_query = apply_equipment_scope(
-        category_query,
+    class_query = apply_equipment_scope(
+        class_query,
         ctx,
         Equipment.department_id,
         "department_id",
     )
-    category_result = await db.execute(category_query)
-    by_category = {row[0]: row[1] for row in category_result.all()}
+    class_result = await db.execute(class_query)
+    by_category = {row[0]: row[1] for row in class_result.all()}
 
     # 按位置统计
     location_query = (

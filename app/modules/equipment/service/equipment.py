@@ -233,15 +233,18 @@ async def create_equipment(
     data: EquipmentCreate,
 ) -> Equipment:
     """创建设备"""
-    # 校验编号唯一性
+    # 校验资产编号唯一性
     existing = await repo.get_equipment_by_no(db, data.equipment_no)
     if existing:
         raise DuplicateException("设备编号", data.equipment_no)
 
-    # 验证所有分类
-    for cid in data.category_ids:
-        await get_equipment_category_by_id(db, cid)
-    await get_location_by_id(db, data.location_id)
+    # 验证分类（如果提供了）
+    if data.category_ids:
+        for cid in data.category_ids:
+            await get_equipment_category_by_id(db, cid)
+    # 验证位置（如果提供了）
+    if data.location_id:
+        await get_location_by_id(db, data.location_id)
 
     equipment_data = data.model_dump()
 

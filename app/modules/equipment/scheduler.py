@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
-from app.shared.config_reader import get_module_setting_bool
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +23,8 @@ async def maintenance_plan_loop() -> None:
     选择 00:05 而非 00:00 是为了避开飞书成员同步（00:00）的执行窗口，
     减少并发数据库连接压力。
     """
-    enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
-    if not enabled:
+    settings = get_settings()
+    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
@@ -69,7 +68,7 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 
@@ -111,7 +110,7 @@ async def scan_timeout_work_orders() -> None:
     from app.platform.integrations.feishu.message import send_timeout_notification
 
     settings = get_settings()
-    dept_id = settings.feishu.platform.equipment_dept_id
+    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
     if not dept_id:
         return
 

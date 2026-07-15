@@ -14572,6 +14572,140 @@
         }
       }
     },
+    "/api/v1/equipment/import/preview": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u9884\u89c8\u5bfc\u5165\u6570\u636e",
+        "description": "\u9884\u89c8\u5bfc\u5165\u6570\u636e\uff0c\u8fd4\u56de\u8f6c\u6362\u540e\u7684\u7ed3\u679c\uff08\u4e0d\u5165\u5e93\uff09\n\n\u6570\u636e\u683c\u5f0f\uff08\u6765\u81ea Excel\uff09\uff1a\n[\n    {\n        \"\u8d44\u4ea7\u7f16\u53f7\": \"59070\",\n        \"\u6807\u7b7e\u53f7\": \"107001252\",\n        \"\u8d44\u4ea7\u8bf4\u660e\": \"\u751f\u5316\u57f9\u517b\u7bb1\",\n        \"\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e\": \"\u56fa\u5b9a\u8d44\u4ea7.\u7535\u5b50\u8bbe\u5907\",\n        \"\u5236\u9020\u5546\": \"\u91cd\u5e86\u6c38\u751f\",\n        \"\u578b\u53f7\": \"SHH-L\",\n        \"\u5f53\u524d\u6210\u672c\": 22123.89,\n        \"\u542f\u7528\u65e5\u671f\": 46196.0,\n        \"\u5b9e\u7269\u6240\u5728\u90e8\u95e8\": \"\u68c0\u9a8c\u5ba4\",\n        \"\u5b9e\u7269\u6240\u5728\u5730\u70b9\": \"\u5fae\u751f\u7269\u5ba4\",\n        \"\u62a5\u5e9f\u72b6\u6001\": \"\u672a\u62a5\u5e9f\",\n        \"\u62a5\u5e9f\u65f6\u95f4\": \"\"\n    }\n]",
+        "operationId": "preview_import_api_v1_equipment_import_preview_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preview Import Api V1 Equipment Import Preview Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/import/batch": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u5bfc\u5165\u8bbe\u5907",
+        "description": "\u6279\u91cf\u5bfc\u5165\u8bbe\u5907\uff08\u5148\u9884\u89c8\uff0c\u518d\u5bfc\u5165\uff09\n\n\u6570\u636e\u683c\u5f0f\u540c preview \u63a5\u53e3",
+        "operationId": "batch_import_api_v1_equipment_import_batch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Batch Import Api V1 Equipment Import Batch Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/safety/accidents": {
       "get": {
         "tags": [
@@ -84624,21 +84758,84 @@
             "title": "Equipment No",
             "description": "\u8bbe\u5907\u7f16\u53f7\uff08\u624b\u52a8\u8f93\u5165\uff0c\u9700\u552f\u4e00\uff09"
           },
+          "equipment_tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Tag",
+            "description": "\u8bbe\u5907\u4f4d\u53f7"
+          },
+          "equipment_class": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "title": "Equipment Class",
+            "description": "\u8bbe\u5907\u5206\u7c7b\uff1aA/B/C",
+            "default": "C"
+          },
+          "category_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Description",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
           "category_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "minItems": 1,
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Category Ids",
-            "description": "\u8bbe\u5907\u5206\u7c7bID\u5217\u8868\uff08\u652f\u6301\u591a\u5206\u7c7b\uff09"
+            "description": "\u8bbe\u5907\u5206\u7c7bID\u5217\u8868\uff08\u652f\u6301\u591a\u5206\u7c7b\uff0c\u53ef\u9009\uff09"
           },
           "location_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location Id",
-            "description": "\u8bbe\u5907\u4f4d\u7f6eID"
+            "description": "\u8bbe\u5907\u4f4d\u7f6eID\uff08\u53ef\u9009\uff09"
+          },
+          "location_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Text",
+            "description": "\u8bbe\u5907\u4f4d\u7f6e\uff08\u6587\u672c\u63cf\u8ff0\uff09"
           },
           "status": {
             "type": "string",
@@ -84767,7 +84964,7 @@
             "title": "Warranty Expire Date",
             "description": "\u4fdd\u4fee\u5230\u671f\u65e5"
           },
-          "asset_value": {
+          "current_cost": {
             "anyOf": [
               {
                 "type": "number",
@@ -84777,8 +84974,21 @@
                 "type": "null"
               }
             ],
-            "title": "Asset Value",
-            "description": "\u8d44\u4ea7\u539f\u503c\uff08\u5143\uff09"
+            "title": "Current Cost",
+            "description": "\u5f53\u524d\u6210\u672c\uff08\u5143\uff09"
+          },
+          "book_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Value",
+            "description": "\u8d26\u9762\u51c0\u503c\uff08\u5143\uff09"
           },
           "depreciation_years": {
             "anyOf": [
@@ -84831,14 +85041,51 @@
             ],
             "title": "Responsible Person Id",
             "description": "\u8d1f\u8d23\u4ebaID\uff0c\u903b\u8f91\u5f15\u7528 identity.users.id\uff1b\u672a\u8bbe\u7f6e\u65f6\u7531\u90e8\u95e8\u8d1f\u8d23\u4eba\u63a8\u5bfc"
+          },
+          "label_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label No",
+            "description": "\u6807\u7b7e\u53f7"
+          },
+          "scrap_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scrap Status",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "scrap_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scrap Time",
+            "description": "\u62a5\u5e9f\u65f6\u95f4"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "equipment_no",
-          "category_ids",
-          "location_id"
+          "equipment_no"
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
@@ -84859,6 +85106,63 @@
             "title": "Name",
             "description": "\u8bbe\u5907\u540d\u79f0"
           },
+          "asset_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset No",
+            "description": "\u8d44\u4ea7\u7f16\u53f7"
+          },
+          "equipment_tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Tag",
+            "description": "\u8bbe\u5907\u4f4d\u53f7"
+          },
+          "equipment_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Class",
+            "description": "\u8bbe\u5907\u5206\u7c7b\uff1aA/B/C"
+          },
+          "category_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Description",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
           "category_ids": {
             "anyOf": [
               {
@@ -84866,8 +85170,7 @@
                   "type": "string",
                   "format": "uuid"
                 },
-                "type": "array",
-                "minItems": 1
+                "type": "array"
               },
               {
                 "type": "null"
@@ -84888,6 +85191,19 @@
             ],
             "title": "Location Id",
             "description": "\u8bbe\u5907\u4f4d\u7f6eID"
+          },
+          "location_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Text",
+            "description": "\u8bbe\u5907\u4f4d\u7f6e\uff08\u6587\u672c\u63cf\u8ff0\uff09"
           },
           "status": {
             "anyOf": [
@@ -85028,7 +85344,7 @@
             "title": "Warranty Expire Date",
             "description": "\u4fdd\u4fee\u5230\u671f\u65e5"
           },
-          "asset_value": {
+          "current_cost": {
             "anyOf": [
               {
                 "type": "number",
@@ -85038,8 +85354,21 @@
                 "type": "null"
               }
             ],
-            "title": "Asset Value",
-            "description": "\u8d44\u4ea7\u539f\u503c\uff08\u5143\uff09"
+            "title": "Current Cost",
+            "description": "\u5f53\u524d\u6210\u672c\uff08\u5143\uff09"
+          },
+          "book_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Value",
+            "description": "\u8d26\u9762\u51c0\u503c\uff08\u5143\uff09"
           },
           "depreciation_years": {
             "anyOf": [
@@ -85092,6 +85421,45 @@
             ],
             "title": "Responsible Person Id",
             "description": "\u8d1f\u8d23\u4ebaID\uff0c\u903b\u8f91\u5f15\u7528 identity.users.id\uff1b\u672a\u8bbe\u7f6e\u65f6\u7531\u90e8\u95e8\u8d1f\u8d23\u4eba\u63a8\u5bfc"
+          },
+          "label_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label No",
+            "description": "\u6807\u7b7e\u53f7"
+          },
+          "scrap_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scrap Status",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "scrap_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scrap Time",
+            "description": "\u62a5\u5e9f\u65f6\u95f4"
           }
         },
         "type": "object",

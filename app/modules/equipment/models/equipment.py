@@ -154,10 +154,15 @@ class Equipment(BaseModel):
 
     equipment_no: Mapped[str] = mapped_column(String(50), comment="设备编号")
     name: Mapped[str] = mapped_column(String(200), comment="设备名称")
-    location_id: Mapped[uuid.UUID] = mapped_column(
+    equipment_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备位号")
+    equipment_class: Mapped[str] = mapped_column(String(10), default="C", comment="设备分类：A/B/C")
+    category_description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="资产类别说明")
+    location_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.locations.id"),
-        comment="设备位置",
+        nullable=True,
+        comment="设备位置ID（可选）",
     )
+    location_text: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="设备位置（文本描述）")
     status: Mapped[str] = mapped_column(
         String(20),
         default="在用",
@@ -176,7 +181,8 @@ class Equipment(BaseModel):
         comment="设备重要性：高/中/低",
     )
     warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
-    asset_value: Mapped[float | None] = mapped_column(nullable=True, comment="资产原值（元）")
+    current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
+    book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
     technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -186,6 +192,9 @@ class Equipment(BaseModel):
         nullable=True,
         comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
     )
+    label_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="标签号")
+    scrap_status: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="报废状态")
+    scrap_time: Mapped[date | None] = mapped_column(Date, nullable=True, comment="报废时间")
 
     # 关系
     category_links: Mapped[list["EquipmentCategoryLink"]] = relationship(

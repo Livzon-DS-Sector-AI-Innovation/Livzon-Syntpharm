@@ -207,7 +207,7 @@ __all__ = [
     "get_department_leader_user_id",
     "get_departments_for_select",
     "get_equipment_by_id",
-    "get_equipment_by_no",
+    "get_equipment_by_asset_no",
     "get_user_name_by_id",
     "get_equipment_names_by_ids",
     "get_equipment_nos_by_ids",

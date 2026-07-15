@@ -32,6 +32,9 @@ router = APIRouter()
 async def _equipment_to_response(equipment, db=None) -> EquipmentResponse:  # type: ignore[no-untyped-def]
     """将 ORM Equipment 转为响应对象，填充多分类信息及部门信息"""
     resp = EquipmentResponse.model_validate(equipment)
+    resp.equipment_tag = equipment.equipment_tag
+    resp.equipment_class = equipment.equipment_class
+    resp.location_text = equipment.location_text
     links = getattr(equipment, "category_links", []) or []
     resp.category_ids = [link.category_id for link in links if not link.is_deleted]
     names = [link.category.name for link in links if not link.is_deleted and link.category]
