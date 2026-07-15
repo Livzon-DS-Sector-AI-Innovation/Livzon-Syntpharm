@@ -33,6 +33,8 @@ class ProductOutputService:
         batch_no: str | None = None,
         start_date: date | None = None,
         end_date: date | None = None,
+        sort_by: str | None = None,
+        sort_order: str = "desc",
     ) -> tuple[list[Any], int]:
         """获取列表"""
         return await self.repo.get_list(
@@ -44,6 +46,8 @@ class ProductOutputService:
             batch_no=batch_no,
             start_date=start_date,
             end_date=end_date,
+            sort_by=sort_by,
+            sort_order=sort_order,
         )
 
     async def get_by_id(self, record_id: uuid.UUID) -> Any:

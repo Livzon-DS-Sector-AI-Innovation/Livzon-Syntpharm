@@ -66387,7 +66387,7 @@
         ],
         "summary": "\u83b7\u53d6\u4ea7\u91cf\u8bb0\u5f55\u5217\u8868",
         "description": "\u83b7\u53d6\u4ea7\u91cf\u8bb0\u5f55\u5217\u8868",
-        "operationId": "get_api_v1_production_product_output_get",
+        "operationId": "get_product_outputs_api_v1_production_product_output_get",
         "parameters": [
           {
             "name": "page",
@@ -66512,6 +66512,36 @@
             }
           },
           {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6392\u5e8f\u5b57\u6bb5: batch_no, production_date, end_date, weight",
+              "title": "Sort By"
+            },
+            "description": "\u6392\u5e8f\u5b57\u6bb5: batch_no, production_date, end_date, weight"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u6392\u5e8f\u65b9\u5411: asc \u6216 desc",
+              "default": "desc",
+              "title": "Sort Order"
+            },
+            "description": "\u6392\u5e8f\u65b9\u5411: asc \u6216 desc"
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -66534,7 +66564,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Production Product Output Get"
+                  "title": "Response Get Product Outputs Api V1 Production Product Output Get"
                 }
               }
             }
@@ -66557,7 +66587,7 @@
         ],
         "summary": "\u65b0\u5efa\u4ea7\u91cf\u8bb0\u5f55",
         "description": "\u65b0\u5efa\u4ea7\u91cf\u8bb0\u5f55",
-        "operationId": "post_api_v1_production_product_output_post",
+        "operationId": "create_product_output_api_v1_production_product_output_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -66592,7 +66622,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Post Api V1 Production Product Output Post"
+                  "title": "Response Create Product Output Api V1 Production Product Output Post"
                 }
               }
             }
@@ -66617,7 +66647,7 @@
         ],
         "summary": "\u83b7\u53d6\u6c47\u603b\u7edf\u8ba1",
         "description": "\u83b7\u53d6\u6bcf\u65e5/\u6708/\u5e74\u6c47\u603b\u7edf\u8ba1",
-        "operationId": "get_api_v1_production_product_output_summary_get",
+        "operationId": "get_product_outputs_summary_api_v1_production_product_output_summary_get",
         "parameters": [
           {
             "name": "target_date",
@@ -66754,7 +66784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Production Product Output Summary Get"
+                  "title": "Response Get Product Outputs Summary Api V1 Production Product Output Summary Get"
                 }
               }
             }
@@ -66779,7 +66809,7 @@
         ],
         "summary": "\u83b7\u53d6\u6279\u6b21\u7edf\u8ba1",
         "description": "\u83b7\u53d6\u6279\u6b21\u7edf\u8ba1",
-        "operationId": "get_api_v1_production_product_output_batch_count_get",
+        "operationId": "get_product_outputs_batch_count_api_v1_production_product_output_batch_count_get",
         "parameters": [
           {
             "name": "target_date",
@@ -66916,7 +66946,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Production Product Output Batch Count Get"
+                  "title": "Response Get Product Outputs Batch Count Api V1 Production Product Output Batch Count Get"
                 }
               }
             }
@@ -66940,8 +66970,8 @@
           "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
         ],
         "summary": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55",
-        "description": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55\u4e3a CSV",
-        "operationId": "get_api_v1_production_product_output_export_get",
+        "description": "\u5bfc\u51fa\u4ea7\u91cf\u8bb0\u5f55\u4e3a XLSX",
+        "operationId": "export_product_outputs_api_v1_production_product_output_export_get",
         "parameters": [
           {
             "name": "workshop",
@@ -67065,7 +67095,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Production Product Output Export Get"
+                  "title": "Response Export Product Outputs Api V1 Production Product Output Export Get"
                 }
               }
             }
@@ -67090,7 +67120,7 @@
         ],
         "summary": "\u83b7\u53d6\u4ea7\u91cf\u8bb0\u5f55\u8be6\u60c5",
         "description": "\u83b7\u53d6\u5355\u6761\u4ea7\u91cf\u8bb0\u5f55",
-        "operationId": "get_api_v1_production_product_output__record_id__get",
+        "operationId": "get_product_output_api_v1_production_product_output__record_id__get",
         "parameters": [
           {
             "name": "record_id",
@@ -67125,7 +67155,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Production Product Output  Record Id  Get"
+                  "title": "Response Get Product Output Api V1 Production Product Output  Record Id  Get"
                 }
               }
             }
@@ -67148,7 +67178,7 @@
         ],
         "summary": "\u66f4\u65b0\u4ea7\u91cf\u8bb0\u5f55",
         "description": "\u66f4\u65b0\u4ea7\u91cf\u8bb0\u5f55",
-        "operationId": "put_api_v1_production_product_output__record_id__put",
+        "operationId": "update_product_output_api_v1_production_product_output__record_id__put",
         "parameters": [
           {
             "name": "record_id",
@@ -67193,7 +67223,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Put Api V1 Production Product Output  Record Id  Put"
+                  "title": "Response Update Product Output Api V1 Production Product Output  Record Id  Put"
                 }
               }
             }
@@ -67216,7 +67246,7 @@
         ],
         "summary": "\u5220\u9664\u4ea7\u91cf\u8bb0\u5f55",
         "description": "\u8f6f\u5220\u9664\u4ea7\u91cf\u8bb0\u5f55",
-        "operationId": "delete_api_v1_production_product_output__record_id__delete",
+        "operationId": "delete_product_output_api_v1_production_product_output__record_id__delete",
         "parameters": [
           {
             "name": "record_id",
@@ -67251,7 +67281,68 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Api V1 Production Product Output  Record Id  Delete"
+                  "title": "Response Delete Product Output Api V1 Production Product Output  Record Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-output/batch": {
+      "delete": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
+        ],
+        "summary": "\u6279\u91cf\u5220\u9664\u4ea7\u91cf\u8bb0\u5f55",
+        "description": "\u6279\u91cf\u8f6f\u5220\u9664\u4ea7\u91cf\u8bb0\u5f55",
+        "operationId": "batch_delete_product_outputs_api_v1_production_product_output_batch_delete",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u9017\u53f7\u5206\u9694\u7684\u8bb0\u5f55 ID \u5217\u8868",
+              "title": "Ids"
+            },
+            "description": "\u9017\u53f7\u5206\u9694\u7684\u8bb0\u5f55 ID \u5217\u8868"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Batch Delete Product Outputs Api V1 Production Product Output Batch Delete"
                 }
               }
             }
@@ -67275,8 +67366,8 @@
           "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
         ],
         "summary": "\u5bfc\u5165\u4ea7\u91cf\u8bb0\u5f55",
-        "description": "\u901a\u8fc7 CSV \u6587\u4ef6\u6279\u91cf\u5bfc\u5165\u4ea7\u91cf\u8bb0\u5f55\n\nCSV \u5217: \u8f66\u95f4,\u4ea7\u54c1\u540d\u79f0,\u6279\u53f7,\u751f\u4ea7\u65e5\u671f,\u7ed3\u675f\u65e5\u671f,\u91cd\u91cf,\u5355\u4f4d,\u5907\u6ce8",
-        "operationId": "post_api_v1_production_product_output_import_post",
+        "description": "\u901a\u8fc7 CSV \u6216 XLSX \u6587\u4ef6\u6279\u91cf\u5bfc\u5165\u4ea7\u91cf\u8bb0\u5f55\n\n\u5217\uff1a\u8f66\u95f4\uff0c\u4ea7\u54c1\u540d\u79f0\uff0c\u6279\u53f7\uff0c\u751f\u4ea7\u65e5\u671f\uff0c\u7ed3\u675f\u65e5\u671f\uff0c\u91cd\u91cf\uff0c\u5355\u4f4d\uff0c\u5907\u6ce8",
+        "operationId": "import_product_outputs_api_v1_production_product_output_import_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -67300,7 +67391,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_production_product_output_import_post"
+                "$ref": "#/components/schemas/Body_import_product_outputs_api_v1_production_product_output_import_post"
               }
             }
           }
@@ -67311,7 +67402,501 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Post Api V1 Production Product Output Import Post"
+                  "title": "Response Import Product Outputs Api V1 Production Product Output Import Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-output/import-from-bitable": {
+      "post": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u4ea7\u91cf\u8bb0\u5f55"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u5bfc\u5165\u4ea7\u91cf\u8bb0\u5f55",
+        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u6279\u91cf\u5bfc\u5165\u4ea7\u91cf\u8bb0\u5f55",
+        "operationId": "import_from_bitable_api_v1_production_product_output_import_from_bitable_post",
+        "parameters": [
+          {
+            "name": "app_token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c app_token",
+              "title": "App Token"
+            },
+            "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c app_token"
+          },
+          {
+            "name": "table_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c table_id\uff08\u4e0d\u586b\u5219\u81ea\u52a8\u83b7\u53d6\u7b2c\u4e00\u4e2a\u8868\uff09",
+              "default": "",
+              "title": "Table Id"
+            },
+            "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c table_id\uff08\u4e0d\u586b\u5219\u81ea\u52a8\u83b7\u53d6\u7b2c\u4e00\u4e2a\u8868\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Import From Bitable Api V1 Production Product Output Import From Bitable Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config/{product_id}": {
+      "get": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u4ea7\u54c1\u540c\u6b65\u914d\u7f6e",
+        "operationId": "get_sync_config_api_v1_production_product_sync_config__product_id__get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Sync Config Api V1 Production Product Sync Config  Product Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config": {
+      "post": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u521b\u5efa\u4ea7\u54c1\u540c\u6b65\u914d\u7f6e",
+        "operationId": "create_sync_config_api_v1_production_product_sync_config_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductSyncConfigCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Sync Config Api V1 Production Product Sync Config Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config/{config_id}": {
+      "put": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u4ea7\u54c1\u540c\u6b65\u914d\u7f6e",
+        "operationId": "update_sync_config_api_v1_production_product_sync_config__config_id__put",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductSyncConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Update Sync Config Api V1 Production Product Sync Config  Config Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u4ea7\u54c1\u540c\u6b65\u914d\u7f6e",
+        "operationId": "delete_sync_config_api_v1_production_product_sync_config__config_id__delete",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Sync Config Api V1 Production Product Sync Config  Config Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config/{product_id}/push": {
+      "post": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u63a8\u9001\u5230\u98de\u4e66",
+        "operationId": "push_to_feishu_api_v1_production_product_sync_config__product_id__push_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Push To Feishu Api V1 Production Product Sync Config  Product Id  Push Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config/{product_id}/pull": {
+      "post": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u62c9\u53d6",
+        "operationId": "pull_from_feishu_api_v1_production_product_sync_config__product_id__pull_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Pull From Feishu Api V1 Production Product Sync Config  Product Id  Pull Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/production/product-sync-config/{product_id}/sync": {
+      "post": {
+        "tags": [
+          "\u751f\u4ea7\u7ba1\u7406 - \u540c\u6b65\u914d\u7f6e"
+        ],
+        "summary": "\u53cc\u5411\u540c\u6b65",
+        "operationId": "bidirectional_sync_api_v1_production_product_sync_config__product_id__sync_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Bidirectional Sync Api V1 Production Product Sync Config  Product Id  Sync Post"
                 }
               }
             }
@@ -73181,6 +73766,20 @@
         ],
         "title": "Body_import_equipments_api_v1_equipment_equipments_import_post"
       },
+      "Body_import_product_outputs_api_v1_production_product_output_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_product_outputs_api_v1_production_product_output_import_post"
+      },
       "Body_import_supplier_records_api_v1_procurement_suppliers_import_post": {
         "properties": {
           "file": {
@@ -73229,20 +73828,6 @@
           "file"
         ],
         "title": "Body_post_api_v1_hr_ai_exam_generate_post"
-      },
-      "Body_post_api_v1_production_product_output_import_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_post_api_v1_production_product_output_import_post"
       },
       "Body_post_api_v1_quality_batch_post": {
         "properties": {
@@ -97175,6 +97760,131 @@
         "type": "object",
         "title": "ProductOutputUpdate",
         "description": "\u66f4\u65b0\u4ea7\u91cf\u8bb0\u5f55"
+      },
+      "ProductSyncConfigCreate": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id",
+            "description": "\u4ea7\u54c1ID"
+          },
+          "app_token": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "App Token",
+            "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c app_token"
+          },
+          "table_id": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Table Id",
+            "description": "\u98de\u4e66\u8868\u683c table_id"
+          },
+          "field_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Mapping",
+            "description": "\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e"
+          },
+          "auto_sync": {
+            "type": "boolean",
+            "title": "Auto Sync",
+            "description": "\u662f\u5426\u81ea\u52a8\u540c\u6b65",
+            "default": false
+          },
+          "sync_direction": {
+            "type": "string",
+            "title": "Sync Direction",
+            "description": "\u540c\u6b65\u65b9\u5411: push/pull/bidirectional",
+            "default": "bidirectional"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "app_token",
+          "table_id"
+        ],
+        "title": "ProductSyncConfigCreate",
+        "description": "\u521b\u5efa\u540c\u6b65\u914d\u7f6e"
+      },
+      "ProductSyncConfigUpdate": {
+        "properties": {
+          "app_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Token",
+            "description": "\u98de\u4e66\u591a\u7ef4\u8868\u683c app_token"
+          },
+          "table_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Id",
+            "description": "\u98de\u4e66\u8868\u683c table_id"
+          },
+          "field_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Mapping",
+            "description": "\u5b57\u6bb5\u6620\u5c04\u914d\u7f6e"
+          },
+          "auto_sync": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Sync",
+            "description": "\u662f\u5426\u81ea\u52a8\u540c\u6b65"
+          },
+          "sync_direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Direction",
+            "description": "\u540c\u6b65\u65b9\u5411: push/pull/bidirectional"
+          }
+        },
+        "type": "object",
+        "title": "ProductSyncConfigUpdate",
+        "description": "\u66f4\u65b0\u540c\u6b65\u914d\u7f6e"
       },
       "ProductUpdate": {
         "properties": {

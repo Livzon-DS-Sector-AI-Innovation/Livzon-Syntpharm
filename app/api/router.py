@@ -12,6 +12,7 @@ from app.modules.procurement import router as procurement_router
 from app.modules.production import router as production_router
 from app.modules.production.product import output_router as product_output_router
 from app.modules.production.product import product_router as workshop_product_router
+from app.modules.production.product.sync_config_api import router as product_sync_config_router
 from app.modules.quality import (
     cpv_router,
     deviation_router,
@@ -102,6 +103,11 @@ api_router.include_router(
     product_output_router,
     prefix="/production",
     tags=["生产管理 - 产量记录"],
+)
+api_router.include_router(
+    product_sync_config_router,
+    prefix="/production",
+    tags=["生产管理 - 同步配置"],
 )
 api_router.include_router(regulatory_tracker_router, prefix="/registration", tags=["法规追踪"])
 api_router.include_router(

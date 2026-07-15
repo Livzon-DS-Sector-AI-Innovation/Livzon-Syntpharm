@@ -20,6 +20,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.modules.production.product.models import Product  # noqa: F401
+from app.modules.production.product.output_models import ProductOutput  # noqa: F401
+from app.modules.production.product.sync_config_models import ProductSyncConfig  # noqa: F401
 from app.shared.base_model import BaseModel
 
 

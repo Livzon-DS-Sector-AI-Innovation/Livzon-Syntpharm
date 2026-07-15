@@ -26,6 +26,8 @@ class ProductOutputRepository:
         batch_no: str | None = None,
         start_date: date | None = None,
         end_date: date | None = None,
+        sort_by: str | None = None,
+        sort_order: str = "desc",
     ) -> tuple[list[ProductOutput], int]:
         """获取产量记录列表"""
         query = select(ProductOutput).where(
@@ -55,14 +57,19 @@ class ProductOutputRepository:
             count_query = count_query.where(ProductOutput.production_date <= end_date)
 
         total = await self.session.scalar(count_query) or 0
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(
-                ProductOutput.production_date.desc(),
-                ProductOutput.created_at.desc(),
+        sort_column = getattr(ProductOutput, sort_by, None) if sort_by else None
+        if sort_column is not None:
+            order_expr = sort_column.desc() if sort_order == "desc" else sort_column.asc()
+            query = query.offset(skip).limit(limit).order_by(order_expr, ProductOutput.created_at.desc())
+        else:
+            query = (
+                query.offset(skip)
+                .limit(limit)
+                .order_by(
+                    ProductOutput.production_date.desc(),
+                    ProductOutput.created_at.desc(),
+                )
             )
-        )
         result = await self.session.execute(query)
         records = list(result.scalars().all())
         return records, total

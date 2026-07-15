@@ -43,3 +43,8 @@ class ProductOutput(BaseModel):
     weight: Mapped[float] = mapped_column(Float, nullable=False, default=0, comment="重量(kg)")
     unit: Mapped[str] = mapped_column(String(20), nullable=False, default="kg", comment="单位")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+
+    feishu_record_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书多维表格记录ID")
+    sync_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="local_only", comment="同步状态: local_only/synced/conflict"
+    )

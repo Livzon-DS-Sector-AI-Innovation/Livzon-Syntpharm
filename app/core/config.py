@@ -99,10 +99,13 @@ class FeishuTrainingConfig(BaseModel):
 
 
 class FeishuProductConfig(BaseModel):
-    """Product module Bitable (uses platform app credentials)."""
+    """Production module — independent Feishu app + product/output Bitables."""
 
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_app_token: str = ""
     bitable_table_id: str = ""
+    bitable_output_app_token: str = ""
+    bitable_output_table_id: str = ""
 
 
 class FeishuAIQueryConfig(BaseModel):

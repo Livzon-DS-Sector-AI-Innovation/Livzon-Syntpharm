@@ -104,6 +104,16 @@ class BitableClient:
         )
         return data.get("items", [])  # type: ignore[no-any-return]
 
+    async def get_tables(self) -> list[dict[str, Any]]:
+        """Get all tables in the bitable app."""
+        if not self.app_token:
+            raise RuntimeError("Bitable app_token not configured")
+        data = await self.client.request(
+            "GET",
+            f"/bitable/v1/apps/{self.app_token}/tables",
+        )
+        return data.get("items", [])  # type: ignore[no-any-return]
+
 
 class FeishuBitableSync:
     """Sync HR data to Feishu Bitable."""
