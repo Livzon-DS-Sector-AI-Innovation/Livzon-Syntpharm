@@ -113,7 +113,7 @@ async def _create_test_equipment(auth_client: AsyncClient) -> str:
         "/api/v1/equipment/equipments",
         json={
             "name": f"测试设备-{uid}",
-            "equipment_no": f"EQ-{cat_code}-0001",
+            "asset_no": f"EQ-{cat_code}-0001",
             "category_ids": [cat_id],
             "location_id": loc_id,
         },

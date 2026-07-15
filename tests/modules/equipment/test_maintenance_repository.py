@@ -158,7 +158,7 @@ async def test_create_work_order(db_session: AsyncSession) -> None:
     db_session.add(location)
     await db_session.flush()
     equipment = Equipment(
-        equipment_no="EQ-T-CAT-0001",
+        asset_no="EQ-T-CAT-0001",
         name="测试设备",
         location_id=location.id,
         status="在用",

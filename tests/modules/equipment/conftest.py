@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import get_settings
 from app.main import app
 from app.modules.equipment.deps import EquipmentAccessContext
+from app.core.database import get_db
 from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User
 
@@ -31,11 +32,6 @@ _test_session_factory = async_sessionmaker(
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────
-
-
-@pytest.fixture
-def anyio_backend() -> str:
-    return "asyncio"
 
 
 @pytest.fixture
@@ -111,6 +107,8 @@ async def auth_client(
     async def _override_get_current_user() -> User:
         return test_reporter
 
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
 
     # Mock the require_equipment_access to return our mock dependency
@@ -139,6 +137,8 @@ async def admin_client(
     async def _override_get_current_user() -> User:
         return test_reporter
 
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
 
     # Mock the require_equipment_access to return our mock dependency
@@ -166,6 +166,7 @@ async def anonymous_client(
     async def _override_get_current_user() -> None:
         return None
 
+    app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
 
     transport = ASGITransport(app=app)
