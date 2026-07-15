@@ -92,7 +92,7 @@ class RouteLocationEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     templates: list[RouteEquipmentTemplateResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
@@ -131,7 +131,7 @@ class RouteEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -228,7 +228,7 @@ class InspectionTaskResponse(BaseModel):
     updated_at: datetime
     route_name: str | None = None
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     assignee_name: str | None = None
     equipment_count: int = 0
     completed_count: int = 0

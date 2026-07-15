@@ -499,7 +499,7 @@ async def get_equipment_nos_by_ids(db: AsyncSession, equipment_ids: list[uuid.UU
     """根据设备ID列表批量获取设备编号映射"""
     if not equipment_ids:
         return {}
-    stmt = select(Equipment.id, Equipment.equipment_no).where(
+    stmt = select(Equipment.id, Equipment.asset_no).where(
         Equipment.id.in_(equipment_ids),
         Equipment.is_deleted == False,  # noqa: E712
     )

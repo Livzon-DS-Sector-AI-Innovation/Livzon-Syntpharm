@@ -40,7 +40,7 @@ def _to_response(wo) -> Any:  # type: ignore[no-untyped-def]
         resp.responsible_person_name = wo.responsible_person.name
     if wo.equipment:
         resp.equipment_name = wo.equipment.name
-        resp.equipment_no = wo.equipment.equipment_no
+        resp.asset_no = wo.equipment.asset_no
     if wo.fault_symptom:
         resp.symptom_name = wo.fault_symptom.name
     if wo.fault_cause:

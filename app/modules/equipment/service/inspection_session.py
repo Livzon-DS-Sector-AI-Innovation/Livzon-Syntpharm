@@ -61,7 +61,7 @@ async def save_session(
 
     Args:
         equipment_order: 设备顺序列表，每项:
-            {equipment_id, equipment_name, equipment_no, location_name, location_sort_order}
+            {equipment_id, equipment_name, asset_no, location_name, location_sort_order}
         pending_results: 当前设备的待确认结果，None 表示处于引导状态
     """
     data = {
@@ -232,7 +232,7 @@ def get_progress(session: dict[str, Any]) -> dict[str, Any]:
             {
                 "equipment_id": eid,
                 "equipment_name": eq["equipment_name"],
-                "equipment_no": eq.get("equipment_no", ""),
+                "asset_no": eq.get("asset_no", ""),
                 "status": status,
             }
         )

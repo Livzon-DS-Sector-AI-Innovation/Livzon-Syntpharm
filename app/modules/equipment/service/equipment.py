@@ -234,9 +234,9 @@ async def create_equipment(
 ) -> Equipment:
     """创建设备"""
     # 校验资产编号唯一性
-    existing = await repo.get_equipment_by_no(db, data.equipment_no)
+    existing = await repo.get_equipment_by_asset_no(db, data.asset_no)
     if existing:
-        raise DuplicateException("设备编号", data.equipment_no)
+        raise DuplicateException("设备编号", data.asset_no)
 
     # 验证分类（如果提供了）
     if data.category_ids:
@@ -251,7 +251,7 @@ async def create_equipment(
     try:
         return await repo.create_equipment(db, equipment_data)
     except IntegrityError:
-        raise DuplicateException("设备编号", data.equipment_no)
+        raise DuplicateException("设备编号", data.asset_no)
 
 
 async def get_equipment_by_id(
@@ -522,7 +522,7 @@ async def import_equipments_from_excel(
     # ── 预加载系统数据 ──
     # 已有设备编号
     existing_nos_result = await db.execute(
-        select(Equipment.equipment_no).where(
+        select(Equipment.asset_no).where(
             Equipment.is_deleted == False,  # noqa: E712
         )
     )
@@ -703,7 +703,7 @@ async def import_equipments_from_excel(
 
             async with db.begin_nested():
                 equipment = Equipment(
-                    equipment_no=eq_no,
+                    asset_no=eq_no,
                     name=name,
                     location_id=location_id,
                     status=status,
@@ -716,7 +716,7 @@ async def import_equipments_from_excel(
                     commissioning_date=_parse_date(raw_cd),
                     description=values[COL_DESCRIPTION],
                     warranty_expire_date=_parse_date(raw_we),
-                    asset_value=_parse_float(raw_av),
+                    current_cost=_parse_float(raw_av),
                     depreciation_years=_parse_int(raw_dy),
                     department_id=department_id,
                     responsible_person_id=responsible_person_id,

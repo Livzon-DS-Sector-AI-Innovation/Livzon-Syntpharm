@@ -371,14 +371,14 @@ async def get_equipment_by_id(
     return result.scalar_one_or_none()
 
 
-async def get_equipment_by_no(
+async def get_equipment_by_asset_no(
     db: AsyncSession,
-    equipment_no: str,
+    asset_no: str,
 ) -> Equipment | None:
     """根据设备编号获取设备"""
     result = await db.execute(
         select(Equipment).where(
-            Equipment.equipment_no == equipment_no,
+            Equipment.asset_no == asset_no,
             Equipment.is_deleted == False,  # noqa: E712
         )
     )
@@ -429,7 +429,7 @@ async def get_equipments(
     if keyword:
         escaped = _escape_like(keyword)
         query = query.where(
-            Equipment.equipment_no.ilike(f"%{escaped}%", escape="\\")
+            Equipment.asset_no.ilike(f"%{escaped}%", escape="\\")
             | Equipment.name.ilike(f"%{escaped}%", escape="\\")
             | Equipment.equipment_tag.ilike(f"%{escaped}%", escape="\\")
         )
@@ -567,12 +567,12 @@ async def get_max_equipment_no_by_category(
     """获取指定分类的最大设备编号"""
     pattern = f"EQ-{category_code}-%"
     result = await db.execute(
-        select(Equipment.equipment_no)
+        select(Equipment.asset_no)
         .where(
-            Equipment.equipment_no.like(pattern),
+            Equipment.asset_no.like(pattern),
             Equipment.is_deleted == False,  # noqa: E712
         )
-        .order_by(Equipment.equipment_no.desc())
+        .order_by(Equipment.asset_no.desc())
         .limit(1)
     )
     return result.scalar_one_or_none()

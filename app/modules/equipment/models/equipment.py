@@ -134,10 +134,10 @@ class Equipment(BaseModel):
 
     __tablename__ = "equipments"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 equipment_no 唯一性检查
+        # 部分唯一索引：仅对未删除的记录做 asset_no 唯一性检查
         Index(
-            "uq_equipments_equipment_no",
-            "equipment_no",
+            "uq_equipments_asset_no",
+            "asset_no",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -152,7 +152,7 @@ class Equipment(BaseModel):
         {"schema": "equipment"},
     )
 
-    equipment_no: Mapped[str] = mapped_column(String(50), comment="设备编号")
+    asset_no: Mapped[str] = mapped_column(String(50), comment="资产编号")
     name: Mapped[str] = mapped_column(String(200), comment="设备名称")
     equipment_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备位号")
     equipment_class: Mapped[str] = mapped_column(String(10), default="C", comment="设备分类：A/B/C")

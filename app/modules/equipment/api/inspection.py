@@ -60,7 +60,7 @@ def _task_to_response(task) -> Any:  # type: ignore[no-untyped-def]
         resp.route_name = task.route.name
     if task.equipment:
         resp.equipment_name = task.equipment.name
-        resp.equipment_no = task.equipment.equipment_no
+        resp.asset_no = task.equipment.asset_no
     if hasattr(task, "assignee") and task.assignee:
         resp.assignee_name = task.assignee.name
     return resp
@@ -163,9 +163,7 @@ async def get_route(
                     equipment_id=eq.equipment_id,
                     sort_order=eq.sort_order,
                     equipment_name=(eq.equipment.name if (eq.equipment and not eq.equipment.is_deleted) else None),
-                    equipment_no=(
-                        eq.equipment.equipment_no if (eq.equipment and not eq.equipment.is_deleted) else None
-                    ),
+                    asset_no=(eq.equipment.asset_no if (eq.equipment and not eq.equipment.is_deleted) else None),
                     templates=[
                         RouteEquipmentTemplateResponse(
                             id=rt.id,
@@ -232,7 +230,7 @@ async def set_route_locations(
                     equipment_id=eq.equipment_id,
                     sort_order=eq.sort_order,
                     equipment_name=eq.equipment.name if eq.equipment else None,
-                    equipment_no=eq.equipment.equipment_no if eq.equipment else None,
+                    asset_no=eq.equipment.asset_no if eq.equipment else None,
                     templates=[
                         RouteEquipmentTemplateResponse(
                             id=rt.id,

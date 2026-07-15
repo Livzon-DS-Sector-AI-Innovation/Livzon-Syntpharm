@@ -43,7 +43,7 @@ def _enrich_plan(plan, category_names: dict[str, str]) -> Any:  # type: ignore[n
     resp = MaintenancePlanResponse.model_validate(plan)
     if plan.equipment:
         resp.equipment_name = plan.equipment.name
-        resp.equipment_no = plan.equipment.equipment_no
+        resp.asset_no = plan.equipment.asset_no
     if plan.executor:
         resp.executor_name = plan.executor.name
     if plan.category_id and str(plan.category_id) in category_names:

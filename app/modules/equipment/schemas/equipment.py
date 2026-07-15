@@ -98,7 +98,7 @@ class EquipmentCreate(BaseModel):
     """创建设备请求"""
 
     name: str = Field(..., min_length=1, max_length=200, description="设备名称")
-    equipment_no: str = Field(..., min_length=1, max_length=50, description="设备编号（手动输入，需唯一）")
+    asset_no: str = Field(..., min_length=1, max_length=50, description="设备编号（手动输入，需唯一）")
     equipment_tag: str | None = Field(default=None, max_length=100, description="设备位号")
     equipment_class: EquipmentClass = Field(default="C", description="设备分类：A/B/C")
     category_description: str | None = Field(default=None, max_length=200, description="资产类别说明")
@@ -168,7 +168,7 @@ class EquipmentResponse(BaseModel):
     """设备响应"""
 
     id: uuid.UUID
-    equipment_no: str
+    asset_no: str
     equipment_tag: str | None = None
     equipment_class: str = "C"
     category_description: str | None = None

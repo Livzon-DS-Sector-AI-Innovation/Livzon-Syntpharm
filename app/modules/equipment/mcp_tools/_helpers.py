@@ -20,8 +20,8 @@ from app.modules.equipment.models.inspection_template import (
     InspectionTemplateItem,
 )
 from app.modules.equipment.repository.equipment import (
+    get_equipment_by_asset_no,
     get_equipment_by_id,
-    get_equipment_by_no,
 )
 from app.modules.equipment.repository.inspection_template import (
     get_inspection_template_by_id,
@@ -197,7 +197,7 @@ async def _get_template_item_map(db: AsyncSession, task: Any, equipment_id: uuid
 
 async def _resolve_equipment(db: AsyncSession, identifier: str) -> Any:
     """将设备编号或 UUID 解析为 Equipment 对象。"""
-    equipment = await get_equipment_by_no(db, identifier)
+    equipment = await get_equipment_by_asset_no(db, identifier)
     if equipment:
         return equipment
     try:

@@ -138,7 +138,7 @@ def _build_card_content(
 
     Args:
         locations_info: 线路巡检的地点信息列表，每项:
-            {location_name, sort_order, equipment: [{name, equipment_no}]}
+            {location_name, sort_order, equipment: [{name, asset_no}]}
     """
     plan_type = task.plan_type or "设备巡检"
     lines = [
@@ -240,7 +240,7 @@ async def send_inspection_start_notification(
                         eq_list.append(
                             {
                                 "name": eq.equipment.name,
-                                "equipment_no": eq.equipment.equipment_no or "",
+                                "asset_no": eq.equipment.asset_no or "",
                             }
                         )
                 locations_info.append(
@@ -344,7 +344,7 @@ async def send_work_order_notification(
         lines = [
             f"**工单编号：**{work_order.work_order_no}",
             f"**设备名称：**{equipment.name}",
-            f"**设备编号：**{equipment.equipment_no}",
+            f"**设备编号：**{equipment.asset_no}",
             f"**优先级：**{work_order.priority}",
             f"**异常描述：**{work_order.fault_description or '-'}",
             f"**来源巡检：**{task.task_no}",

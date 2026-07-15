@@ -793,7 +793,7 @@ async def _cmd_progress(open_id: str, session: dict[str, Any]) -> None:
                 lines.append(f"**{loc_name}**")
         for eq in loc["equipment"]:
             icon = emoji.get(eq["status"], "⬜")
-            detail = eq["equipment_no"] or ""
+            detail = eq["asset_no"] or ""
             detail_str = f" ({detail})" if detail else ""
             if eq["status"] == "pending" and cur_eq and eq["equipment_id"] == cur_eq["equipment_id"]:
                 lines.append(f"  🔍 {icon} **{eq['equipment_name']}**{detail_str} ← 当前")
@@ -1078,7 +1078,7 @@ async def _send_guide_card(open_id: str, session: dict[str, Any]) -> None:
     task_id = session["task_id"]
     plan_type = session.get("plan_type", "")
     equipment_name = cur_eq.get("equipment_name", "未知设备")
-    equipment_no = cur_eq.get("equipment_no", "")
+    asset_no = cur_eq.get("asset_no", "")
     location_name = cur_eq.get("location_name", "")
     progress = get_progress(session)
     current_idx = session.get("current_equipment_index", 0)
@@ -1109,8 +1109,8 @@ async def _send_guide_card(open_id: str, session: dict[str, Any]) -> None:
         "",
     ]
 
-    if equipment_no:
-        lines.append(f"设备编号：{equipment_no}")
+    if asset_no:
+        lines.append(f"设备编号：{asset_no}")
 
     if items:
         lines.append("")
@@ -1304,7 +1304,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         loc_rows = (await db.execute(loc_stmt)).all()
         for loc, loc_name in loc_rows:
             eq_stmt = (
-                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_no)
+                select(RouteLocationEquipment, Equipment.name, Equipment.asset_no)
                 .join(Equipment, RouteLocationEquipment.equipment_id == Equipment.id)
                 .where(
                     RouteLocationEquipment.route_location_id == loc.id,
@@ -1319,7 +1319,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                     {
                         "equipment_id": str(eq.equipment_id),
                         "equipment_name": eq_name,
-                        "equipment_no": eq_no or "",
+                        "asset_no": eq_no or "",
                         "location_name": loc_name or "",
                         "location_sort_order": loc.sort_order,
                     }
@@ -1330,7 +1330,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         for eid_str in task.equipment_ids:
             eid = uuid.UUID(eid_str) if isinstance(eid_str, str) else eid_str
             eq_result = await db.execute(
-                select(Equipment.name, Equipment.equipment_no).where(
+                select(Equipment.name, Equipment.asset_no).where(
                     Equipment.id == eid,
                     Equipment.is_deleted == False,  # noqa: E712
                 )
@@ -1341,7 +1341,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                     {
                         "equipment_id": str(eid),
                         "equipment_name": row.name,
-                        "equipment_no": row.equipment_no or "",
+                        "asset_no": row.asset_no or "",
                         "location_name": "",
                         "location_sort_order": 0,
                     }
@@ -1350,7 +1350,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         from app.modules.equipment.models.equipment import Equipment
 
         eq_result = await db.execute(
-            select(Equipment.name, Equipment.equipment_no).where(
+            select(Equipment.name, Equipment.asset_no).where(
                 Equipment.id == task.equipment_id,
                 Equipment.is_deleted == False,  # noqa: E712
             )
@@ -1361,7 +1361,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                 {
                     "equipment_id": str(task.equipment_id),
                     "equipment_name": row.name,
-                    "equipment_no": row.equipment_no or "",
+                    "asset_no": row.asset_no or "",
                     "location_name": "",
                     "location_sort_order": 0,
                 }

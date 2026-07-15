@@ -100,7 +100,7 @@ class WorkOrderResponse(BaseModel):
     created_by: uuid.UUID | None
     updated_by: uuid.UUID | None
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     reporter_name: str | None = None
     assignee_name: str | None = None
     responsible_person_id: uuid.UUID | None = None

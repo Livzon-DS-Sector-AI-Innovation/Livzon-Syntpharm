@@ -211,7 +211,7 @@ async def submit_inspection(
     all_done = task_after.status == "已完成"
 
     lines = [
-        f"任务 {task.task_no} · 设备 {eq.equipment_no}（{eq.name}）提交成功！",
+        f"任务 {task.task_no} · 设备 {eq.asset_no}（{eq.name}）提交成功！",
         f"已记录 {len(submitted)} 项检查结果",
     ]
     if all_done:
@@ -225,7 +225,7 @@ async def submit_inspection(
         structured_content={
             "success": True,
             "task_no": task.task_no,
-            "equipment_no": eq.equipment_no,
+            "asset_no": eq.asset_no,
             "submitted_count": len(submitted),
             "all_done": all_done,
         },
@@ -416,7 +416,7 @@ async def submit_inspection_photos(
             structured_content={
                 "success": False,
                 "task_no": task.task_no,
-                "equipment_no": eq.equipment_no,
+                "asset_no": eq.asset_no,
                 "photo_count": 0,
                 "failed_count": failed_count,
                 "failed_details": failed_details,
@@ -425,7 +425,7 @@ async def submit_inspection_photos(
         )
 
     parts = [
-        f"任务 {task.task_no} · 设备 {eq.equipment_no}（{eq.name}）",
+        f"任务 {task.task_no} · 设备 {eq.asset_no}（{eq.name}）",
         f"成功上传 {success_count} 张照片",
     ]
     if failed_count:
@@ -436,7 +436,7 @@ async def submit_inspection_photos(
         structured_content={
             "success": True,
             "task_no": task.task_no,
-            "equipment_no": eq.equipment_no,
+            "asset_no": eq.asset_no,
             "photo_count": success_count,
             "failed_count": failed_count,
             "failed_details": failed_details,
@@ -486,7 +486,7 @@ async def list_inspection_tasks(
         tasks = [t for t in tasks if t.status in ("待执行", "执行中")]
     result = [_it_to_dict(t) for t in tasks]
 
-    # 补充多设备任务的 equipment_name 和 equipment_no
+    # 补充多设备任务的 equipment_name 和 asset_no
     need_enrich: list[dict[str, Any]] = []
     all_eq_ids: set[uuid.UUID] = set()
     for r in result:
@@ -506,16 +506,16 @@ async def list_inspection_tasks(
                 if len(names) > 3:
                     r["equipment_name"] += f" 等{len(names)}台"
             if nos:
-                r["equipment_no"] = "、".join(n for n in nos[:3] if n)
+                r["asset_no"] = "、".join(n for n in nos[:3] if n)
                 if len(nos) > 3:
-                    r["equipment_no"] += f" 等{len(nos)}台"
+                    r["asset_no"] += f" 等{len(nos)}台"
 
     if not result:
         content = f"{user.name} 当前没有待处理的巡检任务。"
     else:
         lines = [f"{user.name} 共有 {len(result)} 个巡检任务："]
         for t in result:
-            eq_label = t["equipment_name"] or t.get("equipment_no", "") or f"{t['equipment_count']}台设备"
+            eq_label = t["equipment_name"] or t.get("asset_no", "") or f"{t['equipment_count']}台设备"
             route_label = f"路线「{t['route_name']}」" if t["route_name"] else ""
             lines.append(
                 f"- [{t['status']}] {t['task_no']} "
@@ -669,7 +669,7 @@ async def get_inspection_task_progress(
                     {
                         "equipment_id": str(eq.equipment_id),
                         "equipment_name": eq.equipment.name if eq.equipment else "",
-                        "equipment_no": eq.equipment.equipment_no if eq.equipment else "",
+                        "asset_no": eq.equipment.asset_no if eq.equipment else "",
                         "location_name": loc.location.name if loc.location else "",
                         "sort_order": eq.sort_order,
                     }
@@ -688,7 +688,7 @@ async def get_inspection_task_progress(
                 {
                     "equipment_id": eid_str,
                     "equipment_name": name_map.get(uuid.UUID(eid_str), ""),
-                    "equipment_no": no_map.get(uuid.UUID(eid_str), ""),
+                    "asset_no": no_map.get(uuid.UUID(eid_str), ""),
                     "location_name": "",
                     "sort_order": 0,
                 }
@@ -712,12 +712,12 @@ async def get_inspection_task_progress(
         lines.append("待检设备：")
         for eq in pending:  # type: ignore[assignment]
             loc = f"（{eq['location_name']}）" if eq.get("location_name") else ""  # type: ignore[assignment,attr-defined,index]  # type: ignore[assignment,attr-defined,index]
-            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
+            no = f" {eq['asset_no']}" if eq.get("asset_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
             lines.append(f"  - {eq['equipment_name']}{no}{loc}  [{eq['equipment_id']}]")  # type: ignore[index]
     if checked:
         lines.append("已检设备：")
         for eq in checked:  # type: ignore[assignment]
-            no = f" {eq['equipment_no']}" if eq.get("equipment_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
+            no = f" {eq['asset_no']}" if eq.get("asset_no") else ""  # type: ignore[attr-defined,index]  # type: ignore[attr-defined,index]
             lines.append(f"  - {eq['equipment_name']}{no}  [{eq['equipment_id']}]")  # type: ignore[index]
     content = "\n".join(lines)
 
@@ -798,10 +798,10 @@ async def get_inspection_check_items(
     ]
 
     if not item_dicts:
-        content = f"设备 {eq.equipment_no}（{eq.name}）没有配置检查项。请先在系统中为此设备绑定巡检模板。"
+        content = f"设备 {eq.asset_no}（{eq.name}）没有配置检查项。请先在系统中为此设备绑定巡检模板。"
     else:
         lines = [
-            f"设备 {eq.equipment_no}（{eq.name}）的检查项（共 {len(item_dicts)} 项）：",
+            f"设备 {eq.asset_no}（{eq.name}）的检查项（共 {len(item_dicts)} 项）：",
         ]
         for item in item_dicts:
             std = f"（标准：{item['expected_result']}）" if item["expected_result"] else ""
@@ -813,7 +813,7 @@ async def get_inspection_check_items(
         content=content,
         structured_content={
             "task_no": task.task_no,
-            "equipment_no": eq.equipment_no,
+            "asset_no": eq.asset_no,
             "items": item_dicts,
         },
     )

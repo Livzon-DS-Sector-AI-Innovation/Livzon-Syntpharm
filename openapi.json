@@ -84751,11 +84751,11 @@
             "title": "Name",
             "description": "\u8bbe\u5907\u540d\u79f0"
           },
-          "equipment_no": {
+          "asset_no": {
             "type": "string",
             "maxLength": 50,
             "minLength": 1,
-            "title": "Equipment No",
+            "title": "Asset No",
             "description": "\u8bbe\u5907\u7f16\u53f7\uff08\u624b\u52a8\u8f93\u5165\uff0c\u9700\u552f\u4e00\uff09"
           },
           "equipment_tag": {
@@ -85085,7 +85085,7 @@
         "type": "object",
         "required": [
           "name",
-          "equipment_no"
+          "asset_no"
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"

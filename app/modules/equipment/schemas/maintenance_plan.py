@@ -73,7 +73,7 @@ class MaintenancePlanResponse(BaseModel):
     created_by: uuid.UUID | None
     updated_by: uuid.UUID | None
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     category_name: str | None = None
 
     model_config = {"from_attributes": True}
