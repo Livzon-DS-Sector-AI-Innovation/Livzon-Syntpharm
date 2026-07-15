@@ -7,6 +7,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from .field_models import ChapterAssetUsage
 from .models import ChapterAsset, DossierChapter, DossierTemplate, ProductDossier
 
 
@@ -301,7 +302,7 @@ class DossierRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_available_assets_with_usage(self, chapter_id: UUID) -> list[dict]:
+    async def get_available_assets_with_usage(self, chapter_id: UUID) -> list[dict[str, Any]]:
         """获取章节的可用素材（自有 + 继承）及使用状态
 
         返回格式：

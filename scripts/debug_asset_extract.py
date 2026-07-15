@@ -6,7 +6,6 @@
 
 import asyncio
 import sys
-import os
 from pathlib import Path
 
 # 添加项目路径
@@ -16,9 +15,10 @@ sys.path.insert(0, "/app")
 async def debug_asset_extract(asset_id: str):
     """诊断单个素材文件的解析"""
     from sqlalchemy import select
+
     from app.core.database import async_session_factory
-    from app.modules.registration.dossier_writer.models import ChapterAsset
     from app.modules.registration.dossier_writer.asset_text_extractor import AssetTextExtractor
+    from app.modules.registration.dossier_writer.models import ChapterAsset
 
     print(f"\n{'=' * 80}")
     print(f"诊断素材文件: {asset_id}")
@@ -34,7 +34,7 @@ async def debug_asset_extract(asset_id: str):
             print(f"❌ 数据库中未找到素材: {asset_id}")
             return
 
-        print(f"✅ 数据库记录:")
+        print("✅ 数据库记录:")
         print(f"   - ID: {asset.id}")
         print(f"   - 文件名: {asset.original_filename}")
         print(f"   - 文件类型: {asset.file_type}")
@@ -54,39 +54,39 @@ async def debug_asset_extract(asset_id: str):
             return
 
         file_size = file_path.stat().st_size
-        print(f"\n✅ 文件存在:")
+        print("\n✅ 文件存在:")
         print(f"   - 实际大小: {file_size} bytes")
 
         # 4. 调用解析器
-        print(f"\n🔍 开始解析文件...")
+        print("\n🔍 开始解析文件...")
         extractor = AssetTextExtractor()
 
         try:
             result = extractor.extract(file_path)
 
-            print(f"\n✅ 解析结果:")
+            print("\n✅ 解析结果:")
             print(f"   - 成功: {result.get('success', False)}")
             print(f"   - 文本长度: {len(result.get('text', ''))} 字符")
             print(f"   - 段落数: {len(result.get('paragraphs', []))}")
             print(f"   - 表格数: {len(result.get('tables', []))}")
 
             if result.get("error"):
-                print(f"\n❌ 错误信息:")
+                print("\n❌ 错误信息:")
                 print(f"   {result.get('error')}")
 
             # 5. 输出文本预览
             text = result.get("text", "")
             if text:
                 preview = text[:500]
-                print(f"\n📄 文本预览 (前500字符):")
+                print("\n📄 文本预览 (前500字符):")
                 print(f"{'-' * 80}")
                 print(preview)
                 print(f"{'-' * 80}")
             else:
-                print(f"\n⚠️  未提取到文本内容")
+                print("\n⚠️  未提取到文本内容")
 
         except Exception as e:
-            print(f"\n❌ 解析异常:")
+            print("\n❌ 解析异常:")
             print(f"   - 异常类型: {type(e).__name__}")
             print(f"   - 异常信息: {str(e)}")
             import traceback

@@ -32,10 +32,10 @@ async def run_seed() -> None:
             return
 
         for cat_data in S6_ASSET_CATEGORIES:
-            session.add(AssetCategory(**cat_data))
+            session.add(AssetCategory(**cat_data))  # type: ignore[arg-type]
 
         for fm_data in S6_FIELD_MAPPINGS:
-            session.add(FieldMapping(**fm_data))
+            session.add(FieldMapping(**fm_data))  # type: ignore[arg-type]
 
         await session.commit()
         logger.info(

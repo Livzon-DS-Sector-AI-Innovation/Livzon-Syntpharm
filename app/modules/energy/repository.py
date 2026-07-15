@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
@@ -442,7 +442,7 @@ async def get_collect_log_detail(
     result = await db.execute(query)
     rows = list(result.all())
 
-    return log, rows
+    return log, rows  # type: ignore[return-value]
 
 
 # ── 预警规则 ──

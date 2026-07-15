@@ -554,7 +554,7 @@ async def skip_equipment_check(
             "actual_value": "",
             "remark": reason or "现场无法检查",
         }
-        for item in items
+        for item in items  # type: ignore[attr-defined]
     ]
 
     # 先软删除已有记录，再创建新记录

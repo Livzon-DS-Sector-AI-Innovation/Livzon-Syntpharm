@@ -24,7 +24,7 @@ async def maintenance_plan_loop() -> None:
     减少并发数据库连接压力。
     """
     settings = get_settings()
-    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:
+    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
@@ -68,7 +68,7 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:
+        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 
@@ -110,7 +110,7 @@ async def scan_timeout_work_orders() -> None:
     from app.platform.integrations.feishu.message import send_timeout_notification
 
     settings = get_settings()
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
+    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
     if not dept_id:
         return
 

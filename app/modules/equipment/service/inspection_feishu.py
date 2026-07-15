@@ -856,7 +856,7 @@ async def _cmd_modify(open_id: str, session: dict[str, Any], user_text: str) -> 
         return
 
     # 使用 AI 解析修改
-    from app.modules.equipment.service.ai.client import AIAnalysisError, QwenClient
+    from app.modules.equipment.service.ai.client import AIAnalysisError, QwenClient  # type: ignore[attr-defined]
     from app.modules.equipment.service.ai.prompts import (
         CORRECTION_SYSTEM_PROMPT,
         build_correction_user_prompt,

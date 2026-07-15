@@ -36,7 +36,7 @@ class SpreadsheetClient:
             timeout=30.0,
         )
         value_range = data.get("valueRange", {})
-        return value_range.get("values", [])
+        return value_range.get("values", [])  # type: ignore[no-any-return]
 
     async def read_sheet(
         self,
@@ -56,4 +56,4 @@ class SpreadsheetClient:
             f"/sheets/v3/spreadsheets/{spreadsheet_token}/sheets/query",
             timeout=15.0,
         )
-        return data.get("sheets", [])
+        return data.get("sheets", [])  # type: ignore[no-any-return]

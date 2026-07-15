@@ -74,13 +74,13 @@ class AssetTextExtractor:
                     }
                 )
 
-            full_text = "\n".join(p["text"] for p in paragraphs)
+            full_text = "\n".join(str(p["text"]) for p in paragraphs)
             return {"text": full_text, "paragraphs": paragraphs, "tables": tables}
         except Exception as e:
             return {"text": "", "error": f"docx 提取失败: {str(e)}"}
 
     @staticmethod
-    def _ensure_ocr_service(timeout: int = 180):
+    def _ensure_ocr_service(timeout: int = 180) -> Any:
         """确保 OCR 服务已初始化，如未初始化则尝试自动初始化一次
 
         Args:
@@ -108,12 +108,12 @@ class AssetTextExtractor:
         init_result = [None]
         init_exception = [None]
 
-        def init_worker():
+        def init_worker() -> None:
             try:
                 ocr_module.init_ocr()
-                init_result[0] = ocr_module._ocr_service
+                init_result[0] = ocr_module._ocr_service  # type: ignore[assignment]
             except Exception as e:
-                init_exception[0] = e
+                init_exception[0] = e  # type: ignore[call-overload]
 
         # 在独立线程中初始化
         init_thread = threading.Thread(target=init_worker)
@@ -159,7 +159,7 @@ class AssetTextExtractor:
                     text = page.extract_text() or ""
                     page_texts.append({"page": i + 1, "text": text.strip()})
 
-                full_text = "\n\n".join(p["text"] for p in page_texts)
+                full_text = "\n\n".join(str(p["text"]) for p in page_texts)
                 if full_text.strip():
                     return {
                         "text": full_text,
@@ -186,12 +186,12 @@ class AssetTextExtractor:
 
             ocr_result = {"markdown": None, "structure": None, "error": None}
 
-            def ocr_worker():
+            def ocr_worker() -> None:
                 try:
                     ocr_result["markdown"] = ocr_service.extract_markdown(file_path)
                     ocr_result["structure"] = ocr_service.extract_structure(file_path)
                 except Exception as e:
-                    ocr_result["error"] = str(e)
+                    ocr_result["error"] = str(e)  # type: ignore[assignment]
 
             worker_thread = threading.Thread(target=ocr_worker, daemon=True)
             worker_thread.start()
@@ -271,7 +271,7 @@ class AssetTextExtractor:
     def _extract_xls(file_path: Path) -> dict[str, Any]:
         """从 xls 提取表格数据"""
         try:
-            import pandas as pd
+            import pandas as pd  # type: ignore[import-untyped]
 
             excel_file = pd.ExcelFile(str(file_path), engine="xlrd")
             tables = []

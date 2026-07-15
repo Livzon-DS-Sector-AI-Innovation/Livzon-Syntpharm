@@ -792,9 +792,9 @@ async def get_inspection_check_items(
             "item_name": item.item_name,
             "expected_result": item.expected_result or "",
             "sort_order": item.sort_order,
-            "template_name": tpl_names.get(item.id, ""),
+            "template_name": tpl_names.get(item.id, ""),  # type: ignore[attr-defined]
         }
-        for item in items
+        for item in items  # type: ignore[attr-defined]
     ]
 
     if not item_dicts:
@@ -806,7 +806,7 @@ async def get_inspection_check_items(
         for item in item_dicts:
             std = f"（标准：{item['expected_result']}）" if item["expected_result"] else ""
             tpl = f" [{item['template_name']}]" if item["template_name"] else ""
-            lines.append(f"{item['sort_order'] + 1}. {item['item_name']}{std}{tpl}")  # type: ignore[operator]
+            lines.append(f"{item['sort_order'] + 1}. {item['item_name']}{std}{tpl}")
         content = "\n".join(lines)
 
     return ToolResult(

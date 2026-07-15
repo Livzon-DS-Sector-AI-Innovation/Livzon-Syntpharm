@@ -5,13 +5,10 @@ NMPA 搜索结果页面爬取测试
 策略: 监听页面网络请求 + 页面 DOM 解析
 """
 
-import os
-import sys
 import json
+import os
 import time
-import threading
 from datetime import datetime
-from urllib.parse import urlparse, parse_qs, urlencode
 
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright-browsers"
 
@@ -205,7 +202,7 @@ def main():
         'input[type="text"], input[name*="keyword"], input[name*="search"], input.search-input, #keyword, .search-txt input'
     )
     if search_input:
-        print(f"   ✅ 找到搜索框")
+        print("   ✅ 找到搜索框")
         search_input.fill(keyword)
         time.sleep(1)
 
@@ -214,10 +211,10 @@ def main():
             'button[type="submit"], .search-btn, input[type="submit"], button:has-text("搜索"), button:has-text("查询"), .search-button'
         )
         if search_btn:
-            print(f"   ✅ 找到搜索按钮，点击...")
+            print("   ✅ 找到搜索按钮，点击...")
             search_btn.click()
         else:
-            print(f"   ⚠️  未找到搜索按钮，尝试回车...")
+            print("   ⚠️  未找到搜索按钮，尝试回车...")
             search_input.press("Enter")
 
         time.sleep(3)
@@ -231,7 +228,7 @@ def main():
         print(f"   搜索后URL: {page.url}")
         _screenshot(page, "02_after_search")
     else:
-        print(f"   ⚠️  未找到搜索输入框，尝试直接带参数访问...")
+        print("   ⚠️  未找到搜索输入框，尝试直接带参数访问...")
         # 尝试直接带参数访问
         param_urls = [
             f"https://www.nmpa.gov.cn/datasearch/search-result.html?keyword={keyword}",
@@ -340,7 +337,7 @@ def main():
     # ── 保存结果 ──
     _save(results)
     print(f"\n{'=' * 70}")
-    print(f"✅ 测试完成，结果已保存到 nmpa_search_test_result.json")
+    print("✅ 测试完成，结果已保存到 nmpa_search_test_result.json")
     print(f"{'=' * 70}")
 
     context.close()

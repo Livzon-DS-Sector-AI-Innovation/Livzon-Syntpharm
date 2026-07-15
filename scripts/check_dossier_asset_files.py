@@ -31,6 +31,7 @@ if "DATABASE_URL" in os.environ:
     os.environ["APP_DATABASE_URL"] = os.environ["DATABASE_URL"]
 
 from sqlalchemy import text
+
 from app.core.database import engine
 
 

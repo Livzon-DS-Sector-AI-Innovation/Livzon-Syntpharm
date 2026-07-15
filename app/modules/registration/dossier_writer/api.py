@@ -1,9 +1,10 @@
 """Dossier Writer API endpoints."""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +36,7 @@ async def create_product_dossier(
     current_user: CurrentUser,
     data: ProductDossierCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """创建品种资料"""
     service = DossierService(db)
     try:
@@ -51,7 +52,7 @@ async def list_product_dossiers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取品种资料列表"""
     service = DossierService(db)
     items, total = await service.list_product_dossiers(skip, limit)
@@ -71,7 +72,7 @@ async def get_product_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取品种资料详情"""
     service = DossierService(db)
     dossier = await service.get_product_dossier(dossier_id)
@@ -86,7 +87,7 @@ async def update_product_dossier(
     dossier_id: UUID,
     data: ProductDossierUpdate,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """更新品种资料"""
     service = DossierService(db)
     dossier = await service.update_product_dossier(dossier_id, data)
@@ -100,7 +101,7 @@ async def delete_product_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """删除品种资料"""
     service = DossierService(db)
     success = await service.delete_product_dossier(dossier_id)
@@ -118,7 +119,7 @@ async def upload_templates(
     dossier_id: UUID,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """批量上传模板文件"""
     service = DossierService(db)
 
@@ -152,7 +153,7 @@ async def upload_templates(
                     "file_id": str(template.id),
                     "filename": template.original_filename,
                     "file_path": template.file_path,
-                    "file_size": template.file_size,
+                    "file_size": str(template.file_size) if template.file_size else None,
                     "status": "success",
                 }
             )
@@ -193,7 +194,7 @@ async def parse_templates(
     current_user: CurrentUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """解析模板生成章节树"""
     service = DossierService(db)
     result = await service.parse_templates(dossier_id)
@@ -212,7 +213,7 @@ async def get_chapter_tree(
     current_user: CurrentUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节树"""
     service = DossierService(db)
     chapters = await service.get_chapter_tree(dossier_id)
@@ -224,7 +225,7 @@ async def get_chapter_detail(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节详情"""
     service = DossierService(db)
     chapter = await service.get_chapter_detail(chapter_id)
@@ -242,7 +243,7 @@ async def upload_asset(
     chapter_id: UUID,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """批量上传章节素材"""
     service = DossierService(db)
 
@@ -278,7 +279,7 @@ async def list_assets(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节自有素材列表（不含继承素材）
 
     如需获取包含继承素材的完整列表，请使用 /available-assets 接口。
@@ -293,7 +294,7 @@ async def delete_asset(
     current_user: CurrentUser,
     asset_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """删除素材"""
     service = DossierService(db)
     success = await service.delete_asset(asset_id)
@@ -306,9 +307,9 @@ async def delete_asset(
 async def update_asset_category(
     current_user: CurrentUser,
     asset_id: UUID,
-    body: dict,
+    body: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
@@ -338,7 +339,7 @@ async def export_dossier(
     dossier_id: UUID,
     data: ExportRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """导出品种资料"""
     service = DossierService(db)
     result = await service.export_dossier(dossier_id, data.chapter_ids)
@@ -355,7 +356,7 @@ async def download_exported_file(
     dossier_id: UUID,
     filename: str = Query(..., description="文件名"),
     db: AsyncSession = Depends(get_db),
-):
+) -> FileResponse:
     """下载导出的文件"""
     service = DossierService(db)
     dossier = await service.repo.get_product_dossier(dossier_id)
@@ -364,7 +365,7 @@ async def download_exported_file(
 
     from pathlib import Path
 
-    file_path = Path(dossier.outputs_path) / filename
+    file_path = Path(dossier.outputs_path or "") / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
@@ -380,7 +381,7 @@ async def get_chapter_preview(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节预览内容"""
     service = DossierService(db)
     result = await service.get_chapter_preview(chapter_id)
@@ -396,7 +397,7 @@ async def get_chapter_docx_file(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> FileResponse:
     """获取章节的 docx 工作副本文件，用于前端 docx-preview 渲染"""
     from pathlib import Path
 
@@ -411,7 +412,7 @@ async def get_chapter_docx_file(
     if not chapter.working_file:
         raise HTTPException(status_code=404, detail="该章节尚无工作副本文件")
 
-    file_path = Path(dossier.working_path) / chapter.working_file
+    file_path = Path(dossier.working_path or "") / chapter.working_file
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="工作副本文件不存在")
 
@@ -428,7 +429,7 @@ async def match_assets_to_chapters(
     current_user: CurrentUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """智能匹配素材到章节"""
     service = DossierService(db)
     result = await service.match_assets_to_chapters(dossier_id)
@@ -441,7 +442,7 @@ async def match_assets_to_chapters(
 
 # ====== Field Mapping ======
 
-from .field_fill_service import FieldFillService
+from .field_fill_service import FieldFillService  # noqa: E402
 
 # from .field_mapping_config import S6_FIELD_MAPPINGS  # 已废弃
 
@@ -451,7 +452,7 @@ async def fill_chapter_fields(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """执行字段填充 - 从素材提取内容并填充到章节"""
     service = DossierService(db)
     fill_service = FieldFillService(db)
@@ -469,8 +470,13 @@ async def fill_chapter_fields(
     # 获取章节素材
     assets = await service.list_chapter_assets(chapter_id)
 
+    # 获取章节模型用于填充
+    ch_model = await db.get(DossierChapter, chapter_id)
+    if not ch_model:
+        raise HTTPException(status_code=404, detail="章节不存在")
+
     # 执行填充
-    result = await fill_service.fill_chapter_fields(dossier, chapter, assets)
+    result = await fill_service.fill_chapter_fields(dossier, ch_model, assets)
 
     return success_response(data=result, message=result["message"])
 
@@ -480,7 +486,7 @@ async def get_field_mappings(
     current_user: CurrentUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节的字段映射配置"""
     fill_service = FieldFillService(db)
     mappings = await fill_service.get_field_mappings(chapter_code)
@@ -511,7 +517,7 @@ async def get_field_mappings(
 async def init_s6_field_mappings(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """初始化 S.6 包装系统的字段映射配置（从数据库 seed 数据）"""
     from .service import DossierService
 
@@ -524,7 +530,7 @@ async def init_s6_field_mappings(
 async def init_s7_field_mappings(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """初始化 S.7 稳定性模块的字段映射配置（从 seed_data_s7.py）
 
     初始化 S.7.1、S.7.2、S.7.3 三个子章节的：
@@ -555,7 +561,7 @@ async def get_fill_results(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节的填充结果"""
 
     stmt = (
@@ -594,22 +600,22 @@ async def ai_preview_extraction(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """AI 智能解析预览：提取素材中的字段值（不写入文档）"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
 
     # 获取章节和品种信息
-    stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
-    result = await db.execute(stmt)
-    chapter = result.scalar_one_or_none()
+    ch_stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
+    ch_result = await db.execute(ch_stmt)
+    chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
         return error_response(message="章节不存在", status_code=404)
 
-    stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
-    result = await db.execute(stmt)
-    dossier = result.scalar_one_or_none()
+    pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
+    pd_result = await db.execute(pd_stmt)
+    dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
         return error_response(message="品种资料不存在", status_code=404)
@@ -637,24 +643,24 @@ async def ai_preview_extraction(
 async def ai_confirm_and_fill(
     current_user: CurrentUser,
     chapter_id: UUID,
-    data: dict,
+    data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
 
     # 获取章节和品种信息
-    stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
-    result = await db.execute(stmt)
-    chapter = result.scalar_one_or_none()
+    ch_stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
+    ch_result = await db.execute(ch_stmt)
+    chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
         return error_response(message="章节不存在", status_code=404)
 
-    stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
-    result = await db.execute(stmt)
-    dossier = result.scalar_one_or_none()
+    pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
+    pd_result = await db.execute(pd_stmt)
+    dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
         return error_response(message="品种资料不存在", status_code=404)
@@ -672,7 +678,7 @@ async def get_asset_categories(
     current_user: CurrentUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节的素材分类列表"""
     from .ai_fill_service import AIFillService
 
@@ -686,16 +692,16 @@ async def get_asset_categories(
 async def split_preview(
     current_user: CurrentUser,
     asset_id: UUID,
-    data: dict,
+    data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
 
     stmt = select(ChapterAsset).where(ChapterAsset.id == asset_id)
-    result = await db.execute(stmt)
-    asset = result.scalar_one_or_none()
+    db_result = await db.execute(stmt)
+    asset = db_result.scalar_one_or_none()
 
     if not asset:
         return error_response(message="素材不存在", status_code=404)
@@ -715,23 +721,23 @@ async def split_preview(
 async def split_confirm_and_insert(
     current_user: CurrentUser,
     chapter_id: UUID,
-    data: dict,
+    data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
 
-    stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
-    result = await db.execute(stmt)
-    chapter = result.scalar_one_or_none()
+    ch_stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
+    ch_result = await db.execute(ch_stmt)
+    chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
         return error_response(message="章节不存在", status_code=404)
 
-    stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
-    result = await db.execute(stmt)
-    dossier = result.scalar_one_or_none()
+    pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
+    pd_result = await db.execute(pd_stmt)
+    dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
         return error_response(message="品种资料不存在", status_code=404)
@@ -752,7 +758,7 @@ async def get_appendix_slots(
     current_user: CurrentUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节的所有附录位置（从 FieldMapping 汇总）"""
     from sqlalchemy import and_, select
 
@@ -778,7 +784,7 @@ async def list_available_assets(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节的可用素材列表（自有 + 继承自父级）及使用状态
 
     返回每个素材的：
@@ -817,9 +823,9 @@ async def toggle_asset_usage(
     current_user: CurrentUser,
     chapter_id: UUID,
     asset_id: UUID,
-    body: dict,
+    body: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
@@ -841,7 +847,7 @@ async def list_selected_assets(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     """获取章节已选择使用的素材列表（is_selected=true）
 
     用于章节更新、AI 填充等操作前查看将要使用的素材。
