@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -19,18 +20,16 @@ from app.modules.safety.feishu.client import (
 logger = logging.getLogger(__name__)
 
 
-def _json_dumps(obj) -> str:
+def _json_dumps(obj) -> Any:  # type: ignore[no-untyped-def]
     """JSON 序列化，自动将 UUID 转为字符串。"""
-    return json.dumps(
-        obj, ensure_ascii=False, default=lambda o: str(o) if isinstance(o, UUID) else o
-    )
+    return json.dumps(obj, ensure_ascii=False, default=lambda o: str(o) if isinstance(o, UUID) else o)
 
 
 async def send_user_card(
     open_id: str,
     title: str,
     content: str,
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
     id_type: str = "open_id",
 ) -> bool:
     """使用安全模块飞书应用发送卡片消息给单个用户（DM）。
@@ -66,7 +65,7 @@ async def send_user_card(
             ],
         }
         if elements:
-            card["elements"].extend(elements)
+            card["elements"].extend(elements)  # type: ignore[attr-defined]
 
         card_json = _json_dumps(card)
 
@@ -99,7 +98,7 @@ async def send_user_card(
         return False
 
 
-async def update_card(message_id: str, card: dict) -> bool:
+async def update_card(message_id: str, card: dict[str, Any]) -> bool:
     """更新已发送的卡片消息（PATCH）。
 
     Args:
@@ -148,7 +147,7 @@ async def send_group_card(
     chat_id: str,
     title: str,
     content: str,
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
     header_template: str = "orange",
 ) -> str | None:
     """使用安全模块飞书应用发送卡片消息到群聊。
@@ -183,7 +182,7 @@ async def send_group_card(
             ],
         }
         if elements:
-            card["elements"].extend(elements)
+            card["elements"].extend(elements)  # type: ignore[attr-defined]
 
         card_json = _json_dumps(card)
 
@@ -210,9 +209,7 @@ async def send_group_card(
             )
             return None
         message_id = resp.data.message_id if resp.data else None
-        logger.info(
-            "安全模块群卡片已发送: chat_id=%s, message_id=%s", chat_id, message_id
-        )
+        logger.info("安全模块群卡片已发送: chat_id=%s, message_id=%s", chat_id, message_id)
         return message_id
     except Exception:
         logger.exception("安全模块 send_group_card 异常")
@@ -223,7 +220,7 @@ async def build_card(
     title: str,
     content: str,
     header_template: str = "orange",
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
 ) -> str:
     """构建飞书卡片 JSON 字符串。
 
@@ -247,8 +244,8 @@ async def build_card(
         ],
     }
     if elements:
-        card["elements"].extend(elements)
-    return _json_dumps(card)
+        card["elements"].extend(elements)  # type: ignore[attr-defined]
+    return _json_dumps(card)  # type: ignore[no-any-return]
 
 
 def _resolve_local_image_path(file_path: str) -> str | None:
@@ -314,9 +311,7 @@ async def upload_image_to_feishu(file_path: str) -> str | None:
     else:
         abs_path = _resolve_local_image_path(file_path)
         if not abs_path:
-            logger.warning(
-                "图片文件不存在，跳过上传: %s (checked multiple variants)", file_path
-            )
+            logger.warning("图片文件不存在，跳过上传: %s (checked multiple variants)", file_path)
             return None
         with open(abs_path, "rb") as f:
             image_data = f.read()
@@ -342,7 +337,7 @@ async def upload_image_to_feishu(file_path: str) -> str | None:
                     image_key = data.get("data", {}).get("image_key", "")
                     if image_key:
                         logger.info("图片上传飞书成功: %s → %s", file_path, image_key)
-                        return image_key
+                        return image_key  # type: ignore[no-any-return]
                 logger.error("上传图片到飞书失败: %s", data)
             else:
                 logger.error("上传图片到飞书 HTTP错误: %s", resp.status_code)

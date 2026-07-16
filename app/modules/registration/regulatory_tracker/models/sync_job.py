@@ -26,23 +26,15 @@ class SyncJob(BaseModel):
         ForeignKey("regulatory_tracker.data_channels.id", ondelete="CASCADE"),
         nullable=False,
     )
-    job_type: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="backfill/daily_sync/manual_sync/test"
-    )
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    finished_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    job_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="backfill/daily_sync/manual_sync/test")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         comment="pending/running/success/partial_failed/failed",
     )
-    total_pages: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="总页数"
-    )
+    total_pages: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="总页数")
     checked_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     new_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     updated_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
@@ -51,6 +43,4 @@ class SyncJob(BaseModel):
     # Relationships
     source = relationship("DataSource", back_populates="sync_jobs")
     channel = relationship("DataChannel", back_populates="sync_jobs")
-    pages = relationship(
-        "SyncJobPage", back_populates="sync_job", cascade="all, delete-orphan"
-    )
+    pages = relationship("SyncJobPage", back_populates="sync_job", cascade="all, delete-orphan")

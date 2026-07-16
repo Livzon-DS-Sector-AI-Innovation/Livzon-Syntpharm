@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Tests verifying authentication enforcement on protected vs public endpoints.
 
 Uses ``anonymous_client`` (no user) to confirm that:
@@ -11,7 +12,7 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_health_is_public(anonymous_client: AsyncClient) -> None:
     """/health must be reachable without authentication."""
     response = await anonymous_client.get("/health")
@@ -19,7 +20,7 @@ async def test_health_is_public(anonymous_client: AsyncClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_system_modules_requires_login(anonymous_client: AsyncClient) -> None:
     """/api/v1/system/modules should require authentication."""
     response = await anonymous_client.get("/api/v1/system/modules")
@@ -28,7 +29,7 @@ async def test_system_modules_requires_login(anonymous_client: AsyncClient) -> N
     assert response.status_code in (200, 401)
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_equipment_categories_requires_login(
     anonymous_client: AsyncClient,
 ) -> None:
@@ -39,7 +40,7 @@ async def test_equipment_categories_requires_login(
     assert response.status_code in (200, 401)
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_energy_devices_requires_login(
     anonymous_client: AsyncClient,
 ) -> None:

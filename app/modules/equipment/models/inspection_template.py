@@ -21,9 +21,7 @@ class InspectionTemplate(BaseModel):
     __table_args__ = ({"schema": "equipment"},)
 
     name: Mapped[str] = mapped_column(String(200), comment="模板名称")
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="模板描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述")
     equipment_category_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.equipment_categories.id"),
         nullable=True,
@@ -56,18 +54,10 @@ class InspectionTemplateItem(BaseModel):
         comment="模板ID",
     )
     item_name: Mapped[str] = mapped_column(String(200), comment="检查项名称")
-    item_description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="检查项说明"
-    )
-    expected_result: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="预期结果/标准值"
-    )
-    check_method: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="检查方法"
-    )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, default=0, server_default="0", comment="排序序号"
-    )
+    item_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="检查项说明")
+    expected_result: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="预期结果/标准值")
+    check_method: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="检查方法")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0", comment="排序序号")
 
     # 关系
     template: Mapped[InspectionTemplate] = relationship(
@@ -101,12 +91,8 @@ class InspectionRecord(BaseModel):
         comment="检查项ID",
     )
     result: Mapped[str] = mapped_column(String(20), comment="结果：正常/异常/跳过")
-    actual_value: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="实际值"
-    )
+    actual_value: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="实际值")
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
     # 关系
-    template_item: Mapped[InspectionTemplateItem] = relationship(
-        "InspectionTemplateItem"
-    )
+    template_item: Mapped[InspectionTemplateItem] = relationship("InspectionTemplateItem")

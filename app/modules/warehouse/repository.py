@@ -1,8 +1,9 @@
 """Warehouse database queries live here."""
 
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import asc, func, or_, select, update
+from sqlalchemy import Float, asc, case, cast, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.warehouse.models import (
@@ -19,6 +20,47 @@ from app.modules.warehouse.models import (
 class WarehouseRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    @staticmethod
+    def _json_scalar_text(json_value) -> Any:  # type: ignore[no-untyped-def]
+        json_type = func.jsonb_typeof(json_value)
+        return case(
+            (json_type.in_(("string", "number", "boolean")), json_value.astext),
+            else_=None,
+        )
+
+    @classmethod
+    def _feishu_field_display_text(cls, field: str) -> Any:
+        field_value = WarehouseFeishuRecord.fields[field]
+        first_item = field_value[0]
+        nested_value = field_value["value"]
+        nested_value_first_item = nested_value[0]
+
+        return func.coalesce(
+            cls._json_scalar_text(field_value),
+            field_value["text"].astext,
+            field_value["name"].astext,
+            field_value["title"].astext,
+            field_value["display_name"].astext,
+            field_value["number"].astext,
+            field_value["amount"].astext,
+            cls._json_scalar_text(nested_value),
+            nested_value["text"].astext,
+            nested_value["name"].astext,
+            nested_value["number"].astext,
+            nested_value["amount"].astext,
+            cls._json_scalar_text(first_item),
+            first_item["text"].astext,
+            first_item["name"].astext,
+            first_item["number"].astext,
+            first_item["amount"].astext,
+            cls._json_scalar_text(nested_value_first_item),
+            nested_value_first_item["text"].astext,
+            nested_value_first_item["name"].astext,
+            nested_value_first_item["number"].astext,
+            nested_value_first_item["amount"].astext,
+            field_value.astext,
+        )
 
     async def list_raw_materials(self) -> list[RawMaterialInventory]:
         result = await self.session.execute(
@@ -55,44 +97,28 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def get_raw_material_by_import_key(
-        self, import_key: str
-    ) -> RawMaterialInventory | None:
+    async def get_raw_material_by_import_key(self, import_key: str) -> RawMaterialInventory | None:
         result = await self.session.execute(
-            select(RawMaterialInventory).where(
-                RawMaterialInventory.import_key == import_key
-            )
+            select(RawMaterialInventory).where(RawMaterialInventory.import_key == import_key)
         )
         return result.scalar_one_or_none()
 
-    async def get_packaging_material_by_import_key(
-        self, import_key: str
-    ) -> PackagingMaterialInventory | None:
+    async def get_packaging_material_by_import_key(self, import_key: str) -> PackagingMaterialInventory | None:
         result = await self.session.execute(
-            select(PackagingMaterialInventory).where(
-                PackagingMaterialInventory.import_key == import_key
-            )
+            select(PackagingMaterialInventory).where(PackagingMaterialInventory.import_key == import_key)
         )
         return result.scalar_one_or_none()
 
-    async def get_product_by_import_key(
-        self, import_key: str
-    ) -> ProductInventory | None:
-        result = await self.session.execute(
-            select(ProductInventory).where(ProductInventory.import_key == import_key)
-        )
+    async def get_product_by_import_key(self, import_key: str) -> ProductInventory | None:
+        result = await self.session.execute(select(ProductInventory).where(ProductInventory.import_key == import_key))
         return result.scalar_one_or_none()
 
-    async def create_raw_material(
-        self, item: RawMaterialInventory
-    ) -> RawMaterialInventory:
+    async def create_raw_material(self, item: RawMaterialInventory) -> RawMaterialInventory:
         self.session.add(item)
         await self.session.flush()
         return item
 
-    async def create_packaging_material(
-        self, item: PackagingMaterialInventory
-    ) -> PackagingMaterialInventory:
+    async def create_packaging_material(self, item: PackagingMaterialInventory) -> PackagingMaterialInventory:
         self.session.add(item)
         await self.session.flush()
         return item
@@ -123,9 +149,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def save_feishu_config(
-        self, config: WarehouseFeishuConfig
-    ) -> WarehouseFeishuConfig:
+    async def save_feishu_config(self, config: WarehouseFeishuConfig) -> WarehouseFeishuConfig:
         self.session.add(config)
         await self.session.flush()
         return config
@@ -175,9 +199,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_feishu_table_by_id(
-        self, table_pk: UUID
-    ) -> WarehouseFeishuTable | None:
+    async def get_feishu_table_by_id(self, table_pk: UUID) -> WarehouseFeishuTable | None:
         result = await self.session.execute(
             select(WarehouseFeishuTable).where(
                 WarehouseFeishuTable.is_deleted.is_(False),
@@ -186,9 +208,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_enabled_feishu_table(
-        self, app_token: str, table_id: str
-    ) -> WarehouseFeishuTable | None:
+    async def get_enabled_feishu_table(self, app_token: str, table_id: str) -> WarehouseFeishuTable | None:
         result = await self.session.execute(
             select(WarehouseFeishuTable).where(
                 WarehouseFeishuTable.is_deleted.is_(False),
@@ -213,9 +233,7 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def save_feishu_table(
-        self, table: WarehouseFeishuTable
-    ) -> WarehouseFeishuTable:
+    async def save_feishu_table(self, table: WarehouseFeishuTable) -> WarehouseFeishuTable:
         self.session.add(table)
         await self.session.flush()
         return table
@@ -252,9 +270,7 @@ class WarehouseRepository:
         )
         return list(result.scalars().all())
 
-    async def save_feishu_field(
-        self, field: WarehouseFeishuField
-    ) -> WarehouseFeishuField:
+    async def save_feishu_field(self, field: WarehouseFeishuField) -> WarehouseFeishuField:
         self.session.add(field)
         await self.session.flush()
         return field
@@ -272,9 +288,7 @@ class WarehouseRepository:
         )
         return result.scalar_one_or_none()
 
-    async def save_feishu_record(
-        self, record: WarehouseFeishuRecord
-    ) -> WarehouseFeishuRecord:
+    async def save_feishu_record(self, record: WarehouseFeishuRecord) -> WarehouseFeishuRecord:
         self.session.add(record)
         await self.session.flush()
         return record
@@ -308,6 +322,8 @@ class WarehouseRepository:
         table_id: str,
         keyword: str | None,
         field: str | None,
+        field_operator: str | None,
+        field_value: str | None,
         page: int,
         page_size: int,
     ) -> tuple[list[WarehouseFeishuRecord], int]:
@@ -320,11 +336,34 @@ class WarehouseRepository:
         if keyword:
             pattern = f"%{keyword.strip()}%"
             if field:
-                conditions.append(
-                    WarehouseFeishuRecord.fields[field].astext.ilike(pattern)
-                )
+                conditions.append(self._feishu_field_display_text(field).ilike(pattern))
             else:
                 conditions.append(WarehouseFeishuRecord.search_text.ilike(pattern))
+        if field and field_operator and field_value is not None:
+            field_text = self._feishu_field_display_text(field)
+            normalized_value = field_value.strip()
+
+            if field_operator == "contains":
+                conditions.append(field_text.ilike(f"%{normalized_value}%"))
+            elif field_operator == "eq":
+                conditions.append(field_text == normalized_value)
+            elif field_operator == "ne":
+                conditions.append(field_text != normalized_value)
+            elif field_operator in {"gt", "gte", "lt", "lte"}:
+                numeric_pattern = r"^\s*-?\d+(\.\d+)?\s*$"
+                field_number = case(
+                    (field_text.op("~")(numeric_pattern), cast(field_text, Float)),
+                    else_=None,
+                )
+                compare_value = float(normalized_value)
+                if field_operator == "gt":
+                    conditions.append(field_number > compare_value)
+                elif field_operator == "gte":
+                    conditions.append(field_number >= compare_value)
+                elif field_operator == "lt":
+                    conditions.append(field_number < compare_value)
+                else:
+                    conditions.append(field_number <= compare_value)
 
         total_result = await self.session.execute(
             select(func.count()).select_from(WarehouseFeishuRecord).where(*conditions)

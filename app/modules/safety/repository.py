@@ -56,9 +56,7 @@ class SafetyRepository:
         if department:
             query = query.where(SafetyCheck.department == department)
 
-        count_query = select(func.count(SafetyCheck.id)).where(
-            not SafetyCheck.is_deleted
-        )
+        count_query = select(func.count(SafetyCheck.id)).where(~SafetyCheck.is_deleted)
         if status:
             count_query = count_query.where(SafetyCheck.status == status)
         if check_type:
@@ -77,7 +75,7 @@ class SafetyRepository:
         query = (
             select(SafetyCheck)
             .options(selectinload(SafetyCheck.hazards))
-            .where(SafetyCheck.id == check_id, not SafetyCheck.is_deleted)
+            .where(SafetyCheck.id == check_id, ~SafetyCheck.is_deleted)
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -91,13 +89,11 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_check(
-        self, check_id: uuid.UUID, data: dict[str, Any]
-    ) -> SafetyCheck | None:
+    async def update_check(self, check_id: uuid.UUID, data: dict[str, Any]) -> SafetyCheck | None:
         """更新安全检查"""
         query = (
             update(SafetyCheck)
-            .where(SafetyCheck.id == check_id, not SafetyCheck.is_deleted)
+            .where(SafetyCheck.id == check_id, ~SafetyCheck.is_deleted)
             .values(**data, updated_at=func.now())
             .returning(SafetyCheck)
         )
@@ -106,13 +102,9 @@ class SafetyRepository:
 
     async def delete_check(self, check_id: uuid.UUID) -> bool:
         """删除安全检查（软删除）"""
-        query = (
-            update(SafetyCheck)
-            .where(SafetyCheck.id == check_id, not SafetyCheck.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(SafetyCheck).where(SafetyCheck.id == check_id, ~SafetyCheck.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== HazardReport Operations ====================
 
@@ -135,9 +127,7 @@ class SafetyRepository:
         if status:
             query = query.where(HazardReport.status == status)
         if rectification_status:
-            query = query.where(
-                HazardReport.rectification_status == rectification_status
-            )
+            query = query.where(HazardReport.rectification_status == rectification_status)
         if hazard_type:
             query = query.where(HazardReport.hazard_type == hazard_type)
         if hazard_level:
@@ -145,47 +135,31 @@ class SafetyRepository:
         if hazard_category:
             query = query.where(HazardReport.hazard_category == hazard_category)
         if inspection_category:
-            query = query.where(
-                HazardReport.inspection_category.contains(inspection_category)
-            )
+            query = query.where(HazardReport.inspection_category.contains(inspection_category))
         if department:
             query = query.where(HazardReport.department == department)
         if keyword:
             like = f"%{keyword}%"
-            query = query.where(
-                HazardReport.description.ilike(like)
-                | HazardReport.hazard_no.ilike(like)
-            )
+            query = query.where(HazardReport.description.ilike(like) | HazardReport.hazard_no.ilike(like))
 
-        count_query = select(func.count(HazardReport.id)).where(
-            not HazardReport.is_deleted
-        )
+        count_query = select(func.count(HazardReport.id)).where(~HazardReport.is_deleted)
         if status:
             count_query = count_query.where(HazardReport.status == status)
         if rectification_status:
-            count_query = count_query.where(
-                HazardReport.rectification_status == rectification_status
-            )
+            count_query = count_query.where(HazardReport.rectification_status == rectification_status)
         if hazard_type:
             count_query = count_query.where(HazardReport.hazard_type == hazard_type)
         if hazard_level:
             count_query = count_query.where(HazardReport.hazard_level == hazard_level)
         if hazard_category:
-            count_query = count_query.where(
-                HazardReport.hazard_category == hazard_category
-            )
+            count_query = count_query.where(HazardReport.hazard_category == hazard_category)
         if inspection_category:
-            count_query = count_query.where(
-                HazardReport.inspection_category.contains(inspection_category)
-            )
+            count_query = count_query.where(HazardReport.inspection_category.contains(inspection_category))
         if department:
             count_query = count_query.where(HazardReport.department == department)
         if keyword:
             like = f"%{keyword}%"
-            count_query = count_query.where(
-                HazardReport.description.ilike(like)
-                | HazardReport.hazard_no.ilike(like)
-            )
+            count_query = count_query.where(HazardReport.description.ilike(like) | HazardReport.hazard_no.ilike(like))
 
         total = await self.session.scalar(count_query)
         query = query.offset(skip).limit(limit).order_by(HazardReport.created_at.desc())
@@ -202,37 +176,24 @@ class SafetyRepository:
             func.count(
                 case(
                     (
-                        HazardReport.ai_generated.is_(True)
-                        & (HazardReport.overall_status == "completed"),
+                        HazardReport.ai_generated.is_(True) & (HazardReport.overall_status == "completed"),
                         1,
                     )
                 )
             ).label("pending_review"),
-            func.count(case((HazardReport.rectification_status == "pending", 1))).label(
-                "pending"
-            ),
-            func.count(
-                case((HazardReport.rectification_status == "in_progress", 1))
-            ).label("in_progress"),
-            func.count(case((HazardReport.rectification_status == "replied", 1))).label(
-                "replied"
-            ),
+            func.count(case((HazardReport.rectification_status == "pending", 1))).label("pending"),
+            func.count(case((HazardReport.rectification_status == "in_progress", 1))).label("in_progress"),
+            func.count(case((HazardReport.rectification_status == "replied", 1))).label("replied"),
             func.count(
                 case(
                     (
-                        HazardReport.rectification_status.in_(
-                            ["level1_approved", "level2_approved"]
-                        ),
+                        HazardReport.rectification_status.in_(["level1_approved", "level2_approved"]),
                         1,
                     )
                 )
             ).label("verifying"),
-            func.count(
-                case((HazardReport.rectification_status == "rejected", 1))
-            ).label("rejected"),
-            func.count(case((HazardReport.rectification_status == "closed", 1))).label(
-                "closed"
-            ),
+            func.count(case((HazardReport.rectification_status == "rejected", 1))).label("rejected"),
+            func.count(case((HazardReport.rectification_status == "closed", 1))).label("closed"),
             func.count(
                 case(
                     (
@@ -262,9 +223,7 @@ class SafetyRepository:
 
     async def get_hazard_by_id(self, hazard_id: uuid.UUID) -> HazardReport | None:
         """获取隐患详情"""
-        query = select(HazardReport).where(
-            HazardReport.id == hazard_id, not HazardReport.is_deleted
-        )
+        query = select(HazardReport).where(HazardReport.id == hazard_id, ~HazardReport.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -286,9 +245,7 @@ class SafetyRepository:
         }
     )
 
-    async def update_hazard(
-        self, hazard_id: uuid.UUID, data: dict[str, Any]
-    ) -> HazardReport | None:
+    async def update_hazard(self, hazard_id: uuid.UUID, data: dict[str, Any]) -> HazardReport | None:
         """更新隐患（写后 eager re-fetch，避免 session 缓存旧值）。
 
         RETURNING 返回的对象不会刷新 identity map 中已缓存的旧实例，
@@ -310,14 +267,14 @@ class SafetyRepository:
 
         stmt_update = (
             update(HazardReport)
-            .where(HazardReport.id == hazard_id, not HazardReport.is_deleted)
+            .where(HazardReport.id == hazard_id, ~HazardReport.is_deleted)
             .values(**data, updated_at=func.now())
         )
         await self.session.execute(stmt_update)
 
         stmt_select = (
             select(HazardReport)
-            .where(HazardReport.id == hazard_id, not HazardReport.is_deleted)
+            .where(HazardReport.id == hazard_id, ~HazardReport.is_deleted)
             .execution_options(populate_existing=True)
         )
         result = await self.session.execute(stmt_select)
@@ -326,12 +283,10 @@ class SafetyRepository:
     async def delete_hazard(self, hazard_id: uuid.UUID) -> bool:
         """删除隐患（软删除）"""
         query = (
-            update(HazardReport)
-            .where(HazardReport.id == hazard_id, not HazardReport.is_deleted)
-            .values(is_deleted=True)
+            update(HazardReport).where(HazardReport.id == hazard_id, ~HazardReport.is_deleted).values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     async def count_hazards_today(self, date_prefix: str) -> int:
         """统计指定日期前缀的隐患编号数量（含软删除），用于自动生成序号。"""
@@ -400,9 +355,7 @@ class SafetyRepository:
 
     async def get_accident_by_id(self, accident_id: uuid.UUID) -> Accident | None:
         """获取事故详情"""
-        query = select(Accident).where(
-            Accident.id == accident_id, not Accident.is_deleted
-        )
+        query = select(Accident).where(Accident.id == accident_id, ~Accident.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -415,20 +368,18 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_accident(
-        self, accident_id: uuid.UUID, data: dict[str, Any]
-    ) -> Accident | None:
+    async def update_accident(self, accident_id: uuid.UUID, data: dict[str, Any]) -> Accident | None:
         """更新事故"""
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(Accident)
-            .where(Accident.id == accident_id, not Accident.is_deleted)
+            .where(Accident.id == accident_id, ~Accident.is_deleted)
             .values(**data, updated_at=func.now())
         )
         await self.session.execute(stmt_update)
         stmt_select = (
             select(Accident)
-            .where(Accident.id == accident_id, not Accident.is_deleted)
+            .where(Accident.id == accident_id, ~Accident.is_deleted)
             .execution_options(populate_existing=True)
         )
         result = await self.session.execute(stmt_select)
@@ -436,13 +387,9 @@ class SafetyRepository:
 
     async def delete_accident(self, accident_id: uuid.UUID) -> bool:
         """删除事故（软删除）"""
-        query = (
-            update(Accident)
-            .where(Accident.id == accident_id, not Accident.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(Accident).where(Accident.id == accident_id, ~Accident.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== SafetyTraining Operations ====================
 
@@ -464,22 +411,16 @@ class SafetyRepository:
         if department:
             query = query.where(SafetyTraining.department == department)
 
-        count_query = select(func.count(SafetyTraining.id)).where(
-            not SafetyTraining.is_deleted
-        )
+        count_query = select(func.count(SafetyTraining.id)).where(~SafetyTraining.is_deleted)
         if status:
             count_query = count_query.where(SafetyTraining.status == status)
         if training_type:
-            count_query = count_query.where(
-                SafetyTraining.training_type == training_type
-            )
+            count_query = count_query.where(SafetyTraining.training_type == training_type)
         if department:
             count_query = count_query.where(SafetyTraining.department == department)
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip).limit(limit).order_by(SafetyTraining.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SafetyTraining.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
@@ -489,7 +430,7 @@ class SafetyRepository:
         query = (
             select(SafetyTraining)
             .options(selectinload(SafetyTraining.records))
-            .where(SafetyTraining.id == training_id, not SafetyTraining.is_deleted)
+            .where(SafetyTraining.id == training_id, ~SafetyTraining.is_deleted)
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -503,20 +444,18 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_training(
-        self, training_id: uuid.UUID, data: dict[str, Any]
-    ) -> SafetyTraining | None:
+    async def update_training(self, training_id: uuid.UUID, data: dict[str, Any]) -> SafetyTraining | None:
         """更新安全培训"""
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(SafetyTraining)
-            .where(SafetyTraining.id == training_id, not SafetyTraining.is_deleted)
+            .where(SafetyTraining.id == training_id, ~SafetyTraining.is_deleted)
             .values(**data, updated_at=func.now())
         )
         await self.session.execute(stmt_update)
         stmt_select = (
             select(SafetyTraining)
-            .where(SafetyTraining.id == training_id, not SafetyTraining.is_deleted)
+            .where(SafetyTraining.id == training_id, ~SafetyTraining.is_deleted)
             .execution_options(populate_existing=True)
         )
         result = await self.session.execute(stmt_select)
@@ -526,21 +465,19 @@ class SafetyRepository:
         """删除安全培训（软删除）"""
         query = (
             update(SafetyTraining)
-            .where(SafetyTraining.id == training_id, not SafetyTraining.is_deleted)
+            .where(SafetyTraining.id == training_id, ~SafetyTraining.is_deleted)
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== TrainingRecord Operations ====================
 
-    async def get_records_by_training(
-        self, training_id: uuid.UUID
-    ) -> list[TrainingRecord]:
+    async def get_records_by_training(self, training_id: uuid.UUID) -> list[TrainingRecord]:
         """获取培训记录列表"""
         query = select(TrainingRecord).where(
             TrainingRecord.training_id == training_id,
-            not TrainingRecord.is_deleted,
+            ~TrainingRecord.is_deleted,
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -554,20 +491,18 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_training_record(
-        self, record_id: uuid.UUID, data: dict[str, Any]
-    ) -> TrainingRecord | None:
+    async def update_training_record(self, record_id: uuid.UUID, data: dict[str, Any]) -> TrainingRecord | None:
         """更新培训记录"""
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(TrainingRecord)
-            .where(TrainingRecord.id == record_id, not TrainingRecord.is_deleted)
+            .where(TrainingRecord.id == record_id, ~TrainingRecord.is_deleted)
             .values(**data, updated_at=func.now())
         )
         await self.session.execute(stmt_update)
         stmt_select = (
             select(TrainingRecord)
-            .where(TrainingRecord.id == record_id, not TrainingRecord.is_deleted)
+            .where(TrainingRecord.id == record_id, ~TrainingRecord.is_deleted)
             .execution_options(populate_existing=True)
         )
         result = await self.session.execute(stmt_select)
@@ -577,11 +512,11 @@ class SafetyRepository:
         """删除培训记录（软删除）"""
         query = (
             update(TrainingRecord)
-            .where(TrainingRecord.id == record_id, not TrainingRecord.is_deleted)
+            .where(TrainingRecord.id == record_id, ~TrainingRecord.is_deleted)
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ── 培训证书 ──
 
@@ -594,19 +529,17 @@ class SafetyRepository:
     ) -> tuple[list[TrainingRecord], int]:
         """获取培训证书列表（仅包含有证书的记录）"""
         query = select(TrainingRecord).where(
-            not TrainingRecord.is_deleted,
+            ~TrainingRecord.is_deleted,
             TrainingRecord.certificate_no.isnot(None),
         )
         count_query = select(func.count(TrainingRecord.id)).where(
-            not TrainingRecord.is_deleted,
+            ~TrainingRecord.is_deleted,
             TrainingRecord.certificate_no.isnot(None),
         )
 
         if certificate_status:
             query = query.where(TrainingRecord.certificate_status == certificate_status)
-            count_query = count_query.where(
-                TrainingRecord.certificate_status == certificate_status
-            )
+            count_query = count_query.where(TrainingRecord.certificate_status == certificate_status)
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -621,11 +554,7 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(TrainingRecord.certificate_expiry.asc().nulls_last())
-        )
+        query = query.offset(skip).limit(limit).order_by(TrainingRecord.certificate_expiry.asc().nulls_last())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
@@ -639,7 +568,7 @@ class SafetyRepository:
         query = (
             select(TrainingRecord)
             .where(
-                not TrainingRecord.is_deleted,
+                ~TrainingRecord.is_deleted,
                 TrainingRecord.certificate_no.isnot(None),
                 TrainingRecord.certificate_expiry.isnot(None),
                 TrainingRecord.certificate_expiry >= now,
@@ -670,9 +599,7 @@ class SafetyRepository:
         from datetime import datetime as dt_module
 
         query = select(HazardIdentification).where(~HazardIdentification.is_deleted)
-        count_query = select(func.count(HazardIdentification.id)).where(
-            not HazardIdentification.is_deleted
-        )
+        count_query = select(func.count(HazardIdentification.id)).where(~HazardIdentification.is_deleted)
 
         if batch_id:
             try:
@@ -684,24 +611,18 @@ class SafetyRepository:
                 count_query = count_query.where(HazardIdentification.batch_id == bid)
         if department:
             query = query.where(HazardIdentification.department == department)
-            count_query = count_query.where(
-                HazardIdentification.department == department
-            )
+            count_query = count_query.where(HazardIdentification.department == department)
         if position:
             query = query.where(HazardIdentification.position == position)
             count_query = count_query.where(HazardIdentification.position == position)
         if risk_level:
             query = query.where(HazardIdentification.inherent_risk_level == risk_level)
-            count_query = count_query.where(
-                HazardIdentification.inherent_risk_level == risk_level
-            )
+            count_query = count_query.where(HazardIdentification.inherent_risk_level == risk_level)
         if date_from:
             try:
                 dfrom = dt_module.strptime(date_from, "%Y-%m-%d")
                 query = query.where(HazardIdentification.created_at >= dfrom)
-                count_query = count_query.where(
-                    HazardIdentification.created_at >= dfrom
-                )
+                count_query = count_query.where(HazardIdentification.created_at >= dfrom)
             except ValueError:
                 pass
         if date_to:
@@ -713,16 +634,10 @@ class SafetyRepository:
                 pass
         if overall_status:
             query = query.where(HazardIdentification.overall_status == overall_status)
-            count_query = count_query.where(
-                HazardIdentification.overall_status == overall_status
-            )
+            count_query = count_query.where(HazardIdentification.overall_status == overall_status)
         if ai_node_progress:
-            query = query.where(
-                HazardIdentification.ai_node_progress == ai_node_progress
-            )
-            count_query = count_query.where(
-                HazardIdentification.ai_node_progress == ai_node_progress
-            )
+            query = query.where(HazardIdentification.ai_node_progress == ai_node_progress)
+            count_query = count_query.where(HazardIdentification.ai_node_progress == ai_node_progress)
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -739,11 +654,7 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(HazardIdentification.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(HazardIdentification.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
@@ -766,18 +677,13 @@ class SafetyRepository:
             ("completed", "total_completed"),
         ]:
             q = base.where(HazardIdentification.overall_status == status)
-            results[key] = (
-                await self.session.scalar(
-                    select(func.count()).select_from(q.subquery())
-                )
-                or 0
-            )
+            results[key] = await self.session.scalar(select(func.count()).select_from(q.subquery())) or 0
 
         # 待审核：in_progress 且有未审批的脚本
         from sqlalchemy import or_
 
         pending_q = select(func.count(HazardIdentification.id)).where(
-            not HazardIdentification.is_deleted,
+            ~HazardIdentification.is_deleted,
             HazardIdentification.overall_status == "in_progress",
             or_(
                 HazardIdentification.script1_review_status == "pending",
@@ -804,7 +710,7 @@ class SafetyRepository:
         from datetime import datetime as dt_module
 
         base = select(func.count(HazardIdentification.id)).where(
-            not HazardIdentification.is_deleted,
+            ~HazardIdentification.is_deleted,
             HazardIdentification.overall_status == "completed",
         )
         if department:
@@ -815,17 +721,13 @@ class SafetyRepository:
             base = base.where(HazardIdentification.inherent_risk_level == risk_level)
         if date_from:
             try:
-                base = base.where(
-                    HazardIdentification.created_at
-                    >= dt_module.strptime(date_from, "%Y-%m-%d")
-                )
+                base = base.where(HazardIdentification.created_at >= dt_module.strptime(date_from, "%Y-%m-%d"))
             except ValueError:
                 pass
         if date_to:
             try:
                 base = base.where(
-                    HazardIdentification.created_at
-                    <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
+                    HazardIdentification.created_at <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 )
             except ValueError:
                 pass
@@ -833,7 +735,7 @@ class SafetyRepository:
         total = await self.session.scalar(base) or 0
 
         risk_base = select(func.count(HazardIdentification.id)).where(
-            not HazardIdentification.is_deleted,
+            ~HazardIdentification.is_deleted,
             HazardIdentification.overall_status == "completed",
         )
         if department:
@@ -841,22 +743,18 @@ class SafetyRepository:
         if position:
             risk_base = risk_base.where(HazardIdentification.position == position)
         if risk_level:
-            risk_base = risk_base.where(
-                HazardIdentification.inherent_risk_level == risk_level
-            )
+            risk_base = risk_base.where(HazardIdentification.inherent_risk_level == risk_level)
         if date_from:
             try:
                 risk_base = risk_base.where(
-                    HazardIdentification.created_at
-                    >= dt_module.strptime(date_from, "%Y-%m-%d")
+                    HazardIdentification.created_at >= dt_module.strptime(date_from, "%Y-%m-%d")
                 )
             except ValueError:
                 pass
         if date_to:
             try:
                 risk_base = risk_base.where(
-                    HazardIdentification.created_at
-                    <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
+                    HazardIdentification.created_at <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 )
             except ValueError:
                 pass
@@ -868,14 +766,10 @@ class SafetyRepository:
 
         return {"total": total, **levels}
 
-    async def get_hazard_identification_by_id(
-        self, hid: uuid.UUID
-    ) -> "HazardIdentification | None":
+    async def get_hazard_identification_by_id(self, hid: uuid.UUID) -> "HazardIdentification | None":
         """获取危险源辨识详情"""
 
-        query = select(HazardIdentification).where(
-            HazardIdentification.id == hid, not HazardIdentification.is_deleted
-        )
+        query = select(HazardIdentification).where(HazardIdentification.id == hid, ~HazardIdentification.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -887,9 +781,7 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return result.scalar() or 0
 
-    async def create_hazard_identification(
-        self, data: dict[str, Any]
-    ) -> "HazardIdentification":
+    async def create_hazard_identification(self, data: dict[str, Any]) -> "HazardIdentification":
         """创建危险源辨识记录"""
 
         item = HazardIdentification(**data)
@@ -899,21 +791,19 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_hazard_identification(
-        self, hid: uuid.UUID, data: dict[str, Any]
-    ) -> "HazardIdentification | None":
+    async def update_hazard_identification(self, hid: uuid.UUID, data: dict[str, Any]) -> "HazardIdentification | None":
         """更新危险源辨识记录"""
 
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(HazardIdentification)
-            .where(HazardIdentification.id == hid, not HazardIdentification.is_deleted)
+            .where(HazardIdentification.id == hid, ~HazardIdentification.is_deleted)
             .values(**data, updated_at=func.now())
         )
         await self.session.execute(stmt_update)
         stmt_select = (
             select(HazardIdentification)
-            .where(HazardIdentification.id == hid, not HazardIdentification.is_deleted)
+            .where(HazardIdentification.id == hid, ~HazardIdentification.is_deleted)
             .execution_options(populate_existing=True)
         )
         result = await self.session.execute(stmt_select)
@@ -924,11 +814,11 @@ class SafetyRepository:
 
         query = (
             update(HazardIdentification)
-            .where(HazardIdentification.id == hid, not HazardIdentification.is_deleted)
+            .where(HazardIdentification.id == hid, ~HazardIdentification.is_deleted)
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     async def create_hazard_identifications_batch(
         self, records_data: list[dict[str, Any]]
@@ -950,17 +840,13 @@ class SafetyRepository:
         """按 batch_id 查询辨识记录。"""
         base = select(HazardIdentification).where(
             HazardIdentification.batch_id == batch_id,
-            not HazardIdentification.is_deleted,
+            ~HazardIdentification.is_deleted,
         )
         count_query = select(func.count()).select_from(base.subquery())
         total_result = await self.session.execute(count_query)
         total = total_result.scalar() or 0
 
-        query = (
-            base.order_by(HazardIdentification.created_at.asc())
-            .offset(skip)
-            .limit(limit)
-        )
+        query = base.order_by(HazardIdentification.created_at.asc()).offset(skip).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
 
@@ -976,53 +862,39 @@ class SafetyRepository:
     ) -> tuple[list[OperationRegulation], int]:
         """获取安全操作规程列表"""
         query = select(OperationRegulation).where(~OperationRegulation.is_deleted)
-        count_query = select(func.count(OperationRegulation.id)).where(
-            not OperationRegulation.is_deleted
-        )
+        count_query = select(func.count(OperationRegulation.id)).where(~OperationRegulation.is_deleted)
 
         if position:
             query = query.where(OperationRegulation.position.ilike(f"%{position}%"))
-            count_query = count_query.where(
-                OperationRegulation.position.ilike(f"%{position}%")
-            )
+            count_query = count_query.where(OperationRegulation.position.ilike(f"%{position}%"))
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
-                OperationRegulation.regulation_name.ilike(like)
-                | OperationRegulation.regulation_no.ilike(like)
+                OperationRegulation.regulation_name.ilike(like) | OperationRegulation.regulation_no.ilike(like)
             )
             count_query = count_query.where(
-                OperationRegulation.regulation_name.ilike(like)
-                | OperationRegulation.regulation_no.ilike(like)
+                OperationRegulation.regulation_name.ilike(like) | OperationRegulation.regulation_no.ilike(like)
             )
         if status:
             statuses = [s.strip() for s in status.split(",") if s.strip()]
             if statuses:
                 query = query.where(OperationRegulation.status.in_(statuses))
-                count_query = count_query.where(
-                    OperationRegulation.status.in_(statuses)
-                )
+                count_query = count_query.where(OperationRegulation.status.in_(statuses))
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(OperationRegulation.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(OperationRegulation.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_regulation_by_id(
-        self, regulation_id: uuid.UUID
-    ) -> OperationRegulation | None:
+    async def get_regulation_by_id(self, regulation_id: uuid.UUID) -> OperationRegulation | None:
         """获取安全操作规程详情"""
         query = (
             select(OperationRegulation)
             .options(selectinload(OperationRegulation.revisions))
             .where(
                 OperationRegulation.id == regulation_id,
-                not OperationRegulation.is_deleted,
+                ~OperationRegulation.is_deleted,
             )
         )
         result = await self.session.execute(query)
@@ -1037,16 +909,14 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_regulation(
-        self, regulation_id: uuid.UUID, data: dict[str, Any]
-    ) -> OperationRegulation | None:
+    async def update_regulation(self, regulation_id: uuid.UUID, data: dict[str, Any]) -> OperationRegulation | None:
         """更新安全操作规程"""
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(OperationRegulation)
             .where(
                 OperationRegulation.id == regulation_id,
-                not OperationRegulation.is_deleted,
+                ~OperationRegulation.is_deleted,
             )
             .values(**data, updated_at=func.now())
         )
@@ -1055,7 +925,7 @@ class SafetyRepository:
             select(OperationRegulation)
             .where(
                 OperationRegulation.id == regulation_id,
-                not OperationRegulation.is_deleted,
+                ~OperationRegulation.is_deleted,
             )
             .execution_options(populate_existing=True)
         )
@@ -1068,12 +938,12 @@ class SafetyRepository:
             update(OperationRegulation)
             .where(
                 OperationRegulation.id == regulation_id,
-                not OperationRegulation.is_deleted,
+                ~OperationRegulation.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== RegulationRevision Operations ====================
 
@@ -1088,50 +958,30 @@ class SafetyRepository:
     ) -> tuple[list[RegulationRevision], int]:
         """获取修订记录列表"""
         query = select(RegulationRevision).where(~RegulationRevision.is_deleted)
-        count_query = select(func.count(RegulationRevision.id)).where(
-            not RegulationRevision.is_deleted
-        )
+        count_query = select(func.count(RegulationRevision.id)).where(~RegulationRevision.is_deleted)
 
         if regulation_id:
             query = query.where(RegulationRevision.regulation_id == regulation_id)
-            count_query = count_query.where(
-                RegulationRevision.regulation_id == regulation_id
-            )
+            count_query = count_query.where(RegulationRevision.regulation_id == regulation_id)
         if revision_type:
             query = query.where(RegulationRevision.revision_type == revision_type)
-            count_query = count_query.where(
-                RegulationRevision.revision_type == revision_type
-            )
+            count_query = count_query.where(RegulationRevision.revision_type == revision_type)
         if review_opinion:
             query = query.where(RegulationRevision.review_opinion == review_opinion)
-            count_query = count_query.where(
-                RegulationRevision.review_opinion == review_opinion
-            )
+            count_query = count_query.where(RegulationRevision.review_opinion == review_opinion)
         if revision_scope:
-            query = query.where(
-                RegulationRevision.revision_scope.ilike(f"%{revision_scope}%")
-            )
-            count_query = count_query.where(
-                RegulationRevision.revision_scope.ilike(f"%{revision_scope}%")
-            )
+            query = query.where(RegulationRevision.revision_scope.ilike(f"%{revision_scope}%"))
+            count_query = count_query.where(RegulationRevision.revision_scope.ilike(f"%{revision_scope}%"))
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(RegulationRevision.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(RegulationRevision.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_revision_by_id(
-        self, revision_id: uuid.UUID
-    ) -> RegulationRevision | None:
+    async def get_revision_by_id(self, revision_id: uuid.UUID) -> RegulationRevision | None:
         """获取修订记录详情"""
-        query = select(RegulationRevision).where(
-            RegulationRevision.id == revision_id, not RegulationRevision.is_deleted
-        )
+        query = select(RegulationRevision).where(RegulationRevision.id == revision_id, ~RegulationRevision.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -1144,15 +994,13 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_revision(
-        self, revision_id: uuid.UUID, data: dict[str, Any]
-    ) -> RegulationRevision | None:
+    async def update_revision(self, revision_id: uuid.UUID, data: dict[str, Any]) -> RegulationRevision | None:
         """更新修订记录"""
         query = (
             update(RegulationRevision)
             .where(
                 RegulationRevision.id == revision_id,
-                not RegulationRevision.is_deleted,
+                ~RegulationRevision.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(RegulationRevision)
@@ -1166,12 +1014,12 @@ class SafetyRepository:
             update(RegulationRevision)
             .where(
                 RegulationRevision.id == revision_id,
-                not RegulationRevision.is_deleted,
+                ~RegulationRevision.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== 特殊作业人员资质 Operations ====================
 
@@ -1185,16 +1033,12 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[SpecialOperationPersonnel], int]:
         """获取特殊作业人员资质列表"""
-        query = select(SpecialOperationPersonnel).where(
-            not SpecialOperationPersonnel.is_deleted
-        )
+        query = select(SpecialOperationPersonnel).where(~SpecialOperationPersonnel.is_deleted)
 
         if status:
             query = query.where(SpecialOperationPersonnel.status == status)
         if certificate_type:
-            query = query.where(
-                SpecialOperationPersonnel.certificate_type == certificate_type
-            )
+            query = query.where(SpecialOperationPersonnel.certificate_type == certificate_type)
         if department:
             query = query.where(SpecialOperationPersonnel.department == department)
         if keyword:
@@ -1205,19 +1049,13 @@ class SafetyRepository:
                 | SpecialOperationPersonnel.certificate_number.ilike(like)
             )
 
-        count_query = select(func.count(SpecialOperationPersonnel.id)).where(
-            not SpecialOperationPersonnel.is_deleted
-        )
+        count_query = select(func.count(SpecialOperationPersonnel.id)).where(~SpecialOperationPersonnel.is_deleted)
         if status:
             count_query = count_query.where(SpecialOperationPersonnel.status == status)
         if certificate_type:
-            count_query = count_query.where(
-                SpecialOperationPersonnel.certificate_type == certificate_type
-            )
+            count_query = count_query.where(SpecialOperationPersonnel.certificate_type == certificate_type)
         if department:
-            count_query = count_query.where(
-                SpecialOperationPersonnel.department == department
-            )
+            count_query = count_query.where(SpecialOperationPersonnel.department == department)
         if keyword:
             like = f"%{keyword}%"
             count_query = count_query.where(
@@ -1227,36 +1065,26 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(SpecialOperationPersonnel.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SpecialOperationPersonnel.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_special_operation_personnel_by_id(
-        self, personnel_id: uuid.UUID
-    ) -> SpecialOperationPersonnel | None:
+    async def get_special_operation_personnel_by_id(self, personnel_id: uuid.UUID) -> SpecialOperationPersonnel | None:
         """获取特殊作业人员资质详情"""
         query = select(SpecialOperationPersonnel).where(
             SpecialOperationPersonnel.id == personnel_id,
-            not SpecialOperationPersonnel.is_deleted,
+            ~SpecialOperationPersonnel.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_special_operation_personnel(
-        self, data: dict[str, Any]
-    ) -> SpecialOperationPersonnel:
+    async def create_special_operation_personnel(self, data: dict[str, Any]) -> SpecialOperationPersonnel:
         """创建特殊作业人员资质"""
         item = SpecialOperationPersonnel(**data)
         self.session.add(item)
         await self.session.flush()
-        stmt = select(SpecialOperationPersonnel).where(
-            SpecialOperationPersonnel.id == item.id
-        )
+        stmt = select(SpecialOperationPersonnel).where(SpecialOperationPersonnel.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
@@ -1268,7 +1096,7 @@ class SafetyRepository:
             update(SpecialOperationPersonnel)
             .where(
                 SpecialOperationPersonnel.id == personnel_id,
-                not SpecialOperationPersonnel.is_deleted,
+                ~SpecialOperationPersonnel.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(SpecialOperationPersonnel)
@@ -1282,12 +1110,12 @@ class SafetyRepository:
             update(SpecialOperationPersonnel)
             .where(
                 SpecialOperationPersonnel.id == personnel_id,
-                not SpecialOperationPersonnel.is_deleted,
+                ~SpecialOperationPersonnel.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== 特殊作业票 Operations ====================
 
@@ -1301,18 +1129,14 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[SpecialOperationPermit], int]:
         """获取特殊作业票列表"""
-        query = select(SpecialOperationPermit).where(
-            not SpecialOperationPermit.is_deleted
-        )
+        query = select(SpecialOperationPermit).where(~SpecialOperationPermit.is_deleted)
 
         if status:
             query = query.where(SpecialOperationPermit.status == status)
         if operation_type:
             query = query.where(SpecialOperationPermit.operation_type == operation_type)
         if operation_level:
-            query = query.where(
-                SpecialOperationPermit.operation_level == operation_level
-            )
+            query = query.where(SpecialOperationPermit.operation_level == operation_level)
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -1321,19 +1145,13 @@ class SafetyRepository:
                 | SpecialOperationPermit.work_description.ilike(like)
             )
 
-        count_query = select(func.count(SpecialOperationPermit.id)).where(
-            not SpecialOperationPermit.is_deleted
-        )
+        count_query = select(func.count(SpecialOperationPermit.id)).where(~SpecialOperationPermit.is_deleted)
         if status:
             count_query = count_query.where(SpecialOperationPermit.status == status)
         if operation_type:
-            count_query = count_query.where(
-                SpecialOperationPermit.operation_type == operation_type
-            )
+            count_query = count_query.where(SpecialOperationPermit.operation_type == operation_type)
         if operation_level:
-            count_query = count_query.where(
-                SpecialOperationPermit.operation_level == operation_level
-            )
+            count_query = count_query.where(SpecialOperationPermit.operation_level == operation_level)
         if keyword:
             like = f"%{keyword}%"
             count_query = count_query.where(
@@ -1343,36 +1161,26 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(SpecialOperationPermit.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SpecialOperationPermit.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_special_operation_permit_by_id(
-        self, permit_id: uuid.UUID
-    ) -> SpecialOperationPermit | None:
+    async def get_special_operation_permit_by_id(self, permit_id: uuid.UUID) -> SpecialOperationPermit | None:
         """获取特殊作业票详情"""
         query = select(SpecialOperationPermit).where(
             SpecialOperationPermit.id == permit_id,
-            not SpecialOperationPermit.is_deleted,
+            ~SpecialOperationPermit.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_special_operation_permit(
-        self, data: dict[str, Any]
-    ) -> SpecialOperationPermit:
+    async def create_special_operation_permit(self, data: dict[str, Any]) -> SpecialOperationPermit:
         """创建特殊作业票"""
         item = SpecialOperationPermit(**data)
         self.session.add(item)
         await self.session.flush()
-        stmt = select(SpecialOperationPermit).where(
-            SpecialOperationPermit.id == item.id
-        )
+        stmt = select(SpecialOperationPermit).where(SpecialOperationPermit.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
@@ -1384,7 +1192,7 @@ class SafetyRepository:
             update(SpecialOperationPermit)
             .where(
                 SpecialOperationPermit.id == permit_id,
-                not SpecialOperationPermit.is_deleted,
+                ~SpecialOperationPermit.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(SpecialOperationPermit)
@@ -1398,12 +1206,12 @@ class SafetyRepository:
             update(SpecialOperationPermit)
             .where(
                 SpecialOperationPermit.id == permit_id,
-                not SpecialOperationPermit.is_deleted,
+                ~SpecialOperationPermit.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== SafetyKnowledgeArticle Operations ====================
 
@@ -1416,9 +1224,7 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> tuple[list[SafetyKnowledgeArticle], int]:
         """获取安全知识库文章列表"""
-        query = select(SafetyKnowledgeArticle).where(
-            not SafetyKnowledgeArticle.is_deleted
-        )
+        query = select(SafetyKnowledgeArticle).where(~SafetyKnowledgeArticle.is_deleted)
 
         if category:
             query = query.where(SafetyKnowledgeArticle.category == category)
@@ -1433,9 +1239,7 @@ class SafetyRepository:
                 | SafetyKnowledgeArticle.tags.ilike(like)
             )
 
-        count_query = select(func.count(SafetyKnowledgeArticle.id)).where(
-            not SafetyKnowledgeArticle.is_deleted
-        )
+        count_query = select(func.count(SafetyKnowledgeArticle.id)).where(~SafetyKnowledgeArticle.is_deleted)
         if category:
             count_query = count_query.where(SafetyKnowledgeArticle.category == category)
         if status:
@@ -1450,36 +1254,26 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(SafetyKnowledgeArticle.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SafetyKnowledgeArticle.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_knowledge_article_by_id(
-        self, article_id: uuid.UUID
-    ) -> SafetyKnowledgeArticle | None:
+    async def get_knowledge_article_by_id(self, article_id: uuid.UUID) -> SafetyKnowledgeArticle | None:
         """获取安全知识库文章详情"""
         query = select(SafetyKnowledgeArticle).where(
             SafetyKnowledgeArticle.id == article_id,
-            not SafetyKnowledgeArticle.is_deleted,
+            ~SafetyKnowledgeArticle.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_knowledge_article(
-        self, data: dict[str, Any]
-    ) -> SafetyKnowledgeArticle:
+    async def create_knowledge_article(self, data: dict[str, Any]) -> SafetyKnowledgeArticle:
         """创建安全知识库文章"""
         item = SafetyKnowledgeArticle(**data)
         self.session.add(item)
         await self.session.flush()
-        stmt = select(SafetyKnowledgeArticle).where(
-            SafetyKnowledgeArticle.id == item.id
-        )
+        stmt = select(SafetyKnowledgeArticle).where(SafetyKnowledgeArticle.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
@@ -1491,7 +1285,7 @@ class SafetyRepository:
             update(SafetyKnowledgeArticle)
             .where(
                 SafetyKnowledgeArticle.id == article_id,
-                not SafetyKnowledgeArticle.is_deleted,
+                ~SafetyKnowledgeArticle.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(SafetyKnowledgeArticle)
@@ -1505,12 +1299,12 @@ class SafetyRepository:
             update(SafetyKnowledgeArticle)
             .where(
                 SafetyKnowledgeArticle.id == article_id,
-                not SafetyKnowledgeArticle.is_deleted,
+                ~SafetyKnowledgeArticle.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== 八大特殊作业报备 Operations ====================
 
@@ -1529,14 +1323,10 @@ class SafetyRepository:
         is_critical: bool | None = None,
     ) -> tuple[list[SpecialOperationReport], int]:
         """获取特殊作业报备列表"""
-        query = select(SpecialOperationReport).where(
-            not SpecialOperationReport.is_deleted
-        )
-        count_query = select(func.count(SpecialOperationReport.id)).where(
-            not SpecialOperationReport.is_deleted
-        )
+        query = select(SpecialOperationReport).where(~SpecialOperationReport.is_deleted)
+        count_query = select(func.count(SpecialOperationReport.id)).where(~SpecialOperationReport.is_deleted)
 
-        def _apply_filters(q):
+        def _apply_filters(q) -> Any:  # type: ignore[no-untyped-def]
             if status:
                 q = q.where(SpecialOperationReport.status == status)
             if operation_type:
@@ -1566,36 +1356,26 @@ class SafetyRepository:
         count_query = _apply_filters(count_query)
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(SpecialOperationReport.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SpecialOperationReport.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_special_operation_report_by_id(
-        self, report_id: uuid.UUID
-    ) -> SpecialOperationReport | None:
+    async def get_special_operation_report_by_id(self, report_id: uuid.UUID) -> SpecialOperationReport | None:
         """获取特殊作业报备详情"""
         query = select(SpecialOperationReport).where(
             SpecialOperationReport.id == report_id,
-            not SpecialOperationReport.is_deleted,
+            ~SpecialOperationReport.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_special_operation_report(
-        self, data: dict[str, Any]
-    ) -> SpecialOperationReport:
+    async def create_special_operation_report(self, data: dict[str, Any]) -> SpecialOperationReport:
         """创建特殊作业报备"""
         item = SpecialOperationReport(**data)
         self.session.add(item)
         await self.session.flush()
-        stmt = select(SpecialOperationReport).where(
-            SpecialOperationReport.id == item.id
-        )
+        stmt = select(SpecialOperationReport).where(SpecialOperationReport.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
@@ -1608,7 +1388,7 @@ class SafetyRepository:
             update(SpecialOperationReport)
             .where(
                 SpecialOperationReport.id == report_id,
-                not SpecialOperationReport.is_deleted,
+                ~SpecialOperationReport.is_deleted,
             )
             .values(**data, updated_at=func.now())
         )
@@ -1617,7 +1397,7 @@ class SafetyRepository:
             select(SpecialOperationReport)
             .where(
                 SpecialOperationReport.id == report_id,
-                not SpecialOperationReport.is_deleted,
+                ~SpecialOperationReport.is_deleted,
             )
             .execution_options(populate_existing=True)
         )
@@ -1630,12 +1410,12 @@ class SafetyRepository:
             update(SpecialOperationReport)
             .where(
                 SpecialOperationReport.id == report_id,
-                not SpecialOperationReport.is_deleted,
+                ~SpecialOperationReport.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ── 特殊作业台账查询 ──
 
@@ -1658,51 +1438,35 @@ class SafetyRepository:
             status_list = ["submitted", "approved"]
 
         query = select(SpecialOperationReport).where(
-            not SpecialOperationReport.is_deleted,
+            ~SpecialOperationReport.is_deleted,
             SpecialOperationReport.status.in_(status_list),
         )
         count_query = select(func.count(SpecialOperationReport.id)).where(
-            not SpecialOperationReport.is_deleted,
+            ~SpecialOperationReport.is_deleted,
             SpecialOperationReport.status.in_(status_list),
         )
 
         if operation_type:
             query = query.where(SpecialOperationReport.operation_type == operation_type)
-            count_query = count_query.where(
-                SpecialOperationReport.operation_type == operation_type
-            )
+            count_query = count_query.where(SpecialOperationReport.operation_type == operation_type)
         if operation_level:
-            query = query.where(
-                SpecialOperationReport.operation_level == operation_level
-            )
-            count_query = count_query.where(
-                SpecialOperationReport.operation_level == operation_level
-            )
+            query = query.where(SpecialOperationReport.operation_level == operation_level)
+            count_query = count_query.where(SpecialOperationReport.operation_level == operation_level)
         if risk_level:
             query = query.where(SpecialOperationReport.risk_level == risk_level)
-            count_query = count_query.where(
-                SpecialOperationReport.risk_level == risk_level
-            )
+            count_query = count_query.where(SpecialOperationReport.risk_level == risk_level)
         if department:
             query = query.where(SpecialOperationReport.department == department)
-            count_query = count_query.where(
-                SpecialOperationReport.department == department
-            )
+            count_query = count_query.where(SpecialOperationReport.department == department)
         if date_from:
             query = query.where(SpecialOperationReport.planned_start_time >= date_from)
-            count_query = count_query.where(
-                SpecialOperationReport.planned_start_time >= date_from
-            )
+            count_query = count_query.where(SpecialOperationReport.planned_start_time >= date_from)
         if date_to:
             query = query.where(SpecialOperationReport.planned_end_time <= date_to)
-            count_query = count_query.where(
-                SpecialOperationReport.planned_end_time <= date_to
-            )
+            count_query = count_query.where(SpecialOperationReport.planned_end_time <= date_to)
         if is_critical is not None:
             query = query.where(SpecialOperationReport.is_critical == is_critical)
-            count_query = count_query.where(
-                SpecialOperationReport.is_critical == is_critical
-            )
+            count_query = count_query.where(SpecialOperationReport.is_critical == is_critical)
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -1717,18 +1481,12 @@ class SafetyRepository:
             )
 
         total = await self.session.scalar(count_query)
-        query = (
-            query.offset(skip)
-            .limit(limit)
-            .order_by(SpecialOperationReport.created_at.desc())
-        )
+        query = query.offset(skip).limit(limit).order_by(SpecialOperationReport.created_at.desc())
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_special_operation_ledger_stats(
-        self, status_list: list[str] | None = None
-    ) -> list[dict]:
+    async def get_special_operation_ledger_stats(self, status_list: list[str] | None = None) -> list[dict[str, Any]]:
         """按作业类型统计台账数量和关键作业数量"""
         if status_list is None:
             status_list = ["submitted", "approved"]
@@ -1737,22 +1495,17 @@ class SafetyRepository:
             select(
                 SpecialOperationReport.operation_type,
                 func.count(SpecialOperationReport.id).label("count"),
-                func.sum(
-                    func.cast(SpecialOperationReport.is_critical, type_=func.integer())
-                ).label("critical_count"),
+                func.sum(func.cast(SpecialOperationReport.is_critical, type_=func.integer())).label("critical_count"),
             )
             .where(
-                not SpecialOperationReport.is_deleted,
+                ~SpecialOperationReport.is_deleted,
                 SpecialOperationReport.status.in_(status_list),
             )
             .group_by(SpecialOperationReport.operation_type)
             .order_by(func.count(SpecialOperationReport.id).desc())
         )
         result = await self.session.execute(query)
-        return [
-            {"operation_type": r[0], "count": r[1], "critical_count": r[2] or 0}
-            for r in result.all()
-        ]
+        return [{"operation_type": r[0], "count": r[1], "critical_count": r[2] or 0} for r in result.all()]
 
     # ==================== 每日风险作业报备 Operations ====================
 
@@ -1773,9 +1526,7 @@ class SafetyRepository:
         if department:
             query = query.where(DailyRiskReport.department == department)
         if report_date:
-            query = query.where(
-                func.date(DailyRiskReport.report_date) == report_date.date()
-            )
+            query = query.where(func.date(DailyRiskReport.report_date) == report_date.date())
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -1784,17 +1535,13 @@ class SafetyRepository:
                 | DailyRiskReport.department.ilike(like)
             )
 
-        count_query = select(func.count(DailyRiskReport.id)).where(
-            not DailyRiskReport.is_deleted
-        )
+        count_query = select(func.count(DailyRiskReport.id)).where(~DailyRiskReport.is_deleted)
         if status:
             count_query = count_query.where(DailyRiskReport.status == status)
         if department:
             count_query = count_query.where(DailyRiskReport.department == department)
         if report_date:
-            count_query = count_query.where(
-                func.date(DailyRiskReport.report_date) == report_date.date()
-            )
+            count_query = count_query.where(func.date(DailyRiskReport.report_date) == report_date.date())
         if keyword:
             like = f"%{keyword}%"
             count_query = count_query.where(
@@ -1807,21 +1554,17 @@ class SafetyRepository:
         query = (
             query.offset(skip)
             .limit(limit)
-            .order_by(
-                DailyRiskReport.report_date.desc(), DailyRiskReport.created_at.desc()
-            )
+            .order_by(DailyRiskReport.report_date.desc(), DailyRiskReport.created_at.desc())
         )
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
 
-    async def get_daily_risk_report_by_id(
-        self, report_id: uuid.UUID
-    ) -> DailyRiskReport | None:
+    async def get_daily_risk_report_by_id(self, report_id: uuid.UUID) -> DailyRiskReport | None:
         """获取每日风险作业报备详情"""
         query = select(DailyRiskReport).where(
             DailyRiskReport.id == report_id,
-            not DailyRiskReport.is_deleted,
+            ~DailyRiskReport.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -1835,15 +1578,13 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_daily_risk_report(
-        self, report_id: uuid.UUID, data: dict[str, Any]
-    ) -> DailyRiskReport | None:
+    async def update_daily_risk_report(self, report_id: uuid.UUID, data: dict[str, Any]) -> DailyRiskReport | None:
         """更新每日风险作业报备"""
         query = (
             update(DailyRiskReport)
             .where(
                 DailyRiskReport.id == report_id,
-                not DailyRiskReport.is_deleted,
+                ~DailyRiskReport.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(DailyRiskReport)
@@ -1857,12 +1598,12 @@ class SafetyRepository:
             update(DailyRiskReport)
             .where(
                 DailyRiskReport.id == report_id,
-                not DailyRiskReport.is_deleted,
+                ~DailyRiskReport.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== EHS变更管理 (MOC) Operations ====================
 
@@ -1892,9 +1633,7 @@ class SafetyRepository:
             count_query = count_query.where(EhsChange.change_grade == change_grade)
         if change_duration:
             query = query.where(EhsChange.change_duration == change_duration)
-            count_query = count_query.where(
-                EhsChange.change_duration == change_duration
-            )
+            count_query = count_query.where(EhsChange.change_duration == change_duration)
         if department:
             query = query.where(EhsChange.department == department)
             count_query = count_query.where(EhsChange.department == department)
@@ -1913,7 +1652,7 @@ class SafetyRepository:
         """获取EHS变更详情"""
         query = select(EhsChange).where(
             EhsChange.id == change_id,
-            not EhsChange.is_deleted,
+            ~EhsChange.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -1922,7 +1661,7 @@ class SafetyRepository:
         """根据编号获取EHS变更"""
         query = select(EhsChange).where(
             EhsChange.change_no == change_no,
-            not EhsChange.is_deleted,
+            ~EhsChange.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -1936,16 +1675,14 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_ehs_change(
-        self, change_id: uuid.UUID, data: dict[str, Any]
-    ) -> EhsChange | None:
+    async def update_ehs_change(self, change_id: uuid.UUID, data: dict[str, Any]) -> EhsChange | None:
         """更新EHS变更"""
         # 两步模式：先 UPDATE，再 SELECT + populate_existing 强制刷新 identity map 缓存
         stmt_update = (
             update(EhsChange)
             .where(
                 EhsChange.id == change_id,
-                not EhsChange.is_deleted,
+                ~EhsChange.is_deleted,
             )
             .values(**data, updated_at=func.now())
         )
@@ -1954,7 +1691,7 @@ class SafetyRepository:
             select(EhsChange)
             .where(
                 EhsChange.id == change_id,
-                not EhsChange.is_deleted,
+                ~EhsChange.is_deleted,
             )
             .execution_options(populate_existing=True)
         )
@@ -1967,12 +1704,12 @@ class SafetyRepository:
             update(EhsChange)
             .where(
                 EhsChange.id == change_id,
-                not EhsChange.is_deleted,
+                ~EhsChange.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== OhHazardMonitor Operations ====================
 
@@ -2002,15 +1739,11 @@ class SafetyRepository:
                 | OhHazardMonitor.location.ilike(like)
             )
 
-        count_query = select(func.count(OhHazardMonitor.id)).where(
-            not OhHazardMonitor.is_deleted
-        )
+        count_query = select(func.count(OhHazardMonitor.id)).where(~OhHazardMonitor.is_deleted)
         if status:
             count_query = count_query.where(OhHazardMonitor.status == status)
         if detection_type:
-            count_query = count_query.where(
-                OhHazardMonitor.detection_type == detection_type
-            )
+            count_query = count_query.where(OhHazardMonitor.detection_type == detection_type)
         if workplace:
             count_query = count_query.where(OhHazardMonitor.workplace == workplace)
         if keyword:
@@ -2020,9 +1753,7 @@ class SafetyRepository:
                 | OhHazardMonitor.location.ilike(like)
             )
 
-        query = (
-            query.order_by(OhHazardMonitor.created_at.desc()).offset(skip).limit(limit)
-        )
+        query = query.order_by(OhHazardMonitor.created_at.desc()).offset(skip).limit(limit)
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
@@ -2031,13 +1762,9 @@ class SafetyRepository:
 
         return items, total
 
-    async def get_hazard_monitor_by_id(
-        self, monitor_id: uuid.UUID
-    ) -> OhHazardMonitor | None:
+    async def get_hazard_monitor_by_id(self, monitor_id: uuid.UUID) -> OhHazardMonitor | None:
         """获取职业危害因素监测详情"""
-        query = select(OhHazardMonitor).where(
-            OhHazardMonitor.id == monitor_id, not OhHazardMonitor.is_deleted
-        )
+        query = select(OhHazardMonitor).where(OhHazardMonitor.id == monitor_id, ~OhHazardMonitor.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -2045,7 +1772,7 @@ class SafetyRepository:
         """按编号获取职业危害因素监测"""
         query = select(OhHazardMonitor).where(
             OhHazardMonitor.monitor_no == monitor_no,
-            not OhHazardMonitor.is_deleted,
+            ~OhHazardMonitor.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -2059,13 +1786,11 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_hazard_monitor(
-        self, monitor_id: uuid.UUID, data: dict[str, Any]
-    ) -> OhHazardMonitor | None:
+    async def update_hazard_monitor(self, monitor_id: uuid.UUID, data: dict[str, Any]) -> OhHazardMonitor | None:
         """更新职业危害因素监测"""
         query = (
             update(OhHazardMonitor)
-            .where(OhHazardMonitor.id == monitor_id, not OhHazardMonitor.is_deleted)
+            .where(OhHazardMonitor.id == monitor_id, ~OhHazardMonitor.is_deleted)
             .values(**data, updated_at=func.now())
             .returning(OhHazardMonitor)
         )
@@ -2076,11 +1801,11 @@ class SafetyRepository:
         """软删除职业危害因素监测"""
         query = (
             update(OhHazardMonitor)
-            .where(OhHazardMonitor.id == monitor_id, not OhHazardMonitor.is_deleted)
+            .where(OhHazardMonitor.id == monitor_id, ~OhHazardMonitor.is_deleted)
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== OhHealthExam Operations ====================
 
@@ -2110,9 +1835,7 @@ class SafetyRepository:
                 | OhHealthExam.department.ilike(like)
             )
 
-        count_query = select(func.count(OhHealthExam.id)).where(
-            not OhHealthExam.is_deleted
-        )
+        count_query = select(func.count(OhHealthExam.id)).where(~OhHealthExam.is_deleted)
         if status:
             count_query = count_query.where(OhHealthExam.status == status)
         if exam_type:
@@ -2137,17 +1860,13 @@ class SafetyRepository:
 
     async def get_health_exam_by_id(self, exam_id: uuid.UUID) -> OhHealthExam | None:
         """获取职业健康体检详情"""
-        query = select(OhHealthExam).where(
-            OhHealthExam.id == exam_id, not OhHealthExam.is_deleted
-        )
+        query = select(OhHealthExam).where(OhHealthExam.id == exam_id, ~OhHealthExam.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_health_exam_by_no(self, exam_no: str) -> OhHealthExam | None:
         """按编号获取职业健康体检"""
-        query = select(OhHealthExam).where(
-            OhHealthExam.exam_no == exam_no, not OhHealthExam.is_deleted
-        )
+        query = select(OhHealthExam).where(OhHealthExam.exam_no == exam_no, ~OhHealthExam.is_deleted)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -2160,13 +1879,11 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_health_exam(
-        self, exam_id: uuid.UUID, data: dict[str, Any]
-    ) -> OhHealthExam | None:
+    async def update_health_exam(self, exam_id: uuid.UUID, data: dict[str, Any]) -> OhHealthExam | None:
         """更新职业健康体检"""
         query = (
             update(OhHealthExam)
-            .where(OhHealthExam.id == exam_id, not OhHealthExam.is_deleted)
+            .where(OhHealthExam.id == exam_id, ~OhHealthExam.is_deleted)
             .values(**data, updated_at=func.now())
             .returning(OhHealthExam)
         )
@@ -2175,13 +1892,9 @@ class SafetyRepository:
 
     async def delete_health_exam(self, exam_id: uuid.UUID) -> bool:
         """软删除职业健康体检"""
-        query = (
-            update(OhHealthExam)
-            .where(OhHealthExam.id == exam_id, not OhHealthExam.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(OhHealthExam).where(OhHealthExam.id == exam_id, ~OhHealthExam.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== Contractor Operations ====================
 
@@ -2203,14 +1916,10 @@ class SafetyRepository:
             count_query = count_query.where(Contractor.status == status)
         if qualification_type:
             query = query.where(Contractor.qualification_type == qualification_type)
-            count_query = count_query.where(
-                Contractor.qualification_type == qualification_type
-            )
+            count_query = count_query.where(Contractor.qualification_type == qualification_type)
         if training_status:
             query = query.where(Contractor.training_status == training_status)
-            count_query = count_query.where(
-                Contractor.training_status == training_status
-            )
+            count_query = count_query.where(Contractor.training_status == training_status)
         if keyword:
             like = f"%{keyword}%"
             query = query.where(
@@ -2235,7 +1944,7 @@ class SafetyRepository:
         query = (
             select(Contractor)
             .options(selectinload(Contractor.work_records))
-            .where(Contractor.id == contractor_id, not Contractor.is_deleted)
+            .where(Contractor.id == contractor_id, ~Contractor.is_deleted)
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -2249,13 +1958,11 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_contractor(
-        self, contractor_id: uuid.UUID, data: dict[str, Any]
-    ) -> Contractor | None:
+    async def update_contractor(self, contractor_id: uuid.UUID, data: dict[str, Any]) -> Contractor | None:
         """更新承包商"""
         query = (
             update(Contractor)
-            .where(Contractor.id == contractor_id, not Contractor.is_deleted)
+            .where(Contractor.id == contractor_id, ~Contractor.is_deleted)
             .values(**data, updated_at=func.now())
             .returning(Contractor)
         )
@@ -2264,38 +1971,30 @@ class SafetyRepository:
 
     async def delete_contractor(self, contractor_id: uuid.UUID) -> bool:
         """删除承包商（软删除）"""
-        query = (
-            update(Contractor)
-            .where(Contractor.id == contractor_id, not Contractor.is_deleted)
-            .values(is_deleted=True)
-        )
+        query = update(Contractor).where(Contractor.id == contractor_id, ~Contractor.is_deleted).values(is_deleted=True)
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
 
     # ==================== ContractorWorkRecord Operations ====================
 
-    async def get_work_records_by_contractor(
-        self, contractor_id: uuid.UUID
-    ) -> list[ContractorWorkRecord]:
+    async def get_work_records_by_contractor(self, contractor_id: uuid.UUID) -> list[ContractorWorkRecord]:
         """获取承包商的施工记录列表"""
         query = (
             select(ContractorWorkRecord)
             .where(
                 ContractorWorkRecord.contractor_id == contractor_id,
-                not ContractorWorkRecord.is_deleted,
+                ~ContractorWorkRecord.is_deleted,
             )
             .order_by(ContractorWorkRecord.created_at.desc())
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_work_record_by_id(
-        self, record_id: uuid.UUID
-    ) -> ContractorWorkRecord | None:
+    async def get_work_record_by_id(self, record_id: uuid.UUID) -> ContractorWorkRecord | None:
         """获取施工记录详情"""
         query = select(ContractorWorkRecord).where(
             ContractorWorkRecord.id == record_id,
-            not ContractorWorkRecord.is_deleted,
+            ~ContractorWorkRecord.is_deleted,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -2309,15 +2008,13 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
-    async def update_work_record(
-        self, record_id: uuid.UUID, data: dict[str, Any]
-    ) -> ContractorWorkRecord | None:
+    async def update_work_record(self, record_id: uuid.UUID, data: dict[str, Any]) -> ContractorWorkRecord | None:
         """更新施工记录"""
         query = (
             update(ContractorWorkRecord)
             .where(
                 ContractorWorkRecord.id == record_id,
-                not ContractorWorkRecord.is_deleted,
+                ~ContractorWorkRecord.is_deleted,
             )
             .values(**data, updated_at=func.now())
             .returning(ContractorWorkRecord)
@@ -2331,9 +2028,9 @@ class SafetyRepository:
             update(ContractorWorkRecord)
             .where(
                 ContractorWorkRecord.id == record_id,
-                not ContractorWorkRecord.is_deleted,
+                ~ContractorWorkRecord.is_deleted,
             )
             .values(is_deleted=True)
         )
         result = await self.session.execute(query)
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]

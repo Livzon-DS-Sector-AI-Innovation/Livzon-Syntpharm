@@ -58,9 +58,7 @@ class RouteLocationEquipmentItem(BaseModel):
 
     equipment_id: uuid.UUID = Field(..., description="设备ID")
     sort_order: int = Field(default=0, description="排序")
-    template_ids: list[uuid.UUID] = Field(
-        default_factory=list, description="绑定的模板ID列表"
-    )
+    template_ids: list[uuid.UUID] = Field(default_factory=list, description="绑定的模板ID列表")
 
 
 class RouteLocationItem(BaseModel):
@@ -68,17 +66,13 @@ class RouteLocationItem(BaseModel):
 
     location_id: uuid.UUID = Field(..., description="地点ID")
     sort_order: int = Field(default=0, description="地点顺序")
-    equipments: list[RouteLocationEquipmentItem] = Field(
-        default_factory=list, description="该地点下的设备列表"
-    )
+    equipments: list[RouteLocationEquipmentItem] = Field(default_factory=list, description="该地点下的设备列表")
 
 
 class RouteLocationsBatch(BaseModel):
     """批量设置线路地点-设备-模板请求"""
 
-    locations: list[RouteLocationItem] = Field(
-        default_factory=list, description="地点列表（全量替换）"
-    )
+    locations: list[RouteLocationItem] = Field(default_factory=list, description="地点列表（全量替换）")
 
 
 class RouteEquipmentTemplateResponse(BaseModel):
@@ -98,7 +92,7 @@ class RouteLocationEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     templates: list[RouteEquipmentTemplateResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
@@ -127,9 +121,7 @@ class InspectionRouteEquipmentItem(BaseModel):
 class InspectionRouteEquipmentBatch(BaseModel):
     """批量设置路线设备请求（已废弃，保留兼容）"""
 
-    equipments: list[InspectionRouteEquipmentItem] = Field(
-        ..., min_length=1, description="设备列表"
-    )
+    equipments: list[InspectionRouteEquipmentItem] = Field(..., min_length=1, description="设备列表")
 
 
 class RouteEquipmentResponse(BaseModel):
@@ -139,7 +131,7 @@ class RouteEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -183,12 +175,8 @@ class InspectionTaskCreate(BaseModel):
     """创建巡检任务请求"""
 
     route_id: uuid.UUID | None = Field(default=None, description="路线ID")
-    equipment_id: uuid.UUID | None = Field(
-        default=None, description="单设备ID（兼容旧版，推荐用 equipment_ids）"
-    )
-    equipment_ids: list[uuid.UUID] | None = Field(
-        default=None, min_length=1, description="设备ID列表（多设备模式）"
-    )
+    equipment_id: uuid.UUID | None = Field(default=None, description="单设备ID（兼容旧版，推荐用 equipment_ids）")
+    equipment_ids: list[uuid.UUID] | None = Field(default=None, min_length=1, description="设备ID列表（多设备模式）")
     template_ids: list[uuid.UUID] | None = Field(
         default=None,
         min_length=1,
@@ -240,7 +228,7 @@ class InspectionTaskResponse(BaseModel):
     updated_at: datetime
     route_name: str | None = None
     equipment_name: str | None = None
-    equipment_no: str | None = None
+    asset_no: str | None = None
     assignee_name: str | None = None
     equipment_count: int = 0
     completed_count: int = 0
@@ -263,9 +251,7 @@ class InspectionRecordItem(BaseModel):
 class EquipmentCheckResult(BaseModel):
     """单设备检查结果（含多个检查项）"""
 
-    records: list[InspectionRecordItem] = Field(
-        ..., min_length=1, description="检查项结果列表"
-    )
+    records: list[InspectionRecordItem] = Field(..., min_length=1, description="检查项结果列表")
 
 
 class InspectionRecordResponse(BaseModel):
@@ -291,9 +277,7 @@ class InspectionRecordResponse(BaseModel):
 class RouteCheckSubmit(BaseModel):
     """线路巡检提交请求"""
 
-    overall_result: InspectionOverallResult = Field(
-        ..., description="总体结果：正常/异常"
-    )
+    overall_result: InspectionOverallResult = Field(..., description="总体结果：正常/异常")
     route_summary: str | None = Field(default=None, description="现场描述")
 
 
@@ -333,9 +317,7 @@ class InspectionAIItemResult(BaseModel):
 class InspectionAIAnalyzeResponse(BaseModel):
     """AI 分析响应"""
 
-    items: list[InspectionAIItemResult] = Field(
-        default_factory=list, description="分析结果列表"
-    )
+    items: list[InspectionAIItemResult] = Field(default_factory=list, description="分析结果列表")
 
 
 # ═══════════ 历史详情 ═══════════

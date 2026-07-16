@@ -5,13 +5,14 @@
 
 import logging
 import sys
+from typing import Any
 
 logger = logging.getLogger(__name__)
-from docx import Document
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx import Document  # noqa: E402
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT  # noqa: E402
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING  # noqa: E402
+from docx.oxml.ns import qn  # noqa: E402
+from docx.shared import Pt  # noqa: E402
 
 # 固定信息
 FIXED_INFO = {
@@ -24,7 +25,7 @@ FIXED_INFO = {
 TEMPLATE_PATH = "assets/对照物质说明表模板.docx"
 
 
-def set_cell_format(cell, text, align_center=True, is_formula=False):
+def set_cell_format(cell, text, align_center=True, is_formula=False) -> Any:  # type: ignore[no-untyped-def]
     """设置单元格格式
     is_formula: 是否为分子式，需要处理下标数字
     """
@@ -63,7 +64,7 @@ def set_cell_format(cell, text, align_center=True, is_formula=False):
         paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
 
-def generate_document(coa_data, output_path):
+def generate_document(coa_data, output_path) -> Any:  # type: ignore[no-untyped-def]
     """生成对照物质说明表"""
 
     # 打开模板
@@ -100,9 +101,7 @@ def generate_document(coa_data, output_path):
     set_cell_format(table2.rows[0].cells[3], coa_data.get("有效期", ""))
 
     # R2C2: 分子式（数字下标）
-    set_cell_format(
-        table2.rows[1].cells[1], coa_data.get("分子式", ""), is_formula=True
-    )
+    set_cell_format(table2.rows[1].cells[1], coa_data.get("分子式", ""), is_formula=True)
 
     # R2C4: 分子量
     set_cell_format(table2.rows[1].cells[3], coa_data.get("分子量", ""))
@@ -140,9 +139,7 @@ def generate_document(coa_data, output_path):
         )
 
     # R8C2-4: 使用方法（勾选直接折算）
-    set_cell_format(
-        table2.rows[7].cells[1], "□使用前干燥    ☑直接折算   □其他", align_center=False
-    )
+    set_cell_format(table2.rows[7].cells[1], "□使用前干燥    ☑直接折算   □其他", align_center=False)
 
     # ===== 表格3：签章 =====
     # R2C2-4: 提供单位（固定信息）

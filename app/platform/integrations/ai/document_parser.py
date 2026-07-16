@@ -53,9 +53,7 @@ class DocumentParser:
 
         # If no text extracted, this is likely a scanned PDF - use OCR
         if len(text.strip()) < 100:  # Less than 100 chars means probably empty
-            logger.info(
-                f"PDF appears to be scanned (extracted {len(text)} chars), attempting OCR..."
-            )
+            logger.info(f"PDF appears to be scanned (extracted {len(text)} chars), attempting OCR...")
             text = DocumentParser._extract_pdf_ocr(path, max_pages=10)
 
         return text
@@ -88,8 +86,8 @@ class DocumentParser:
                 # Use hybrid API - PP-StructureV3 for better structure preservation
                 # Returns Markdown format which preserves tables, formulas, etc.
                 text = ocr_service.extract(image, output_format="markdown")
-                if text.strip():
-                    parts.append(f"--- Page {i + 1} ---\n{text.strip()}")
+                if text.strip():  # type: ignore[union-attr]
+                    parts.append(f"--- Page {i + 1} ---\n{text.strip()}")  # type: ignore[union-attr]
 
             if not parts:
                 return "[OCR未能提取到文本内容]"
@@ -118,9 +116,7 @@ class DocumentParser:
             parts.append(f"## Sheet: {sheet_name}")
             rows: list[str] = []
             for row in ws.iter_rows(values_only=True):
-                row_str = "\t".join(
-                    str(cell) if cell is not None else "" for cell in row
-                )
+                row_str = "\t".join(str(cell) if cell is not None else "" for cell in row)
                 if row_str.strip():
                     rows.append(row_str)
             parts.append("\n".join(rows))

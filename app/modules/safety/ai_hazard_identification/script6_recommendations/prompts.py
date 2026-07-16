@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 SYSTEM_ROLE = """你是一位资深的化工企业安全技术改造顾问，服务于原料药生产企业。
 你精通：
 - 控制层级理论（消除/替代 → 工程控制 → 管理控制 → PPE → 应急）
@@ -128,8 +130,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
 
     if knowledge_context:
         sections.append(
-            "## 参考文档（知识库）\n\n"
-            "以下为行业最佳实践和同类企业事故教训，优先参照：\n\n" + knowledge_context
+            "## 参考文档（知识库）\n\n以下为行业最佳实践和同类企业事故教训，优先参照：\n\n" + knowledge_context
         )
 
     sections.append(OUTPUT_FORMAT)
@@ -137,7 +138,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     return "\n\n".join(sections)
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回脚本6的 DB 种子配置。"""
     return {
         "script_number": 6,

@@ -1,4 +1,5 @@
 """Equipment service layer: re-export all public functions."""
+# ruff: noqa: F401
 
 from app.modules.equipment.service.ai import analyze_inspection_photo
 from app.modules.equipment.service.ai.service import (
@@ -16,6 +17,10 @@ from app.modules.equipment.service.calibration import (
     get_overdue_calibration_plans,
     update_calibration_plan,
 )
+from app.modules.equipment.service.data_scope import (
+    apply_equipment_scope,
+    verify_write_ownership,
+)
 from app.modules.equipment.service.equipment import (
     create_equipment,
     create_equipment_category,
@@ -24,6 +29,7 @@ from app.modules.equipment.service.equipment import (
     delete_equipment_category,
     delete_location,
     generate_equipment_no,
+    generate_template_bytes,
     get_departments_for_select,
     get_equipment_by_id,
     get_equipment_categories,
@@ -34,6 +40,7 @@ from app.modules.equipment.service.equipment import (
     get_location_by_id,
     get_location_tree,
     get_locations,
+    import_equipments_from_excel,
     update_equipment,
     update_equipment_category,
     update_location,
@@ -167,6 +174,9 @@ __all__ = [
     "analyze_inspection_photo",
     "parse_manual_submission",
     "get_inspection_items_for_session",
+    # data scope
+    "apply_equipment_scope",
+    "verify_write_ownership",
     # calibration
     "create_calibration_plan",
     "create_calibration_record",
@@ -185,6 +195,7 @@ __all__ = [
     "delete_equipment_category",
     "delete_location",
     "generate_equipment_no",
+    "generate_template_bytes",
     "get_departments_for_select",
     "get_equipment_by_id",
     "get_equipment_categories",
@@ -195,6 +206,7 @@ __all__ = [
     "get_location_by_id",
     "get_location_tree",
     "get_locations",
+    "import_equipments_from_excel",
     "update_equipment",
     "update_equipment_category",
     "update_location",

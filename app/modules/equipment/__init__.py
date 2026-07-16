@@ -1,3 +1,6 @@
+from typing import Any
+
+from app.modules.equipment import events  # noqa: F401 — register event bus subscriptions
 from app.modules.equipment.api import router
 from app.shared.lifecycle import register_background_worker
 
@@ -7,14 +10,14 @@ __all__ = ["router"]
 # ── Background worker registration ────────────────────────────
 
 
-async def _start_equipment_ws():
+async def _start_equipment_ws() -> Any:
     """Start equipment module's Feishu WebSocket client."""
     from app.modules.equipment.feishu.ws_client import start_equipment_ws
 
     await start_equipment_ws()
 
 
-async def _stop_equipment_ws():
+async def _stop_equipment_ws() -> Any:
     """Stop equipment module's Feishu WebSocket client."""
     from app.modules.equipment.feishu.ws_client import stop_equipment_ws
 
@@ -28,7 +31,7 @@ register_background_worker(
 )
 
 
-async def _start_equipment_scheduler():
+async def _start_equipment_scheduler() -> Any:
     """Start equipment module's maintenance plan and timeout scan loops."""
     import asyncio
 
@@ -44,7 +47,7 @@ async def _start_equipment_scheduler():
     )
 
 
-async def _stop_equipment_scheduler():
+async def _stop_equipment_scheduler() -> Any:
     """Stop equipment module's scheduler loops."""
     from app.modules.equipment.scheduler import (
         stop_maintenance_plan_flag,

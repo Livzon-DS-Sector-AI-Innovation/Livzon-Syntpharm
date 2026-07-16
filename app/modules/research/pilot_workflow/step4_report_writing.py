@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 from app.modules.research.llm_service import call_llm
 from app.modules.research.models import PilotWorkflow
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def _build_prompt(
-    all_results: dict,
+    all_results: dict[str, Any],
     workflow: PilotWorkflow,
 ) -> str:
     """构建报告撰写的 LLM prompt"""
@@ -69,9 +70,9 @@ def _build_prompt(
 
 
 async def execute_report_writing(
-    step_input: dict,
+    step_input: dict[str, Any],
     workflow: PilotWorkflow,
-) -> dict:
+) -> dict[str, Any]:
     """执行报告撰写"""
     prompt = _build_prompt(
         all_results=step_input,

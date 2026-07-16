@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     JSON,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,27 +35,26 @@ class InspectionRoute(BaseModel):
 
     __tablename__ = "inspection_routes"
     __table_args__ = (
-        UniqueConstraint("name", "is_deleted", name="uq_inspection_routes_name"),
+        # 部分唯一索引：仅对未删除的记录做路线名称唯一性检查
+        Index(
+            "uq_inspection_routes_name",
+            "name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         {"schema": "equipment"},
     )
 
     name: Mapped[str] = mapped_column(String(200), comment="路线名称")
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="路线描述"
-    )
-    is_active: Mapped[bool] = mapped_column(
-        default=True, server_default="true", comment="是否启用"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="路线描述")
+    is_active: Mapped[bool] = mapped_column(default=True, server_default="true", comment="是否启用")
 
     # 关系
     locations_rel: Mapped[list[RouteLocation]] = relationship(
         "RouteLocation",
         back_populates="route",
         order_by="RouteLocation.sort_order",
-        primaryjoin=(
-            "and_(InspectionRoute.id == foreign(RouteLocation.route_id), "
-            "RouteLocation.is_deleted == False)"
-        ),
+        primaryjoin=("and_(InspectionRoute.id == foreign(RouteLocation.route_id), RouteLocation.is_deleted == False)"),
     )
 
 
@@ -63,11 +63,13 @@ class InspectionRouteSchedule(BaseModel):
 
     __tablename__ = "inspection_route_schedules"
     __table_args__ = (
-        UniqueConstraint(
+        # 部分唯一索引：仅对未删除的记录做路线+cron唯一性检查
+        Index(
+            "uq_route_schedules_route_cron_deleted",
             "route_id",
             "cron_expression",
-            "is_deleted",
-            name="uq_route_schedules_route_cron_deleted",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
         ),
         {"schema": "equipment"},
     )
@@ -110,11 +112,13 @@ class InspectionRouteEquipment(BaseModel):
 
     __tablename__ = "inspection_route_equipments"
     __table_args__ = (
-        UniqueConstraint(
+        # 部分唯一索引：仅对未删除的记录做路线+设备唯一性检查
+        Index(
+            "uq_route_equipments_route_equipment",
             "route_id",
             "equipment_id",
-            "is_deleted",
-            name="uq_route_equipments_route_equipment",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
         ),
         {"schema": "equipment"},
     )
@@ -130,9 +134,7 @@ class InspectionRouteEquipment(BaseModel):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, comment="巡检顺序")
 
     # 关系（已废弃：equipments_rel 已改为 locations_rel）
-    route: Mapped[InspectionRoute] = relationship(
-        "InspectionRoute", foreign_keys=[route_id]
-    )
+    route: Mapped[InspectionRoute] = relationship("InspectionRoute", foreign_keys=[route_id])
     equipment: Mapped[Equipment] = relationship("Equipment")
 
 
@@ -141,7 +143,13 @@ class InspectionTask(BaseModel):
 
     __tablename__ = "inspection_tasks"
     __table_args__ = (
-        UniqueConstraint("task_no", "is_deleted", name="uq_inspection_tasks_task_no"),
+        # 部分唯一索引：仅对未删除的记录做任务编号唯一性检查
+        Index(
+            "uq_inspection_tasks_task_no",
+            "task_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         CheckConstraint(
             "status IN ('待执行', '执行中', '已完成', '已关闭')",
             name="ck_inspection_tasks_status",
@@ -157,9 +165,7 @@ class InspectionTask(BaseModel):
         {"schema": "equipment"},
     )
 
-    task_no: Mapped[str] = mapped_column(
-        String(50), comment="任务编号 IT-yyyymmdd-xxxx"
-    )
+    task_no: Mapped[str] = mapped_column(String(50), comment="任务编号 IT-yyyymmdd-xxxx")
     route_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.inspection_routes.id"),
         nullable=True,
@@ -170,15 +176,13 @@ class InspectionTask(BaseModel):
         nullable=True,
         comment="单设备ID（单设备模式，兼容旧数据）",
     )
-    equipment_ids: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, comment="设备ID列表（多设备模式）"
-    )
-    template_ids: Mapped[list | None] = mapped_column(
+    equipment_ids: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="设备ID列表（多设备模式）")
+    template_ids: Mapped[list[Any] | None] = mapped_column(
         JSON,
         nullable=True,
         comment="[DEPRECATED] 模板ID列表，推荐用 equipment_templates",
     )
-    equipment_templates: Mapped[dict | None] = mapped_column(
+    equipment_templates: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, nullable=True, comment="设备-模板绑定 {equipment_id: [template_id,...]}"
     )
     plan_type: Mapped[str] = mapped_column(
@@ -191,40 +195,22 @@ class InspectionTask(BaseModel):
         nullable=True,
         comment="巡检人员ID",
     )
-    planned_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), comment="计划巡检时间"
-    )
+    planned_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), comment="计划巡检时间")
     status: Mapped[str] = mapped_column(
         String(20),
         default="待执行",
         comment="任务状态：待执行/执行中/已完成/已关闭",
     )
-    overall_result: Mapped[str | None] = mapped_column(
-        String(10), nullable=True, comment="总体结果：正常/异常"
-    )
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="开始时间"
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="完成时间"
-    )
-    closed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="关闭时间"
-    )
-    closure_remark: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="关闭备注"
-    )
-    route_summary: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="线路巡检现场描述"
-    )
+    overall_result: Mapped[str | None] = mapped_column(String(10), nullable=True, comment="总体结果：正常/异常")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="开始时间")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成时间")
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="关闭时间")
+    closure_remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="关闭备注")
+    route_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="线路巡检现场描述")
 
     # 关系
-    route: Mapped[InspectionRoute | None] = relationship(
-        "InspectionRoute", foreign_keys=[route_id]
-    )
-    equipment: Mapped[Equipment | None] = relationship(
-        "Equipment", foreign_keys=[equipment_id]
-    )
+    route: Mapped[InspectionRoute | None] = relationship("InspectionRoute", foreign_keys=[route_id])
+    equipment: Mapped[Equipment | None] = relationship("Equipment", foreign_keys=[equipment_id])
     assignee: Mapped[User | None] = relationship("User", foreign_keys=[assigned_to])
 
 

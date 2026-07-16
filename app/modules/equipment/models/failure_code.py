@@ -22,9 +22,7 @@ class FailureSymptom(BaseModel):
 
     code: Mapped[str] = mapped_column(String(50), comment="故障现象代码")
     name: Mapped[str] = mapped_column(String(100), comment="故障现象名称")
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="故障现象描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="故障现象描述")
     sort_order: Mapped[int] = mapped_column(default=0, comment="排序号")
     is_active: Mapped[bool] = mapped_column(
         Boolean,
@@ -50,9 +48,7 @@ class FailureCause(BaseModel):
 
     code: Mapped[str] = mapped_column(String(50), comment="故障原因代码")
     name: Mapped[str] = mapped_column(String(100), comment="故障原因名称")
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="故障原因描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="故障原因描述")
     sort_order: Mapped[int] = mapped_column(default=0, comment="排序号")
     is_active: Mapped[bool] = mapped_column(
         Boolean,
@@ -78,9 +74,7 @@ class FailureAction(BaseModel):
 
     code: Mapped[str] = mapped_column(String(50), comment="维修措施代码")
     name: Mapped[str] = mapped_column(String(100), comment="维修措施名称")
-    description: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="维修措施描述"
-    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="维修措施描述")
     sort_order: Mapped[int] = mapped_column(default=0, comment="排序号")
     is_active: Mapped[bool] = mapped_column(
         Boolean,

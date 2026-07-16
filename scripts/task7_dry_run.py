@@ -1,3 +1,4 @@
+# ruff: noqa
 """Task7 小批量试跑：对 10 条待回填法规执行 AI 分析。
 
 使用方法：
@@ -25,13 +26,13 @@ if os.path.exists(_env_file):
 
 sys.path.insert(0, _project_root)
 
-from sqlalchemy import and_, select
-
-from app.core.database import async_session_factory
 from app.modules.regulatory_tracker.models.regulatory_document import RegulatoryDocument
 from app.modules.regulatory_tracker.services.ai_analysis_service import (
     analyze_and_update,
 )
+from sqlalchemy import and_, select
+
+from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 logging.basicConfig(
@@ -100,9 +101,7 @@ async def dry_run():
                         "error": None,
                         "ai_analysis_status": doc.ai_analysis_status,
                         "document_category": doc.document_category,
-                        "ai_relevance_score": float(doc.ai_relevance_score)
-                        if doc.ai_relevance_score
-                        else None,
+                        "ai_relevance_score": float(doc.ai_relevance_score) if doc.ai_relevance_score else None,
                         "ai_summary_preview": (doc.ai_summary or "")[:100],
                     }
                 )
@@ -143,9 +142,7 @@ async def dry_run():
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     logger.info("=" * 60)
-    logger.info(
-        f"试跑完成: 成功={success_count}, 失败={failed_count}, 总耗时={total_elapsed:.1f}s"
-    )
+    logger.info(f"试跑完成: 成功={success_count}, 失败={failed_count}, 总耗时={total_elapsed:.1f}s")
     logger.info(f"结果已保存到: {report_path}")
     logger.info("=" * 60)
 

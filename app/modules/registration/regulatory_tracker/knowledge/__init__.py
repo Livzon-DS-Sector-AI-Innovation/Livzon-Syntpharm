@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,10 @@ KNOWLEDGE_DIR = Path(__file__).parent
 _cache: dict[str, Any] = {}
 
 
-def _load_yaml(filename: str) -> dict:
+def _load_yaml(filename: str) -> dict[str, Any]:
     """加载 YAML 文件，带缓存。"""
     if filename in _cache:
-        return _cache[filename]
+        return _cache[filename]  # type: ignore[no-any-return]
 
     filepath = KNOWLEDGE_DIR / filename
     if not filepath.exists():
@@ -38,22 +38,22 @@ def _load_yaml(filename: str) -> dict:
         return {}
 
 
-def get_impact_rules() -> dict:
+def get_impact_rules() -> dict[str, Any]:
     """获取影响判定规则。"""
     return _load_yaml("impact_rules.yaml")
 
 
-def get_keyword_rules() -> dict:
+def get_keyword_rules() -> dict[str, Any]:
     """获取关键词规则。"""
     return _load_yaml("keyword_rules.yaml")
 
 
-def get_action_guidance() -> dict:
+def get_action_guidance() -> dict[str, Any]:
     """获取建议行动模板。"""
     return _load_yaml("action_guidance.yaml")
 
 
-def get_all_rules() -> dict:
+def get_all_rules() -> dict[str, Any]:
     """获取所有规则。"""
     return {
         "impact_rules": get_impact_rules(),
@@ -83,9 +83,7 @@ def build_prompt_summary() -> str:
     # 中影响法规主题
     lines.append("")
     lines.append("## 默认中影响法规（通用要求类）")
-    lines.append(
-        "以下法规主题默认 impact_level=medium, relevance_level=related 或 weak_related："
-    )
+    lines.append("以下法规主题默认 impact_level=medium, relevance_level=related 或 weak_related：")
     for rule in impact_rules.get("medium_impact_rules", []):
         keywords_str = "、".join(rule.get("keywords", [])[:5])
         lines.append(f"- {rule['topic']}（关键词：{keywords_str}）")
@@ -132,7 +130,7 @@ def build_prompt_summary() -> str:
     return "\n".join(lines)
 
 
-def clear_cache():
+def clear_cache() -> Any:
     """清除缓存（用于测试或规则更新后）。"""
     global _cache
     _cache = {}

@@ -29,9 +29,7 @@ async def get_data_source_by_code(db: AsyncSession, code: str) -> DataSource | N
     return result.scalar_one_or_none()
 
 
-async def get_data_source_by_id(
-    db: AsyncSession, source_id: uuid.UUID
-) -> DataSource | None:
+async def get_data_source_by_id(db: AsyncSession, source_id: uuid.UUID) -> DataSource | None:
     """根据ID获取数据源"""
     result = await db.execute(
         select(DataSource).where(
@@ -45,9 +43,7 @@ async def get_data_source_by_id(
 # ============ DataChannel ============
 
 
-async def get_channel_by_code(
-    db: AsyncSession, source_id: uuid.UUID, code: str
-) -> DataChannel | None:
+async def get_channel_by_code(db: AsyncSession, source_id: uuid.UUID, code: str) -> DataChannel | None:
     """根据编码获取栏目"""
     result = await db.execute(
         select(DataChannel).where(
@@ -59,9 +55,7 @@ async def get_channel_by_code(
     return result.scalar_one_or_none()
 
 
-async def get_channel_by_id(
-    db: AsyncSession, channel_id: uuid.UUID
-) -> DataChannel | None:
+async def get_channel_by_id(db: AsyncSession, channel_id: uuid.UUID) -> DataChannel | None:
     """根据ID获取栏目"""
     result = await db.execute(
         select(DataChannel).where(
@@ -101,13 +95,9 @@ async def create_document(db: AsyncSession, data: dict[str, Any]) -> RegulatoryD
     return doc
 
 
-async def update_document(
-    db: AsyncSession, doc_id: uuid.UUID, data: dict[str, Any]
-) -> RegulatoryDocument | None:
+async def update_document(db: AsyncSession, doc_id: uuid.UUID, data: dict[str, Any]) -> RegulatoryDocument | None:
     """更新文档"""
-    result = await db.execute(
-        select(RegulatoryDocument).where(RegulatoryDocument.id == doc_id)
-    )
+    result = await db.execute(select(RegulatoryDocument).where(RegulatoryDocument.id == doc_id))
     doc = result.scalar_one_or_none()
     if not doc:
         return None
@@ -118,9 +108,7 @@ async def update_document(
     return doc
 
 
-async def count_documents(
-    db: AsyncSession, source_id: uuid.UUID, channel_id: uuid.UUID
-) -> int:
+async def count_documents(db: AsyncSession, source_id: uuid.UUID, channel_id: uuid.UUID) -> int:
     """统计文档数量"""
     result = await db.execute(
         select(func.count(RegulatoryDocument.id)).where(
@@ -149,9 +137,7 @@ async def get_sync_job_by_id(db: AsyncSession, job_id: uuid.UUID) -> SyncJob | N
     return result.scalar_one_or_none()
 
 
-async def update_sync_job(
-    db: AsyncSession, job_id: uuid.UUID, data: dict[str, Any]
-) -> SyncJob | None:
+async def update_sync_job(db: AsyncSession, job_id: uuid.UUID, data: dict[str, Any]) -> SyncJob | None:
     """更新同步任务"""
     job = await get_sync_job_by_id(db, job_id)
     if not job:
@@ -174,9 +160,7 @@ async def create_sync_job_page(db: AsyncSession, data: dict[str, Any]) -> SyncJo
     return page
 
 
-async def update_sync_job_page(
-    db: AsyncSession, page_id: uuid.UUID, data: dict[str, Any]
-) -> SyncJobPage | None:
+async def update_sync_job_page(db: AsyncSession, page_id: uuid.UUID, data: dict[str, Any]) -> SyncJobPage | None:
     """更新同步任务分页记录"""
     result = await db.execute(select(SyncJobPage).where(SyncJobPage.id == page_id))
     page = result.scalar_one_or_none()
@@ -226,10 +210,7 @@ async def get_summary_stats(db: AsyncSession) -> dict[str, Any]:
 
     # 最近同步任务
     last_sync_result = await db.execute(
-        select(SyncJob)
-        .where(SyncJob.finished_at.isnot(None))
-        .order_by(SyncJob.finished_at.desc())
-        .limit(1)
+        select(SyncJob).where(SyncJob.finished_at.isnot(None)).order_by(SyncJob.finished_at.desc()).limit(1)
     )
     last_sync = last_sync_result.scalar_one_or_none()
 
@@ -237,9 +218,7 @@ async def get_summary_stats(db: AsyncSession) -> dict[str, Any]:
         "totalCount": total_count,
         "todayNewCount": today_new_count,
         "unreadNewCount": unread_new_count,
-        "lastSyncTime": last_sync.finished_at.isoformat()
-        if last_sync and last_sync.finished_at
-        else None,
+        "lastSyncTime": last_sync.finished_at.isoformat() if last_sync and last_sync.finished_at else None,
         "lastSyncStatus": last_sync.status if last_sync else None,
     }
 
@@ -321,18 +300,13 @@ async def get_documents_with_filters(
         count_query = count_query.where(ff_filter)
 
     if first_found_to:
-        ff_filter = RegulatoryDocument.first_found_at < func.date(
-            first_found_to
-        ) + text("INTERVAL '1 day'")
+        ff_filter = RegulatoryDocument.first_found_at < func.date(first_found_to) + text("INTERVAL '1 day'")
         query = query.where(ff_filter)
         count_query = count_query.where(ff_filter)
 
     # 法规类型筛选（基于 ai_key_points JSONB）
     if regulation_type:
-        rt_filter = (
-            RegulatoryDocument.ai_key_points["regulation_type"].astext
-            == regulation_type
-        )
+        rt_filter = RegulatoryDocument.ai_key_points["regulation_type"].astext == regulation_type
         query = query.where(rt_filter)
         count_query = count_query.where(rt_filter)
 
@@ -340,7 +314,7 @@ async def get_documents_with_filters(
     if impact_level:
         if impact_level == "unanalyzed":
             # 未分析：ai_analysis_status 为 null 或不是 completed
-            unanalyzed_filter = (RegulatoryDocument.ai_analysis_status is None) | (
+            unanalyzed_filter = (RegulatoryDocument.ai_analysis_status is None) | (  # type: ignore[operator]
                 RegulatoryDocument.ai_analysis_status != "completed"
             )
             query = query.where(unanalyzed_filter)
@@ -375,17 +349,11 @@ async def get_documents_with_filters(
     # 是否需要通知筛选（基于 ai_key_points JSONB）
     if notification_required is not None:
         if notification_required:
-            notif_filter = (
-                RegulatoryDocument.ai_key_points["notification_required"].astext
-                == "true"
-            )
+            notif_filter = RegulatoryDocument.ai_key_points["notification_required"].astext == "true"
             query = query.where(notif_filter)
             count_query = count_query.where(notif_filter)
         else:
-            notif_filter = (
-                RegulatoryDocument.ai_key_points["notification_required"].astext
-                == "false"
-            ) | (
+            notif_filter = (RegulatoryDocument.ai_key_points["notification_required"].astext == "false") | (
                 RegulatoryDocument.ai_key_points["notification_required"].astext is None
             )
             query = query.where(notif_filter)
@@ -412,9 +380,7 @@ async def get_documents_with_filters(
     return documents, total
 
 
-async def get_document_by_id(
-    db: AsyncSession, doc_id: uuid.UUID
-) -> RegulatoryDocument | None:
+async def get_document_by_id(db: AsyncSession, doc_id: uuid.UUID) -> RegulatoryDocument | None:
     """根据 ID 获取文档"""
     result = await db.execute(
         select(RegulatoryDocument).where(
@@ -437,12 +403,7 @@ async def get_sync_jobs_list(
 
     # 分页查询
     offset = (page - 1) * page_size
-    result = await db.execute(
-        select(SyncJob)
-        .order_by(SyncJob.created_at.desc())
-        .offset(offset)
-        .limit(page_size)
-    )
+    result = await db.execute(select(SyncJob).order_by(SyncJob.created_at.desc()).offset(offset).limit(page_size))
     jobs = list(result.scalars().all())
 
     return jobs, total
@@ -455,9 +416,7 @@ async def get_dashboard_stats(db: AsyncSession) -> dict[str, Any]:
     """获取 Dashboard 统计数据：今日新增、本周新增、未读、AI 已分析"""
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
-    week_start = datetime.combine(
-        today - __import__("datetime").timedelta(days=6), datetime.min.time()
-    )
+    week_start = datetime.combine(today - __import__("datetime").timedelta(days=6), datetime.min.time())
 
     # 今日新增
     today_result = await db.execute(
@@ -586,9 +545,7 @@ async def get_source_status(db: AsyncSession) -> list[dict[str, Any]]:
                 "code": source.code,
                 "name": source.name,
                 "status": "active",
-                "lastSyncTime": last_sync.finished_at.isoformat()
-                if last_sync and last_sync.finished_at
-                else None,
+                "lastSyncTime": last_sync.finished_at.isoformat() if last_sync and last_sync.finished_at else None,
                 "todayNewCount": today_new,
             }
         )
@@ -609,9 +566,7 @@ async def get_source_status(db: AsyncSession) -> list[dict[str, Any]]:
     return status_list
 
 
-async def get_today_new_documents(
-    db: AsyncSession, limit: int = 10
-) -> list[RegulatoryDocument]:
+async def get_today_new_documents(db: AsyncSession, limit: int = 10) -> list[RegulatoryDocument]:
     """获取今日新增法规列表"""
     today_start = datetime.combine(date.today(), datetime.min.time())
     result = await db.execute(
@@ -626,9 +581,7 @@ async def get_today_new_documents(
     return list(result.scalars().all())
 
 
-async def get_document_detail(
-    db: AsyncSession, doc_id: uuid.UUID
-) -> dict[str, Any] | None:
+async def get_document_detail(db: AsyncSession, doc_id: uuid.UUID) -> dict[str, Any] | None:
     """获取法规详情（含来源、栏目名称）"""
     result = await db.execute(
         select(RegulatoryDocument).where(
@@ -646,12 +599,7 @@ async def get_document_detail(
 
     # 从 raw_data 提取正文和附件
     raw_data = doc.raw_data or {}
-    detail_text = (
-        raw_data.get("detail_text")
-        or raw_data.get("contentSummary")
-        or raw_data.get("summary")
-        or ""
-    )
+    detail_text = raw_data.get("detail_text") or raw_data.get("contentSummary") or raw_data.get("summary") or ""
 
     return {
         "id": str(doc.id),
@@ -670,9 +618,7 @@ async def get_document_detail(
         "aiAnalysisStatus": doc.ai_analysis_status,
         "detailText": detail_text[:5000] if detail_text else None,
         "firstFoundAt": doc.first_found_at.isoformat() if doc.first_found_at else None,
-        "lastCheckedAt": doc.last_checked_at.isoformat()
-        if doc.last_checked_at
-        else None,
+        "lastCheckedAt": doc.last_checked_at.isoformat() if doc.last_checked_at else None,
         "documentId": doc.document_id,
         "isNew": doc.is_new,
         "isRead": doc.is_read,
@@ -680,9 +626,7 @@ async def get_document_detail(
     }
 
 
-async def get_related_documents(
-    db: AsyncSession, doc: RegulatoryDocument, limit: int = 10
-) -> list[RegulatoryDocument]:
+async def get_related_documents(db: AsyncSession, doc: RegulatoryDocument, limit: int = 10) -> list[RegulatoryDocument]:
     """获取相关法规（同分类或同栏目）"""
     result = await db.execute(
         select(RegulatoryDocument)
@@ -739,7 +683,7 @@ async def get_impact_stats(db: AsyncSession) -> dict[str, int]:
     unanalyzed_result = await db.execute(
         select(func.count(RegulatoryDocument.id)).where(
             RegulatoryDocument.is_deleted == False,  # noqa: E712
-            (RegulatoryDocument.ai_analysis_status is None)
+            (RegulatoryDocument.ai_analysis_status is None)  # type: ignore[operator]
             | (RegulatoryDocument.ai_analysis_status != "completed"),
         )
     )
@@ -752,9 +696,7 @@ async def get_impact_stats(db: AsyncSession) -> dict[str, int]:
     }
 
 
-async def get_priority_documents(
-    db: AsyncSession, limit: int = 10
-) -> list[RegulatoryDocument]:
+async def get_priority_documents(db: AsyncSession, limit: int = 10) -> list[RegulatoryDocument]:
     """获取重点关注法规（high/medium impact）。"""
     from sqlalchemy import String, cast
 
@@ -764,9 +706,7 @@ async def get_priority_documents(
             RegulatoryDocument.is_deleted == False,  # noqa: E712
             RegulatoryDocument.ai_analysis_status == "completed",
             RegulatoryDocument.ai_key_points.isnot(None),
-            cast(RegulatoryDocument.ai_key_points["impact_level"], String).in_(
-                ["high", "medium"]
-            ),
+            cast(RegulatoryDocument.ai_key_points["impact_level"], String).in_(["high", "medium"]),
         )
         .order_by(RegulatoryDocument.ai_relevance_score.desc())
         .limit(limit)
@@ -821,10 +761,8 @@ async def get_attention_count(db: AsyncSession) -> int:
     return result.scalar() or 0
 
 
-async def get_priority_documents_v2(
-    db: AsyncSession, limit: int = 5
-) -> list[RegulatoryDocument]:
-    """Get top priority documents: attention category, sorted by relevance score."""
+async def get_priority_documents_v2(db: AsyncSession, limit: int = 5) -> list[RegulatoryDocument]:
+    """Get top priority documents: attention category, sorted by publish date."""
     result = await db.execute(
         select(RegulatoryDocument)
         .where(
@@ -833,8 +771,7 @@ async def get_priority_documents_v2(
             RegulatoryDocument.ai_analysis_status == "completed",
         )
         .order_by(
-            RegulatoryDocument.ai_relevance_score.desc().nullslast(),
-            RegulatoryDocument.first_found_at.desc(),
+            RegulatoryDocument.publish_date.desc().nullslast(),
         )
         .limit(limit)
     )
@@ -870,9 +807,7 @@ async def get_source_status_v2(db: AsyncSession) -> list[dict[str, Any]]:
             {
                 "code": source.code,
                 "name": source.name,
-                "lastSyncTime": last_sync.finished_at.isoformat()
-                if last_sync and last_sync.finished_at
-                else None,
+                "lastSyncTime": last_sync.finished_at.isoformat() if last_sync and last_sync.finished_at else None,
                 "lastSyncStatus": last_sync.status if last_sync else None,
             }
         )
@@ -893,4 +828,4 @@ async def get_week_stats(db: AsyncSession) -> dict[str, int]:
     """)
     )
     row = result.fetchone()
-    return {"total": row[0], "high_impact": row[1]}
+    return {"total": row[0], "high_impact": row[1]}  # type: ignore[index]

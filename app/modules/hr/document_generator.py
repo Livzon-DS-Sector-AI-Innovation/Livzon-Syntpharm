@@ -12,11 +12,9 @@ from app.modules.hr.models import Employee
 
 def _find_template() -> Path:
     candidates = [
-        Path("员工培训教育管理规程/7.3新员工入职培训记录.docx"),
-        Path("../员工培训教育管理规程/7.3新员工入职培训记录.docx"),
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "员工培训教育管理规程"
-        / "7.3新员工入职培训记录.docx",
+        Path("assets/hr/7.3新员工入职培训记录.docx"),
+        Path("../assets/hr/7.3新员工入职培训记录.docx"),
+        Path(__file__).resolve().parent.parent.parent.parent / "assets/hr" / "7.3新员工入职培训记录.docx",
     ]
     for p in candidates:
         if p.exists():
@@ -24,7 +22,7 @@ def _find_template() -> Path:
     raise FileNotFoundError("模板文件未找到: 7.3新员工入职培训记录.docx")
 
 
-def _replace_all(doc, placeholders: dict[str, str]) -> None:
+def _replace_all(doc, placeholders: dict[str, str]) -> Any:  # type: ignore[no-untyped-def]
     """Replace all {key} placeholders across the document."""
     for para in doc.paragraphs:
         for key, val in placeholders.items():
@@ -49,9 +47,7 @@ def generate_onboarding_training_record(
 
     # ── Replace all employee info placeholders ──
     quals = employee.qualifications
-    qual_str = (
-        ", ".join(quals) if isinstance(quals, list) else (str(quals) if quals else "")
-    )
+    qual_str = ", ".join(quals) if isinstance(quals, list) else (str(quals) if quals else "")
 
     _replace_all(
         doc,
@@ -59,9 +55,7 @@ def generate_onboarding_training_record(
             "{姓名}": employee.name or "",
             "{学历}": employee.education or "",
             "{毕业院校}": employee.school or "",
-            "{毕业时间}": str(employee.graduation_date)
-            if employee.graduation_date
-            else "",
+            "{毕业时间}": str(employee.graduation_date) if employee.graduation_date else "",
             "{体现部门}": employee.department or "",
             "{体现岗位}": employee.position or "",
             "{证书}": qual_str,
@@ -98,7 +92,7 @@ def generate_onboarding_training_record(
         else:
             # Fallback: add rows at end
             for item in training_items:
-                t.add_row()
+                t.add_row()  # type: ignore[no-untyped-call]
 
         # Fill in item data (now rows template_idx .. template_idx+N-1)
         for i, item in enumerate(training_items):

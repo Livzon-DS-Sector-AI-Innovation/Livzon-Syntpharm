@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -48,9 +49,7 @@ class RoleResponse(BaseModel):
 class PersonnelAddRequest(BaseModel):
     """添加人员请求 — 从 identity.users 选取"""
 
-    user_ids: list[uuid.UUID] = Field(
-        ..., min_length=1, description="identity.users 的 ID 列表"
-    )
+    user_ids: list[uuid.UUID] = Field(..., min_length=1, description="identity.users 的 ID 列表")
 
 
 class PersonnelAddResult(BaseModel):
@@ -58,14 +57,14 @@ class PersonnelAddResult(BaseModel):
 
     added: list[uuid.UUID]
     skipped: list[uuid.UUID] = Field(default_factory=list)
-    errors: list[dict] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list[Any])
 
 
 class PersonnelUpdate(BaseModel):
     """更新人员请求"""
 
     is_active: bool | None = Field(None, description="是否在岗")
-    extended_attrs: dict | None = Field(None, description="扩展属性")
+    extended_attrs: dict[str, Any] | None = Field(None, description="扩展属性")
 
 
 class PersonnelRoleAssign(BaseModel):
@@ -84,9 +83,7 @@ class PersonnelCategoryItem(BaseModel):
 class PersonnelCategoryAssign(BaseModel):
     """人员+角色绑定设备分类请求"""
 
-    categories: list[PersonnelCategoryItem] = Field(
-        default_factory=list, description="分类绑定列表"
-    )
+    categories: list[PersonnelCategoryItem] = Field(default_factory=list, description="分类绑定列表")
 
 
 class PersonnelRoleInfo(BaseModel):
@@ -122,7 +119,7 @@ class PersonnelResponse(BaseModel):
     feishu_user_id: str | None
     feishu_open_id: str | None
     mobile: str | None
-    extended_attrs: dict | None
+    extended_attrs: dict[str, Any] | None
     is_active: bool
     roles: list[PersonnelRoleInfo] = Field(default_factory=list)
     categories: list[PersonnelCategoryInfo] = Field(default_factory=list)
@@ -165,4 +162,4 @@ class FeishuRefreshResult(BaseModel):
     updated: int = Field(description="成功更新数")
     skipped: int = Field(description="跳过（无变更）")
     unmatched: int = Field(description="未匹配（identity 中找不到）")
-    errors: list[dict] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list[Any])

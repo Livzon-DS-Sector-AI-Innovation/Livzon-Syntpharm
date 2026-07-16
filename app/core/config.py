@@ -2,6 +2,7 @@ import logging
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -24,14 +25,17 @@ def _get_env_file() -> str:
 # Feishu Configuration Models
 # ============================================================================
 
+
 class FeishuAppCredentials(BaseModel):
     """Reusable model for a Feishu app's bot credentials."""
+
     app_id: str = ""
     app_secret: str = ""
 
 
 class FeishuPlatformConfig(BaseModel):
     """Platform app — SSO, org sync, IM, and shared Bitable access."""
+
     app_id: str = ""
     app_secret: str = ""
     redirect_uri: str = ""
@@ -49,6 +53,7 @@ class FeishuPlatformConfig(BaseModel):
 
 class FeishuHRBitableConfig(BaseModel):
     """HR module Bitable tables (uses platform app credentials)."""
+
     app_token: str = ""
     employee_table_id: str = ""
     department_table_id: str = ""
@@ -62,6 +67,7 @@ class FeishuHRBitableConfig(BaseModel):
 
 class FeishuSafetyConfig(BaseModel):
     """Safety module — independent Feishu app + hazard Bitable."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_app_token: str = ""
     hazard_table_id: str = ""
@@ -69,12 +75,14 @@ class FeishuSafetyConfig(BaseModel):
 
 class FeishuEquipmentConfig(BaseModel):
     """Equipment module — independent Feishu app for bot interaction."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     ws_enabled: bool = True
 
 
 class FeishuVehicleConfig(BaseModel):
     """Vehicle module — independent Feishu app + vehicle request Bitable."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_request_app_token: str = ""
     bitable_request_table_id: str = ""
@@ -82,6 +90,7 @@ class FeishuVehicleConfig(BaseModel):
 
 class FeishuTrainingConfig(BaseModel):
     """Training module — independent Feishu app + training-related Bitables."""
+
     credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_material_bom_app_token: str = ""
     bitable_material_bom_table_id: str = ""
@@ -89,20 +98,34 @@ class FeishuTrainingConfig(BaseModel):
     bitable_training_notification_table_id: str = ""
 
 
+class FeishuEnergyConfig(BaseModel):
+    """Energy module — uses platform app credentials for Bitable access."""
+
+    app_token: str = ""
+    workshop_table_id: str = ""
+    monthly_table_id: str = ""
+
+
 class FeishuProductConfig(BaseModel):
-    """Product module Bitable (uses platform app credentials)."""
+    """Production module — independent Feishu app + product/output Bitables."""
+
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
     bitable_app_token: str = ""
     bitable_table_id: str = ""
+    bitable_output_app_token: str = ""
+    bitable_output_table_id: str = ""
 
 
 class FeishuAIQueryConfig(BaseModel):
     """AI-powered Bitable query settings."""
+
     tables: str = ""  # JSON: {"别名": {"app_token": "...", "table_id": "...", "filterable_fields": [...]}}
     max_rows: int = 200
 
 
 class FeishuSettings(BaseModel):
     """Top-level Feishu configuration — all modules grouped."""
+
     platform: FeishuPlatformConfig = Field(default_factory=FeishuPlatformConfig)
     hr_bitable: FeishuHRBitableConfig = Field(default_factory=FeishuHRBitableConfig)
     safety: FeishuSafetyConfig = Field(default_factory=FeishuSafetyConfig)
@@ -110,6 +133,7 @@ class FeishuSettings(BaseModel):
     vehicle: FeishuVehicleConfig = Field(default_factory=FeishuVehicleConfig)
     training: FeishuTrainingConfig = Field(default_factory=FeishuTrainingConfig)
     product: FeishuProductConfig = Field(default_factory=FeishuProductConfig)
+    energy: FeishuEnergyConfig = Field(default_factory=FeishuEnergyConfig)
     ai_query: FeishuAIQueryConfig = Field(default_factory=FeishuAIQueryConfig)
     aily_app_id: str = ""
 
@@ -117,6 +141,7 @@ class FeishuSettings(BaseModel):
 # ============================================================================
 # Main Settings
 # ============================================================================
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -134,7 +159,7 @@ class Settings(BaseSettings):
 
     @field_validator("DEBUG", mode="before")
     @classmethod
-    def coerce_debug_bool(cls, v):
+    def coerce_debug_bool(cls, v) -> Any:  # type: ignore[no-untyped-def]
         """兼容 VS Code 等注入的非布尔值（如 DEBUG=release）。"""
         if isinstance(v, bool):
             return v
@@ -155,11 +180,10 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
-    
+
     # AI
     AI_API_KEY: str = ""
     AI_BASE_URL: str = "https://api.openai.com/v1"
-    AI_VISION_MODEL: str = "gpt-4o"
 
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
@@ -168,6 +192,7 @@ class Settings(BaseSettings):
     feishu: FeishuSettings = Field(default_factory=FeishuSettings)
 
     FRONTEND_URL: str = ""
+    SSO_ADMIN_IDENTIFIERS: str = ""
 
     # Upload
     MAX_UPLOAD_SIZE_MB: int = 50
@@ -183,8 +208,23 @@ class Settings(BaseSettings):
     # JWT
     JWT_EXPIRE_SECONDS: int = 86400  # 24 hours
 
+    # Bootstrap local users
+    BOOTSTRAP_ADMIN_USERNAME: str = ""
+    BOOTSTRAP_ADMIN_PASSWORD: str = ""
+    BOOTSTRAP_ADMIN_NAME: str = "系统管理员"
+    BOOTSTRAP_ADMIN_EMAIL: str = ""
+    BOOTSTRAP_USER_USERNAME: str = ""
+    BOOTSTRAP_USER_PASSWORD: str = ""
+    BOOTSTRAP_USER_NAME: str = "普通用户"
+    BOOTSTRAP_USER_EMAIL: str = ""
+    LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
+
     # AI — HR 离职分析
     MOONSHOT_API_KEY: str = ""
+
+    # AI — MiniMax (quality module AI features)
+    MINIMAX_API_KEY: str = ""
+    MINIMAX_BASE_URL: str = "https://api.minimax.chat/v1"
 
     # Regulatory Tracker — 定时同步
     CRAWLER_HEADLESS: str = "true"
@@ -199,10 +239,32 @@ class Settings(BaseSettings):
     # LLM (AI 解析配置)
     LLM_API_KEY: str | None = None
     LLM_BASE_URL: str | None = "https://api.deepseek.com"
-    LLM_MODEL: str | None = "deepseek-chat"
 
     # MCP — AI Agent 认证
     MCP_AGENT_API_KEYS: str = ""
+
+    # Livzon Agent (Hermes)
+    HERMES_AGENT_URL: str = ""
+    HERMES_AGENT_TOKEN: str = ""
+
+    # HR Bitable
+    HR_BITABLE_APP_TOKEN: str = ""
+
+    # Font
+    CJK_FONT_PATH: str = ""
+    CJK_FONT_FALLBACK_PATHS: list[str] = [
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    ]
+
+    # LibreOffice
+    SOFFICE_PATH: str = ""
+    SOFFICE_FALLBACK_PATHS: list[str] = [
+        "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+        "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+    ]
 
     # API
     API_V1_PREFIX: str = "/api/v1"

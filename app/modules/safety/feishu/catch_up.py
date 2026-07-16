@@ -59,9 +59,7 @@ async def _fetch_bitable_since(
 
 async def _get_local_feishu_ids(db: AsyncSession) -> set[str]:
     """获取本地所有已关联 feishu_record_id 的隐患记录 ID 集合。"""
-    stmt = select(HazardReport.feishu_record_id).where(
-        HazardReport.feishu_record_id.isnot(None)
-    )
+    stmt = select(HazardReport.feishu_record_id).where(HazardReport.feishu_record_id.isnot(None))
     result = await db.execute(stmt)
     return {row[0] for row in result.fetchall() if row[0]}
 
@@ -327,9 +325,7 @@ async def recover_unprocessed_records() -> dict[str, Any]:
 
             # 3b. 查重：本地是否已有同 feishu_record_id 的记录
             async with async_session_factory() as db:
-                stmt = select(HazardReport).where(
-                    HazardReport.feishu_record_id == record_id
-                )
+                stmt = select(HazardReport).where(HazardReport.feishu_record_id == record_id)
                 result = await db.execute(stmt)
                 existing_hazard = result.scalar_one_or_none()
 

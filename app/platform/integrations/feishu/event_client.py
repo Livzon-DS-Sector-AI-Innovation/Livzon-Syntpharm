@@ -18,7 +18,7 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 # 事件类型 → 处理器列表
-_handlers: dict[str, list] = {}
+_handlers: dict[str, list[Any]] = {}
 _stop: asyncio.Event | None = None
 
 # 飞书 endpoint
@@ -26,10 +26,10 @@ FEISHU_DOMAIN = "https://open.feishu.cn"
 WS_ENDPOINT_URL = f"{FEISHU_DOMAIN}/callback/ws/endpoint"
 
 
-def on_event(event_type: str):
+def on_event(event_type: str) -> Any:
     """装饰器：注册事件处理器。"""
 
-    def decorator(func):
+    def decorator(func) -> Any:  # type: ignore[no-untyped-def]
         _handlers.setdefault(event_type, []).append(func)
         logger.info("注册飞书事件: type=%s handler=%s", event_type, func.__name__)
         return func
@@ -61,7 +61,7 @@ async def _get_ws_url(app_id: str, app_secret: str) -> str | None:
             if data.get("code") == 0:
                 url = data.get("data", {}).get("URL")
                 logger.info("获取 WebSocket URL 成功: %s", url[:80] if url else "empty")
-                return url
+                return url  # type: ignore[no-any-return]
             else:
                 logger.error(
                     "获取 WebSocket URL 失败: code=%s msg=%s",
@@ -89,9 +89,7 @@ async def start_ws() -> None:
     while not _stop.is_set():
         try:
             # 1. 获取 WebSocket URL
-            ws_url = await _get_ws_url(
-                settings.feishu.platform.app_id, settings.feishu.platform.app_secret
-            )
+            ws_url = await _get_ws_url(settings.feishu.platform.app_id, settings.feishu.platform.app_secret)
             if not ws_url:
                 logger.error("无法获取 WebSocket URL，10 秒后重试")
                 await asyncio.sleep(10)
@@ -149,9 +147,7 @@ async def start_ws() -> None:
                             else:
                                 logger.debug("收到非事件帧: type=%s", msg_type)
                         except Exception as e:
-                            logger.debug(
-                                "protobuf 解析失败 (%d bytes): %s", len(message), e
-                            )
+                            logger.debug("protobuf 解析失败 (%d bytes): %s", len(message), e)
                     else:
                         # 文本消息（ping/pong 等）
                         try:
@@ -194,9 +190,7 @@ async def _dispatch_event(event: dict[str, Any]) -> None:
         event_data = event.get("event", event)
         await _dispatch(event_type, event_data)
     else:
-        logger.debug(
-            "无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200]
-        )
+        logger.debug("无法确定事件类型: %s", json.dumps(event, ensure_ascii=False)[:200])
 
 
 async def stop_ws() -> None:

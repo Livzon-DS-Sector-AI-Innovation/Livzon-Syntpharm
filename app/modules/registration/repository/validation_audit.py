@@ -1,5 +1,6 @@
 """Validation Audit database queries."""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import asc, desc, func, select
@@ -38,18 +39,12 @@ class ValidationAuditTaskRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[ValidationAuditTask], int]:
-        stmt = select(ValidationAuditTask).where(
-            ValidationAuditTask.is_deleted.is_(False)
-        )
+        stmt = select(ValidationAuditTask).where(ValidationAuditTask.is_deleted.is_(False))
 
         if product_name:
-            stmt = stmt.where(
-                ValidationAuditTask.product_name.ilike(f"%{product_name}%")
-            )
+            stmt = stmt.where(ValidationAuditTask.product_name.ilike(f"%{product_name}%"))
         if source_company:
-            stmt = stmt.where(
-                ValidationAuditTask.source_company.ilike(f"%{source_company}%")
-            )
+            stmt = stmt.where(ValidationAuditTask.source_company.ilike(f"%{source_company}%"))
         if status:
             stmt = stmt.where(ValidationAuditTask.status == status)
 
@@ -77,7 +72,7 @@ class ValidationAuditTaskRepository:
         )
         return result.scalar_one()
 
-    async def update(self, task: ValidationAuditTask, **kwargs) -> ValidationAuditTask:
+    async def update(self, task: ValidationAuditTask, **kwargs) -> Any:  # type: ignore[no-untyped-def]
         for key, value in kwargs.items():
             if hasattr(task, key):
                 setattr(task, key, value)
@@ -200,9 +195,7 @@ class ValidationAuditIssueRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def create_batch(
-        self, issues: list[ValidationAuditIssue]
-    ) -> list[ValidationAuditIssue]:
+    async def create_batch(self, issues: list[ValidationAuditIssue]) -> list[ValidationAuditIssue]:
         self.session.add_all(issues)
         await self.session.flush()
         if not issues:
@@ -259,9 +252,7 @@ class ValidationAuditKnowledgeBaseRepository:
         )
         return list(result.scalars().all())
 
-    async def create(
-        self, entry: ValidationAuditKnowledgeBase
-    ) -> ValidationAuditKnowledgeBase:
+    async def create(self, entry: ValidationAuditKnowledgeBase) -> ValidationAuditKnowledgeBase:
         self.session.add(entry)
         await self.session.flush()
         result = await self.session.execute(

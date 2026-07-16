@@ -1,3 +1,4 @@
+# ruff: noqa
 """Sync Feishu Bitable vehicle request data to PostgreSQL.
 
 Usage: cd to dazah-backend and run:
@@ -60,9 +61,7 @@ def _extract_text(value) -> str:
     if isinstance(value, list):
         # Rich text: [{"text": "...", "type": "text"}]
         if len(value) > 0 and isinstance(value[0], dict) and "text" in value[0]:
-            return "".join(
-                item.get("text", "") for item in value if isinstance(item, dict)
-            )
+            return "".join(item.get("text", "") for item in value if isinstance(item, dict))
         # Person array: [{"name": "...", ...}]
         if len(value) > 0 and isinstance(value[0], dict) and "name" in value[0]:
             names = [item.get("name", "") for item in value if isinstance(item, dict)]
@@ -72,11 +71,7 @@ def _extract_text(value) -> str:
     if isinstance(value, dict):
         # Rich text object: {"type": 1, "value": [{"text": "..."}]}
         if "value" in value and isinstance(value["value"], list):
-            return "".join(
-                item.get("text", "")
-                for item in value["value"]
-                if isinstance(item, dict)
-            )
+            return "".join(item.get("text", "") for item in value["value"] if isinstance(item, dict))
         return value.get("text", "")
     return str(value)
 
@@ -229,9 +224,7 @@ async def fetch_and_sync_recent(client: httpx.AsyncClient, token: str) -> dict:
                     await session.execute(insert(VehicleRequest).values(**parsed))
                     total_synced += 1
                 except Exception as e:
-                    logger.error(
-                        "Sync failed for record %s: %s", rec.get("record_id"), e
-                    )
+                    logger.error("Sync failed for record %s: %s", rec.get("record_id"), e)
                     total_failed += 1
                     await session.rollback()
 

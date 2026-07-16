@@ -3,6 +3,7 @@
 from datetime import date, datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 from pydantic import BaseModel, Field
@@ -38,11 +39,9 @@ class TrainingEvaluationInput(BaseModel):
 
 def _find_template() -> Path:
     candidates = [
-        Path("员工培训教育管理规程/7.11培训效果评估表.docx"),
-        Path("../员工培训教育管理规程/7.11培训效果评估表.docx"),
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "员工培训教育管理规程"
-        / "7.11培训效果评估表.docx",
+        Path("assets/hr/7.11培训效果评估表.docx"),
+        Path("../assets/hr/7.11培训效果评估表.docx"),
+        Path(__file__).resolve().parent.parent.parent.parent / "assets/hr" / "7.11培训效果评估表.docx",
     ]
     for p in candidates:
         if p.exists():
@@ -50,7 +49,7 @@ def _find_template() -> Path:
     raise FileNotFoundError("模板文件未找到: 7.11培训效果评估表.docx")
 
 
-def _set_cell(cell, text: str) -> None:
+def _set_cell(cell, text: str) -> Any:  # type: ignore[no-untyped-def]
     """Set cell text using the first run's formatting."""
     first = None
     for p in cell.paragraphs:
@@ -103,9 +102,7 @@ def generate_training_evaluation(data: TrainingEvaluationInput) -> BytesIO:
 
     # Row 4: 培训对象 (cols 1-14 merged)
     people = "、".join(data.trainee_names) if data.trainee_names else ""
-    _set_cell(
-        table.rows[4].cells[1], f"部门/班组/人员(Dept./group/personnel)：{people}"
-    )
+    _set_cell(table.rows[4].cells[1], f"部门/班组/人员(Dept./group/personnel)：{people}")
 
     # Row 5-7: 应到/实到/缺席 (fill if data available)
     if data.expected_count is not None:

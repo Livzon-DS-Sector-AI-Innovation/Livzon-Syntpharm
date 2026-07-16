@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Maintenance API integration tests."""
 
 import uuid
@@ -68,9 +69,7 @@ async def test_delete_failure_symptom(auth_client: AsyncClient):
     )
     code_id = create_resp.json()["data"]["id"]
 
-    response = await auth_client.delete(
-        f"/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"
-    )
+    response = await auth_client.delete(f"/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}")
     assert response.status_code == 200
 
 
@@ -114,7 +113,7 @@ async def _create_test_equipment(auth_client: AsyncClient) -> str:
         "/api/v1/equipment/equipments",
         json={
             "name": f"测试设备-{uid}",
-            "equipment_no": f"EQ-{cat_code}-0001",
+            "asset_no": f"EQ-{cat_code}-0001",
             "category_ids": [cat_id],
             "location_id": loc_id,
         },
@@ -244,9 +243,7 @@ async def test_calibration_plan_crud(auth_client: AsyncClient):
     plan_id = create_resp.json()["data"]["id"]
 
     # 查询
-    get_resp = await auth_client.get(
-        f"/api/v1/equipment/maintenance/calibration/plans/{plan_id}"
-    )
+    get_resp = await auth_client.get(f"/api/v1/equipment/maintenance/calibration/plans/{plan_id}")
     assert get_resp.status_code == 200
 
     # 修改
@@ -261,9 +258,7 @@ async def test_calibration_plan_crud(auth_client: AsyncClient):
     assert list_resp.status_code == 200
 
     # 删除
-    del_resp = await auth_client.delete(
-        f"/api/v1/equipment/maintenance/calibration/plans/{plan_id}"
-    )
+    del_resp = await auth_client.delete(f"/api/v1/equipment/maintenance/calibration/plans/{plan_id}")
     assert del_resp.status_code == 200
 
 

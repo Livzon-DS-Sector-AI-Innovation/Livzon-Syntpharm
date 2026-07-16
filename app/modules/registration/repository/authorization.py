@@ -35,18 +35,12 @@ class AuthorizationLetterRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[AuthorizationLetter], int]:
-        stmt = select(AuthorizationLetter).where(
-            AuthorizationLetter.is_deleted.is_(False)
-        )
+        stmt = select(AuthorizationLetter).where(AuthorizationLetter.is_deleted.is_(False))
 
         if product_name:
-            stmt = stmt.where(
-                AuthorizationLetter.product_name.ilike(f"%{product_name}%")
-            )
+            stmt = stmt.where(AuthorizationLetter.product_name.ilike(f"%{product_name}%"))
         if preparation_unit:
-            stmt = stmt.where(
-                AuthorizationLetter.preparation_unit.ilike(f"%{preparation_unit}%")
-            )
+            stmt = stmt.where(AuthorizationLetter.preparation_unit.ilike(f"%{preparation_unit}%"))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -94,9 +88,7 @@ class SupplementaryReplyRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list["SupplementaryReply"], int]:
-        stmt = select(SupplementaryReply).where(
-            SupplementaryReply.is_deleted.is_(False)
-        )
+        stmt = select(SupplementaryReply).where(SupplementaryReply.is_deleted.is_(False))
 
         if drug_name:
             stmt = stmt.where(SupplementaryReply.drug_name.ilike(f"%{drug_name}%"))

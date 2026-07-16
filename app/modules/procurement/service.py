@@ -1,30 +1,41 @@
 """Procurement business workflows live here."""
 
+import csv
 import re
 from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from hashlib import sha256
-from io import BytesIO
-from uuid import UUID
+from io import BytesIO, StringIO
+from pathlib import Path
+from uuid import UUID, uuid4
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
 from pypdf import PdfReader
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
+from app.core.storage import get_object, upload_object
+from app.core.storage import is_enabled as minio_enabled
+from app.modules.procurement.contract_generator import generate_contract
 from app.modules.procurement.models import (
+    ContractRecord,
     InvoiceRecognitionRecord,
     PurchaseRequest,
     PurchaseRequestApproval,
     PurchaseRequestItem,
+    Supplier,
 )
 from app.modules.procurement.repository import (
+    ContractRecordRepository,
     InvoiceRecognitionRepository,
     PurchaseRequestRepository,
+    SupplierRepository,
 )
 from app.modules.procurement.schemas import (
+    ContractGenerateRequest,
     InvoiceLineItem,
     InvoiceRecognitionResult,
     PurchaseApprovalRequest,
@@ -36,6 +47,8 @@ from app.modules.procurement.schemas import (
     PurchaseRequestResponse,
     PurchaseRequestStatus,
     PurchaseRequestUpdate,
+    SupplierImportResult,
+    SupplierResponse,
 )
 
 MONEY_PATTERN = r"[¥￥]?\s*([0-9]+(?:\.[0-9]+)?)"
@@ -44,9 +57,7 @@ MONEY_QUANT = Decimal("0.01")
 
 APPROVAL_ROLE_TO_PENDING_STATUS = {
     PurchaseApprovalRole.department_head: PurchaseRequestStatus.pending_department_head,
-    PurchaseApprovalRole.responsible_leader: (
-        PurchaseRequestStatus.pending_responsible_leader
-    ),
+    PurchaseApprovalRole.responsible_leader: (PurchaseRequestStatus.pending_responsible_leader),
 }
 
 PURCHASE_CATEGORY_LABELS = {
@@ -87,14 +98,26 @@ PURCHASE_ORDER_EXPORT_COLUMN_WIDTHS = {
     "K": 29.75,
 }
 
+SUPPORTED_SUPPLIER_TABLE_EXTENSIONS = {".xlsx", ".xlsm", ".csv", ".tsv"}
+SUPPLIER_FIELD_ALIASES = {
+    "supplier_code": {"供应商代码", "供应商编码", "供应商编号"},
+    "supplier_name": {"供应商名称", "供应商", "供应商全称"},
+    "material_code": {"物料编码", "物料代码", "物料编号"},
+    "material_name": {"物料名称", "物料", "品名"},
+    "manufacturer_code": {"生产厂家编码", "厂家编码", "生产商编码"},
+    "manufacturer_name": {"生产厂家名称", "生产厂家", "厂家名称", "生产商"},
+    "purchase_category": {"采购品类名称", "采购品类", "品类", "采购类别"},
+    "last_updated_by": {"最后更新人", "更新人"},
+    "last_updated_date": {"最后更新日期", "更新日期", "最后更新时间"},
+}
+
+CONTRACT_STORAGE_DIR = "contracts"
+
 
 class DuplicateInvoiceError(ValueError):
     def __init__(self, existing_record: InvoiceRecognitionRecord) -> None:
         self.existing_record = existing_record
-        super().__init__(
-            "发票已识别过，"
-            f"记录 ID：{existing_record.id}，文件：{existing_record.file_name}"
-        )
+        super().__init__(f"发票已识别过，记录 ID：{existing_record.id}，文件：{existing_record.file_name}")
 
 
 def recognize_invoice_pdf(
@@ -143,10 +166,7 @@ async def recognize_and_store_invoice_pdf(
         seller_name=result.seller_name,
         total_tax_amount=result.total_tax_amount,
         total_amount_with_tax_small=result.total_amount_with_tax_small,
-        line_items=[
-            item.model_dump(mode="json", exclude_none=False)
-            for item in result.line_items
-        ],
+        line_items=[item.model_dump(mode="json", exclude_none=False) for item in result.line_items],
         raw_text=result.raw_text,
     )
     return await repository.create(record)
@@ -182,6 +202,60 @@ async def batch_delete_invoice_recognition_records(
     record_ids: list[UUID],
 ) -> int:
     return await InvoiceRecognitionRepository(db).batch_delete_records(record_ids)
+
+
+async def import_supplier_table_file(
+    db: AsyncSession,
+    file_bytes: bytes,
+    *,
+    file_name: str,
+) -> SupplierImportResult:
+    if not file_bytes:
+        raise ValueError("上传文件为空")
+
+    columns, rows, sheet_name = _parse_supplier_table_file(file_bytes, file_name)
+    suppliers = [
+        _build_supplier_from_row(
+            raw_data=row_data,
+            columns=columns,
+            file_name=file_name,
+            sheet_name=sheet_name,
+            row_number=row_number,
+        )
+        for row_number, row_data in rows
+    ]
+    imported_count = await SupplierRepository(db).replace_all(suppliers)
+    return SupplierImportResult(
+        imported_count=imported_count,
+        columns=columns,
+        file_name=file_name,
+        sheet_name=sheet_name,
+    )
+
+
+async def list_suppliers(
+    db: AsyncSession,
+    *,
+    keyword: str | None = None,
+    supplier_name: str | None = None,
+    material_name: str | None = None,
+    purchase_category: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[SupplierResponse], int, list[str]]:
+    suppliers, total, columns = await SupplierRepository(db).list_suppliers(
+        keyword=keyword,
+        supplier_name=supplier_name,
+        material_name=material_name,
+        purchase_category=purchase_category,
+        page=page,
+        page_size=page_size,
+    )
+    return (
+        [SupplierResponse.model_validate(supplier) for supplier in suppliers],
+        total,
+        columns,
+    )
 
 
 async def create_purchase_request(
@@ -267,10 +341,7 @@ async def list_purchase_requests(
                 page=page,
                 page_size=page_size,
             )
-            responses = [
-                await _get_purchase_request_response(repository, request.id)
-                for request in requests
-            ]
+            responses = [await _get_purchase_request_response(repository, request.id) for request in requests]
             return responses, total
 
     requests, total = await repository.list_requests(
@@ -280,10 +351,7 @@ async def list_purchase_requests(
         page=page,
         page_size=page_size,
     )
-    responses = [
-        await _get_purchase_request_response(repository, request.id)
-        for request in requests
-    ]
+    responses = [await _get_purchase_request_response(repository, request.id) for request in requests]
     return responses, total
 
 
@@ -335,6 +403,104 @@ async def export_purchase_order_lines_xlsx(
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
+
+
+async def generate_and_store_contract(
+    db: AsyncSession,
+    payload: ContractGenerateRequest,
+) -> tuple[BytesIO, str, str, ContractRecord]:
+    buffer, filename, content_type = generate_contract(payload)
+    file_bytes = buffer.getvalue()
+    record_id = uuid4()
+    stored_path = _store_contract_file(
+        record_id=record_id,
+        filename=filename,
+        content=file_bytes,
+        content_type=content_type,
+    )
+    record = ContractRecord(
+        id=record_id,
+        title=payload.title.strip(),
+        category=payload.category.value,
+        contract_number=payload.contract_number,
+        contract_date=payload.contract_date,
+        seller_name=payload.seller.name,
+        filename=filename,
+        file_path=stored_path,
+        content_type=content_type,
+        file_size=len(file_bytes),
+        payload=payload.model_dump(mode="json"),
+    )
+    created = await ContractRecordRepository(db).create(record)
+    return BytesIO(file_bytes), filename, content_type, created
+
+
+async def list_contract_records(
+    db: AsyncSession,
+    *,
+    keyword: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[ContractRecord], int]:
+    return await ContractRecordRepository(db).list_records(
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+    )
+
+
+async def get_contract_record(
+    db: AsyncSession,
+    record_id: UUID,
+) -> ContractRecord:
+    record = await ContractRecordRepository(db).get(record_id)
+    if not record:
+        raise ValueError("合同记录不存在")
+    return record
+
+
+async def get_contract_record_file(
+    db: AsyncSession,
+    record_id: UUID,
+) -> tuple[bytes, str, str]:
+    record = await get_contract_record(db, record_id)
+    if minio_enabled():
+        result = get_object("procurement", record.file_path)
+        if result is None:
+            raise ValueError("合同文件不存在")
+        data, content_type = result
+        return data, content_type or record.content_type, record.filename
+
+    file_path = Path(record.file_path)
+    if not file_path.exists():
+        raise ValueError("合同文件不存在")
+    return file_path.read_bytes(), record.content_type, record.filename
+
+
+def _store_contract_file(
+    *,
+    record_id: UUID,
+    filename: str,
+    content: bytes,
+    content_type: str,
+) -> str:
+    safe_filename = Path(filename).name
+    if minio_enabled():
+        object_key = f"{CONTRACT_STORAGE_DIR}/{record_id}/{safe_filename}"
+        return upload_object(
+            module="procurement",
+            object_key=object_key,
+            data=content,
+            length=len(content),
+            content_type=content_type,
+        )
+
+    storage_root = Path(get_settings().STORAGE_ROOT)
+    directory = storage_root / "procurement" / CONTRACT_STORAGE_DIR / str(record_id)
+    directory.mkdir(parents=True, exist_ok=True)
+    file_path = directory / safe_filename
+    file_path.write_bytes(content)
+    return str(file_path)
 
 
 async def submit_purchase_request(
@@ -423,7 +589,7 @@ async def _review_purchase_request(
 
 
 def _build_purchase_request_items(
-    item_inputs: list,
+    item_inputs: list,  # type: ignore[type-arg]
 ) -> tuple[list[PurchaseRequestItem], Decimal]:
     items: list[PurchaseRequestItem] = []
     total_amount = Decimal("0")
@@ -514,9 +680,7 @@ def _build_purchase_order_workbook(
 
     row_index = 4
     total_rows: list[int] = []
-    for department, department_lines in _group_purchase_order_lines_by_department(
-        lines
-    ):
+    for department, department_lines in _group_purchase_order_lines_by_department(lines):
         _write_department_row(worksheet, row_index, department)
         row_index += 1
         _write_purchase_order_header_row(worksheet, row_index)
@@ -537,9 +701,7 @@ def _build_purchase_order_workbook(
         )
         row_index += 1
 
-    total_formula = (
-        f"=SUM({','.join(f'J{row}' for row in total_rows)})" if total_rows else "0"
-    )
+    total_formula = f"=SUM({','.join(f'J{row}' for row in total_rows)})" if total_rows else "0"
     _write_purchase_order_total_row(worksheet, row_index, "总计", total_formula)
     row_index += 1
     _write_signature_row(worksheet, row_index)
@@ -584,7 +746,7 @@ def _group_purchase_order_lines_by_department(
     return list(groups.items())
 
 
-def _apply_purchase_order_sheet_setup(worksheet) -> None:
+def _apply_purchase_order_sheet_setup(worksheet) -> None:  # type: ignore[no-untyped-def]
     for column_letter, width in PURCHASE_ORDER_EXPORT_COLUMN_WIDTHS.items():
         worksheet.column_dimensions[column_letter].width = width
     worksheet.page_setup.orientation = "landscape"
@@ -602,7 +764,7 @@ def _apply_purchase_order_sheet_setup(worksheet) -> None:
     )
 
 
-def _write_merged_title(worksheet, row_index: int, value: str) -> None:
+def _write_merged_title(worksheet, row_index: int, value: str) -> None:  # type: ignore[no-untyped-def]
     worksheet.merge_cells(
         start_row=row_index,
         start_column=1,
@@ -615,7 +777,7 @@ def _write_merged_title(worksheet, row_index: int, value: str) -> None:
     cell.alignment = Alignment(horizontal="center", vertical="center")
 
 
-def _write_department_row(worksheet, row_index: int, department: str) -> None:
+def _write_department_row(worksheet, row_index: int, department: str) -> None:  # type: ignore[no-untyped-def]
     worksheet.row_dimensions[row_index].height = 32.15
     worksheet.cell(row_index, 1, f"申购部门：{department}")
     fill = PatternFill("solid", fgColor="D9E1F4")
@@ -631,7 +793,7 @@ def _write_department_row(worksheet, row_index: int, department: str) -> None:
         cell.border = border
 
 
-def _write_purchase_order_header_row(worksheet, row_index: int) -> None:
+def _write_purchase_order_header_row(worksheet, row_index: int) -> None:  # type: ignore[no-untyped-def]
     worksheet.row_dimensions[row_index].height = 32.15
     for column_index, header in enumerate(PURCHASE_ORDER_EXPORT_HEADERS, start=1):
         cell = worksheet.cell(row_index, column_index, header)
@@ -644,7 +806,7 @@ def _write_purchase_order_header_row(worksheet, row_index: int) -> None:
         cell.border = _purchase_order_border()
 
 
-def _write_purchase_order_detail_row(
+def _write_purchase_order_detail_row(  # type: ignore[no-untyped-def]
     worksheet,
     row_index: int,
     index: int,
@@ -673,7 +835,7 @@ def _write_purchase_order_detail_row(
     worksheet.cell(row_index, 10).number_format = "0.00"
 
 
-def _write_purchase_order_total_row(
+def _write_purchase_order_total_row(  # type: ignore[no-untyped-def]
     worksheet,
     row_index: int,
     label: str,
@@ -690,7 +852,7 @@ def _write_purchase_order_total_row(
     worksheet.cell(row_index, 10).number_format = "0.00"
 
 
-def _write_signature_row(worksheet, row_index: int) -> None:
+def _write_signature_row(worksheet, row_index: int) -> None:  # type: ignore[no-untyped-def]
     worksheet.merge_cells(
         start_row=row_index,
         start_column=1,
@@ -737,6 +899,185 @@ async def _get_purchase_request_response(
     )
 
 
+def _parse_supplier_table_file(
+    file_bytes: bytes,
+    file_name: str,
+) -> tuple[list[str], list[tuple[int, dict[str, object]]], str]:
+    suffix = _get_file_suffix(file_name)
+    if suffix not in SUPPORTED_SUPPLIER_TABLE_EXTENSIONS:
+        supported = "、".join(sorted(SUPPORTED_SUPPLIER_TABLE_EXTENSIONS))
+        raise ValueError(f"暂不支持该文件类型，请上传 {supported} 文件")
+
+    if suffix in {".xlsx", ".xlsm"}:
+        return _parse_supplier_workbook(file_bytes)
+    delimiter = "\t" if suffix == ".tsv" else ","
+    return _parse_supplier_text_table(file_bytes, delimiter=delimiter)
+
+
+def _parse_supplier_workbook(
+    file_bytes: bytes,
+) -> tuple[list[str], list[tuple[int, dict[str, object]]], str]:
+    workbook = load_workbook(BytesIO(file_bytes), read_only=True, data_only=True)
+    worksheet = workbook.active
+    table_rows = list(worksheet.iter_rows(values_only=True))
+    return _build_supplier_rows(table_rows, worksheet.title)
+
+
+def _parse_supplier_text_table(
+    file_bytes: bytes,
+    *,
+    delimiter: str,
+) -> tuple[list[str], list[tuple[int, dict[str, object]]], str]:
+    text = _decode_table_text(file_bytes)
+    reader = csv.reader(StringIO(text), delimiter=delimiter)
+    return _build_supplier_rows(list(reader), "CSV" if delimiter == "," else "TSV")  # type: ignore[arg-type]
+
+
+def _decode_table_text(file_bytes: bytes) -> str:
+    for encoding in ("utf-8-sig", "gb18030"):
+        try:
+            return file_bytes.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise ValueError("无法识别文本编码，请使用 UTF-8 或 GB18030 编码")
+
+
+def _build_supplier_rows(
+    table_rows: list[tuple[object, ...] | list[object]],
+    sheet_name: str,
+) -> tuple[list[str], list[tuple[int, dict[str, object]]], str]:
+    header_index = _find_header_row_index(table_rows)
+    if header_index is None:
+        raise ValueError("未找到表头行")
+
+    raw_headers = [_format_cell_string(value) for value in table_rows[header_index]]
+    columns = _deduplicate_headers(raw_headers)
+    if not columns:
+        raise ValueError("表头为空")
+
+    rows: list[tuple[int, dict[str, object]]] = []
+    for row_index, row in enumerate(
+        table_rows[header_index + 1 :],
+        start=header_index + 2,
+    ):
+        row_values = list(row)
+        raw_data = {
+            column: _cell_to_json_value(row_values[index] if index < len(row_values) else None)
+            for index, column in enumerate(columns)
+        }
+        if all(value in ("", None) for value in raw_data.values()):
+            continue
+        rows.append((row_index, raw_data))
+
+    if not rows:
+        raise ValueError("表格中没有可导入的数据行")
+    return columns, rows, sheet_name
+
+
+def _find_header_row_index(
+    table_rows: list[tuple[object, ...] | list[object]],
+) -> int | None:
+    for index, row in enumerate(table_rows):
+        non_empty_count = sum(1 for value in row if _format_cell_string(value))
+        if non_empty_count >= 2:
+            return index
+    return None
+
+
+def _deduplicate_headers(raw_headers: list[str]) -> list[str]:
+    columns: list[str] = []
+    seen: dict[str, int] = {}
+    for index, raw_header in enumerate(raw_headers, start=1):
+        header = raw_header or f"未命名字段{index}"
+        next_count = seen.get(header, 0) + 1
+        seen[header] = next_count
+        columns.append(header if next_count == 1 else f"{header}_{next_count}")
+    return columns
+
+
+def _build_supplier_from_row(
+    *,
+    raw_data: dict[str, object],
+    columns: list[str],
+    file_name: str,
+    sheet_name: str,
+    row_number: int,
+) -> Supplier:
+    return Supplier(
+        supplier_code=_get_supplier_field(raw_data, "supplier_code"),
+        supplier_name=_get_supplier_field(raw_data, "supplier_name"),
+        material_code=_get_supplier_field(raw_data, "material_code"),
+        material_name=_get_supplier_field(raw_data, "material_name"),
+        manufacturer_code=_get_supplier_field(raw_data, "manufacturer_code"),
+        manufacturer_name=_get_supplier_field(raw_data, "manufacturer_name"),
+        purchase_category=_get_supplier_field(raw_data, "purchase_category"),
+        last_updated_by=_get_supplier_field(raw_data, "last_updated_by"),
+        last_updated_date=_parse_supplier_date(_get_supplier_field(raw_data, "last_updated_date")),
+        import_file_name=file_name,
+        import_sheet_name=sheet_name,
+        import_row_number=row_number,
+        import_columns=columns,
+        raw_data=raw_data,
+    )
+
+
+def _get_supplier_field(raw_data: dict[str, object], field_name: str) -> str:
+    aliases = SUPPLIER_FIELD_ALIASES[field_name]
+    normalized_aliases = {_normalize_header(alias) for alias in aliases}
+    for column, value in raw_data.items():
+        if _normalize_header(column) in normalized_aliases:
+            return _format_cell_string(value)
+    return ""
+
+
+def _parse_supplier_date(value: str) -> date | None:
+    if not value:
+        return None
+    for date_format in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"):
+        try:
+            return datetime.strptime(value, date_format).date()
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value).date()
+    except ValueError:
+        return None
+
+
+def _get_file_suffix(file_name: str) -> str:
+    normalized = file_name.strip().lower()
+    if "." not in normalized:
+        return ""
+    return normalized[normalized.rfind(".") :]
+
+
+def _normalize_header(value: str) -> str:
+    return re.sub(r"[\s_（）()：:]+", "", value).lower()
+
+
+def _cell_to_json_value(value: object) -> object:
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return _format_decimal(value)
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _format_cell_string(value: object) -> str:
+    json_value = _cell_to_json_value(value)
+    if json_value is None:
+        return ""
+    if isinstance(json_value, str):
+        return json_value.strip()
+    return str(json_value).strip()
+
+
 def _parse_invoice_text(
     raw_text: str,
     *,
@@ -766,9 +1107,7 @@ def _build_invoice_duplicate_key(result: InvoiceRecognitionResult) -> str | None
         _normalize_duplicate_part(result.invoice_number),
         _normalize_duplicate_part(result.invoice_date),
         _normalize_duplicate_part(result.seller_name),
-        _normalize_duplicate_part(
-            _format_money_for_key(result.total_amount_with_tax_small)
-        ),
+        _normalize_duplicate_part(_format_money_for_key(result.total_amount_with_tax_small)),
     ]
     return "|".join(parts)
 
@@ -801,7 +1140,7 @@ def _extract_seller_name(lines: list[str]) -> str | None:
             line,
         )
         if len(names) >= 2:
-            return names[1].strip()
+            return names[1].strip()  # type: ignore[no-any-return]
 
         seller_name = _extract_seller_name_before_marker(line)
         if seller_name:
@@ -814,11 +1153,7 @@ def _extract_seller_name_before_marker(line: str) -> str | None:
     if not match:
         return None
 
-    candidates = [
-        part.strip()
-        for part in re.split(r"\s{2,}", match.group(1).strip())
-        if part.strip()
-    ]
+    candidates = [part.strip() for part in re.split(r"\s{2,}", match.group(1).strip()) if part.strip()]
     if not candidates:
         return None
 
@@ -901,7 +1236,7 @@ def _parse_line_item(line: str) -> InvoiceLineItem | None:
 
         amount = _to_decimal(numeric_values[-1])
         quantity = (
-            _to_decimal(numeric_values[0])
+            _to_decimal(numeric_values[0])  # type: ignore[assignment]
             if len(numeric_values) >= 3
             else _extract_quantity(numeric_values[0], amount)
         )

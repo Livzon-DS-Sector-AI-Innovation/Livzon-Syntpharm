@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ═══════════════════════════════════════════════════════════════
 # 系统角色定义
 # ═══════════════════════════════════════════════════════════════
@@ -120,8 +122,7 @@ FEWSHOT_EXAMPLES = [
                 "关闭罐盖氮气置换三次（每次3分钟），启动搅拌并在线监测pH至4.5±0.2"
             ),
             "equipment_facilities": (
-                "反应罐R201（搪玻璃，带搅拌）、压力表、手推泵、"
-                "盐酸储罐、氮气置换管线、pH计（在线监测）"
+                "反应罐R201（搪玻璃，带搅拌）、压力表、手推泵、盐酸储罐、氮气置换管线、pH计（在线监测）"
             ),
             "raw_auxiliary_materials": "盐酸（30%，100L）、氮气",
         },
@@ -143,9 +144,7 @@ FEWSHOT_EXAMPLES = [
                 "离心分离：打开结晶罐底阀放料至离心机LGZ-1600，"
                 "800rpm离心15分钟，纯化水500L淋洗滤饼再离心5分钟，出料装桶称重"
             ),
-            "equipment_facilities": (
-                "结晶罐、离心机LGZ-1600（800rpm）、母液罐、称重设备"
-            ),
+            "equipment_facilities": ("结晶罐、离心机LGZ-1600（800rpm）、母液罐、称重设备"),
             "raw_auxiliary_materials": "纯化水（500L）、晶浆（来自结晶罐）、湿品滤饼",
         },
     },
@@ -174,10 +173,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
 
     # ── 段3: REFERENCE_DOCS ──
     if knowledge_context:
-        sections.append(
-            "## 参考文档（知识库）\n\n"
-            "以下为本企业相关的知识库信息，优先参照：\n\n" + knowledge_context
-        )
+        sections.append("## 参考文档（知识库）\n\n以下为本企业相关的知识库信息，优先参照：\n\n" + knowledge_context)
 
     # ── 段4: OUTPUT_FORMAT ──
     sections.append(OUTPUT_FORMAT)
@@ -190,7 +186,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
 # ═══════════════════════════════════════════════════════════════
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回脚本1的 DB 种子配置。"""
     return {
         "script_number": 1,

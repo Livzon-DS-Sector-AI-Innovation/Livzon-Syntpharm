@@ -154,7 +154,7 @@ async def restart_ws_with_config(
                 app_token=app_token,
             )
             await client.subscribe_bitable()
-        start_ws_client(
+        start_ws_client(  # type: ignore[unused-coroutine]
             app_id=app_id,
             app_secret=app_secret,
             event_handler=_build_event_handler(),

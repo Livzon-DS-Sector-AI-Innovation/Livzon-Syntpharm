@@ -52,15 +52,10 @@ class RecommendationRuleEngine:
 
         # 1. needs_recommendation 合法值
         if output.needs_recommendation.strip() not in VALID_NEEDS:
-            errors.append(
-                f"needs_recommendation 必须为 '是' 或 '否'，当前: '{output.needs_recommendation}'"
-            )
+            errors.append(f"needs_recommendation 必须为 '是' 或 '否'，当前: '{output.needs_recommendation}'")
 
         # 2. 残余风险 level_1/2 必须建议
-        if (
-            input_data.residual_risk_level in ("level_1", "level_2")
-            and output.needs_recommendation.strip() == "否"
-        ):
+        if input_data.residual_risk_level in ("level_1", "level_2") and output.needs_recommendation.strip() == "否":
             errors.append(
                 f"残余风险为 {input_data.residual_risk_level}（{input_data.residual_risk_label}），"
                 "needs_recommendation 不能为「否」"
@@ -68,9 +63,7 @@ class RecommendationRuleEngine:
 
         # 3. recommendation_type 合法值
         if output.recommendation_type.strip() not in VALID_TYPES:
-            errors.append(
-                f"recommendation_type 必须在 {VALID_TYPES} 中，当前: '{output.recommendation_type}'"
-            )
+            errors.append(f"recommendation_type 必须在 {VALID_TYPES} 中，当前: '{output.recommendation_type}'")
 
         # 4. recommendation_priority 合法值
         if output.recommendation_priority.strip() not in VALID_PRIORITIES:
@@ -85,9 +78,7 @@ class RecommendationRuleEngine:
                 errors.append(f"建议措施内容过短（{len(content)}字），最少 20 字")
             for phrase in BANNED_PHRASES:
                 if phrase in content:
-                    errors.append(
-                        f"建议措施包含空泛表述: '{phrase}'，请输出具体可执行的措施"
-                    )
+                    errors.append(f"建议措施包含空泛表述: '{phrase}'，请输出具体可执行的措施")
 
         # 6. 不能与现有控制措施完全相同（字符串级别检查）
         for existing_field in [

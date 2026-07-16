@@ -11,10 +11,10 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.modules.regulatory_tracker.models import RegulatoryDocument
 from sqlalchemy import func, select
 
 from app.core.database import async_session_factory
-from app.modules.regulatory_tracker.models import RegulatoryDocument
 from app.platform.identity.models import User  # noqa: F401
 
 logging.basicConfig(
@@ -36,9 +36,7 @@ async def fix_publish_date():
         total_count = total_result.scalar()
 
         no_date_result = await db.execute(
-            select(func.count(RegulatoryDocument.id)).where(
-                RegulatoryDocument.publish_date.is_(None)
-            )
+            select(func.count(RegulatoryDocument.id)).where(RegulatoryDocument.publish_date.is_(None))
         )
         no_date_count = no_date_result.scalar()
 
@@ -46,9 +44,7 @@ async def fix_publish_date():
         logger.info(f"修复前 - publish_date 为空: {no_date_count}")
 
         # 查询所有 publish_date 为空的记录
-        result = await db.execute(
-            select(RegulatoryDocument).where(RegulatoryDocument.publish_date.is_(None))
-        )
+        result = await db.execute(select(RegulatoryDocument).where(RegulatoryDocument.publish_date.is_(None)))
         docs = result.scalars().all()
 
         fixed_count = 0
@@ -69,15 +65,11 @@ async def fix_publish_date():
                 try:
                     publish_date = datetime.strptime(issue_date_str, "%Y%m%d").date()
                 except ValueError as e:
-                    logger.warning(
-                        f"文档 {doc.document_id} 日期解析失败: {issue_date_str}, 错误: {e}"
-                    )
+                    logger.warning(f"文档 {doc.document_id} 日期解析失败: {issue_date_str}, 错误: {e}")
                     failed_count += 1
                     continue
             else:
-                logger.warning(
-                    f"文档 {doc.document_id} 日期格式错误: {issue_date_str} (长度: {len(issue_date_str)})"
-                )
+                logger.warning(f"文档 {doc.document_id} 日期格式错误: {issue_date_str} (长度: {len(issue_date_str)})")
                 failed_count += 1
                 continue
 
@@ -93,9 +85,7 @@ async def fix_publish_date():
         total_count_after = total_result_after.scalar()
 
         no_date_result_after = await db.execute(
-            select(func.count(RegulatoryDocument.id)).where(
-                RegulatoryDocument.publish_date.is_(None)
-            )
+            select(func.count(RegulatoryDocument.id)).where(RegulatoryDocument.publish_date.is_(None))
         )
         no_date_count_after = no_date_result_after.scalar()
 

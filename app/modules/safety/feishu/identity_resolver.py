@@ -58,10 +58,7 @@ class ResolvedPerson:
         }
 
     def __repr__(self) -> str:
-        return (
-            f"ResolvedPerson(open_id={self.open_id!r}, "
-            f"user_id={self.user_id!r}, name={self.name!r})"
-        )
+        return f"ResolvedPerson(open_id={self.open_id!r}, user_id={self.user_id!r}, name={self.name!r})"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -144,9 +141,7 @@ class IdentityResolver:
 
         # ── 回退：identity.departments 的 leader_user_id ──
         if not dept.leader_user_id:
-            logger.warning(
-                "resolve_department_leader: 部门 %r 无 leader_user_id", dept.name
-            )
+            logger.warning("resolve_department_leader: 部门 %r 无 leader_user_id", dept.name)
             return None
 
         leader = await self._find_user_by_user_id(dept.leader_user_id)
@@ -195,20 +190,14 @@ class IdentityResolver:
                 department_name,
                 supervisor_name,
             )
-            return await self.resolve_by_name(
-                supervisor_name, department_hint=dept.name
-            )
+            return await self.resolve_by_name(supervisor_name, department_hint=dept.name)
 
         # ── 回退：identity.departments 的父部门 leader ──
         if not dept.parent_feishu_department_id:
-            logger.info(
-                "resolve_supervising_leader: %r 无父部门，无分管领导", dept.name
-            )
+            logger.info("resolve_supervising_leader: %r 无父部门，无分管领导", dept.name)
             return None
 
-        parent_dept = await self._find_department_by_id(
-            dept.parent_feishu_department_id
-        )
+        parent_dept = await self._find_department_by_id(dept.parent_feishu_department_id)
         if parent_dept is None:
             logger.warning(
                 "resolve_supervising_leader: 父部门 %r 不在 identity.departments",
@@ -394,9 +383,7 @@ class IdentityResolver:
 
         # 多人同名，尝试用部门提示消歧
         if department_hint:
-            filtered = [
-                u for u in users if u.department and department_hint in u.department
-            ]
+            filtered = [u for u in users if u.department and department_hint in u.department]
             if len(filtered) == 1:
                 logger.info(
                     "_find_user_by_name: %r 多命中 %d，部门消歧 → %r",

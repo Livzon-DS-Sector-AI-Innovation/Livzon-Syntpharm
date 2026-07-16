@@ -1,6 +1,7 @@
 """Feishu HTTP client with auth and retry."""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -35,7 +36,7 @@ class FeishuClient(IntegrationClient):
         parent_type: str = "bitable_file",
         parent_node: str | None = None,
         timeout: float = 60.0,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Upload a file to Feishu Drive and return file metadata.
 
         Args:
@@ -89,12 +90,10 @@ class FeishuClient(IntegrationClient):
             raise
         result = resp.json()
         if result.get("code") != 0:
-            raise RuntimeError(
-                f"Feishu upload error: code={result.get('code')}, msg={result.get('msg')}"
-            )
-        return result.get("data", {})
+            raise RuntimeError(f"Feishu upload error: code={result.get('code')}, msg={result.get('msg')}")
+        return result.get("data", {})  # type: ignore[no-any-return]
 
-    async def health_check(self) -> dict:
+    async def health_check(self) -> dict[str, Any]:
         try:
             token = await self._auth.get_token()
             return {"status": "ok", "token_prefix": token[:10] + "..."}
@@ -106,11 +105,11 @@ class FeishuClient(IntegrationClient):
         method: str,
         path: str,
         *,
-        json: dict | None = None,
-        params: dict | None = None,
-        headers: dict | None = None,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
         timeout: float = 15.0,
-    ) -> dict:
+    ) -> dict[str, Any]:
         token = await self._auth.get_token()
         default_headers = {
             "Authorization": f"Bearer {token}",
@@ -132,8 +131,5 @@ class FeishuClient(IntegrationClient):
         data = resp.json()
 
         if data.get("code") != 0:
-            raise RuntimeError(
-                f"Feishu API error: code={data.get('code')}, msg={data.get('msg')}, "
-                f"path={path}"
-            )
-        return data.get("data", {})
+            raise RuntimeError(f"Feishu API error: code={data.get('code')}, msg={data.get('msg')}, path={path}")
+        return data.get("data", {})  # type: ignore[no-any-return]

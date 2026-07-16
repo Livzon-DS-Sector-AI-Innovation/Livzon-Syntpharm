@@ -1,10 +1,11 @@
+# ruff: noqa
 """Sync Feishu Bitable data to hr._old / hr._new clone tables.
 
 Usage:
     cd dazah-backend
     uv run python scripts/sync_feishu_to_clone_tables.py
 
-Requires FEISHU_APP_ID and FEISHU_APP_SECRET in environment.
+Requires FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET in environment.
 """
 
 import asyncio
@@ -450,20 +451,14 @@ async def sync_table(
         record["feishu_record_id"] = record_id
 
         # Post-process: employees_old has no "入职时间", use "入丽珠时间" as hire_date
-        if (
-            db_table == "hr.employees_old"
-            and not record.get("hire_date")
-            and record.get("livo_entry_date")
-        ):
+        if db_table == "hr.employees_old" and not record.get("hire_date") and record.get("livo_entry_date"):
             record["hire_date"] = record["livo_entry_date"]
 
         # Skip records with empty required fields
         if db_table in ("hr.employees_old", "hr.employees_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning(
-                    "  Skipping record %s: missing employee_number", record_id
-                )
+                logger.warning("  Skipping record %s: missing employee_number", record_id)
                 continue
             if not record.get("hire_date"):
                 errors += 1
@@ -472,9 +467,7 @@ async def sync_table(
         if db_table in ("hr.onboarding_records_old", "hr.onboarding_records_new"):
             if not record.get("employee_number"):
                 errors += 1
-                logger.warning(
-                    "  Skipping record %s: missing employee_number", record_id
-                )
+                logger.warning("  Skipping record %s: missing employee_number", record_id)
                 continue
             if not record.get("hire_date"):
                 errors += 1
@@ -560,7 +553,12 @@ async def main():
 
 
 if __name__ == "__main__":
-    if not os.getenv("FEISHU_APP_ID") or not os.getenv("FEISHU_APP_SECRET"):
-        print("[!] Please set FEISHU_APP_ID and FEISHU_APP_SECRET")
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    app_id = settings.feishu.platform.app_id
+    app_secret = settings.feishu.platform.app_secret
+    if not app_id or not app_secret:
+        print("[!] Please set FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET")
         sys.exit(1)
     asyncio.run(main())

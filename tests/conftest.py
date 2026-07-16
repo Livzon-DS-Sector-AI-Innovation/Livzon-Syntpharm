@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Root test configuration — auth fixtures and shared DB session.
 
 Provides three client fixtures:
@@ -12,7 +13,6 @@ FastAPI dependency injection during tests.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -21,11 +21,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.exceptions import AppException, ForbiddenException
 from app.main import app  # noqa: F401  (trigger module registration)
 from app.platform.identity.deps import get_current_user
 from app.platform.identity.models import User  # noqa: F401
-from app.platform.permission.deps import require_admin, require_user
 
 settings = get_settings()
 
@@ -40,42 +38,6 @@ _test_session_factory = async_sessionmaker(
     expire_on_commit=False,
 )
 
-# All permission codes used in the app — extracted from source.
-# Returning this set from get_user_permissions ensures all permission checks pass.
-_ALL_PERMISSION_CODES = {
-    "energy:alert:manage",
-    "energy:alert:read",
-    "energy:collect_log:read",
-    "energy:device:manage",
-    "energy:device:read",
-    "energy:overview:read",
-    "equipment:asset:create",
-    "equipment:asset:delete",
-    "equipment:asset:read",
-    "equipment:asset:update",
-    "equipment:inspection:create",
-    "equipment:inspection:delete",
-    "equipment:inspection:read",
-    "equipment:inspection:update",
-    "equipment:maintenance:create",
-    "equipment:maintenance:delete",
-    "equipment:maintenance:read",
-    "equipment:maintenance:update",
-    "equipment:personnel:manage",
-    "equipment:personnel:read",
-    "equipment:spare_part:create",
-    "equipment:spare_part:read",
-    "equipment:spare_part:update",
-    "equipment:stats:read",
-    "equipment:work_order:approve",
-    "equipment:work_order:create",
-    "equipment:work_order:read",
-    "equipment:work_order:update",
-    # Admin/super permissions
-    "permission:role:manage",
-}
-
-
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
@@ -83,14 +45,12 @@ def _make_user(
     name: str,
     employee_no: str,
     *,
-    role: str = "member",
     feishu_open_id: str | None = None,
 ) -> User:
     """Create a transient User object (not persisted)."""
     return User(
         name=name,
         employee_no=employee_no,
-        role=role,
         feishu_open_id=feishu_open_id,
     )
 
@@ -103,6 +63,7 @@ def _build_client(
     bypass_permissions: bool = True,
 ) -> tuple:
     """Wire up dependency overrides and return ``(AsyncClient ctx, cleanup)``."""
+
     # DB override
     async def _override_get_db() -> AsyncIterator[AsyncSession]:
         try:
@@ -114,38 +75,13 @@ def _build_client(
     async def _override_get_current_user() -> User | None:
         return user
 
-    async def _override_require_user() -> User:
-        if user is None:
-            raise AppException(status_code=401, message="未登录")
-        return user
-
-    async def _override_require_admin() -> User:
-        if user is None:
-            raise AppException(status_code=401, message="未登录")
-        if not is_admin:
-            raise ForbiddenException("仅管理员可操作")
-        return user
-
     app.dependency_overrides[get_db] = _override_get_db
     app.dependency_overrides[get_current_user] = _override_get_current_user
-    app.dependency_overrides[require_user] = _override_require_user
-    app.dependency_overrides[require_admin] = _override_require_admin
-
-    # Patch get_user_permissions to return all permission codes.
-    # This is called inside require_permission's checker at request time.
-    # By returning all codes, we ensure all permission checks pass.
-    perm_mock = AsyncMock(return_value=_ALL_PERMISSION_CODES)
-    patcher = patch("app.platform.permission.deps.get_user_permissions", perm_mock)
-    
-    if bypass_permissions:
-        patcher.start()
 
     transport = ASGITransport(app=app)
     client = AsyncClient(transport=transport, base_url="http://test")
 
     def cleanup():
-        if bypass_permissions:
-            patcher.stop()
         app.dependency_overrides.clear()
 
     return client, cleanup
@@ -175,7 +111,9 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     business-logic API tests can run without setting up real RBAC data.
     """
     test_user = _make_user(
-        "Test User", "TEST-001", role="member", feishu_open_id="test_open_id",
+        "Test User",
+        "TEST-001",
+        feishu_open_id="test_open_id",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -195,13 +133,18 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     checks — use this for endpoints that demand administrator privileges.
     """
     test_user = _make_user(
-        "Admin User", "ADMIN-001", role="admin", feishu_open_id="admin_open_id",
+        "Admin User",
+        "ADMIN-001",
+        feishu_open_id="admin_open_id",
     )
     db_session.add(test_user)
     await db_session.flush()
 
     client, cleanup = _build_client(
-        db_session, test_user, is_admin=True, bypass_permissions=True,
+        db_session,
+        test_user,
+        is_admin=True,
+        bypass_permissions=True,
     )
     async with client:
         yield client

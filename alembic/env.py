@@ -1,3 +1,4 @@
+import os
 from collections.abc import MutableMapping
 from importlib import import_module
 from logging.config import fileConfig
@@ -13,6 +14,8 @@ import_module("app.platform.audit.models")
 import_module("app.platform.identity.models")
 import_module("app.core.llm.config")
 import_module("app.modules.registration.dossier_writer.models")
+import_module("app.modules.quality.ai.models")
+import_module("app.modules.quality.ai.config_model")
 for module in BUSINESS_MODULES:
     import_module(f"app.modules.{module.code}.models")
 
@@ -26,6 +29,28 @@ settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", "dossier_writer", *BUSINESS_SCHEMAS))
+
+# Get target schema from environment variable (for single-module migration generation)
+TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")
+
+
+def include_object(object, name, type_, reflected, compare_to):
+    """Limit autogenerate to specific schema.
+    
+    If ALEMBIC_TARGET_SCHEMA is set, only include objects in that schema.
+    """
+    if not TARGET_SCHEMA:
+        return True
+    
+    if type_ == "table":
+        return object.schema == TARGET_SCHEMA
+    elif type_ in ("column", "index", "unique_constraint"):
+        return object.table.schema == TARGET_SCHEMA
+    elif type_ == "foreign_key_constraint":
+        # For foreign keys, check the parent table's schema
+        return object.parent.schema == TARGET_SCHEMA
+    
+    return True
 
 
 def include_name(
@@ -43,11 +68,24 @@ def include_name(
         str | None,
     ],
 ) -> bool:
-    """Limit autogenerate to schemas owned by this application."""
+    """Limit autogenerate to schemas owned by this application.
+    
+    If ALEMBIC_TARGET_SCHEMA is set, only include that specific schema.
+    """
     if type_ == "schema":
+        if TARGET_SCHEMA:
+            return name == TARGET_SCHEMA
         return name in PROJECT_SCHEMAS
     if type_ == "table":
-        return parent_names.get("schema_name") in PROJECT_SCHEMAS
+        schema_name = parent_names.get("schema_name")
+        if TARGET_SCHEMA:
+            return schema_name == TARGET_SCHEMA
+        return schema_name in PROJECT_SCHEMAS
+    if type_ in ("column", "index", "unique_constraint", "foreign_key_constraint"):
+        schema_name = parent_names.get("schema_name")
+        if TARGET_SCHEMA:
+            return schema_name == TARGET_SCHEMA
+        return schema_name in PROJECT_SCHEMAS
     return True
 
 
@@ -109,8 +147,9 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         include_schemas=True,
         include_name=include_name,
+        include_object=include_object,
         compare_type=True,
-        compare_server_default=True,
+        compare_server_default=False,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -121,7 +160,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     from urllib.parse import quote_plus, urlparse
 
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     from sqlalchemy.pool import NullPool
 
     # Parse URL to separate host and database
@@ -143,14 +182,22 @@ def run_migrations_online() -> None:
     )
 
     with engine.connect() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS alembic_version (version_num varchar(255) NOT NULL PRIMARY KEY)"
+            )
+        )
+        connection.commit()
+
         context.configure(
             connection=connection,
             process_revision_directives=process_revision_directives,
             target_metadata=target_metadata,
             include_schemas=True,
             include_name=include_name,
+            include_object=include_object,
             compare_type=True,
-            compare_server_default=True,
+            compare_server_default=False,
         )
         with context.begin_transaction():
             context.run_migrations()

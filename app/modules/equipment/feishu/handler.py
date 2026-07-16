@@ -57,8 +57,7 @@ def _on_message_receive(data: P2ImMessageReceiveV1) -> None:
         user_id = sender.sender_id.user_id or ""
 
     logger.info(
-        "设备机器人收到消息: type=%s, user_id=%s, open_id=%s, "
-        "chat_type=%s, message_id=%s",
+        "设备机器人收到消息: type=%s, user_id=%s, open_id=%s, chat_type=%s, message_id=%s",
         msg_type,
         user_id,
         open_id,
@@ -257,6 +256,7 @@ async def _handle_card_action_async(
 
     from app.core.database import async_session_factory
     from app.modules.equipment import repository as repo
+    from app.modules.equipment.deps import EquipmentAccessContext
     from app.modules.equipment.feishu.notification import send_user_card
     from app.modules.equipment.schemas import WorkOrderVerify
     from app.modules.equipment.service.work_order import verify_work_order
@@ -298,18 +298,18 @@ async def _handle_card_action_async(
                 open_id=open_id,
                 title="⚠️ 无法验收",
                 receive_id_type="open_id",
-                content=f"工单 **{wo.work_order_no}** 当前状态为「{wo.status}」，"
-                "只有「待验收」的工单才能验收。",
+                content=f"工单 **{wo.work_order_no}** 当前状态为「{wo.status}」，只有「待验收」的工单才能验收。",
             )
             return
 
         label = "验收通过" if result == "合格" else "退回"
         try:
             verify_data = WorkOrderVerify(
-                result=result,  # type: ignore[arg-type]
+                result=result,
                 remark=f"通过飞书卡片{label}",
             )
-            await verify_work_order(db, wo.id, user.id, verify_data)
+            ctx = EquipmentAccessContext(user=user, data_scope="all")
+            await verify_work_order(db, wo.id, ctx, verify_data)
             await db.commit()
         except Exception as e:
             logger.exception("飞书卡片验收失败: %s", e)
@@ -325,9 +325,5 @@ async def _handle_card_action_async(
         open_id=open_id,
         title=f"✅ {label}",
         receive_id_type="open_id",
-        content=(
-            f"工单 **{wo.work_order_no}**"
-            f"（{wo.equipment.name if wo.equipment else ''}）\n"
-            f"已{label}。"
-        ),
+        content=(f"工单 **{wo.work_order_no}**（{wo.equipment.name if wo.equipment else ''}）\n已{label}。"),
     )

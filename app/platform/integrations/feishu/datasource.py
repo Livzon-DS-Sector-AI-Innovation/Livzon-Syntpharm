@@ -49,7 +49,7 @@ class BitableDataSource:
         record = await self.client.create_record(self.table_id, fields)
         rid = record.get("record_id", "")
         logger.info("[BitableDS] created record %s in %s", rid, self.table_id)
-        return rid
+        return rid  # type: ignore[no-any-return]
 
     async def update(self, record_id: str, fields: dict[str, Any]) -> None:
         """更新指定行。"""
@@ -94,7 +94,7 @@ class BitableDataSource:
         if existing:
             rid = existing["record_id"]
             await self.update(rid, fields)
-            return rid
+            return rid  # type: ignore[no-any-return]
         else:
             return await self.create(fields)
 
@@ -138,9 +138,7 @@ class BitableDataSource:
     # ─── 字段类型转换辅助 ───
 
     @staticmethod
-    def prepare_fields(
-        raw: dict[str, Any], date_fields: set[str] | None = None
-    ) -> dict[str, Any]:
+    def prepare_fields(raw: dict[str, Any], date_fields: set[str] | None = None) -> dict[str, Any]:
         """将 Python 原生类型转换为飞书多维表格接受的格式。
 
         自动处理：

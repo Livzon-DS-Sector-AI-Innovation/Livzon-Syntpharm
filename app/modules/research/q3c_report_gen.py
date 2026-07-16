@@ -4,14 +4,15 @@ Generate Markdown compliance report from solvent analysis.
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
-import json
-import re
-from datetime import datetime
+import json  # noqa: E402
+import re  # noqa: E402
+from datetime import datetime  # noqa: E402
 
 
-def load_solvent_synonyms():
+def load_solvent_synonyms() -> Any:
     """Load solvent synonyms including Chinese names."""
     try:
         from app.modules.research.ich_service import DATA_DIR
@@ -25,7 +26,7 @@ def load_solvent_synonyms():
     return {}
 
 
-def get_chinese_name(solvent_name, synonyms):
+def get_chinese_name(solvent_name, synonyms) -> Any:  # type: ignore[no-untyped-def]
     """Get Chinese name for a solvent if available."""
     # Normalize solvent name for lookup
     normalized = solvent_name.lower().strip()
@@ -41,7 +42,7 @@ def get_chinese_name(solvent_name, synonyms):
     return solvent_name  # Return original if no Chinese name found
 
 
-def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
+def generate_q3c_report(analysis, flag_class1=True, ich_data_source="") -> Any:  # type: ignore[no-untyped-def]
     """
     Generate Markdown report from analysis results.
 
@@ -82,9 +83,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     # Class 1 warning
     if flag_class1 and class_counts["class1"] > 0:
-        lines.append(
-            "⚠️ **合规问题:** 检出 {} 种 Class 1 溶剂!".format(class_counts["class1"])
-        )
+        lines.append("⚠️ **合规问题:** 检出 {} 种 Class 1 溶剂!".format(class_counts["class1"]))
         lines.append("")
         lines.append(
             "**根据 ICH Q3C 第 3.1 节:** Class 1 溶剂不应使用，除非能提供**强有力的科学依据**,即使残留量低于限值。"
@@ -105,15 +104,11 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         step_titles[step_num] = step_title
 
     # Group solvents by step, deduplicate within each step
-    step_solvents = {}
+    step_solvents = {}  # type: ignore[var-annotated]
     for solvent_name, data in all_solvents.items():
         solvent_english = data.get("canonical") or data.get("solvent") or solvent_name
         solvent_display = get_chinese_name(solvent_english, synonyms)
-        class_display = (
-            data["class"].replace("class", "Class ")
-            if data["class"] != "unknown"
-            else "未列出"
-        )
+        class_display = data["class"].replace("class", "Class ") if data["class"] != "unknown" else "未列出"
         limit = data.get("limit") or "N/A"
         # Convert limit to string for consistent display
         if isinstance(limit, int):
@@ -123,9 +118,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         for step in steps_unique:
             if step not in step_solvents:
                 step_solvents[step] = []
-            step_solvents[step].append(
-                {"solvent": solvent_display, "class": class_display, "limit": limit}
-            )
+            step_solvents[step].append({"solvent": solvent_display, "class": class_display, "limit": limit})
 
     # Generate separate table for each step
     for step in sorted(step_solvents.keys()):
@@ -213,9 +206,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     if routine_release:
         for item in routine_release:
-            lines.append(
-                f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['reason']} |"
-            )
+            lines.append(f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['reason']} |")
     else:
         lines.append("| - | - | - | 无溶剂需要批批检验 |")
 
@@ -234,9 +225,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
                 f"| {item['solvent']} | {item['class']} | {item['limit']} | {item['threshold']} | {item['reason']} |"
             )
     else:
-        lines.append(
-            "| - | - | - | - | No solvents qualify for development control only |"
-        )
+        lines.append("| - | - | - | - | No solvents qualify for development control only |")
 
     lines.append("")
 
@@ -274,9 +263,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
     # Sort solvents for consistent output
     sort_order = {"class1": 0, "class2": 1, "class3": 2, "unknown": 3}
-    sorted_solvents = sorted(
-        all_solvents.items(), key=lambda x: (sort_order.get(x[1]["class"], 3), x[0])
-    )
+    sorted_solvents = sorted(all_solvents.items(), key=lambda x: (sort_order.get(x[1]["class"], 3), x[0]))
 
     for solvent_name, data in sorted_solvents:
         if data["class"] not in ["class2", "class3"]:
@@ -290,9 +277,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         else:  # class3
             method = "LOD ≤0.5% 或 GC"
 
-        lines.append(
-            f"| {solvent_display} | {data['class'].replace('class', 'Class ')} | {method} |"
-        )
+        lines.append(f"| {solvent_display} | {data['class'].replace('class', 'Class ')} | {method} |")
 
     lines.append("")
 
@@ -300,11 +285,12 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     lines.append("### 说明:")
     lines.append("")
     lines.append("- **Class 2 溶剂:** 根据 ICH Q3C 第 3.5 节，必须使用 GC 进行定量测试")
+    lines.append("- **Class 3 溶剂:** 根据 ICH Q3C 第 3.5 节，LOD ≤0.5% 可接受，或使用已验证的 GC 方法")
     lines.append(
-        "- **Class 3 溶剂:** 根据 ICH Q3C 第 3.5 节，LOD ≤0.5% 可接受，或使用已验证的 GC 方法"
-    )
-    lines.append(
-        "- **10% 标准:** 第 2.2 节中的溶剂可通过工艺开发阶段控制，提供代表性数据证明残留量持续 ≤10% ICH 限值，可豁免批批检验。根据 EMA/EDQM CEP 要求，代表性数据需来自 **6 批连续中试规模批次** 或 **3 批连续工业生产规模批次** (EMA Annex I, CPMP/QWP/450/03-Rev.1)"
+        "- **10% 标准:** 第 2.2 节中的溶剂可通过工艺开发阶段控制，"
+        "提供代表性数据证明残留量持续 ≤10% ICH 限值，可豁免批批检验。"
+        "根据 EMA/EDQM CEP 要求，代表性数据需来自 **6 批连续中试规模批次** 或 **3 批连续工业生产规模批次** "
+        "(EMA Annex I, CPMP/QWP/450/03-Rev.1)"
     )
     lines.append("")
 
@@ -319,9 +305,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
 
         for solvent_name, data in all_solvents.items():
             if data["class"] == "unknown":
-                solvent_english = (
-                    data.get("canonical") or data.get("solvent") or solvent_name
-                )
+                solvent_english = data.get("canonical") or data.get("solvent") or solvent_name
                 solvent_display = get_chinese_name(solvent_english, synonyms)
                 matched_as = data.get("matched_as", solvent_name)
                 lines.append(f"- **{solvent_display}** (匹配为：{matched_as})")
@@ -333,9 +317,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     # When to consult original documents
     needs_consultation = []
     if class_counts["class1"] > 0:
-        needs_consultation.append(
-            "检出 Class 1 溶剂 (需要根据 ICH Q3C 第 3.1 节提供获益/风险评估依据)"
-        )
+        needs_consultation.append("检出 Class 1 溶剂 (需要根据 ICH Q3C 第 3.1 节提供获益/风险评估依据)")
     if class_counts["unknown"] > 0:
         needs_consultation.append("未列出溶剂需要根据 ICH Q3C 第 5 节进行毒理学评估")
 
@@ -344,7 +326,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
         lines.append("")
         lines.append("以下项目需要查阅原始监管文件:")
         lines.append("")
-        for item in needs_consultation:
+        for item in needs_consultation:  # type: ignore[assignment]
             lines.append(f"- {item}")
         lines.append("")
         lines.append("**参考文件:**")
@@ -360,24 +342,18 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source=""):
     return "\n".join(lines)
 
 
-def main():
+def main() -> Any:
     import argparse
 
     parser = argparse.ArgumentParser(description="Generate ICH Q3C compliance report")
-    parser.add_argument(
-        "analysis_json", help="Path to analysis JSON from solvent_match.py"
-    )
-    parser.add_argument(
-        "-o", "--output", default="-", help="Output file (default: stdout)"
-    )
+    parser.add_argument("analysis_json", help="Path to analysis JSON from solvent_match.py")
+    parser.add_argument("-o", "--output", default="-", help="Output file (default: stdout)")
     parser.add_argument(
         "--no-flag-class1",
         action="store_true",
         help="Don't highlight Class 1 violations",
     )
-    parser.add_argument(
-        "--ich-data-source", default="", help="Source of ICH data for documentation"
-    )
+    parser.add_argument("--ich-data-source", default="", help="Source of ICH data for documentation")
 
     args = parser.parse_args()
 

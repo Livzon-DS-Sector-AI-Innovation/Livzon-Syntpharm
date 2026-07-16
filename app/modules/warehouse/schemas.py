@@ -122,9 +122,7 @@ class ProductInventoryListResponse(BaseModel):
     meta: dict[str, int] | None = None
 
 
-WarehouseFeishuBusinessDomain = Literal[
-    "finished_product", "materials_packaging", "hardware"
-]
+WarehouseFeishuBusinessDomain = Literal["finished_product", "materials_packaging", "hardware"]
 
 
 WAREHOUSE_FEISHU_DOMAIN_LABELS: dict[str, str] = {

@@ -3,6 +3,7 @@
 import uuid
 from datetime import date, datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -159,7 +160,7 @@ class OcrTaskResponse(BaseModel):
     id: uuid.UUID
     status: str
     image_url: str
-    result: dict | None = None
+    result: dict[str, Any] | None = None
     error_message: str | None = None
     batch_id: str | None = None
     created_at: datetime | None = None
@@ -170,7 +171,7 @@ class CreateOcrTaskRequest(BaseModel):
 
 
 class CreateOcrRecordRequest(BaseModel):
-    records: list[dict] = Field(default_factory=list)
+    records: list[dict[str, Any]] = Field(default_factory=list[Any])
     image_url: str = Field(..., description="图片地址")
     task_id: str | None = None
 
@@ -183,7 +184,7 @@ class OcrSubmitResponse(BaseModel):
 
 
 class SubmitOcrTaskResultRequest(BaseModel):
-    records: list[dict] = Field(default_factory=list)
+    records: list[dict[str, Any]] = Field(default_factory=list[Any])
 
 
 # ─── Audit ───

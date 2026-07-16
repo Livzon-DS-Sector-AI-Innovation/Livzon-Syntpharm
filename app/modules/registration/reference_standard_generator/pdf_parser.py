@@ -3,6 +3,7 @@
 import io
 import logging
 import re
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -214,9 +215,7 @@ class COAParser:
 
         # 如果没有找到，尝试从 "Date of Testing" 推算（加 4 年）
         if "expiration_date" not in self.metadata:
-            match = re.search(
-                r"Date\s+of\s+Testing[:\s]+(\d{4}-\d{2}-\d{2})", text, re.IGNORECASE
-            )
+            match = re.search(r"Date\s+of\s+Testing[:\s]+(\d{4}-\d{2}-\d{2})", text, re.IGNORECASE)
             if match:
                 from datetime import datetime, timedelta
 
@@ -241,15 +240,9 @@ class COAParser:
                 storage_text = match.group(1).strip()
                 # 智能识别贮存条件
                 storage_lower = storage_text.lower()
-                if any(
-                    kw in storage_lower
-                    for kw in ["-20", "- 20", "20°c", "frozen", "冷冻"]
-                ):
+                if any(kw in storage_lower for kw in ["-20", "- 20", "20°c", "frozen", "冷冻"]):
                     self.metadata["storage_condition"] = "冷冻"
-                elif any(
-                    kw in storage_lower
-                    for kw in ["2-8", "2~8", "2℃-8℃", "cold", "冷藏"]
-                ):
+                elif any(kw in storage_lower for kw in ["2-8", "2~8", "2℃-8℃", "cold", "冷藏"]):
                     self.metadata["storage_condition"] = "冷藏"
                 elif any(kw in storage_lower for kw in ["room", "常温", "室温", "25"]):
                     self.metadata["storage_condition"] = "常温"
@@ -262,7 +255,7 @@ class COAParser:
 
         return self.metadata
 
-    def parse(self) -> dict:
+    def parse(self) -> dict[str, Any]:
         """完整解析 COA"""
         self.extract_text()
         self.extract_metadata()
@@ -272,7 +265,7 @@ class COAParser:
         }
 
 
-def parse_coa(pdf_data: bytes) -> dict:
+def parse_coa(pdf_data: bytes) -> dict[str, Any]:
     """便捷函数：解析 COA PDF"""
     parser = COAParser(pdf_data)
     return parser.parse()

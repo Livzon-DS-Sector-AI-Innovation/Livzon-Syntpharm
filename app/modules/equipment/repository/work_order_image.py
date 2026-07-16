@@ -1,6 +1,7 @@
 """Work order image repository."""
 
 import uuid
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,16 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.equipment.models.work_order_image import WorkOrderImage
 
 
-async def create_image(db: AsyncSession, data: dict) -> WorkOrderImage:
+async def create_image(db: AsyncSession, data: dict[str, Any]) -> WorkOrderImage:
     image = WorkOrderImage(**data)
     db.add(image)
     await db.flush()
     return image
 
 
-async def get_images_by_work_order(
-    db: AsyncSession, work_order_id: uuid.UUID
-) -> list[WorkOrderImage]:
+async def get_images_by_work_order(db: AsyncSession, work_order_id: uuid.UUID) -> list[WorkOrderImage]:
     result = await db.execute(
         select(WorkOrderImage)
         .where(
@@ -29,9 +28,7 @@ async def get_images_by_work_order(
     return list(result.scalars().all())
 
 
-async def get_image_by_id(
-    db: AsyncSession, image_id: uuid.UUID
-) -> WorkOrderImage | None:
+async def get_image_by_id(db: AsyncSession, image_id: uuid.UUID) -> WorkOrderImage | None:
     result = await db.execute(
         select(WorkOrderImage).where(
             WorkOrderImage.id == image_id,

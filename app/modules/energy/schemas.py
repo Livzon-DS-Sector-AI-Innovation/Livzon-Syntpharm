@@ -2,29 +2,100 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
 StrUUID = Annotated[str, BeforeValidator(str)]
-EnergyType = Literal["electricity", "water", "gas"]
+EnergyType = Literal["electricity", "water", "steam", "natural_gas"]
 MonitorLevel = Literal["normal", "important", "urgent"]
 CollectStatus = Literal["success", "partial", "failed"]
+WorkshopCategory = Literal["workshop", "position", "support", "utility"]
+
+
+# ── 车间管理 ──
+
+
+class EnergyWorkshopCreate(BaseModel):
+    code: str = Field(..., min_length=1, max_length=50, description="车间编码")
+    name: str = Field(..., min_length=1, max_length=100, description="车间名称")
+    category: WorkshopCategory = Field(..., description="分类")
+    parent_id: StrUUID | None = Field(default=None, description="父级车间ID")
+    sort_order: int = Field(default=0, description="排序")
+    is_active: bool = Field(default=True, description="是否启用")
+
+
+class EnergyWorkshopUpdate(BaseModel):
+    code: str | None = Field(default=None, min_length=1, max_length=50)
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    category: WorkshopCategory | None = Field(default=None)
+    parent_id: StrUUID | None = Field(default=None)
+    sort_order: int | None = Field(default=None)
+    is_active: bool | None = Field(default=None)
+
+
+class EnergyWorkshopResponse(BaseModel):
+    id: StrUUID
+    code: str
+    name: str
+    category: str
+    parent_id: StrUUID | None
+    sort_order: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ── 月度记录 ──
+
+
+class EnergyMonthlyRecordCreate(BaseModel):
+    workshop_id: StrUUID = Field(..., description="车间ID")
+    energy_type: EnergyType = Field(..., description="能源类型")
+    record_date: date = Field(..., description="记录日期")
+    date_range_end: date | None = Field(default=None, description="日期范围结束")
+    value: float = Field(..., ge=0, description="能耗值")
+    unit: str = Field(..., min_length=1, max_length=20, description="计量单位")
+    source: str = Field(default="feishu", max_length=50, description="数据来源")
+    remark: str | None = Field(default=None, max_length=500, description="备注")
+
+
+class EnergyMonthlyRecordResponse(BaseModel):
+    id: StrUUID
+    workshop_id: StrUUID
+    energy_type: str
+    record_date: date
+    date_range_end: date | None
+    value: float
+    unit: str
+    source: str
+    remark: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class EnergyMonthlyRecordBatchCreate(BaseModel):
+    """批量创建月度记录"""
+
+    records: list[EnergyMonthlyRecordCreate] = Field(..., description="记录列表")
+
+
+# ── 设备配置 ──
 
 
 class EnergyDeviceConfigCreate(BaseModel):
     platform_code: str = Field(..., min_length=1, max_length=50, description="平台标识")
-    platform_device_code: str = Field(
-        ..., min_length=1, max_length=100, description="三方平台设备编码"
-    )
+    platform_device_code: str = Field(..., min_length=1, max_length=100, description="三方平台设备编码")
     device_name: str = Field(..., min_length=1, max_length=200, description="设备名称")
     energy_type: EnergyType = Field(..., description="能源类型")
     api_endpoint: str = Field(default="", max_length=500, description="API 路径")
     workshop: str = Field(..., min_length=1, max_length=100, description="所属车间")
-    production_line: str | None = Field(
-        default=None, max_length=100, description="所属产线"
-    )
+    production_line: str | None = Field(default=None, max_length=100, description="所属产线")
     monitor_level: MonitorLevel = Field(default="normal", description="监控等级")
     unit: str = Field(..., min_length=1, max_length=20, description="计量单位")
     collection_interval: int = Field(default=60, ge=1, description="采集间隔(分钟)")
@@ -120,15 +191,9 @@ class CollectLogDetailResponse(BaseModel):
     success_count: int
     error_message: str | None
     created_at: datetime
-    devices: list[CollectLogDeviceDetail] = Field(
-        default_factory=list, description="设备数据详情列表"
-    )
-    time_range_start: datetime | None = Field(
-        default=None, description="数据覆盖起始时间"
-    )
-    time_range_end: datetime | None = Field(
-        default=None, description="数据覆盖结束时间"
-    )
+    devices: list[CollectLogDeviceDetail] = Field(default_factory=list, description="设备数据详情列表")
+    time_range_start: datetime | None = Field(default=None, description="数据覆盖起始时间")
+    time_range_end: datetime | None = Field(default=None, description="数据覆盖结束时间")
 
 
 class CollectTriggerRequest(BaseModel):
@@ -150,9 +215,7 @@ AlertRecordStatus = Literal["pending", "processed", "ignored"]
 
 class EnergyAlertRuleCreate(BaseModel):
     rule_name: str = Field(..., min_length=1, max_length=200, description="规则名称")
-    rule_description: str | None = Field(
-        default=None, max_length=500, description="规则描述"
-    )
+    rule_description: str | None = Field(default=None, max_length=500, description="规则描述")
     energy_type: EnergyType = Field(..., description="能源类型")
     monitor_metric: MonitorMetric = Field(..., description="监控指标")
     threshold_type: ThresholdType = Field(..., description="阈值类型")
@@ -230,6 +293,33 @@ class EnergyAlertRecordResponse(BaseModel):
 
 class AlertRecordProcessRequest(BaseModel):
     status: Literal["processed", "ignored"] = Field(..., description="处理结果")
-    process_note: str | None = Field(
-        default=None, max_length=500, description="处理备注"
-    )
+    process_note: str | None = Field(default=None, max_length=500, description="处理备注")
+
+
+# ── 飞书导入 ──
+
+
+class BitableCrossImportRequest(BaseModel):
+    """飞书多维表格交叉表导入请求"""
+
+    year: int | None = Field(default=None, ge=2020, le=2030, description="年份，如 2026")
+    month: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}$", description="月份，如 2026-06")
+
+
+class FeishuEnergyImportRequest(BaseModel):
+    """飞书表格导入请求"""
+
+    spreadsheet_token: str = Field(..., description="飞书电子表格 token")
+    sheet_id: str | None = Field(default=None, description="工作表 ID，为空则取第一个")
+    source: str = Field(default="feishu", max_length=50, description="数据来源标识")
+    dry_run: bool = Field(default=False, description="试运行，只解析不写入")
+
+
+class FeishuEnergyImportResponse(BaseModel):
+    """飞书表格导入结果"""
+
+    workshops_created: int = 0
+    workshops_existing: int = 0
+    records_created: int = 0
+    records_skipped: int = 0
+    errors: list[str] = Field(default_factory=list)

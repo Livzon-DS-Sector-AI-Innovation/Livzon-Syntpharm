@@ -1,6 +1,7 @@
 """Helper functions for reading module runtime settings from database."""
 
 import json
+from typing import Any
 
 from sqlalchemy import select
 
@@ -26,7 +27,7 @@ async def get_module_setting(module: str, key: str, default: str = "") -> str:
             select(ModuleSetting).where(
                 ModuleSetting.module == module,
                 ModuleSetting.key == key,
-                ModuleSetting.is_deleted == False,
+                ~ModuleSetting.is_deleted,
             )
         )
         setting = result.scalar_one_or_none()
@@ -68,9 +69,7 @@ async def get_module_setting_int(module: str, key: str, default: int = 0) -> int
         return default
 
 
-async def get_module_setting_json(
-    module: str, key: str, default: dict | list | None = None
-):
+async def _func_l72(module: str, key: str, default: dict[str, Any] | list[Any] | None = None) -> Any:
     """Read a JSON runtime setting.
 
     Args:

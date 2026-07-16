@@ -3,6 +3,7 @@
 import logging
 import uuid
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -87,20 +88,14 @@ class PressureService:
         exists = await self.repo.check_point_id_unique(point_id)
         return CheckUniqueResponse(exists=exists)
 
-    async def create_point_mapping(
-        self, data: PointMappingCreate
-    ) -> PointMappingResponse:
+    async def create_point_mapping(self, data: PointMappingCreate) -> PointMappingResponse:
         exists = await self.repo.check_point_id_unique(data.point_id)
         if exists:
-            raise AppException(
-                status_code=409, message=f"位点编号 {data.point_id} 已存在"
-            )
+            raise AppException(status_code=409, message=f"位点编号 {data.point_id} 已存在")
         mapping = await self.repo.create_point_mapping(data.model_dump())
         return PointMappingResponse.model_validate(mapping)
 
-    async def update_point_mapping(
-        self, mapping_id: UUID, data: PointMappingUpdate
-    ) -> PointMappingResponse:
+    async def update_point_mapping(self, mapping_id: UUID, data: PointMappingUpdate) -> PointMappingResponse:
         mapping = await self.repo.get_point_mapping_by_id(mapping_id)
         if not mapping:
             raise NotFoundException("位点映射", str(mapping_id))
@@ -146,9 +141,7 @@ class PressureService:
             raise NotFoundException("压差记录", str(record_id))
         return PressureRecordResponse.model_validate(record)
 
-    async def create_manual_record(
-        self, data: CreateManualRecordRequest, creator: str = ""
-    ) -> dict:
+    async def create_manual_record(self, data: CreateManualRecordRequest, creator: str = "") -> dict[str, Any]:
         # 查找位点映射获取区域和标准压差
         mapping = await self.repo.get_point_mapping_by_point_id(data.point_id)
         area = mapping.area if mapping else "其他"
@@ -169,9 +162,7 @@ class PressureService:
         )
         return {"id": str(record.id), "success": True}
 
-    async def create_batch_manual(
-        self, data: BatchManualEntryRequest, creator: str = ""
-    ) -> BatchManualEntryResponse:
+    async def create_batch_manual(self, data: BatchManualEntryRequest, creator: str = "") -> BatchManualEntryResponse:
         batch_id = str(uuid.uuid4())
         success_count = 0
         fail_count = 0
@@ -224,9 +215,7 @@ class PressureService:
             batch_id=batch_id,
         )
 
-    async def create_ocr_records(
-        self, data: CreateOcrRecordRequest, creator: str = ""
-    ) -> OcrSubmitResponse:
+    async def create_ocr_records(self, data: CreateOcrRecordRequest, creator: str = "") -> OcrSubmitResponse:
         batch_id = str(uuid.uuid4())
         success_count = 0
         records_to_create = []
@@ -243,9 +232,7 @@ class PressureService:
             record_time = rec_data.get("record_time", datetime.now().isoformat())
             if isinstance(record_time, str):
                 try:
-                    record_time = datetime.fromisoformat(
-                        record_time.replace("Z", "+00:00")
-                    )
+                    record_time = datetime.fromisoformat(record_time.replace("Z", "+00:00"))
                 except (ValueError, TypeError):
                     record_time = datetime.now()
 
@@ -302,7 +289,7 @@ class PressureService:
 
     # ─── Audit ───
 
-    async def audit_record(self, record_id: UUID, data: AuditRequest) -> dict:
+    async def audit_record(self, record_id: UUID, data: AuditRequest) -> dict[str, Any]:
         record = await self.repo.get_record_by_id(record_id)
         if not record:
             raise NotFoundException("压差记录", str(record_id))
@@ -310,9 +297,7 @@ class PressureService:
         return {"success": True}
 
     async def batch_audit(self, data: BatchAuditRequest) -> BatchAuditResponse:
-        success = await self.repo.batch_audit_records(
-            data.ids, data.status, data.reject_reason
-        )
+        success = await self.repo.batch_audit_records(data.ids, data.status, data.reject_reason)
         return BatchAuditResponse(
             success_count=success,
             fail_count=len(data.ids) - success,
@@ -350,24 +335,16 @@ class PressureService:
             total=total,
         )
 
-    async def delete_merged_row(self, data: DeleteMergedRowRequest) -> dict:
+    async def delete_merged_row(self, data: DeleteMergedRowRequest) -> dict[str, Any]:
         deleted = await self.repo.delete_merged_row(data.point_id, data.date)
         return {"success_count": deleted, "success": True}
 
-    async def batch_delete_merged_rows(
-        self, data: BatchDeleteMergedRowsRequest
-    ) -> dict:
-        deleted = await self.repo.batch_delete_merged_rows(
-            [r.model_dump() for r in data.rows]
-        )
+    async def batch_delete_merged_rows(self, data: BatchDeleteMergedRowsRequest) -> dict[str, Any]:
+        deleted = await self.repo.batch_delete_merged_rows([r.model_dump() for r in data.rows])
         return {"success_count": deleted, "fail_count": 0, "success": True}
 
-    async def update_merged_row(
-        self, data: UpdateMergedRowRequest
-    ) -> UpdateMergedRowResponse:
-        count = await self.repo.update_merged_row(
-            data.point_id, data.date, data.time_slot_values
-        )
+    async def update_merged_row(self, data: UpdateMergedRowRequest) -> UpdateMergedRowResponse:
+        count = await self.repo.update_merged_row(data.point_id, data.date, data.time_slot_values)
         return UpdateMergedRowResponse(success_count=count, success=True)
 
     # ─── Export ───
@@ -394,9 +371,7 @@ class PressureService:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[OcrTaskResponse], int]:
-        tasks, total = await self.repo.list_ocr_tasks(
-            status=status, page=page, page_size=page_size
-        )
+        tasks, total = await self.repo.list_ocr_tasks(status=status, page=page, page_size=page_size)
         return [OcrTaskResponse.model_validate(t) for t in tasks], total
 
     async def get_ocr_task(self, task_id: UUID) -> OcrTaskResponse:
@@ -405,9 +380,7 @@ class PressureService:
             raise NotFoundException("OCR 任务", str(task_id))
         return OcrTaskResponse.model_validate(task)
 
-    async def create_ocr_task(
-        self, data: CreateOcrTaskRequest, creator: str = ""
-    ) -> OcrTaskResponse:
+    async def create_ocr_task(self, data: CreateOcrTaskRequest, creator: str = "") -> OcrTaskResponse:
         task = await self.repo.create_ocr_task(
             {
                 "image_url": data.image_url,
@@ -510,14 +483,12 @@ class PressureService:
         item = await self.repo.create_data_master(data.model_dump())
         return DataMasterResponse.model_validate(item)
 
-    async def batch_create_data_master(
-        self, data: BatchCreateDataMasterRequest
-    ) -> list[DataMasterResponse]:
+    async def batch_create_data_master(self, data: BatchCreateDataMasterRequest) -> list[DataMasterResponse]:
         items = [DataMaster(**item.model_dump()) for item in data.items]
         created = await self.repo.create_data_master_batch(items)
         return [DataMasterResponse.model_validate(i) for i in created]
 
-    async def update_data_master(self, item_id: UUID, data: dict) -> DataMasterResponse:
+    async def update_data_master(self, item_id: UUID, data: dict[str, Any]) -> DataMasterResponse:
         item = await self.repo.get_data_master_by_id(item_id)
         if not item:
             raise NotFoundException("数据总表记录", str(item_id))
@@ -547,9 +518,7 @@ class PressureService:
         page: int = 1,
         page_size: int = 20,
     ) -> NotificationListResponse:
-        items, total = await self.repo.list_notifications(
-            user_id=user_id, page=page, page_size=page_size
-        )
+        items, total = await self.repo.list_notifications(user_id=user_id, page=page, page_size=page_size)
         unread = await self.repo.get_unread_count(user_id)
         return NotificationListResponse(
             items=[NotificationResponse.model_validate(i) for i in items],

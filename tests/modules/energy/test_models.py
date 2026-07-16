@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from __future__ import annotations
 
 from app.modules.energy.models import (
@@ -39,7 +40,7 @@ class TestEnums:
     def test_energy_type_values(self):
         assert EnergyType.ELECTRICITY.value == "electricity"
         assert EnergyType.WATER.value == "water"
-        assert EnergyType.GAS.value == "gas"
+        assert EnergyType.STEAM.value == "steam"
 
     def test_monitor_level_values(self):
         assert MonitorLevel.NORMAL.value == "normal"

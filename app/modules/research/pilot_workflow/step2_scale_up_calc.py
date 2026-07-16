@@ -2,6 +2,7 @@
 
 import logging
 import math
+from typing import Any
 
 from app.modules.research.models import PilotWorkflow
 
@@ -16,7 +17,7 @@ EQUIPMENT_PROFILES = {
 }
 
 
-def _calc_geometry(volume_l: float, h_d_ratio: float) -> dict:
+def _calc_geometry(volume_l: float, h_d_ratio: float) -> dict[str, Any]:
     """计算设备几何参数"""
     volume_m3 = volume_l / 1000.0
     # V = π/4 * D^2 * (H_D_ratio * D) = π/4 * H_D_ratio * D^3
@@ -40,7 +41,7 @@ def _assess_heat_transfer(
     lab_volume_l: float,
     pilot_volume_l: float,
     heat_transfer_coeff: float,
-) -> dict:
+) -> dict[str, Any]:
     """评估传热能力变化"""
     # 小试设备（假设 H/D = 1.0）
     lab_geo = _calc_geometry(lab_volume_l, 1.0)
@@ -76,7 +77,7 @@ def _assess_mixing(
     scale_up_ratio: float,
     pilot_volume_l: float,
     agitator_type: str,
-) -> dict:
+) -> dict[str, Any]:
     """评估混合效果"""
     # 简化搅拌功率估算（按体积放大）
     # 经验法则：P/V ∝ N^3 * D^2，恒 P/V 时 N ∝ D^(-2/3)
@@ -117,10 +118,10 @@ def _assess_mixing(
 def _assess_equipment_fit(
     pilot_volume_l: float,
     equipment_type: str,
-) -> dict:
+) -> dict[str, Any]:
     """评估设备适配性"""
     profile = EQUIPMENT_PROFILES.get(equipment_type, EQUIPMENT_PROFILES["默认"])
-    geo = _calc_geometry(pilot_volume_l, profile["h_d_ratio"])
+    geo = _calc_geometry(pilot_volume_l, profile["h_d_ratio"])  # type: ignore[arg-type]
 
     # 容积填充率（假设70%为最佳）
     fill_rate = 0.7
@@ -128,10 +129,10 @@ def _assess_equipment_fit(
 
     # 高径比评估
     h_d_ratio = profile["h_d_ratio"]
-    if h_d_ratio > 2.0:
+    if h_d_ratio > 2.0:  # type: ignore[operator]
         fit_level = "需注意"
         fit_detail = f"高径比{h_d_ratio}较大，液柱静压可能影响底部反应"
-    elif h_d_ratio < 0.8:
+    elif h_d_ratio < 0.8:  # type: ignore[operator]
         fit_level = "需注意"
         fit_detail = f"高径比{h_d_ratio}较小，设备偏矮胖，混合可能不均匀"
     else:
@@ -151,9 +152,9 @@ def _assess_equipment_fit(
 
 
 async def execute_scale_up_calc(
-    step_input: dict,
+    step_input: dict[str, Any],
     workflow: PilotWorkflow,
-) -> dict:
+) -> dict[str, Any]:
     """执行工程计算与放大评估"""
     scale_up_ratio = workflow.scale_up_ratio
     equipment_type = workflow.equipment_type
@@ -169,14 +170,14 @@ async def execute_scale_up_calc(
         scale_up_ratio=scale_up_ratio,
         lab_volume_l=lab_volume,
         pilot_volume_l=pilot_volume,
-        heat_transfer_coeff=profile["heat_transfer_coeff"],
+        heat_transfer_coeff=profile["heat_transfer_coeff"],  # type: ignore[arg-type]
     )
 
     # 混合评估
     mixing_assessment = _assess_mixing(
         scale_up_ratio=scale_up_ratio,
         pilot_volume_l=pilot_volume,
-        agitator_type=profile["agitator_type"],
+        agitator_type=profile["agitator_type"],  # type: ignore[arg-type]
     )
 
     # 设备适配性评估

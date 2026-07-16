@@ -9,12 +9,15 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.llm import LLMError, llm_client
+from app.core.llm import llm_client
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.knowledge import (
     build_prompt_summary,
 )
-from app.modules.registration.regulatory_tracker.models.regulatory_document import RegulatoryDocument
+from app.modules.registration.regulatory_tracker.models.regulatory_document import (
+    RegulatoryDocument,
+)
 from app.modules.registration.regulatory_tracker.services.classification_service import (
     compute_document_category,
 )
@@ -174,7 +177,7 @@ def _rewrite_action_to_assessment(action: str) -> str:
     return rewritten
 
 
-def build_analysis_prompt(document: RegulatoryDocument) -> list[dict]:
+def build_analysis_prompt(document: RegulatoryDocument) -> list[dict[str, Any]]:
     """构建原料药企业法规影响评估 Prompt。"""
     title = document.title or ""
     classification = document.classification or "未知"
@@ -353,7 +356,7 @@ def build_analysis_prompt(document: RegulatoryDocument) -> list[dict]:
     ]
 
 
-def validate_impact_result(result: dict) -> dict:
+def validate_impact_result(result: dict[str, Any]) -> dict[str, Any]:
     """验证和规范化影响评估结果，包含规则兜底逻辑。"""
 
     # ===== 基础字段验证 =====
@@ -413,9 +416,7 @@ def validate_impact_result(result: dict) -> dict:
     result["departments"] = [d for d in result["departments"] if d in VALID_DEPARTMENTS]
 
     # 过滤 ctd_sections 为有效值
-    result["ctd_sections"] = [
-        c for c in result["ctd_sections"] if c in VALID_CTD_SECTIONS
-    ]
+    result["ctd_sections"] = [c for c in result["ctd_sections"] if c in VALID_CTD_SECTIONS]
 
     # 验证 confidence
     try:
@@ -430,9 +431,7 @@ def validate_impact_result(result: dict) -> dict:
             result[field] = ""
 
     # 确保 evidence_excerpts 是字符串数组
-    result["evidence_excerpts"] = [
-        e for e in result["evidence_excerpts"] if isinstance(e, str)
-    ]
+    result["evidence_excerpts"] = [e for e in result["evidence_excerpts"] if isinstance(e, str)]
 
     # ===== 规则兜底逻辑 =====
 
@@ -452,9 +451,7 @@ def validate_impact_result(result: dict) -> dict:
                 item["affected"] = False
                 item["reason"] = ""
         # 只保留 1 条归档建议
-        if not result["recommended_actions"] or not _action_is_assessment_style(
-            result["recommended_actions"][0]
-        ):
+        if not result["recommended_actions"] or not _action_is_assessment_style(result["recommended_actions"][0]):
             result["recommended_actions"] = ["与原料药企业无关，归档留存"]
         else:
             result["recommended_actions"] = result["recommended_actions"][:1]
@@ -507,9 +504,7 @@ def validate_impact_result(result: dict) -> dict:
     if not isinstance(result.get("focus_required"), bool):
         result["focus_required"] = impact_level_to_focus_required(impact_level)
     if not isinstance(result.get("archive_recommended"), bool):
-        result["archive_recommended"] = impact_level_to_archive_recommended(
-            impact_level
-        )
+        result["archive_recommended"] = impact_level_to_archive_recommended(impact_level)
     if not isinstance(result.get("notification_required"), bool):
         result["notification_required"] = impact_level in ("high", "medium")
 
@@ -548,8 +543,8 @@ async def analyze_document(document: RegulatoryDocument) -> dict[str, Any]:
             "status": "completed",
         }
 
-    except LLMError as e:
-        logger.error(f"AI 分析文档失败 [{document.document_id}]: {e}")
+    except (LLMOutputError, LLMProviderError, LLMRateLimitError) as e:
+        logger.exception("LLM call failed")(f"AI 分析文档失败 [{document.document_id}]: {e}")  # type: ignore[func-returns-value,misc]
         return {
             "executive_summary": None,
             "regulation_type": None,
@@ -651,9 +646,7 @@ async def analyze_and_update(
         except Exception as e:
             retry_count += 1
             if retry_count < MAX_RETRY_ATTEMPTS:
-                logger.warning(
-                    f"[{doc_id}] AI 分析异常，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {e}"
-                )
+                logger.warning(f"[{doc_id}] AI 分析异常，重试 {retry_count}/{MAX_RETRY_ATTEMPTS}: {e}")
                 await asyncio.sleep(2**retry_count)
 
     # ===== 更新分析结果 =====
@@ -742,8 +735,8 @@ async def analyze_new_documents(
 
     stmt = select(RegulatoryDocument).where(
         and_(
-            not RegulatoryDocument.is_deleted,
-            RegulatoryDocument.ai_analysis_status is None,
+            ~RegulatoryDocument.is_deleted,
+            RegulatoryDocument.ai_analysis_status is None,  # type: ignore[arg-type]
         )
     )
 

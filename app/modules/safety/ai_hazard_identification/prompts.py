@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 系统角色定义
 # ═══════════════════════════════════════════════════════════════════════════
@@ -125,8 +127,39 @@ OUTPUT_FORMAT = """## 输出格式
     "corrective": "整改措施——完整中文段落，针对隐患描述输出最直接的整改措施，含具体操作步骤、责任岗位、完成时限、验收标准，引用具体标准编号，≥50字",
     "preventive": "预防措施——完整中文段落，防止该隐患再次出现的预防措施，含具体制度名称、检查频次、台账名称、培训计划、考核方式，≥50字"
   },
-  "major_hazard_basis": "隐患判定依据，引用具体法规标准条文。格式：[法规/标准名称]第X条：'条文内容'"
+  "major_hazard_basis": "隐患判定依据，引用具体法规标准条文。格式：[法规/标准名称]第X条：'条文内容'",
+  "defect_substance": "substantive | procedural | uncertain",
+  "defect_substance_reasoning": "缺陷实质评估理由（≥10字）：推断链长度分析——从观察到安全后果共几步？每步是物理必然还是概率假设？"
 }"""
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 缺陷实质评估规则（v2：控制过度推断，区分实质缺陷与形式瑕疵）
+# ═══════════════════════════════════════════════════════════════════════════
+
+DEFECT_SUBSTANCE_RULES = """### 6. 缺陷实质评估规则
+
+在给出最终结论前，必须自问：**这个缺陷是否直接构成安全威胁？**
+
+**实质缺陷 (substantive)** — 直接造成人员伤亡、设备损坏或环境破坏：
+- 推断链条 ≤2 步，每步基于物理必然性（非概率假设）
+- 示例：防爆堵头缺失 → 粉尘进入电箱 → 短路爆炸（2步，物理必然）
+- 示例：高处作业未系安全带 → 坠落 → 重伤/死亡（2步，物理必然）
+
+**形式瑕疵 (procedural)** — 管理/文档/标签/临时放置类问题，不直接构成物理威胁：
+- 推断链条 ≥3 步，且至少 2 步基于概率假设而非物理必然
+- 文档类：文件未签章/未归档 → 需假设"内容可能过期"→ 再假设"人员执行过期规程"→ 再假设"导致事故"——后两步均为概率假设
+- 标签类：标签褪色/模糊 → 设备本身功能完好，标签问题不直接导致事故
+- 放置类：物品临时放置不当/未归位 → 当场可纠正，不构成持续物理威胁
+- 核心判断：如果缺陷本质是"东西没放对位置"而非"东西本身坏了/缺了/失效了"→ procedural
+
+**不确定 (uncertain)** — 信息不足无法判断实质程度
+
+**缺省规则**：
+- 形式/文档/标签/临时放置类问题默认从 procedural 起评
+- procedural 类缺陷的 hazard_level 最高为 general
+- procedural 类缺陷的整改建议禁止出现"停产""全厂排查""修订制度体系"等过度措施，只需描述具体纠正动作
+- 如果信息不足 → uncertain，在 reasoning 中说明缺失信息"""
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -144,6 +177,10 @@ TEXT_PROMPT_TEMPLATE = """## 现场隐患信息
 
 ---
 
+{defect_substance_rules}
+
+---
+
 {output_format}"""
 
 # 多模态模式模板（有图片时）
@@ -154,6 +191,10 @@ VISION_PROMPT_TEMPLATE = """请仔细观察以下现场拍摄的缺陷照片，�
 ---
 
 {work_rules}
+
+---
+
+{defect_substance_rules}
 
 ---
 
@@ -223,6 +264,25 @@ FEWSHOT_EXAMPLES = [
                 "preventive": "工程技术：部署特殊作业票证电子化审批系统（移动端+桌面端），支持电子签名、GPS定位签到、人脸识别验证到场人员身份，系统自动校验签章完整性和审批时间逻辑性，不完整则锁定不允许进入下一步；在动火作业区域安装移动式视频监控设备（防爆型），对动火作业全过程进行实时录像并云端存储30天。管理体系：建立特殊作业票证三级审核制度（班组自检→车间复检→安全部抽检），每周对已归档票证按10%比例随机抽查，重点核查签章完整性、时间逻辑一致性及安全措施落实情况；检查结果纳入月度安全绩效考核，连续2个月不合格的车间取消自主审批权限",
             },
             "major_hazard_basis": "GB 30871-2022 第4.7条：特殊作业审批手续应齐全、安全措施应全部落实、作业环境应符合安全要求；《安全生产法》第四十六条：生产经营单位进行爆破、吊装、动火、临时用电等危险作业，应当安排专门人员进行现场安全管理",
+            "defect_substance": "substantive",
+            "defect_substance_reasoning": "签章空白是直接的管理失控（1步：签章空白→无监管动火），动火作业无监管可必然导致火灾/爆炸（2步），推断链短且每步为物理/管理必然，属实质缺陷",
+        },
+    },
+    # 示例5：形式瑕疵 — 文档放置不当，推断链过长，应识别为 procedural（v2 新增）
+    {
+        "input": "车间操作规程现场放置的为打印版本，非正式签发版本，未加盖签发章",
+        "output": {
+            "key_defect": "现场放置的《岗位安全操作规程》为打印版本，未加盖签发章，属于非正式签发版本",
+            "hazard_type": "management_defect",
+            "hazard_category": "documentation",
+            "hazard_level": "general",
+            "rectification_suggestion": {
+                "corrective": "由车间安全员将打印版操作规程替换为正式签发版本（加盖受控章），将正式版本放置于操作岗位指定文件位；2小时内确认现行所有岗位的操作规程是否为正式签发版本，非正式版本立即回收",
+                "preventive": "在岗位文件位张贴'仅限正式签发版本'标识；将操作规程版本状态纳入车间每周 6S 检查项，由安全员抽查并记录",
+            },
+            "major_hazard_basis": "GB/T 13861-2022 第5.2条：企业应建立并实施文件化管理制度，确保安全生产相关制度、规程的制定、审批、发布和更新受控",
+            "defect_substance": "procedural",
+            "defect_substance_reasoning": "从观察到安全后果的推断链：打印版未签章→(假设1)正式签发版本可能不存在→(假设2)人员执行了错误内容→(假设3)导致操作偏差→(假设4)引发安全事故。推断链共5步，后4步均为概率假设而非物理必然。缺陷本质是'文件未放在正确位置'的收纳问题，不构成直接物理威胁。正式签发版本实际存在，只需替换归位即可",
         },
     },
 ]
@@ -297,6 +357,7 @@ def build_full_prompt(
     prompt = template.format(
         context=context,
         work_rules=WORK_RULES,
+        defect_substance_rules=DEFECT_SUBSTANCE_RULES,
         output_format=OUTPUT_FORMAT,
     )
 
@@ -320,9 +381,7 @@ def build_full_prompt(
 
             prompt += f"\n\n**示例{i}**\n"
             prompt += f"输入描述：{ex['input']}\n"
-            prompt += (
-                f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
-            )
+            prompt += f"标准输出：{_json.dumps(ex['output'], ensure_ascii=False, indent=2)}"
 
     return prompt
 
@@ -336,10 +395,12 @@ def get_expected_keys() -> list[str]:
         "hazard_level",
         "rectification_suggestion",
         "major_hazard_basis",
+        "defect_substance",
+        "defect_substance_reasoning",
     ]
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回用于写入 ai_workflow_configs 表的种子配置。
 
     这是 DB-first 架构的初始数据，使插件可通过前端 AI 工作流配置界面管理。

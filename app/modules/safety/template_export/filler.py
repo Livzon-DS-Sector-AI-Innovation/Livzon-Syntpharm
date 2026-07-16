@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
+from typing import Any
 
 import openpyxl
 from openpyxl.styles import Font
@@ -38,7 +39,7 @@ class ExcelTemplateFiller:
     def fill(
         self,
         template_path: str | Path,
-        data: list[dict],
+        data: list[dict[str, Any]],
     ) -> openpyxl.Workbook:
         """Load template, fill with data, return the workbook (unsaved)."""
         wb = openpyxl.load_workbook(str(template_path))
@@ -55,7 +56,7 @@ class ExcelTemplateFiller:
     def fill_and_save(
         self,
         template_path: str | Path,
-        data: list[dict],
+        data: list[dict[str, Any]],
         output_path: str | Path,
     ) -> Path:
         """Convenience: fill + save, returning the output path."""
@@ -65,7 +66,7 @@ class ExcelTemplateFiller:
 
     # ── Private helpers ─────────────────────────────────────────────────
 
-    def _replace_title(self, ws, data: list[dict]) -> None:
+    def _replace_title(self, ws, data: list[dict[str, Any]]) -> Any:  # type: ignore[no-untyped-def]
         """Replace *** placeholder in the title row."""
         resolver = self._cfg.title_resolver
         if resolver is None:
@@ -80,9 +81,9 @@ class ExcelTemplateFiller:
         if new_title != original:
             cell.value = new_title
 
-    def _capture_sample_styles(self, ws) -> dict[str, dict]:
+    def _capture_sample_styles(self, ws) -> Any:  # type: ignore[no-untyped-def]
         """Snapshots font/fill/alignment/border from every column of the sample row."""
-        styles: dict[str, dict] = {}
+        styles: dict[str, dict[str, Any]] = {}
         row = self._cfg.sample_row
         for c in range(1, self._cfg.total_columns + 1):
             col_letter = get_column_letter(c).lower()
@@ -95,8 +96,11 @@ class ExcelTemplateFiller:
             }
         return styles
 
-    def _fill_data_rows(
-        self, ws, data: list[dict], sample_styles: dict[str, dict]
+    def _fill_data_rows(  # type: ignore[no-untyped-def]
+        self,
+        ws,
+        data: list[dict[str, Any]],
+        sample_styles: dict[str, dict[str, Any]],
     ) -> None:
         """Write data rows starting at sample_row, cloning styles."""
         start_row = self._cfg.sample_row
@@ -144,19 +148,17 @@ class ExcelTemplateFiller:
                             color=color,
                         )
 
-    def _apply_page_setup(self, ws) -> None:
+    def _apply_page_setup(self, ws) -> Any:  # type: ignore[no-untyped-def]
         """Set print/PDF page properties on the worksheet."""
         ps = self._cfg.page_setup
         ws.page_setup.orientation = ps.orientation
         ws.page_setup.paperSize = ps.paper_size
         ws.page_setup.fitToWidth = ps.fit_to_width
         ws.page_setup.fitToHeight = ps.fit_to_height
-        ws.sheet_properties.pageSetUpPr = (
-            openpyxl.worksheet.properties.PageSetupProperties(fitToPage=True)
-        )
+        ws.sheet_properties.pageSetUpPr = openpyxl.worksheet.properties.PageSetupProperties(fitToPage=True)
 
     @staticmethod
-    def _strip_column_letters_row(ws) -> None:
+    def _strip_column_letters_row(ws) -> Any:  # type: ignore[no-untyped-def]
         """Remove the column-letter hint row (row with a,b,c,…) if present.
         Row 6 in the standard template; we clear it so it doesn't appear in PDF.
         """
@@ -167,7 +169,7 @@ class ExcelTemplateFiller:
     # ── Static helpers ──────────────────────────────────────────────────
 
     @staticmethod
-    def _format_value(value, col_letter: str, numeric_cols: frozenset) -> str | float:
+    def _format_value(value, col_letter: str, numeric_cols: frozenset[Any]) -> Any:  # type: ignore[no-untyped-def]
         """Coerce value to the expected type for the column."""
         if value is None:
             return ""

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Quality module test fixtures."""
 
 from __future__ import annotations

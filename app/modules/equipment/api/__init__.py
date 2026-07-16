@@ -1,5 +1,6 @@
 """设备模块 API 路由入口."""
 
+from app.modules.equipment.api.batch_import import router as import_router
 from app.modules.equipment.api.calibration import (
     router as calibration_router,
 )
@@ -56,3 +57,5 @@ router.include_router(maintainers_router, prefix="/maintenance/staff")
 router.include_router(personnel_router, prefix="/personnel")
 # 巡检模块路由（独立于维修工单）
 router.include_router(inspection_router, prefix="/inspection")
+
+router.include_router(import_router, prefix="/import")

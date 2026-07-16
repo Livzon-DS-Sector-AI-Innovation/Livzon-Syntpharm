@@ -64,7 +64,7 @@ class RecommendationGenerator(BasePlugin[RecommendationInput, RecommendationOutp
     def _get_expected_keys(self) -> list[str]:
         return EXPECTED_KEYS
 
-    def _parse_output(self, raw: dict) -> RecommendationOutput:
+    def _parse_output(self, raw: dict[str, Any]) -> RecommendationOutput:
         try:
             return RecommendationOutput(
                 needs_recommendation=raw.get("needs_recommendation", "是"),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
@@ -15,23 +15,21 @@ from app.modules.energy.models import (
     EnergyCollectLog,
     EnergyData,
     EnergyDeviceConfig,
+    EnergyMonthlyRecord,
+    EnergyWorkshop,
 )
 
 # ── 设备配置 ──
 
 
-async def create_device_config(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyDeviceConfig:
+async def create_device_config(db: AsyncSession, data: dict[str, Any]) -> EnergyDeviceConfig:
     obj = EnergyDeviceConfig(**data)
     db.add(obj)
     await db.flush()
     return obj
 
 
-async def get_device_config_by_id(
-    db: AsyncSession, config_id: UUID
-) -> EnergyDeviceConfig | None:
+async def get_device_config_by_id(db: AsyncSession, config_id: UUID) -> EnergyDeviceConfig | None:
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.id == config_id,
@@ -74,9 +72,7 @@ async def list_device_configs(
     return list(result.scalars().all()), total
 
 
-async def update_device_config(
-    db: AsyncSession, config_id: UUID, data: dict[str, Any]
-) -> EnergyDeviceConfig | None:
+async def update_device_config(db: AsyncSession, config_id: UUID, data: dict[str, Any]) -> EnergyDeviceConfig | None:
     obj = await get_device_config_by_id(db, config_id)
     if obj is None:
         return None
@@ -119,9 +115,7 @@ async def exists_device_config(
     return count > 0
 
 
-async def get_enabled_devices_by_platform(
-    db: AsyncSession, platform_code: str
-) -> list[EnergyDeviceConfig]:
+async def get_enabled_devices_by_platform(db: AsyncSession, platform_code: str) -> list[EnergyDeviceConfig]:
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.platform_code == platform_code,
@@ -132,9 +126,7 @@ async def get_enabled_devices_by_platform(
     return list(result.scalars().all())
 
 
-async def get_latest_energy_data(
-    db: AsyncSession, device_config_id: UUID
-) -> EnergyData | None:
+async def get_latest_energy_data(db: AsyncSession, device_config_id: UUID) -> EnergyData | None:
     """获取指定设备最近一条能耗数据记录。"""
     result = await db.execute(
         select(EnergyData)
@@ -237,33 +229,54 @@ async def get_energy_statistics(
     start_time: datetime,
     end_time: datetime,
 ) -> list[dict[str, Any]]:
-    if group_by == "workshop":
-        group_col = EnergyDeviceConfig.workshop
-    elif group_by == "production_line":
-        group_col = EnergyDeviceConfig.production_line
-    else:
-        group_col = EnergyDeviceConfig.device_name
+    """按车间/产线/设备汇总能耗（从月度记录表查询）"""
+    start_date = start_time.date() if hasattr(start_time, "date") else start_time
+    end_date = end_time.date() if hasattr(end_time, "date") else end_time
 
-    query = (
-        select(
-            group_col.label("group_key"),
-            func.sum(EnergyData.value).label("total_value"),
-            EnergyData.unit,
-            func.count(EnergyData.id).label("data_count"),
+    if group_by == "workshop":
+        query = (
+            select(
+                EnergyWorkshop.name.label("group_key"),
+                func.sum(EnergyMonthlyRecord.value).label("total_value"),
+                EnergyMonthlyRecord.unit,
+                func.count(EnergyMonthlyRecord.id).label("data_count"),
+            )
+            .join(
+                EnergyWorkshop,
+                EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+            )
+            .where(
+                EnergyMonthlyRecord.record_date >= start_date,
+                EnergyMonthlyRecord.record_date <= end_date,
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
         )
-        .join(
-            EnergyDeviceConfig,
-            EnergyData.device_config_id == EnergyDeviceConfig.id,
+    else:
+        # 对于其他分组方式，暂时按车间分组
+        query = (
+            select(
+                EnergyWorkshop.name.label("group_key"),
+                func.sum(EnergyMonthlyRecord.value).label("total_value"),
+                EnergyMonthlyRecord.unit,
+                func.count(EnergyMonthlyRecord.id).label("data_count"),
+            )
+            .join(
+                EnergyWorkshop,
+                EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+            )
+            .where(
+                EnergyMonthlyRecord.record_date >= start_date,
+                EnergyMonthlyRecord.record_date <= end_date,
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
         )
-        .where(
-            EnergyData.is_deleted == False,  # noqa: E712
-            EnergyData.timestamp >= start_time,
-            EnergyData.timestamp <= end_time,
-        )
-        .group_by(group_col, EnergyData.unit)
-    )
+
     if energy_type:
-        query = query.where(EnergyDeviceConfig.energy_type == energy_type)
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
 
     result = await db.execute(query)
     rows = result.all()
@@ -289,23 +302,23 @@ async def get_overview_summary(
     start_time: datetime,
     end_time: datetime,
 ) -> list[dict[str, Any]]:
-    """按能源类型汇总能耗"""
+    """按能源类型汇总能耗（从月度记录表查询）"""
+    # 将 datetime 转换为 date 用于查询
+    start_date = start_time.date() if hasattr(start_time, "date") else start_time
+    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+
     query = (
         select(
-            EnergyDeviceConfig.energy_type,
-            func.sum(EnergyData.value).label("total_value"),
-            EnergyData.unit,
-        )
-        .join(
-            EnergyDeviceConfig,
-            EnergyData.device_config_id == EnergyDeviceConfig.id,
+            EnergyMonthlyRecord.energy_type,
+            func.sum(EnergyMonthlyRecord.value).label("total_value"),
+            EnergyMonthlyRecord.unit,
         )
         .where(
-            EnergyData.is_deleted == False,  # noqa: E712
-            EnergyData.timestamp >= start_time,
-            EnergyData.timestamp <= end_time,
+            EnergyMonthlyRecord.record_date >= start_date,
+            EnergyMonthlyRecord.record_date <= end_date,
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
         )
-        .group_by(EnergyDeviceConfig.energy_type, EnergyData.unit)
+        .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
     )
     result = await db.execute(query)
     return [
@@ -324,32 +337,32 @@ async def get_overview_trend(
     end_time: datetime,
     energy_type: str | None = None,
 ) -> list[dict[str, Any]]:
-    """按小时获取能耗趋势数据"""
+    """按日期获取能耗趋势数据（从月度记录表查询）"""
+    # 将 datetime 转换为 date 用于查询
+    start_date = start_time.date() if hasattr(start_time, "date") else start_time
+    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+
     query = (
         select(
-            EnergyData.timestamp,
-            EnergyDeviceConfig.energy_type,
-            func.sum(EnergyData.value).label("total_value"),
-        )
-        .join(
-            EnergyDeviceConfig,
-            EnergyData.device_config_id == EnergyDeviceConfig.id,
+            EnergyMonthlyRecord.record_date,
+            EnergyMonthlyRecord.energy_type,
+            func.sum(EnergyMonthlyRecord.value).label("total_value"),
         )
         .where(
-            EnergyData.is_deleted == False,  # noqa: E712
-            EnergyData.timestamp >= start_time,
-            EnergyData.timestamp <= end_time,
+            EnergyMonthlyRecord.record_date >= start_date,
+            EnergyMonthlyRecord.record_date <= end_date,
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
         )
-        .group_by(EnergyData.timestamp, EnergyDeviceConfig.energy_type)
-        .order_by(EnergyData.timestamp.asc())
+        .group_by(EnergyMonthlyRecord.record_date, EnergyMonthlyRecord.energy_type)
+        .order_by(EnergyMonthlyRecord.record_date.asc())
     )
     if energy_type:
-        query = query.where(EnergyDeviceConfig.energy_type == energy_type)
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
 
     result = await db.execute(query)
     return [
         {
-            "time": row.timestamp.isoformat(),
+            "time": row.record_date.isoformat(),
             "value": float(row.total_value or 0),
             "type": row.energy_type,
         }
@@ -357,9 +370,7 @@ async def get_overview_trend(
     ]
 
 
-async def create_collect_log(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyCollectLog:
+async def create_collect_log(db: AsyncSession, data: dict[str, Any]) -> EnergyCollectLog:
     obj = EnergyCollectLog(**data)
     db.add(obj)
     await db.flush()
@@ -431,7 +442,7 @@ async def get_collect_log_detail(
     result = await db.execute(query)
     rows = list(result.all())
 
-    return log, rows
+    return log, rows  # type: ignore[return-value]
 
 
 # ── 预警规则 ──
@@ -450,9 +461,7 @@ async def create_alert_rule(db: AsyncSession, data: dict[str, Any]) -> EnergyAle
     return result.scalar_one()
 
 
-async def get_alert_rule_by_id(
-    db: AsyncSession, rule_id: UUID
-) -> EnergyAlertRule | None:
+async def get_alert_rule_by_id(db: AsyncSession, rule_id: UUID) -> EnergyAlertRule | None:
     result = await db.execute(
         select(EnergyAlertRule).where(
             EnergyAlertRule.id == rule_id,
@@ -490,9 +499,7 @@ async def list_alert_rules(
     return list(result.scalars().all()), total
 
 
-async def update_alert_rule(
-    db: AsyncSession, rule_id: UUID, data: dict[str, Any]
-) -> EnergyAlertRule | None:
+async def update_alert_rule(db: AsyncSession, rule_id: UUID, data: dict[str, Any]) -> EnergyAlertRule | None:
     obj = await get_alert_rule_by_id(db, rule_id)
     if obj is None:
         return None
@@ -520,9 +527,7 @@ async def delete_alert_rule(db: AsyncSession, rule_id: UUID) -> bool:
 # ── 预警记录 ──
 
 
-async def create_alert_record(
-    db: AsyncSession, data: dict[str, Any]
-) -> EnergyAlertRecord:
+async def create_alert_record(db: AsyncSession, data: dict[str, Any]) -> EnergyAlertRecord:
     obj = EnergyAlertRecord(**data)
     db.add(obj)
     await db.flush()
@@ -535,9 +540,7 @@ async def create_alert_record(
     return result.scalar_one()
 
 
-async def get_alert_record_by_id(
-    db: AsyncSession, record_id: UUID
-) -> EnergyAlertRecord | None:
+async def get_alert_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyAlertRecord | None:
     result = await db.execute(
         select(EnergyAlertRecord).where(
             EnergyAlertRecord.id == record_id,
@@ -581,9 +584,7 @@ async def list_alert_records(
     return list(result.scalars().all()), total
 
 
-async def update_alert_record(
-    db: AsyncSession, record_id: UUID, data: dict[str, Any]
-) -> EnergyAlertRecord | None:
+async def update_alert_record(db: AsyncSession, record_id: UUID, data: dict[str, Any]) -> EnergyAlertRecord | None:
     obj = await get_alert_record_by_id(db, record_id)
     if obj is None:
         return None
@@ -597,3 +598,258 @@ async def update_alert_record(
         )
     )
     return result.scalar_one_or_none()
+
+
+# ── 车间管理 ──
+
+
+async def create_workshop(db: AsyncSession, data: dict[str, Any]) -> EnergyWorkshop:
+    from app.modules.energy.models import EnergyWorkshop
+
+    obj = EnergyWorkshop(**data)
+    db.add(obj)
+    await db.flush()
+    return obj
+
+
+async def get_workshop_by_id(db: AsyncSession, workshop_id: UUID) -> EnergyWorkshop | None:
+    from app.modules.energy.models import EnergyWorkshop
+
+    result = await db.execute(
+        select(EnergyWorkshop).where(
+            EnergyWorkshop.id == workshop_id,
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_workshop_by_code(db: AsyncSession, code: str) -> EnergyWorkshop | None:
+    from app.modules.energy.models import EnergyWorkshop
+
+    result = await db.execute(
+        select(EnergyWorkshop).where(
+            EnergyWorkshop.code == code,
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_workshop_by_name(db: AsyncSession, name: str) -> EnergyWorkshop | None:
+    from app.modules.energy.models import EnergyWorkshop
+
+    result = await db.execute(
+        select(EnergyWorkshop).where(
+            EnergyWorkshop.name == name,
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_workshops(
+    db: AsyncSession,
+    *,
+    category: str | None = None,
+    is_active: bool | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> tuple[list[EnergyWorkshop], int]:
+    from app.modules.energy.models import EnergyWorkshop
+
+    query = select(EnergyWorkshop).where(
+        EnergyWorkshop.is_deleted == False  # noqa: E712
+    )
+    if category:
+        query = query.where(EnergyWorkshop.category == category)
+    if is_active is not None:
+        query = query.where(EnergyWorkshop.is_active == is_active)
+
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar() or 0
+
+    query = query.order_by(EnergyWorkshop.sort_order, EnergyWorkshop.code)
+    query = query.offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    return list(result.scalars().all()), total
+
+
+async def update_workshop(db: AsyncSession, workshop_id: UUID, data: dict[str, Any]) -> EnergyWorkshop | None:
+    from app.modules.energy.models import EnergyWorkshop
+
+    obj = await get_workshop_by_id(db, workshop_id)
+    if obj is None:
+        return None
+    for key, value in data.items():
+        setattr(obj, key, value)
+    await db.flush()
+    result = await db.execute(
+        select(EnergyWorkshop).where(
+            EnergyWorkshop.id == workshop_id,
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> bool:
+    obj = await get_workshop_by_id(db, workshop_id)
+    if obj is None:
+        return False
+    obj.is_deleted = True
+    await db.flush()
+    return True
+
+
+# ── 月度记录 ──
+
+
+async def create_monthly_record(db: AsyncSession, data: dict[str, Any]) -> EnergyMonthlyRecord:
+    from app.modules.energy.models import EnergyMonthlyRecord
+
+    obj = EnergyMonthlyRecord(**data)
+    db.add(obj)
+    await db.flush()
+    return obj
+
+
+async def batch_create_monthly_records(db: AsyncSession, records: list[dict[str, Any]]) -> list[EnergyMonthlyRecord]:
+    from app.modules.energy.models import EnergyMonthlyRecord
+
+    objs = [EnergyMonthlyRecord(**r) for r in records]
+    db.add_all(objs)
+    await db.flush()
+    return objs
+
+
+async def batch_upsert_monthly_records(
+    db: AsyncSession, records: list[dict[str, Any]]
+) -> tuple[list[EnergyMonthlyRecord], int]:
+    """批量 upsert 月度记录，遇到唯一约束冲突时更新 value。
+
+    返回 (新建列表, 更新数量)。
+    """
+    from app.modules.energy.models import EnergyMonthlyRecord
+
+    created: list[EnergyMonthlyRecord] = []
+    updated_count = 0
+
+    for r in records:
+        result = await db.execute(
+            select(EnergyMonthlyRecord).where(
+                EnergyMonthlyRecord.workshop_id == r["workshop_id"],
+                EnergyMonthlyRecord.energy_type == r["energy_type"],
+                EnergyMonthlyRecord.record_date == r["record_date"],
+            )
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            existing.value = r["value"]
+            existing.unit = r.get("unit", existing.unit)
+            existing.source = r.get("source", existing.source)
+            existing.remark = r.get("remark")
+            existing.date_range_end = r.get("date_range_end")
+            updated_count += 1
+        else:
+            obj = EnergyMonthlyRecord(**r)
+            db.add(obj)
+            created.append(obj)
+
+    await db.flush()
+    return created, updated_count
+
+
+async def list_monthly_records(
+    db: AsyncSession,
+    *,
+    workshop_id: UUID | None = None,
+    energy_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> tuple[list[EnergyMonthlyRecord], int]:
+    from app.modules.energy.models import EnergyMonthlyRecord
+
+    query = select(EnergyMonthlyRecord).where(
+        EnergyMonthlyRecord.is_deleted == False  # noqa: E712
+    )
+    if workshop_id:
+        query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
+    if energy_type:
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
+    if start_date:
+        query = query.where(EnergyMonthlyRecord.record_date >= start_date)
+    if end_date:
+        query = query.where(EnergyMonthlyRecord.record_date <= end_date)
+
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar() or 0
+
+    query = query.order_by(EnergyMonthlyRecord.record_date.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    return list(result.scalars().all()), total
+
+
+async def get_monthly_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyMonthlyRecord | None:
+    from app.modules.energy.models import EnergyMonthlyRecord
+
+    result = await db.execute(
+        select(EnergyMonthlyRecord).where(
+            EnergyMonthlyRecord.id == record_id,
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def delete_monthly_record(db: AsyncSession, record_id: UUID) -> bool:
+    obj = await get_monthly_record_by_id(db, record_id)
+    if obj is None:
+        return False
+    obj.is_deleted = True
+    await db.flush()
+    return True
+
+
+async def get_monthly_summary(
+    db: AsyncSession,
+    workshop_id: UUID | None = None,
+    energy_type: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> dict[str, Any]:
+    """获取月度记录汇总，按能源类型分组统计总量"""
+    query = select(
+        EnergyMonthlyRecord.energy_type,
+        func.sum(EnergyMonthlyRecord.value).label("total_value"),
+        EnergyMonthlyRecord.unit,
+    )
+
+    if workshop_id:
+        query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
+    if energy_type:
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
+    if start_date:
+        query = query.where(EnergyMonthlyRecord.record_date >= start_date)
+    if end_date:
+        query = query.where(EnergyMonthlyRecord.record_date <= end_date)
+
+    query = query.group_by(
+        EnergyMonthlyRecord.energy_type,
+        EnergyMonthlyRecord.unit,
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    summary = {}
+    for row in rows:
+        summary[row.energy_type] = {
+            "total_value": float(row.total_value or 0),
+            "unit": row.unit,
+        }
+
+    return summary

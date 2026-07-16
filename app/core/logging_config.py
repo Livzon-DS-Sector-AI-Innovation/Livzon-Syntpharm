@@ -34,6 +34,7 @@ import os
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 # ── request_id 上下文（由 app.platform.audit.middleware.AuditMiddleware 设置）──
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
@@ -44,6 +45,7 @@ _MODULE_PREFIX_MAP: dict[str, str] = {
     "app.modules.equipment": "equipment",
     "app.modules.energy": "energy",
     "app.modules.hr": "hr",
+    "app.platform.audit": "audit",
     "app.platform": "platform",
     "app.core": "core",
 }
@@ -89,9 +91,9 @@ def _resolve_log_level(level_str: str, fallback: str = "WARNING") -> int:
     无效输入回退到 fallback，避免 getattr(logging, "INVALID") 导致启动崩溃。
     """
     try:
-        return getattr(logging, level_str.upper())
+        return getattr(logging, level_str.upper())  # type: ignore[no-any-return]
     except AttributeError:
-        return getattr(logging, fallback.upper())
+        return getattr(logging, fallback.upper())  # type: ignore[no-any-return]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -153,6 +155,15 @@ class ConsoleFormatter(logging.Formatter):
     }
     _RESET = "\033[0m"
     _DIM = "\033[2m"
+    _TZ = ZoneInfo("Asia/Shanghai")
+
+    def formatTime(  # noqa: N802
+        self, record: logging.LogRecord, datefmt: str | None = None
+    ) -> str:
+        ct = datetime.fromtimestamp(record.created, tz=self._TZ)
+        if datefmt:
+            return ct.strftime(datefmt)
+        return ct.isoformat()
 
     def format(self, record: logging.LogRecord) -> str:
         color = self._COLORS.get(record.levelname, "")
@@ -364,14 +375,8 @@ def get_logging_config(
     # 其余三方库使用 console_3rd handler（handler 级 WARNING 防库内 setLevel 绕过）
     _info_level_loggers = {"uvicorn", "uvicorn.error"}
     for name, default_level in _THIRD_PARTY_LOGGERS.items():
-        level = (
-            os.getenv(f"LOG_{name.upper().replace('.', '_')}_LEVEL", "")
-            or third_party_level
-            or default_level
-        )
-        tp_handlers: list[str] = (
-            ["console"] if name in _info_level_loggers else ["console_3rd"]
-        )
+        level = os.getenv(f"LOG_{name.upper().replace('.', '_')}_LEVEL", "") or third_party_level or default_level
+        tp_handlers: list[str] = ["console"] if name in _info_level_loggers else ["console_3rd"]
         if is_production:
             tp_handlers.append("file_other")
         loggers[name] = {
@@ -449,9 +454,7 @@ def setup_logging(
         for prefix, default_level in _THIRD_PARTY_LOGGERS.items():
             if existing_name == prefix or existing_name.startswith(prefix + "."):
                 level_str = (
-                    os.getenv(f"LOG_{prefix.upper().replace('.', '_')}_LEVEL", "")
-                    or third_party_level
-                    or default_level
+                    os.getenv(f"LOG_{prefix.upper().replace('.', '_')}_LEVEL", "") or third_party_level or default_level
                 )
                 existing_obj.setLevel(_resolve_log_level(level_str))
                 break

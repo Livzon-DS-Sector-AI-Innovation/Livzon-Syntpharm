@@ -57,6 +57,7 @@ from app.modules.safety.ai_hazard_identification.rules import (
     auto_correct,
 )
 from app.modules.safety.ai_hazard_identification.schemas import (
+    DefectSubstanceEnum,
     HazardCategoryEnum,
     HazardIdentificationInput,
     HazardIdentificationOutput,
@@ -147,6 +148,7 @@ __all__ = [
     "HazardTypeEnum",
     "HazardCategoryEnum",
     "HazardLevelEnum",
+    "DefectSubstanceEnum",
     # ── 工具（隐患识别）──
     "get_db_seed_config",
     "get_expected_keys",

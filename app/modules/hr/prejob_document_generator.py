@@ -17,9 +17,7 @@ def _find_old_template() -> Path:
     candidates = [
         Path("员工培训教育管理规程") / OLD_TEMPLATE_NAME,
         Path("../员工培训教育管理规程") / OLD_TEMPLATE_NAME,
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "员工培训教育管理规程"
-        / OLD_TEMPLATE_NAME,
+        Path(__file__).resolve().parent.parent.parent.parent / "员工培训教育管理规程" / OLD_TEMPLATE_NAME,
     ]
     for p in candidates:
         if p.exists():
@@ -32,9 +30,7 @@ def _find_new_template() -> Path:
     candidates = [
         Path("新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
         Path("../新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
-        Path(__file__).resolve().parent.parent.parent.parent
-        / "新厂人员培训管理规程"
-        / NEW_TEMPLATE_NAME,
+        Path(__file__).resolve().parent.parent.parent.parent / "新厂人员培训管理规程" / NEW_TEMPLATE_NAME,
     ]
     for p in candidates:
         if p.exists():
@@ -91,7 +87,7 @@ def _generate_new(employee: Employee) -> BytesIO:
     table = doc.tables[0]
 
     # Row 1: [姓名] [姓名] [] [] [部门] []
-    # cells[0] and cells[1] are merged (label), cells[2] and cells[3] are merged (value), cells[4] is label, cells[5] is value
+    # cells[0]+[1] merged(label), cells[2]+[3] merged(value), cells[4]=label, cells[5]=value
     table.rows[1].cells[2].text = employee.name or ""
     table.rows[1].cells[5].text = employee.department or ""
 

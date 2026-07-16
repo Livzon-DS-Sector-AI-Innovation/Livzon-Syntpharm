@@ -18,9 +18,7 @@ OUTPUT_DIR = "/mnt/c/Users/chenlinxin/Desktop/codex资料/导出数据"
 async def export_label_verification_sql():
     async with engine.begin() as conn:
         result = await conn.execute(
-            text(
-                "SELECT * FROM production.label_verifications WHERE is_deleted = false ORDER BY verification_date"
-            )
+            text("SELECT * FROM production.label_verifications WHERE is_deleted = false ORDER BY verification_date")
         )
         rows = result.fetchall()
         columns = result.keys()
@@ -58,9 +56,7 @@ async def export_label_verification_sql():
             data = dict(zip(columns, row))
             cols = ", ".join(columns)
             vals = ", ".join(fmt(data[c]) for c in columns)
-            lines.append(
-                f"INSERT INTO production.label_verifications ({cols}) VALUES ({vals});"
-            )
+            lines.append(f"INSERT INTO production.label_verifications ({cols}) VALUES ({vals});")
 
         lines.append("")
         lines.append(f"-- 导出完成，共 {len(rows)} 条 INSERT 语句")

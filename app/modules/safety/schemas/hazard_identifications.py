@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -50,10 +51,10 @@ RISK_LEVELS = [
 ]
 
 
-def get_risk_level(d_value: float) -> dict:
+def get_risk_level(d_value: float) -> dict[str, Any]:
     """根据 D 值获取风险等级"""
     for level in RISK_LEVELS:
-        if level["min_d"] <= d_value <= level["max_d"]:
+        if level["min_d"] <= d_value <= level["max_d"]:  # type: ignore[operator]
             return level
     return RISK_LEVELS[-1]
 
@@ -87,9 +88,7 @@ OVERALL_STATUS_OPTIONS = [
 class HazardIdentificationBase(BaseModel):
     """危险源辨识基础模式"""
 
-    hazard_id_no: str | None = Field(
-        None, max_length=64, description="危险源编号（留空自动生成）"
-    )
+    hazard_id_no: str | None = Field(None, max_length=64, description="危险源编号（留空自动生成）")
     department: str = Field(..., max_length=100, description="部门")
     position: str = Field(..., max_length=100, description="岗位")
     production_step: str | None = Field(None, description="生产步骤（可选）")
@@ -161,7 +160,7 @@ class HazardIdentificationRunScript(BaseModel):
     """触发脚本执行请求"""
 
     script_number: int = Field(..., ge=1, le=7, description="脚本编号(1-7)")
-    ai_output: dict | None = Field(None, description="AI 输出内容")
+    ai_output: dict[str, Any] | None = Field(None, description="AI 输出内容")
 
 
 class HazardIdentificationResponse(HazardIdentificationBase):
@@ -256,9 +255,7 @@ class HazardIdentificationBatchCreate(BaseModel):
     regulation_id: uuid.UUID = Field(..., description="引用的安全操作规程 ID")
     department: str = Field(..., max_length=100, description="部门")
     position: str = Field(..., max_length=100, description="岗位")
-    stage_names: list[str] = Field(
-        ..., min_length=1, max_length=50, description="选中的工艺阶段名称列表"
-    )
+    stage_names: list[str] = Field(..., min_length=1, max_length=50, description="选中的工艺阶段名称列表")
     notes: str | None = Field(None, description="备注（共享到所有记录）")
     auto_submit: bool = Field(False, description="是否创建后自动提交进入AI流程")
 

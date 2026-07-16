@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+# ruff: noqa: E402, I001
 import asyncio
 import logging
 import os
@@ -12,8 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-# Ensure platform models are registered in SQLAlchemy metadata
-import app.platform.audit.models  # noqa: F401  # noqa: F401
+import app.platform.audit.models  # noqa: F401
 
 # Ensure platform models are registered in SQLAlchemy metadata
 import app.platform.identity.models  # noqa: F401
@@ -26,6 +27,7 @@ from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
 )
 from app.platform.audit import AuditMiddleware
 from app.shared.ocr_service import init_ocr
+from app.shared.file_conversion import init_file_conversion
 
 settings = get_settings()
 
@@ -57,8 +59,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan — auto-start all registered background workers."""
     logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
 
-    # Initialize OCR service
-    init_ocr()
+    # Initialize OCR service in background (model loading is heavy)
+    asyncio.create_task(asyncio.to_thread(init_ocr))
+
+    # Initialize file conversion service (libreoffice CLI wrapper, no-op)
+    init_file_conversion()
 
     # Import all modules to trigger their __init__.py and register workers
     import app.modules.energy  # noqa: F401
@@ -67,6 +72,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     import app.modules.safety  # noqa: F401
     import app.platform.identity  # noqa: F401
     import app.platform.integrations.feishu  # noqa: F401
+
+    # Auto-seed required configuration data
+    from app.core.seed import run_seeds
+
+    await run_seeds()
 
     # Start all registered background workers
     from app.shared.lifecycle import get_all_workers
@@ -80,6 +90,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         tasks.append((worker, task))
 
     # Start unified scheduler engine (for DB-driven generators)
+    from app.platform.identity.service import bootstrap_local_users
+
+    await bootstrap_local_users()
 
     from app.modules.warehouse.feishu_events import register_feishu_event_handlers
 
@@ -101,6 +114,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
+
+    # Start reagent reminder scheduler
+    try:
+        from app.modules.quality.qms.reagent_reminder_scheduler import register
+
+        register()
+        logger.info("Reagent reminder scheduler registered")
+    except Exception as e:
+        logger.warning(f"Failed to register reagent reminder scheduler: {e}")
+
+    # Start deviation reporter reminder scheduler
+    try:
+        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import (
+            register as register_deviation_reminder,
+        )
+
+        register_deviation_reminder()
+        logger.info("Deviation reporter reminder scheduler registered")
+    except Exception as e:
+        logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
 
     # ── 平台级飞书 WebSocket 长连接 ──
     if settings.feishu.platform.ws_enabled:
@@ -133,12 +166,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     asyncio.create_task(start_ws())
 
-    # ── 安全模块定时任务调度引擎 ──
-    from app.modules.safety.scheduler import (
-        scheduled_task_loop,
-    )
+    # ── Livzon 助手飞书交互卡片回调（开发环境可用 WebSocket 长连接）──
+    if settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED:
+        from app.platform.identity.feishu_card_ws import start_livzon_card_ws
 
-    asyncio.create_task(scheduled_task_loop())
+        asyncio.create_task(start_livzon_card_ws())
 
     # ── 统一调度引擎（平台级，各模块可渐进迁移）──
 
@@ -170,7 +202,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown: stop all workers in reverse order
     logger.info("Shutting down %s", settings.APP_NAME)
 
-    # Stop unified scheduler engine
+    # ── 停止统一调度引擎 ──
     scheduler_engine.stop()
     try:
         await asyncio.wait_for(scheduler_engine_task, timeout=10)
@@ -251,6 +283,14 @@ logger.info("MCP server mounted at /mcp")
 
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.message,
+        )
     return error_response(
         message=exc.message,
         detail=exc.detail_msg,
@@ -259,9 +299,15 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.detail,
+        )
     return error_response(
         message=str(exc.detail),
         status_code=exc.status_code,
@@ -269,9 +315,7 @@ async def http_exception_handler(
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     errors = exc.errors()
     detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
     return error_response(
@@ -295,6 +339,24 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
         message="数据完整性错误",
         detail=msg,
         status_code=400,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", None)
+    logger.exception(
+        "Unhandled exception on %s %s [request_id=%s]: %s",
+        request.method,
+        request.url.path,
+        request_id,
+        exc,
+    )
+    return error_response(
+        message="服务内部错误",
+        detail=f"请联系管理员，错误编号: {request_id}" if request_id else None,
+        status_code=500,
+        request_id=request_id,
     )
 
 

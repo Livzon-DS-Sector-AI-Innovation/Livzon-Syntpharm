@@ -1,11 +1,22 @@
 """Feishu SSO, approval, IM, Bitable, notification and WebSocket integrations."""
 
+from typing import Any
+
 from app.platform.integrations.feishu.bitable import FeishuBitableSync
 from app.platform.integrations.feishu.client import FeishuClient
 from app.platform.integrations.feishu.datasource import BitableDataSource
 from app.platform.integrations.feishu.employee_datasource import (
     EmployeeBitableDataSource,
     EmployeeRecord,
+)
+from app.platform.integrations.feishu.im import (
+    FeishuMessageSendResult,
+    build_callback_card_content,
+    build_callback_status_card_content,
+    build_simple_card_content,
+    build_text_message_content,
+    send_feishu_message,
+    update_feishu_message,
 )
 from app.platform.integrations.feishu.notification import (
     build_card,
@@ -33,6 +44,13 @@ __all__ = [
     "BitableDataSource",
     "EmployeeBitableDataSource",
     "EmployeeRecord",
+    "FeishuMessageSendResult",
+    "build_callback_card_content",
+    "build_callback_status_card_content",
+    "build_simple_card_content",
+    "build_text_message_content",
+    "send_feishu_message",
+    "update_feishu_message",
     "build_card",
     "send_user_card",
     "BitableReference",
@@ -51,7 +69,7 @@ __all__ = [
 # ── Background worker registration ────────────────────────────
 
 
-async def _start_platform_ws():
+async def _start_platform_ws() -> Any:
     """Start platform-level Feishu WebSocket client."""
     import asyncio
 
@@ -62,7 +80,7 @@ async def _start_platform_ws():
     await start_ws_client()
 
 
-def _stop_platform_ws():
+def _stop_platform_ws() -> Any:
     """Stop platform-level Feishu WebSocket client."""
     from app.platform.integrations.feishu.ws_client import stop_ws_client
 

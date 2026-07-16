@@ -1,6 +1,7 @@
 """OpenAI-compatible LLM HTTP client."""
 
 import json
+from typing import Any
 
 import httpx
 
@@ -45,7 +46,7 @@ class AIService:
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         response_format: str = "json_object",
         temperature: float = 0.1,
         max_tokens: int = 16384,
@@ -55,12 +56,9 @@ class AIService:
         msgs = [dict(m) for m in messages]  # shallow copy
         if response_format == "json_object":
             last = msgs[-1]
-            if (
-                isinstance(last.get("content"), str)
-                and "json" not in last["content"].lower()
-            ):
+            if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
                 last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
-        body: dict = {
+        body: dict[str, Any] = {
             "model": self.model,
             "messages": msgs,
             "temperature": temperature,
@@ -72,14 +70,14 @@ class AIService:
         resp = await self._client.post("/chat/completions", json=body)
         resp.raise_for_status()
         data = resp.json()
-        return data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
     async def chat_parsed(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         expected_keys: list[str],
         temperature: float = 0.1,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Chat + parse JSON response, validating expected keys exist."""
         raw = await self.chat(messages, temperature=temperature)
         try:
@@ -92,7 +90,7 @@ class AIService:
             if len(parsed) == 0:
                 raise AIOutputError("AI returned empty list", raw)
             if isinstance(parsed[0], dict):
-                merged: dict = {}
+                merged: dict[str, Any] = {}
                 for item in parsed:
                     for k, v in item.items():
                         if k in merged and isinstance(v, str):
@@ -111,7 +109,7 @@ class AIService:
         missing = [k for k in expected_keys if k not in parsed]
         if missing:
             raise AIOutputError(f"AI response missing keys: {missing}", raw)
-        return parsed
+        return parsed  # type: ignore[no-any-return]
 
     async def chat_vision(
         self,
@@ -125,7 +123,7 @@ class AIService:
         Uses OpenAI-compatible vision format:
         messages = [{"role":"user", "content":[{"type":"text",...}, {"type":"image_url",...}]}]
         """
-        content_parts: list[dict] = [
+        content_parts: list[dict[str, Any]] = [
             {"type": "text", "text": text_prompt},
         ]
         for url in image_urls:
@@ -136,7 +134,7 @@ class AIService:
                 }
             )
 
-        body: dict = {
+        body: dict[str, Any] = {
             "model": self.model,
             "messages": [
                 {"role": "user", "content": content_parts},
@@ -148,7 +146,7 @@ class AIService:
         resp = await self._client.post("/chat/completions", json=body)
         resp.raise_for_status()
         data = resp.json()
-        return data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
     async def chat_vision_parsed(
         self,
@@ -156,7 +154,7 @@ class AIService:
         image_urls: list[str],
         expected_keys: list[str],
         temperature: float = 0.1,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Vision chat + parse JSON response, validating expected keys."""
         raw = await self.chat_vision(text_prompt, image_urls, temperature=temperature)
         try:
@@ -184,9 +182,9 @@ class AIService:
         missing = [k for k in expected_keys if k not in parsed]
         if missing:
             raise AIOutputError(f"Vision AI response missing keys: {missing}", raw)
-        return parsed
+        return parsed  # type: ignore[no-any-return]
 
-    async def health_check(self) -> dict:
+    async def health_check(self) -> dict[str, Any]:
         """Check connectivity by listing models (lightweight endpoint)."""
         try:
             resp = await self._client.get("/models", timeout=5)

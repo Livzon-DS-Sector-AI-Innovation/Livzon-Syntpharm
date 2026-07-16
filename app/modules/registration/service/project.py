@@ -22,7 +22,7 @@ async def get_projects(db: AsyncSession) -> list[RegistrationProject]:
 async def get_project(db: AsyncSession, project_id: uuid.UUID) -> RegistrationProject:
     stmt = select(RegistrationProject).where(
         RegistrationProject.id == project_id,
-        not RegistrationProject.is_deleted,
+        ~RegistrationProject.is_deleted,
     )
     result = await db.execute(stmt)
     project = result.scalar_one_or_none()
@@ -39,9 +39,7 @@ async def create_project(db: AsyncSession, data: ProjectCreate) -> RegistrationP
     return project
 
 
-async def update_project(
-    db: AsyncSession, project_id: uuid.UUID, data: ProjectUpdate
-) -> RegistrationProject:
+async def update_project(db: AsyncSession, project_id: uuid.UUID, data: ProjectUpdate) -> RegistrationProject:
     project = await get_project(db, project_id)
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(project, field, value)

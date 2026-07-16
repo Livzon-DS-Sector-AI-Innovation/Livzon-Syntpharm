@@ -29,7 +29,7 @@ class DomesticApprovalCreate(DomesticApprovalBase):
 
 
 class DomesticApprovalUpdate(DomesticApprovalBase):
-    product_name: str | None = None
+    product_name: str | None = None  # type: ignore[assignment]
 
 
 class DomesticApprovalResponse(DomesticApprovalBase):
@@ -63,7 +63,7 @@ class OverseasApprovalCreate(OverseasApprovalBase):
 
 
 class OverseasApprovalUpdate(OverseasApprovalBase):
-    product_name: str | None = None
+    product_name: str | None = None  # type: ignore[assignment]
 
 
 class OverseasApprovalResponse(OverseasApprovalBase):
@@ -94,7 +94,7 @@ class InternationalReviewCreate(InternationalReviewBase):
 
 
 class InternationalReviewUpdate(InternationalReviewBase):
-    product_name: str | None = None
+    product_name: str | None = None  # type: ignore[assignment]
 
 
 class InternationalReviewResponse(InternationalReviewBase):
@@ -125,7 +125,7 @@ class CoppCertificateCreate(CoppCertificateBase):
 
 
 class CoppCertificateUpdate(CoppCertificateBase):
-    product_name: str | None = None
+    product_name: str | None = None  # type: ignore[assignment]
 
 
 class CoppCertificateResponse(CoppCertificateBase):
@@ -155,7 +155,7 @@ class WcCertificateCreate(WcCertificateBase):
 
 
 class WcCertificateUpdate(WcCertificateBase):
-    product_name: str | None = None
+    product_name: str | None = None  # type: ignore[assignment]
 
 
 class WcCertificateResponse(WcCertificateBase):

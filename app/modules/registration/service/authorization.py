@@ -348,12 +348,9 @@ class SupplementaryReplyService:
         # 2. 合并药品信息（用户手动输入优先于 PDF 提取）
         drug_info = {
             "drug_name": drug_name_override or metadata.get("drug_name", "未知药品"),
-            "registration_number": registration_number_override
-            or metadata.get("registration_number", ""),
-            "acceptance_number": acceptance_number_override
-            or metadata.get("acceptance_number", ""),
-            "company_name": company_name_override
-            or metadata.get("company_name", API_COMPANY),
+            "registration_number": registration_number_override or metadata.get("registration_number", ""),
+            "acceptance_number": acceptance_number_override or metadata.get("acceptance_number", ""),
+            "company_name": company_name_override or metadata.get("company_name", API_COMPANY),
             "doc_type": "补充资料",
             "application_type": "首次登记",
             "contact": "魏永红",

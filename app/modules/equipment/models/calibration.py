@@ -35,16 +35,10 @@ class CalibrationPlan(BaseModel):
         ForeignKey("equipment.equipments.id"),
         comment="设备ID",
     )
-    calibration_type: Mapped[str] = mapped_column(
-        String(20), comment="校准类型：内部校准/外部检定"
-    )
+    calibration_type: Mapped[str] = mapped_column(String(20), comment="校准类型：内部校准/外部检定")
     cycle_months: Mapped[int] = mapped_column(comment="校准周期（月）")
-    last_calibration_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="上次校准日期"
-    )
-    next_calibration_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="下次校准日期"
-    )
+    last_calibration_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="上次校准日期")
+    next_calibration_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="下次校准日期")
     responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("identity.users.id"),
         nullable=True,
@@ -89,16 +83,10 @@ class CalibrationRecord(BaseModel):
         comment="设备ID",
     )
     calibration_date: Mapped[date] = mapped_column(Date, comment="校准日期")
-    calibration_type: Mapped[str] = mapped_column(
-        String(20), comment="校准类型：内部校准/外部检定"
-    )
+    calibration_type: Mapped[str] = mapped_column(String(20), comment="校准类型：内部校准/外部检定")
     result: Mapped[str] = mapped_column(String(10), comment="校准结果：合格/不合格")
-    certificate_no: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="证书编号"
-    )
-    calibrated_by: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="校准人/机构"
-    )
+    certificate_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="证书编号")
+    calibrated_by: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="校准人/机构")
     next_due_date: Mapped[date] = mapped_column(Date, comment="下次校准日期")
     remark: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 

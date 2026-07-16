@@ -32,9 +32,7 @@ class LabelVerificationBase(BaseModel):
     check_all_barrels_identified: bool = Field(..., description="是否识别到每一桶")
     check_exception_handled: bool = Field(..., description="异常处理结果")
 
-    result_status: str = Field(
-        "全部一致", max_length=16, description="总体结论：全部一致/存在差异"
-    )
+    result_status: str = Field("全部一致", max_length=16, description="总体结论：全部一致/存在差异")
     result_summary: str = Field(..., description="结论摘要")
 
     video_file_key: str = Field(..., max_length=256, description="视频文件 key")

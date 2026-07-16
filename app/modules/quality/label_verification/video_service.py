@@ -4,6 +4,7 @@ import base64
 import json
 import logging
 import os
+from typing import Any
 
 import cv2
 
@@ -36,13 +37,10 @@ class LabelVerificationVideoService:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = total_frames / video_fps if video_fps > 0 else 0
 
-        logger.info(
-            f"视频信息: {video_path}, FPS={video_fps:.2f}, "
-            f"总帧数={total_frames}, 时长={duration:.1f}秒"
-        )
+        logger.info(f"视频信息: {video_path}, FPS={video_fps:.2f}, 总帧数={total_frames}, 时长={duration:.1f}秒")
 
         frame_interval = max(1, int(video_fps / fps))
-        frames_base64 = []
+        frames_base64 = []  # type: ignore[var-annotated]
         current_frame = 0
 
         while cap.isOpened() and len(frames_base64) < max_frames:
@@ -61,7 +59,7 @@ class LabelVerificationVideoService:
         logger.info(f"提取了 {len(frames_base64)} 帧 (目标 FPS={fps})")
         return frames_base64
 
-    def get_video_info(self, video_path: str) -> dict:
+    def get_video_info(self, video_path: str) -> dict[str, Any]:
         """获取视频基本信息"""
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"视频文件不存在: {video_path}")
@@ -115,7 +113,7 @@ class LabelVerificationVideoService:
 5. 如果某些信息完全无法识别，请设为 null，不要猜测
 6. barrels_seen 列出你在视频中实际看到的所有桶的编号"""
 
-    def _build_detailed_prompt(self, form_data: dict) -> str:
+    def _build_detailed_prompt(self, form_data: dict[str, Any]) -> str:
         """构建带表单数据的详细对比提示词"""
         return f"""你是一个药品生产标签核验专家。请仔细分析这些视频帧截图，将标签上的信息与以下表单数据进行逐项对比。
 
@@ -178,7 +176,7 @@ class LabelVerificationVideoService:
   "notes": "其他备注"
 }}"""
 
-    def _parse_ai_response(self, raw: str) -> dict:
+    def _parse_ai_response(self, raw: str) -> dict[str, Any]:
         """解析 AI 返回的 JSON，处理 markdown 格式等"""
         cleaned = raw.strip()
         # 去掉 markdown 代码块
@@ -194,9 +192,9 @@ class LabelVerificationVideoService:
                 cleaned = cleaned[:-3]
             cleaned = cleaned.strip()
 
-        return json.loads(cleaned)
+        return json.loads(cleaned)  # type: ignore[no-any-return]
 
-    def _is_recognition_complete(self, result: dict) -> bool:
+    def _is_recognition_complete(self, result: dict[str, Any]) -> bool:
         """判断识别结果是否完整（关键信息是否都有）"""
         critical_fields = [
             "batch_number",
@@ -214,7 +212,7 @@ class LabelVerificationVideoService:
 
         return True
 
-    def _is_comparison_complete(self, result: dict) -> bool:
+    def _is_comparison_complete(self, result: dict[str, Any]) -> bool:
         """判断对比结果是否完整（8项是否都有明确判断）"""
         check_fields = [
             "check_batch_number",
@@ -236,14 +234,14 @@ class LabelVerificationVideoService:
 
         return True
 
-    async def analyze_and_compare(
+    async def analyze_and_compare(  # type: ignore[no-untyped-def]
         self,
         video_path: str,
-        form_data: dict,
+        form_data: dict[str, Any],
         ai_service,
         initial_fps: float = 1.0,
         max_retry_fps: float = 0.3,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         核心方法：分析视频并与表单数据自动对比。
         如果识别不全，自动降低帧率重试。
@@ -286,12 +284,9 @@ class LabelVerificationVideoService:
             # 判断是否需要降帧率重试
             if self._is_comparison_complete(result):
                 logger.info(
-                    f"分析完成, 置信度={result.get('confidence')}, "
-                    f"帧数={len(selected_frames)}, FPS={current_fps}"
+                    f"分析完成, 置信度={result.get('confidence')}, 帧数={len(selected_frames)}, FPS={current_fps}"
                 )
-                return self._format_comparison_result(
-                    result, len(selected_frames), current_fps, retry_count
-                )
+                return self._format_comparison_result(result, len(selected_frames), current_fps, retry_count)
 
             # 识别不完整，降低帧率重试
             retry_count += 1
@@ -299,15 +294,10 @@ class LabelVerificationVideoService:
             if current_fps < max_retry_fps:
                 break
 
-            logger.info(
-                f"识别不完整 (置信度={result.get('confidence')}), "
-                f"降低帧率到 {current_fps} 重试"
-            )
+            logger.info(f"识别不完整 (置信度={result.get('confidence')}), 降低帧率到 {current_fps} 重试")
 
         # 最终结果（即使不完整也返回）
-        return self._format_comparison_result(
-            result, len(selected_frames), current_fps, retry_count
-        )
+        return self._format_comparison_result(result, len(selected_frames), current_fps, retry_count)
 
     def _select_key_frames(self, frames: list[str], max_count: int = 12) -> list[str]:
         """从所有帧中选择关键帧，尽量均匀分布"""
@@ -326,11 +316,11 @@ class LabelVerificationVideoService:
 
     def _format_comparison_result(
         self,
-        result: dict,
+        result: dict[str, Any],
         frames_count: int,
         fps_used: float,
         retry_count: int,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """格式化对比结果"""
         check_fields = [
             "check_batch_number",

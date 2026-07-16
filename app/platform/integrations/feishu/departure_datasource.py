@@ -20,9 +20,9 @@ _settings = get_settings()
 def _extract_text(value: Any) -> str:
     """Extract plain text from Feishu text-field array format."""
     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
-        return value[0].get("text", "")
+        return value[0].get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, dict) and "text" in value:
-        return value.get("text", "")
+        return value.get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, str):
         return value
     return str(value) if value is not None else ""
@@ -35,9 +35,9 @@ def _extract_number(value: Any) -> int | float | None:
     if isinstance(value, dict) and "value" in value:
         v = value["value"]
         if isinstance(v, list) and len(v) > 0:
-            return v[0]
+            return v[0]  # type: ignore[no-any-return]
     if isinstance(value, list) and len(value) > 0:
-        return value[0]
+        return value[0]  # type: ignore[no-any-return]
     return None
 
 
@@ -99,7 +99,7 @@ class DepartureBitableDataSource:
     async def create(self, data: dict[str, Any]) -> str:
         fields = self._prepare_write_fields(data)
         record = await self.client.create_record(self.table_id, fields)
-        return record.get("record_id", "")
+        return record.get("record_id", "")  # type: ignore[no-any-return]
 
     async def update(self, record_id: str, data: dict[str, Any]) -> None:
         fields = self._prepare_write_fields(data)
@@ -159,30 +159,20 @@ class DepartureRecord:
         # Contact
         self.phone: str = _extract_text(fields.get("手机"))
         self.emergency_contact_phone: str = _extract_text(fields.get("紧急联系人电话"))
-        self.emergency_contact_relation: str = _extract_text(
-            fields.get("紧急联系人|关系")
-        )
+        self.emergency_contact_relation: str = _extract_text(fields.get("紧急联系人|关系"))
         self.bank_account: str = _extract_text(fields.get("银行卡号"))
 
         # Contract
         self.contract_type: str = fields.get("合同期限", "")
 
         # Work history
-        self.transfer_history: str = _extract_text(
-            fields.get("异动(含曾经工作部门、岗位)")
-        )
+        self.transfer_history: str = _extract_text(fields.get("异动(含曾经工作部门、岗位)"))
 
         # Offboarding specific
         self.offboarding_type: str = _extract_text(fields.get("离职类型"))
-        self.offboarding_reason: list[str] = _extract_multi_select(
-            fields.get("离职原因")
-        )
-        self.offboarding_reason_2: list[str] = _extract_multi_select(
-            fields.get("离职原因2")
-        )
-        self.offboarding_remarks: list[str] = _extract_multi_select(
-            fields.get("离职备注")
-        )
+        self.offboarding_reason: list[str] = _extract_multi_select(fields.get("离职原因"))
+        self.offboarding_reason_2: list[str] = _extract_multi_select(fields.get("离职原因2"))
+        self.offboarding_remarks: list[str] = _extract_multi_select(fields.get("离职备注"))
 
         # Other
         self.remarks: str = _extract_text(fields.get("备注"))

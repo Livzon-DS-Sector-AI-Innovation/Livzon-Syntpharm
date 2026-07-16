@@ -2,11 +2,12 @@
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.quality.models import (
+from app.modules.quality.models import (  # type: ignore[attr-defined]
     DepartmentContact,
     DepartmentWeeklyConfirmation,
     Deviation,
@@ -49,11 +50,11 @@ APPROVAL_STEP_LABELS = {
 PENDING_STATUSES = list(STATUS_TO_STEP.keys())
 
 
-async def check_overdue_deviations(db: AsyncSession) -> list[dict]:
+async def check_overdue_deviations(db: AsyncSession) -> list[dict[str, Any]]:
     """Find deviations that have exceeded their step deadline."""
     query = select(Deviation).where(
         and_(
-            not Deviation.is_deleted,
+            ~Deviation.is_deleted,
             Deviation.status.in_(PENDING_STATUSES),
             Deviation.status_updated_at.isnot(None),
         )
@@ -92,7 +93,7 @@ async def check_overdue_deviations(db: AsyncSession) -> list[dict]:
     return overdue_items
 
 
-async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]:
+async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict[str, Any]]:
     """Find departments with production but no deviation submission this week."""
     # Get current week key (e.g., "2026-W23")
     now = datetime.now(UTC)
@@ -102,7 +103,7 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]
     # Get all production workshops
     workshop_query = select(DepartmentContact).where(
         and_(
-            not DepartmentContact.is_deleted,
+            ~DepartmentContact.is_deleted,
             DepartmentContact.is_production_workshop,
         )
     )
@@ -126,23 +127,16 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]
             unsubmitted.append(
                 {
                     "department": workshop.department,
-                    "dept_head_id": str(workshop.dept_head_id)
-                    if workshop.dept_head_id
-                    else None,
+                    "dept_head_id": str(workshop.dept_head_id) if workshop.dept_head_id else None,
                     "gmp_staff_ids": workshop.gmp_staff_ids or [],
                 }
             )
-        elif (
-            confirm.production_status == "production"
-            and confirm.deviation_status == "unsubmitted"
-        ):
+        elif confirm.production_status == "production" and confirm.deviation_status == "unsubmitted":
             # Confirmed production but no deviation submitted
             unsubmitted.append(
                 {
                     "department": workshop.department,
-                    "dept_head_id": str(workshop.dept_head_id)
-                    if workshop.dept_head_id
-                    else None,
+                    "dept_head_id": str(workshop.dept_head_id) if workshop.dept_head_id else None,
                     "gmp_staff_ids": workshop.gmp_staff_ids or [],
                 }
             )
@@ -150,7 +144,7 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict]
     return unsubmitted
 
 
-def format_overdue_notification(item: dict) -> str:
+def format_overdue_notification(item: dict[str, Any]) -> str:
     """Format an overdue deviation notification message."""
     return (
         f"⚠️ 偏差超期提醒\n\n"
@@ -164,7 +158,7 @@ def format_overdue_notification(item: dict) -> str:
     )
 
 
-def format_weekly_unsubmitted_notification(dept: dict) -> str:
+def format_weekly_unsubmitted_notification(dept: dict[str, Any]) -> str:
     """Format a weekly unsubmitted deviation notification message."""
     return (
         f"📋 周偏差确认提醒\n\n"

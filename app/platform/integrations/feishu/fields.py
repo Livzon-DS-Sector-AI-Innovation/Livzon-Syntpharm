@@ -14,18 +14,14 @@ from typing import Any
 def extract_text(value: Any) -> str:
     """Extract plain text from Feishu text-field array or object format."""
     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
-        return value[0].get("text", "")
+        return value[0].get("text", "")  # type: ignore[no-any-return]
     if isinstance(value, dict):
         if "text" in value:
-            return value.get("text", "")
-        if (
-            "value" in value
-            and isinstance(value["value"], list)
-            and len(value["value"]) > 0
-        ):
+            return value.get("text", "")  # type: ignore[no-any-return]
+        if "value" in value and isinstance(value["value"], list) and len(value["value"]) > 0:
             inner = value["value"][0]
             if isinstance(inner, dict) and "text" in inner:
-                return inner.get("text", "")
+                return inner.get("text", "")  # type: ignore[no-any-return]
             return str(inner)
     if isinstance(value, str):
         return value
@@ -45,9 +41,9 @@ def extract_number(value: Any) -> int | float | None:
     if isinstance(value, dict) and "value" in value:
         v = value["value"]
         if isinstance(v, list) and len(v) > 0:
-            return v[0]
+            return v[0]  # type: ignore[no-any-return]
     if isinstance(value, list) and len(value) > 0:
-        return value[0]
+        return value[0]  # type: ignore[no-any-return]
     return None
 
 
@@ -67,7 +63,7 @@ def extract_multi_select(value: Any) -> list[str]:
     return [str(value)]
 
 
-def extract_attachments(value: Any) -> list[dict]:
+def extract_attachments(value: Any) -> list[dict[str, Any]]:
     """Extract attachment array from Feishu attachment field."""
     if isinstance(value, list):
         return [dict(item) for item in value if isinstance(item, dict)]
@@ -86,7 +82,7 @@ def extract_email(value: Any) -> str:
     """Extract email from Feishu URL/mailto format."""
     if isinstance(value, dict):
         if "text" in value:
-            return value["text"]
+            return value["text"]  # type: ignore[no-any-return]
         if "link" in value:
             link = value["link"]
             if isinstance(link, str) and link.startswith("mailto:"):

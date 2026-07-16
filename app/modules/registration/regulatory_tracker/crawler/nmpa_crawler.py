@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """NMPA 备案信息数据采集适配器（CDE 模式重写）。
 
 核心原则（与 CDE crawler 完全一致）：
@@ -166,9 +167,7 @@ class NmpaRecordAdapter:
         # Read config from database if not overridden
         self.headless = self._headless_override
         if self.headless is None:
-            self.headless = await get_module_setting_bool(
-                "regulatory_tracker", "NMPA_CRAWLER_HEADLESS", False
-            )
+            self.headless = await get_module_setting_bool("regulatory_tracker", "NMPA_CRAWLER_HEADLESS", False)
 
         self.list_url = self._list_url_override
         if self.list_url is None:
@@ -180,15 +179,11 @@ class NmpaRecordAdapter:
 
         self.discovery_mode = self._discovery_mode_override
         if self.discovery_mode is None:
-            self.discovery_mode = await get_module_setting_bool(
-                "regulatory_tracker", "NMPA_API_DISCOVERY_MODE", True
-            )
+            self.discovery_mode = await get_module_setting_bool("regulatory_tracker", "NMPA_API_DISCOVERY_MODE", True)
 
         self.browsers_path = self._browsers_path_override
         if self.browsers_path is None:
-            self.browsers_path = await get_module_setting(
-                "regulatory_tracker", "CRAWLER_BROWSERS_PATH", ""
-            )
+            self.browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
 
         self.detail_url_template = self._detail_url_template_override
         if self.detail_url_template is None:
@@ -221,9 +216,7 @@ class NmpaRecordAdapter:
         await self._context.add_init_script(STEALTH_JS)
         self._page = await self._context.new_page()
         self._discovered_responses = []
-        logger.info(
-            f"NMPA 浏览器启动 (headless={self.headless}, discovery={self.discovery_mode})"
-        )
+        logger.info(f"NMPA 浏览器启动 (headless={self.headless}, discovery={self.discovery_mode})")
 
     async def stop(self):
         """关闭浏览器"""
@@ -381,18 +374,14 @@ class NmpaRecordAdapter:
                             "body_head": body[:500],
                         }
                     )
-                    logger.info(
-                        f"[DISCOVERY] XHR: {response.status} {url[:150]} body_len={len(body)}"
-                    )
+                    logger.info(f"[DISCOVERY] XHR: {response.status} {url[:150]} body_len={len(body)}")
 
                 result = self._parse_api_response(url, body)
                 if result:
                     captured["result"] = result
                     event.set()
                     if not self.discovery_mode:
-                        logger.info(
-                            f"✅ 捕获数据 API 响应: {url[:120]}, records={len(result['records'])}"
-                        )
+                        logger.info(f"✅ 捕获数据 API 响应: {url[:120]}, records={len(result['records'])}")
             except Exception as e:
                 logger.debug(f"处理响应异常: {e}")
 
@@ -405,9 +394,7 @@ class NmpaRecordAdapter:
                 wait_until="networkidle",
                 timeout=timeout_ms,
             )
-            logger.info(
-                f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self._page.title()}"
-            )
+            logger.info(f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self._page.title()}")
 
             # 等待数据响应
             try:
@@ -425,9 +412,7 @@ class NmpaRecordAdapter:
 
         return captured["result"]
 
-    async def _click_next_page_and_capture(
-        self, timeout_ms: int = 20000
-    ) -> dict | None:
+    async def _click_next_page_and_capture(self, timeout_ms: int = 20000) -> dict | None:
         """点击分页按钮并捕获响应（CDE 模式）"""
         captured: dict[str, Any] = {"result": None}
         event = asyncio.Event()
@@ -635,11 +620,7 @@ class NmpaRecordAdapter:
         """
         # ID
         doc_id = str(
-            record.get("id")
-            or record.get("recordId")
-            or record.get("备案编号")
-            or record.get("批准文号")
-            or ""
+            record.get("id") or record.get("recordId") or record.get("备案编号") or record.get("批准文号") or ""
         )
 
         # 标题/名称
@@ -674,21 +655,11 @@ class NmpaRecordAdapter:
                     continue
 
         # 状态
-        status = (
-            record.get("status")
-            or record.get("state")
-            or record.get("nowstate")
-            or record.get("状态")
-            or ""
-        )
+        status = record.get("status") or record.get("state") or record.get("nowstate") or record.get("状态") or ""
 
         # 分类
         classification = (
-            record.get("classification")
-            or record.get("category")
-            or record.get("fclass")
-            or record.get("分类")
-            or ""
+            record.get("classification") or record.get("category") or record.get("fclass") or record.get("分类") or ""
         )
 
         # 原文链接

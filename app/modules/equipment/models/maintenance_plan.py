@@ -59,23 +59,15 @@ class MaintenancePlan(BaseModel):
         comment="计划类型：预防性维护/预测性维护",
     )
     frequency: Mapped[int] = mapped_column(Integer, comment="维护频率数值")
-    frequency_unit: Mapped[str] = mapped_column(
-        String(10), comment="频率单位：天/周/月/年"
-    )
-    last_maintenance_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="上次维护日期"
-    )
-    next_maintenance_date: Mapped[date | None] = mapped_column(
-        Date, nullable=True, comment="下次维护日期"
-    )
+    frequency_unit: Mapped[str] = mapped_column(String(10), comment="频率单位：天/周/月/年")
+    last_maintenance_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="上次维护日期")
+    next_maintenance_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="下次维护日期")
     executor_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("identity.users.id"),
         nullable=True,
         comment="执行人ID",
     )
-    maintenance_content: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="维护内容说明"
-    )
+    maintenance_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="维护内容说明")
     status: Mapped[str] = mapped_column(
         String(10),
         default="启用",

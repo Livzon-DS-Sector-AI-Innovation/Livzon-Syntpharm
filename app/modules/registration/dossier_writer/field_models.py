@@ -16,12 +16,8 @@ class FieldMapping(BaseModel):
     __tablename__ = "field_mappings"
     __table_args__ = {"schema": "dossier_writer"}
 
-    chapter_code: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="章节编号，如 3.2.S.6"
-    )
-    field_name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="字段名，如 包材类型"
-    )
+    chapter_code: Mapped[str] = mapped_column(String(100), nullable=False, comment="章节编号，如 3.2.S.6")
+    field_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="字段名，如 包材类型")
     field_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -53,20 +49,14 @@ class FieldMapping(BaseModel):
         nullable=True,
         comment="素材分类名：指向 AssetCategory.category_name，限定 AI 只在对应分类的素材中查找",
     )
-    fixed_value: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="固定值：当 source_type=fixed 时使用"
-    )
+    fixed_value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="固定值：当 source_type=fixed 时使用")
     appendix_slot: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="附录编号：当 field_type=image_appendix 时，对应模板中的附录位置",
     )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="字段在章节内的排序"
-    )
-    is_required: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default="true", comment="是否必填"
-    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="字段在章节内的排序")
+    is_required: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否必填")
 
 
 class FieldFillResult(BaseModel):
@@ -93,12 +83,8 @@ class FieldFillResult(BaseModel):
         nullable=False,
         comment="字段映射ID",
     )
-    field_name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="字段名（冗余存储便于查询）"
-    )
-    filled_value: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="填充的值"
-    )
+    field_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="字段名（冗余存储便于查询）")
+    filled_value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="填充的值")
     source_asset_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("dossier_writer.chapter_assets.id", ondelete="SET NULL"),
@@ -113,21 +99,15 @@ class FieldFillResult(BaseModel):
     fill_method: Mapped[str] = mapped_column(
         String(50), nullable=False, default="ai", comment="填充方式: ai/rule/manual"
     )
-    confidence: Mapped[float | None] = mapped_column(
-        Float, nullable=True, comment="置信度（AI填充时用，0-1）"
-    )
-    ai_reasoning: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="AI 的推理过程，用于用户审核"
-    )
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="置信度（AI填充时用，0-1）")
+    ai_reasoning: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI 的推理过程，用于用户审核")
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         default="pending",
         comment="状态: pending/extracted/filled/reviewed/rejected",
     )
-    reviewed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="审核时间"
-    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="审核时间")
 
 
 class AssetCategory(BaseModel):
@@ -136,12 +116,8 @@ class AssetCategory(BaseModel):
     __tablename__ = "asset_categories"
     __table_args__ = {"schema": "dossier_writer"}
 
-    chapter_code: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="章节编号，如 3.2.S.6"
-    )
-    category_name: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="分类名称，如 授权书"
-    )
+    chapter_code: Mapped[str] = mapped_column(String(100), nullable=False, comment="章节编号，如 3.2.S.6")
+    category_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="分类名称，如 授权书")
     category_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -154,9 +130,7 @@ class AssetCategory(BaseModel):
     description: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="分类说明，帮助用户理解这个分类包含什么内容"
     )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="排序序号"
-    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="排序序号")
 
 
 class AssetPageSplit(BaseModel):
@@ -171,27 +145,52 @@ class AssetPageSplit(BaseModel):
         nullable=False,
         comment="素材ID",
     )
-    page_number: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="页码（从1开始）"
-    )
-    page_type: Mapped[str] = mapped_column(
-        String(200), nullable=False, comment="AI 识别的页面类型"
-    )
-    content_summary: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="页面内容摘要"
-    )
-    ocr_text: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="OCR 提取的页面文本"
-    )
-    appendix_slot: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="用户确认的附录编号"
-    )
-    image_path: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="转换后的图片路径"
-    )
+    page_number: Mapped[int] = mapped_column(Integer, nullable=False, comment="页码（从1开始）")
+    page_type: Mapped[str] = mapped_column(String(200), nullable=False, comment="AI 识别的页面类型")
+    content_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="页面内容摘要")
+    ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="OCR 提取的页面文本")
+    appendix_slot: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="用户确认的附录编号")
+    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="转换后的图片路径")
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         default="pending",
         comment="状态: pending/confirmed/inserted/skipped",
+    )
+
+
+class ChapterAssetUsage(BaseModel):
+    """章节素材使用关系表 - 记录章节实际使用了哪些素材"""
+
+    __tablename__ = "chapter_asset_usages"
+    __table_args__ = {"schema": "dossier_writer"}
+
+    product_dossier_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.product_dossiers.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="品种资料ID",
+    )
+    chapter_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.dossier_chapters.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="章节ID",
+    )
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dossier_writer.chapter_assets.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="素材ID",
+    )
+    usage_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="使用类型: own/inherited",
+    )
+    is_selected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        server_default="true",
+        comment="是否实际用于本章节",
     )

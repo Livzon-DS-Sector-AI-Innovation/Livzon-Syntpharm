@@ -48,9 +48,7 @@ async def upload_images(
             raise AppException(message="无法获取文件大小")
         max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
         if file_size > max_bytes:
-            raise AppException(
-                message=f"文件大小超过限制（{settings.MAX_UPLOAD_SIZE_MB}MB）"
-            )
+            raise AppException(message=f"文件大小超过限制（{settings.MAX_UPLOAD_SIZE_MB}MB）")
 
         stored_name = f"{uuid.uuid4()}{ext}"
         content = await file.read()
@@ -85,9 +83,7 @@ async def upload_images(
     return images
 
 
-async def get_images(
-    db: AsyncSession, work_order_id: uuid.UUID
-) -> list[WorkOrderImage]:
+async def get_images(db: AsyncSession, work_order_id: uuid.UUID) -> list[WorkOrderImage]:
     return await repo.get_images_by_work_order(db, work_order_id)
 
 

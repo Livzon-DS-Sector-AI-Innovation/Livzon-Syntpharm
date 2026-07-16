@@ -7,9 +7,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.core.database import async_session_factory
 from app.modules.regulatory_tracker import repository as repo
 from app.modules.regulatory_tracker.tasks.sync_tasks import daily_sync_job
+
+from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 logging.basicConfig(
@@ -34,9 +35,7 @@ async def main():
             logger.error("CDE 数据源不存在")
             return
 
-        channel = await repo.get_channel_by_code(
-            db, source.id, "cde_domestic_guideline"
-        )
+        channel = await repo.get_channel_by_code(db, source.id, "cde_domestic_guideline")
         if not channel:
             logger.error("栏目不存在")
             return

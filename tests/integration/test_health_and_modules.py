@@ -1,8 +1,9 @@
+# mypy: ignore-errors
 import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_health(auth_client: AsyncClient) -> None:
     response = await auth_client.get("/health")
 
@@ -10,7 +11,7 @@ async def test_health(auth_client: AsyncClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_list_modules(auth_client: AsyncClient) -> None:
     response = await auth_client.get("/api/v1/system/modules")
 

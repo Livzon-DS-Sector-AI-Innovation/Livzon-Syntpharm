@@ -45,9 +45,7 @@ async def test_ai_preview():
 
             for field in result.get("fields", [])[:5]:
                 status = "✓" if field.get("value") else "✗"
-                print(
-                    f"  {status} {field['field_name']}: {str(field.get('value', ''))[:50]}"
-                )
+                print(f"  {status} {field['field_name']}: {str(field.get('value', ''))[:50]}")
 
         return data.get("success")
 
@@ -70,9 +68,7 @@ async def main():
     print("=" * 60)
 
     if not success2:
-        print(
-            "\n提示: 如果 AI 解析预览失败，请检查 .env 文件中的 LLM_API_KEY 是否已配置"
-        )
+        print("\n提示: 如果 AI 解析预览失败，请检查 .env 文件中的 LLM_API_KEY 是否已配置")
 
 
 if __name__ == "__main__":

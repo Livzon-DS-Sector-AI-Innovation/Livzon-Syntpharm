@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.equipment import repository as repo
+from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models.equipment import EquipmentCategory
 from app.modules.equipment.models.personnel import (
     EquipmentPersonnel,
@@ -28,6 +29,7 @@ from app.modules.equipment.schemas.personnel import (
     RoleResponse,
     RoleUpdate,
 )
+from app.modules.equipment.service.data_scope import verify_write_ownership
 from app.platform.identity.models import User
 
 # ── 角色 Service ──
@@ -77,9 +79,7 @@ async def list_roles(
     return [RoleResponse.model_validate(r) for r in roles], total
 
 
-async def update_role(
-    db: AsyncSession, role_id: uuid.UUID, data: RoleUpdate
-) -> RoleResponse:
+async def update_role(db: AsyncSession, role_id: uuid.UUID, data: RoleUpdate) -> RoleResponse:
     role = await repo.get_role_by_id(db, role_id)
     if not role:
         raise NotFoundException("角色", str(role_id))
@@ -115,9 +115,7 @@ async def get_role_by_code(db: AsyncSession, code: str) -> RoleResponse | None:
 # ── 人员 Service ──
 
 
-async def add_personnel(
-    db: AsyncSession, data: PersonnelAddRequest
-) -> PersonnelAddResult:
+async def add_personnel(db: AsyncSession, data: PersonnelAddRequest) -> PersonnelAddResult:
     """从 identity.users 中添加人员到设备人员池"""
     result = PersonnelAddResult(added=[], skipped=[], errors=[])
 
@@ -132,9 +130,7 @@ async def add_personnel(
             )
             user = user_result.scalar_one_or_none()
             if not user:
-                result.errors.append(
-                    {"user_id": str(user_id), "reason": "identity.users 中未找到"}
-                )
+                result.errors.append({"user_id": str(user_id), "reason": "identity.users 中未找到"})
                 continue
 
             # 去重
@@ -174,15 +170,11 @@ async def get_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> PersonnelR
     cat_infos: list[PersonnelCategoryInfo] = []
     if categories:
         cat_ids = [c.category_id for c in categories]
-        cat_result = await db.execute(
-            select(EquipmentCategory).where(EquipmentCategory.id.in_(cat_ids))
-        )
+        cat_result = await db.execute(select(EquipmentCategory).where(EquipmentCategory.id.in_(cat_ids)))
         cat_map = {c.id: c.name for c in cat_result.scalars().all()}
 
         role_ids_in_cat = {c.role_id for c in categories}
-        role_result = await db.execute(
-            select(EquipmentRole).where(EquipmentRole.id.in_(role_ids_in_cat))
-        )
+        role_result = await db.execute(select(EquipmentRole).where(EquipmentRole.id.in_(role_ids_in_cat)))
         role_map = {r.id: r.name for r in role_result.scalars().all()}
 
         for c in categories:
@@ -227,6 +219,7 @@ async def get_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> PersonnelR
 
 async def list_personnel(
     db: AsyncSession,
+    ctx: EquipmentAccessContext,
     *,
     role_ids: list[uuid.UUID] | None = None,
     is_active: bool | None = None,
@@ -237,6 +230,7 @@ async def list_personnel(
     offset = (page - 1) * page_size
     items, total = await repo.list_personnel(
         db,
+        ctx,
         role_ids=role_ids,
         is_active=is_active,
         keyword=keyword,
@@ -249,15 +243,10 @@ async def list_personnel(
     roles_map: dict[uuid.UUID, list[PersonnelRoleInfo]] = {}
     if all_personnel_ids:
         for pid in all_personnel_ids:
-            roles_map[pid] = [
-                PersonnelRoleInfo.model_validate(r)
-                for r in await repo.get_personnel_roles(db, pid)
-            ]
+            roles_map[pid] = [PersonnelRoleInfo.model_validate(r) for r in await repo.get_personnel_roles(db, pid)]
 
     # 批量查所有人员分类约束
-    cat_map: dict[uuid.UUID, list[PersonnelCategoryInfo]] = {
-        pid: [] for pid in all_personnel_ids
-    }
+    cat_map: dict[uuid.UUID, list[PersonnelCategoryInfo]] = {pid: [] for pid in all_personnel_ids}
     if all_personnel_ids:
         cat_rows = await repo.get_personnel_categories_batch(db, all_personnel_ids)
         cat_ids = {c.category_id for c in cat_rows}
@@ -265,14 +254,10 @@ async def list_personnel(
         cat_name_map: dict[uuid.UUID, str] = {}
         role_name_map: dict[uuid.UUID, str] = {}
         if cat_ids:
-            cat_result = await db.execute(
-                select(EquipmentCategory).where(EquipmentCategory.id.in_(cat_ids))
-            )
+            cat_result = await db.execute(select(EquipmentCategory).where(EquipmentCategory.id.in_(cat_ids)))
             cat_name_map = {c.id: c.name for c in cat_result.scalars().all()}
         if role_ids_in_cat:
-            role_result = await db.execute(
-                select(EquipmentRole).where(EquipmentRole.id.in_(role_ids_in_cat))
-            )
+            role_result = await db.execute(select(EquipmentRole).where(EquipmentRole.id.in_(role_ids_in_cat)))
             role_name_map = {r.id: r.name for r in role_result.scalars().all()}
         for c in cat_rows:
             cat_map.setdefault(c.personnel_id, []).append(
@@ -324,11 +309,16 @@ async def list_personnel(
 
 
 async def update_personnel(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelUpdate
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelUpdate,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     if data.is_active is not None:
         personnel.is_active = data.is_active
     if data.extended_attrs is not None:
@@ -337,10 +327,16 @@ async def update_personnel(
     return await get_personnel(db, personnel_id)
 
 
-async def delete_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> None:
+async def delete_personnel(
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    ctx: EquipmentAccessContext | None = None,
+) -> None:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_roles(db, personnel_id)
     await repo.soft_delete_personnel_categories(db, personnel_id)
     personnel.is_deleted = True
@@ -348,11 +344,16 @@ async def delete_personnel(db: AsyncSession, personnel_id: uuid.UUID) -> None:
 
 
 async def assign_roles(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelRoleAssign
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelRoleAssign,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_roles(db, personnel_id)
     if data.role_ids:
         await repo.add_personnel_roles(db, personnel_id, data.role_ids)
@@ -360,17 +361,19 @@ async def assign_roles(
 
 
 async def update_categories(
-    db: AsyncSession, personnel_id: uuid.UUID, data: PersonnelCategoryAssign
+    db: AsyncSession,
+    personnel_id: uuid.UUID,
+    data: PersonnelCategoryAssign,
+    ctx: EquipmentAccessContext | None = None,
 ) -> PersonnelResponse:
     personnel = await repo.get_personnel_by_id(db, personnel_id)
     if not personnel:
         raise NotFoundException("设备人员", str(personnel_id))
+    if ctx:
+        await verify_write_ownership(ctx, personnel, "created_by", "user_id")
     await repo.soft_delete_personnel_categories(db, personnel_id)
     if data.categories:
-        items = [
-            {"role_id": c.role_id, "category_id": c.category_id}
-            for c in data.categories
-        ]
+        items = [{"role_id": c.role_id, "category_id": c.category_id} for c in data.categories]
         await repo.add_personnel_categories(db, personnel_id, items)
     return await get_personnel(db, personnel_id)
 
@@ -402,10 +405,7 @@ async def get_candidates(
             feishu_user_id=r["feishu_user_id"],
             feishu_open_id=r["feishu_open_id"],
             roles=[
-                PersonnelRoleInfo(
-                    id=rl["id"], name=rl["name"], code=rl["code"], scope=rl["scope"]
-                )
-                for rl in r["roles"]
+                PersonnelRoleInfo(id=rl["id"], name=rl["name"], code=rl["code"], scope=rl["scope"]) for rl in r["roles"]
             ],
         )
         for r in raw
@@ -431,7 +431,7 @@ async def refresh_feishu(db: AsyncSession) -> FeishuRefreshResult:
     user_map = {u.id: u for u in users_result.scalars().all()}
 
     for p in rows:
-        user = user_map.get(p.user_id)
+        user = user_map.get(p.user_id)  # type: ignore[arg-type]
         if not user:
             result.unmatched += 1
             continue
@@ -460,9 +460,7 @@ async def refresh_feishu(db: AsyncSession) -> FeishuRefreshResult:
     return result
 
 
-async def get_personnel_by_id(
-    db: AsyncSession, personnel_id: uuid.UUID
-) -> PersonnelResponse | None:
+async def get_personnel_by_id(db: AsyncSession, personnel_id: uuid.UUID) -> PersonnelResponse | None:
     """供 public_api 调用的简洁接口"""
     try:
         return await get_personnel(db, personnel_id)

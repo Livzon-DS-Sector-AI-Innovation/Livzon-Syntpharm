@@ -43,30 +43,20 @@ class ResidualRiskRuleEngine:
             return errors
 
         # 2. D = L×E×C 校验
-        if all(
-            v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)
-        ):
-            expected_d = lec.l_value * lec.e_value * lec.c_value
+        if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value, lec.d_value)):
+            expected_d = lec.l_value * lec.e_value * lec.c_value  # type: ignore[operator]
             if expected_d > 0:
-                deviation = abs(lec.d_value - expected_d) / expected_d
+                deviation = abs(lec.d_value - expected_d) / expected_d  # type: ignore[operator]
                 if deviation > 0.05:
-                    errors.append(
-                        f"D 值 {lec.d_value} 与 L×E×C={expected_d} 偏差 {deviation:.1%}"
-                    )
+                    errors.append(f"D 值 {lec.d_value} 与 L×E×C={expected_d} 偏差 {deviation:.1%}")
 
         # 3. 风险等级与 D 值一致性
         if lec.d_value is not None and lec.risk_level is not None:
             ranges = RISK_LEVEL_RANGES.get(lec.risk_level)
             if ranges:
                 min_d, max_d = ranges
-                if not (
-                    min_d <= lec.d_value < max_d
-                    if max_d != float("inf")
-                    else lec.d_value >= min_d
-                ):
-                    errors.append(
-                        f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致"
-                    )
+                if not (min_d <= lec.d_value < max_d if max_d != float("inf") else lec.d_value >= min_d):
+                    errors.append(f"D 值 {lec.d_value} 与风险等级 {lec.risk_level} 不一致")
 
         # 4. 残余风险不应高于固有风险（保守约束）
         if (
@@ -74,10 +64,7 @@ class ResidualRiskRuleEngine:
             and input_data.d_inherent is not None
             and lec.d_value > input_data.d_inherent * 1.05  # 容忍 5%
         ):
-            errors.append(
-                f"残余风险 D={lec.d_value} 高于固有风险 D={input_data.d_inherent}，"
-                "措施不应增加风险"
-            )
+            errors.append(f"残余风险 D={lec.d_value} 高于固有风险 D={input_data.d_inherent}，措施不应增加风险")
 
         # 5. 保守原则 — 无措施不得大幅降低 C 值
         if lec.c_value is not None and input_data.c_inherent is not None:
@@ -87,8 +74,7 @@ class ResidualRiskRuleEngine:
                 and "泄压" not in (input_data.existing_engineering_controls or "")
             ):
                 logger.warning(
-                    "残余 C=%s 较固有 C=%s 下降超过 50%%，"
-                    "但未发现可降低后果严重性的工程措施（防爆/泄压），请人工审核",
+                    "残余 C=%s 较固有 C=%s 下降超过 50%%，但未发现可降低后果严重性的工程措施（防爆/泄压），请人工审核",
                     lec.c_value,
                     input_data.c_inherent,
                 )
@@ -100,10 +86,7 @@ def auto_correct(output: ResidualRiskOutput) -> ResidualRiskOutput:
     """自动修正 LEC 输出（计算 D = L×E×C）。"""
     lec = output.lec
     if all(v is not None for v in (lec.l_value, lec.e_value, lec.c_value)):
-        calculated_d = lec.l_value * lec.e_value * lec.c_value
-        if (
-            lec.d_value is None
-            or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1
-        ):
+        calculated_d = lec.l_value * lec.e_value * lec.c_value  # type: ignore[operator]
+        if lec.d_value is None or abs(lec.d_value - calculated_d) / max(calculated_d, 0.01) > 0.1:
             lec.d_value = calculated_d
     return output

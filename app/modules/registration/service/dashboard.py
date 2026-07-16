@@ -21,7 +21,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status == "approved",
         )
     )
@@ -32,7 +32,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationCertificate)
         .where(
-            not RegistrationCertificate.is_deleted,
+            ~RegistrationCertificate.is_deleted,
             RegistrationCertificate.status.in_(("valid", "expiring")),
         )
     )
@@ -43,7 +43,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status.in_(SUBMITTED_STATUSES),
         )
     )
@@ -54,7 +54,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         select(func.count())
         .select_from(RegistrationProject)
         .where(
-            not RegistrationProject.is_deleted,
+            ~RegistrationProject.is_deleted,
             RegistrationProject.status.notin_(TERMINAL_STATUSES),
         )
     )
@@ -68,9 +68,7 @@ async def get_dashboard_summary(db: AsyncSession) -> DashboardSummaryResponse:
         .limit(10)
     )
     recent_result = await db.execute(stmt_recent)
-    recent_projects = [
-        DashboardProjectItem.model_validate(p) for p in recent_result.scalars().all()
-    ]
+    recent_projects = [DashboardProjectItem.model_validate(p) for p in recent_result.scalars().all()]
 
     # 海外获批记录（10条）
     stmt_certs = (

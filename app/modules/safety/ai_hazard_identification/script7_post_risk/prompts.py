@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.modules.safety.ai_hazard_identification.script3_inherent_risk.schemas import (
     LEC_SCORING_GUIDE,
     RISK_LEVEL_TABLE,
@@ -103,9 +105,7 @@ FEWSHOT_EXAMPLES = [
             "residual_risk_level": "level_4",
             "residual_risk_label": "四级/低风险",
             "recommendation_content": (
-                "1. 反应罐R201增设罐压联锁开盖装置\n"
-                "2. pH计增设自动加酸定量控制系统\n"
-                "3. 增设HCl气体检测报警器"
+                "1. 反应罐R201增设罐压联锁开盖装置\n2. pH计增设自动加酸定量控制系统\n3. 增设HCl气体检测报警器"
             ),
             "recommendation_type": "工程控制",
         },
@@ -143,7 +143,7 @@ def build_prompt(context_text: str, knowledge_context: str | None = None) -> str
     return "\n\n".join(sections)
 
 
-def get_db_seed_config() -> dict:
+def get_db_seed_config() -> dict[str, Any]:
     """返回脚本7的 DB 种子配置。"""
     return {
         "script_number": 7,

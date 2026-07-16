@@ -8,7 +8,7 @@ import logging
 import uuid
 from datetime import date as date_type
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,10 +48,7 @@ async def _collect_equipment_names(db: AsyncSession, task: InspectionTask) -> li
                     names.append(name_map[eid])
     # 多设备模式
     elif task.equipment_ids:
-        id_list = [
-            uid if isinstance(uid, uuid.UUID) else uuid.UUID(uid)
-            for uid in (task.equipment_ids or [])
-        ]
+        id_list = [uid if isinstance(uid, uuid.UUID) else uuid.UUID(uid) for uid in (task.equipment_ids or [])]
         if id_list:
             name_map = await repo.get_equipment_names_by_ids(db, id_list)
             for eid in id_list:
@@ -64,7 +61,7 @@ async def _collect_equipment_names(db: AsyncSession, task: InspectionTask) -> li
     return names
 
 
-async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[dict]:
+async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[dict[str, Any]]:
     """获取模板检查项列表。
 
     优先使用已加载的 template.items 关系；若未加载则查询数据库。
@@ -113,7 +110,7 @@ async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[di
             tid = uuid.UUID(t) if isinstance(t, str) else t
             template_id_set.add(tid)
 
-    all_items: list[dict] = []
+    all_items: list[dict[str, Any]] = []
     seen: set[str] = set()
     for tid in template_id_set:
         template = await repo.get_inspection_template_by_id(db, tid)
@@ -134,14 +131,14 @@ async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[di
 def _build_card_content(
     task: InspectionTask,
     equipment_names: list[str],
-    items: list[dict],
-    locations_info: list[dict] | None = None,
+    items: list[dict[str, Any]],
+    locations_info: list[dict[str, Any]] | None = None,
 ) -> str:
     """构建飞书卡片 markdown 正文。
 
     Args:
         locations_info: 线路巡检的地点信息列表，每项:
-            {location_name, sort_order, equipment: [{name, equipment_no}]}
+            {location_name, sort_order, equipment: [{name, asset_no}]}
     """
     plan_type = task.plan_type or "设备巡检"
     lines = [
@@ -156,14 +153,10 @@ def _build_card_content(
 
         # 按地点展示路线层级
         if locations_info:
-            total_equipment = sum(
-                len(loc.get("equipment", [])) for loc in locations_info
-            )
+            total_equipment = sum(len(loc.get("equipment", [])) for loc in locations_info)
             lines.append("")
             lines.append("---")
-            lines.append(
-                f"**📍 巡检路线（共 {len(locations_info)} 个地点 · {total_equipment} 台设备）**"
-            )
+            lines.append(f"**📍 巡检路线（共 {len(locations_info)} 个地点 · {total_equipment} 台设备）**")
             lines.append("")
             for i, loc in enumerate(locations_info):
                 eq_list = loc.get("equipment", [])
@@ -192,29 +185,17 @@ def _build_card_content(
     # 检查项目
     lines.append("")
     lines.append("---")
-    lines.append("**📋 检查项目：**")
+    lines.append("**📋 所有检查项目：**")
     lines.append("")
 
     if items:
         for item in items[:20]:
-            expected = (
-                f"（标准：{item['expected_result']}）"
-                if item.get("expected_result")
-                else ""
-            )
+            expected = f"（标准：{item['expected_result']}）" if item.get("expected_result") else ""
             lines.append(f"• {item['item_name']}{expected}")
         if len(items) > 20:
             lines.append(f"> 还有 {len(items) - 20} 项，请在系统中查看")
     else:
         lines.append("请在系统中查看检查项目详情")
-
-    # 引导提示
-    lines.append("")
-    lines.append("---")
-    lines.append("**💡 开始巡检：**")
-    lines.append("到达设备现场后，回复「**开始**」进入逐台引导模式。")
-    lines.append("或直接发送设备照片，AI 将自动识别检查项。")
-    lines.append("回复「**帮助**」查看完整命令列表。")
 
     return "\n".join(lines)
 
@@ -249,24 +230,22 @@ async def send_inspection_start_notification(
         logger.info("  Collected %d template items", len(items))
 
         # 线路巡检：收集地点层级信息
-        locations_info: list[dict] | None = None
+        locations_info: list[dict[str, Any]] | None = None
         if task.plan_type == "线路巡检" and task.route and task.route.locations_rel:
             locations_info = []
             for loc in sorted(task.route.locations_rel, key=lambda x: x.sort_order):
-                eq_list: list[dict] = []
+                eq_list: list[dict[str, Any]] = []
                 for eq in sorted((loc.equipments or []), key=lambda x: x.sort_order):
                     if eq.equipment and not eq.equipment.is_deleted:
                         eq_list.append(
                             {
                                 "name": eq.equipment.name,
-                                "equipment_no": eq.equipment.equipment_no or "",
+                                "asset_no": eq.equipment.asset_no or "",
                             }
                         )
                 locations_info.append(
                     {
-                        "location_name": loc.location.name
-                        if loc.location
-                        else "未知地点",
+                        "location_name": loc.location.name if loc.location else "未知地点",
                         "sort_order": loc.sort_order,
                         "equipment": eq_list,
                     }
@@ -324,8 +303,7 @@ async def send_inspection_start_notification(
                 )
         else:
             logger.info(
-                "  ℹ FEISHU_EQUIPMENT_CHAT_ID not configured, "
-                "skipping group notification for task %s",
+                "  ℹ FEISHU_EQUIPMENT_CHAT_ID not configured, skipping group notification for task %s",
                 task.task_no,
             )
 
@@ -356,8 +334,7 @@ async def send_work_order_notification(
     """
     if not responsible_user_id:
         logger.info(
-            "Skipping work order notification: no responsible person user_id "
-            "(work_order_no=%s)",
+            "Skipping work order notification: no responsible person user_id (work_order_no=%s)",
             work_order.work_order_no,
         )
         return
@@ -367,7 +344,7 @@ async def send_work_order_notification(
         lines = [
             f"**工单编号：**{work_order.work_order_no}",
             f"**设备名称：**{equipment.name}",
-            f"**设备编号：**{equipment.equipment_no}",
+            f"**设备编号：**{equipment.asset_no}",
             f"**优先级：**{work_order.priority}",
             f"**异常描述：**{work_order.fault_description or '-'}",
             f"**来源巡检：**{task.task_no}",

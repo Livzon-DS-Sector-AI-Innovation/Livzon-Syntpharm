@@ -48,10 +48,21 @@ def extract_schemas_from_migration(file_path: str) -> set[str]:
     return schemas
 
 
+# Architecture-approved cross-module migrations (core/infrastructure changes).
+# These are exceptions to the single-module rule per AGENTS.md:
+# "跨模块外键、platform/core/shared 级变更可以跨 schema，但必须由架构负责人审批"
+ARCHITECTURE_APPROVED_EXCEPTIONS: frozenset[str] = frozenset()
+
+
 def is_baseline_migration(file_path: str) -> bool:
-    """Check if this is a baseline/initial migration."""
-    filename = Path(file_path).name.lower()
-    return "baseline" in filename or "initial" in filename
+    """Check if this is a baseline/initial migration or an approved exception."""
+    filename = Path(file_path).stem.lower()
+    if "baseline" in filename or "initial" in filename:
+        return True
+    for exception_id in ARCHITECTURE_APPROVED_EXCEPTIONS:
+        if exception_id in filename:
+            return True
+    return False
 
 
 def main():
@@ -80,12 +91,8 @@ def main():
         print(f"✓ {migration_file}: Single schema '{schema}' (OK)")
         sys.exit(0)
     else:
-        print(
-            f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}"
-        )
-        print(
-            "\nError: A migration should only touch tables within one module's schema."
-        )
+        print(f"✗ {migration_file}: Multiple schemas detected: {', '.join(sorted(schemas))}")
+        print("\nError: A migration should only touch tables within one module's schema.")
         print("If this migration includes changes from other modules, please:")
         print("  1. Discard this migration: rm " + migration_file)
         print("  2. Re-generate with --include-object filtering, or")

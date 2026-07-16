@@ -3,12 +3,13 @@
 import logging
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
-from app.core.tasks import spawn_task
+from app.core.jobs import spawn_task
 from app.modules.research.models import PilotWorkflow, PilotWorkflowStep
 from app.modules.research.pilot_workflow.step1_param_extraction import (
     execute_param_extraction,
@@ -70,9 +71,9 @@ async def _create_steps(session: AsyncSession, workflow_id: uuid.UUID) -> None:
 async def _execute_step(
     session: AsyncSession,
     step: PilotWorkflowStep,
-    step_defn: dict,
+    step_defn: dict[str, Any],
     workflow: PilotWorkflow,
-) -> dict:
+) -> dict[str, Any]:
     """执行单个步骤，返回输出数据"""
     step.status = "running"
     step.started_at = datetime.now(UTC)
@@ -87,7 +88,7 @@ async def _execute_step(
         step.status = "waiting_approval"
         step.completed_at = datetime.now(UTC)
         await session.flush()
-        return output
+        return output  # type: ignore[no-any-return]
     except Exception as e:
         logger.exception(f"Step {step.step_code} failed: {e}")
         step.status = "failed"
@@ -105,17 +106,11 @@ async def start_workflow(workflow_id: uuid.UUID) -> None:
         await _create_steps(session, workflow_id)
 
         # 更新工作流状态为 running
-        await session.execute(
-            update(PilotWorkflow)
-            .where(PilotWorkflow.id == workflow_id)
-            .values(status="running")
-        )
+        await session.execute(update(PilotWorkflow).where(PilotWorkflow.id == workflow_id).values(status="running"))
         await session.flush()
 
         # 获取工作流和第一个步骤
-        result = await session.execute(
-            select(PilotWorkflow).where(PilotWorkflow.id == workflow_id)
-        )
+        result = await session.execute(select(PilotWorkflow).where(PilotWorkflow.id == workflow_id))
         workflow = result.scalar_one()
 
         result = await session.execute(
@@ -125,25 +120,23 @@ async def start_workflow(workflow_id: uuid.UUID) -> None:
             )
         )
         step = result.scalar_one()
-        step.input_data = {}
+        step.input_data = {}  # type: ignore[attr-defined]
 
         # 执行第一步
         try:
-            await _execute_step(session, step, STEP_DEFINITIONS[0], workflow)
+            await _execute_step(session, step, STEP_DEFINITIONS[0], workflow)  # type: ignore[arg-type]
             # 工作流保持 running 状态，等待人工确认
             await session.commit()
         except Exception:
             await session.rollback()
 
 
-async def approve_step(workflow_id: uuid.UUID) -> dict:
+async def approve_step(workflow_id: uuid.UUID) -> dict[str, Any]:
     """确认当前步骤，异步执行下一步。返回执行结果信息。"""
 
     async with async_session_factory() as session:
         # 获取工作流
-        result = await session.execute(
-            select(PilotWorkflow).where(PilotWorkflow.id == workflow_id)
-        )
+        result = await session.execute(select(PilotWorkflow).where(PilotWorkflow.id == workflow_id))
         workflow = result.scalar_one_or_none()
         if not workflow:
             return {"error": "工作流不存在"}
@@ -179,7 +172,7 @@ async def approve_step(workflow_id: uuid.UUID) -> dict:
         if next_idx >= len(steps):
             # 所有步骤完成
             workflow.status = "completed"
-            workflow.final_report = waiting_step.output_data
+            workflow.final_report = waiting_step.output_data  # type: ignore[attr-defined]
             await session.commit()
             return {
                 "status": "completed",
@@ -193,14 +186,14 @@ async def approve_step(workflow_id: uuid.UUID) -> dict:
         # 累积所有已完成步骤的输出作为下一步的输入
         accumulated_results = {}
         for s in steps[:next_idx]:
-            if s.output_data and isinstance(s.output_data, dict):
-                step_key = s.step_code
-                accumulated_results[step_key] = s.output_data
-        next_step.input_data = accumulated_results
+            if s.output_data and isinstance(s.output_data, dict):  # type: ignore[attr-defined]
+                step_key = s.step_code  # type: ignore[attr-defined]
+                accumulated_results[step_key] = s.output_data  # type: ignore[attr-defined]
+        next_step.input_data = accumulated_results  # type: ignore[attr-defined]
 
         # 标记下一步为运行中
         next_step.status = "running"
-        next_step.started_at = datetime.now(UTC)
+        next_step.started_at = datetime.now(UTC)  # type: ignore[attr-defined]
 
         await session.commit()
 
@@ -212,9 +205,9 @@ async def approve_step(workflow_id: uuid.UUID) -> dict:
 
         return {
             "status": "running",
-            "step_order": next_step.step_order,
-            "step_name": next_step.step_name,
-            "message": f"步骤 {waiting_step.step_order} 已确认，步骤 {next_step.step_order} 正在执行",
+            "step_order": next_step.step_order,  # type: ignore[attr-defined]
+            "step_name": next_step.step_name,  # type: ignore[attr-defined]
+            "message": f"步骤 {waiting_step.step_order} 已确认，步骤 {next_step.step_order} 正在执行",  # type: ignore[attr-defined]
         }
 
 
@@ -222,9 +215,7 @@ async def _execute_next_step_async(workflow_id: uuid.UUID, step_idx: int) -> Non
     """异步执行工作流步骤"""
     async with async_session_factory() as session:
         # 获取工作流
-        result = await session.execute(
-            select(PilotWorkflow).where(PilotWorkflow.id == workflow_id)
-        )
+        result = await session.execute(select(PilotWorkflow).where(PilotWorkflow.id == workflow_id))
         workflow = result.scalar_one()
 
         # 获取步骤
@@ -238,8 +229,8 @@ async def _execute_next_step_async(workflow_id: uuid.UUID, step_idx: int) -> Non
         step_defn = STEP_DEFINITIONS[step_idx]
 
         try:
-            await _execute_step(session, step, step_defn, workflow)
+            await _execute_step(session, step, step_defn, workflow)  # type: ignore[arg-type]
             await session.commit()
         except Exception as e:
-            logger.exception(f"Step {step.step_code} failed: {e}")
+            logger.exception(f"Step {step.step_code} failed: {e}")  # type: ignore[attr-defined]
             await session.rollback()

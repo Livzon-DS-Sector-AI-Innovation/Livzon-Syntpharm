@@ -2,15 +2,18 @@
 
 import logging
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.events import event_bus
 from app.core.response import paginated_response, success_response
 from app.core.tasks import spawn_task
 from app.modules.equipment import service
+from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import (
     MaterialConsumeRequest,
     MaterialConsumeResponse,
@@ -22,44 +25,11 @@ from app.modules.equipment.schemas import (
     WorkOrderUpdate,
     WorkOrderVerify,
 )
-from app.platform.identity.models import User
-from app.platform.identity.permissions import require_login
 
 logger = logging.getLogger(__name__)
 
 
-async def _notify_start(wo) -> None:
-    """网页点击开始执行时，飞书通知维修人。非关键路径。"""
-    try:
-        if not wo.assignee:
-            return
-        from app.modules.equipment.feishu.notification import send_user_card
-
-        user = wo.assignee
-        if not user.feishu_user_id:
-            return
-
-        eq_name = wo.equipment.name if wo.equipment else ""
-        title = f"🔧 开始维修 - {wo.work_order_no}"
-        lines = [
-            f"**工单编号：**{wo.work_order_no}",
-            f"**关联设备：**{eq_name}",
-            f"**工单类型：**{wo.order_type}",
-            f"**优先级：**{wo.priority}",
-            "",
-            "维修已开始，请尽快完成维修并提交。",
-        ]
-        content = "\n".join(lines)
-        await send_user_card(
-            open_id=user.feishu_user_id,
-            title=title,
-            content=content,
-        )
-    except Exception:
-        logger.exception("开始维修通知异常: %s", wo.work_order_no)
-
-
-def _to_response(wo) -> WorkOrderResponse:
+def _to_response(wo) -> Any:  # type: ignore[no-untyped-def]
     """将 ORM WorkOrder 转为响应对象，填充关联名称。"""
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:
@@ -70,7 +40,7 @@ def _to_response(wo) -> WorkOrderResponse:
         resp.responsible_person_name = wo.responsible_person.name
     if wo.equipment:
         resp.equipment_name = wo.equipment.name
-        resp.equipment_no = wo.equipment.equipment_no
+        resp.asset_no = wo.equipment.asset_no
     if wo.fault_symptom:
         resp.symptom_name = wo.fault_symptom.name
     if wo.fault_cause:
@@ -87,9 +57,11 @@ router = APIRouter()
 async def create_work_order(
     data: WorkOrderCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:create"),
+    ),
 ) -> JSONResponse:
-    wo = await service.create_work_order(db, data, user.id)
+    wo = await service.create_work_order(db, data, ctx)
     return success_response(data=_to_response(wo))
 
 
@@ -98,9 +70,11 @@ async def update_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
-    wo = await service.update_work_order(db, work_order_id, data)
+    wo = await service.update_work_order(db, work_order_id, data, ctx)
     return success_response(data=_to_response(wo))
 
 
@@ -114,10 +88,13 @@ async def list_work_orders(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:read"),
+    ),
 ) -> JSONResponse:
     work_orders, total = await service.get_work_orders(
         db,
+        ctx,
         status=status,
         exclude_status=exclude_status,
         equipment_id=equipment_id,
@@ -138,10 +115,13 @@ async def list_work_orders(
 async def get_work_order_statistics(
     exclude_status: str | None = Query(None, description="排除状态"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:stats:read"),
+    ),
 ) -> JSONResponse:
     stats = await service.get_work_order_statistics(
         db,
+        ctx,
         exclude_status=exclude_status,
     )
     return success_response(data=WorkOrderStatistics.model_validate(stats))
@@ -151,7 +131,9 @@ async def get_work_order_statistics(
 async def get_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:read"),
+    ),
 ) -> JSONResponse:
     wo = await service.get_work_order_by_id(db, work_order_id)
     return success_response(data=_to_response(wo))
@@ -162,9 +144,11 @@ async def assign_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderAssign,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
-    wo = await service.assign_work_order(db, work_order_id, data.assignee_id)
+    wo = await service.assign_work_order(db, work_order_id, data.assignee_id, ctx)
     return success_response(data=_to_response(wo))
 
 
@@ -172,11 +156,33 @@ async def assign_work_order(
 async def start_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
-    wo = await service.start_work_order(db, work_order_id)
-    # 网页点击开始时飞书通知维修人（非关键路径）
-    spawn_task(_notify_start(wo))
+    wo = await service.start_work_order(db, work_order_id, ctx)
+    if wo.assignee and wo.assignee.feishu_user_id:
+        eq_name = wo.equipment.name if wo.equipment else ""
+        title = f"🔧 开始维修 - {wo.work_order_no}"
+        lines = [
+            f"**工单编号：**{wo.work_order_no}",
+            f"**关联设备：**{eq_name}",
+            f"**工单类型：**{wo.order_type}",
+            f"**优先级：**{wo.priority}",
+            "",
+            "维修已开始，请尽快完成维修并提交。",
+        ]
+        content = "\n".join(lines)
+        spawn_task(
+            event_bus.publish(
+                "equipment.work_order.started",
+                {
+                    "open_id": wo.assignee.feishu_user_id,
+                    "title": title,
+                    "content": content,
+                },
+            )
+        )
     return success_response(data=_to_response(wo))
 
 
@@ -185,9 +191,11 @@ async def complete_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderComplete,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
-    wo = await service.complete_work_order(db, work_order_id, data)
+    wo = await service.complete_work_order(db, work_order_id, data, ctx)
     return success_response(data=_to_response(wo))
 
 
@@ -196,9 +204,11 @@ async def verify_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderVerify,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:approve"),
+    ),
 ) -> JSONResponse:
-    wo = await service.verify_work_order(db, work_order_id, user.id, data)
+    wo = await service.verify_work_order(db, work_order_id, ctx, data)
     return success_response(data=_to_response(wo))
 
 
@@ -206,9 +216,11 @@ async def verify_work_order(
 async def close_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
-    wo = await service.close_work_order(db, work_order_id)
+    wo = await service.close_work_order(db, work_order_id, ctx)
     return success_response(data=_to_response(wo))
 
 
@@ -217,24 +229,24 @@ async def consume_materials(
     work_order_id: uuid.UUID,
     data: MaterialConsumeRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:update"),
+    ),
 ) -> JSONResponse:
     items = [item.model_dump() for item in data.items]
-    transactions = await service.consume_materials(db, work_order_id, items)
-    return success_response(
-        data=[MaterialConsumeResponse.model_validate(t) for t in transactions]
-    )
+    transactions = await service.consume_materials(db, work_order_id, items, ctx)
+    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
 
 
 @router.get("/{work_order_id}/materials", summary="工单领料记录")
 async def get_material_consumptions(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_login()),
+    ctx: EquipmentAccessContext = Depends(
+        require_equipment_access("equipment:work_order:read"),
+    ),
 ) -> JSONResponse:
     from app.modules.equipment import repository as repo
 
     transactions = await repo.get_material_consumptions(db, work_order_id)
-    return success_response(
-        data=[MaterialConsumeResponse.model_validate(t) for t in transactions]
-    )
+    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])

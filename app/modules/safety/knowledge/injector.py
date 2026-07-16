@@ -86,9 +86,7 @@ class KnowledgeInjector:
         cards = await self._load_cards(include_priority)
         if not cards:
             logger.warning("未找到已发布的知识卡片，使用空上下文")
-            return (
-                "(法规知识库暂未加载，请依据通用安全知识进行判断，但不要编造法规条文。)"
-            )
+            return "(法规知识库暂未加载，请依据通用安全知识进行判断，但不要编造法规条文。)"
 
         # 智能选择
         if ai_service and len(cards) > max_cards:
@@ -130,9 +128,7 @@ class KnowledgeInjector:
         clauses: list[str] = []
         for card in cards:
             if card.legal_basis_clauses:
-                clauses.append(
-                    f"**{card.document_title}** 相关条文：\n{card.legal_basis_clauses}"
-                )
+                clauses.append(f"**{card.document_title}** 相关条文：\n{card.legal_basis_clauses}")
         return "\n\n".join(clauses) if clauses else ""
 
     async def build_context(
@@ -262,12 +258,8 @@ class KnowledgeInjector:
                 card_data = row.knowledge_card
                 if isinstance(card_data, str):
                     card_data = _json.loads(card_data)
-                card_data["document_title"] = row.title or card_data.get(
-                    "document_title", ""
-                )
-                card_data["document_category"] = row.category or card_data.get(
-                    "document_category", ""
-                )
+                card_data["document_title"] = row.title or card_data.get("document_title", "")
+                card_data["document_category"] = row.category or card_data.get("document_category", "")
                 card_data["full_document_ref"] = str(row.id)
                 card_data.setdefault("priority", "P1")
                 card_data.setdefault("version", getattr(row, "card_version", 1) or 1)
@@ -279,9 +271,7 @@ class KnowledgeInjector:
         return cards
 
     @staticmethod
-    def _filter_by_priority(
-        cards: list[KnowledgeCard], max_priority: str
-    ) -> list[KnowledgeCard]:
+    def _filter_by_priority(cards: list[KnowledgeCard], max_priority: str) -> list[KnowledgeCard]:
         """按优先级筛选卡片（P0 < P1 < P2）。"""
         priority_order = {"P0": 0, "P1": 1, "P2": 2}
         max_level = priority_order.get(max_priority, 2)
@@ -868,8 +858,7 @@ class KnowledgeInjector:
                     "- 标识：承载能力标示牌固定在醒目位置"
                 ),
                 legal_basis_clauses=(
-                    "GB 4053.3-2009 第4章：钢斜梯的安全要求。"
-                    "第5章：钢直梯的安全要求。第6章：平台及通道的安全要求。"
+                    "GB 4053.3-2009 第4章：钢斜梯的安全要求。第5章：钢直梯的安全要求。第6章：平台及通道的安全要求。"
                 ),
             ),
             # ━━ P2-3: 职业病危害因素分类目录（新增 — 危险源辨识清单 #4）━━
@@ -951,8 +940,7 @@ class KnowledgeInjector:
                     "- 检测周期：每年至少检测一次接地电阻"
                 ),
                 legal_basis_clauses=(
-                    "SH/T 3097-2017 第4章：静电接地范围。第5章：静电接地方式。"
-                    "第6章：静电接地的检测与维护。"
+                    "SH/T 3097-2017 第4章：静电接地范围。第5章：静电接地方式。第6章：静电接地的检测与维护。"
                 ),
             ),
             # ━━ P2-6: GB 7231（新增 — 危险源辨识清单 #11）━━
@@ -983,10 +971,7 @@ class KnowledgeInjector:
                     "\n"
                     "标识应包含：介质名称 + 流向箭头 + 压力/温度等级（必要时）"
                 ),
-                legal_basis_clauses=(
-                    "GB 7231 第4章：基本识别色的规定。第5章：识别符号。"
-                    "第6章：安全标识。"
-                ),
+                legal_basis_clauses=("GB 7231 第4章：基本识别色的规定。第5章：识别符号。第6章：安全标识。"),
             ),
             # ━━ P2-7: GB/T 4272-2024（新增 — 危险源辨识清单 #12）━━
             KnowledgeCard(

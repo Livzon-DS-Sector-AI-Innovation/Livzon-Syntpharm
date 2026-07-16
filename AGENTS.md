@@ -6,9 +6,17 @@
 
 本项目采用**模块化单体架构**，不是微服务。禁止引入微服务、消息队列或其他复杂架构。
 
-**技术栈**：Python 3.12+、FastAPI、SQLAlchemy 2.0 async、PostgreSQL 17、Redis、Alembic、Pydantic v2、uv、pytest、ruff、mypy、MinIO。
+**技术栈**：Python 3.12+、FastAPI、SQLAlchemy 2.0 async、PostgreSQL 17、Redis、Alembic、Pydantic v2、uv、pytest、ruff（line-length=120）、mypy（strict）、MinIO。
 
 遇到不确定的 API 或库用法时，先查阅官方文档或 Context7，再进行实现。
+
+## 代码格式规范
+
+- **行长度限制**: 120 字符（`pyproject.toml` 中 `tool.ruff.line-length = 120`）
+- **E501 排除列表**: 以下内容类型文件因存储长字符串字面量（LLM prompt、知识库、法规文本、测试 fixture）被排除在 E501 检查之外。这些文件的**主要用途是存储内容文本**，按列断行会降低可读性。
+  - 排除列表在 `pyproject.toml` 的 `[tool.ruff.lint.per-file-ignores]` 中维护
+  - 新增 prompt/知识库/测试 fixture 文件时，若其长字符串行超过 120 字符，应添加到排除列表
+  - 代码文件（service/repository/api）的 E501 必须修复，不得添加到排除列表
 
 ## 目录结构
 
@@ -102,6 +110,8 @@ DELETE /api/v1/{module}/{resource}/{id}
 **禁止**：修改已合并或执行过的历史 migration（除非用户明确要求）。
 
 ### 迁移规范
+
+**命名规范**：迁移文件必须使用顺序编号格式 `NNNN_descriptive_name.py`，其中 NNNN 是 4 位数字（如 0001、0002）。Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）。禁止使用 Alembic 自动生成的哈希 ID（如 `3cb28d1e1ac7`）。
 
 **初始基线例外**：`0001_baseline_full_schema` 迁移允许跨所有 schema，这是唯一允许跨模块的迁移。
 

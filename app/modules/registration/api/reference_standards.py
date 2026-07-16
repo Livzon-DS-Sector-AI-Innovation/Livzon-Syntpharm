@@ -1,5 +1,6 @@
 """对照物质说明表 API 路由"""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
@@ -20,9 +21,9 @@ def get_service(session: AsyncSession = Depends(get_db)) -> ReferenceStandardSer
 
 
 @router.post("/parse-coa", summary="解析COA文件提取信息")
-async def parse_coa_file(
+async def post(
     coa: UploadFile = File(...),
-):
+) -> Any:
     """解析COA PDF文件，自动提取关键信息"""
     coa_data = await coa.read()
 
@@ -36,8 +37,8 @@ async def parse_coa_file(
     )
 
 
-@router.post("/generate", summary="生成对照物质说明表")
-async def generate_reference_standard(
+@router.post("/generate", summary="生成对照物质说明表")  # type: ignore[no-redef]
+async def post(  # noqa: F811
     coa: UploadFile,
     drug_name: str = Form(..., description="药品名称"),
     reference_substance_name: str | None = Form(None, description="对照物质名称"),
@@ -54,7 +55,7 @@ async def generate_reference_standard(
     storage_condition: str | None = Form(None, description="贮存条件"),
     remarks: str | None = Form(None, description="备注"),
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     coa_data = await coa.read()
     coa_file_name = coa.filename or "COA.pdf"
 
@@ -84,11 +85,11 @@ async def generate_reference_standard(
 
 
 @router.get("", summary="对照物质说明表记录列表")
-async def list_reference_standards(
+async def get(
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     records, total = await service.list_records(
         drug_name=drug_name,
         page=page_params.page,
@@ -103,20 +104,20 @@ async def list_reference_standards(
     )
 
 
-@router.get("/{record_id}", summary="对照物质说明表记录详情")
-async def get_reference_standard(
+@router.get("/{record_id}", summary="对照物质说明表记录详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     record = await service.get_record(record_id)
     return success_response(data=record.model_dump(mode="json"))
 
 
-@router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")
-async def get_reference_standard_download_url(
+@router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     record_model = await service.repo.get_by_id(record_id)
     if not record_model:
         raise NotFoundException("对照物质说明表记录", str(record_id))
@@ -125,16 +126,14 @@ async def get_reference_standard_download_url(
     if not file_path.exists():
         raise NotFoundException("说明表文件")
 
-    return success_response(
-        data={"url": f"/api/v1/registration/reference-standards/{record_id}/download"}
-    )
+    return success_response(data={"url": f"/api/v1/registration/reference-standards/{record_id}/download"})
 
 
-@router.get("/{record_id}/download", summary="下载生成的说明表文件")
-async def download_reference_standard(
+@router.get("/{record_id}/download", summary="下载生成的说明表文件")  # type: ignore[no-redef]
+async def get(  # noqa: F811
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     record_model = await service.repo.get_by_id(record_id)
     if not record_model:
         raise NotFoundException("对照物质说明表记录", str(record_id))
@@ -151,9 +150,9 @@ async def download_reference_standard(
 
 
 @router.delete("/{record_id}", summary="删除对照物质说明表记录")
-async def delete_reference_standard(
+async def delete(
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
-):
+) -> Any:
     await service.delete_record(record_id)
     return success_response(message="对照物质说明表记录删除成功")

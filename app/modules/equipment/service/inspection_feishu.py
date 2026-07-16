@@ -104,31 +104,23 @@ async def process_feishu_image(
             task = result.scalar_one_or_none()
             if not task or task.status != "执行中":
                 await clear_session(open_id)
-                await _reply_text(
-                    open_id, "当前会话中的任务已结束，请回复「开始」重新选择。"
-                )
+                await _reply_text(open_id, "当前会话中的任务已结束，请回复「开始」重新选择。")
                 return
         else:
             # 无会话 → 查找最新活跃任务，自动创建会话
             task = await _find_active_task(db, user.id)
             if not task:
-                await _reply_text(
-                    open_id, "当前没有执行中的巡检任务。\n请先在系统中开始巡检。"
-                )
+                await _reply_text(open_id, "当前没有执行中的巡检任务。\n请先在系统中开始巡检。")
                 return
             session = await _auto_create_session(db, task, open_id)
             if session is None:
-                await _reply_text(
-                    open_id, "无法确定巡检设备，请回复「开始」手动进入巡检。"
-                )
+                await _reply_text(open_id, "无法确定巡检设备，请回复「开始」手动进入巡检。")
                 return
 
         # 4. 确定当前设备
         cur_eq = get_current_equipment(session)
         if cur_eq is None:
-            await _reply_text(
-                open_id, "所有设备均已处理完毕。\n回复「进度」查看巡检完成情况。"
-            )
+            await _reply_text(open_id, "所有设备均已处理完毕。\n回复「进度」查看巡检完成情况。")
             return
 
         equipment_id = uuid.UUID(cur_eq["equipment_id"])
@@ -160,9 +152,7 @@ async def process_feishu_image(
             )
         except Exception as e:
             logger.exception("AI 分析失败: task=%s", task.task_no)
-            await _reply_text(
-                open_id, f"AI 分析失败：{e}\n照片已保存，请手动描述检查结果。"
-            )
+            await _reply_text(open_id, f"AI 分析失败：{e}\n照片已保存，请手动描述检查结果。")
             return
 
         # 8. 保存会话并进入确认状态，发送结果卡片
@@ -227,16 +217,12 @@ async def process_feishu_text(open_id: str, text: str, user_id: str = "") -> Non
             await clear_session(open_id)
             await _reply_text(
                 open_id,
-                f"已退出巡检任务 **{task_no}**。\n"
-                "回复「**开始**」重新选择巡检任务。\n"
-                "回复「**工单**」查看工单。",
+                f"已退出巡检任务 **{task_no}**。\n回复「**开始**」重新选择巡检任务。\n回复「**工单**」查看工单。",
             )
         else:
             await _reply_text(
                 open_id,
-                "当前没有进行中的巡检任务。\n"
-                "回复「**开始**」选择巡检任务。\n"
-                "回复「**工单**」查看工单。",
+                "当前没有进行中的巡检任务。\n回复「**开始**」选择巡检任务。\n回复「**工单**」查看工单。",
             )
         return
 
@@ -310,9 +296,7 @@ async def process_feishu_text(open_id: str, text: str, user_id: str = "") -> Non
         if text in _PROGRESS_COMMANDS:
             await _cmd_progress(open_id, session)
         else:
-            await _reply_text(
-                open_id, "当前状态不支持此操作，请回复「帮助」查看可用命令。"
-            )
+            await _reply_text(open_id, "当前状态不支持此操作，请回复「帮助」查看可用命令。")
         return
 
     # ── 4. 无会话时的提示 ──
@@ -338,7 +322,7 @@ async def _cmd_start(open_id: str, user_id: str = "") -> None:
     """
     # === Phase 1: 只做 DB 和 Redis，收集数据 ===
     active_task_ids: list[uuid.UUID] = []
-    active_task_infos: list[dict] = []
+    active_task_infos: list[dict[str, Any]] = []
     session_exists = False
     session_task_id: str | None = None
 
@@ -355,10 +339,7 @@ async def _cmd_start(open_id: str, user_id: str = "") -> None:
             completed, skipped = await _get_processed_equipment_ids(db, task_id)
             first_idx = 0
             for i, eq in enumerate(equipment_order):
-                if (
-                    eq["equipment_id"] not in completed
-                    and eq["equipment_id"] not in skipped
-                ):
+                if eq["equipment_id"] not in completed and eq["equipment_id"] not in skipped:
                     first_idx = i
                     break
             await save_session(
@@ -407,11 +388,7 @@ async def _cmd_start(open_id: str, user_id: str = "") -> None:
         else:
             for i, t in enumerate(active_tasks, 1):
                 eq_count = await _count_task_equipment(db, t)
-                target = (
-                    t.route.name
-                    if t.route
-                    else (t.equipment.name if t.equipment else f"{eq_count}台设备")
-                )
+                target = t.route.name if t.route else (t.equipment.name if t.equipment else f"{eq_count}台设备")
                 active_task_infos.append(
                     {
                         "index": i,
@@ -441,7 +418,7 @@ async def _cmd_start(open_id: str, user_id: str = "") -> None:
         f"**📋 您有 {len(active_task_infos)} 个执行中的巡检任务：**",
         "",
     ]
-    options: list[dict] = []
+    options: list[dict[str, Any]] = []
     for info in active_task_infos:
         plan_label = "🔵" if info["plan_type"] == "线路巡检" else "🟠"
         lines.append(
@@ -485,10 +462,7 @@ async def _select_and_guide(open_id: str, task_id: uuid.UUID) -> None:
 
         first_idx = 0
         for i, eq in enumerate(equipment_order):
-            if (
-                eq["equipment_id"] not in completed
-                and eq["equipment_id"] not in skipped
-            ):
+            if eq["equipment_id"] not in completed and eq["equipment_id"] not in skipped:
                 first_idx = i
                 break
 
@@ -547,7 +521,7 @@ async def _count_task_equipment(db: AsyncSession, task: InspectionTask) -> int:
     return 0
 
 
-async def _cmd_submit(open_id: str, session: dict) -> None:
+async def _cmd_submit(open_id: str, session: dict[str, Any]) -> None:
     """提交当前设备的待确认结果。"""
     results = session.get("pending_results")
     if not results:
@@ -605,7 +579,7 @@ async def _cmd_submit(open_id: str, session: dict) -> None:
                         submit_route_check,
                     )
 
-                    records_db = await repo.get_records_by_task(
+                    records_db = await repo.get_records_by_task(  # type: ignore[attr-defined]
                         db,
                         uuid.UUID(task_id),
                     )
@@ -616,7 +590,7 @@ async def _cmd_submit(open_id: str, session: dict) -> None:
                         overall_result="异常" if has_abnormal else "正常",
                     )
                 else:
-                    completed_obj = await complete_task(db, uuid.UUID(task_id))
+                    completed_obj = await complete_task(db, uuid.UUID(task_id))  # type: ignore[call-arg]
                 await db.commit()
             completed = completed_obj
             await clear_session(open_id)
@@ -654,11 +628,7 @@ async def _cmd_submit(open_id: str, session: dict) -> None:
                 f"**✅ {equipment_name} — 已提交 {len(records)} 项**",
                 "",
                 f"📊 进度：{progress.get('done', 0)}/{progress.get('total', 0)} 已完成"
-                + (
-                    f"（{progress.get('skipped', 0)} 跳过）"
-                    if progress.get("skipped", 0) > 0
-                    else ""
-                ),
+                + (f"（{progress.get('skipped', 0)} 跳过）" if progress.get("skipped", 0) > 0 else ""),
             ]
             if next_eq:
                 lines.append("")
@@ -686,7 +656,7 @@ async def _cmd_submit(open_id: str, session: dict) -> None:
             logger.exception("引导卡发送失败: open_id=%s, task=%s", open_id, task_no)
 
 
-async def _cmd_skip(open_id: str, session: dict) -> None:
+async def _cmd_skip(open_id: str, session: dict[str, Any]) -> None:
     """跳过当前设备。"""
     cur_eq = get_current_equipment(session)
     if not cur_eq:
@@ -731,7 +701,7 @@ async def _cmd_skip(open_id: str, session: dict) -> None:
                         submit_route_check,
                     )
 
-                    records_db = await repo.get_records_by_task(
+                    records_db = await repo.get_records_by_task(  # type: ignore[attr-defined]
                         db,
                         uuid.UUID(task_id),
                     )
@@ -742,7 +712,7 @@ async def _cmd_skip(open_id: str, session: dict) -> None:
                         overall_result="异常" if has_abnormal else "正常",
                     )
                 else:
-                    completed_obj = await complete_task(db, uuid.UUID(task_id))
+                    completed_obj = await complete_task(db, uuid.UUID(task_id))  # type: ignore[call-arg]
                 await db.commit()
             completed = completed_obj
             await clear_session(open_id)
@@ -752,11 +722,7 @@ async def _cmd_skip(open_id: str, session: dict) -> None:
             await send_user_card(
                 open_id=open_id,
                 title=f"✅ 巡检任务已完成 - {task_no}",
-                content=(
-                    f"**{equipment_name}** 已跳过。\n\n"
-                    f"所有设备已处理完毕，任务已完成。\n"
-                    f"总体结果：{overall}"
-                ),
+                content=(f"**{equipment_name}** 已跳过。\n\n所有设备已处理完毕，任务已完成。\n总体结果：{overall}"),
                 receive_id_type="open_id",
             )
         else:
@@ -766,11 +732,7 @@ async def _cmd_skip(open_id: str, session: dict) -> None:
                 f"**⏭️ 已跳过：{equipment_name}**",
                 "",
                 f"📊 进度：{progress.get('done', 0)}/{progress.get('total', 0)} 已完成"
-                + (
-                    f"（{progress.get('skipped', 0)} 跳过）"
-                    if progress.get("skipped", 0) > 0
-                    else ""
-                ),
+                + (f"（{progress.get('skipped', 0)} 跳过）" if progress.get("skipped", 0) > 0 else ""),
             ]
             if next_eq:
                 lines.append("")
@@ -797,7 +759,7 @@ async def _cmd_skip(open_id: str, session: dict) -> None:
             logger.exception("引导卡发送失败: open_id=%s", open_id)
 
 
-async def _cmd_progress(open_id: str, session: dict) -> None:
+async def _cmd_progress(open_id: str, session: dict[str, Any]) -> None:
     """查看当前巡检进度。"""
     progress = get_progress(session)
     task_no = session.get("task_no", "")
@@ -822,8 +784,7 @@ async def _cmd_progress(open_id: str, session: dict) -> None:
         if loc_name:
             # 检查该地点是否有当前设备
             has_current = any(
-                e["equipment_id"] == (cur_eq["equipment_id"] if cur_eq else "")
-                and e["status"] == "pending"
+                e["equipment_id"] == (cur_eq["equipment_id"] if cur_eq else "") and e["status"] == "pending"
                 for e in loc["equipment"]
             )
             if has_current:
@@ -832,16 +793,10 @@ async def _cmd_progress(open_id: str, session: dict) -> None:
                 lines.append(f"**{loc_name}**")
         for eq in loc["equipment"]:
             icon = emoji.get(eq["status"], "⬜")
-            detail = eq["equipment_no"] or ""
+            detail = eq["asset_no"] or ""
             detail_str = f" ({detail})" if detail else ""
-            if (
-                eq["status"] == "pending"
-                and cur_eq
-                and eq["equipment_id"] == cur_eq["equipment_id"]
-            ):
-                lines.append(
-                    f"  🔍 {icon} **{eq['equipment_name']}**{detail_str} ← 当前"
-                )
+            if eq["status"] == "pending" and cur_eq and eq["equipment_id"] == cur_eq["equipment_id"]:
+                lines.append(f"  🔍 {icon} **{eq['equipment_name']}**{detail_str} ← 当前")
             else:
                 lines.append(f"  {icon} {eq['equipment_name']}{detail_str}")
 
@@ -864,19 +819,17 @@ async def _cmd_progress(open_id: str, session: dict) -> None:
     )
 
 
-async def _cmd_continue(open_id: str, session: dict) -> None:
+async def _cmd_continue(open_id: str, session: dict[str, Any]) -> None:
     """继续巡检 — 发送当前设备引导卡片。"""
     cur_eq = get_current_equipment(session)
     if cur_eq is None:
-        await _reply_text(
-            open_id, "所有设备均已处理完毕！\n回复「进度」查看巡检完成情况。"
-        )
+        await _reply_text(open_id, "所有设备均已处理完毕！\n回复「进度」查看巡检完成情况。")
         return
 
     await _send_guide_card(open_id, session)
 
 
-async def _cmd_cancel(open_id: str, session: dict) -> None:
+async def _cmd_cancel(open_id: str, session: dict[str, Any]) -> None:
     """取消当前待确认结果，回到引导状态。"""
     from app.modules.equipment.service.inspection_session import update_session
 
@@ -895,7 +848,7 @@ async def _cmd_cancel(open_id: str, session: dict) -> None:
     )
 
 
-async def _cmd_modify(open_id: str, session: dict, user_text: str) -> None:
+async def _cmd_modify(open_id: str, session: dict[str, Any], user_text: str) -> None:
     """处理用户对巡检结果的修改（使用 AI 解析）。"""
     current_results = session.get("pending_results")
     if not current_results:
@@ -903,7 +856,7 @@ async def _cmd_modify(open_id: str, session: dict, user_text: str) -> None:
         return
 
     # 使用 AI 解析修改
-    from app.modules.equipment.service.ai.client import AIAnalysisError, QwenClient
+    from app.modules.equipment.service.ai.client import AIAnalysisError, QwenClient  # type: ignore[attr-defined]
     from app.modules.equipment.service.ai.prompts import (
         CORRECTION_SYSTEM_PROMPT,
         build_correction_user_prompt,
@@ -944,13 +897,13 @@ async def _cmd_modify(open_id: str, session: dict, user_text: str) -> None:
         return
 
     # 按 template_item_id 映射
-    ai_map: dict[str, dict] = {}
+    ai_map: dict[str, dict[str, Any]] = {}
     for item in ai_items:
         tid = item.get("template_item_id")
         if tid:
             ai_map[tid] = item
 
-    updated_results: list[dict] = []
+    updated_results: list[dict[str, Any]] = []
     for r in current_results:
         tid = r["template_item_id"]
         if tid in ai_map:
@@ -1064,7 +1017,7 @@ async def _cmd_help(open_id: str) -> None:
 # ═══════════ 手动提交 ═══════════
 
 
-async def _handle_manual_submit(open_id: str, session: dict, user_text: str) -> None:
+async def _handle_manual_submit(open_id: str, session: dict[str, Any], user_text: str) -> None:
     """处理手动文字提交 — 使用 AI 解析非结构化文本。"""
     cur_eq = get_current_equipment(session)
     if not cur_eq:
@@ -1092,9 +1045,7 @@ async def _handle_manual_submit(open_id: str, session: dict, user_text: str) -> 
             )
 
             if not results:
-                await _reply_text(
-                    open_id, "AI 未能从文本中解析出检查结果，请换一种方式描述。"
-                )
+                await _reply_text(open_id, "AI 未能从文本中解析出检查结果，请换一种方式描述。")
                 return
 
             # 保存结果并进入确认状态
@@ -1102,9 +1053,7 @@ async def _handle_manual_submit(open_id: str, session: dict, user_text: str) -> 
 
             # 发送确认卡片
             task_no = session.get("task_no", "")
-            await _send_confirm_card_from_results(
-                open_id, task_no, equipment_name, results
-            )
+            await _send_confirm_card_from_results(open_id, task_no, equipment_name, results)
 
             await _reply_text(
                 open_id,
@@ -1120,7 +1069,7 @@ async def _handle_manual_submit(open_id: str, session: dict, user_text: str) -> 
 # ═══════════ 卡片发送 ═══════════
 
 
-async def _send_guide_card(open_id: str, session: dict) -> None:
+async def _send_guide_card(open_id: str, session: dict[str, Any]) -> None:
     """发送当前设备的引导卡片（含检查项、地点信息）。"""
     cur_eq = get_current_equipment(session)
     if not cur_eq:
@@ -1129,21 +1078,19 @@ async def _send_guide_card(open_id: str, session: dict) -> None:
     task_id = session["task_id"]
     plan_type = session.get("plan_type", "")
     equipment_name = cur_eq.get("equipment_name", "未知设备")
-    equipment_no = cur_eq.get("equipment_no", "")
+    asset_no = cur_eq.get("asset_no", "")
     location_name = cur_eq.get("location_name", "")
     progress = get_progress(session)
     current_idx = session.get("current_equipment_index", 0)
 
     # Phase 1: DB 获取检查项
-    items: list[dict] = []
+    items: list[dict[str, Any]] = []
     async with async_session_factory() as db:
         from app.modules.equipment.service.ai.service import (
             get_inspection_items_for_session,
         )
 
-        items = await get_inspection_items_for_session(
-            db, uuid.UUID(task_id), uuid.UUID(cur_eq["equipment_id"])
-        )
+        items = await get_inspection_items_for_session(db, uuid.UUID(task_id), uuid.UUID(cur_eq["equipment_id"]))
 
     # Phase 2: 构建卡片并发送（不持有 DB session）
     lines = []
@@ -1162,19 +1109,15 @@ async def _send_guide_card(open_id: str, session: dict) -> None:
         "",
     ]
 
-    if equipment_no:
-        lines.append(f"设备编号：{equipment_no}")
+    if asset_no:
+        lines.append(f"设备编号：{asset_no}")
 
     if items:
         lines.append("")
         lines.append("**📋 检查项目：**")
         lines.append("")
         for i, item in enumerate(items):
-            expected = (
-                f"（标准：{item['expected_result']}）"
-                if item.get("expected_result")
-                else ""
-            )
+            expected = f"（标准：{item['expected_result']}）" if item.get("expected_result") else ""
             lines.append(f"{i + 1}. **{item['item_name']}**{expected}")
 
     lines.append("")
@@ -1196,7 +1139,7 @@ async def _send_guide_card(open_id: str, session: dict) -> None:
 async def _send_confirm_card(
     open_id: str,
     task: InspectionTask,
-    results: list[dict],
+    results: list[dict[str, Any]],
     equipment_name: str,
 ) -> None:
     """发送 AI 分析结果确认卡片。"""
@@ -1233,7 +1176,7 @@ async def _send_confirm_card(
 
 
 async def _send_confirm_card_from_results(
-    open_id: str, task_no: str, equipment_name: str, results: list[dict]
+    open_id: str, task_no: str, equipment_name: str, results: list[dict[str, Any]]
 ) -> None:
     """发送确认卡片（从结果列表，无需 ORM 对象）。"""
     normal = sum(1 for r in results if r["result"] == "正常")
@@ -1269,9 +1212,7 @@ async def _send_confirm_card_from_results(
 # ═══════════ 辅助函数 ═══════════
 
 
-async def _resolve_user_for_text(
-    db: AsyncSession, open_id: str, user_id: str
-) -> Any | None:
+async def _resolve_user_for_text(db: AsyncSession, open_id: str, user_id: str) -> Any | None:
     """根据 open_id / user_id 查找系统用户（用于文本消息路径）。"""
     from app.platform.identity.models import User
 
@@ -1304,9 +1245,7 @@ async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> Any | None:
     return result.scalar_one_or_none()
 
 
-async def _find_active_task(
-    db: AsyncSession, user_id: uuid.UUID
-) -> InspectionTask | None:
+async def _find_active_task(db: AsyncSession, user_id: uuid.UUID) -> InspectionTask | None:
     """查找用户正在执行的最新巡检任务。"""
     result = await db.execute(
         select(InspectionTask)
@@ -1328,9 +1267,7 @@ async def _get_full_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask
     result = await db.execute(
         select(InspectionTask)
         .options(
-            selectinload(InspectionTask.route).selectinload(
-                InspectionRoute.locations_rel
-            ),
+            selectinload(InspectionTask.route).selectinload(InspectionRoute.locations_rel),
             selectinload(InspectionTask.equipment),
             selectinload(InspectionTask.assignee),
         )
@@ -1342,11 +1279,11 @@ async def _get_full_task(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask
     return result.scalar_one()
 
 
-async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list[dict]:
+async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list[dict[str, Any]]:
     """构建任务关联的设备顺序列表（含地点信息）。
     纯 SQL 查询，不依赖 ORM relationship 遍历，避免 WS 上下文懒加载。
     """
-    order: list[dict] = []
+    order: list[dict[str, Any]] = []
 
     if task.route_id:
         from app.modules.equipment.models.equipment import Equipment, Location
@@ -1367,7 +1304,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         loc_rows = (await db.execute(loc_stmt)).all()
         for loc, loc_name in loc_rows:
             eq_stmt = (
-                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_no)
+                select(RouteLocationEquipment, Equipment.name, Equipment.asset_no)
                 .join(Equipment, RouteLocationEquipment.equipment_id == Equipment.id)
                 .where(
                     RouteLocationEquipment.route_location_id == loc.id,
@@ -1382,7 +1319,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                     {
                         "equipment_id": str(eq.equipment_id),
                         "equipment_name": eq_name,
-                        "equipment_no": eq_no or "",
+                        "asset_no": eq_no or "",
                         "location_name": loc_name or "",
                         "location_sort_order": loc.sort_order,
                     }
@@ -1393,7 +1330,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         for eid_str in task.equipment_ids:
             eid = uuid.UUID(eid_str) if isinstance(eid_str, str) else eid_str
             eq_result = await db.execute(
-                select(Equipment.name, Equipment.equipment_no).where(
+                select(Equipment.name, Equipment.asset_no).where(
                     Equipment.id == eid,
                     Equipment.is_deleted == False,  # noqa: E712
                 )
@@ -1404,7 +1341,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                     {
                         "equipment_id": str(eid),
                         "equipment_name": row.name,
-                        "equipment_no": row.equipment_no or "",
+                        "asset_no": row.asset_no or "",
                         "location_name": "",
                         "location_sort_order": 0,
                     }
@@ -1413,7 +1350,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         from app.modules.equipment.models.equipment import Equipment
 
         eq_result = await db.execute(
-            select(Equipment.name, Equipment.equipment_no).where(
+            select(Equipment.name, Equipment.asset_no).where(
                 Equipment.id == task.equipment_id,
                 Equipment.is_deleted == False,  # noqa: E712
             )
@@ -1424,7 +1361,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
                 {
                     "equipment_id": str(task.equipment_id),
                     "equipment_name": row.name,
-                    "equipment_no": row.equipment_no or "",
+                    "asset_no": row.asset_no or "",
                     "location_name": "",
                     "location_sort_order": 0,
                 }
@@ -1433,9 +1370,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
     return order
 
 
-async def _get_processed_equipment_ids(
-    db: AsyncSession, task_id: uuid.UUID
-) -> tuple[set[str], set[str]]:
+async def _get_processed_equipment_ids(db: AsyncSession, task_id: uuid.UUID) -> tuple[set[str], set[str]]:
     """获取已处理和已跳过的设备 ID 集合。"""
     from app.modules.equipment.models.inspection_template import InspectionRecord
 
@@ -1463,9 +1398,7 @@ async def _get_processed_equipment_ids(
     return completed, skipped
 
 
-async def _auto_create_session(
-    db: AsyncSession, task: InspectionTask, open_id: str
-) -> dict | None:
+async def _auto_create_session(db: AsyncSession, task: InspectionTask, open_id: str) -> dict[str, Any] | None:
     """自动创建引导会话（拍照触发时用）。"""
     task = await _get_full_task(db, task.id)
     equipment_order = await _build_equipment_order(db, task)
@@ -1495,9 +1428,7 @@ async def _auto_create_session(
     return await get_session(open_id)
 
 
-async def _download_image(
-    message_id: str, image_key: str
-) -> tuple[bytes | None, str | None]:
+async def _download_image(message_id: str, image_key: str) -> tuple[bytes | None, str | None]:
     """从飞书下载消息中的图片。"""
     from lark_oapi.api.im.v1.model.get_message_resource_request import (
         GetMessageResourceRequest,
@@ -1511,13 +1442,7 @@ async def _download_image(
     client = await get_equipment_feishu_client()
     token = await get_equipment_tenant_token(client)
 
-    req = (
-        GetMessageResourceRequest.builder()
-        .message_id(message_id)
-        .file_key(image_key)
-        .type("image")
-        .build()
-    )
+    req = GetMessageResourceRequest.builder().message_id(message_id).file_key(image_key).type("image").build()
     req.headers["Authorization"] = f"Bearer {token}"
 
     try:
@@ -1580,19 +1505,17 @@ async def _save_photo(
     db.add(photo)
     await db.commit()
 
-    result = await db.execute(
-        select(InspectionPhoto).where(InspectionPhoto.id == photo.id)
-    )
+    result = await db.execute(select(InspectionPhoto).where(InspectionPhoto.id == photo.id))
     return result.scalar_one()
 
 
-async def _handle_inspection_selection(open_id: str, opt: dict) -> None:
+async def _handle_inspection_selection(open_id: str, opt: dict[str, Any]) -> None:
     """处理巡检任务选择。"""
     task_id = uuid.UUID(opt["task_id"])
     await _select_and_guide(open_id, task_id)
 
 
-async def _handle_work_order_selection(open_id: str, opt: dict) -> None:
+async def _handle_work_order_selection(open_id: str, opt: dict[str, Any]) -> None:
     """处理工单选择（查看详情或完成）。"""
     wo_no = opt.get("work_order_no", "")
     wo_status = opt.get("status", "")
@@ -1615,9 +1538,7 @@ async def _handle_work_order_selection(open_id: str, opt: dict) -> None:
             open_id=open_id,
             title=f"📋 工单 {wo_no}",
             content=(
-                f"**{wo_no}** · {opt.get('order_type', '')}\n"
-                f"设备：{opt.get('equipment_name', '')}\n"
-                f"状态：{wo_status}"
+                f"**{wo_no}** · {opt.get('order_type', '')}\n设备：{opt.get('equipment_name', '')}\n状态：{wo_status}"
             ),
             receive_id_type="open_id",
         )

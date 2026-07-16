@@ -2,6 +2,7 @@
 
 import io
 import logging
+from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -11,7 +12,7 @@ from docx.shared import Cm, Pt, RGBColor
 logger = logging.getLogger(__name__)
 
 
-def _set_run_font(run, size=12, bold=False, color=None):
+def _set_run_font(run, size=12, bold=False, color=None) -> Any:  # type: ignore[no-untyped-def]
     """设置字体"""
     run.font.name = "Times New Roman"
     run.font.size = Pt(size)
@@ -21,7 +22,7 @@ def _set_run_font(run, size=12, bold=False, color=None):
         run.font.color.rgb = color
 
 
-def _add_para(doc, text, size=12, bold=False, color=None, align=None, indent=0):
+def _add_para(doc, text, size=12, bold=False, color=None, align=None, indent=0) -> Any:  # type: ignore[no-untyped-def]
     """添加段落"""
     p = doc.add_paragraph()
     r = p.add_run(text)
@@ -36,14 +37,12 @@ def _add_para(doc, text, size=12, bold=False, color=None, align=None, indent=0):
     return p
 
 
-def _add_cover_page(doc, drug_info: dict):
+def _add_cover_page(doc, drug_info: dict[str, Any]) -> Any:  # type: ignore[no-untyped-def]
     """生成封面页"""
     for _ in range(6):
         doc.add_paragraph()
 
-    _add_para(
-        doc, "原料药登记资料", size=26, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER
-    )
+    _add_para(doc, "原料药登记资料", size=26, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
     doc.add_paragraph()
 
     _add_para(
@@ -132,12 +131,10 @@ def _add_cover_page(doc, drug_info: dict):
         bold=True,
         align=WD_ALIGN_PARAGRAPH.CENTER,
     )
-    _add_para(
-        doc, "补充资料研究报告", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER
-    )
+    _add_para(doc, "补充资料研究报告", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
 
 
-def _add_toc_page(doc, questions: list[dict]):
+def _add_toc_page(doc, questions: list[dict[str, Any]]) -> Any:  # type: ignore[no-untyped-def]
     """生成目录页"""
     _add_para(doc, "目  录", size=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
     doc.add_paragraph()
@@ -165,7 +162,7 @@ def _add_toc_page(doc, questions: list[dict]):
             )
 
 
-def _add_body_content(doc, questions: list[dict]):
+def _add_body_content(doc, questions: list[dict[str, Any]]) -> Any:  # type: ignore[no-untyped-def]
     """生成正文内容"""
     for q in questions:
         if q["level"] == 1:
@@ -183,9 +180,7 @@ def _add_body_content(doc, questions: list[dict]):
 
         # 回复建议
         _add_para(doc, "【回复建议】", size=12, bold=True)
-        _add_para(
-            doc, "• 回复思路：请分析CDE关注点，制定回复策略", size=12, indent=0.74
-        )
+        _add_para(doc, "• 回复思路：请分析CDE关注点，制定回复策略", size=12, indent=0.74)
         _add_para(doc, "• 回复模板：请参照CDE通知函原文进行回复", size=12, indent=0.74)
         _add_para(doc, "• 补充实验：视具体情况而定", size=12, indent=0.74)
         _add_para(
@@ -198,8 +193,8 @@ def _add_body_content(doc, questions: list[dict]):
 
 
 def generate_reply_document(
-    drug_info: dict,
-    questions: list[dict],
+    drug_info: dict[str, Any],
+    questions: list[dict[str, Any]],
 ) -> bytes:
     """
     生成发补回复 Word 文档，返回文件二进制内容。
@@ -221,11 +216,11 @@ def generate_reply_document(
 
     # 封面页
     _add_cover_page(doc, drug_info)
-    doc.add_page_break()
+    doc.add_page_break()  # type: ignore[no-untyped-call]
 
     # 目录页
     _add_toc_page(doc, questions)
-    doc.add_page_break()
+    doc.add_page_break()  # type: ignore[no-untyped-call]
 
     # 正文
     _add_body_content(doc, questions)

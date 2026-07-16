@@ -46,9 +46,7 @@ async def update_drug(
     if data.nodes:
         for node_update in data.nodes:
             existing_nodes = await repo.get_drug_nodes(db, drug_id)
-            existing = any(
-                n.node_index == node_update.node_index for n in existing_nodes
-            )
+            existing = any(n.node_index == node_update.node_index for n in existing_nodes)
             if existing:
                 await repo.update_drug_node(
                     db,
