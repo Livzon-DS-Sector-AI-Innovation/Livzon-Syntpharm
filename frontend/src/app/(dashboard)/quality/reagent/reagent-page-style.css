@@ -1,0 +1,471 @@
+/* Reagent Management Page - Responsive Styles */
+
+/* Page Layout */
+.reagent-page {
+  padding: 6px;
+  min-height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .reagent-page {
+    padding: 24px;
+  }
+}
+
+/* Header Toolbar */
+.reagent-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .reagent-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+}
+
+.reagent-search-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .reagent-search-area {
+    flex-direction: row;
+    gap: 12px;
+    max-width: 480px;
+  }
+}
+
+.reagent-action-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .reagent-action-area {
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+}
+
+/* View Toggle */
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Statistics Cards */
+.reagent-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .reagent-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+}
+
+.stat-card {
+  background: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+  font-size: 18px;
+}
+
+@media (min-width: 768px) {
+  .stat-icon {
+    font-size: 28px;
+  }
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+@media (min-width: 768px) {
+  .stat-num {
+    font-size: 26px;
+  }
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+@media (min-width: 768px) {
+  .stat-label {
+    font-size: 13px;
+  }
+}
+
+.stat-card-green .stat-icon { color: #10b981; }
+.stat-card-green .stat-num { color: #10b981; }
+.stat-card-orange .stat-icon { color: #f59e0b; }
+.stat-card-orange .stat-num { color: #f59e0b; }
+.stat-card-red .stat-icon { color: #ef4444; }
+.stat-card-red .stat-num { color: #ef4444; }
+.stat-card-blue .stat-icon { color: #3b82f6; }
+.stat-card-blue .stat-num { color: #3b82f6; }
+
+/* Card Grid View */
+.reagent-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .reagent-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .reagent-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+.reagent-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  transition: all 0.2s;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .reagent-card {
+    padding: 16px;
+  }
+}
+
+.reagent-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.reagent-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.reagent-card-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .reagent-card-image {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+.reagent-card-title-area {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.reagent-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+@media (min-width: 768px) {
+  .reagent-card-name {
+    font-size: 16px;
+  }
+}
+
+.reagent-card-lot {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reagent-card-status {
+  flex-shrink: 0;
+}
+
+.reagent-card-status .ant-tag {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reagent-card-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .reagent-card-info {
+    gap: 10px;
+  }
+}
+
+.reagent-card-info-item {
+  font-size: 11px;
+}
+
+@media (min-width: 768px) {
+  .reagent-card-info-item {
+    font-size: 13px;
+  }
+}
+
+.reagent-card-info-label {
+  color: #6b7280;
+  margin-bottom: 1px;
+}
+
+.reagent-card-info-value {
+  color: #1f2937;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reagent-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.reagent-card-date {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.reagent-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Mobile Drawer */
+.reagent-drawer .ant-drawer-body {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .reagent-drawer .ant-drawer-body {
+    padding: 24px;
+  }
+}
+
+.reagent-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.reagent-drawer-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .reagent-drawer-image {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+.reagent-drawer-title-area {
+  flex: 1;
+}
+
+.reagent-drawer-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .reagent-drawer-name {
+    font-size: 20px;
+  }
+}
+
+.reagent-drawer-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .reagent-drawer-info-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+.reagent-drawer-info-item {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.reagent-drawer-info-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.reagent-drawer-info-value {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* Form Drawer */
+.form-drawer .ant-drawer-body {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .form-drawer .ant-drawer-body {
+    padding: 24px;
+  }
+}
+
+/* Upload Area Mobile */
+.upload-area-mobile {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px dashed #d1d5db;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .upload-area-mobile {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+}
+
+/* Pagination Mobile */
+.pagination-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+@media (min-width: 768px) {
+  .pagination-mobile {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 16px 0;
+  }
+}
+
+/* Empty State */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .empty-state {
+    padding: 60px 40px;
+  }
+}
+
+/* AI Button Mobile */
+.ai-btn-mobile {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .ai-btn-mobile {
+    width: auto;
+    margin-bottom: 0;
+  }
+}

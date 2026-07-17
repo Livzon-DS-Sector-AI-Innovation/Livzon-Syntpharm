@@ -1,0 +1,17 @@
+services:
+  frontend:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - API_BASE_URL=${API_BASE_URL:-http://app:8000}
+    networks:
+      - backend
+    restart: unless-stopped
+
+networks:
+  backend:
+    external: true
+    name: ${BACKEND_NETWORK:-dazah-backend_default}

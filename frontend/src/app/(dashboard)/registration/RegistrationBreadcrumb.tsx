@@ -1,0 +1,72 @@
+'use client'
+import { usePathname } from 'next/navigation'
+import { Breadcrumb } from 'antd'
+import Link from 'next/link'
+
+const PATH_LABELS: Record<string, string> = {
+  ledger: '注册台账',
+  projects: '注册项目管理',
+  review: '审评进度查询',
+  regulation: '法规跟踪',
+  'dossier-writer': '申报资料撰写',
+  'validation-audit': '验证文件审核',
+  'authorization-letter': '授权书管理',
+  'supplementary-reply': '发补回复',
+  'reference-standard': '对照物质说明表',
+}
+
+function getBreadcrumbItems(pathname: string) {
+  const stripped = pathname.replace(/^\/registration\/?/, '')
+  const segments = stripped.split('/').filter(Boolean)
+  const items: { title: React.ReactNode }[] = [
+    { title: <Link href="/registration">注册管理</Link> },
+  ]
+
+  let currentPath = ''
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i]
+    currentPath += (currentPath ? '/' : '') + seg
+    const fullPath = '/registration' + (currentPath ? '/' + currentPath : '')
+
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg)) {
+      const parentPath = segments.slice(0, i).join('/')
+      if (parentPath === 'dossier-writer') {
+        items.push({ title: '品种详情' })
+      } else if (parentPath === 'validation-audit') {
+        items.push({ title: '任务详情' })
+      } else {
+        items.push({ title: '详情' })
+      }
+    } else if (seg === 'new') {
+      items.push({ title: '新建任务' })
+    } else if (seg === 'list') {
+      items.push({ title: '法规列表' })
+    } else {
+      const label = PATH_LABELS[seg]
+      if (label) {
+        if (i < segments.length - 1) {
+          items.push({ title: <Link href={fullPath}>{label}</Link> })
+        } else {
+          items.push({ title: label })
+        }
+      }
+    }
+  }
+
+  return items
+}
+
+export function RegistrationBreadcrumb() {
+  const pathname = usePathname()
+
+  if (pathname === '/registration') return null
+
+  const items = getBreadcrumbItems(pathname)
+  if (items.length <= 1) return null
+
+  return (
+    <div className="mb-4">
+      <Breadcrumb items={items} />
+    </div>
+  )
+}

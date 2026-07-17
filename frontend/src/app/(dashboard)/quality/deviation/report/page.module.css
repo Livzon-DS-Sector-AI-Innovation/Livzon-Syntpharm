@@ -1,0 +1,175 @@
+/* 偏差报告编辑器样式 */
+
+.toolbar {
+  padding: 8px;
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+
+.editorContainer {
+  border: 1px solid #d9d9d9;
+  border-radius: 0 0 4px 4px;
+  min-height: 500px;
+  padding: 16px;
+  background: #fff;
+}
+
+.prose {
+  outline: none;
+  min-height: 450px;
+}
+
+/* 段落样式 */
+.prose p {
+  margin: 0.5em 0;
+  line-height: 1.8;
+}
+
+/* 标题样式 */
+.prose h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 1em 0 0.5em;
+  color: #333;
+}
+
+.prose h2 {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0.8em 0 0.4em;
+  color: #333;
+}
+
+.prose h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0.6em 0 0.3em;
+  color: #333;
+}
+
+/* 列表样式 */
+.prose ul,
+.prose ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin: 0.25em 0;
+  line-height: 1.8;
+}
+
+/* 表格样式 */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #d9d9d9;
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  background: #fafafa;
+  font-weight: bold;
+}
+
+.prose tr:hover td {
+  background: #f5f5f5;
+}
+
+/* 选中单元格样式 */
+.prose .selectedCell:after {
+  background: rgba(82, 196, 26, 0.1);
+  content: '';
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.prose .selectedCell {
+  position: relative;
+}
+
+/* 行内样式 */
+.prose strong {
+  font-weight: bold;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose s {
+  text-decoration: line-through;
+}
+
+/* 引用块 */
+.prose blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 4px solid #d9d9d9;
+  background: #fafafa;
+  color: #666;
+}
+
+/* 代码块 */
+.prose pre {
+  background: #f5f5f5;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: monospace;
+}
+
+.prose code {
+  background: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* 右键菜单样式 */
+.contextMenu {
+  position: fixed;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  z-index: 1000;
+  min-width: 160px;
+}
+
+.contextMenuTitle {
+  padding: 8px 16px;
+  font-weight: 500;
+  color: #1890ff;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 4px;
+}
+
+.contextMenuItem {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.contextMenuItem:hover {
+  background: #f5f5f5;
+  color: #1890ff;
+}

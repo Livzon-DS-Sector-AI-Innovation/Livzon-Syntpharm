@@ -1,0 +1,696 @@
+/* ============================================
+   仪器校准管理 - 现代化响应式设计系统
+   ============================================ */
+
+/* ---- 设计变量 ---- */
+:root {
+  --ins-primary: #4f46e5;
+  --ins-primary-light: #6366f1;
+  --ins-primary-bg: #eef2ff;
+  --ins-success: #059669;
+  --ins-success-bg: #ecfdf5;
+  --ins-warning: #d97706;
+  --ins-warning-bg: #fffbeb;
+  --ins-danger: #dc2626;
+  --ins-danger-bg: #fef2f2;
+  --ins-text: #1e293b;
+  --ins-text-secondary: #64748b;
+  --ins-text-light: #94a3b8;
+  --ins-border: #e2e8f0;
+  --ins-bg: #f8fafc;
+  --ins-card-radius: 16px;
+  --ins-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --ins-shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --ins-shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* ---- 页面容器 ---- */
+.instrument-page {
+  padding: 12px;
+  min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: var(--ins-bg);
+}
+
+@media (min-width: 768px) {
+  .instrument-page {
+    padding: 24px;
+  }
+}
+
+/* ---- 顶部工具栏 ---- */
+.instrument-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .instrument-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+}
+
+.instrument-toolbar h1 {
+  letter-spacing: -0.02em;
+}
+
+/* ---- 统计卡片 ---- */
+.instrument-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .instrument-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+}
+
+.instrument-stat-card {
+  position: relative;
+  background: white;
+  padding: 16px;
+  border-radius: var(--ins-card-radius);
+  border: 1px solid var(--ins-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.instrument-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+}
+
+.instrument-stat-card:hover {
+  box-shadow: var(--ins-shadow-md);
+  transform: translateY(-2px);
+}
+
+.stat-card-blue::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+.stat-card-green::before { background: linear-gradient(90deg, #059669, #10b981); }
+.stat-card-orange::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
+.stat-card-red::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+.instrument-stat-icon {
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .instrument-stat-icon {
+    font-size: 26px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.stat-card-blue .instrument-stat-icon { background: var(--ins-primary-bg); color: var(--ins-primary); }
+.stat-card-green .instrument-stat-icon { background: var(--ins-success-bg); color: var(--ins-success); }
+.stat-card-orange .instrument-stat-icon { background: var(--ins-warning-bg); color: var(--ins-warning); }
+.stat-card-red .instrument-stat-icon { background: var(--ins-danger-bg); color: var(--ins-danger); }
+
+.stat-card-blue .instrument-stat-num { color: var(--ins-primary); }
+.stat-card-green .instrument-stat-num { color: var(--ins-success); }
+.stat-card-orange .instrument-stat-num { color: var(--ins-warning); }
+.stat-card-red .instrument-stat-num { color: var(--ins-danger); }
+
+.instrument-stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.instrument-stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .instrument-stat-num {
+    font-size: 28px;
+  }
+}
+
+.instrument-stat-label {
+  font-size: 11px;
+  color: var(--ins-text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+@media (min-width: 768px) {
+  .instrument-stat-label {
+    font-size: 13px;
+  }
+}
+
+/* ---- 告警卡片 ---- */
+.alert-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .alert-cards {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+.alert-card {
+  flex: 1;
+  background: white;
+  border-radius: var(--ins-card-radius);
+  border: 1px solid var(--ins-border);
+  overflow: hidden;
+  box-shadow: var(--ins-shadow-sm);
+}
+
+.alert-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ins-text);
+  border-bottom: 1px solid var(--ins-border);
+}
+
+@media (min-width: 768px) {
+  .alert-card-header {
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+}
+
+.alert-card-body {
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .alert-card-body {
+    padding: 16px 20px;
+  }
+}
+
+/* ---- 告警列表项 ---- */
+.alert-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--ins-bg);
+  border-radius: 12px;
+  gap: 12px;
+  transition: background 0.2s;
+}
+
+.alert-item:hover {
+  background: #f1f5f9;
+}
+
+.alert-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ins-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alert-item-sub {
+  font-size: 11px;
+  color: var(--ins-text-light);
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  margin-top: 2px;
+}
+
+.alert-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.alert-item-date {
+  font-size: 11px;
+  color: var(--ins-text-secondary);
+  font-weight: 500;
+}
+
+/* ---- 快捷操作按钮 ---- */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .quick-actions {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+  }
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: white;
+  border: 1px solid var(--ins-border);
+  border-radius: var(--ins-card-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--ins-primary);
+  box-shadow: var(--ins-shadow-md);
+  transform: translateY(-2px);
+}
+
+.quick-action-btn .action-icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--ins-primary-bg);
+  color: var(--ins-primary);
+}
+
+.quick-action-btn .action-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ins-text);
+}
+
+@media (min-width: 768px) {
+  .quick-action-btn .action-icon {
+    font-size: 28px;
+    width: 52px;
+    height: 52px;
+  }
+  .quick-action-btn .action-label {
+    font-size: 13px;
+  }
+}
+
+/* ---- 搜索区域 ---- */
+.records-search-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .records-search-area {
+    flex-direction: row;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* ---- 卡片网格 ---- */
+.records-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .records-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* ---- 记录卡片 ---- */
+.record-card {
+  background: white;
+  border-radius: var(--ins-card-radius);
+  border: 1px solid var(--ins-border);
+  padding: 16px;
+  transition: all 0.3s ease;
+  box-shadow: var(--ins-shadow-sm);
+}
+
+.record-card:hover {
+  box-shadow: var(--ins-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.record-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ins-border);
+}
+
+.record-card-no {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ins-primary);
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+}
+
+.record-card-body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.record-card-item {
+  font-size: 12px;
+}
+
+.record-card-item-label {
+  color: var(--ins-text-light);
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.record-card-item-value {
+  color: var(--ins-text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ins-border);
+}
+
+/* ---- 仪器台账卡片 ---- */
+.instrument-card {
+  background: white;
+  border-radius: var(--ins-card-radius);
+  border: 1px solid var(--ins-border);
+  padding: 16px;
+  transition: all 0.3s ease;
+  box-shadow: var(--ins-shadow-sm);
+}
+
+.instrument-card:hover {
+  box-shadow: var(--ins-shadow-md);
+}
+
+.instrument-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.instrument-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ins-text);
+}
+
+.instrument-card-no {
+  font-size: 12px;
+  color: var(--ins-text-light);
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  margin-top: 2px;
+}
+
+.instrument-card-body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.instrument-card-item {
+  font-size: 12px;
+}
+
+.instrument-card-item-label {
+  color: var(--ins-text-light);
+  margin-bottom: 2px;
+}
+
+.instrument-card-item-value {
+  color: var(--ins-text);
+  font-weight: 600;
+}
+
+.instrument-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ins-border);
+}
+
+/* ---- 设置页面 ---- */
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ins-text);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ins-primary-bg);
+}
+
+.settings-section-title .anticon {
+  color: var(--ins-primary);
+}
+
+/* ---- 抽屉 ---- */
+.instrument-drawer .ant-drawer-body {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .instrument-drawer .ant-drawer-body {
+    padding: 24px;
+  }
+}
+
+/* ---- 分页 ---- */
+.pagination-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+@media (min-width: 768px) {
+  .pagination-mobile {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 16px 0;
+  }
+}
+
+/* ---- 空状态 ---- */
+.empty-state {
+  padding: 30px 20px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .empty-state {
+    padding: 40px 30px;
+  }
+}
+
+/* ---- 通用卡片容器 ---- */
+.ins-card {
+  background: white;
+  border-radius: var(--ins-card-radius);
+  border: 1px solid var(--ins-border);
+  box-shadow: var(--ins-shadow-sm);
+}
+
+/* ---- 移动端表格优化 ---- */
+@media (max-width: 767px) {
+  .instrument-page > .ant-table-wrapper,
+  .instrument-page .ins-card > .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .instrument-page > .ant-table-wrapper > .ant-table,
+  .instrument-page .ins-card > .ant-table-wrapper > .ant-table {
+    min-width: 600px;
+  }
+
+  /* 展开行内嵌套的小表格 - 设置合理最小宽度，支持横向滚动 */
+  .instrument-page .instrument-expand-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .instrument-page .ant-table-expanded-row .ant-table,
+  .instrument-page .instrument-expand-section .ant-table {
+    min-width: 520px !important;
+    width: auto !important;
+  }
+
+  .instrument-page .ant-table-expanded-row .ant-table-thead > tr > th,
+  .instrument-page .ant-table-expanded-row .ant-table-tbody > tr > td,
+  .instrument-page .instrument-expand-section .ant-table-thead > tr > th,
+  .instrument-page .instrument-expand-section .ant-table-tbody > tr > td {
+    white-space: nowrap;
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+
+  .instrument-page .ant-pagination {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .instrument-page .ant-pagination-options {
+    display: none;
+  }
+
+  .calibration-record-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .calibration-record-item {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid var(--ins-border);
+  }
+
+  .calibration-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .calibration-record-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ins-text);
+  }
+
+  .calibration-record-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .calibration-record-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .calibration-record-label {
+    color: var(--ins-text-secondary);
+    flex-shrink: 0;
+    width: 65px;
+  }
+
+  .calibration-record-value {
+    color: var(--ins-text);
+    flex: 1;
+    text-align: right;
+    margin-left: 8px;
+  }
+
+  .calibration-record-value.danger {
+    color: var(--ins-danger);
+    font-weight: 600;
+  }
+
+  .calibration-record-tag {
+    display: inline-block;
+    background: var(--ins-danger);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
+}
+
+/* ---- 移动端Modal优化 ---- */
+@media (max-width: 767px) {
+  .instrument-page .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+  
+  .instrument-page .ant-modal .ant-modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}

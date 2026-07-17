@@ -1,0 +1,34 @@
+import type { components } from '@/types/generated/schema'
+
+export type RawMaterial = components['schemas']['RawMaterialResponse']
+export type RawMaterialListResponse = components['schemas']['RawMaterialListResponse']
+export type PackagingMaterial = components['schemas']['PackagingMaterialResponse']
+export type PackagingMaterialListResponse =
+  components['schemas']['PackagingMaterialListResponse']
+export type ProductInventory = components['schemas']['ProductInventoryResponse']
+export type ProductInventoryListResponse =
+  components['schemas']['ProductInventoryListResponse']
+export type WarehouseFeishuConfig =
+  components['schemas']['WarehouseFeishuConfigResponse']
+export type WarehouseFeishuConfigUpsert =
+  components['schemas']['WarehouseFeishuConfigUpsert']
+export type WarehouseFeishuConnectivityResult =
+  components['schemas']['WarehouseFeishuConnectivityResult']
+export type WarehouseFeishuTable =
+  components['schemas']['WarehouseFeishuTableResponse']
+export type WarehouseFeishuBusinessDomain =
+  WarehouseFeishuTable['business_domain']
+export type WarehouseFeishuTableEnablePayload =
+  components['schemas']['WarehouseFeishuTableEnablePayload']
+export type WarehouseFeishuTableBatchEnablePayload =
+  components['schemas']['WarehouseFeishuTableBatchEnablePayload']
+export type WarehouseFeishuTableSyncResult =
+  components['schemas']['WarehouseFeishuTableSyncResult']
+export type WarehouseFeishuRawRecordData =
+  components['schemas']['WarehouseFeishuRawRecordData']
+export type WarehouseFeishuRawRecord =
+  components['schemas']['WarehouseFeishuRawRecordResponse']
+export type WarehouseFeishuField =
+  components['schemas']['WarehouseFeishuFieldResponse']
+export type WarehouseFeishuWsStatus =
+  components['schemas']['WarehouseFeishuWsStatus']

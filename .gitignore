@@ -1,0 +1,27 @@
+# Environment variables
+.env
+
+# Data directories (runtime data, not in repo)
+postgres-data/
+redis-data/
+minio-data/
+uploads/
+storage/
+logs/
+backups/
+
+# Secrets
+secrets/
+
+# Deployment
+deploy-venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
