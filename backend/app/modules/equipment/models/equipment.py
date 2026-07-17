@@ -1,0 +1,205 @@
+"""Equipment ORM models."""
+
+import uuid
+from datetime import date
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    text,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.shared.base_model import BaseModel
+
+
+class EquipmentCategory(BaseModel):
+    """设备分类表"""
+
+    __tablename__ = "equipment_categories"
+    __table_args__ = (
+        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
+        Index(
+            "uq_equipment_categories_code_dept",
+            "code",
+            "department_id",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "equipment"},
+    )
+
+    name: Mapped[str] = mapped_column(String(100), comment="分类名称")
+    code: Mapped[str] = mapped_column(String(50), comment="分类代码")
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+    )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("equipment.equipment_categories.id"),
+        nullable=True,
+        comment="父分类ID",
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="分类描述")
+
+    # 关系
+    parent: Mapped["EquipmentCategory | None"] = relationship(
+        "EquipmentCategory",
+        remote_side="EquipmentCategory.id",
+        back_populates="children",
+    )
+    children: Mapped[list["EquipmentCategory"]] = relationship(
+        "EquipmentCategory",
+        back_populates="parent",
+    )
+
+
+class Location(BaseModel):
+    """位置表"""
+
+    __tablename__ = "locations"
+    __table_args__ = (
+        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
+        Index(
+            "uq_locations_code_dept",
+            "code",
+            "department_id",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "equipment"},
+    )
+
+    name: Mapped[str] = mapped_column(String(100), comment="位置名称")
+    code: Mapped[str] = mapped_column(String(50), comment="位置代码")
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+    )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("equipment.locations.id"),
+        nullable=True,
+        comment="父位置ID",
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="位置描述")
+
+    # 关系
+    parent: Mapped["Location | None"] = relationship(
+        "Location",
+        remote_side="Location.id",
+        back_populates="children",
+    )
+    children: Mapped[list["Location"]] = relationship(
+        "Location",
+        back_populates="parent",
+    )
+
+
+class EquipmentCategoryLink(BaseModel):
+    """设备-分类多对多关联表"""
+
+    __tablename__ = "equipment_category_links"
+    __table_args__ = (
+        # 部分唯一索引：仅对未删除的记录做设备+分类唯一性检查
+        Index(
+            "uq_equipment_category_links",
+            "equipment_id",
+            "category_id",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "equipment"},
+    )
+
+    equipment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("equipment.equipments.id"),
+        comment="设备ID",
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("equipment.equipment_categories.id"),
+        comment="分类ID",
+    )
+
+    # 关系
+    equipment: Mapped["Equipment"] = relationship("Equipment", back_populates="category_links")
+    category: Mapped["EquipmentCategory"] = relationship("EquipmentCategory")
+
+
+class Equipment(BaseModel):
+    """设备主表"""
+
+    __tablename__ = "equipments"
+    __table_args__ = (
+        # 部分唯一索引：仅对未删除的记录做 asset_no 唯一性检查
+        Index(
+            "uq_equipments_asset_no",
+            "asset_no",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        CheckConstraint(
+            "status IN ('在用', '备用', '维修中', '停用', '报废')",
+            name="ck_equipments_status",
+        ),
+        CheckConstraint(
+            "importance IN ('高', '中', '低')",
+            name="ck_equipments_importance",
+        ),
+        {"schema": "equipment"},
+    )
+
+    asset_no: Mapped[str] = mapped_column(String(50), comment="资产编号")
+    name: Mapped[str] = mapped_column(String(200), comment="设备名称")
+    equipment_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备位号")
+    equipment_class: Mapped[str] = mapped_column(String(10), default="C", comment="设备分类：A/B/C")
+    category_description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="资产类别说明")
+    location_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("equipment.locations.id"),
+        nullable=True,
+        comment="设备位置ID（可选）",
+    )
+    location_text: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="设备位置（文本描述）")
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="在用",
+        comment="设备状态：在用/备用/维修中/停用/报废",
+    )
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备型号")
+    specification: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="设备规格")
+    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="制造商")
+    supplier: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="供应商")
+    production_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="出厂日期")
+    commissioning_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="投用日期")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="设备描述")
+    importance: Mapped[str] = mapped_column(
+        String(10),
+        default="低",
+        comment="设备重要性：高/中/低",
+    )
+    warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
+    current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
+    book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
+    depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
+    technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+    )
+    responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
+        nullable=True,
+        comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
+    )
+    label_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="标签号")
+    scrap_status: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="报废状态")
+    scrap_time: Mapped[date | None] = mapped_column(Date, nullable=True, comment="报废时间")
+
+    # 关系
+    category_links: Mapped[list["EquipmentCategoryLink"]] = relationship(
+        "EquipmentCategoryLink",
+        back_populates="equipment",
+        lazy="selectin",
+    )
+    location: Mapped["Location"] = relationship("Location")

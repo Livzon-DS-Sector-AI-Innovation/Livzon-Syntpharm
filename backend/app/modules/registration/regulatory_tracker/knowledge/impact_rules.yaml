@@ -1,0 +1,492 @@
+# 原料药企业法规影响判定规则 V1
+# 依据：api_regulatory_impact_assessment_criteria_v1.md
+#
+# 每条规则定义一类法规主题的默认判定和升级/降级条件。
+# AI Prompt 和后端校验逻辑均引用本文件。
+
+# ============================================================
+# 默认高影响法规（直接涉及原料药/API）
+# ============================================================
+high_impact_rules:
+  - topic: "原料药/API 指导原则"
+    keywords: ["原料药", "API", "活性成分", "drug substance", "化学原料药"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["注册", "QA", "QC", "研发"]
+    typical_ctd_sections: ["3.2.S.1", "3.2.S.2", "3.2.S.3", "3.2.S.4", "3.2.S.5", "3.2.S.6", "3.2.S.7"]
+    downgrade_conditions:
+      - "征求意见稿且无强制约束力"
+      - "明确不适用于化学原料药"
+
+  - topic: "DMF/药品主文件"
+    keywords: ["DMF", "药品主文件", "ASMF", "CEP", "主文件"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["注册"]
+    typical_ctd_sections: ["3.2.S.1", "3.2.S.2", "3.2.S.3", "3.2.S.4", "3.2.S.5", "3.2.S.6", "3.2.S.7"]
+    downgrade_conditions: []
+
+  - topic: "CTD 3.2.S 章节要求"
+    keywords: ["CTD 3.2.S", "3.2.S", "CTD 原料药", "CTD格式"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["注册", "研发"]
+    typical_ctd_sections: ["3.2.S.1", "3.2.S.2", "3.2.S.3", "3.2.S.4", "3.2.S.5", "3.2.S.6", "3.2.S.7"]
+    downgrade_conditions: []
+
+  - topic: "药学研究"
+    keywords: ["药学研究", "质量研究", "化学研究", "药学"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["研发", "QC"]
+    typical_ctd_sections: ["3.2.S.1", "3.2.S.2", "3.2.S.3", "3.2.S.4"]
+    downgrade_conditions: []
+
+  - topic: "杂质研究"
+    keywords: ["杂质", "杂质谱", "基因毒性杂质", "元素杂质", "残留溶剂", "致突变杂质", "genotoxic impurity"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "QC", "研发"]
+    typical_ctd_sections: ["3.2.S.3", "3.2.S.4"]
+    downgrade_conditions: []
+
+  - topic: "稳定性研究"
+    keywords: ["稳定性", "效期", "货架期", "加速稳定性", "长期稳定性"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "QC", "研发"]
+    typical_ctd_sections: ["3.2.S.7"]
+    downgrade_conditions: []
+
+  - topic: "分析方法验证"
+    keywords: ["分析方法", "方法验证", "方法确认", "分析方法的验证"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QC", "QA"]
+    typical_ctd_sections: ["3.2.S.4"]
+    downgrade_conditions: []
+
+  - topic: "质量标准"
+    keywords: ["质量标准", "质量标准制定", "限度", "质量标准研究"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "QC"]
+    typical_ctd_sections: ["3.2.S.4"]
+    downgrade_conditions: []
+
+  - topic: "生产工艺"
+    keywords: ["生产工艺", "工艺验证", "工艺优化", "关键工艺参数", "工艺研究"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["研发", "生产", "验证"]
+    typical_ctd_sections: ["3.2.S.2", "3.2.S.3"]
+    downgrade_conditions: []
+
+  - topic: "GMP（原料药）"
+    keywords: ["原料药GMP", "API GMP", "GMP附录：原料药", "GMP附录:原料药"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "生产"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "ICH Q1/Q3/Q6/Q7/M7"
+    keywords: ["ICH Q1", "ICH Q3", "ICH Q6", "ICH Q7", "ICH M7", "ICH指导原则"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "QC", "注册"]
+    typical_ctd_sections: ["3.2.S.3", "3.2.S.4", "3.2.S.7"]
+    downgrade_conditions: []
+
+  - topic: "药典标准（原料药）"
+    keywords: ["药典", "ChP", "USP", "EP", "JP", "药典各论", "原料药各论"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QC", "QA"]
+    typical_ctd_sections: ["3.2.S.4", "3.2.S.5"]
+    downgrade_conditions: []
+
+  - topic: "变更研究"
+    keywords: ["变更控制", "变更研究", "可比性研究", "变更分类"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QA", "注册", "研发"]
+    typical_ctd_sections: ["3.2.S.2", "3.2.S.3"]
+    downgrade_conditions: []
+
+  - topic: "起始物料"
+    keywords: ["起始原料", "起始物料", "关键起始物料"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["研发", "QA", "供应链"]
+    typical_ctd_sections: ["3.2.S.2"]
+    downgrade_conditions: []
+
+  - topic: "溶剂/试剂"
+    keywords: ["残留溶剂", "溶剂控制", "试剂"]
+    default_relevance: "related"
+    default_impact: "high"
+    focus_required: true
+    archive_recommended: false
+    typical_departments: ["QC", "生产"]
+    typical_ctd_sections: ["3.2.S.3", "3.2.S.4"]
+    downgrade_conditions: []
+
+
+# ============================================================
+# 默认中影响法规（通用要求类）
+# ============================================================
+medium_impact_rules:
+  - topic: "药品注册通用要求"
+    keywords: ["药品注册", "注册管理", "注册申报", "注册办法"]
+    default_relevance: "related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["注册"]
+    typical_ctd_sections: []
+    downgrade_conditions:
+      - "仅为信息性通知"
+
+  - topic: "关联审评审批"
+    keywords: ["关联审评", "关联审批", "原辅包关联", "关联审评审批"]
+    default_relevance: "related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["注册"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "上市后变更"
+    keywords: ["上市后变更", "变更分类", "上市后研究"]
+    default_relevance: "related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "注册"]
+    typical_ctd_sections: ["3.2.S.2", "3.2.S.3"]
+    downgrade_conditions: []
+
+  - topic: "药品检查通用要求"
+    keywords: ["药品检查", "GMP检查", "飞行检查", "监督检查"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "生产"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "数据可靠性"
+    keywords: ["数据可靠性", "ALCOA", "数据完整性"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "QC"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "药品生产许可"
+    keywords: ["生产许可", "生产范围", "许可证"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "生产"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "质量体系通用要求"
+    keywords: ["质量体系", "QMS", "质量管理体系"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "药品召回"
+    keywords: ["药品召回", "召回管理"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "注册"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "药品追溯"
+    keywords: ["药品追溯", "追溯体系", "药品编码"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "供应链"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+  - topic: "委托生产/检验"
+    keywords: ["委托生产", "委托检验", "外包管理"]
+    default_relevance: "weak_related"
+    default_impact: "medium"
+    focus_required: false
+    archive_recommended: false
+    typical_departments: ["QA", "生产"]
+    typical_ctd_sections: []
+    downgrade_conditions: []
+
+
+# ============================================================
+# 默认低影响法规（可升级）
+# ============================================================
+low_impact_rules:
+  - topic: "制剂BE研究"
+    keywords: ["生物等效性", "BE", "生物利用度", "BE研究"]
+    default_relevance: "weak_related"
+    default_impact: "low"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: ["研发", "注册"]
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["API粒径", "原料药粒径", "粒度", "particle size"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "涉及API粒径，可能影响制剂BE"
+      - keywords: ["晶型", "多晶型", "polymorph"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "涉及API晶型，可能影响制剂BE"
+      - keywords: ["溶出", "溶解度", "溶解速率", "CQA"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "涉及API溶出相关CQA"
+      - keywords: ["杂质控制", "杂质谱", "降解产物"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "涉及API杂质控制"
+      - keywords: ["原料药变更", "API变更", "变更对制剂BE"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "涉及原料药变更对制剂BE的影响"
+    downgrade_conditions: []
+
+  - topic: "制剂指导原则（非API）"
+    keywords: ["制剂", "片剂", "胶囊", "注射液", "口服制剂"]
+    default_relevance: "weak_related"
+    default_impact: "low"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: ["研发"]
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["原料药", "API", "活性成分"]
+        upgraded_impact: "medium"
+        upgraded_relevance: "related"
+        reason: "制剂指导原则中明确涉及API技术要求"
+    downgrade_conditions: []
+
+
+# ============================================================
+# 默认无影响法规（可升级）
+# ============================================================
+none_impact_rules:
+  - topic: "临床试验"
+    keywords: ["临床试验", "临床方案", "临床终点", "I期", "II期", "III期"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["原料药安全性", "API安全性"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及原料药安全性风险"
+      - keywords: ["杂质毒理", "毒理学", "毒理研究"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及杂质毒理评估"
+      - keywords: ["基因毒性杂质", "致突变杂质", "genotoxic"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及基因毒性杂质"
+      - keywords: ["元素杂质", "重金属", "elemental impurity"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及元素杂质"
+      - keywords: ["残留溶剂"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及残留溶剂"
+    downgrade_conditions: []
+
+  - topic: "药物警戒"
+    keywords: ["药物警戒", "PV", "不良反应", "ADR", "不良反应监测"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["原料药安全性", "API安全性"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及原料药安全性风险"
+      - keywords: ["基因毒性杂质", "致突变杂质"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及基因毒性杂质"
+      - keywords: ["元素杂质", "重金属"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及元素杂质"
+      - keywords: ["残留溶剂"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及残留溶剂"
+    downgrade_conditions: []
+
+  - topic: "说明书标签"
+    keywords: ["说明书", "标签", "包装说明", "药品说明书"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["原料药标准", "API标准"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "涉及原料药标准信息"
+    downgrade_conditions: []
+
+  - topic: "药品广告"
+    keywords: ["药品广告", "广告审查"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "医疗器械"
+    keywords: ["医疗器械", "器械注册"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "化妆品"
+    keywords: ["化妆品", "化妆品注册"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "会议通知"
+    keywords: ["会议", "研讨会", "论坛", "会议通知"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "培训通知"
+    keywords: ["培训", "培训班", "学习班", "培训通知"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "一般新闻动态"
+    keywords: ["新闻", "动态", "资讯", "工作通讯"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions: []
+    downgrade_conditions: []
+
+  - topic: "中药/天然药物"
+    keywords: ["中药", "天然药物", "中药材", "中药饮片"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["化学原料药", "通用要求"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "中药法规中包含化学原料药通用要求"
+    downgrade_conditions: []
+
+  - topic: "生物制品（非API）"
+    keywords: ["生物制品", "疫苗", "血液制品", "细胞治疗"]
+    default_relevance: "unrelated"
+    default_impact: "none"
+    focus_required: false
+    archive_recommended: true
+    typical_departments: []
+    typical_ctd_sections: []
+    upgrade_conditions:
+      - keywords: ["化学原料药", "GMP通用"]
+        upgraded_impact: "low"
+        upgraded_relevance: "weak_related"
+        reason: "生物制品法规中包含化学原料药通用要求"
+    downgrade_conditions: []
