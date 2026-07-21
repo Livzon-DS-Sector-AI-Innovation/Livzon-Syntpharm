@@ -37,7 +37,7 @@ jobs:
       - run: pip install uv && uv sync --dev
       - run: bash scripts/ci.sh typecheck
 
-  backend-openapi:
+  openapi:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: backend } }
     env:
@@ -51,6 +51,14 @@ jobs:
         with: { python-version: '3.12' }
       - run: pip install uv && uv sync --dev
       - run: bash scripts/ci.sh openapi
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+        working-directory: ../frontend
+      - run: bash scripts/ci.sh openapi
+        working-directory: ../frontend
+        env: { BACKEND_REPO_PATH: ../backend }
 
   backend-migration-scope:
     runs-on: ubuntu-latest
@@ -141,20 +149,6 @@ jobs:
         with: { python-version: '3.12' }
       - run: pip install uv && uv sync --dev
       - run: bash scripts/ci.sh test
-
-  frontend-openapi:
-    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci.sh openapi
-        env:
-          BACKEND_REPO_PATH: ../backend
 
   frontend-build:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
