@@ -12,90 +12,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Backend quick jobs (all pushes) ────────────────────────────────────────
-
-  backend-typecheck:
+  quick:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
-    env:
-      FEISHU__PLATFORM__APP_ID: ci_dummy
-      FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-      FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+
+      - name: Backend quick checks
+        uses: actions/setup-python@v6
         with: { python-version: '3.12' }
       - run: pip install uv
       - run: uv sync --dev
-      - run: bash scripts/ci.sh typecheck
+        working-directory: backend
+      - run: bash scripts/ci.sh quick
+        working-directory: backend
+        env:
+          FEISHU__PLATFORM__APP_ID: ci_dummy
+          FEISHU__PLATFORM__APP_SECRET: ci_dummy
+          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+          FRONTEND_URL: http://localhost:3000
 
-  backend-lint:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv
-      - run: uv sync --dev
-      - run: bash scripts/ci.sh lint
-
-  backend-openapi:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
-    env:
-      FEISHU__PLATFORM__APP_ID: ci_dummy
-      FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-      FRONTEND_URL: http://localhost:3000
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv
-      - run: uv sync --dev
-      - run: bash scripts/ci.sh openapi
-
-  backend-migration-scope:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv
-      - run: uv sync --dev
-      - run: bash scripts/ci.sh migration-scope
-
-  # ── Frontend quick jobs (all pushes) ───────────────────────────────────────
-
-  frontend-typecheck:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      - name: Frontend quick checks
+        uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
-      - run: bash scripts/ci.sh typecheck
+      - run: bash scripts/ci.sh quick
+        working-directory: frontend
 
-  frontend-lint:
-    runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
-      - run: bash scripts/ci.sh lint
-
-  # ── Full jobs (main push | PR | manual) ────────────────────────────────────
-
-  backend-test:
+  full:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
     services:
       postgres:
         image: postgres:17
@@ -109,46 +54,59 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-      FEISHU__PLATFORM__APP_ID: ci_dummy
-      FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-      FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+
+      - name: Backend alembic check
+        uses: actions/setup-python@v6
         with: { python-version: '3.12' }
       - run: pip install uv
       - run: uv sync --dev
-      - run: bash scripts/ci.sh test
+        working-directory: backend
+      - run: bash scripts/ci.sh alembic
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
+          FEISHU__PLATFORM__APP_ID: ci_dummy
+          FEISHU__PLATFORM__APP_SECRET: ci_dummy
+          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+          FRONTEND_URL: http://localhost:3000
 
-  frontend-e2e:
-    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      API_BASE_URL: http://localhost:8000
-      CI: true
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      - name: Backend tests
+        run: bash scripts/ci.sh test
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
+          FEISHU__PLATFORM__APP_ID: ci_dummy
+          FEISHU__PLATFORM__APP_SECRET: ci_dummy
+          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+          FRONTEND_URL: http://localhost:3000
+
+      - name: Frontend setup
+        uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
 
-      - name: Install frontend deps
-        run: cd frontend && pnpm install --frozen-lockfile
+      - name: Frontend openapi drift check
+        run: bash scripts/ci.sh openapi
+        working-directory: frontend
+        env:
+          BACKEND_REPO_PATH: ../backend
 
-      - name: Install Playwright
-        run: cd frontend && pnpm exec playwright install --with-deps chromium
+      - name: Frontend build
+        run: bash scripts/ci.sh build
+        working-directory: frontend
+        env:
+          API_BASE_URL: http://localhost:8000
 
+      - name: Frontend E2E
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
       - name: Start backend
         run: |
           cd backend
-          pip install uv
-          uv sync --dev
-          docker compose -f ../docker-compose.yml up -d postgres redis
-          sleep 5
           export DATABASE_URL=postgresql+asyncpg://erp_user:change-me-in-production@localhost:5432/erp
           export FEISHU__PLATFORM__APP_ID=ci_dummy
           export FEISHU__PLATFORM__APP_SECRET=ci_dummy
@@ -161,7 +119,6 @@ jobs:
             curl -sf http://localhost:8000/docs > /dev/null 2>&1 && break
             sleep 2
           done
-
       - name: Start frontend
         run: |
           cd frontend
@@ -171,18 +128,17 @@ jobs:
             curl -sf http://localhost:3000 > /dev/null 2>&1 && break
             sleep 2
           done
-
-      - name: Run Playwright
-        run: cd frontend && pnpm exec playwright test
-
+      - run: pnpm exec playwright test
+        working-directory: frontend
+        env:
+          API_BASE_URL: http://localhost:8000
+          CI: true
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with: { name: playwright-report, path: frontend/playwright-report/, retention-days: 7 }
-
       - name: Stop services
         if: always()
         run: |
           kill $(cat /tmp/frontend.pid) 2>/dev/null || true
           kill $(cat /tmp/backend.pid) 2>/dev/null || true
-          docker compose -f docker-compose.yml down 2>/dev/null || true
