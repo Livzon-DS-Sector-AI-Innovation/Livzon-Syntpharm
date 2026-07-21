@@ -2840,7 +2840,6 @@ SETTING_KEYS = [
     "AI_BASE_URL",
     "AI_API_KEY",
     "AI_MODEL",
-    "FEISHU__AILY_APP_ID",
 ]
 
 

@@ -99,11 +99,6 @@ export default function SystemSettingsClient() {
         <Form.Item label="AI_MODEL" name="AI_MODEL">
           <Input placeholder="deepseek-v4-pro" />
         </Form.Item>
-
-        <Divider orientation="horizontal">Aily</Divider>
-        <Form.Item label="AILY_APP_ID" name="AILY_APP_ID">
-          <Input placeholder="Aily App ID" />
-        </Form.Item>
       </Form>
     </Card>
   )

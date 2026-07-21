@@ -135,7 +135,6 @@ class FeishuSettings(BaseModel):
     product: FeishuProductConfig = Field(default_factory=FeishuProductConfig)
     energy: FeishuEnergyConfig = Field(default_factory=FeishuEnergyConfig)
     ai_query: FeishuAIQueryConfig = Field(default_factory=FeishuAIQueryConfig)
-    aily_app_id: str = ""
 
 
 # ============================================================================

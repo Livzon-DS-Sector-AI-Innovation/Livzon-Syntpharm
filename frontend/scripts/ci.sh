@@ -80,7 +80,8 @@ run_lint() {
 
 run_build() {
     log_section "Next.js Build (Docker)"
-    if ! docker compose -f docker-compose.dev.yml run --rm ci-build; then
+    ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
+    if ! docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" run --rm frontend sh -c "pnpm build"; then
         log_error "Build failed!"; FAILED=1
     else
         log_info "Build passed"
@@ -91,7 +92,7 @@ run_openapi() {
     log_section "OpenAPI Drift Check"
     check_node_version || return 1
     install_deps || return 1
-    BACKEND_REPO="${BACKEND_REPO_PATH:-../dazah-backend}"
+    BACKEND_REPO="${BACKEND_REPO_PATH:-../backend}"
     BACKEND_SPEC="$BACKEND_REPO/openapi.json"
     if [ ! -f "$BACKEND_SPEC" ]; then
         log_warn "Backend openapi.json not found at $BACKEND_SPEC"
