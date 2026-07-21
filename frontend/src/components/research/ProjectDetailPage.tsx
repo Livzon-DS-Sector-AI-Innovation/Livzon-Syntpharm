@@ -8,7 +8,6 @@ import {
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import { fetchMilestones, fetchStages, checkTransition,  } from '@/lib/api/client/research/rd-project'
-import { PilotStudyPage } from './PilotStudyPage'
 import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
@@ -182,11 +181,6 @@ export function ProjectDetailPage({ project }: Props) {
       key: 'deliverables',
       label: '阶段交付物',
       children: <StageDeliverablesTab projectId={project.id} currentStage={project.current_stage} />,
-    },
-    {
-      key: 'pilot',
-      label: '中试研究',
-      children: <PilotStudyPage projectId={project.id} />,
     },
     {
       key: 'validation',

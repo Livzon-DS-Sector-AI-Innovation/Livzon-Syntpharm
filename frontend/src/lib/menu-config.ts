@@ -348,7 +348,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "initiations", label: "立项管理", path: "/research/initiations" },
       { key: "route-development", label: "打通路线", path: "/research/route-development" },
       { key: "process-optimization", label: "工艺优化", path: "/research/process-optimization" },
-      { key: "pilot-study", label: "中试研究", path: "/research/pilot-study" },
+      { key: "pilot-study", label: "中试研究", path: "/research/pilot-workflow" },
       { key: "process-validation", label: "工艺验证", path: "/research/process-validation" },
       { key: "registration-filing", label: "申报资料", path: "/research/registration-filing" },
       { key: "research-tracks", label: "研究项", path: "/research/research-tracks" },
