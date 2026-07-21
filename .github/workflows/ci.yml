@@ -82,9 +82,98 @@ jobs:
         with: { node-version: '22', cache: 'pnpm' }
       - run: bash scripts/ci.sh typecheck
 
-  full:
+  backend-alembic:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dazah_ci
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+      FRONTEND_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh alembic
+
+  backend-test:
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dazah_ci
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+      FRONTEND_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh test
+
+  frontend-openapi:
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/ci.sh openapi
+        env:
+          BACKEND_REPO_PATH: ../backend
+
+  frontend-build:
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/ci.sh build
+        env:
+          API_BASE_URL: http://localhost:8000
+
+  frontend-e2e:
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
     services:
       postgres:
         image: postgres:17
@@ -100,57 +189,15 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v5
-
-      - name: Backend alembic check
-        uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv
-      - run: uv sync --dev
-        working-directory: backend
-      - run: bash scripts/ci.sh alembic
-        working-directory: backend
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-          FEISHU__PLATFORM__APP_ID: ci_dummy
-          FEISHU__PLATFORM__APP_SECRET: ci_dummy
-          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-          FRONTEND_URL: http://localhost:3000
-
-      - name: Backend tests
-        run: bash scripts/ci.sh test
-        working-directory: backend
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-          FEISHU__PLATFORM__APP_ID: ci_dummy
-          FEISHU__PLATFORM__APP_SECRET: ci_dummy
-          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-          FRONTEND_URL: http://localhost:3000
-
-      - name: Frontend setup
-        uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
-        working-directory: frontend
-
-      - name: Frontend openapi drift check
-        run: bash scripts/ci.sh openapi
-        working-directory: frontend
-        env:
-          BACKEND_REPO_PATH: ../backend
-
-      - name: Frontend build
-        run: bash scripts/ci.sh build
-        working-directory: frontend
-        env:
-          API_BASE_URL: http://localhost:8000
-
-      - name: Frontend E2E
-        run: pnpm exec playwright install --with-deps chromium
-        working-directory: frontend
+      - run: pnpm exec playwright install --with-deps chromium
       - name: Start backend
         run: |
           cd backend
+          pip install uv && uv sync --dev
           export DATABASE_URL=postgresql+asyncpg://erp_user:change-me-in-production@localhost:5432/erp
           export FEISHU__PLATFORM__APP_ID=ci_dummy
           export FEISHU__PLATFORM__APP_SECRET=ci_dummy
@@ -165,7 +212,6 @@ jobs:
           done
       - name: Start frontend
         run: |
-          cd frontend
           nohup pnpm dev > /tmp/frontend.log 2>&1 &
           echo $! > /tmp/frontend.pid
           for i in $(seq 1 30); do
@@ -173,7 +219,6 @@ jobs:
             sleep 2
           done
       - run: pnpm exec playwright test
-        working-directory: frontend
         env:
           API_BASE_URL: http://localhost:8000
           CI: true
