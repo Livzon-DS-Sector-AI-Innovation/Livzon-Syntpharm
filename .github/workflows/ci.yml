@@ -17,13 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Backend quick checks
+      - name: Backend setup
         uses: actions/setup-python@v6
         with: { python-version: '3.12' }
       - run: pip install uv
       - run: uv sync --dev
         working-directory: backend
-      - run: bash scripts/ci.sh quick
+
+      - name: Backend lint
+        run: bash scripts/ci.sh lint
+        working-directory: backend
+
+      - name: Backend typecheck
+        run: bash scripts/ci.sh typecheck
         working-directory: backend
         env:
           FEISHU__PLATFORM__APP_ID: ci_dummy
@@ -31,11 +37,30 @@ jobs:
           FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
           FRONTEND_URL: http://localhost:3000
 
-      - name: Frontend quick checks
+      - name: Backend openapi
+        run: bash scripts/ci.sh openapi
+        working-directory: backend
+        env:
+          FEISHU__PLATFORM__APP_ID: ci_dummy
+          FEISHU__PLATFORM__APP_SECRET: ci_dummy
+          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+          FRONTEND_URL: http://localhost:3000
+
+      - name: Backend migration-scope
+        run: bash scripts/ci.sh migration-scope
+        working-directory: backend
+
+      - name: Frontend setup
         uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
-      - run: bash scripts/ci.sh quick
+
+      - name: Frontend lint
+        run: bash scripts/ci.sh lint
+        working-directory: frontend
+
+      - name: Frontend typecheck
+        run: bash scripts/ci.sh typecheck
         working-directory: frontend
 
   full:
