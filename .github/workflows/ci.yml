@@ -12,56 +12,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quick:
+  backend-lint:
     runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
     steps:
       - uses: actions/checkout@v5
-
-      - name: Backend setup
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with: { python-version: '3.12' }
-      - run: pip install uv
-      - run: uv sync --dev
-        working-directory: backend
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh lint
 
-      - name: Backend lint
-        run: bash scripts/ci.sh lint
-        working-directory: backend
+  backend-typecheck:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    env:
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+      FRONTEND_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh typecheck
 
-      - name: Backend typecheck
-        run: bash scripts/ci.sh typecheck
-        working-directory: backend
-        env:
-          FEISHU__PLATFORM__APP_ID: ci_dummy
-          FEISHU__PLATFORM__APP_SECRET: ci_dummy
-          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-          FRONTEND_URL: http://localhost:3000
+  backend-openapi:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    env:
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
+      FRONTEND_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh openapi
 
-      - name: Backend openapi
-        run: bash scripts/ci.sh openapi
-        working-directory: backend
-        env:
-          FEISHU__PLATFORM__APP_ID: ci_dummy
-          FEISHU__PLATFORM__APP_SECRET: ci_dummy
-          FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
-          FRONTEND_URL: http://localhost:3000
+  backend-migration-scope:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
+      - run: pip install uv && uv sync --dev
+      - run: bash scripts/ci.sh migration-scope
 
-      - name: Backend migration-scope
-        run: bash scripts/ci.sh migration-scope
-        working-directory: backend
-
-      - name: Frontend setup
-        uses: pnpm/action-setup@v6
+  frontend-lint:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
+      - run: bash scripts/ci.sh lint
 
-      - name: Frontend lint
-        run: bash scripts/ci.sh lint
-        working-directory: frontend
-
-      - name: Frontend typecheck
-        run: bash scripts/ci.sh typecheck
-        working-directory: frontend
+  frontend-typecheck:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: bash scripts/ci.sh typecheck
 
   full:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
