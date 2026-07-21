@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+const BACKEND_URL = process.env.API_BASE_URL || 'http://localhost:8000'
 
 // 超时配置
 const DEFAULT_TIMEOUT = 60000
