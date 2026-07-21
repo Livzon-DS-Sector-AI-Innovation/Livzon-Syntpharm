@@ -1,4 +1,8 @@
 services:
+  nginx:
+    profiles:
+      - production
+
   backend:
     volumes:
       - ./backend/app:/app/app

@@ -2,6 +2,12 @@
 
 本文档定义 AI 编码助手必须遵守的规则。违反这些规则会导致代码被拒绝。
 
+## Table of Contents
+- [Repository-Wide Rules](#repository-wide-rules)
+- [Repo Organization](#repo-organization)
+- [Backend — Python / FastAPI](#backend----python--fastapi)
+- [Frontend — Next.js / TypeScript](#frontend----nextjs--typescript)
+
 ## Repository-Wide Rules
 
 - No hardcoded absolute file paths (use config, env vars, or relative paths)
@@ -9,6 +15,39 @@
 - Never log or expose API keys, tokens, or passwords
 - Never commit `.env` files — only `.env.example` templates
 - Cross-references between backend and frontend must go through public contracts (OpenAPI spec)
+
+## Repo Organization
+
+### Tests
+- Test files live under `backend/tests/modules/<module>/`
+- Test fixtures (sample files, test data) go in `backend/tests/fixtures/`
+- Unit tests in `backend/tests/unit/`, integration tests in `backend/tests/integration/`
+
+### Scripts (`backend/scripts/`)
+Organized by purpose:
+
+| Directory | Purpose |
+|---|---|
+| `scripts/ci/` | CI orchestration, spec generation, migration checks |
+| `scripts/seed/` | Database seeding and module settings |
+| `scripts/migration/` | One-off data migrations and backfills |
+| `scripts/sync/` | Feishu sync and bitable inspection |
+| `scripts/import/` | Excel/CSV data import scripts |
+| `scripts/test/` | Test helpers and debug scripts |
+| `scripts/regulatory_poc/` | Regulatory tracker proof-of-concept |
+
+CI entry point is `scripts/ci/ci.sh`. All CI-related paths in `.github/workflows/` must reference the `scripts/ci/` subdirectory.
+
+### Third-Party Code
+- Vendored third-party libraries belong in `backend/vendor/`
+- Do not clone external repos directly into `backend/` root
+- `backend/edbo_service/` is the EDBO+ wrapper service
+- `backend/vendor/edboplus-main/` is the vendored EDBO+ library
+
+### Documentation
+- Backend docs in `backend/docs/`
+- Training templates in `backend/docs/training/`
+- Do not place `.docx`, `.xlsx`, or PDF files at `backend/` root
 
 ---
 
@@ -129,7 +168,7 @@ DELETE /api/v1/{module}/{resource}/{id}
 
 **单模块原则**：基线之后的每个迁移文件只能修改一个模块的 schema。跨模块外键、`platform`/`core`/`shared` 级变更可以跨 schema，但必须由架构负责人审批。
 
-CI 会自动检查（`scripts/check_migration_scope.py`），违反会导致 PR 无法合并。
+CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 PR 无法合并。
 
 ### Model 与 Migration 绑定规则
 
@@ -191,7 +230,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 **新增配置**：
 - LLM API keys → 通过管理界面配置，加密存储在 `core.llm_configs` 表
 - 其他 API key / 凭证 → 加到 `core/config.py` 的 `Settings` 类
-- 模型名称 / 功能开关 / 运营参数 → 加到 `scripts/seed_module_settings.py` 并通过 Web UI 管理
+- 模型名称 / 功能开关 / 运营参数 → 加到 `scripts/seed/seed_module_settings.py` 并通过 Web UI 管理
 
 **环境变量同步**：新增/修改 `.env` 文件时，必须同步修改 `.env.example`。
 
@@ -204,21 +243,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 
 所有飞书应用凭证采用嵌套结构管理，按模块分组。结构定义在 `app/core/config.py`：
 
-```python
-class FeishuAppCredentials(BaseModel):
-    app_id: str = ""
-    app_secret: str = ""
-
-class FeishuSettings(BaseModel):
-    platform: FeishuPlatformConfig      # 平台应用（SSO、组织同步、IM、通用 Bitable）
-    hr_bitable: FeishuHRBitableConfig   # HR 模块表格（使用平台应用凭证）
-    safety: FeishuSafetyConfig          # 安全模块（独立应用 + 隐患表格）
-    equipment: FeishuEquipmentConfig    # 设备模块（独立应用）
-    vehicle: FeishuVehicleConfig        # 车辆模块（独立应用 + 申请表格）
-    training: FeishuTrainingConfig      # 培训模块（独立应用 + 培训表格）
-    product: FeishuProductConfig        # 产品模块（使用平台应用凭证）
-    ai_query: FeishuAIQueryConfig       # AI 查询配置
-```
+**结构定义**在 `app/core/config.py` 的 `FeishuSettings` 类中，按模块分组。
 
 **环境变量命名规则**：使用双下划线 `__` 分隔层级，格式 `FEISHU__{MODULE}__{FIELD}` 或 `FEISHU__{MODULE}__CREDENTIALS__{FIELD}`。
 
@@ -295,8 +320,6 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 - **禁止**记录 API key、token、密码等敏感信息
 
 ## 测试规范
-
-测试文件放在 `tests/modules/<module>/`，与模块一一对应。
 
 **框架**：pytest + pytest-asyncio，异步测试用 `@pytest.mark.asyncio`。
 
@@ -556,7 +579,7 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 ```bash
 # 1. 在 backend 目录导出最新 spec
-cd ../backend && uv run python scripts/export_openapi.py
+cd ../backend && uv run python scripts/ci/export_openapi.py
 
 # 2. 在 frontend 目录重新生成类型
 cd ../frontend && pnpm generate:api

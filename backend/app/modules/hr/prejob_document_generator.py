@@ -27,10 +27,11 @@ def _find_old_template() -> Path:
 
 def _find_new_template() -> Path:
     """Locate the new factory docx template."""
+    training_dir = Path(__file__).resolve().parent.parent.parent.parent / "docs" / "training" / "新厂人员培训管理规程"
     candidates = [
-        Path("新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
-        Path("../新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
-        Path(__file__).resolve().parent.parent.parent.parent / "新厂人员培训管理规程" / NEW_TEMPLATE_NAME,
+        Path("docs/training/新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
+        Path("../docs/training/新厂人员培训管理规程") / NEW_TEMPLATE_NAME,
+        training_dir / NEW_TEMPLATE_NAME,
     ]
     for p in candidates:
         if p.exists():
