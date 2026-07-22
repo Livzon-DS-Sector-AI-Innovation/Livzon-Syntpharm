@@ -58,7 +58,7 @@ jobs:
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
         working-directory: frontend
-      - run: bash scripts/ci/ci.sh openapi
+      - run: bash scripts/ci.sh openapi
         working-directory: frontend
         env: { BACKEND_REPO_PATH: ../backend }
 
@@ -81,7 +81,7 @@ jobs:
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: bash scripts/ci/ci.sh lint
+      - run: bash scripts/ci.sh lint
 
   frontend-typecheck:
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: bash scripts/ci/ci.sh typecheck
+      - run: bash scripts/ci.sh typecheck
 
   backend-alembic:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
@@ -165,7 +165,7 @@ jobs:
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci/ci.sh build
+      - run: bash scripts/ci.sh build
         env:
           API_BASE_URL: http://localhost:8000
 
