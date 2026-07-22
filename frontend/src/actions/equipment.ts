@@ -6,9 +6,8 @@ import {
   CreateFailureCodeInput, UpdateFailureCodeInput,
   CreateWorkOrderInput, AssignWorkOrderInput, CompleteWorkOrderInput, VerifyWorkOrderInput,
   CreateCalibrationPlanInput, UpdateCalibrationPlanInput, CreateCalibrationRecordInput,
-  ImportResult, ImportRowError,
 } from '@/types/equipment'
-export type { ImportResult, ImportRowError }
+import type { ImportResult, ImportRowError } from '@/types/equipment'
 import {
   createCategoryApi,
   updateCategoryApi,

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { App, Modal, Upload, Button, Space, Table, Typography, Alert } from 'antd'
 import { DownloadOutlined, InboxOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
-import { downloadImportTemplate, importEquipments, type ImportResult, type ImportRowError } from '@/actions/equipment'
+import { downloadImportTemplate, importEquipments } from '@/actions/equipment'
+import type { ImportResult, ImportRowError } from '@/types/equipment'
 
 const { Dragger } = Upload
 const { Text } = Typography

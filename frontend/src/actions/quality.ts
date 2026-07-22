@@ -115,8 +115,6 @@ import {
 } from '@/lib/validation/schemas'
 import * as QualityServer from '@/lib/api/server/quality'
 
-export type { AiLogItem, AiLogFilter }
-
 async function wrap<T>(promise: Promise<unknown>): Promise<ApiResponse<T>> {
   const data = await promise
   return { data: data as T, code: 200, message: 'ok' }
