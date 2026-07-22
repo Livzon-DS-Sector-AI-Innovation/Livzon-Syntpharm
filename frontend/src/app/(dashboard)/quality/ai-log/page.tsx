@@ -31,7 +31,8 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import { getAiLogs, AiLogItem, AiLogFilter } from '@/actions/quality'
+import { getAiLogs } from '@/actions/quality'
+import { AiLogItem, AiLogFilter } from '@/types/quality'
 
 const { RangePicker } = DatePicker
 const { TextArea } = Input
