@@ -301,6 +301,7 @@ for cmd in "${SUBCOMMANDS[@]}"; do
         openapi)         run_openapi ;;
         alembic)         run_alembic ;;
         migration-scope) run_migration_scope ;;
+        test)            run_tests ;;
         quick)           run_quick ;;
         full)
             run_quick
