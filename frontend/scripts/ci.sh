@@ -81,7 +81,7 @@ run_lint() {
 run_build() {
     log_section "Next.js Build (Docker)"
     ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
-    if ! docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" run --rm frontend sh -c "pnpm build"; then
+    if ! docker compose -f "$ROOT_DIR/docker-compose.ci.yml" run --rm --build ci-build sh -c "pnpm build"; then
         log_error "Build failed!"; FAILED=1
     else
         log_info "Build passed"
