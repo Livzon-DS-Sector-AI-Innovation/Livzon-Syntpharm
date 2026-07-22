@@ -1,57 +1,57 @@
-# AI Coding Standards
+# AI 编程规范
 
 本文档定义 AI 编码助手必须遵守的规则。违反这些规则会导致代码被拒绝。
 
-## Table of Contents
-- [Repository-Wide Rules](#repository-wide-rules)
-- [Repo Organization](#repo-organization)
-- [Backend — Python / FastAPI](#backend----python--fastapi)
-- [Frontend — Next.js / TypeScript](#frontend----nextjs--typescript)
+## 目录
+- [仓库通用规则](#仓库通用规则)
+- [仓库组织](#仓库组织)
+- [后端 — Python / FastAPI](#后端----python--fastapi)
+- [前端 — Next.js / TypeScript](#前端----nextjs--typescript)
 
-## Repository-Wide Rules
+## 仓库通用规则
 
-- No hardcoded absolute file paths (use config, env vars, or relative paths)
-- No hardcoded `localhost` / `127.0.0.1` in URLs (use env vars)
-- Never log or expose API keys, tokens, or passwords
-- Never commit `.env` files — only `.env.example` templates
-- Cross-references between backend and frontend must go through public contracts (OpenAPI spec)
+- 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
+- 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
+- 禁止在日志或异常中输出 API key、token、密码等敏感信息
+- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
+- 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
-## Repo Organization
+## 仓库组织
 
-### Tests
-- Test files live under `backend/tests/modules/<module>/`
-- Test fixtures (sample files, test data) go in `backend/tests/fixtures/`
-- Unit tests in `backend/tests/unit/`, integration tests in `backend/tests/integration/`
+### 测试
+- 测试文件放在 `backend/tests/modules/<module>/`
+- 测试 fixture（样本文件、测试数据）放在 `backend/tests/fixtures/`
+- 单元测试放在 `backend/tests/unit/`，集成测试放在 `backend/tests/integration/`
 
-### Scripts (`backend/scripts/`)
-Organized by purpose:
+### 脚本 (`backend/scripts/`)
+按用途组织：
 
-| Directory | Purpose |
+| 目录 | 用途 |
 |---|---|
-| `scripts/ci/` | CI orchestration, spec generation, migration checks |
-| `scripts/seed/` | Database seeding and module settings |
-| `scripts/migration/` | One-off data migrations and backfills |
-| `scripts/sync/` | Feishu sync and bitable inspection |
-| `scripts/import/` | Excel/CSV data import scripts |
-| `scripts/test/` | Test helpers and debug scripts |
-| `scripts/regulatory_poc/` | Regulatory tracker proof-of-concept |
+| `scripts/ci/` | CI 编排、spec 生成、迁移检查 |
+| `scripts/seed/` | 数据库种子数据与模块设置 |
+| `scripts/migration/` | 一次性数据迁移与回填 |
+| `scripts/sync/` | 飞书同步与多维表格检查 |
+| `scripts/import/` | Excel/CSV 数据导入脚本 |
+| `scripts/test/` | 测试辅助与调试脚本 |
+| `scripts/regulatory_poc/` | 法规追踪概念验证 |
 
-CI entry point is `scripts/ci/ci.sh`. All CI-related paths in `.github/workflows/` must reference the `scripts/ci/` subdirectory.
+CI 入口为 `scripts/ci/ci.sh`。`.github/workflows/` 中的所有 CI 路径必须引用 `scripts/ci/` 子目录。
 
-### Third-Party Code
-- Vendored third-party libraries belong in `backend/vendor/`
-- Do not clone external repos directly into `backend/` root
-- `backend/edbo_service/` is the EDBO+ wrapper service
-- `backend/vendor/edboplus-main/` is the vendored EDBO+ library
+### 第三方代码
+- 第三方库放在 `backend/vendor/`
+- 禁止将外部仓库直接克隆到 `backend/` 根目录
+- `backend/edbo_service/` 是 EDBO+ 封装服务
+- `backend/vendor/edboplus-main/` 是 EDBO+ 库
 
-### Documentation
-- Backend docs in `backend/docs/`
-- Training templates in `backend/docs/training/`
-- Do not place `.docx`, `.xlsx`, or PDF files at `backend/` root
+### 文档
+- 后端文档放在 `backend/docs/`
+- 培训模板放在 `backend/docs/training/`
+- 禁止将 `.docx`、`.xlsx` 或 PDF 文件放在 `backend/` 根目录
 
 ---
 
-# Backend — Python / FastAPI
+# 后端 — Python / FastAPI
 
 ## 架构原则
 
@@ -346,7 +346,7 @@ uv run pytest tests/modules/<module>/ -k "test_name"  # 单个用例
 
 ---
 
-# Frontend — Next.js / TypeScript
+# 前端 — Next.js / TypeScript
 
 原料药厂管理系统前端，Next.js 16 App Router，TypeScript。后端为独立的 Python FastAPI 服务。
 
@@ -401,7 +401,7 @@ frontend/src/
 └── proxy.ts                  # API 代理（禁止修改）
 ```
 
-## Server Component vs Client Component
+## Server Component 与 Client Component
 
 `page.tsx` 默认是 Server Component，**不加** `'use client'`。
 
@@ -508,8 +508,6 @@ const response = await fetch(`${API_BASE}/api/v1/production/batches`)
 ### proxy.ts 规则
 
 `src/proxy.ts` 是 Next.js 请求中间层，仅负责 API 转发、流式响应处理和轻量登录状态判断。当前项目使用 Turbopack，因此不使用 `next.config.js` 的 `rewrites()`，而通过 `proxy.ts` 转发 `/api/v1/*`。
-
-API 转发使用 `fetch` 和 `new NextResponse` 进行透明传递，不使用 `NextResponse.rewrite`。
 
 **允许：**
 - 将 `/api/v1/*` 转发到后端

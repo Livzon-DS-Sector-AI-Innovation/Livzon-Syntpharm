@@ -39,7 +39,6 @@ jobs:
 
   openapi:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
@@ -50,15 +49,17 @@ jobs:
       - uses: actions/setup-python@v6
         with: { python-version: '3.12' }
       - run: pip install uv && uv sync --dev
+        working-directory: backend
       - run: bash scripts/ci/ci.sh openapi
+        working-directory: backend
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
-        working-directory: ../frontend
+        working-directory: frontend
       - run: bash scripts/ci/ci.sh openapi
-        working-directory: ../frontend
+        working-directory: frontend
         env: { BACKEND_REPO_PATH: ../backend }
 
   backend-migration-scope:
