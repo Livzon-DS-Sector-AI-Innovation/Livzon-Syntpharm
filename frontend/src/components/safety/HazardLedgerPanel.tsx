@@ -37,7 +37,7 @@ import {
 import type { HazardIdentification, HazardLedgerStats } from '@/types/safety'
 import { RISK_LEVEL_OPTIONS } from '@/types/safety'
 import dayjs from 'dayjs'
-import { statusPill } from '@/components/safety/shared-styles'
+import { statusPill } from '@/components/safety/sharedStyles'
 
 const { Text } = Typography
 const { RangePicker } = DatePicker

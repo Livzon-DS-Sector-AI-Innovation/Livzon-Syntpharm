@@ -1,4 +1,13 @@
 import type { components } from '@/types/generated/schema'
+import type {
+  Drug,
+  DrugNode,
+  Holiday,
+  ReviewNodeConfig,
+  DashboardProjectItem,
+  DashboardCertificateItem,
+  DashboardSummary,
+} from '@/types/registration'
 
 export type DrugCreate = components['schemas']['DrugCreate']
 export type DrugUpdate = components['schemas']['DrugUpdate']
@@ -41,7 +50,7 @@ export async function fetchAuthorizationLetters(params?: {
   return json
 }
 
-export async function getAuthorizationLetterDownloadUrl(id: string): Promise<string> {
+export async function fetchAuthorizationLetterDownloadUrl(id: string): Promise<string> {
   const res = await fetch(`/api/v1/registration/authorization-letters/${id}/download-url`)
   if (!res.ok) throw new Error(`请求失败: ${res.status}`)
   const json = await res.json()
@@ -65,7 +74,7 @@ export async function fetchReferenceStandards(params?: {
   return json
 }
 
-export async function getReferenceStandardDownloadUrl(id: string): Promise<string> {
+export async function fetchReferenceStandardDownloadUrl(id: string): Promise<string> {
   const res = await fetch(`/api/v1/registration/reference-standards/${id}/download-url`)
   if (!res.ok) throw new Error(`请求失败: ${res.status}`)
   const json = await res.json()
@@ -90,7 +99,7 @@ export async function fetchSupplementaryReplies(params?: {
   return json
 }
 
-export async function getSupplementaryReplyDownloadUrl(id: string): Promise<string> {
+export async function fetchSupplementaryReplyDownloadUrl(id: string): Promise<string> {
   const res = await fetch(`/api/v1/registration/supplementary-replies/${id}/download-url`)
   if (!res.ok) throw new Error(`请求失败: ${res.status}`)
   const json = await res.json()
@@ -98,42 +107,6 @@ export async function getSupplementaryReplyDownloadUrl(id: string): Promise<stri
 }
 
 // ====== 药品 (from registration-client) ======
-
-export interface DrugNode {
-  id: string
-  drug_id: string
-  node_index: number
-  actual_date: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface Drug {
-  id: string
-  name: string
-  type: '仿制药' | '创新药' | '原料药'
-  acceptance_date: string
-  current_node: number
-  created_at: string
-  updated_at: string
-  nodes: DrugNode[]
-}
-
-export interface Holiday {
-  id: string
-  year: number
-  date: string
-  type: 'holiday' | 'makeup'
-  description: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ReviewNodeConfig {
-  index: number
-  name: string
-  days: number
-}
 
 export async function fetchDrugs(): Promise<Drug[]> {
   const res = await fetch(`/api/v1/registration/drugs/`)
@@ -163,39 +136,8 @@ export async function fetchHolidays(year?: number): Promise<Holiday[]> {
 }
 
 // Dashboard types and functions (merged from registration-dashboard-client.ts)
-export interface DashboardProjectItem {
-  id: string
-  product_name: string
-  market: string
-  registration_type: string | null
-  status: string
-  submitted_at: string | null
-  accepted_at: string | null
-  expected_completion_at: string | null
-  owner: string | null
-  latest_progress: string | null
-}
 
-export interface DashboardCertificateItem {
-  id: string
-  product_name: string
-  certificate_no: string | null
-  approved_at: string | null
-  valid_until: string | null
-  certificate_status: string
-  file_path: string | null
-}
-
-export interface DashboardSummary {
-  approved_product_count: number
-  overseas_approval_count: number
-  submitted_project_count: number
-  active_project_count: number
-  recent_projects: DashboardProjectItem[]
-  overseas_approvals: DashboardCertificateItem[]
-}
-
-export async function getRegistrationDashboardSummary(): Promise<DashboardSummary> {
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
   const res = await fetch('/api/v1/registration/dashboard/summary')
   if (!res.ok) throw new Error(`请求失败: ${res.status}`)
   const json = await res.json()

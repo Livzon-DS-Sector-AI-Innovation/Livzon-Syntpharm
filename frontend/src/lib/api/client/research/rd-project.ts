@@ -103,7 +103,7 @@ export async function fetchFindings(trackId: string): Promise<RdResearchFinding[
 }
 
 // Stage Transition
-export async function checkTransition(projectId: string, targetStage: string): Promise<StageTransitionCheck> {
+export async function fetchStageTransitionCheck(projectId: string, targetStage: string): Promise<StageTransitionCheck> {
   return apiFetch<StageTransitionCheck>(`${API_BASE}/research/rd-projects/${projectId}/transition-check?target_stage=${targetStage}`)
 }
 

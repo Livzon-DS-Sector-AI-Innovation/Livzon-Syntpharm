@@ -1571,7 +1571,8 @@ class SafetyService:
 
     # ── 固定模板 PDF 回退（reportlab）──
 
-    async def _export_hazard_ledger_pdf_fallback(self, items, filters: dict[str, Any]) -> Any:  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    async def _export_hazard_ledger_pdf_fallback(self, items, filters: dict[str, Any]) -> Any:
         """固定模板 PDF 生成（reportlab）—— AI 格式化失败时的回退方案"""
         import io
         from datetime import datetime as dt_module

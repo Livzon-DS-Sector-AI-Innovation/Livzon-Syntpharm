@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -31,6 +32,7 @@ router = APIRouter()
 
 @router.post("/tasks", response_model=dict, summary="创建审核任务")
 async def post(
+    current_user: CurrentUser,
     data: ValidationAuditTaskCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -44,6 +46,7 @@ async def post(
 
 @router.get("/tasks", response_model=dict, summary="任务列表")
 async def get(
+    current_user: CurrentUser,
     product_name: str | None = Query(None),
     source_company: str | None = Query(None),
     status: str | None = Query(None),
@@ -71,6 +74,7 @@ async def get(
 
 @router.get("/tasks/{task_id}", response_model=dict, summary="任务详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -86,6 +90,7 @@ async def get(  # noqa: F811
 
 @router.put("/tasks/{task_id}", response_model=dict, summary="更新任务")
 async def put(
+    current_user: CurrentUser,
     task_id: UUID,
     data: ValidationAuditTaskUpdate,
     db: AsyncSession = Depends(get_db),
@@ -103,6 +108,7 @@ async def put(
 
 @router.delete("/tasks/{task_id}", response_model=dict, summary="删除任务")
 async def delete(
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -119,6 +125,7 @@ async def delete(
 
 @router.post("/tasks/{task_id}/files", response_model=dict, summary="上传文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     files: list[UploadFile] = File(...),
     file_type: str = Form(...),
@@ -170,6 +177,7 @@ async def post(  # noqa: F811
 
 @router.get("/tasks/{task_id}/files", response_model=dict, summary="文件列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -189,6 +197,7 @@ async def get(  # noqa: F811
 
 @router.post("/tasks/{task_id}/parse", response_model=dict, summary="解析文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -211,6 +220,7 @@ async def post(  # noqa: F811
 
 @router.post("/tasks/{task_id}/audit", response_model=dict, summary="执行审核")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -239,6 +249,7 @@ async def post(  # noqa: F811
 
 @router.get("/tasks/{task_id}/issues", response_model=dict, summary="问题列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     issue_type: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
@@ -256,6 +267,7 @@ async def get(  # noqa: F811
 
 @router.get("/tasks/{task_id}/report", response_model=dict, summary="审核报告")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -274,6 +286,7 @@ async def get(  # noqa: F811
 
 @router.post("/tasks/{task_id}/export", response_model=dict, summary="导出报告")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:

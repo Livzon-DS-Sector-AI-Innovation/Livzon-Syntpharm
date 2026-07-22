@@ -6,10 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, UploadFile
-from pydantic import BaseModel
-
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
+from app.modules.quality.qms.deviation_report_schemas import OptimizeTextRequest
 
 logger = logging.getLogger(__name__)
 
@@ -158,13 +157,6 @@ async def get(
 
 
 # ============ AI 优化接口 ============
-
-
-class OptimizeTextRequest(BaseModel):
-    """AI优化文本请求"""
-
-    text: str
-    optimize_type: str = "polish"  # polish=润色, summarize=总结, expand=扩展, simplify=简化
 
 
 @router.post("/ai/optimize", summary="AI优化文本")  # type: ignore[no-redef]

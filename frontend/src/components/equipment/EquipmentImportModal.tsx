@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Modal, Upload, Button, Table, Tag, App, Steps } from 'antd'
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
+import { previewEquipmentImport, batchImportEquipment } from '@/actions/equipment'
 
 const { Dragger } = Upload
 
@@ -131,12 +132,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const fetchPreview = async (data: any[]) => {
     setLoading(true)
     try {
-      const response = await fetch('/api/v1/equipment/import/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
+      const result = await previewEquipmentImport(data)
       if (result.code === 200) {
         setPreviewData(result.data.items)
         setCurrentStep(2)
@@ -157,12 +153,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const handleImport = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/v1/equipment/import/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rawData),
-      })
-      const result = await response.json()
+      const result = await batchImportEquipment(rawData)
       if (result.code === 200) {
         setImportResult(result.data)
         setCurrentStep(3)

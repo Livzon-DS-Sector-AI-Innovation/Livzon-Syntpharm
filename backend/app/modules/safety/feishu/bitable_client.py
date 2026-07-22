@@ -138,7 +138,7 @@ class SafetyBitableClient:
 
         async def _try_download(url: str) -> bytes | None:
             last_error = None
-            for attempt in range(3):
+            for attempt in range(4):
                 try:
                     async with httpx.AsyncClient(
                         timeout=120,
@@ -151,7 +151,7 @@ class SafetyBitableClient:
                         if resp.status_code == 200:
                             return resp.content
                         logger.warning(
-                            "Bitable 下载附件失败: url=%s... status=%s body=%s (attempt %d/3)",
+                            "Bitable 下载附件失败: url=%s... status=%s body=%s (attempt %d/4)",
                             url[:100],
                             resp.status_code,
                             (resp.text or "")[:200],
@@ -160,18 +160,18 @@ class SafetyBitableClient:
                         last_error = f"HTTP {resp.status_code}"
                 except Exception as exc:
                     logger.warning(
-                        "Bitable 下载附件异常: url=%s... error=%s (attempt %d/3)",
+                        "Bitable 下载附件异常: url=%s... error=%s (attempt %d/4)",
                         url[:100],
                         exc,
                         attempt + 1,
                     )
                     last_error = str(exc)
 
-                if attempt < 2:
-                    await asyncio.sleep(2**attempt)  # 1s, 2s 退避
+                if attempt < 3:
+                    await asyncio.sleep(2**attempt)  # 1s, 2s, 4s 退避
 
             logger.error(
-                "Bitable 下载附件最终失败(3次重试耗尽): url=%s... last_error=%s",
+                "Bitable 下载附件最终失败(4次重试耗尽): url=%s... last_error=%s",
                 url[:100],
                 last_error,
             )

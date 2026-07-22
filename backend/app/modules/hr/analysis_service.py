@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.hr.ai_service import AiChatService
+from app.core.llm import llm_client
 from app.modules.hr.analysis_schemas import (
     TurnoverAnalysisResponse,
     TurnoverMetrics,
@@ -51,9 +51,8 @@ _TURNOVER_SYSTEM_PROMPT = """你是一位人力资源数据分析顾问，擅长
 class TurnoverAnalysisService:
     """Service for analyzing HR turnover data and generating AI insights."""
 
-    def __init__(self, session: AsyncSession, ai_service: AiChatService) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        self.ai_service = ai_service
 
     async def analyze(self) -> TurnoverAnalysisResponse:
         """Run full turnover analysis: fetch data, compute metrics, generate AI report."""
@@ -275,7 +274,7 @@ class TurnoverAnalysisService:
 
         try:
             content_parts = []
-            async for chunk in self.ai_service.stream_chat(
+            async for chunk in llm_client.stream_chat(
                 messages=messages,
                 system_prompt=_TURNOVER_SYSTEM_PROMPT,
             ):

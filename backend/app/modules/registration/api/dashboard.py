@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -13,6 +14,7 @@ router = APIRouter()
 
 @router.get("/summary", summary="获取注册首页看板汇总数据")
 async def dashboard_summary(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     summary = await get_dashboard_summary(db)

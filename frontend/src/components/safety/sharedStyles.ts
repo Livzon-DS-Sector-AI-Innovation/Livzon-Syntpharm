@@ -2,7 +2,7 @@
  * Safety 模块共享样式工具
  *
  * 使用方式：
- *   import { statusPill, actionLink, pillTab } from '@/components/safety/shared-styles'
+ *   import { statusPill, actionLink, pillTab } from '@/components/safety/sharedStyles'
  *
  *   // 状态标签
  *   <span style={statusPill('#1aae39', '#d9f3e1')}>正常</span>

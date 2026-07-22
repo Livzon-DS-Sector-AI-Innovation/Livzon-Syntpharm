@@ -17,6 +17,9 @@ import type {
   UpdateCapaRequest,
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
+  AiLogItem,
+  AiLogListResponse,
+  AiLogFilter,
 } from '@/types/quality'
 import type {
   SamplingOrder,
@@ -111,6 +114,8 @@ import {
   parse
 } from '@/lib/validation/schemas'
 import * as QualityServer from '@/lib/api/server/quality'
+
+export type { AiLogItem, AiLogFilter }
 
 async function wrap<T>(promise: Promise<unknown>): Promise<ApiResponse<T>> {
   const data = await promise
@@ -492,35 +497,6 @@ export async function getStabilityTrendData(studyId: string) {
 }
 
 // ============ AI交互日志 Actions ============
-
-export interface AiLogItem {
-  id: string
-  bill_no: string | null
-  operate_type: string
-  operator: string
-  system_prompt: string | null
-  user_input: string | null
-  ai_response: string | null
-  error_message: string | null
-  tokens_used: number | null
-  latency_ms: number | null
-  created_at: string
-}
-
-export interface AiLogListResponse {
-  items: AiLogItem[]
-  total: number
-  page: number
-  page_size: number
-}
-
-export interface AiLogFilter {
-  operate_type?: string
-  operator?: string
-  start_date?: string
-  end_date?: string
-  keyword?: string
-}
 
 export async function getAiLogs(params: AiLogFilter & { page?: number; page_size?: number } = {}) {
   return wrap<AiLogListResponse>(QualityServer.getAiLogs(params))

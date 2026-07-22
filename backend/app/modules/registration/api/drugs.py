@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -23,6 +24,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取药品列表")
 async def list_drugs(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有药品及其审评节点"""
@@ -33,6 +35,7 @@ async def list_drugs(
 
 @router.post("/", summary="创建药品")
 async def create_drug(
+    current_user: CurrentUser,
     data: DrugCreate,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -42,7 +45,7 @@ async def create_drug(
 
 
 @router.get("/nodes", summary="获取审评节点配置")
-async def get_review_nodes() -> JSONResponse:
+async def get_review_nodes(current_user: CurrentUser, ) -> JSONResponse:
     """获取10个审评节点的配置信息"""
     nodes = [ReviewNodeConfig(**n) for n in ReviewNode.get_all()]
     return success_response(data=nodes)
@@ -50,6 +53,7 @@ async def get_review_nodes() -> JSONResponse:
 
 @router.get("/{drug_id}", summary="获取药品详情")
 async def get_drug(
+    current_user: CurrentUser,
     drug_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -60,6 +64,7 @@ async def get_drug(
 
 @router.put("/{drug_id}", summary="更新药品")
 async def update_drug(
+    current_user: CurrentUser,
     drug_id: uuid.UUID,
     data: DrugUpdate,
     db: AsyncSession = Depends(get_db),
@@ -71,6 +76,7 @@ async def update_drug(
 
 @router.delete("/{drug_id}", summary="删除药品")
 async def delete_drug(
+    current_user: CurrentUser,
     drug_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:

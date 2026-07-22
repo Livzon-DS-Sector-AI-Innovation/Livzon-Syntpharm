@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -20,6 +21,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取注册项目列表")
 async def list_projects(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     projects = await project_service.get_projects(db)
@@ -29,6 +31,7 @@ async def list_projects(
 
 @router.post("/", summary="创建注册项目")
 async def create_project(
+    current_user: CurrentUser,
     data: ProjectCreate,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -38,6 +41,7 @@ async def create_project(
 
 @router.get("/{project_id}", summary="获取注册项目详情")
 async def get_project(
+    current_user: CurrentUser,
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -47,6 +51,7 @@ async def get_project(
 
 @router.put("/{project_id}", summary="更新注册项目")
 async def update_project(
+    current_user: CurrentUser,
     project_id: uuid.UUID,
     data: ProjectUpdate,
     db: AsyncSession = Depends(get_db),
@@ -57,6 +62,7 @@ async def update_project(
 
 @router.delete("/{project_id}", summary="删除注册项目")
 async def delete_project(
+    current_user: CurrentUser,
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:

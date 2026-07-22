@@ -321,7 +321,9 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 
 ## 测试规范
 
-**框架**：pytest + pytest-asyncio，异步测试用 `@pytest.mark.asyncio`。
+**框架**：pytest + pytest-asyncio。`pyproject.toml` 中配置了 `asyncio_mode = "auto"`，`async def test_*` 函数会被自动识别为异步测试，不需要 `@pytest.mark.asyncio` 装饰器。
+
+**测试中允许使用 `Base.metadata.create_all()` 创建内存 SQLite 表。** Alembic 迁移面向 PostgreSQL，无法在 SQLite 上运行。内存数据库在每次测试结束后自动销毁，无需迁移。
 
 **覆盖优先级**：service 层业务逻辑 > API 端点契约 > repository 查询。
 

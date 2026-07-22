@@ -11,8 +11,6 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-ARG NEXT_PUBLIC_API_BASE_URL=
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV API_BASE_URL=http://backend:8000
 ENV NODE_ENV=production
 

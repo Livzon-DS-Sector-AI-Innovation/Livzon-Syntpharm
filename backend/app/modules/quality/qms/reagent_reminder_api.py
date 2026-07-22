@@ -6,34 +6,14 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.response import success_response
 from app.modules.quality.qms.reagent_reminder_service import ReagentReminderService
 from app.platform.database import get_db_session
+from app.modules.quality.qms.reagent_reminder_schemas import ItemReminderRequest, ReminderConfigRequest
 
 router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
-
-
-# ============ 请求模型 ============
-
-
-class ReminderConfigRequest(BaseModel):
-    """提醒配置请求"""
-
-    feishu_app_id: str = Field(..., description="飞书应用 AppID")
-    feishu_app_secret: str = Field(..., description="飞书应用 AppSecret")
-    feishu_chat_id: str = Field(..., description="飞书群 ID")
-    low_stock_threshold: int = Field(default=2, description="库存不足阈值")
-    is_enabled: bool = Field(default=True, description="是否启用")
-
-
-class ItemReminderRequest(BaseModel):
-    """单个试剂提醒配置请求"""
-
-    reagent_name: str = Field(..., description="试剂名称")
-    is_enabled: bool = Field(default=True, description="是否启用提醒")
 
 
 # ============ API 接口 ============

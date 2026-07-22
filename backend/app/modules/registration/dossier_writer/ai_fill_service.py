@@ -21,7 +21,6 @@ from .field_models import AssetCategory, AssetPageSplit, FieldFillResult, FieldM
 from .models import ChapterAsset, DossierChapter, ProductDossier
 
 logger = logging.getLogger(__name__)
-_logger = logging.getLogger(__name__)
 
 
 class AIFillService:
@@ -380,12 +379,12 @@ class AIFillService:
 
         fill_instructions = []
         if text_fields:
-            _logger.info(f"[Fill] Template has {len(template_paragraphs)} paragraphs, {len(template_tables)} tables")
+            logger.info(f"[Fill] Template has {len(template_paragraphs)} paragraphs, {len(template_tables)} tables")
             for p in template_paragraphs[:30]:
-                _logger.info(f"  P[{p['index']}]: {p['text'][:80]}")  # type: ignore[index]
+                logger.info(f"  P[{p['index']}]: {p['text'][:80]}")  # type: ignore[index]
             for t in template_tables:
-                _logger.info(f"  T[{t['index']}]: {t['rows']}x{t['cols']} preview={t['preview'][:2]}")  # type: ignore[index]
-            _logger.info(f"[Fill] Fields to fill: {[f['field_name'] for f in text_fields]}")
+                logger.info(f"  T[{t['index']}]: {t['rows']}x{t['cols']} preview={t['preview'][:2]}")  # type: ignore[index]
+            logger.info(f"[Fill] Fields to fill: {[f['field_name'] for f in text_fields]}")
 
             messages = build_fill_location_prompt(
                 template_paragraphs=template_paragraphs,
@@ -395,13 +394,13 @@ class AIFillService:
             try:
                 parsed_result = await self.llm.chat_json(messages)
                 fill_instructions = parsed_result.get("fills", [])
-                _logger.info(f"[Fill] AI returned {len(fill_instructions)} fill instructions:")
+                logger.info(f"[Fill] AI returned {len(fill_instructions)} fill instructions:")
                 for inst in fill_instructions:
-                    _logger.info(
+                    logger.info(
                         f"  {inst.get('field_name')}: action={inst.get('fill_action')} target={inst.get('target')}"
                     )
             except LLMError as e:
-                _logger.warning(f"[Fill] AI location prompt failed: {e}")
+                logger.warning(f"[Fill] AI location prompt failed: {e}")
 
         # 加载素材（带分类名称），用于图片插入
         chapter_assets = await self.get_chapter_assets(chapter.id)
@@ -454,7 +453,7 @@ class AIFillService:
 
             if instruction and instruction.get("fill_action") != "skip":
                 success = self._execute_fill(doc, instruction, value)
-                _logger.info(
+                logger.info(
                     f"[Fill] {field_name}: action={instruction.get('fill_action')} result={'OK' if success else 'FAIL'}"
                 )
                 fill_results.append(
@@ -466,9 +465,9 @@ class AIFillService:
                 )
             else:
                 # 没有填充指令，尝试 fallback 策略
-                _logger.info(f"[Fill] {field_name}: no instruction, trying fallback")
+                logger.info(f"[Fill] {field_name}: no instruction, trying fallback")
                 success = self._fallback_fill(doc, field_name, value, field_type)
-                _logger.info(f"[Fill] {field_name}: fallback result={'OK' if success else 'FAIL'}")
+                logger.info(f"[Fill] {field_name}: fallback result={'OK' if success else 'FAIL'}")
                 fill_results.append(
                     {
                         "field_name": field_name,
@@ -932,9 +931,6 @@ class AIFillService:
 
         使用 FieldMapping.source_category 精确定位素材，不再依赖关键词硬编码匹配。
         """
-        import logging
-
-        _logger = logging.getLogger(__name__)
         from .field_models import FieldMapping
 
         # 1. 通过 field_mapping_id 查找 FieldMapping，获取 source_category
@@ -945,7 +941,7 @@ class AIFillService:
             mapping = await self.db.get(FieldMapping, uuid.UUID(mapping_id))
             if mapping:
                 source_category = mapping.source_category
-                _logger.info(f"[ImageInsert] {field_name}: field_mapping source_category={source_category}")
+                logger.info(f"[ImageInsert] {field_name}: field_mapping source_category={source_category}")
 
         # 2. 使用 _filter_assets_by_category 精确匹配素材
         target_asset = None
@@ -953,7 +949,7 @@ class AIFillService:
             matched_assets = self._filter_assets_by_category(chapter_assets, source_category)
             if matched_assets:
                 target_asset = matched_assets[0]
-                _logger.info(
+                logger.info(
                     f"[ImageInsert] {field_name}: matched asset via source_category: {target_asset.original_filename}"
                 )
 
@@ -978,7 +974,7 @@ class AIFillService:
                     appendix_slot = field_data.get("value", "")
                     if cat.appendix_slot and appendix_slot and cat.appendix_slot in appendix_slot:
                         target_asset = matched[0]
-                        _logger.info(
+                        logger.info(
                             f"[ImageInsert] {field_name}: matched via appendix_slot: {target_asset.original_filename}"
                         )
                         break
@@ -989,24 +985,24 @@ class AIFillService:
                     matched = self._filter_assets_by_category(chapter_assets, cat.category_name)
                     if matched:
                         target_asset = matched[0]
-                        _logger.info(
+                        logger.info(
                             f"[ImageInsert] {field_name}: fallback to image category asset: {target_asset.original_filename}"
                         )
                         break
 
         if not target_asset:
-            _logger.warning(f"[ImageInsert] {field_name}: no matching asset found (source_category={source_category})")
+            logger.warning(f"[ImageInsert] {field_name}: no matching asset found (source_category={source_category})")
             return False
 
         # 4. 转换素材的第一页为图片
         file_path = Path(target_asset.file_path)
         if not file_path.exists():
-            _logger.warning(f"[ImageInsert] {field_name}: file not found {file_path}")
+            logger.warning(f"[ImageInsert] {field_name}: file not found {file_path}")
             return False
 
         img_path = self.extractor.pdf_page_to_image(file_path, 1)
         if not img_path:
-            _logger.warning(f"[ImageInsert] {field_name}: failed to convert to image (only PDF supported)")
+            logger.warning(f"[ImageInsert] {field_name}: failed to convert to image (only PDF supported)")
             return False
 
         # 5. 在文档中查找附录位置并插入图片
@@ -1018,7 +1014,7 @@ class AIFillService:
         if not success:
             success = self._insert_image_at_appendix(doc, field_name, img_path)
 
-        _logger.info(f"[ImageInsert] {field_name}: insert result = {success}")
+        logger.info(f"[ImageInsert] {field_name}: insert result = {success}")
         return success
 
     def _insert_image_at_appendix(self, doc: Document, appendix_slot: str, img_path: Path) -> bool:  # type: ignore[valid-type]

@@ -92,7 +92,7 @@ api_router.include_router(reagent_reminder_router, prefix="/quality", tags=["质
 api_router.include_router(instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"])
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
-api_router.include_router(sop_ai_router, prefix="/sop-ai", tags=["SOP AI"])
+api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])
 api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])
 api_router.include_router(
     workshop_product_router,

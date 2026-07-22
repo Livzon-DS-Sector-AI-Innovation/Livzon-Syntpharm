@@ -16,7 +16,7 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { SpecialOperationReport, DailyRiskReport, TrainingRecord } from '@/types/safety'
-import { T } from './shared-styles'
+import { T } from './sharedStyles'
 
 const { Title, Text } = Typography
 

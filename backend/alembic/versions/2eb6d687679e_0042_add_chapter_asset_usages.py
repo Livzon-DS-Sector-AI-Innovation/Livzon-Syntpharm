@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '2eb6d687679e'
-down_revision: Union[str, None] = '6379b65e0052'
+revision: str = '0042_add_chapter_asset_usages'
+down_revision: Union[str, None] = '0041_equipment_add_fields'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

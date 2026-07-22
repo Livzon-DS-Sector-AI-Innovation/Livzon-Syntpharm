@@ -88,6 +88,15 @@ import {
   fetchTrainingSessionByIdApi,
   sendTrainingSessionSelectTasksApi,
   fetchTrainingSessionSelectTasksApi,
+  sendTrainingSelectTaskApi,
+  savePrejobTemplateApi,
+  generatePrejobTrainingPlanApi,
+  submitTrainingSelectTaskApi,
+  createTrainingTeamApi,
+  updateTrainingTeamApi,
+  deleteTrainingTeamApi,
+  upsertTrainingSpecialistApi,
+  deleteTrainingSpecialistApi,
 } from '@/lib/api/server/hr'
 
 
@@ -635,4 +644,66 @@ export async function sendTrainingSessionSelectTasksAction(id: string): Promise<
 
 export async function fetchTrainingSessionSelectTasksAction(id: string): Promise<{ code: number; message: string; data: SelectTask[] }> {
   return fetchTrainingSessionSelectTasksApi(id)
+}
+
+export async function sendTrainingSelectTaskAction(data: unknown) {
+  const res = await sendTrainingSelectTaskApi(data)
+  revalidatePath('/hr/training')
+  return res
+}
+
+export async function savePrejobTemplateAction(department: string, factory: 'old' | 'new', items: unknown[]) {
+  const res = await savePrejobTemplateApi({ department, factory, items })
+  revalidatePath('/hr/training/prejob')
+  return res
+}
+
+export async function generatePrejobTrainingPlanAction(
+  employeeId: string,
+  employeeName: string,
+  factory: 'old' | 'new' = 'old',
+  items?: unknown[]
+): Promise<Blob> {
+  const blob = await generatePrejobTrainingPlanApi(employeeId, {}, factory, items || [])
+  revalidatePath('/hr')
+  return blob
+}
+
+export async function submitTrainingSelectTaskAction(
+  token: string,
+  data: { selectedNumbers: string[]; selectedNames: string[] }
+) {
+  const res = await submitTrainingSelectTaskApi(token, data)
+  revalidatePath('/hr/training')
+  return res
+}
+
+export async function createTrainingTeamAction(data: unknown) {
+  const res = await createTrainingTeamApi(data)
+  revalidatePath('/hr/training/team')
+  return res
+}
+
+export async function updateTrainingTeamAction(id: string, data: unknown) {
+  const res = await updateTrainingTeamApi(id, data)
+  revalidatePath('/hr/training/team')
+  return res
+}
+
+export async function deleteTrainingTeamAction(id: string) {
+  const res = await deleteTrainingTeamApi(id)
+  revalidatePath('/hr/training/team')
+  return res
+}
+
+export async function upsertTrainingSpecialistAction(data: unknown) {
+  const res = await upsertTrainingSpecialistApi(data)
+  revalidatePath('/hr/training/specialists')
+  return res
+}
+
+export async function deleteTrainingSpecialistAction(id: string) {
+  const res = await deleteTrainingSpecialistApi(id)
+  revalidatePath('/hr/training/specialists')
+  return res
 }

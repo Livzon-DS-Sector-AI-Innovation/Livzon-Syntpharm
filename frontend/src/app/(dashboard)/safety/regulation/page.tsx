@@ -76,7 +76,7 @@ import {
   pillPurple,
   pillDefault,
   T,
-} from '@/components/safety/shared-styles'
+} from '@/components/safety/sharedStyles'
 import dayjs from 'dayjs'
 
 const { Text } = Typography

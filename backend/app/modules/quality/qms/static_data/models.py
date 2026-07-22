@@ -33,6 +33,7 @@ class StorageCondition(BaseModel):
     """Storage Condition Dictionary"""
 
     __tablename__ = "t_qs_storage_condition"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     cond_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Condition code (unique)")
@@ -56,6 +57,7 @@ class Unit(BaseModel):
     """Unit Dictionary"""
 
     __tablename__ = "t_qs_unit"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     unit_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Unit code (unique)")
@@ -78,6 +80,7 @@ class HplcReference(BaseModel):
     """HPLC Reference Substance Ledger"""
 
     __tablename__ = "t_qs_hplc_reference"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     ref_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Reference code (unique)")
@@ -123,6 +126,7 @@ class HplcReferenceUsage(BaseModel):
     """HPLC Reference Substance Usage Log"""
 
     __tablename__ = "t_qs_hplc_reference_usage"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     ref_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="Reference substance ID")
@@ -147,6 +151,7 @@ class ChromColumn(BaseModel):
     """Chromatography Column Management"""
 
     __tablename__ = "t_qs_chrom_column"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     col_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Column code (unique)")
@@ -181,6 +186,7 @@ class Standard(BaseModel):
     """Standard Reference Substance Management (标准品管理)"""
 
     __tablename__ = "t_qs_standard"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     std_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Standard code (unique)")
@@ -214,6 +220,7 @@ class Medium(BaseModel):
     """Medium Management (培养基管理)"""
 
     __tablename__ = "t_qs_medium"
+    __table_args__ = {"schema": "qms"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     medium_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Medium code (unique)")

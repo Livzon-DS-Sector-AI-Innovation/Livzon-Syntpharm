@@ -5,7 +5,10 @@ import type {
   PageParams,
   DictOption,
   WarningsResponse,
+  AuditLogItem,
+  UploadResponse,
 } from '@/types/static-data'
+export type { AuditLogItem, UploadResponse }
 import {
   getDictEquipmentCategory as getDictEquipmentCategoryServer,
   getDictEquipmentStatus as getDictEquipmentStatusServer,
@@ -353,20 +356,6 @@ export async function getWarnings(days = 30): Promise<ApiResponse<WarningsRespon
 
 // ========== 审计日志 ==========
 
-export interface AuditLogItem {
-  id: number
-  module_type: string
-  record_id: number
-  record_code: string | null
-  operate_type: string
-  operate_by: number
-  operate_by_name?: string
-  operate_time: string
-  old_value: string | null
-  new_value: string | null
-  change_summary: string | null
-}
-
 export async function listAuditLogs(params: {
   page?: number
   page_size?: number
@@ -385,15 +374,6 @@ export async function getAuditModules(): Promise<ApiResponse<{ module_type: stri
 }
 
 // ========== 文件上传下载 ==========
-
-export interface UploadResponse {
-  file_id: string
-  original_name: string
-  stored_name: string
-  url: string
-  size: number
-  content_type: string
-}
 
 export async function uploadFile(file: File): Promise<ApiResponse<UploadResponse>> {
   const formData = new FormData()

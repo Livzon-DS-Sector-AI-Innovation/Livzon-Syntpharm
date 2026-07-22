@@ -1,17 +1,9 @@
 import {
   EmployeeListResponse,
   EmployeeResponse,
-  EmployeeCreateInput,
-  EmployeeUpdateInput,
   DepartmentListResponse,
-  DepartmentCreateInput,
-  DepartmentUpdateInput,
   TeamListResponse,
-  TeamCreateInput,
-  TeamUpdateInput,
   OffboardingRecordListResponse,
-  OffboardingRecordCreateInput,
-  OffboardingRecordUpdateInput,
   OnboardingRecordListResponse,
   DepartureRecordListResponse,
   SyncStatusResponse,
@@ -25,37 +17,15 @@ import {
   TrainingAssessmentResponse,
   TrainingApprovalListResponse,
   TrainingApprovalResponse,
-  PrejobTemplate,
-  PrejobTemplateItem,
-  TrainingNotifyData,
-  SyncFromFeishuResponse,
-  SyncToFeishuResponse,
   TurnoverAnalysisResponse,
-  TrainingSignInSheetData,
-  TrainingNotificationData,
-  TrainingEvaluationData,
-  OnboardingEvaluationData,
-  SendTrainingNotificationResponse,
-  DeleteResponse,
-  TrainingLedgerRecord,
-  TrainingLedgerCreateInput,
-  TrainingLedgerUpdateInput,
   TrainingLedgerListResponse,
-  TrainingLedgerPageRecord,
   TrainingLedgerPageListResponse,
-  TrainingLedgerPageCreateResponse,
-  AnnualTrainingPlan,
-  AnnualTrainingPlanItem,
   AnnualTrainingPlanListResponse,
   AnnualTrainingPlanItemListResponse,
   SopCatalogListResponse,
-  TrainingSelectTaskData,
-  SendTrainingSelectTaskResponse,
   GenericDataResponse,
   GenericDataListResponse,
   PrejobTemplateResponse,
-  PrejobTemplateSaveResponse,
-  UploadEmployeesResponse,
 } from '@/types/hr'
 
 const API_BASE = '/api/v1'
@@ -224,24 +194,6 @@ export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
   return res.json()
 }
 
-export async function syncFromFeishu(): Promise<SyncFromFeishuResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/sync-from-feishu`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('从飞书同步失败')
-  return res.json()
-}
-
-export async function syncToFeishu(id: string): Promise<SyncToFeishuResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/${id}/sync-to-feishu`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('同步到飞书失败')
-  return res.json()
-}
-
 export async function fetchTrainingPlans(
   params?: {
     keyword?: string
@@ -398,24 +350,6 @@ export async function fetchTrainingApprovalById(id: string): Promise<TrainingApp
 
 export { fetchTrainingPlanSops as fetchTrainingSops }
 
-export async function syncOnboardingFromFeishu(): Promise<SyncFromFeishuResponse> {
-  const res = await fetch(`${API_BASE}/hr/onboarding-records/sync-from-feishu`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('从飞书同步入职台账失败')
-  return res.json()
-}
-
-export async function syncDepartureFromFeishu(): Promise<SyncFromFeishuResponse> {
-  const res = await fetch(`${API_BASE}/hr/departure-records/sync-from-feishu`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('从飞书同步离职台账失败')
-  return res.json()
-}
-
 export async function fetchTurnoverAnalysis(): Promise<TurnoverAnalysisResponse> {
   const res = await fetch(`${API_BASE}/hr/turnover-analysis`, {
     cache: 'no-store',
@@ -458,112 +392,6 @@ export async function fetchPrejobTrainingPlan(
   const a = document.createElement('a')
   a.href = url
   a.download = `7.4岗前培训计划_${employeeName}.xlsx`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
-export async function generateTrainingSignInSheet(
-  data: TrainingSignInSheetData,
-  factory: 'old' | 'new' = 'old'
-): Promise<void> {
-  const res = await fetch(`${API_BASE}/hr/training-sign-in-sheet`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('生成培训签到表失败')
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  const disposition = res.headers.get('content-disposition')
-  const filenameMatch = disposition?.match(/filename\*=utf-8''(.+)/)
-  a.download = filenameMatch
-    ? decodeURIComponent(filenameMatch[1])
-    : `培训签到表_${data.training_date}.docx`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
-export async function generateTrainingNotification(
-  data: TrainingNotificationData,
-  factory: 'old' | 'new' = 'old'
-): Promise<void> {
-  const res = await fetch(`${API_BASE}/hr/training-notification`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('生成培训通知失败')
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `培训通知_${data.training_date}.docx`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
-export async function sendTrainingNotification(
-  data: TrainingNotifyData
-): Promise<SendTrainingNotificationResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-notifications/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('发送培训通知失败')
-  return res.json()
-}
-
-export async function generateTrainingEvaluation(
-  data: TrainingEvaluationData,
-  factory: 'old' | 'new' = 'old'
-): Promise<void> {
-  const res = await fetch(`${API_BASE}/hr/training-evaluation`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('生成培训效果评估表失败')
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  const safeDate = (data.training_date || 'nodate').replace(/-/g, '')
-  a.download = `培训效果评估表_${safeDate}.docx`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
-export async function generateOnboardingEvaluation(
-  data: OnboardingEvaluationData
-): Promise<void> {
-  const res = await fetch(`${API_BASE}/hr/onboarding-evaluation`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('生成员工上岗评估表失败')
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  const safeDate = data.approval_date || 'nodate'
-  a.download = `7.12员工上岗评估表_${safeDate}.xlsx`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -615,44 +443,6 @@ export async function fetchTrainingLedgers(
   return res.json()
 }
 
-export async function createTrainingLedger(
-  data: TrainingLedgerCreateInput
-): Promise<TrainingRecordResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-ledgers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('创建培训台账记录失败')
-  return res.json()
-}
-
-export async function updateTrainingLedger(
-  id: string,
-  data: TrainingLedgerUpdateInput
-): Promise<TrainingRecordResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-ledgers/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('更新培训台账记录失败')
-  return res.json()
-}
-
-export async function deleteTrainingLedger(
-  id: string
-): Promise<DeleteResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-ledgers/${id}`, {
-    method: 'DELETE',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('删除培训台账记录失败')
-  return res.json()
-}
-
 // ─── TrainingLedgerPage APIs ───
 
 export async function fetchTrainingLedgerPages(): Promise<TrainingLedgerPageListResponse> {
@@ -660,19 +450,6 @@ export async function fetchTrainingLedgerPages(): Promise<TrainingLedgerPageList
     cache: 'no-store',
   })
   if (!res.ok) throw new Error('获取培训台账页面列表失败')
-  return res.json()
-}
-
-export async function createTrainingLedgerPage(
-  data: { employee_number: string; employee_name: string; ledger_type?: string }
-): Promise<TrainingLedgerPageCreateResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-ledgers/pages`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('创建培训台账页面失败')
   return res.json()
 }
 
@@ -877,17 +654,6 @@ export async function fetchCandidateById(id: string): Promise<GenericDataRespons
 
 // ─── Training Select Task APIs ───
 
-export async function sendTrainingSelectTask(data: TrainingSelectTaskData): Promise<SendTrainingSelectTaskResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-select-tasks/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('发送飞书选择任务失败')
-  return res.json()
-}
-
 export async function fetchTrainingSelectTaskResult(token: string): Promise<GenericDataResponse> {
   const res = await fetch(`${API_BASE}/hr/training-select-tasks/${token}/result`, {
     cache: 'no-store',
@@ -919,50 +685,6 @@ export async function fetchPrejobTemplate(
   return res.json()
 }
 
-export async function savePrejobTemplate(
-  department: string,
-  factory: 'old' | 'new',
-  items: PrejobTemplateItem[]
-): Promise<PrejobTemplateSaveResponse> {
-  const res = await fetch(`${API_BASE}/hr/prejob-training-templates`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ department, factory, items }),
-  })
-  if (!res.ok) throw new Error('保存岗前培训计划模板失败')
-  return res.json()
-}
-
-export async function fetchPrejobTrainingPlanWithItems(
-  employeeId: string,
-  employeeName: string,
-  factory: 'old' | 'new' = 'old',
-  items?: PrejobTemplateItem[]
-): Promise<void> {
-  const res = await fetch(
-    `${API_BASE}/hr/employees/${employeeId}/prejob-training-plan?factory=${factory}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(items || []),
-      cache: 'no-store',
-    }
-  )
-  if (!res.ok) throw new Error('生成岗前培训计划失败')
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  const filename = factory === 'old'
-    ? `7.4岗前培训计划_${employeeName}.xlsx`
-    : `R-GN-2002 C 岗前培训计划_${employeeName}.docx`
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
 // ─── Additional Training Select Task APIs ───
 
 export async function fetchTrainingSelectTask(token: string): Promise<GenericDataResponse> {
@@ -970,19 +692,6 @@ export async function fetchTrainingSelectTask(token: string): Promise<GenericDat
     cache: 'no-store',
   })
   if (!res.ok) throw new Error('获取选择任务失败')
-  return res.json()
-}
-
-export async function submitTrainingSelectTask(
-  token: string,
-  data: { selectedNumbers: string[]; selectedNames: string[] }
-): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-select-tasks/${token}/submit`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('提交选择结果失败')
   return res.json()
 }
 
@@ -996,72 +705,10 @@ export async function fetchTrainingSessionSelectTasks(sessionId: string): Promis
 
 // ─── Training Team & Specialist APIs ───
 
-export async function createTrainingTeam(data: any): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-teams`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建培训团队失败')
-  return res.json()
-}
-
-export async function updateTrainingTeam(id: string, data: any): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-teams/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新培训团队失败')
-  return res.json()
-}
-
-export async function deleteTrainingTeam(id: string): Promise<DeleteResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-teams/${id}`, {
-    method: 'DELETE',
-  })
-  if (!res.ok) throw new Error('删除培训团队失败')
-  return res.json()
-}
-
-export async function upsertTrainingSpecialist(data: any): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-specialists`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建/更新培训专家失败')
-  return res.json()
-}
-
-export async function deleteTrainingSpecialist(id: string): Promise<DeleteResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-specialists/${id}`, {
-    method: 'DELETE',
-  })
-  if (!res.ok) throw new Error('删除培训专家失败')
-  return res.json()
-}
-
-export async function fetchTrainingSpecialists(): Promise<GenericDataListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-specialists`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训专家列表失败')
-  return res.json()
-}
-
 export async function fetchTrainingTeams(factory?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-teams`, {
     cache: 'no-store',
   })
   if (!res.ok) throw new Error('获取培训团队列表失败')
-  return res.json()
-}
-
-export async function uploadEmployeesFile(file: File): Promise<UploadEmployeesResponse> {
-  const fd = new FormData()
-  fd.append('file', file)
-  const res = await fetch('/api/v1/hr/employees/upload', { method: 'POST', body: fd, credentials: 'include' })
-  if (!res.ok) throw new Error('上传失败')
   return res.json()
 }

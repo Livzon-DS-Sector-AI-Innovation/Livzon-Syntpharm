@@ -170,3 +170,21 @@ export interface EquipmentStatistics {
   by_category: Record<string, number>
   by_location: Record<string, number>
 }
+
+// 导入结果
+export interface ImportResult {
+  success: number
+  failed: number
+  errors: ImportRowError[]
+  error?: string
+  data?: any
+  imported?: number
+  skipped?: number
+  warnings?: any[]
+}
+
+export interface ImportRowError {
+  row: number
+  field: string
+  message: string
+}

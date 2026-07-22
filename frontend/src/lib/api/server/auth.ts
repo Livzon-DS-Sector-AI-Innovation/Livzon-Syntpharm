@@ -1,14 +1,7 @@
 import type { User, ImpersonationStatusExtended } from '@/types/user'
+import type { LoginResponse } from '@/types/auth'
 
 const API_BASE = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-
-export interface LoginResponse {
-  data?: {
-    access_token?: string
-  }
-  message?: string
-  detail?: string
-}
 
 function getApiBaseCandidates() {
   return Array.from(

@@ -16,7 +16,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons'
 
-import { T } from '@/components/safety/shared-styles'
+import { T } from '@/components/safety/sharedStyles'
 import animStyles from './safety-animations.module.css'
 
 /* ─────── design tokens ─────── */

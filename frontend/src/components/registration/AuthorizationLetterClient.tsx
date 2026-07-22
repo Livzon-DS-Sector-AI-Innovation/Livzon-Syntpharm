@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload, InputNumber } from 'antd'
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AuthorizationLetterListItem, ProductInfo } from '@/types/registration'
-import { fetchAuthorizationLetters, getAuthorizationLetterDownloadUrl } from '@/lib/api/client/registration'
+import { fetchAuthorizationLetters, fetchAuthorizationLetterDownloadUrl } from '@/lib/api/client/registration'
 import { generateAuthorizationLetter, deleteAuthorizationLetter } from '@/actions/registration'
 import dayjs from 'dayjs'
 
@@ -166,7 +166,7 @@ export default function AuthorizationLetterClient({
   }
 
   const handleDownload = async (id: string, fileName: string) => {
-    const url = await getAuthorizationLetterDownloadUrl(id)
+    const url = await fetchAuthorizationLetterDownloadUrl(id)
     const link = document.createElement('a')
     link.href = url
     link.download = fileName

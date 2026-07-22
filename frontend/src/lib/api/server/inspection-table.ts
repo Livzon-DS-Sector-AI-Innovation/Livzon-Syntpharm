@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
-import type { ColumnConfig, CreateTableRequest, UpdateTableRequest } from '@/types/inspection-table'
+import type { ColumnConfig, CreateTableRequest, UpdateTableRequest, RecognizeResult } from '@/types/inspection-table'
 
 async function apiFetchFormData<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
@@ -18,17 +18,6 @@ async function apiFetchFormData<T>(url: string, options?: RequestInit): Promise<
   }
   const result = await response.json()
   return result.data ?? result
-}
-
-export interface RecognizeResult {
-  image_url?: string
-  images?: Array<{ original_name: string; saved_path: string }>
-  recognized_rows: Record<string, any>[]
-  columns_config: Array<{
-    key: string
-    label: string
-    type: string
-  }>
 }
 
 export async function getInspectionTables(params?: {

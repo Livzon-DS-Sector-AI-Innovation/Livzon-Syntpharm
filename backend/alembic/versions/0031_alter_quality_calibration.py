@@ -1,5 +1,8 @@
 """alter_quality_calibration
 
+CROSS-MODULE: identity FK operations approved by architecture owner.
+See AGENTS.md: 跨模块外键、platform/core/shared 级变更可以跨 schema"
+
 Revision ID: 0031_alter_quality_calibration
 Revises: 0030_alter_hr_json_columns
 Create Date: 2026-07-12 11:33:33.282156

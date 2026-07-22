@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons'
 
 // ── DESIGN.md Token Colors（从 shared-styles 统一导入）──
-export { T } from './shared-styles'
+export { T } from './sharedStyles'
 
 // ── Operation type labels, colors & icons ──
 export const OP_TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {

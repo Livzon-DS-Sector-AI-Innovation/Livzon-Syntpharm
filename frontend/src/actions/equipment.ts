@@ -6,7 +6,9 @@ import {
   CreateFailureCodeInput, UpdateFailureCodeInput,
   CreateWorkOrderInput, AssignWorkOrderInput, CompleteWorkOrderInput, VerifyWorkOrderInput,
   CreateCalibrationPlanInput, UpdateCalibrationPlanInput, CreateCalibrationRecordInput,
+  ImportResult, ImportRowError,
 } from '@/types/equipment'
+export type { ImportResult, ImportRowError }
 import {
   createCategoryApi,
   updateCategoryApi,
@@ -217,22 +219,6 @@ export async function createCalibrationRecord(data: CreateCalibrationRecordInput
 }
 
 // ==================== 设备导入 ====================
-export interface ImportResult {
-  success: number
-  failed: number
-  errors: ImportRowError[]
-  error?: string
-  data?: any
-  imported?: number
-  skipped?: number
-  warnings?: any[]
-}
-
-export interface ImportRowError {
-  row: number
-  field: string
-  message: string
-}
 
 export async function downloadImportTemplate(): Promise<any> {
   const blob = await downloadImportTemplateOldApi()
@@ -500,4 +486,24 @@ export async function updateWorkOrder(id: string, data: any) {
   const result = await updateWorkOrderApi(id, data)
   revalidatePath('/equipment/maintenance')
   return result
+}
+
+const API_BASE_URL = process.env.API_BASE_URL || 'http://backend:8000'
+
+export async function previewEquipmentImport(data: any[]) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/equipment/import/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return response.json()
+}
+
+export async function batchImportEquipment(data: any[]) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/equipment/import/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return response.json()
 }

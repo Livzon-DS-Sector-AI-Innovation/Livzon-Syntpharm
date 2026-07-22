@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import ApiResponse
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.service import SopAiCheckService
@@ -25,6 +26,7 @@ router = APIRouter()
 
 @router.get("/config", summary="获取配置列表")
 async def get(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取所有配置"""
@@ -35,6 +37,7 @@ async def get(
 
 @router.get("/config/{config_key}", summary="获取单个配置")
 async def get_config(
+    current_user: CurrentUser,
     config_key: str,
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
@@ -46,6 +49,7 @@ async def get_config(
 
 @router.put("/config/{config_key}", summary="更新配置")
 async def update_config(
+    current_user: CurrentUser,
     config_key: str,
     request: schemas.SopAiConfigUpdate,
     db: AsyncSession = Depends(get_db),
@@ -66,6 +70,7 @@ async def update_config(
 
 @router.post("/check/single", summary="单文件预审")
 async def single_check(
+    current_user: CurrentUser,
     request: schemas.SingleCheckRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -85,6 +90,7 @@ async def single_check(
 
 @router.post("/check/batch", summary="批量巡检")
 async def batch_check(
+    current_user: CurrentUser,
     request: schemas.BatchCheckRequest,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -103,6 +109,7 @@ async def batch_check(
 
 @router.get("/records", summary="获取校验记录列表")
 async def list_records(
+    current_user: CurrentUser,
     status: str | None = Query(None, description="状态过滤"),
     file_code: str | None = Query(None, description="文件编号过滤"),
     start_date: datetime | None = Query(None, description="开始时间"),
@@ -154,6 +161,7 @@ async def list_records(
 
 @router.get("/records/{id}", summary="获取校验记录详情")
 async def get_record(
+    current_user: CurrentUser,
     id: str,
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
@@ -172,6 +180,7 @@ async def get_record(
 
 @router.put("/problems/{problem_id}", summary="处理问题")
 async def handle_problem(
+    current_user: CurrentUser,
     problem_id: str,
     request: schemas.ProblemHandleRequest,
     db: AsyncSession = Depends(get_db),
@@ -202,6 +211,7 @@ async def handle_problem(
 
 @router.get("/jobs", summary="获取定时任务列表")
 async def list_jobs(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """获取定时任务列表"""
@@ -226,6 +236,7 @@ async def list_jobs(
 
 @router.post("/jobs", summary="创建定时任务")
 async def create_job(
+    current_user: CurrentUser,
     request: schemas.ScheduledJobCreate,
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
@@ -255,6 +266,7 @@ async def create_job(
 
 @router.delete("/jobs/{job_id}", summary="删除定时任务")
 async def delete_job(
+    current_user: CurrentUser,
     job_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
@@ -275,6 +287,7 @@ async def delete_job(
 
 @router.get("/export/{id}", summary="导出报告")
 async def export_report(
+    current_user: CurrentUser,
     id: str,
     format: str = Query("excel", description="导出格式: excel/pdf"),
     include_problems: bool = Query(True, description="是否包含问题明细"),

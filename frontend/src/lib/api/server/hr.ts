@@ -508,3 +508,67 @@ export async function fetchSopCatalog(params?: any) {
   const qs = sp.toString()
   return apiFetch(`${API_BASE_URL}/api/v1/hr/sop-catalog${qs ? `?${qs}` : ''}`)
 }
+
+export async function sendTrainingSelectTaskApi(data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-select-tasks/send`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function savePrejobTemplateApi(data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/prejob-training-templates`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function generatePrejobTrainingPlanApi(employeeId: string, params: any, factory: string, body: any) {
+  return apiFetchBlob(
+    `${API_BASE_URL}/api/v1/hr/employees/${employeeId}/prejob-training-plan?factory=${factory}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+  )
+}
+
+export async function submitTrainingSelectTaskApi(token: string, data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-select-tasks/${token}/submit`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function createTrainingTeamApi(data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-teams`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateTrainingTeamApi(id: string, data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-teams/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteTrainingTeamApi(id: string) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-teams/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function upsertTrainingSpecialistApi(data: any) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-specialists`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteTrainingSpecialistApi(id: string) {
+  return apiFetch(`${API_BASE_URL}/api/v1/hr/training-specialists/${id}`, {
+    method: 'DELETE',
+  })
+}

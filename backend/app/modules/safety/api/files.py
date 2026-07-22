@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.storage import get_object
 from app.core.storage import is_enabled as minio_enabled
 
@@ -97,6 +98,7 @@ def _resolve_local_path(file_path: str) -> str | None:
     description="通过 object_key 或本地路径返回文件内容。支持向后兼容旧路径。",
 )
 async def handler(
+    current_user: CurrentUser,
     file_path: str,
     request: Request,
     db: AsyncSession = Depends(get_db),

@@ -8,17 +8,26 @@ import {
   updateUser as updateUserServer,
   resetUserPassword as resetUserPasswordServer,
 } from '@/lib/api/server/users'
+import type {
+  UserManagementItem,
+  UserManagementListResponse,
+  LocalUserCreate,
+  UserManagementUpdate,
+  PasswordResetRequest,
+} from '@/types/users'
+
+export type {
+  UserManagementItem,
+  UserManagementListResponse,
+  LocalUserCreate,
+  UserManagementUpdate,
+  PasswordResetRequest,
+}
 
 async function getAuthToken(): Promise<string | undefined> {
   const cookieStore = await cookies()
   return cookieStore.get('auth_token')?.value
 }
-
-export type UserManagementItem = any
-export type UserManagementListResponse = any
-export type LocalUserCreate = any
-export type UserManagementUpdate = any
-export type PasswordResetRequest = any
 
 export async function getUsers(params?: {
   keyword?: string
@@ -26,7 +35,7 @@ export async function getUsers(params?: {
   status?: 'active' | 'disabled'
 }) {
   const token = await getAuthToken()
-  return getUsersServer(params, token) as UserManagementListResponse
+  return getUsersServer(params, token) as Promise<UserManagementListResponse>
 }
 
 export async function createUser(data: LocalUserCreate) {

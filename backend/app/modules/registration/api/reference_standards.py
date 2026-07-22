@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -22,6 +23,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> ReferenceStandardSer
 
 @router.post("/parse-coa", summary="解析COA文件提取信息")
 async def post(
+    current_user: CurrentUser,
     coa: UploadFile = File(...),
 ) -> Any:
     """解析COA PDF文件，自动提取关键信息"""
@@ -39,6 +41,7 @@ async def post(
 
 @router.post("/generate", summary="生成对照物质说明表")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     coa: UploadFile,
     drug_name: str = Form(..., description="药品名称"),
     reference_substance_name: str | None = Form(None, description="对照物质名称"),
@@ -86,6 +89,7 @@ async def post(  # noqa: F811
 
 @router.get("", summary="对照物质说明表记录列表")
 async def get(
+    current_user: CurrentUser,
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: ReferenceStandardService = Depends(get_service),
@@ -106,6 +110,7 @@ async def get(
 
 @router.get("/{record_id}", summary="对照物质说明表记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
@@ -115,6 +120,7 @@ async def get(  # noqa: F811
 
 @router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
@@ -131,6 +137,7 @@ async def get(  # noqa: F811
 
 @router.get("/{record_id}/download", summary="下载生成的说明表文件")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
@@ -151,6 +158,7 @@ async def get(  # noqa: F811
 
 @router.delete("/{record_id}", summary="删除对照物质说明表记录")
 async def delete(
+    current_user: CurrentUser,
     record_id: UUID,
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:

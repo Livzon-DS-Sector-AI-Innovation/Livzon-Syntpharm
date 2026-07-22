@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -42,7 +41,7 @@ async def test_login(
     if settings.APP_ENV not in ("development", "test", "e2e"):
         raise HTTPException(status_code=404)
 
-    expected_secret = os.getenv("E2E_AUTH_SECRET", "dazah-e2e-secret-2024")
+    expected_secret = settings.E2E_AUTH_SECRET
     if x_e2e_secret != expected_secret:
         raise HTTPException(status_code=404)
 

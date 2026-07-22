@@ -51,7 +51,7 @@ export {
   filterByMenuKey,
   computeMenuCounts,
   getGroupForKey,
-} from './KnowledgeConstants'
+} from './knowledgeConstants'
 export {
   NODE_TYPE_STYLE,
   ENTITY_TYPE_STYLE,
@@ -65,4 +65,4 @@ export type {
   CategoryStyle,
   KnowledgeMenuGroup,
   KnowledgeMenuItem,
-} from './KnowledgeConstants'
+} from './knowledgeConstants'

@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -20,6 +21,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取注册证书列表")
 async def list_certificates(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     certs = await cert_service.get_certificates(db)
@@ -29,6 +31,7 @@ async def list_certificates(
 
 @router.post("/", summary="创建注册证书")
 async def create_certificate(
+    current_user: CurrentUser,
     data: CertificateCreate,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -38,6 +41,7 @@ async def create_certificate(
 
 @router.get("/{certificate_id}", summary="获取注册证书详情")
 async def get_certificate(
+    current_user: CurrentUser,
     certificate_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -47,6 +51,7 @@ async def get_certificate(
 
 @router.put("/{certificate_id}", summary="更新注册证书")
 async def update_certificate(
+    current_user: CurrentUser,
     certificate_id: uuid.UUID,
     data: CertificateUpdate,
     db: AsyncSession = Depends(get_db),
@@ -57,6 +62,7 @@ async def update_certificate(
 
 @router.delete("/{certificate_id}", summary="删除注册证书")
 async def delete_certificate(
+    current_user: CurrentUser,
     certificate_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:

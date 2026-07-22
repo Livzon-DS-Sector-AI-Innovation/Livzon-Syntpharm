@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -20,6 +21,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取对照品列表")
 async def list_reference_substances(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有对照品记录"""
@@ -30,6 +32,7 @@ async def list_reference_substances(
 
 @router.post("/", summary="创建对照品")
 async def create_reference_substance(
+    current_user: CurrentUser,
     payload: ReferenceSubstanceCreate,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -41,6 +44,7 @@ async def create_reference_substance(
 
 @router.get("/{substance_id}", summary="获取对照品详情")
 async def get_reference_substance(
+    current_user: CurrentUser,
     substance_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -53,6 +57,7 @@ async def get_reference_substance(
 
 @router.put("/{substance_id}", summary="更新对照品")
 async def update_reference_substance(
+    current_user: CurrentUser,
     substance_id: uuid.UUID,
     payload: ReferenceSubstanceUpdate,
     db: AsyncSession = Depends(get_db),
@@ -68,6 +73,7 @@ async def update_reference_substance(
 
 @router.delete("/{substance_id}", summary="删除对照品")
 async def delete_reference_substance(
+    current_user: CurrentUser,
     substance_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
