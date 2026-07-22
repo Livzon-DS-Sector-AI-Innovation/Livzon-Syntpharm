@@ -55,7 +55,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
         working-directory: frontend
       - run: bash scripts/ci/ci.sh openapi
@@ -80,7 +80,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: bash scripts/ci/ci.sh lint
 
   frontend-typecheck:
@@ -91,7 +91,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: bash scripts/ci/ci.sh typecheck
 
   backend-alembic:
@@ -163,7 +163,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
       - run: bash scripts/ci/ci.sh build
         env:
@@ -191,7 +191,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm' }
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Start backend
