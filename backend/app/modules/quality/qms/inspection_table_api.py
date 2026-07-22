@@ -8,12 +8,12 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
+
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
 from app.modules.quality.qms.inspection_table_schemas import (
     BatchRowsRequest,
-    CreateTableRequest,
     RowDataRequest,
     UpdateTableRequest,
 )

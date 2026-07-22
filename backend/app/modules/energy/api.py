@@ -5,10 +5,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import error_response, paginated_response, success_response
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS

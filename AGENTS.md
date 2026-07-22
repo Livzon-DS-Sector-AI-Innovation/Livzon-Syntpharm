@@ -36,8 +36,6 @@
 | `scripts/test/` | 测试辅助与调试脚本 |
 | `scripts/regulatory_poc/` | 法规追踪概念验证 |
 
-CI 入口为 `scripts/ci/ci.sh`。`.github/workflows/` 中的所有 CI 路径必须引用 `scripts/ci/` 子目录。
-
 ### 第三方代码
 - 第三方库放在 `backend/vendor/`
 - 禁止将外部仓库直接克隆到 `backend/` 根目录

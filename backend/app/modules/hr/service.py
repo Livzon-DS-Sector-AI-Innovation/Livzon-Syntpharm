@@ -7,7 +7,6 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.hr.models import (
     AnnualTrainingPlan,
@@ -1406,7 +1405,7 @@ class CandidateService:
                 "recommendation_level": "",
             }
             logger.info("AI parser result: %s", result)
-            return result  # type: ignore[no-any-return]
+            return result
         except Exception:
             logger.exception("Failed to parse resume images via AI")
             return {

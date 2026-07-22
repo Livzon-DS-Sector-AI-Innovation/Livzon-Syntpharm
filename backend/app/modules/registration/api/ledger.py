@@ -5,12 +5,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
-from app.core.deps import CurrentUser
 from pydantic import TypeAdapter
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,

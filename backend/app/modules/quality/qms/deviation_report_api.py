@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, UploadFile
+
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
 from app.modules.quality.qms.deviation_report_schemas import OptimizeTextRequest

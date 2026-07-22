@@ -7,8 +7,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Button, message, Tabs } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { Employee, Department } from '@/types/hr'
-import { fetchEmployeesAction } from '@/actions/hr'
-import { fetchNewEmployees, fetchNewDepartments, uploadEmployeesFile } from '@/lib/api/client/hr'
+import { fetchEmployeesAction, uploadEmployeesAction } from '@/actions/hr'
+import { fetchNewEmployees, fetchNewDepartments } from '@/lib/api/client/hr'
 import { fetchDepartments } from '@/lib/api/client/hr'
 import { useHrStore } from '@/stores/hr'
 import EmployeeTable from './EmployeeTable'
@@ -140,7 +140,9 @@ export default function EmployeeProfileClient({
         </h1>
         <Upload accept=".xlsx,.xls" showUploadList={false} customRequest={async ({file}) => {
           try {
-            const d = await uploadEmployeesFile(file as File)
+            const fd = new FormData()
+            fd.append('file', file as File)
+            const d = await uploadEmployeesAction(fd)
             if (d.code === 0) message.success(`上传完成：新增${d.data.created}，更新${d.data.updated}`)
             else message.error(d.message || '上传失败')
             handleRefresh()

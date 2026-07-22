@@ -15,6 +15,7 @@ from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.llm import llm_client
 from app.core.response import success_response
 from app.modules.administration.public_api import (  # type: ignore[attr-defined]
     VehicleRequest,
@@ -28,7 +29,6 @@ from app.modules.hr.public_api import (
     search_employees_by_name,
     search_employees_fuzzy,
 )
-from app.core.llm import llm_client
 from app.modules.quality.ai.exam_generator import (
     build_generate_prompt,
     generate_exam_docx,

@@ -128,6 +128,7 @@ NATURAL_QUERY_PARSE_PROMPT = """## 用户输入
 }
 ```"""
 
+
 class SpecialOperationReportService:
     """八大特殊作业报备业务服务"""
 

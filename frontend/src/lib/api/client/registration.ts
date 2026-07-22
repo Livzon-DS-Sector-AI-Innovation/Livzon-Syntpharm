@@ -12,6 +12,8 @@ import type {
 export type DrugCreate = components['schemas']['DrugCreate']
 export type DrugUpdate = components['schemas']['DrugUpdate']
 
+export type { Drug, ReviewNodeConfig } from '@/types/registration'
+
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,

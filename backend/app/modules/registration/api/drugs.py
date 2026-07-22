@@ -4,10 +4,10 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import success_response
 from app.modules.registration import service
 from app.modules.registration.models.review import ReviewNode
@@ -45,7 +45,9 @@ async def create_drug(
 
 
 @router.get("/nodes", summary="获取审评节点配置")
-async def get_review_nodes(current_user: CurrentUser, ) -> JSONResponse:
+async def get_review_nodes(
+    current_user: CurrentUser,
+) -> JSONResponse:
     """获取10个审评节点的配置信息"""
     nodes = [ReviewNodeConfig(**n) for n in ReviewNode.get_all()]
     return success_response(data=nodes)

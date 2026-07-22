@@ -712,3 +712,11 @@ export async function fetchTrainingTeams(factory?: string): Promise<GenericDataL
   if (!res.ok) throw new Error('获取培训团队列表失败')
   return res.json()
 }
+
+export async function fetchTrainingSpecialists(factory?: string): Promise<GenericDataListResponse> {
+  const res = await fetch(`${API_BASE}/hr/training-specialists`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('获取培训专家列表失败')
+  return res.json()
+}

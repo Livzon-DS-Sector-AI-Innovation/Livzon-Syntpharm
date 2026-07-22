@@ -14,8 +14,8 @@ import {
   fetchNewDepartments,
   fetchEmployees,
   fetchNewEmployees,
-  submitTrainingSelectTask,
 } from '@/lib/api/client/hr'
+import { submitTrainingSelectTaskAction } from '@/actions/hr'
 
 interface TrainingSelectClientProps {
   token: string
@@ -92,7 +92,7 @@ export default function TrainingSelectClient({
       const selectedNames = employees
         .filter((e) => selectedNumbers.includes(e.value))
         .map((e) => e.label.split(' ')[0])
-      const res = await submitTrainingSelectTask(token, { selectedNumbers, selectedNames })
+      const res = await submitTrainingSelectTaskAction(token, { selectedNumbers, selectedNames })
       setResultData(res.data)
       setSubmitted(true)
       message.success('选择结果已提交')

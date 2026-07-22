@@ -158,9 +158,6 @@ async def upload_templates(
                 }
             )
         except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.error(f"[Upload] Failed to save {file.filename}: {e}", exc_info=True)
             results.append({"filename": file.filename, "status": "failed", "error": str(e)})
 

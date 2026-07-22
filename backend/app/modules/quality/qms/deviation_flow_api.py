@@ -14,15 +14,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.platform.database import get_db_session
-from app.platform.notification.feishu_client_config import FeishuClient
 from app.modules.quality.qms.deviation_flow_schemas import (
-    AttachmentResponse,
     DeviationCreateRequest,
-    DeviationResponse,
-    DeviationSubmitRequest,
     DeviationUpdateRequest,
 )
+from app.platform.database import get_db_session
+from app.platform.notification.feishu_client_config import FeishuClient
 
 logger = logging.getLogger(__name__)
 

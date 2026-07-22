@@ -6,10 +6,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
-from app.core.deps import CurrentUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.validation_audit import (
     ValidationAuditFileListItem,

@@ -271,12 +271,13 @@ class TurnoverAnalysisService:
         )
 
         messages = [{"role": "user", "content": user_prompt}]
+        if _TURNOVER_SYSTEM_PROMPT:
+            messages.insert(0, {"role": "system", "content": _TURNOVER_SYSTEM_PROMPT})
 
         try:
             content_parts = []
-            async for chunk in llm_client.stream_chat(
+            async for chunk in llm_client._func_l309(
                 messages=messages,
-                system_prompt=_TURNOVER_SYSTEM_PROMPT,
             ):
                 if chunk.get("type") == "content":
                     content_parts.append(chunk.get("text", ""))
