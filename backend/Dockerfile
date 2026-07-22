@@ -4,9 +4,9 @@ WORKDIR /app
 
 # Remove all existing Debian sources and use Chinese mirror
 RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
-    echo "deb https://mirror.nyist.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
-    echo "deb https://mirror.nyist.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
-    echo "deb https://mirror.nyist.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+    echo "deb https://mirrors.ustc.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
 
 # Install system dependencies required for OpenCV and PaddleOCR
 RUN apt-get update && apt-get install -y \

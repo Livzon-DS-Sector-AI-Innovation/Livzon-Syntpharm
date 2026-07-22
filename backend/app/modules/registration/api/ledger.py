@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import TypeAdapter
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,13 +17,13 @@ from app.modules.registration.schemas.ledger import (
     DomesticApprovalResponse,
     InternationalReviewCreate,
     InternationalReviewResponse,
+    LedgerSummary,
     OverseasApprovalCreate,
     OverseasApprovalResponse,
     WcCertificateCreate,
     WcCertificateResponse,
 )
 from app.modules.registration.service import ledger as ledger_service
-from pydantic import TypeAdapter
 
 router = APIRouter()
 
@@ -38,7 +39,8 @@ async def get(
 ) -> Any:
     items = await ledger_service.list_domestic_approvals(db, skip, limit)
     adapter = TypeAdapter(list[DomesticApprovalResponse])
-    return success_response(data=adapter.dump_python(items, mode="json"))
+    validated = adapter.validate_python(items)
+    return success_response(data=adapter.dump_python(validated, mode="json"))
 
 
 @router.post("/domestic-approvals", response_model=DomesticApprovalResponse)
@@ -155,7 +157,8 @@ async def get(  # noqa: F811
 ) -> Any:
     items = await ledger_service.list_overseas_approvals(db, skip, limit)
     adapter = TypeAdapter(list[OverseasApprovalResponse])
-    return success_response(data=adapter.dump_python(items, mode="json"))
+    validated = adapter.validate_python(items)
+    return success_response(data=adapter.dump_python(validated, mode="json"))
 
 
 @router.post("/overseas-approvals", response_model=OverseasApprovalResponse)  # type: ignore[no-redef]
@@ -266,7 +269,8 @@ async def get(  # noqa: F811
 ) -> Any:
     items = await ledger_service.list_international_reviews(db, skip, limit)
     adapter = TypeAdapter(list[InternationalReviewResponse])
-    return success_response(data=adapter.dump_python(items, mode="json"))
+    validated = adapter.validate_python(items)
+    return success_response(data=adapter.dump_python(validated, mode="json"))
 
 
 @router.post("/international-reviews", response_model=InternationalReviewResponse)  # type: ignore[no-redef]
@@ -359,7 +363,8 @@ async def get(  # noqa: F811
 ) -> Any:
     items = await ledger_service.list_copp_certificates(db, skip, limit)
     adapter = TypeAdapter(list[CoppCertificateResponse])
-    return success_response(data=adapter.dump_python(items, mode="json"))
+    validated = adapter.validate_python(items)
+    return success_response(data=adapter.dump_python(validated, mode="json"))
 
 
 @router.post("/copp-certificates", response_model=CoppCertificateResponse)  # type: ignore[no-redef]
@@ -452,7 +457,8 @@ async def get(  # noqa: F811
 ) -> Any:
     items = await ledger_service.list_wc_certificates(db, skip, limit)
     adapter = TypeAdapter(list[WcCertificateResponse])
-    return success_response(data=adapter.dump_python(items, mode="json"))
+    validated = adapter.validate_python(items)
+    return success_response(data=adapter.dump_python(validated, mode="json"))
 
 
 @router.post("/wc-certificates", response_model=WcCertificateResponse)  # type: ignore[no-redef]

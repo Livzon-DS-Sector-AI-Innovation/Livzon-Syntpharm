@@ -1,18 +1,57 @@
-# AI Coding Standards
+# AI 编程规范
 
 本文档定义 AI 编码助手必须遵守的规则。违反这些规则会导致代码被拒绝。
 
-## Repository-Wide Rules
+## 目录
+- [仓库通用规则](#仓库通用规则)
+- [仓库组织](#仓库组织)
+- [后端 — Python / FastAPI](#后端----python--fastapi)
+- [前端 — Next.js / TypeScript](#前端----nextjs--typescript)
 
-- No hardcoded absolute file paths (use config, env vars, or relative paths)
-- No hardcoded `localhost` / `127.0.0.1` in URLs (use env vars)
-- Never log or expose API keys, tokens, or passwords
-- Never commit `.env` files — only `.env.example` templates
-- Cross-references between backend and frontend must go through public contracts (OpenAPI spec)
+## 仓库通用规则
+
+- 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
+- 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
+- 禁止在日志或异常中输出 API key、token、密码等敏感信息
+- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
+- 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
+
+## 仓库组织
+
+### 测试
+- 测试文件放在 `backend/tests/modules/<module>/`
+- 测试 fixture（样本文件、测试数据）放在 `backend/tests/fixtures/`
+- 单元测试放在 `backend/tests/unit/`，集成测试放在 `backend/tests/integration/`
+
+### 脚本 (`backend/scripts/`)
+按用途组织：
+
+| 目录 | 用途 |
+|---|---|
+| `scripts/ci/` | CI 编排、spec 生成、迁移检查 |
+| `scripts/seed/` | 数据库种子数据与模块设置 |
+| `scripts/migration/` | 一次性数据迁移与回填 |
+| `scripts/sync/` | 飞书同步与多维表格检查 |
+| `scripts/import/` | Excel/CSV 数据导入脚本 |
+| `scripts/test/` | 测试辅助与调试脚本 |
+| `scripts/regulatory_poc/` | 法规追踪概念验证 |
+
+CI 入口为 `scripts/ci/ci.sh`。`.github/workflows/` 中的所有 CI 路径必须引用 `scripts/ci/` 子目录。
+
+### 第三方代码
+- 第三方库放在 `backend/vendor/`
+- 禁止将外部仓库直接克隆到 `backend/` 根目录
+- `backend/edbo_service/` 是 EDBO+ 封装服务
+- `backend/vendor/edboplus-main/` 是 EDBO+ 库
+
+### 文档
+- 后端文档放在 `backend/docs/`
+- 培训模板放在 `backend/docs/training/`
+- 禁止将 `.docx`、`.xlsx` 或 PDF 文件放在 `backend/` 根目录
 
 ---
 
-# Backend — Python / FastAPI
+# 后端 — Python / FastAPI
 
 ## 架构原则
 
@@ -129,7 +168,7 @@ DELETE /api/v1/{module}/{resource}/{id}
 
 **单模块原则**：基线之后的每个迁移文件只能修改一个模块的 schema。跨模块外键、`platform`/`core`/`shared` 级变更可以跨 schema，但必须由架构负责人审批。
 
-CI 会自动检查（`scripts/check_migration_scope.py`），违反会导致 PR 无法合并。
+CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 PR 无法合并。
 
 ### Model 与 Migration 绑定规则
 
@@ -191,7 +230,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 **新增配置**：
 - LLM API keys → 通过管理界面配置，加密存储在 `core.llm_configs` 表
 - 其他 API key / 凭证 → 加到 `core/config.py` 的 `Settings` 类
-- 模型名称 / 功能开关 / 运营参数 → 加到 `scripts/seed_module_settings.py` 并通过 Web UI 管理
+- 模型名称 / 功能开关 / 运营参数 → 加到 `scripts/seed/seed_module_settings.py` 并通过 Web UI 管理
 
 **环境变量同步**：新增/修改 `.env` 文件时，必须同步修改 `.env.example`。
 
@@ -204,21 +243,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 
 所有飞书应用凭证采用嵌套结构管理，按模块分组。结构定义在 `app/core/config.py`：
 
-```python
-class FeishuAppCredentials(BaseModel):
-    app_id: str = ""
-    app_secret: str = ""
-
-class FeishuSettings(BaseModel):
-    platform: FeishuPlatformConfig      # 平台应用（SSO、组织同步、IM、通用 Bitable）
-    hr_bitable: FeishuHRBitableConfig   # HR 模块表格（使用平台应用凭证）
-    safety: FeishuSafetyConfig          # 安全模块（独立应用 + 隐患表格）
-    equipment: FeishuEquipmentConfig    # 设备模块（独立应用）
-    vehicle: FeishuVehicleConfig        # 车辆模块（独立应用 + 申请表格）
-    training: FeishuTrainingConfig      # 培训模块（独立应用 + 培训表格）
-    product: FeishuProductConfig        # 产品模块（使用平台应用凭证）
-    ai_query: FeishuAIQueryConfig       # AI 查询配置
-```
+**结构定义**在 `app/core/config.py` 的 `FeishuSettings` 类中，按模块分组。
 
 **环境变量命名规则**：使用双下划线 `__` 分隔层级，格式 `FEISHU__{MODULE}__{FIELD}` 或 `FEISHU__{MODULE}__CREDENTIALS__{FIELD}`。
 
@@ -296,8 +321,6 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 
 ## 测试规范
 
-测试文件放在 `tests/modules/<module>/`，与模块一一对应。
-
 **框架**：pytest + pytest-asyncio，异步测试用 `@pytest.mark.asyncio`。
 
 **覆盖优先级**：service 层业务逻辑 > API 端点契约 > repository 查询。
@@ -323,7 +346,7 @@ uv run pytest tests/modules/<module>/ -k "test_name"  # 单个用例
 
 ---
 
-# Frontend — Next.js / TypeScript
+# 前端 — Next.js / TypeScript
 
 原料药厂管理系统前端，Next.js 16 App Router，TypeScript。后端为独立的 Python FastAPI 服务。
 
@@ -378,7 +401,7 @@ frontend/src/
 └── proxy.ts                  # API 代理（禁止修改）
 ```
 
-## Server Component vs Client Component
+## Server Component 与 Client Component
 
 `page.tsx` 默认是 Server Component，**不加** `'use client'`。
 
@@ -486,8 +509,6 @@ const response = await fetch(`${API_BASE}/api/v1/production/batches`)
 
 `src/proxy.ts` 是 Next.js 请求中间层，仅负责 API 转发、流式响应处理和轻量登录状态判断。当前项目使用 Turbopack，因此不使用 `next.config.js` 的 `rewrites()`，而通过 `proxy.ts` 转发 `/api/v1/*`。
 
-API 转发使用 `fetch` 和 `new NextResponse` 进行透明传递，不使用 `NextResponse.rewrite`。
-
 **允许：**
 - 将 `/api/v1/*` 转发到后端
 - 透传 HTTP method、body、headers 和 cookies
@@ -556,7 +577,7 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 ```bash
 # 1. 在 backend 目录导出最新 spec
-cd ../backend && uv run python scripts/export_openapi.py
+cd ../backend && uv run python scripts/ci/export_openapi.py
 
 # 2. 在 frontend 目录重新生成类型
 cd ../frontend && pnpm generate:api
