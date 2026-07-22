@@ -18917,6 +18917,22 @@
               "type": "string",
               "title": "File Path"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -28574,12 +28590,40 @@
         ],
         "summary": "\u83b7\u53d6\u5df2\u767b\u8bb0\u7684\u5e73\u53f0\u5217\u8868",
         "operationId": "list_platforms_api_v1_energy_platforms_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -28633,6 +28677,22 @@
               "title": "End Time"
             },
             "description": "\u7ed3\u675f\u65f6\u95f4(ISO\u683c\u5f0f)"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -28664,6 +28724,24 @@
         ],
         "summary": "\u65b0\u589e\u8bbe\u5907\u914d\u7f6e",
         "operationId": "create_device_config_api_v1_energy_devices_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -28818,6 +28896,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -28859,6 +28953,22 @@
               "format": "uuid",
               "title": "Config Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -28897,6 +29007,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -28946,6 +29072,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -29078,6 +29220,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29161,6 +29319,22 @@
               "title": "End Time"
             },
             "description": "\u7ed3\u675f\u65f6\u95f4(ISO\u683c\u5f0f)"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29192,15 +29366,33 @@
         ],
         "summary": "\u624b\u52a8\u89e6\u53d1\u91c7\u96c6",
         "operationId": "trigger_collection_api_v1_energy_collect_trigger_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CollectTriggerRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -29290,6 +29482,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29331,6 +29539,22 @@
               "format": "uuid",
               "title": "Log Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29362,6 +29586,24 @@
         ],
         "summary": "\u65b0\u589e\u9884\u8b66\u89c4\u5219",
         "operationId": "create_alert_rule_api_v1_energy_alerts_rules_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -29480,6 +29722,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29521,6 +29779,22 @@
               "format": "uuid",
               "title": "Rule Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29559,6 +29833,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Rule Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -29608,6 +29898,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Rule Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -29757,6 +30063,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29797,6 +30119,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -29840,6 +30178,24 @@
         ],
         "summary": "\u65b0\u589e\u8f66\u95f4",
         "operationId": "create_workshop_api_v1_energy_workshops_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -29941,6 +30297,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -29983,6 +30355,22 @@
               "format": "uuid",
               "title": "Workshop Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30022,6 +30410,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Workshop Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -30073,6 +30477,22 @@
               "format": "uuid",
               "title": "Workshop Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30105,6 +30525,24 @@
         ],
         "summary": "\u65b0\u589e\u6708\u5ea6\u8bb0\u5f55",
         "operationId": "create_monthly_record_api_v1_energy_monthly_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -30243,6 +30681,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30275,15 +30729,33 @@
         ],
         "summary": "\u6279\u91cf\u65b0\u589e\u6708\u5ea6\u8bb0\u5f55",
         "operationId": "batch_create_monthly_records_api_v1_energy_monthly_batch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EnergyMonthlyRecordBatchCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -30388,6 +30860,22 @@
               "title": "End Date"
             },
             "description": "\u7ed3\u675f\u65e5\u671f(YYYY-MM-DD)"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30430,6 +30918,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30470,6 +30974,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -30502,15 +31022,33 @@
         ],
         "summary": "\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u80fd\u8017\u6570\u636e",
         "operationId": "import_from_feishu_api_v1_energy_monthly_import_feishu_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FeishuEnergyImportRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -30542,12 +31080,40 @@
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6570\u636e",
         "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u548c\u6708\u5ea6\u8bb0\u5f55\u6570\u636e\u3002",
         "operationId": "sync_from_bitable_api_v1_energy_sync_bitable_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -30562,12 +31128,40 @@
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e",
         "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e\u3002",
         "operationId": "sync_workshops_from_bitable_api_v1_energy_sync_bitable_workshops_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -30582,12 +31176,40 @@
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u8bb0\u5f55",
         "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u80fd\u8017\u8bb0\u5f55\u3002",
         "operationId": "sync_monthly_from_bitable_api_v1_energy_sync_bitable_monthly_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -30602,15 +31224,33 @@
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u6570\u636e",
         "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u80fd\u6e90\u6570\u636e\u3002\n\n\u8bf7\u6c42\u4f53:\n- year: \u5e74\u4efd\uff08\u5982 2026\uff09\n- \u6216 month: \u6708\u4efd\u8868\u540d\uff08\u5982 \"2026-06\"\uff09",
         "operationId": "cross_import_from_bitable_api_v1_energy_sync_bitable_cross_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BitableCrossImportRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -31758,15 +32398,33 @@
         "summary": "\u8bc6\u522b\u91c7\u8d2d\u53d1\u7968 PDF",
         "description": "\u4ece\u7535\u5b50\u53d1\u7968 PDF \u4e2d\u8bc6\u522b\u53d1\u7968\u53f7\u7801\u3001\u5f00\u7968\u65e5\u671f\u3001\u9500\u552e\u65b9\u540d\u79f0\u3001\u7a0e\u989d\u5408\u8ba1\u548c\u4ef7\u7a0e\u5408\u8ba1\uff08\u5c0f\u5199\uff09\u3002\u5f00\u542f\u660e\u7ec6\u8bc6\u522b\u65f6\u989d\u5916\u8bc6\u522b\u9879\u76ee\u540d\u79f0\u3001\u5355\u4f4d\u548c\u6570\u91cf\u3002",
         "operationId": "recognize_invoice_api_v1_procurement_invoices_recognize_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -31899,6 +32557,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -31933,15 +32607,33 @@
         "summary": "\u5bfc\u5165\u4f9b\u5e94\u5546\u6e05\u5355\u8868\u683c",
         "description": "\u4e0a\u4f20 xlsx\u3001xlsm\u3001csv \u6216 tsv \u8868\u683c\u6587\u4ef6\uff0c\u6309\u6587\u4ef6\u8868\u5934\u8bfb\u53d6\u5b57\u6bb5\u5e76\u66ff\u6362\u5f53\u524d\u4f9b\u5e94\u5546\u6e05\u5355\u3002",
         "operationId": "import_supplier_records_api_v1_procurement_suppliers_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_import_supplier_records_api_v1_procurement_suppliers_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -32056,6 +32748,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32100,6 +32808,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32134,15 +32858,33 @@
         "summary": "\u6279\u91cf\u5220\u9664\u91c7\u8d2d\u53d1\u7968\u8bc6\u522b\u8bb0\u5f55",
         "description": "\u8f6f\u5220\u9664\u591a\u6761\u91c7\u8d2d\u53d1\u7968\u8bc6\u522b\u5386\u53f2\u8bb0\u5f55\u3002",
         "operationId": "batch_delete_invoice_records_api_v1_procurement_invoices_recognition_records_batch_delete_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InvoiceRecognitionRecordDeleteRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -32247,6 +32989,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32325,6 +33083,22 @@
               "title": "Month"
             },
             "description": "\u6708\u4efd"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32467,6 +33241,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32499,6 +33289,24 @@
         "summary": "\u521b\u5efa\u91c7\u8d2d\u7533\u8bf7",
         "description": "\u4fdd\u5b58\u91c7\u8d2d\u7533\u8bf7\u8349\u7a3f\uff0c\u5e76\u6309\u6570\u91cf\u548c\u5355\u4ef7\u81ea\u52a8\u8ba1\u7b97\u660e\u7ec6\u603b\u989d\u4e0e\u5408\u8ba1\u3002",
         "operationId": "create_purchase_request_record_api_v1_procurement_purchase_requests_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -32550,6 +33358,22 @@
               "format": "uuid",
               "title": "Request Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32591,6 +33415,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Request Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -32646,6 +33486,22 @@
               "format": "uuid",
               "title": "Request Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32688,6 +33544,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Request Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -32741,6 +33613,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Request Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -32831,6 +33719,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32873,6 +33777,22 @@
             "schema": {
               "$ref": "#/components/schemas/ContractCategory"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -32907,15 +33827,33 @@
         "summary": "\u751f\u6210\u91c7\u8d2d\u5408\u540c",
         "description": "\u6839\u636e\u5408\u540c\u5206\u7c7b\u3001\u57fa\u7840\u4fe1\u606f\u3001\u4f9b\u5e94\u5546\u4fe1\u606f\u548c\u660e\u7ec6\u884c\u751f\u6210 Word \u5408\u540c\u3002",
         "operationId": "create_contract_api_v1_procurement_contracts_generate_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ContractGenerateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -32955,6 +33893,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Contract Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -32998,6 +33952,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Contract Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -45345,12 +46315,40 @@
         ],
         "summary": "\u83b7\u53d6\u6ce8\u518c\u9996\u9875\u770b\u677f\u6c47\u603b\u6570\u636e",
         "operationId": "dashboard_summary_api_v1_registration_dashboard_summary_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45365,12 +46363,40 @@
         ],
         "summary": "\u83b7\u53d6\u6ce8\u518c\u9879\u76ee\u5217\u8868",
         "operationId": "list_projects_api_v1_registration_projects__get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45383,15 +46409,33 @@
         ],
         "summary": "\u521b\u5efa\u6ce8\u518c\u9879\u76ee",
         "operationId": "create_project_api_v1_registration_projects__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ProjectCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -45433,6 +46477,22 @@
               "format": "uuid",
               "title": "Project Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -45472,6 +46532,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -45523,6 +46599,22 @@
               "format": "uuid",
               "title": "Project Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -45555,12 +46647,40 @@
         ],
         "summary": "\u83b7\u53d6\u6ce8\u518c\u8bc1\u4e66\u5217\u8868",
         "operationId": "list_certificates_api_v1_registration_certificates__get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45573,15 +46693,33 @@
         ],
         "summary": "\u521b\u5efa\u6ce8\u518c\u8bc1\u4e66",
         "operationId": "create_certificate_api_v1_registration_certificates__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CertificateCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -45623,6 +46761,22 @@
               "format": "uuid",
               "title": "Certificate Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -45662,6 +46816,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Certificate Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -45713,6 +46883,22 @@
               "format": "uuid",
               "title": "Certificate Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -45746,12 +46932,40 @@
         "summary": "\u83b7\u53d6\u836f\u54c1\u5217\u8868",
         "description": "\u83b7\u53d6\u6240\u6709\u836f\u54c1\u53ca\u5176\u5ba1\u8bc4\u8282\u70b9",
         "operationId": "list_drugs_api_v1_registration_drugs__get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45765,15 +46979,33 @@
         "summary": "\u521b\u5efa\u836f\u54c1",
         "description": "\u521b\u5efa\u65b0\u836f\u54c1",
         "operationId": "create_drug_api_v1_registration_drugs__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DrugCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -45806,12 +47038,40 @@
         "summary": "\u83b7\u53d6\u5ba1\u8bc4\u8282\u70b9\u914d\u7f6e",
         "description": "\u83b7\u53d610\u4e2a\u5ba1\u8bc4\u8282\u70b9\u7684\u914d\u7f6e\u4fe1\u606f",
         "operationId": "get_review_nodes_api_v1_registration_drugs_nodes_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -45836,6 +47096,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Drug Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -45877,6 +47153,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Drug Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -45929,6 +47221,22 @@
               "format": "uuid",
               "title": "Drug Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -45980,6 +47288,22 @@
               "title": "Year"
             },
             "description": "\u5e74\u4efd\u7b5b\u9009"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46011,6 +47335,24 @@
         "summary": "\u521b\u5efa\u8282\u5047\u65e5",
         "description": "\u521b\u5efa\u8282\u5047\u65e5",
         "operationId": "create_holiday_api_v1_registration_holidays__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -46061,6 +47403,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Holiday Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -46113,6 +47471,22 @@
               "format": "uuid",
               "title": "Holiday Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46145,6 +47519,24 @@
         ],
         "summary": "\u83b7\u53d6\u54c1\u79cd\u767b\u8bb0\u53f7\u5bf9\u7167\u8868",
         "operationId": "list_products_api_v1_registration_authorization_letters_products_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -46152,6 +47544,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response List Products Api V1 Registration Authorization Letters Products Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -46226,6 +47628,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46260,15 +47678,33 @@
         ],
         "summary": "\u751f\u6210\u6388\u6743\u4e66",
         "operationId": "post_api_v1_registration_authorization_letters_generate_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_authorization_letters_generate_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -46312,6 +47748,22 @@
               "format": "uuid",
               "title": "Letter Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46353,6 +47805,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Letter Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -46398,6 +47866,22 @@
               "format": "uuid",
               "title": "Letter Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46442,6 +47926,22 @@
               "format": "uuid",
               "title": "Letter Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46477,12 +47977,40 @@
         "summary": "\u83b7\u53d6\u5bf9\u7167\u54c1\u5217\u8868",
         "description": "\u83b7\u53d6\u6240\u6709\u5bf9\u7167\u54c1\u8bb0\u5f55",
         "operationId": "list_reference_substances_api_v1_registration_reference_substances__get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -46496,15 +48024,33 @@
         "summary": "\u521b\u5efa\u5bf9\u7167\u54c1",
         "description": "\u521b\u5efa\u5bf9\u7167\u54c1\u8bb0\u5f55",
         "operationId": "create_reference_substance_api_v1_registration_reference_substances__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReferenceSubstanceCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -46547,6 +48093,22 @@
               "format": "uuid",
               "title": "Substance Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46587,6 +48149,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Substance Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -46639,6 +48217,22 @@
               "format": "uuid",
               "title": "Substance Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46672,15 +48266,33 @@
         "summary": "\u89e3\u6790COA\u6587\u4ef6\u63d0\u53d6\u4fe1\u606f",
         "description": "\u89e3\u6790COA PDF\u6587\u4ef6\uff0c\u81ea\u52a8\u63d0\u53d6\u5173\u952e\u4fe1\u606f",
         "operationId": "post_api_v1_registration_reference_standards_parse_coa_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_reference_standards_parse_coa_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -46714,15 +48326,33 @@
         ],
         "summary": "\u751f\u6210\u5bf9\u7167\u7269\u8d28\u8bf4\u660e\u8868",
         "operationId": "post_api_v1_registration_reference_standards_generate_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_reference_standards_generate_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -46797,6 +48427,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46841,6 +48487,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46882,6 +48544,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -46927,6 +48605,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -46971,6 +48665,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47005,15 +48715,33 @@
         ],
         "summary": "\u751f\u6210\u53d1\u8865\u56de\u590d\u6587\u6863",
         "operationId": "post_api_v1_registration_supplementary_replies_generate_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_supplementary_replies_generate_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -47088,6 +48816,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47132,6 +48876,22 @@
               "format": "uuid",
               "title": "Reply Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47173,6 +48933,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Reply Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -47218,6 +48994,22 @@
               "format": "uuid",
               "title": "Reply Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47262,6 +49054,22 @@
               "format": "uuid",
               "title": "Reply Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47296,6 +49104,24 @@
         ],
         "summary": "\u521b\u5efa\u5ba1\u6838\u4efb\u52a1",
         "operationId": "post_api_v1_registration_validation_audit_tasks_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -47409,6 +49235,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47455,6 +49297,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47498,6 +49356,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -47553,6 +49427,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47599,6 +49489,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -47654,6 +49560,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47700,6 +49622,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47745,6 +49683,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -47808,6 +49762,22 @@
               ],
               "title": "Issue Type"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47854,6 +49824,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47899,6 +49885,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -47956,6 +49958,22 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -47988,6 +50006,24 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_domestic_approvals_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -48030,15 +50066,33 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_domestic_approvals_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_ledger_domestic_approvals_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -48072,6 +50126,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_domestic_approvals_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48079,6 +50151,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Domestic Approvals Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48114,6 +50196,22 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -48146,6 +50244,24 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_overseas_approvals_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -48188,15 +50304,33 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_overseas_approvals_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_ledger_overseas_approvals_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -48230,6 +50364,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_overseas_approvals_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48237,6 +50389,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Overseas Approvals Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48272,6 +50434,22 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -48304,6 +50482,24 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_international_reviews_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -48346,15 +50542,33 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_international_reviews_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_ledger_international_reviews_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -48388,6 +50602,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_international_reviews_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48395,6 +50627,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger International Reviews Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48430,6 +50672,22 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -48462,6 +50720,24 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_copp_certificates_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -48504,15 +50780,33 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_copp_certificates_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_ledger_copp_certificates_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -48546,6 +50840,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_copp_certificates_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48553,6 +50865,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Copp Certificates Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48588,6 +50910,22 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -48620,6 +50958,24 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_wc_certificates_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -48662,15 +51018,33 @@
         ],
         "summary": "Post",
         "operationId": "post_api_v1_registration_ledger_wc_certificates_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_registration_ledger_wc_certificates_import_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -48704,6 +51078,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_wc_certificates_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48711,6 +51103,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Wc Certificates Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48726,6 +51128,24 @@
         ],
         "summary": "Get",
         "operationId": "get_api_v1_registration_ledger_summary_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48733,6 +51153,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Summary Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -48749,6 +51179,24 @@
         "summary": "Get",
         "description": "\u4ece drugs \u8868\u83b7\u53d6\u5ba1\u8bc4\u4e2d\u7684\u54c1\u79cd",
         "operationId": "get_api_v1_registration_ledger_reviewing_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48756,6 +51204,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Registration Ledger Reviewing Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -65297,21 +67755,49 @@
         }
       }
     },
-    "/api/v1/sop-ai/config": {
+    "/api/v1/quality/sop-ai/config": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u83b7\u53d6\u914d\u7f6e\u5217\u8868",
         "description": "\u83b7\u53d6\u6240\u6709\u914d\u7f6e",
-        "operationId": "get_api_v1_sop_ai_config_get",
+        "operationId": "get_api_v1_quality_sop_ai_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Sop Ai Config Get"
+                  "title": "Response Get Api V1 Quality Sop Ai Config Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -65319,14 +67805,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/config/{config_key}": {
+    "/api/v1/quality/sop-ai/config/{config_key}": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u83b7\u53d6\u5355\u4e2a\u914d\u7f6e",
         "description": "\u83b7\u53d6\u6307\u5b9a\u914d\u7f6e",
-        "operationId": "get_config_api_v1_sop_ai_config__config_key__get",
+        "operationId": "get_config_api_v1_quality_sop_ai_config__config_key__get",
         "parameters": [
           {
             "name": "config_key",
@@ -65335,6 +67821,22 @@
             "schema": {
               "type": "string",
               "title": "Config Key"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -65365,7 +67867,7 @@
         ],
         "summary": "\u66f4\u65b0\u914d\u7f6e",
         "description": "\u66f4\u65b0\u914d\u7f6e",
-        "operationId": "update_config_api_v1_sop_ai_config__config_key__put",
+        "operationId": "update_config_api_v1_quality_sop_ai_config__config_key__put",
         "parameters": [
           {
             "name": "config_key",
@@ -65374,6 +67876,22 @@
             "schema": {
               "type": "string",
               "title": "Config Key"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -65409,23 +67927,41 @@
         }
       }
     },
-    "/api/v1/sop-ai/check/single": {
+    "/api/v1/quality/sop-ai/check/single": {
       "post": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u5355\u6587\u4ef6\u9884\u5ba1",
         "description": "\u5bf9\u5355\u4e2a\u6587\u4ef6\u8fdb\u884c\u9884\u5ba1\u6821\u9a8c",
-        "operationId": "single_check_api_v1_sop_ai_check_single_post",
+        "operationId": "single_check_api_v1_quality_sop_ai_check_single_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SingleCheckRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -65433,9 +67969,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Single Check Api V1 Sop Ai Check Single Post"
+                  "additionalProperties": true,
+                  "title": "Response Single Check Api V1 Quality Sop Ai Check Single Post"
                 }
               }
             }
@@ -65453,23 +67989,41 @@
         }
       }
     },
-    "/api/v1/sop-ai/check/batch": {
+    "/api/v1/quality/sop-ai/check/batch": {
       "post": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u6279\u91cf\u5de1\u68c0",
         "description": "\u5bf9\u591a\u4e2a\u6587\u4ef6\u8fdb\u884c\u6279\u91cf\u5de1\u68c0",
-        "operationId": "batch_check_api_v1_sop_ai_check_batch_post",
+        "operationId": "batch_check_api_v1_quality_sop_ai_check_batch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BatchCheckRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -65477,9 +68031,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Batch Check Api V1 Sop Ai Check Batch Post"
+                  "additionalProperties": true,
+                  "title": "Response Batch Check Api V1 Quality Sop Ai Check Batch Post"
                 }
               }
             }
@@ -65497,14 +68051,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/records": {
+    "/api/v1/quality/sop-ai/records": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u5217\u8868",
         "description": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u5217\u8868",
-        "operationId": "list_records_api_v1_sop_ai_records_get",
+        "operationId": "list_records_api_v1_quality_sop_ai_records_get",
         "parameters": [
           {
             "name": "status",
@@ -65606,6 +68160,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -65616,7 +68186,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response List Records Api V1 Sop Ai Records Get"
+                  "title": "Response List Records Api V1 Quality Sop Ai Records Get"
                 }
               }
             }
@@ -65634,14 +68204,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/records/{id}": {
+    "/api/v1/quality/sop-ai/records/{id}": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u8be6\u60c5",
         "description": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u8be6\u60c5",
-        "operationId": "get_record_api_v1_sop_ai_records__id__get",
+        "operationId": "get_record_api_v1_quality_sop_ai_records__id__get",
         "parameters": [
           {
             "name": "id",
@@ -65650,6 +68220,22 @@
             "schema": {
               "type": "string",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -65675,14 +68261,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/problems/{problem_id}": {
+    "/api/v1/quality/sop-ai/problems/{problem_id}": {
       "put": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u5904\u7406\u95ee\u9898",
         "description": "\u5904\u7406\u95ee\u9898",
-        "operationId": "handle_problem_api_v1_sop_ai_problems__problem_id__put",
+        "operationId": "handle_problem_api_v1_quality_sop_ai_problems__problem_id__put",
         "parameters": [
           {
             "name": "problem_id",
@@ -65691,6 +68277,22 @@
             "schema": {
               "type": "string",
               "title": "Problem Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -65726,23 +68328,51 @@
         }
       }
     },
-    "/api/v1/sop-ai/jobs": {
+    "/api/v1/quality/sop-ai/jobs": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u5217\u8868",
         "description": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u5217\u8868",
-        "operationId": "list_jobs_api_v1_sop_ai_jobs_get",
+        "operationId": "list_jobs_api_v1_quality_sop_ai_jobs_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response List Jobs Api V1 Sop Ai Jobs Get"
+                  "additionalProperties": true,
+                  "title": "Response List Jobs Api V1 Quality Sop Ai Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -65755,16 +68385,34 @@
         ],
         "summary": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1",
         "description": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1",
-        "operationId": "create_job_api_v1_sop_ai_jobs_post",
+        "operationId": "create_job_api_v1_quality_sop_ai_jobs_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ScheduledJobCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -65788,14 +68436,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/jobs/{job_id}": {
+    "/api/v1/quality/sop-ai/jobs/{job_id}": {
       "delete": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u5220\u9664\u5b9a\u65f6\u4efb\u52a1",
         "description": "\u5220\u9664\u5b9a\u65f6\u4efb\u52a1",
-        "operationId": "delete_job_api_v1_sop_ai_jobs__job_id__delete",
+        "operationId": "delete_job_api_v1_quality_sop_ai_jobs__job_id__delete",
         "parameters": [
           {
             "name": "job_id",
@@ -65804,6 +68452,22 @@
             "schema": {
               "type": "string",
               "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -65829,14 +68493,14 @@
         }
       }
     },
-    "/api/v1/sop-ai/export/{id}": {
+    "/api/v1/quality/sop-ai/export/{id}": {
       "get": {
         "tags": [
           "SOP AI"
         ],
         "summary": "\u5bfc\u51fa\u62a5\u544a",
         "description": "\u5bfc\u51fa\u6821\u9a8c\u62a5\u544a",
-        "operationId": "export_report_api_v1_sop_ai_export__id__get",
+        "operationId": "export_report_api_v1_quality_sop_ai_export__id__get",
         "parameters": [
           {
             "name": "id",
@@ -65870,6 +68534,22 @@
               "title": "Include Problems"
             },
             "description": "\u662f\u5426\u5305\u542b\u95ee\u9898\u660e\u7ec6"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
