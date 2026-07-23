@@ -46,7 +46,11 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
 
   const handleLogout = async () => {
     setLoggingOut(true)
-    await logout()
+    try {
+      await logout()
+    } catch {
+      // redirect() throws NEXT_REDIRECT, which Next.js handles internally
+    }
   }
 
   const avatarSrc = user?.avatar_url || undefined

@@ -1,14 +1,13 @@
 services:
-  nginx:
-    profiles:
-      - production
-
   backend:
     volumes:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
       - ./backend/alembic.ini:/app/alembic.ini
       - ./backend/storage:/app/storage
+    dns:
+      - 223.5.5.5
+      - 8.8.8.8
     command: >
       sh -c "uv run alembic upgrade head &&
       .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"
@@ -26,5 +25,6 @@ services:
       WATCHPACK_POLLING: "true"
       WATCHPACK_POLLING_INTERVAL: "1000"
       CHOKIDAR_USEPOLLING: "true"
+      ALLOWED_DEV_ORIGINS: "8.138.238.190"
     command: sh -c "rm -rf /app/.next && pnpm dev"
     user: node

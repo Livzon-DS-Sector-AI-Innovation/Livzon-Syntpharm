@@ -35,6 +35,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "$PROJECT_ROOT"
 
+REPO_ROOT="$(dirname "$PROJECT_ROOT")"
+CI_COMPOSE_FILE="$REPO_ROOT/docker-compose.ci.yml"
+
+STARTED_CI_PG=false
+cleanup_ci_pg() {
+    if [ "$STARTED_CI_PG" = "true" ]; then
+        log_info "Stopping CI postgres..."
+        docker compose -f "$CI_COMPOSE_FILE" down -v postgres 2>/dev/null || true
+    fi
+}
+trap cleanup_ci_pg EXIT
+
 # ── Colors ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -105,8 +117,17 @@ PSQL_HOST="${DB_HOST:-localhost}"
 check_postgres() {
     if ! uv run python -c "
 import asyncio
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
-asyncio.run(create_async_engine('${DB_URL}').dispose())
+async def check():
+    engine = create_async_engine('${DB_URL}')
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text('SELECT 1'))
+        return True
+    finally:
+        await engine.dispose()
+asyncio.run(check())
 " 2>/dev/null; then
         return 1
     fi
@@ -114,15 +135,26 @@ asyncio.run(create_async_engine('${DB_URL}').dispose())
 }
 
 ensure_postgres() {
-    if ! check_postgres; then
+    if check_postgres; then
+        return
+    fi
+    if [ "${CI_MODE}" = "true" ]; then
         log_error "PostgreSQL is not accessible at ${PSQL_HOST}:5432"
-        if [ "${CI_MODE}" = "true" ]; then
-            log_error "GitHub Actions should have started a postgres service."
-        else
-            log_error "Start it with: docker compose up -d db"
-        fi
+        log_error "GitHub Actions should have started a postgres service."
         exit 1
     fi
+    log_info "Starting CI postgres container..."
+    docker compose -f "$CI_COMPOSE_FILE" up -d postgres
+    STARTED_CI_PG=true
+    for i in $(seq 1 30); do
+        if check_postgres; then
+            log_info "CI postgres ready"
+            return
+        fi
+        sleep 1
+    done
+    log_error "CI postgres did not become ready"
+    exit 1
 }
 
 clean_db() {
@@ -135,12 +167,7 @@ clean_db() {
     if [ "${CI_MODE}" = "true" ]; then
         PSQL_CMD="psql -h ${PSQL_HOST} -U postgres"
     else
-        # Try docker compose first, fall back to direct psql
-        if docker compose ps db >/dev/null 2>&1; then
-            PSQL_CMD="docker compose exec -T db psql -U postgres"
-        else
-            PSQL_CMD="psql -h ${PSQL_HOST} -U postgres"
-        fi
+        PSQL_CMD="docker compose -f \"$CI_COMPOSE_FILE\" exec -T postgres psql -U postgres"
     fi
     ${PSQL_CMD} -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${DB_NAME}' AND pid <> pg_backend_pid();" 2>/dev/null || true
     ${PSQL_CMD} -c "DROP DATABASE IF EXISTS \"${DB_NAME}\";" 2>/dev/null || true
@@ -207,6 +234,7 @@ run_alembic() {
     echo "=== Alembic Check ==="
     ensure_postgres
     clean_db
+    export DATABASE_URL="$DB_URL"
 
     local HEAD_COUNT
     HEAD_COUNT=$(uv run alembic heads 2>&1 | grep -c '(head)')
@@ -275,6 +303,7 @@ run_tests() {
     echo "=== Tests ==="
     ensure_postgres
     clean_db
+    export DATABASE_URL="$DB_URL"
 
     # Apply migrations before tests (tests need schema)
     echo "Applying database migrations..."

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   reactCompiler: false,
-  allowedDevOrigins: ['172.28.215.130', 'localhost', '127.0.0.1'],
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(',').filter(Boolean) || ['localhost', '127.0.0.1'],
   productionBrowserSourceMaps: true,
   logging: {
     fetches: {

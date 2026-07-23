@@ -76,7 +76,7 @@ export async function logout() {
   const cookieStore = await cookies()
   cookieStore.delete('auth_token')
   revalidatePath('/')
-  redirect('/production')
+  redirect('/login')
 }
 
 export async function startImpersonate(targetUserId: string): Promise<void> {

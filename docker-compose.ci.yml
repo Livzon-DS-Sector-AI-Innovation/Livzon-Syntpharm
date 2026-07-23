@@ -5,3 +5,17 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       NODE_ENV: production
+
+  postgres:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dazah_ci
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dazah_ci"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
