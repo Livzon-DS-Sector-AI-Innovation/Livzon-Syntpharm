@@ -16,7 +16,7 @@ export default async function globalSetup(config: FullConfig) {
   })
   const { token } = await res.json()
 
-  await page.goto(`${baseURL}/auth/callback?token=${token}`, { waitUntil: 'commit' })
+  await page.goto(`${baseURL}/auth/callback?token=${token}`, { waitUntil: 'commit', timeout: 60000 })
 
   await context.storageState({ path: AUTH_FILE })
   await browser.close()

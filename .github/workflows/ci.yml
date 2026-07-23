@@ -218,6 +218,7 @@ jobs:
             curl -sf http://localhost:3000 > /dev/null 2>&1 && break
             sleep 2
           done
+          curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
       - run: pnpm exec playwright test
         env:
           API_BASE_URL: http://localhost:8000
