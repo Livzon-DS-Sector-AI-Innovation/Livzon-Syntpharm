@@ -147,6 +147,9 @@ run_e2e() {
         done
     fi
 
+    # Pre-warm callback route (Next.js cold compile on first request)
+    curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
+
     if ! pnpm test:e2e; then
         log_error "E2E tests failed!"; FAILED=1
     else
