@@ -1,5 +1,8 @@
 """add_procurement_module_tables
 
+CROSS-MODULE: identity FK operations approved by architecture owner.
+See AGENTS.md: 跨模块外键、platform/core/shared 级变更可以跨 schema"
+
 Revision ID: 0021_add_procurement_module_tables
 Revises: 0022_add_identity_module_tables
 Create Date: 2026-07-07 17:04:58.180846

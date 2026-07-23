@@ -8,12 +8,13 @@ import {
   createModuleSetting as apiCreateModuleSetting,
   deleteModuleSetting as apiDeleteModuleSetting,
 } from '@/lib/api/server/module-settings'
+import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
 
 export type {
   ModuleSetting,
   ModuleSettingUpdate,
   ModuleSettingCreate,
-} from '@/lib/api/server/module-settings'
+}
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies()
@@ -27,12 +28,12 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers
 }
 
-export async function getModuleSettings(module?: string): Promise<{ data: import('@/lib/api/server/module-settings').ModuleSetting[] }> {
+export async function getModuleSettings(module?: string): Promise<{ data: ModuleSetting[] }> {
   const headers = await getAuthHeaders()
   return apiGetModuleSettings(headers, module)
 }
 
-export async function getModuleSetting(module: string, key: string): Promise<{ data: import('@/lib/api/server/module-settings').ModuleSetting }> {
+export async function getModuleSetting(module: string, key: string): Promise<{ data: ModuleSetting }> {
   const headers = await getAuthHeaders()
   return apiGetModuleSetting(headers, module, key)
 }
@@ -40,15 +41,15 @@ export async function getModuleSetting(module: string, key: string): Promise<{ d
 export async function updateModuleSetting(
   module: string,
   key: string,
-  data: import('@/lib/api/server/module-settings').ModuleSettingUpdate
-): Promise<{ data: import('@/lib/api/server/module-settings').ModuleSetting }> {
+  data: ModuleSettingUpdate
+): Promise<{ data: ModuleSetting }> {
   const headers = await getAuthHeaders()
   return apiUpdateModuleSetting(headers, module, key, data)
 }
 
 export async function createModuleSetting(
-  data: import('@/lib/api/server/module-settings').ModuleSettingCreate
-): Promise<{ data: import('@/lib/api/server/module-settings').ModuleSetting }> {
+  data: ModuleSettingCreate
+): Promise<{ data: ModuleSetting }> {
   const headers = await getAuthHeaders()
   return apiCreateModuleSetting(headers, data)
 }

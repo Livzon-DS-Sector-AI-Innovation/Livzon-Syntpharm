@@ -64,3 +64,15 @@ export interface TableListItem {
   row_count: number
   created_at: string
 }
+
+// 图片识别结果
+export interface RecognizeResult {
+  image_url?: string
+  images?: Array<{ original_name: string; saved_path: string }>
+  recognized_rows: Record<string, any>[]
+  columns_config: Array<{
+    key: string
+    label: string
+    type: string
+  }>
+}

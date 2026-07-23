@@ -5,10 +5,17 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.quality.qms.deviation_settings_schemas import (
+    AutoTriggerRequest,
+    FeishuBotConfigRequest,
+    LeaderRequest,
+    MessageTemplateRequest,
+    QAUserRequest,
+    ReminderRuleRequest,
+)
 from app.modules.quality.qms.feishu_service import get_feishu_service
 from app.platform.database import get_db_session
 
@@ -35,68 +42,6 @@ URGENCY_LEVELS = [
     {"value": "important", "label": "重要"},
     {"value": "serious", "label": "严重"},
 ]
-
-
-# ============ 请求模型 ============
-
-
-class QAUserRequest(BaseModel):
-    """QA人员请求"""
-
-    open_id: str = Field(..., description="飞书OpenID")
-    name: str = Field(..., description="姓名")
-    department: str | None = Field(None, description="部门")
-
-
-class LeaderRequest(BaseModel):
-    """部门负责人请求"""
-
-    open_id: str = Field(..., description="飞书OpenID")
-    name: str = Field(..., description="姓名")
-    department: str = Field(..., description="负责部门")
-
-
-class ReminderRuleRequest(BaseModel):
-    """提醒规则请求"""
-
-    deviation_type: str | None = Field(None, description="偏差类型")
-    urgency_level: str | None = Field(None, description="紧急等级")
-    auto_reminder: bool = Field(True, description="是否自动提醒")
-    reminder_time: str = Field("08:30", description="提醒时间")
-    message_template: str | None = Field(None, description="消息模板")
-
-
-class AutoTriggerRequest(BaseModel):
-    """自动提醒触发请求"""
-
-    trigger_type: str = Field(..., description="触发类型")
-    trigger_condition: str | None = Field(None, description="触发条件")
-    is_enabled: bool = Field(True, description="是否启用")
-    notify_qa: bool = Field(True, description="通知QA")
-    notify_leader: bool = Field(True, description="通知部门负责人")
-    notify_reporter: bool = Field(False, description="通知填报人")
-    custom_message: str | None = Field(None, description="自定义消息")
-
-
-class MessageTemplateRequest(BaseModel):
-    """消息模板请求"""
-
-    template_type: str = Field(..., description="模板类型")
-    template_name: str = Field(..., description="模板名称")
-    title_template: str = Field(..., description="标题模板")
-    content_template: str = Field(..., description="内容模板")
-    is_default: bool = Field(False, description="是否默认模板")
-
-
-class FeishuBotConfigRequest(BaseModel):
-    """飞书机器人配置请求"""
-
-    bot_name: str | None = Field(None, description="机器人名称")
-    app_id: str = Field(..., description="App ID")
-    app_secret: str = Field(..., description="App Secret")
-    bot_token: str | None = Field(None, description="Bot Token")
-    encrypt_key: str | None = Field(None, description="加密密钥")
-    verification_token: str | None = Field(None, description="验证Token")
 
 
 # ============ API 接口 ============
@@ -958,13 +903,6 @@ async def get_options() -> Any:
 
 
 # ----- 飞书用户查询 -----
-
-
-class FeishuUserRequest(BaseModel):
-    """飞书用户查询请求"""
-
-    mobile: str = Field(..., description="手机号")
-    country_code: str = Field("86", description="国家码")
 
 
 @router.get("/feishu-user/by-mobile", summary="根据手机号查询飞书用户")

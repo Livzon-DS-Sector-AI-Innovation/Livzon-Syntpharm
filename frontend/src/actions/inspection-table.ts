@@ -18,7 +18,7 @@ import {
   deleteInspectionTemplate as apiDeleteInspectionTemplate,
 } from '@/lib/api/server/inspection-table'
 
-export type { RecognizeResult } from '@/lib/api/server/inspection-table'
+export type { RecognizeResult } from '@/types/inspection-table'
 
 export async function getInspectionTables(params?: {
   is_active?: boolean

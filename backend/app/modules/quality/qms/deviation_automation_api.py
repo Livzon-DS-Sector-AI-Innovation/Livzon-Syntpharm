@@ -15,13 +15,20 @@ from fastapi import (
     Form,
     UploadFile,
 )
-from pydantic import BaseModel
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
+from app.modules.quality.qms.deviation_automation_schemas import (
+    AIResultUpdate,
+    DevTaskCreate,
+    ReportTemplateCreate,
+    ReportTemplateUpdate,
+    SOPRuleCreate,
+    SOPRuleUpdate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,27 +36,6 @@ router = APIRouter(prefix="/deviation-automation", tags=["偏差报告自动化"
 
 
 # ============ SOP规则管理 API ============
-
-
-class SOPRuleCreate(BaseModel):
-    sop_code: str
-    sop_full_name: str
-    sop_version: str
-    business_tag: str | None = None
-    standard_limit: str | None = None
-    standard_sentence: str | None = None
-    sop_file_path: str | None = None
-
-
-class SOPRuleUpdate(BaseModel):
-    sop_code: str | None = None
-    sop_full_name: str | None = None
-    sop_version: str | None = None
-    business_tag: str | None = None
-    standard_limit: str | None = None
-    standard_sentence: str | None = None
-    status: int | None = None
-    sop_file_path: str | None = None
 
 
 @router.get("/sop-rules", summary="查询SOP规则列表")
@@ -536,13 +522,6 @@ async def download_sop_file(
 # ============ 偏差任务管理 API ============
 
 
-class DevTaskCreate(BaseModel):
-    deviation_no: str
-    creator: str
-    auditor: str | None = None
-    report_date: date
-
-
 @router.post("/tasks", summary="新建偏差任务")
 async def create_dev_task(
     task: DevTaskCreate,
@@ -680,10 +659,6 @@ async def update_task_status(
     await db.flush()
 
     return ApiResponse(message="状态更新成功")
-
-
-class AIResultUpdate(BaseModel):
-    ai_result: str
 
 
 @router.put("/tasks/{task_id}/update-ai-result", summary="更新AI处理结果")
@@ -2063,19 +2038,6 @@ async def list_templates(
         )
 
     return ApiResponse(data={"items": templates, "total": total})
-
-
-class ReportTemplateCreate(BaseModel):
-    name: str
-    description: str | None = None
-    is_active: int | None = 1
-
-
-class ReportTemplateUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    file_path: str | None = None
-    is_active: int | None = None
 
 
 @router.post("/templates", summary="新增报告模板")

@@ -1,0 +1,7 @@
+services:
+  ci-build:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: production

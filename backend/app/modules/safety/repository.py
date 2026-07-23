@@ -1,5 +1,6 @@
 """Safety database queries."""
 
+import logging
 import uuid
 from datetime import datetime
 from typing import Any
@@ -28,6 +29,8 @@ from app.modules.safety.models import (
     SpecialOperationReport,
     TrainingRecord,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SafetyRepository:
@@ -255,10 +258,7 @@ class SafetyRepository:
         # ── 防御层：禁止空字符串覆盖 person 姓名字段 ──
         for guard_field in self._PERSON_NAME_GUARD_FIELDS:
             if data.get(guard_field) == "":
-                import logging
-
-                _logger = logging.getLogger(__name__)
-                _logger.warning(
+                logger.warning(
                     "repo.update_hazard 拦截空字符串: hazard_id=%s field=%s (已从 update_data 移除)",
                     hazard_id,
                     guard_field,

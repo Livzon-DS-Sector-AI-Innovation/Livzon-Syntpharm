@@ -21,7 +21,7 @@ export {
   linkPrimary,
   linkDanger,
   linkPurple,
-} from './shared-styles'
+} from './sharedStyles'
 export { AlertsPageClient } from './AlertsPageClient'
 export { CollectLogsPageClient } from './CollectLogsPageClient'
 export { DevicesPageClient } from './DevicesPageClient'

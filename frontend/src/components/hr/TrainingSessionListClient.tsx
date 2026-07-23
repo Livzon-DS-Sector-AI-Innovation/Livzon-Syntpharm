@@ -10,15 +10,15 @@ import {
   deleteTrainingSession,
   updateTrainingSessionStatus,
   sendTrainingSessionSelectTasksAction,
-} from '@/actions/hr'
-import {
   generateTrainingNotification,
   generateTrainingSignInSheet,
   generateTrainingEvaluation,
-  fetchTrainingSessionSelectTasks,
-  fetchTrainingLedgerPages,
   createTrainingLedger,
   createTrainingLedgerPage,
+} from '@/actions/hr'
+import {
+  fetchTrainingSessionSelectTasks,
+  fetchTrainingLedgerPages,
   fetchEmployees,
   fetchNewEmployees,
 } from '@/lib/api/client/hr'
@@ -190,7 +190,7 @@ export default function TrainingSessionListClient({
         issuer_department: record.issuer_department || record.department,
         issue_date: record.issue_date || record.training_date,
       }
-      await generateTrainingNotification(payload, (record.factory as 'old' | 'new') || 'old')
+      await generateTrainingNotification({ ...payload, factory: (record.factory as 'old' | 'new') || 'old' })
       message.success('培训通知已导出')
     } catch (err: any) {
       message.error(err.message || '生成失败')
@@ -233,7 +233,7 @@ export default function TrainingSessionListClient({
         training_method: record.training_method,
         employee_names: employeeNames,
       }
-      await generateTrainingSignInSheet(payload, factory)
+      await generateTrainingSignInSheet({ ...payload, factory })
       message.success('签到表已生成')
     } catch (err: any) {
       message.error(err.message || '生成失败')
@@ -281,7 +281,7 @@ export default function TrainingSessionListClient({
         expected_count: employeeNames.length,
         employee_names: employeeNames,
       }
-      await generateTrainingEvaluation(payload, factory)
+      await generateTrainingEvaluation({ ...payload, factory })
       message.success('培训效果评估表已生成')
       await handleStatusChange(record, 'evaluated')
     } catch (err: any) {

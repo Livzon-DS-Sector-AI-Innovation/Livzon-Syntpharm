@@ -81,7 +81,7 @@ run_lint() {
 run_build() {
     log_section "Next.js Build (Docker)"
     ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
-    if ! docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" run --rm frontend sh -c "pnpm build"; then
+    if ! docker compose -f "$ROOT_DIR/docker-compose.ci.yml" run --rm --build ci-build sh -c "pnpm build"; then
         log_error "Build failed!"; FAILED=1
     else
         log_info "Build passed"
@@ -120,10 +120,36 @@ run_e2e() {
     log_section "E2E Tests"
     check_node_version || return 1
     install_deps || return 1
-    if ! npx playwright --version 2>/dev/null; then
-        log_warn "Playwright not configured (run 'pnpm exec playwright install chromium' first)"
-        return 0
+    ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
+
+    # Ensure backend is running
+    if ! curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+        log_info "Starting development stack..."
+        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait backend
+        log_info "Waiting for backend to be ready..."
+        for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+                break
+            fi
+            sleep 2
+        done
     fi
+
+    # Ensure frontend is running
+    if ! curl -s http://localhost:3000 > /dev/null 2>&1; then
+        log_info "Starting frontend..."
+        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait frontend
+        for i in $(seq 1 30); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+                break
+            fi
+            sleep 2
+        done
+    fi
+
+    # Pre-warm callback route (Next.js cold compile on first request)
+    curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
+
     if ! pnpm test:e2e; then
         log_error "E2E tests failed!"; FAILED=1
     else

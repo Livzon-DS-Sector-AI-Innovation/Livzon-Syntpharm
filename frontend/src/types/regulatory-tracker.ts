@@ -128,3 +128,40 @@ export interface AIBatchAnalysisResult {
   overallAssessment: string
   generatedAt: string
 }
+
+// ====== Dashboard Types ======
+
+export interface SourceStatus {
+  sourceId: string
+  sourceName: string
+  enabled: boolean
+  lastSyncAt: string | null
+  lastSyncStatus: string | null
+  documentCount: number
+}
+
+export interface TrendItem {
+  date: string
+  count: number
+}
+
+export interface PriorityDocument {
+  id: string
+  title: string
+  publishDate: string | null
+  impactLevel: 'high' | 'medium' | 'low' | 'none'
+  impactScore: number
+}
+
+export interface DashboardData {
+  summary: SummaryStats
+  sourceStatuses: SourceStatus[]
+  recentTrend: TrendItem[]
+  priorityDocuments: PriorityDocument[]
+}
+
+export interface DocumentDetail extends RegulatoryDocument {
+  sourceName: string
+  detailText: string
+  relatedDocuments: RegulatoryDocument[]
+}

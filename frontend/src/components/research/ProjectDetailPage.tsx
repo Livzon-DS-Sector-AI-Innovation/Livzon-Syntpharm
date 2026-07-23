@@ -7,7 +7,7 @@ import {
   RdProject, RdMilestone, RdStageRecord, RdResearchTrack, RdResearchFinding,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
-import { fetchMilestones, fetchStages, checkTransition,  } from '@/lib/api/client/research/rd-project'
+import { fetchMilestones, fetchStages, fetchStageTransitionCheck,  } from '@/lib/api/client/research/rd-project'
 import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'

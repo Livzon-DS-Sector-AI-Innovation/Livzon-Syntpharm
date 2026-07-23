@@ -14,7 +14,7 @@ import {
   PaperClipOutlined,
 } from '@ant-design/icons'
 import type { SafetyKnowledgeArticle } from '@/types/safety'
-import { BT_CATEGORY_STYLE, FALLBACK_STYLE, getCategoryStyle } from './KnowledgeConstants'
+import { BT_CATEGORY_STYLE, FALLBACK_STYLE, getCategoryStyle } from './knowledgeConstants'
 
 interface Props {
   article: SafetyKnowledgeArticle

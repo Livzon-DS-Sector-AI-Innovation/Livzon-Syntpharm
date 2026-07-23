@@ -1,27 +1,5 @@
 import { apiFetch } from '@/lib/api/server/base'
-
-export interface ModuleSetting {
-  id: string
-  module: string
-  key: string
-  value: string
-  value_type: string
-  description: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ModuleSettingUpdate {
-  value: string
-}
-
-export interface ModuleSettingCreate {
-  module: string
-  key: string
-  value: string
-  value_type: string
-  description?: string
-}
+import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
 
 export async function getModuleSettings(
   headers: Record<string, string>,

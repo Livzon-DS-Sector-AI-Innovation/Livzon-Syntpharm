@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import success_response
 from app.modules.registration import service
 from app.modules.registration.schemas.holiday import (
@@ -19,6 +20,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取节假日列表")
 async def list_holidays(
+    current_user: CurrentUser,
     year: int | None = Query(None, description="年份筛选"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -30,6 +32,7 @@ async def list_holidays(
 
 @router.post("/", summary="创建节假日")
 async def create_holiday(
+    current_user: CurrentUser,
     data: HolidayCreate,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -40,6 +43,7 @@ async def create_holiday(
 
 @router.put("/{holiday_id}", summary="更新节假日")
 async def update_holiday(
+    current_user: CurrentUser,
     holiday_id: uuid.UUID,
     data: HolidayCreate,
     db: AsyncSession = Depends(get_db),
@@ -51,6 +55,7 @@ async def update_holiday(
 
 @router.delete("/{holiday_id}", summary="删除节假日")
 async def delete_holiday(
+    current_user: CurrentUser,
     holiday_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:

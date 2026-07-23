@@ -1,8 +1,4 @@
-# mypy: ignore-errors
-"""AI 能力服务层
-
-提供 AI 日志保存等通用 AI 相关服务。
-"""
+"""AI log persistence service."""
 
 import logging
 import uuid
@@ -195,37 +191,3 @@ def log_ai_interaction(
 
     with concurrent.futures.ThreadPoolExecutor() as pool:
         return pool.submit(_save_log).result()  # type: ignore[no-any-return]
-
-
-from app.core.llm import llm_client  # noqa: E402
-
-
-class AiChatService:
-    """Service for streaming chat completions via centralized LLM client."""
-
-    def __init__(
-        self,
-        api_key: str = "",
-        base_url: str = "",
-        model: str = "moonshot-v1-128k",
-    ) -> None:
-        self.model = model
-        self.base_url = base_url
-
-    async def _func_l217(
-        self,
-        messages: list[dict[str, any]],  # type: ignore[valid-type]
-        system_prompt: str | None = None,
-    ) -> Any:
-        """Stream chat completion tokens from the LLM."""
-        all_messages: list[dict[str, any]] = []  # type: ignore[valid-type]
-        if system_prompt:
-            all_messages.append({"role": "system", "content": system_prompt})
-        all_messages.extend(messages)
-
-        async for chunk in llm_client.stream_chat(  # type: ignore[attr-defined]
-            all_messages,
-            temperature=0.1,
-            max_tokens=4096,
-        ):
-            yield chunk.get("text", "")

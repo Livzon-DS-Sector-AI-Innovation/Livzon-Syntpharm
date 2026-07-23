@@ -17,6 +17,18 @@ import type {
   CalibrationRecordFilter,
   ApprovalRecord,
   ApprovalCreate,
+  AIRecognizedInstrumentInfo,
+  UpcomingCalibrationRecord,
+  UpcomingCalibrationResponse,
+  ReminderResponse,
+  RecordsForReminderResponse,
+  ReminderConfig,
+  ReminderConfigListResponse,
+  ReminderConfigCreate,
+  ReminderConfigUpdate,
+  AutoTriggerResponse,
+  FeishuUser,
+  FeishuDepartment,
 } from '@/types/instrument'
 
 async function apiFetchWithoutContentType<T>(url: string, options?: RequestInit): Promise<T> {
@@ -209,17 +221,6 @@ export async function approveCalibrationRecord(id: string, data: ApprovalCreate)
   })
 }
 
-export interface AIRecognizedInstrumentInfo {
-  instrument_name: string
-  model: string
-  serial_no: string
-  manufacturer: string
-  last_calibration_date: string
-  next_calibration_date: string
-  calibration_agency: string
-  raw_result?: string
-}
-
 export async function recognizeInstrumentLabel(file: File): Promise<AIRecognizedInstrumentInfo> {
   const formData = new FormData()
   formData.append('file', file)
@@ -229,54 +230,8 @@ export async function recognizeInstrumentLabel(file: File): Promise<AIRecognized
   })
 }
 
-export interface UpcomingCalibrationRecord {
-  id: string
-  calibration_no: string
-  instrument_id: string | null
-  instrument_no: string | null
-  instrument_name: string | null
-  calibration_date: string | null
-  valid_until: string | null
-  calibration_result: string
-  days_until_expiry: number | null
-}
-
-export interface UpcomingCalibrationResponse {
-  items: UpcomingCalibrationRecord[]
-  total: number
-  days: number
-}
-
-export interface ReminderResponse {
-  sent: boolean
-  count: number
-  chat_id: string
-  receive_id_type: string
-}
-
 export async function getUpcomingCalibrationRecords(days: number = 30): Promise<UpcomingCalibrationResponse> {
   return apiFetch<UpcomingCalibrationResponse>(`/api/v1/quality/instrument/record/upcoming?days=${days}`)
-}
-
-export interface RecordsForReminderResponse {
-  overdue: Array<{
-    id: string
-    instrument_id: string | null
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number
-  }>
-  upcoming: Array<{
-    id: string
-    instrument_id: string | null
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number
-  }>
-  total_overdue: number
-  total_upcoming: number
 }
 
 export async function getRecordsForReminder(days: number = 30): Promise<RecordsForReminderResponse> {
@@ -303,57 +258,6 @@ export async function sendCalibrationReminder(
   return result
 }
 
-export interface ReminderConfig {
-  id: string
-  name: string
-  feishu_app_id: string | null
-  feishu_app_secret: string | null
-  chat_id: string | null
-  receive_id_type: string
-  remind_30_days: boolean
-  remind_14_days: boolean
-  remind_7_days: boolean
-  remind_overdue: boolean
-  is_active: boolean
-  last_remind_30_days: string | null
-  last_remind_14_days: string | null
-  last_remind_7_days: string | null
-  last_remind_overdue: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ReminderConfigListResponse {
-  items: ReminderConfig[]
-  total: number
-}
-
-export interface ReminderConfigCreate {
-  name: string
-  feishu_app_id?: string
-  feishu_app_secret?: string
-  chat_id?: string
-  receive_id_type?: string
-  remind_30_days?: boolean
-  remind_14_days?: boolean
-  remind_7_days?: boolean
-  remind_overdue?: boolean
-  is_active?: boolean
-}
-
-export interface ReminderConfigUpdate {
-  name?: string
-  feishu_app_id?: string
-  feishu_app_secret?: string
-  chat_id?: string
-  receive_id_type?: string
-  remind_30_days?: boolean
-  remind_14_days?: boolean
-  remind_7_days?: boolean
-  remind_overdue?: boolean
-  is_active?: boolean
-}
-
 export async function getReminderConfigs(): Promise<ReminderConfigListResponse> {
   return apiFetch<ReminderConfigListResponse>('/api/v1/quality/instrument/reminder-config')
 }
@@ -378,34 +282,10 @@ export async function deleteReminderConfig(id: string): Promise<void> {
   })
 }
 
-export interface AutoTriggerResponse {
-  results: Array<{
-    config_name: string
-    sent: string[]
-    errors: string[]
-  }>
-}
-
 export async function autoTriggerReminders(): Promise<AutoTriggerResponse> {
   return apiFetch<AutoTriggerResponse>('/api/v1/quality/instrument/reminder/auto-trigger', {
     method: 'POST',
   })
-}
-
-export interface FeishuUser {
-  open_id: string
-  name: string
-  en_name?: string
-  email?: string
-  mobile?: string
-  avatar?: string
-  department_ids?: string[]
-}
-
-export interface FeishuDepartment {
-  open_department_id: string
-  name: string
-  parent_department_id: string
 }
 
 export async function resolveFeishuUser(mobile?: string, email?: string): Promise<string | null> {

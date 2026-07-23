@@ -10,7 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '1f550ec06f66'
+revision: str = '0038_add_product_sync_config'
 down_revision: Union[str, None] = '0037_drop_user_role'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

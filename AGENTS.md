@@ -36,8 +36,6 @@
 | `scripts/test/` | 测试辅助与调试脚本 |
 | `scripts/regulatory_poc/` | 法规追踪概念验证 |
 
-CI 入口为 `scripts/ci/ci.sh`。`.github/workflows/` 中的所有 CI 路径必须引用 `scripts/ci/` 子目录。
-
 ### 第三方代码
 - 第三方库放在 `backend/vendor/`
 - 禁止将外部仓库直接克隆到 `backend/` 根目录
@@ -321,7 +319,7 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 
 ## 测试规范
 
-**框架**：pytest + pytest-asyncio，异步测试用 `@pytest.mark.asyncio`。
+**框架**：pytest + pytest-asyncio。`pyproject.toml` 中配置了 `asyncio_mode = "auto"`，`async def test_*` 函数会被自动识别为异步测试，不需要 `@pytest.mark.asyncio` 装饰器。
 
 **覆盖优先级**：service 层业务逻辑 > API 端点契约 > repository 查询。
 

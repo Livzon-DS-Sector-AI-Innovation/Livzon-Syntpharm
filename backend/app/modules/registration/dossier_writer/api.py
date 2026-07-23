@@ -1,5 +1,6 @@
 """Dossier Writer API endpoints."""
 
+import logging
 from typing import Any
 from uuid import UUID
 
@@ -24,6 +25,8 @@ from .schemas import (
     ProductDossierUpdate,
 )
 from .service import DossierService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -139,14 +142,11 @@ async def upload_templates(
         try:
             # 读取文件内容
             content = await file.read()
-            import logging
-
-            _logger = logging.getLogger(__name__)
-            _logger.info(f"[Upload] Processing file: {file.filename}, size: {len(content)} bytes")
+            logger.info(f"[Upload] Processing file: {file.filename}, size: {len(content)} bytes")
 
             # 保存模板
             template = await service.save_template_file(dossier_id, file.filename, content)
-            _logger.info(f"[Upload] Saved template: {template.id}, filename: {template.original_filename}")
+            logger.info(f"[Upload] Saved template: {template.id}, filename: {template.original_filename}")
 
             results.append(
                 {
@@ -158,10 +158,7 @@ async def upload_templates(
                 }
             )
         except Exception as e:
-            import logging
-
-            _logger = logging.getLogger(__name__)
-            _logger.error(f"[Upload] Failed to save {file.filename}: {e}", exc_info=True)
+            logger.error(f"[Upload] Failed to save {file.filename}: {e}", exc_info=True)
             results.append({"filename": file.filename, "status": "failed", "error": str(e)})
 
     # 更新品种状态为 template_uploaded

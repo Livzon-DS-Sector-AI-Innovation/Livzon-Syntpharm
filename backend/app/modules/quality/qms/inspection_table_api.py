@@ -8,42 +8,17 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
-from pydantic import BaseModel
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
+from app.modules.quality.qms.inspection_table_schemas import (
+    BatchRowsRequest,
+    RowDataRequest,
+    UpdateTableRequest,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class CreateTableRequest(BaseModel):
-    """创建数据表请求"""
-
-    table_name: str
-    table_description: str | None = None
-    columns_config: list[Any] = []
-
-
-class UpdateTableRequest(BaseModel):
-    """更新数据表请求"""
-
-    table_name: str | None = None
-    table_description: str | None = None
-    columns_config: list[Any] | None = None
-    is_active: bool | None = None
-
-
-class RowDataRequest(BaseModel):
-    """行数据请求"""
-
-    row_data: dict[str, Any]
-
-
-class BatchRowsRequest(BaseModel):
-    """批量行数据请求"""
-
-    rows: list[dict[str, Any]]
 
 
 router = APIRouter(prefix="/inspection-table", tags=["原料检验数据"])

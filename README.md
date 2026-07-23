@@ -2,6 +2,47 @@
 
 原料药厂 ERP 管理系统，包含后端（Python/FastAPI）、前端（Next.js）和基础设施配置。
 
+面向丽珠合成制药厂，覆盖生产、质量、安全、人事等核心业务模块。
+
+
+
+## Business Modules
+
+| Module | Backend | Frontend |
+|---|---|---|
+| **Production** | 批次管理、工序记录、物料平衡 | 批次管理、工序记录、物料平衡 |
+| **Equipment** | 设备台账、保养维修、巡检、备件 | 设备台账、保养维修、巡检、备件 |
+| **Safety** | 隐患辨识、风险管控、特种作业 | 隐患辨识、风险管控、特种作业 |
+| **Energy** | 设备监控、告警、采集日志 | 设备监控、告警、采集日志 |
+| **Quality** | 偏差管理、CAPA、工艺验证 | 偏差管理、CAPA、工艺验证 |
+| **HR** | 员工档案、入职培训、考勤 | 员工档案、入职培训、考勤 |
+| **Registration** | Dossier 编写、法规追踪、补充答复 | Dossier 编写、法规追踪、补充答复 |
+| **Research** | 实验管理、贝叶斯优化、ICH 分析 | 实验管理、贝叶斯优化、ICH 分析 |
+| **Administration** | 系统设置、车辆管理 | 系统设置、车辆管理 |
+| **Procurement** | 采购管理、合同生成 | 采购管理 |
+| **Environment** | 环境监测 | 环境监测 |
+| **Warehouse** | 仓库管理、库存 | 仓库管理 |
+
+
+## Tech Stack
+
+### Backend
+- **Python 3.12+** + FastAPI
+- **PostgreSQL 17** + Redis + MinIO (S3 兼容对象存储)
+- **SQLAlchemy 2.0** (async) + Alembic (migrations)
+- **Pydantic v2** for validation
+- **uv** for package management
+- PaddleOCR for document parsing
+
+### Frontend
+- **Next.js 16** + React 19 + TypeScript
+- **Ant Design V6** 组件库
+- **Tailwind CSS** 工具样式
+- **Zustand** 客户端状态管理
+- **React Query** 服务端数据请求
+- **pnpm** for package management
+
+
 ## Repository Structure
 
 ```
@@ -32,40 +73,6 @@ Livzon-Syntpharm/
 └── AGENTS.md             # AI 编码规范
 ```
 
-## Tech Stack
-
-### Backend
-- **Python 3.12+** + FastAPI
-- **PostgreSQL 17** + Redis + MinIO (S3 兼容对象存储)
-- **SQLAlchemy 2.0** (async) + Alembic (migrations)
-- **Pydantic v2** for validation
-- **uv** for package management
-- PaddleOCR for document parsing
-
-### Frontend
-- **Next.js 16** + React 19 + TypeScript
-- **Ant Design V6** 组件库
-- **Tailwind CSS** 工具样式
-- **Zustand** 客户端状态管理
-- **React Query** 服务端数据请求
-- **pnpm** for package management
-
-## Business Modules
-
-| Module | Backend | Frontend |
-|---|---|---|
-| **Production** | 批次管理、工序记录、物料平衡 | 批次管理、工序记录、物料平衡 |
-| **Equipment** | 设备台账、保养维修、巡检、备件 | 设备台账、保养维修、巡检、备件 |
-| **Safety** | 隐患辨识、风险管控、特种作业 | 隐患辨识、风险管控、特种作业 |
-| **Energy** | 设备监控、告警、采集日志 | 设备监控、告警、采集日志 |
-| **Quality** | 偏差管理、CAPA、工艺验证 | 偏差管理、CAPA、工艺验证 |
-| **HR** | 员工档案、入职培训、考勤 | 员工档案、入职培训、考勤 |
-| **Registration** | Dossier 编写、法规追踪、补充答复 | Dossier 编写、法规追踪、补充答复 |
-| **Research** | 实验管理、贝叶斯优化、ICH 分析 | 实验管理、贝叶斯优化、ICH 分析 |
-| **Administration** | 系统设置、车辆管理 | 系统设置、车辆管理 |
-| **Procurement** | 采购管理、合同生成 | 采购管理 |
-| **Environment** | 环境监测 | 环境监测 |
-| **Warehouse** | 仓库管理、库存 | 仓库管理 |
 
 ## Deployment
 
@@ -193,7 +200,7 @@ Frontend API types are generated from the backend OpenAPI spec:
 
 ```bash
 # In backend/:
-uv run python scripts/export_openapi.py
+uv run python scripts/ci/export_openapi.py
 
 # In frontend/:
 cp ../backend/openapi.json src/types/generated/openapi.json

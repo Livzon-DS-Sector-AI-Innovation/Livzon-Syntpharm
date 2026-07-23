@@ -1,5 +1,6 @@
 """Registration ledger API endpoints."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
@@ -9,6 +10,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,
@@ -25,6 +27,8 @@ from app.modules.registration.schemas.ledger import (
 )
 from app.modules.registration.service import ledger as ledger_service
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -33,6 +37,7 @@ router = APIRouter()
 
 @router.get("/domestic-approvals")
 async def get(
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -45,6 +50,7 @@ async def get(
 
 @router.post("/domestic-approvals", response_model=DomesticApprovalResponse)
 async def post(
+    current_user: CurrentUser,
     data: DomesticApprovalCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -54,6 +60,7 @@ async def post(
 
 @router.post("/domestic-approvals/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -66,9 +73,6 @@ async def post(  # noqa: F811
         parse_result = ledger_service.import_domestic_approvals_from_excel(content)
 
         # 记录日志
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.info(f"📥 Import file: {filename}, size: {file_size} bytes")
         logger.info(
             f"📊 Parse result: total={parse_result['total_rows']}, "
@@ -125,15 +129,13 @@ async def post(  # noqa: F811
             }
         )
     except Exception as e:
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.error(f"❌ Import failed: {str(e)}", exc_info=True)
         return error_response(message=f"文件解析失败: {str(e)}", status_code=400)
 
 
 @router.get("/domestic-approvals/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_domestic_approvals(db)
@@ -151,6 +153,7 @@ async def get(  # noqa: F811
 
 @router.get("/overseas-approvals")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -163,6 +166,7 @@ async def get(  # noqa: F811
 
 @router.post("/overseas-approvals", response_model=OverseasApprovalResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     data: OverseasApprovalCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -172,6 +176,7 @@ async def post(  # noqa: F811
 
 @router.post("/overseas-approvals/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -181,9 +186,6 @@ async def post(  # noqa: F811
         filename = file.filename or "unknown.xlsx"
 
         # 记录日志
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.info(f"📥 Import file: {filename}, size: {file_size} bytes")
 
         parse_result = ledger_service.import_overseas_approvals_from_excel(content)
@@ -246,6 +248,7 @@ async def post(  # noqa: F811
 
 @router.get("/overseas-approvals/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_overseas_approvals(db)
@@ -263,6 +266,7 @@ async def get(  # noqa: F811
 
 @router.get("/international-reviews")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -275,6 +279,7 @@ async def get(  # noqa: F811
 
 @router.post("/international-reviews", response_model=InternationalReviewResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     data: InternationalReviewCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -284,6 +289,7 @@ async def post(  # noqa: F811
 
 @router.post("/international-reviews/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -340,6 +346,7 @@ async def post(  # noqa: F811
 
 @router.get("/international-reviews/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_international_reviews(db)
@@ -357,6 +364,7 @@ async def get(  # noqa: F811
 
 @router.get("/copp-certificates")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -369,6 +377,7 @@ async def get(  # noqa: F811
 
 @router.post("/copp-certificates", response_model=CoppCertificateResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     data: CoppCertificateCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -378,6 +387,7 @@ async def post(  # noqa: F811
 
 @router.post("/copp-certificates/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -434,6 +444,7 @@ async def post(  # noqa: F811
 
 @router.get("/copp-certificates/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_copp_certificates(db)
@@ -451,6 +462,7 @@ async def get(  # noqa: F811
 
 @router.get("/wc-certificates")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -463,6 +475,7 @@ async def get(  # noqa: F811
 
 @router.post("/wc-certificates", response_model=WcCertificateResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     data: WcCertificateCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -472,6 +485,7 @@ async def post(  # noqa: F811
 
 @router.post("/wc-certificates/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: CurrentUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -528,6 +542,7 @@ async def post(  # noqa: F811
 
 @router.get("/wc-certificates/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_wc_certificates(db)
@@ -545,6 +560,7 @@ async def get(  # noqa: F811
 
 @router.get("/summary")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     summary = await ledger_service.get_ledger_summary(db)
@@ -557,6 +573,7 @@ async def get(  # noqa: F811
 
 @router.get("/reviewing")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """从 drugs 表获取审评中的品种"""

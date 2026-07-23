@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react'
 import { Menu } from 'antd'
 import type { MenuProps } from 'antd'
 import { FileTextOutlined } from '@ant-design/icons'
-import { KNOWLEDGE_MENU } from './KnowledgeConstants'
-import type { KnowledgeMenuGroup } from './KnowledgeConstants'
+import { KNOWLEDGE_MENU } from './knowledgeConstants'
+import type { KnowledgeMenuGroup } from './knowledgeConstants'
 
 interface KnowledgeSidebarProps {
   /** 当前选中的菜单 key，null 表示"全部文档" */

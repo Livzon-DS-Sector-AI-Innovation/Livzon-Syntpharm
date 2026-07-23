@@ -40,7 +40,7 @@ import HazardIdentificationDrawer from './HazardIdentificationDrawer'
 import HazardIdentificationBatchDrawer from './HazardIdentificationBatchDrawer'
 import BatchProgressPanel from './BatchProgressPanel'
 
-import { statusPill, actionLink } from '@/components/safety/shared-styles'
+import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 
 const { Text } = Typography
 

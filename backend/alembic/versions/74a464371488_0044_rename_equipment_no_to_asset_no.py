@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '74a464371488'
-down_revision: Union[str, None] = 'fcb768b8df78'
+revision: str = '0044_rename_equipment_no_to_asset_no'
+down_revision: Union[str, None] = '0043_fix_production_index_names'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

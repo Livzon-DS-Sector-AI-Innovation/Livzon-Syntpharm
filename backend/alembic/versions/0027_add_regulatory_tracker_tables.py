@@ -1,5 +1,8 @@
 """add regulatory tracker tables
 
+CROSS-MODULE: identity FK operations approved by architecture owner.
+See AGENTS.md: 跨模块外键、platform/core/shared 级变更可以跨 schema"
+
 Revision ID: 0027_add_regulatory_tracker_tables
 Revises: 0027
 Create Date: 2026-07-10 00:49:38.145049

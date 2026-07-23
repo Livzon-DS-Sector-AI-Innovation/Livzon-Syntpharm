@@ -7,6 +7,11 @@ import type {
   ApiResponse,
   UploadResult,
   UploadResponse,
+  ChapterPreview,
+  MatchResult,
+  FieldFillResult,
+  AssetCategory,
+  AvailableAsset,
 } from '@/types/dossier-writer'
 
 
@@ -86,15 +91,6 @@ export function getDownloadUrl(dossierId: string, filename: string): string {
 
 // ====== Chapter Preview ======
 
-export interface ChapterPreview {
-  success: boolean
-  chapter_code: string
-  chapter_title: string
-  paragraphs: Array<{ text: string; style: string }>
-  tables: string[][][]
-  message?: string
-}
-
 export async function getChapterPreview(chapterId: string): Promise<ChapterPreview> {
   const res = await fetch(
     `/api/v1/registration/dossier-writer/chapters/${chapterId}/preview`
@@ -110,32 +106,7 @@ export async function getChapterPreview(chapterId: string): Promise<ChapterPrevi
 
 // ====== Asset Matching ======
 
-export interface MatchResult {
-  success: boolean
-  message: string
-  matched_count: number
-  unmatched_files: string[]
-}
-
-// ====== Field Filling ======
-
-export interface FieldFillResult {
-  success: boolean
-  message: string
-  filled_count: number
-  total_fields: number
-  results: Array<{
-    field_name: string
-    status: string
-    filled_value: string | null
-  }>
-}
-
 // ====== AI Fill ======
-
-import type {
-  AssetCategory,
-} from '@/types/dossier-writer'
 
 export async function fetchAssetCategories(chapterCode: string): Promise<AssetCategory[]> {
   const res = await fetch(
@@ -176,8 +147,6 @@ export async function fetchChapterDocx(chapterId: string): Promise<ArrayBuffer |
 
 
 // ====== Asset Usage (素材使用管理) ======
-
-import type { AvailableAsset } from '@/types/dossier-writer'
 
 export async function fetchAvailableAssets(chapterId: string): Promise<AvailableAsset[]> {
   const res = await fetch(

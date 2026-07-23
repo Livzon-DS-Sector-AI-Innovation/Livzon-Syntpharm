@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Table, Input, Button, Space, App, Card, Modal, Form, Upload } from 'antd'
 import { UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { SupplementaryReplyListItem } from '@/types/registration'
-import { fetchSupplementaryReplies, getSupplementaryReplyDownloadUrl } from '@/lib/api/client/registration'
+import { fetchSupplementaryReplies, fetchSupplementaryReplyDownloadUrl } from '@/lib/api/client/registration'
 import { generateSupplementaryReply, deleteSupplementaryReplyAction } from '@/actions/registration'
 import dayjs from 'dayjs'
 
@@ -157,7 +157,7 @@ export default function SupplementaryReplyClient({
           <Button
             type="link"
             icon={<DownloadOutlined />}
-            onClick={async () => { const url = await getSupplementaryReplyDownloadUrl(record.id); window.open(url, "_blank"); }}
+            onClick={async () => { const url = await fetchSupplementaryReplyDownloadUrl(record.id); window.open(url, "_blank"); }}
             target="_blank"
           >
             下载

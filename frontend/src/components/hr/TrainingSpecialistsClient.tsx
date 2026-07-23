@@ -6,18 +6,20 @@ import { PlusOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from '@ant-d
 import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist } from '@/types/hr'
 import {
   fetchTrainingSpecialists,
-  upsertTrainingSpecialist,
-  deleteTrainingSpecialist,
   fetchTrainingTeams,
-  createTrainingTeam,
-  updateTrainingTeam,
-  deleteTrainingTeam,
   fetchDepartments,
   fetchNewDepartments,
   fetchEmployees,
   fetchNewEmployees,
 } from '@/lib/api/client/hr'
-import { syncTrainingSpecialistsFeishuOpenIds } from '@/actions/hr'
+import {
+  upsertTrainingSpecialistAction,
+  deleteTrainingSpecialistAction,
+  createTrainingTeamAction,
+  updateTrainingTeamAction,
+  deleteTrainingTeamAction,
+  syncTrainingSpecialistsFeishuOpenIds,
+} from '@/actions/hr'
 
 export default function TrainingSpecialistsClient() {
   // ── Specialist state ──
@@ -135,7 +137,7 @@ export default function TrainingSpecialistsClient() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteTrainingSpecialist(id)
+      await deleteTrainingSpecialistAction(id)
       message.success('已删除')
       loadData()
     } catch (err: any) {
@@ -147,7 +149,7 @@ export default function TrainingSpecialistsClient() {
     const values = await form.validateFields()
     setSaving(true)
     try {
-      await upsertTrainingSpecialist({
+      await upsertTrainingSpecialistAction({
         department: values.department,
         employee_number: values.employee_number,
         employee_name: values.employee_name,
@@ -245,7 +247,7 @@ export default function TrainingSpecialistsClient() {
 
   const handleTeamDelete = async (id: string) => {
     try {
-      await deleteTrainingTeam(id)
+      await deleteTrainingTeamAction(id)
       message.success('班组已删除')
       loadTeams(teamFactory)
     } catch (err: any) {
@@ -264,7 +266,7 @@ export default function TrainingSpecialistsClient() {
           specialist_employee_number: values.specialist_employee_number,
           employee_numbers: values.employee_numbers || [],
         }
-        await updateTrainingTeam(editingTeam.id, payload)
+        await updateTrainingTeamAction(editingTeam.id, payload)
         message.success('班组已更新')
       } else {
         const payload: TrainingTeamCreateInput = {
@@ -274,7 +276,7 @@ export default function TrainingSpecialistsClient() {
           specialist_employee_number: values.specialist_employee_number,
           employee_numbers: values.employee_numbers || [],
         }
-        await createTrainingTeam(payload)
+        await createTrainingTeamAction(payload)
         message.success('班组已创建')
       }
       setTeamModalOpen(false)

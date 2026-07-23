@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
 import { UploadOutlined, DownloadOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
-import { fetchReferenceStandards, getReferenceStandardDownloadUrl } from '@/lib/api/client/registration'
+import { fetchReferenceStandards, fetchReferenceStandardDownloadUrl } from '@/lib/api/client/registration'
 import { parseCOA } from '@/actions/registration'
 import { generateReferenceStandard, deleteReferenceStandardAction } from '@/actions/registration'
 import dayjs from 'dayjs'
@@ -207,7 +207,7 @@ export default function ReferenceStandardClient({
           <Button
             type="link"
             icon={<DownloadOutlined />}
-            onClick={async () => { const url = await getReferenceStandardDownloadUrl(record.id); window.open(url, "_blank"); }}
+            onClick={async () => { const url = await fetchReferenceStandardDownloadUrl(record.id); window.open(url, "_blank"); }}
             target="_blank"
           >
             下载

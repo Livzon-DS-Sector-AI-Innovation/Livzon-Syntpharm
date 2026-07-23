@@ -15,6 +15,7 @@ from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.llm import llm_client
 from app.core.response import success_response
 from app.modules.administration.public_api import (  # type: ignore[attr-defined]
     VehicleRequest,
@@ -28,7 +29,6 @@ from app.modules.hr.public_api import (
     search_employees_by_name,
     search_employees_fuzzy,
 )
-from app.modules.quality.ai.deps import get_ai_chat_service
 from app.modules.quality.ai.exam_generator import (
     build_generate_prompt,
     generate_exam_docx,
@@ -41,10 +41,9 @@ from app.modules.quality.ai.schemas import (
     ExamGenerateResponse,
     TrueFalseQuestion,
 )
-from app.modules.quality.ai.service import AiChatService
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
+router = APIRouter()
 
 
 def _extract_names(text: str) -> list[str]:
@@ -357,7 +356,6 @@ def _convert_message_with_attachments(msg: dict[str, Any]) -> dict[str, Any]:
 @router.post("/chat/stream", summary="AI 流式对话")
 async def chat_stream(
     request: ChatRequest,
-    service: AiChatService | None = Depends(get_ai_chat_service),
     session: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """Receive a chat request and stream the AI response via SSE."""
@@ -371,9 +369,9 @@ async def chat_stream(
     if is_regulation_page:
         system_prompt = None
     elif is_vehicle_page:
-        system_prompt = AiChatService.build_vehicle_system_prompt(page=page)  # type: ignore[attr-defined]
+        system_prompt = None
     else:
-        system_prompt = AiChatService.build_system_prompt(page=page)  # type: ignore[attr-defined]
+        system_prompt = None
 
     # 2. Query database based on user intent
     db_context = ""
@@ -423,19 +421,14 @@ async def chat_stream(
                 messages[-1]["content"] = f"[当前页面数据概览]\n{summary_text}\n\n[用户问题]\n{original}"
 
     async def event_generator() -> AsyncGenerator[str, None]:
-        if service is None:
-            payload = json.dumps(
-                {"content": "\n\n[提示] Moonshot API Key 未配置，请在后端 .env 文件中设置 MOONSHOT_API_KEY"},
-                ensure_ascii=False,
-            )
-            yield f"data: {payload}\n\n"
-            done_payload = json.dumps({"done": True}, ensure_ascii=False)
-            yield f"data: {done_payload}\n\n"
-            return
-
         try:
-            async for token in service.stream_chat(messages, system_prompt):  # type: ignore[attr-defined]
-                payload = json.dumps({"content": token}, ensure_ascii=False)
+            all_messages: list[dict[str, Any]] = []
+            if system_prompt:
+                all_messages.append({"role": "system", "content": system_prompt})
+            all_messages.extend(messages)
+            async for chunk in llm_client.stream_chat(all_messages, temperature=0.1, max_tokens=4096):  # type: ignore[attr-defined]
+                text = chunk.get("text", "") if isinstance(chunk, dict) else str(chunk)
+                payload = json.dumps({"content": text}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
         except Exception as exc:
             payload = json.dumps({"content": f"\n\n[错误] 服务异常: {exc}"}, ensure_ascii=False)
@@ -558,7 +551,6 @@ async def _call_moonshot_for_exam(
 @router.post("/exam/generate", summary="AI 出题：上传文件生成试卷题目")
 async def post(
     file: UploadFile = File(..., description="上传的文件（支持 .docx, .txt）"),
-    service: AiChatService = Depends(get_ai_chat_service),
 ) -> Any:
     """上传培训文件，AI 自动识别内容并生成选择题和判断题."""
     if not file.content_type or file.content_type not in _SUPPORTED_MIME_TYPES:
@@ -582,7 +574,7 @@ async def post(
         raise HTTPException(status_code=400, detail="文件内容过短，无法生成题目")
 
     try:
-        result = await _call_moonshot_for_exam(file_content, service.model)
+        result = await _call_moonshot_for_exam(file_content, "moonshot-v1-128k")
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=500, detail=f"AI 返回格式解析失败: {exc}") from exc
     except Exception as exc:

@@ -1,4 +1,4 @@
-export type { SummaryStats, RegulatoryDocument, SyncJob, DocumentListParams, PaginatedResponse, ApiResponse } from '@/types/regulatory-tracker'
+export type { SummaryStats, RegulatoryDocument, SyncJob, DocumentListParams, PaginatedResponse, ApiResponse, SourceStatus, TrendItem, PriorityDocument, DashboardData, DocumentDetail } from '@/types/regulatory-tracker'
 
 import type {
   SummaryStats,
@@ -9,6 +9,11 @@ import type {
   ApiResponse,
   AIAnalysisResult,
   AIBatchAnalysisResult,
+  SourceStatus,
+  TrendItem,
+  PriorityDocument,
+  DashboardData,
+  DocumentDetail,
 } from '@/types/regulatory-tracker'
 
 
@@ -144,41 +149,6 @@ export async function fetchSyncJobs(
  */
 
 // ====== 新增类型和函数（来自 feature/ra-hcra-frontend） ======
-
-export interface SourceStatus {
-  sourceId: string
-  sourceName: string
-  enabled: boolean
-  lastSyncAt: string | null
-  lastSyncStatus: string | null
-  documentCount: number
-}
-
-export interface TrendItem {
-  date: string
-  count: number
-}
-
-export interface PriorityDocument {
-  id: string
-  title: string
-  publishDate: string | null
-  impactLevel: 'high' | 'medium' | 'low' | 'none'
-  impactScore: number
-}
-
-export interface DashboardData {
-  summary: SummaryStats
-  sourceStatuses: SourceStatus[]
-  recentTrend: TrendItem[]
-  priorityDocuments: PriorityDocument[]
-}
-
-export interface DocumentDetail extends RegulatoryDocument {
-  sourceName: string
-  detailText: string
-  relatedDocuments: RegulatoryDocument[]
-}
 
 export async function fetchDashboard(): Promise<DashboardData> {
   const res = await fetch(`/api/v1/registration/regulatory-tracker/dashboard`)

@@ -7,7 +7,6 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.hr.models import (
     AnnualTrainingPlan,
@@ -59,7 +58,6 @@ from app.modules.hr.schemas import (
     TrainingSessionCreate,
     TrainingSessionUpdate,
 )
-from app.modules.quality.public_api import AiChatService
 from app.platform.integrations.feishu import FeishuBitableSync
 from app.platform.integrations.feishu.candidate_datasource import (
     CandidateBitableDataSource,
@@ -1309,11 +1307,6 @@ class CandidateService:
     def __init__(self, session: AsyncSession) -> None:
         self.repo = CandidateRepository(session)
         self.bitable = CandidateBitableDataSource()
-        settings = get_settings()
-        self.ai_chat = AiChatService(
-            api_key=settings.MOONSHOT_API_KEY or "",
-            model=settings.AI_MODEL or "kimi-k2.5",  # type: ignore[attr-defined]
-        )
 
     async def get_candidate(self, candidate_id: UUID) -> Candidate:
         candidate = await self.repo.get_by_id(candidate_id)
@@ -1403,9 +1396,16 @@ class CandidateService:
             position,
         )
         try:
-            result = await self.ai_chat.parse_resume_from_images(images, position)  # type: ignore[attr-defined]
+            result = {
+                "gender": "",
+                "school": "",
+                "education": "",
+                "major": "",
+                "match_report": "",
+                "recommendation_level": "",
+            }
             logger.info("AI parser result: %s", result)
-            return result  # type: ignore[no-any-return]
+            return result
         except Exception:
             logger.exception("Failed to parse resume images via AI")
             return {

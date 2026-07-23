@@ -20,7 +20,7 @@ import {
   pillInfo,
   pillDefault,
   T
-} from '@/components/safety/shared-styles'
+} from '@/components/safety/sharedStyles'
 import dayjs from 'dayjs'
 import animStyles from './safety-animations.module.css'
 

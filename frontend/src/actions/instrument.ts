@@ -19,6 +19,18 @@ import type {
   CalibrationRecordFilter,
   ApprovalRecord,
   ApprovalCreate,
+  AIRecognizedInstrumentInfo,
+  UpcomingCalibrationRecord,
+  UpcomingCalibrationResponse,
+  ReminderResponse,
+  RecordsForReminderResponse,
+  ReminderConfig,
+  ReminderConfigListResponse,
+  ReminderConfigCreate,
+  ReminderConfigUpdate,
+  AutoTriggerResponse,
+  FeishuUser,
+  FeishuDepartment,
 } from '@/types/instrument'
 import {
   getInstruments as fetchInstruments,
@@ -69,14 +81,12 @@ export type {
   RecordsForReminderResponse,
   ReminderConfig,
   ReminderConfigListResponse,
+  ReminderConfigCreate,
+  ReminderConfigUpdate,
   AutoTriggerResponse,
   FeishuUser,
   FeishuDepartment,
-} from '@/lib/api/server/instrument'
-import type {
-  ReminderConfigCreate,
-  ReminderConfigUpdate,
-} from '@/lib/api/server/instrument'
+} from '@/types/instrument'
 
 export async function getInstruments(params: InstrumentFilter = {}) {
   return fetchInstruments(params)

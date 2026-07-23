@@ -59,7 +59,7 @@ import HazardRectificationReplyModal from './HazardRectificationReplyModal'
 import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
 import dayjs from 'dayjs'
-import { statusPill, actionLink } from '@/components/safety/shared-styles'
+import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 
 const { Text } = Typography
 

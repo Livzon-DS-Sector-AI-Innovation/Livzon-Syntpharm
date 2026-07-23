@@ -632,3 +632,34 @@ export interface StandardQueryParams {
   version?: string
   is_effective?: boolean
 }
+
+// ============ AI 交互日志 ============
+
+export interface AiLogItem {
+  id: string
+  bill_no: string | null
+  operate_type: string
+  operator: string
+  system_prompt: string | null
+  user_input: string | null
+  ai_response: string | null
+  error_message: string | null
+  tokens_used: number | null
+  latency_ms: number | null
+  created_at: string
+}
+
+export interface AiLogListResponse {
+  items: AiLogItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface AiLogFilter {
+  operate_type?: string
+  operator?: string
+  start_date?: string
+  end_date?: string
+  keyword?: string
+}

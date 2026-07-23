@@ -1,5 +1,6 @@
 """研发项目 API 路由."""
 
+import logging
 import uuid
 from uuid import UUID
 
@@ -60,6 +61,8 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+
+logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["research"])
 
@@ -363,7 +366,6 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
 
     import io
     import itertools
-    import logging
     import math
 
     import pandas as pd  # type: ignore[import-untyped]

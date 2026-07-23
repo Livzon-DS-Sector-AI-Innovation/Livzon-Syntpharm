@@ -2,7 +2,7 @@
  * Energy 模块共享样式 — 与 Equipment 模块保持一致
  *
  * 使用方式：
- *   import { statusPill, actionLink } from '@/components/energy/shared-styles'
+ *   import { statusPill, actionLink } from '@/components/energy/sharedStyles'
  *   <span style={statusPill('#1aae39', '#d9f3e1')}>启用</span>
  *   <span role="button" onClick={...} style={actionLink('#0075de')}>
  *     <EditOutlined />编辑
