@@ -126,6 +126,13 @@ run_e2e() {
     if ! curl -sf http://localhost:8000/health > /dev/null 2>&1; then
         log_info "Starting development stack..."
         docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait backend
+        log_info "Waiting for backend to be ready..."
+        for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+                break
+            fi
+            sleep 2
+        done
     fi
 
     if ! pnpm test:e2e; then
