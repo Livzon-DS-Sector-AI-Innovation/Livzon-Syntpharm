@@ -195,8 +195,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Start backend
+        working-directory: backend
         run: |
-          cd backend
           pip install uv && uv sync --dev
           export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
           export FEISHU__PLATFORM__APP_ID=ci_dummy
