@@ -198,7 +198,7 @@ jobs:
         run: |
           cd backend
           pip install uv && uv sync --dev
-          export DATABASE_URL=postgresql+asyncpg://erp_user:change-me-in-production@localhost:5432/erp
+          export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
           export FEISHU__PLATFORM__APP_ID=ci_dummy
           export FEISHU__PLATFORM__APP_SECRET=ci_dummy
           export FEISHU__PLATFORM__REDIRECT_URI=http://localhost:3000/auth/callback

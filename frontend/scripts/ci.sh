@@ -120,10 +120,14 @@ run_e2e() {
     log_section "E2E Tests"
     check_node_version || return 1
     install_deps || return 1
-    if ! npx playwright --version 2>/dev/null; then
-        log_warn "Playwright not configured (run 'pnpm exec playwright install chromium' first)"
-        return 0
+    ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
+
+    # Ensure backend is running
+    if ! curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+        log_info "Starting development stack..."
+        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait backend
     fi
+
     if ! pnpm test:e2e; then
         log_error "E2E tests failed!"; FAILED=1
     else
