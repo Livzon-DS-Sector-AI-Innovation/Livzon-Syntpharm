@@ -135,6 +135,18 @@ run_e2e() {
         done
     fi
 
+    # Ensure frontend is running
+    if ! curl -s http://localhost:3000 > /dev/null 2>&1; then
+        log_info "Starting frontend..."
+        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait frontend
+        for i in $(seq 1 30); do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+                break
+            fi
+            sleep 2
+        done
+    fi
+
     if ! pnpm test:e2e; then
         log_error "E2E tests failed!"; FAILED=1
     else
