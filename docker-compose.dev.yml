@@ -5,9 +5,6 @@ services:
       - ./backend/alembic:/app/alembic
       - ./backend/alembic.ini:/app/alembic.ini
       - ./backend/storage:/app/storage
-    dns:
-      - 223.5.5.5
-      - 8.8.8.8
     command: >
       sh -c "uv run alembic upgrade head &&
       .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"
