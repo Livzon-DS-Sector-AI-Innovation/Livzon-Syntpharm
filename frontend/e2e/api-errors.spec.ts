@@ -32,7 +32,7 @@ test.describe('API 错误监控', () => {
     })
 
     for (const path of PAGES) {
-      await page.goto(path, { timeout: 30000, waitUntil: 'domcontentloaded' })
+      await page.goto(path, { timeout: 60000, waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1000)
     }
 

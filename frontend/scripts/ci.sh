@@ -88,75 +88,6 @@ run_build() {
     fi
 }
 
-run_openapi() {
-    log_section "OpenAPI Drift Check"
-    check_node_version || return 1
-    install_deps || return 1
-    BACKEND_REPO="${BACKEND_REPO_PATH:-../backend}"
-    BACKEND_SPEC="$BACKEND_REPO/openapi.json"
-    if [ ! -f "$BACKEND_SPEC" ]; then
-        log_warn "Backend openapi.json not found at $BACKEND_SPEC"
-        log_warn "Skipping OpenAPI drift check"
-        return 0
-    fi
-    cp "$BACKEND_SPEC" src/types/generated/openapi.json
-    if ! BACKEND_SPEC_PATH=src/types/generated/openapi.json pnpm generate:api; then
-        log_error "Failed to generate API types"; FAILED=1; return 1
-    fi
-    if ! git diff --exit-code src/types/generated/schema.ts > /dev/null 2>&1; then
-        log_error "Generated types are out of date!"
-        echo ""
-        echo "The backend API has changed. Please update the frontend types:"
-        echo "  1. Pull the latest backend changes"
-        echo "  2. Run: pnpm generate:api"
-        echo "  3. Commit the updated src/types/generated/schema.ts"
-        FAILED=1
-    else
-        log_info "Generated types are up to date"
-    fi
-}
-
-run_e2e() {
-    log_section "E2E Tests"
-    check_node_version || return 1
-    install_deps || return 1
-    ROOT_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
-
-    # Ensure backend is running
-    if ! curl -sf http://localhost:8000/health > /dev/null 2>&1; then
-        log_info "Starting development stack..."
-        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait backend
-        log_info "Waiting for backend to be ready..."
-        for i in $(seq 1 60); do
-            if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
-                break
-            fi
-            sleep 2
-        done
-    fi
-
-    # Ensure frontend is running
-    if ! curl -s http://localhost:3000 > /dev/null 2>&1; then
-        log_info "Starting frontend..."
-        docker compose -f "$ROOT_DIR/docker-compose.yml" -f "$ROOT_DIR/docker-compose.dev.yml" up -d --wait frontend
-        for i in $(seq 1 30); do
-            if curl -s http://localhost:3000 > /dev/null 2>&1; then
-                break
-            fi
-            sleep 2
-        done
-    fi
-
-    # Pre-warm callback route (Next.js cold compile on first request)
-    curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
-
-    if ! pnpm test:e2e; then
-        log_error "E2E tests failed!"; FAILED=1
-    else
-        log_info "E2E tests passed"
-    fi
-}
-
 run_clean_db() {
     log_section "Cleaning Database/Cache"
     if [ -d ".next" ]; then
@@ -176,20 +107,14 @@ SUBCOMMANDS=()
 for arg in "$@"; do
     case "$arg" in
         --help|-h)
-            echo "Usage: $0 [typecheck|lint|build|openapi|e2e|quick|full|clean-db]"
+            echo "Usage: $0 [typecheck|lint|build|clean-db]"
             echo ""
-            echo "CI Definitions:"
-            echo "  quick = typecheck + lint"
-            echo "  full  = quick + build + openapi + e2e"
+            echo "Domain CI checks. Cross-project checks (openapi, e2e) at root: scripts/ci.sh"
             echo ""
             echo "Commands:"
             echo "  typecheck  - Run TypeScript type check"
             echo "  lint       - Run ESLint"
             echo "  build      - Run Next.js build"
-            echo "  openapi    - Run OpenAPI drift check"
-            echo "  e2e        - Run Playwright end-to-end tests"
-            echo "  quick      - Run quick CI (typecheck + lint)"
-            echo "  full       - Run full CI (quick + build + openapi + e2e)"
             echo "  clean-db   - Clean .next and node_modules"
             exit 0
             ;;
@@ -198,25 +123,17 @@ for arg in "$@"; do
     esac
 done
 
-if [ ${#SUBCOMMANDS[@]} -eq 0 ]; then SUBCOMMANDS=("quick"); fi
+if [ ${#SUBCOMMANDS[@]} -eq 0 ]; then
+    echo "Usage: $0 [typecheck|lint|build|clean-db]"
+    echo "Cross-project checks (openapi, e2e) at root: scripts/ci.sh"
+    exit 1
+fi
 
-EXPANDED_COMMANDS=()
 for cmd in "${SUBCOMMANDS[@]}"; do
-    case "$cmd" in
-        quick) EXPANDED_COMMANDS+=(typecheck lint) ;;
-        full)  EXPANDED_COMMANDS+=(typecheck lint build openapi e2e) ;;
-        all)   EXPANDED_COMMANDS+=(typecheck lint) ;;
-        *)     EXPANDED_COMMANDS+=("$cmd") ;;
-    esac
-done
-
-for cmd in "${EXPANDED_COMMANDS[@]}"; do
     case "${cmd}" in
         typecheck) run_typecheck ;;
         lint)      run_lint ;;
         build)     run_build ;;
-        openapi)   run_openapi ;;
-        e2e)       run_e2e ;;
         clean-db)  run_clean_db ;;
         *) echo "Unknown command: ${cmd}"; exit 1 ;;
     esac
