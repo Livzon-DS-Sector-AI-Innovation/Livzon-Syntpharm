@@ -14,7 +14,7 @@ import {
   InspectionCompleteInput, MaterialConsumeInput,
 } from '@/types/equipment'
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.API_BASE_URL || ''
 
 async function actionFetch<T>(url: string, options?: RequestInit): Promise<T | null> {
   const response = await fetch(url, {

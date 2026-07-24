@@ -238,7 +238,8 @@ async def _fetch_open_hazards_details(repo: Any) -> str:
         status = STATUS_MAP.get(h.rectification_status, h.rectification_status or "—")
 
         lines.append(
-            f"**{i}. {h.hazard_no}** | {'⚠️' if h.hazard_level == 'critical' else '🔶' if h.hazard_level == 'major' else '🔹'} {level}\n"  # noqa: E501
+            f"**{i}. {h.hazard_no}** | "
+            f"{'⚠️' if h.hazard_level == 'critical' else '🔶' if h.hazard_level == 'major' else '🔹'} {level}\n"
             f"描述：{desc}\n"
             f"责任：{dept} | 发现：{discovered} | 限期：{deadline} | {status}\n"
         )

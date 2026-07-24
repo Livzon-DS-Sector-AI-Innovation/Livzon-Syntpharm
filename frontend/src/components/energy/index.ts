@@ -1,3 +1,4 @@
+'use client'
 export { EnergyOverview } from './EnergyOverview'
 export { StatsCards } from './StatsCards'
 export { TrendChart } from './TrendChart'
