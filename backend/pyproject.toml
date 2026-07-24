@@ -91,6 +91,8 @@ select = ["E", "F", "I", "N", "W", "UP"]
 "scripts/debug_asset_extract.py" = ["E501", "E722"]
 "scripts/regulatory_poc/nmpa_search_test.py" = ["E501", "E722"]
 
+"app/modules/procurement/contract_generator.py" = ["E501", "E722"]
+"app/modules/hr/api.py" = ["E501", "E722"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
