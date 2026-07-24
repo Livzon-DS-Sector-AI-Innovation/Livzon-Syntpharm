@@ -28,13 +28,22 @@
 
 | 目录 | 用途 |
 |---|---|
-| `scripts/ci/` | CI 编排、spec 生成、迁移检查 |
+| `scripts/ci/` | CI 编排、迁移检查 |
 | `scripts/seed/` | 数据库种子数据与模块设置 |
 | `scripts/migration/` | 一次性数据迁移与回填 |
 | `scripts/sync/` | 飞书同步与多维表格检查 |
 | `scripts/import/` | Excel/CSV 数据导入脚本 |
 | `scripts/test/` | 测试辅助与调试脚本 |
 | `scripts/regulatory_poc/` | 法规追踪概念验证 |
+
+### 跨项目 CI (`scripts/ci.sh`)
+
+根目录 `scripts/ci.sh` 负责跨项目 CI 检查，不属于单独的后端或前端：
+
+| 子命令 | 用途 |
+|---|---|
+| `openapi` | 后端导出 OpenAPI spec → 前端生成类型 → 检查漂移 |
+| `e2e` | 启动服务（PostgreSQL + 后端 + 前端）→ 运行 Playwright → 清理 |
 
 ### 第三方代码
 - 第三方库放在 `backend/vendor/`
@@ -574,6 +583,10 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 如果后端 API 发生变化，前端必须重新生成类型：
 
 ```bash
+# 使用根目录 CI 脚本（推荐，一次性完成导出 + 生成 + 漂移检查）
+bash scripts/ci.sh openapi
+
+# 或分步执行：
 # 1. 在 backend 目录导出最新 spec
 cd ../backend && uv run python scripts/ci/export_openapi.py
 

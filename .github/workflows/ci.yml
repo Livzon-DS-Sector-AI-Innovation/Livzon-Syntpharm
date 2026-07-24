@@ -1,3 +1,20 @@
+# ┌──────────────────────────────────────────────────────────────────────┐
+# │ CI Groups (documentation only — not executable)                     │
+# │                                                                     │
+# │  quick  = backend-lint + backend-typecheck                          │
+# │         + frontend-lint + frontend-typecheck                        │
+# │                                                                     │
+# │  full   = quick + openapi + backend-migration-scope                 │
+# │         + backend-alembic + backend-test + frontend-build           │
+# │         + frontend-e2e                                              │
+# │                                                                     │
+# │  To run locally:                                                    │
+# │    bash scripts/ci.sh openapi                                       │
+# │    bash scripts/ci.sh e2e                                           │
+# │    cd backend && bash scripts/ci/ci.sh test                         │
+# │    cd frontend && bash scripts/ci/ci.sh lint                        │
+# └──────────────────────────────────────────────────────────────────────┘
+
 name: CI
 
 on:
@@ -48,19 +65,13 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-        working-directory: backend
-      - run: bash scripts/ci/ci.sh openapi
-        working-directory: backend
+      - run: pip install uv && cd backend && uv sync --dev
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: pnpm install --frozen-lockfile
-        working-directory: frontend
+      - run: cd frontend && pnpm install --frozen-lockfile
       - run: bash scripts/ci.sh openapi
-        working-directory: frontend
-        env: { BACKEND_REPO_PATH: ../backend }
 
   backend-migration-scope:
     runs-on: ubuntu-latest
@@ -172,63 +183,21 @@ jobs:
   frontend-e2e:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: dazah_ci
-        ports: [5432:5432]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.12' }
       - uses: pnpm/action-setup@v6
         with: { version: "10.33.0" }
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - name: Start backend
-        working-directory: backend
-        run: |
-          pip install uv && uv sync --dev
-          export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
-          export FEISHU__PLATFORM__APP_ID=ci_dummy
-          export FEISHU__PLATFORM__APP_SECRET=ci_dummy
-          export FEISHU__PLATFORM__REDIRECT_URI=http://localhost:3000/auth/callback
-          export FRONTEND_URL=http://localhost:3000
-          uv run alembic upgrade head
-          nohup uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
-          echo $! > /tmp/backend.pid
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/docs > /dev/null 2>&1 && break
-            sleep 2
-          done
-      - name: Start frontend
-        run: |
-          nohup pnpm dev > /tmp/frontend.log 2>&1 &
-          echo $! > /tmp/frontend.pid
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:3000 > /dev/null 2>&1 && break
-            sleep 2
-          done
-          curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
-      - run: pnpm exec playwright test
+      - run: cd frontend && pnpm install --frozen-lockfile
+      - run: cd backend && pip install uv && uv sync --dev
+      - run: cd frontend && pnpm exec playwright install --with-deps chromium
+      - run: bash scripts/ci.sh e2e
         env:
-          API_BASE_URL: http://localhost:8000
           CI: true
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with: { name: playwright-report, path: frontend/playwright-report/, retention-days: 7 }
-      - name: Stop services
-        if: always()
-        run: |
-          kill $(cat /tmp/frontend.pid) 2>/dev/null || true
-          kill $(cat /tmp/backend.pid) 2>/dev/null || true
