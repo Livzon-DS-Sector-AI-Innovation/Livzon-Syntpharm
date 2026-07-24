@@ -472,7 +472,7 @@ async def get_equipment_names_by_ids(db: AsyncSession, equipment_ids: list[uuid.
 async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict]) -> list[RouteLocation]:
     """全量替换路线的地点→设备→模板配置"""
     existing_locs = (await db.execute(select(RouteLocation).where(RouteLocation.route_id == route_id))).scalars().all()
-    existing_loc_ids = {r.id for r in existing_locs}
+    {r.id for r in existing_locs}
     existing_by_loc_id: dict[uuid.UUID, RouteLocation] = {}
     for r in existing_locs:
         if r.location_id not in existing_by_loc_id or not r.is_deleted:

@@ -27,25 +27,25 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.shared.base_model import BaseModel
 
 
-class EnergyType(str, enum.Enum):
+class EnergyType(enum.StrEnum):
     ELECTRICITY = "electricity"
     WATER = "water"
     STEAM = "steam"
 
 
-class MonitorLevel(str, enum.Enum):
+class MonitorLevel(enum.StrEnum):
     NORMAL = "normal"
     IMPORTANT = "important"
     URGENT = "urgent"
 
 
-class CollectStatus(str, enum.Enum):
+class CollectStatus(enum.StrEnum):
     SUCCESS = "success"
     PARTIAL = "partial"
     FAILED = "failed"
 
 
-class WorkshopCategory(str, enum.Enum):
+class WorkshopCategory(enum.StrEnum):
     WORKSHOP = "workshop"  # 生产车间
     POSITION = "position"  # 岗位
     SUPPORT = "support"  # 辅助部门

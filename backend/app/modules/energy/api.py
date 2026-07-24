@@ -637,7 +637,7 @@ async def daily_import_from_bitable(
 
     dates_result = await db.execute(
         select(distinct(EnergyDailyData.date))
-        .where(EnergyDailyData.is_alert == True, EnergyDailyData.alert_record_id.is_(None))
+        .where(EnergyDailyData.is_alert, EnergyDailyData.alert_record_id.is_(None))
         .order_by(EnergyDailyData.date.desc())
     )
     dates_to_check = [str(d) for d in dates_result.scalars().all()]

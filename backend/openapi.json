@@ -5894,22 +5894,6 @@
               "title": "Tree"
             },
             "description": "\u662f\u5426\u8fd4\u56de\u6811\u5f62\u7ed3\u6784"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -5951,22 +5935,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Category Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -6209,22 +6177,6 @@
               "title": "Tree"
             },
             "description": "\u662f\u5426\u8fd4\u56de\u6811\u5f62\u7ed3\u6784"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -6266,22 +6218,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Location Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -6437,40 +6373,12 @@
         "summary": "\u83b7\u53d6\u90e8\u95e8\u5217\u8868\uff08\u4f9b\u8bbe\u5907\u8868\u5355\u4e0b\u62c9\u4f7f\u7528\uff09",
         "description": "\u83b7\u53d6\u53ef\u9009\u90e8\u95e8\u5217\u8868\uff0c\u542b\u90e8\u95e8\u540d\u79f0\u548c\u8d1f\u8d23\u4eba\u59d3\u540d",
         "operationId": "get_departments_list_api_v1_equipment_departments_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -6661,22 +6569,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -6709,40 +6601,12 @@
         "summary": "\u83b7\u53d6\u8bbe\u5907\u7edf\u8ba1",
         "description": "\u83b7\u53d6\u8bbe\u5907\u7edf\u8ba1",
         "operationId": "get_equipment_statistics_api_v1_equipment_equipments_statistics_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -6766,22 +6630,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Equipment Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -6907,112 +6755,6 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/equipment/equipments/import/template": {
-      "get": {
-        "tags": [
-          "\u8bbe\u5907\u7ba1\u7406"
-        ],
-        "summary": "\u4e0b\u8f7d\u8bbe\u5907\u5bfc\u5165\u6a21\u677f",
-        "description": "\u4e0b\u8f7d\u8bbe\u5907\u53f0\u8d26 Excel \u5bfc\u5165\u6a21\u677f",
-        "operationId": "download_import_template_api_v1_equipment_equipments_import_template_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/equipment/equipments/import": {
-      "post": {
-        "tags": [
-          "\u8bbe\u5907\u7ba1\u7406"
-        ],
-        "summary": "\u6279\u91cf\u5bfc\u5165\u8bbe\u5907",
-        "description": "\u4ece Excel \u6587\u4ef6\u6279\u91cf\u5bfc\u5165\u8bbe\u5907\u53f0\u8d26",
-        "operationId": "import_equipments_api_v1_equipment_equipments_import_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_import_equipments_api_v1_equipment_equipments_import_post"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -7178,22 +6920,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -7225,40 +6951,12 @@
         ],
         "summary": "\u5e93\u5b58\u9884\u8b66\u5217\u8868",
         "operationId": "get_stock_warnings_api_v1_equipment_spare_parts_stock_warnings_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -7281,22 +6979,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Spare Part Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -7458,22 +7140,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Spare Part Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -7695,40 +7361,12 @@
         ],
         "summary": "\u67e5\u8be2\u6545\u969c\u73b0\u8c61\u5217\u8868",
         "operationId": "list_codes_api_v1_equipment_maintenance_failure_codes_symptoms_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -7751,22 +7389,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Code Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -7974,40 +7596,12 @@
         ],
         "summary": "\u67e5\u8be2\u6545\u969c\u539f\u56e0\u5217\u8868",
         "operationId": "list_codes_api_v1_equipment_maintenance_failure_codes_causes_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -8030,22 +7624,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Code Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -8253,40 +7831,12 @@
         ],
         "summary": "\u67e5\u8be2\u7ef4\u4fee\u63aa\u65bd\u5217\u8868",
         "operationId": "list_codes_api_v1_equipment_maintenance_failure_codes_actions_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -8309,22 +7859,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Code Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -8552,24 +8086,6 @@
             "description": "\u5de5\u5355\u72b6\u6001"
           },
           {
-            "name": "exclude_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6392\u9664\u72b6\u6001",
-              "title": "Exclude Status"
-            },
-            "description": "\u6392\u9664\u72b6\u6001"
-          },
-          {
             "name": "equipment_id",
             "in": "query",
             "required": false,
@@ -8650,22 +8166,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -8706,22 +8206,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Work Order Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -8772,22 +8256,6 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -8819,58 +8287,12 @@
         ],
         "summary": "\u5de5\u5355\u7edf\u8ba1",
         "operationId": "get_work_order_statistics_api_v1_equipment_maintenance_work_orders_statistics_get",
-        "parameters": [
-          {
-            "name": "exclude_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6392\u9664\u72b6\u6001",
-              "title": "Exclude Status"
-            },
-            "description": "\u6392\u9664\u72b6\u6001"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -9274,22 +8696,6 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -9440,22 +8846,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -9500,22 +8890,6 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u5929\u6570"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -9556,22 +8930,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Plan Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -9844,22 +9202,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -9900,22 +9242,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -10024,25 +9350,6 @@
             "description": "\u8bbe\u5907ID"
           },
           {
-            "name": "category_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u5206\u7c7bID",
-              "title": "Category Id"
-            },
-            "description": "\u5206\u7c7bID"
-          },
-          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -10104,22 +9411,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -10164,22 +9455,6 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u5929\u6570\uff0c0=\u4ec5\u903e\u671f"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -10220,22 +9495,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Plan Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -10525,22 +9784,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -10581,22 +9824,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -11080,22 +10307,6 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -11126,7 +10337,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u67e5\u770b\u5de5\u5355\u56fe\u7247\u6587\u4ef6",
-        "operationId": "get_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get",
+        "operationId": "serve_work_order_image_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get",
         "parameters": [
           {
             "name": "work_order_id",
@@ -11147,22 +10358,6 @@
               "format": "uuid",
               "title": "Image Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -11170,9 +10365,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Get Api V1 Equipment Maintenance Work Orders  Work Order Id  Images  Image Id  File Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -11320,40 +10513,12 @@
         ],
         "summary": "\u83b7\u53d6\u62a2\u5355\u8d85\u65f6\u914d\u7f6e",
         "operationId": "get_claim_timeout_api_v1_equipment_maintenance_config_claim_timeout_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -11365,33 +10530,15 @@
         ],
         "summary": "\u66f4\u65b0\u62a2\u5355\u8d85\u65f6\u914d\u7f6e",
         "operationId": "update_claim_timeout_api_v1_equipment_maintenance_config_claim_timeout_put",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ClaimTimeoutUpdateRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -11423,40 +10570,12 @@
         "summary": "\u83b7\u53d6\u8bbe\u5907\u6a21\u5757\u7ef4\u4fee\u4eba\u5458\u5217\u8868",
         "description": "\u4ece\u4eba\u5458\u914d\u7f6e\u4e2d\u83b7\u53d6\u6240\u6709\u5728\u5c97\u4eba\u5458\uff0c\u4f9b\u5de5\u5355\u6307\u6d3e\u7ef4\u4fee\u4eba\u65f6\u9009\u62e9\u3002",
         "operationId": "list_maintainers_api_v1_equipment_maintenance_staff_maintainers_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -11471,40 +10590,12 @@
         "summary": "\u83b7\u53d6\u5168\u4f53\u5458\u5de5\u5217\u8868",
         "description": "\u8fd4\u56de\u6240\u6709\u672c\u5730\u7528\u6237\uff0c\u4f9b\u5de5\u5355\u8d23\u4efb\u4eba\u9009\u62e9\u3002",
         "operationId": "list_all_users_api_v1_equipment_maintenance_staff_all_users_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -11518,24 +10609,6 @@
         ],
         "summary": "\u521b\u5efa\u89d2\u8272",
         "operationId": "create_role_api_v1_equipment_personnel_roles_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -11632,22 +10705,6 @@
               "default": 100,
               "title": "Page Size"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -11689,22 +10746,6 @@
               "format": "uuid",
               "title": "Role Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -11743,22 +10784,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Role Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -11809,22 +10834,6 @@
               "format": "uuid",
               "title": "Role Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -11856,24 +10865,6 @@
         ],
         "summary": "\u4ece\u8eab\u4efd\u7cfb\u7edf\u6dfb\u52a0\u4eba\u5458",
         "operationId": "add_personnel_api_v1_equipment_personnel_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -11992,22 +10983,6 @@
               "default": 20,
               "title": "Page Size"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12072,22 +11047,6 @@
               "title": "Category Id"
             },
             "description": "\u8bbe\u5907\u5206\u7c7bID\uff08\u53ef\u9009\uff09"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12129,22 +11088,6 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12183,22 +11126,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -12249,22 +11176,6 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12305,22 +11216,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -12370,22 +11265,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -12438,22 +11317,6 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "requestBody": {
@@ -12503,22 +11366,6 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "requestBody": {
@@ -12560,40 +11407,12 @@
         ],
         "summary": "\u624b\u52a8\u5237\u65b0\u98de\u4e66\u4fe1\u606f",
         "operationId": "refresh_feishu_api_v1_equipment_personnel_refresh_feishu_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -12744,22 +11563,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12801,22 +11604,6 @@
               "format": "uuid",
               "title": "Route Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12855,22 +11642,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Route Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -12921,22 +11692,6 @@
               "format": "uuid",
               "title": "Route Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -12977,22 +11732,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Route Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -13246,22 +11985,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -13302,22 +12025,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -13834,22 +12541,6 @@
               "format": "uuid",
               "title": "Task Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -13880,7 +12571,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u67e5\u770b\u7167\u7247\u6587\u4ef6",
-        "operationId": "get_api_v1_equipment_inspection_photos__photo_id__file_get",
+        "operationId": "serve_photo_api_v1_equipment_inspection_photos__photo_id__file_get",
         "parameters": [
           {
             "name": "photo_id",
@@ -13891,22 +12582,6 @@
               "format": "uuid",
               "title": "Photo Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -13914,9 +12589,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Get Api V1 Equipment Inspection Photos  Photo Id  File Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -14026,22 +12699,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Equipment Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
             }
           }
         ],
@@ -14203,22 +12860,6 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -14260,22 +12901,6 @@
               "format": "uuid",
               "title": "Task Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -14306,7 +12931,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u8def\u7ebf\u5b9a\u65f6\u4efb\u52a1\u5217\u8868",
-        "operationId": "handler_api_v1_equipment_inspection_routes__route_id__schedules_get",
+        "operationId": "list_schedules_api_v1_equipment_inspection_routes__route_id__schedules_get",
         "parameters": [
           {
             "name": "route_id",
@@ -14317,22 +12942,6 @@
               "format": "uuid",
               "title": "Route Id"
             }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
           }
         ],
         "responses": {
@@ -14340,9 +12949,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Equipment Inspection Routes  Route Id  Schedules Get"
-                }
+                "schema": {}
               }
             }
           },
@@ -14363,7 +12970,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1",
-        "operationId": "handler_api_v1_equipment_inspection_routes__route_id__schedules_post",
+        "operationId": "create_schedule_api_v1_equipment_inspection_routes__route_id__schedules_post",
         "parameters": [
           {
             "name": "route_id",
@@ -14407,9 +13014,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Equipment Inspection Routes  Route Id  Schedules Post"
-                }
+                "schema": {}
               }
             }
           },
@@ -14432,7 +13037,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u66f4\u65b0\u5b9a\u65f6\u4efb\u52a1",
-        "operationId": "handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put",
+        "operationId": "update_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put",
         "parameters": [
           {
             "name": "route_id",
@@ -14486,9 +13091,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Equipment Inspection Routes  Route Id  Schedules  Schedule Id  Put"
-                }
+                "schema": {}
               }
             }
           },
@@ -14509,7 +13112,7 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u5220\u9664\u5b9a\u65f6\u4efb\u52a1",
-        "operationId": "handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete",
+        "operationId": "delete_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete",
         "parameters": [
           {
             "name": "route_id",
@@ -14553,9 +13156,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Equipment Inspection Routes  Route Id  Schedules  Schedule Id  Delete"
-                }
+                "schema": {}
               }
             }
           },
@@ -31268,6 +29869,26 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/energy/sync/bitable/daily-import": {
+      "post": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\u5e76\u68c0\u67e5\u9884\u8b66",
+        "description": "\u624b\u52a8\u89e6\u53d1\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\uff0c\u5bfc\u5165\u540e\u81ea\u52a8\u68c0\u67e5\u9884\u8b66",
+        "operationId": "daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -79598,21 +78219,6 @@
         ],
         "title": "Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post"
       },
-      "Body_import_equipments_api_v1_equipment_equipments_import_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File",
-            "description": "Excel \u6587\u4ef6\uff08.xlsx\uff09"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_import_equipments_api_v1_equipment_equipments_import_post"
-      },
       "Body_import_product_outputs_api_v1_production_product_output_import_post": {
         "properties": {
           "file": {
@@ -90554,7 +89160,7 @@
             "maxLength": 50,
             "minLength": 1,
             "title": "Asset No",
-            "description": "\u8bbe\u5907\u7f16\u53f7\uff08\u624b\u52a8\u8f93\u5165\uff0c\u9700\u552f\u4e00\uff09"
+            "description": "\u8d44\u4ea7\u7f16\u53f7\uff08\u624b\u52a8\u8f93\u5165\uff0c\u9700\u552f\u4e00\uff09"
           },
           "equipment_tag": {
             "anyOf": [
@@ -90839,6 +89445,19 @@
             ],
             "title": "Responsible Person Id",
             "description": "\u8d1f\u8d23\u4ebaID\uff0c\u903b\u8f91\u5f15\u7528 identity.users.id\uff1b\u672a\u8bbe\u7f6e\u65f6\u7531\u90e8\u95e8\u8d1f\u8d23\u4eba\u63a8\u5bfc"
+          },
+          "responsible_person_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Name",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d"
           },
           "label_no": {
             "anyOf": [
@@ -91219,6 +89838,19 @@
             ],
             "title": "Responsible Person Id",
             "description": "\u8d1f\u8d23\u4ebaID\uff0c\u903b\u8f91\u5f15\u7528 identity.users.id\uff1b\u672a\u8bbe\u7f6e\u65f6\u7531\u90e8\u95e8\u8d1f\u8d23\u4eba\u63a8\u5bfc"
+          },
+          "responsible_person_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Name",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d"
           },
           "label_no": {
             "anyOf": [
@@ -99918,30 +98550,10 @@
       "MaintenancePlanCreate": {
         "properties": {
           "equipment_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Equipment Id",
-            "description": "\u8bbe\u5907ID\uff08\u4e0e category_id \u4e8c\u9009\u4e00\uff09"
-          },
-          "category_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category Id",
-            "description": "\u8bbe\u5907\u5206\u7c7bID\uff08\u4e0e equipment_id \u4e8c\u9009\u4e00\uff09"
+            "description": "\u8bbe\u5907ID"
           },
           "plan_name": {
             "type": "string",
@@ -99989,7 +98601,7 @@
             "title": "Last Maintenance Date",
             "description": "\u4e0a\u6b21\u7ef4\u62a4\u65e5\u671f"
           },
-          "executor_id": {
+          "responsible_person_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -99999,8 +98611,8 @@
                 "type": "null"
               }
             ],
-            "title": "Executor Id",
-            "description": "\u6267\u884c\u4ebaID"
+            "title": "Responsible Person Id",
+            "description": "\u8d1f\u8d23\u4ebaID"
           },
           "maintenance_content": {
             "anyOf": [
@@ -100029,6 +98641,7 @@
         },
         "type": "object",
         "required": [
+          "equipment_id",
           "plan_name",
           "frequency",
           "frequency_unit"
@@ -100111,7 +98724,7 @@
             "title": "Last Maintenance Date",
             "description": "\u4e0a\u6b21\u7ef4\u62a4\u65e5\u671f"
           },
-          "executor_id": {
+          "responsible_person_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -100121,8 +98734,8 @@
                 "type": "null"
               }
             ],
-            "title": "Executor Id",
-            "description": "\u6267\u884c\u4ebaID"
+            "title": "Responsible Person Id",
+            "description": "\u8d1f\u8d23\u4ebaID"
           },
           "maintenance_content": {
             "anyOf": [
@@ -121837,6 +120450,7 @@
             "enum": [
               "\u6545\u969c\u7ef4\u4fee",
               "\u8ba1\u5212\u7ef4\u62a4",
+              "\u5de1\u68c0",
               "\u6821\u51c6",
               "\u5f02\u5e38\u5904\u7406",
               "\u65e5\u5e38\u7ef4\u62a4"
@@ -121990,6 +120604,7 @@
                 "enum": [
                   "\u6545\u969c\u7ef4\u4fee",
                   "\u8ba1\u5212\u7ef4\u62a4",
+                  "\u5de1\u68c0",
                   "\u6821\u51c6",
                   "\u5f02\u5e38\u5904\u7406",
                   "\u65e5\u5e38\u7ef4\u62a4"

@@ -220,7 +220,6 @@ class EnergyBitableCrossImport:
         current_unit = "kWh"
         date_columns: dict[str, tuple[date, date | None]] = {}
         water_subcategory: dict[str, str] = {}  # 自来水子类别映射
-        expect_date_header = False
         expect_subcategory_row = False
 
         # 单位映射
@@ -246,7 +245,6 @@ class EnergyBitableCrossImport:
                 current_unit = unit_map.get(detected_type, "")
                 date_columns = {}
                 water_subcategory = {}
-                expect_date_header = True
                 expect_subcategory_row = detected_type == "water"
                 continue
 
@@ -262,7 +260,6 @@ class EnergyBitableCrossImport:
                         parsed = self._parse_date_header(str(value))
                         if parsed:
                             date_columns[key] = parsed
-                expect_date_header = False
                 continue
 
             # 检查是否是子类别行（自来水部分）

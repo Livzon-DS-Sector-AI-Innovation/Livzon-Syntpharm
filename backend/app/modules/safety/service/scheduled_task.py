@@ -111,7 +111,7 @@ class ScheduledTaskService:
             render_template,
         )
 
-        enabled_keys = [ds.key for ds in data.data_sources if ds.enabled]
+        [ds.key for ds in data.data_sources if ds.enabled]
         # Build mock variables
         variables: dict[str, str] = {}
         for ds in data.data_sources:

@@ -214,7 +214,7 @@ class EnergyBitableDailyImport:
         result = await db.execute(
             select(EnergyDailyData).where(
                 EnergyDailyData.date == check_date,
-                EnergyDailyData.is_alert == True,
+                EnergyDailyData.is_alert,
                 EnergyDailyData.alert_record_id.is_(None),  # 尚未生成预警记录
             )
         )

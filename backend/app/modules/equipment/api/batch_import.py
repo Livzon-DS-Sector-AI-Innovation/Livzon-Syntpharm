@@ -108,7 +108,7 @@ async def get_department_id_by_name(db: AsyncSession, dept_name: str) -> uuid.UU
     result = await db.execute(
         select(Department.id).where(
             Department.name == dept_name,
-            Department.is_deleted == False,
+            not Department.is_deleted,
         )
     )
     return result.scalar_one_or_none()
@@ -379,7 +379,7 @@ async def batch_import(
                 "importance": "中",
             }
 
-            equipment = await repo.create_equipment(db, equipment_data)
+            await repo.create_equipment(db, equipment_data)
             # 每行独立 commit，确保成功的数据立即保存
             await db.commit()
             created_count += 1

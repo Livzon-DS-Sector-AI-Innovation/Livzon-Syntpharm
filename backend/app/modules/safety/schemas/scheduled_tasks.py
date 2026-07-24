@@ -2,12 +2,12 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class TaskStatusEnum(str, Enum):
+class TaskStatusEnum(StrEnum):
     """任务执行状态枚举"""
 
     RUNNING = "running"
@@ -15,7 +15,7 @@ class TaskStatusEnum(str, Enum):
     FAILURE = "failure"
 
 
-class HeaderColorEnum(str, Enum):
+class HeaderColorEnum(StrEnum):
     """卡片头部颜色枚举"""
 
     BLUE = "blue"
