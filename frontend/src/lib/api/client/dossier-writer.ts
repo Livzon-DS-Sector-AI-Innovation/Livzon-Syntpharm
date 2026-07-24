@@ -38,18 +38,7 @@ export async function fetchProductDossier(id: string): Promise<ProductDossier> {
 
 // ====== Template Upload ======
 
-export async function uploadTemplatesClient(dossierId: string, files: FileList): Promise<UploadResponse> {
-  const formData = new FormData()
-  Array.from(files).forEach(file => formData.append('files', file))
 
-  const res = await fetch(`/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
-    method: 'POST',
-    body: formData,
-  })
-  const json: ApiResponse<UploadResponse> = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '上传失败')
-  return json.data
-}
 
 
 // ====== Template Parsing ======
@@ -171,44 +160,4 @@ export async function fetchSelectedAssets(chapterId: string): Promise<ChapterAss
 }
 
 // ====== AI Preview (客户端调用，绕过 server action 超时) ======
-export async function aiPreviewExtractionClient(chapterId: string): Promise<any> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 600000) // 10分钟超时
-  
-  try {
-    const res = await fetch(
-      `/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-      }
-    )
-    
-    // 安全解析响应：检查 content-type 和响应状态
-    const contentType = res.headers.get('content-type') || ''
-    let payload: any
-    
-    if (contentType.includes('application/json')) {
-      payload = await res.json()
-    } else {
-      // 非 JSON 响应，读取文本内容
-      const text = await res.text()
-      throw new Error(`AI解析失败：HTTP ${res.status} ${text || res.statusText}`)
-    }
-    
-    // 检查响应状态
-    if (!res.ok || payload.code !== 200) {
-      throw new Error(payload.message || payload.error?.message || `AI解析失败：HTTP ${res.status}`)
-    }
-    
-    return payload.data
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      throw new Error('AI 解析超时（10分钟），请稍后重试或减少素材数量')
-    }
-    throw error
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
+// POST operations moved to actions/dossier-writer.ts

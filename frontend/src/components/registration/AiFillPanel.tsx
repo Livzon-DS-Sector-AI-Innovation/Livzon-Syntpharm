@@ -11,8 +11,8 @@ import {
 } from '@ant-design/icons'
 import type { ChapterAsset, AssetCategory } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
-import { fetchAssetCategories, fetchSelectedAssets, aiPreviewExtractionClient } from '@/lib/api/client/dossier-writer'
-import { aiConfirmAndFill, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
+import { fetchAssetCategories, fetchSelectedAssets } from '@/lib/api/client/dossier-writer'
+import { aiConfirmAndFill, aiPreviewExtraction, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
 
 const { Text, Paragraph } = Typography
 
@@ -121,7 +121,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
   const handleAiPreview = async () => {
     setPreviewLoading(true)
     try {
-      const result = await aiPreviewExtractionClient(chapterId)
+      const result = await aiPreviewExtraction(chapterId)
       if (result.success) {
         setPreviewResult(result)
         setEditedFields(result.fields)

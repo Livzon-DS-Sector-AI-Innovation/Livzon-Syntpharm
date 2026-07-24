@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons'
 import { useRegulationStore } from '@/stores/regulation'
 import type { Regulation } from '@/lib/api/client/administration/regulation'
-import { extractRegulationText } from '@/lib/api/client/administration/regulation'
+import { extractRegulationText } from '@/actions/administration'
 import type { ColumnsType } from 'antd/es/table'
 
 const API_BASE = '/api/v1'

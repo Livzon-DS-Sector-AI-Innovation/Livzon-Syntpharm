@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Input, Space, Modal, Form, message, Popconfirm } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
-import { fetchGiftRequisitions, createGiftRequisition, updateGiftRequisition, deleteGiftRequisition } from '@/lib/api/client/administration/gift-requisition'
+import { fetchGiftRequisitions } from '@/lib/api/client/administration/gift-requisition'
+import { createGiftRequisition, updateGiftRequisition, deleteGiftRequisition } from '@/actions/administration'
 
 export default function RequisitionPage() {
   const [data, setData] = useState<any[]>([])

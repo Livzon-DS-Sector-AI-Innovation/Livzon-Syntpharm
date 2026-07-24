@@ -13,7 +13,7 @@ import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
   createProductDossier, deleteProductDossier, parseTemplates,
 } from '@/actions/dossier-writer'
-import { uploadTemplatesClient } from '@/lib/api/client/dossier-writer'
+import { uploadTemplates } from '@/actions/dossier-writer'
 import type { ProductDossier, ProductDossierCreate } from '@/types/dossier-writer'
 import type { UploadResponse } from '@/types/dossier-writer'
 
@@ -82,7 +82,7 @@ export function DossierWriterPageClient() {
     
     try {
       const fileArray = Array.from(files)
-      const result: UploadResponse = await uploadTemplatesClient(currentDossier.id, files)
+      const result: UploadResponse = await uploadTemplates(currentDossier.id, files)
       
       if (result.success_count > 0) {
         message.success(`上传成功 ${result.success_count} 个文件`)

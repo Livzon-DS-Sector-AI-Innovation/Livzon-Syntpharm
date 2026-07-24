@@ -229,3 +229,14 @@ export async function checkAlertsAction(checkDate: string) {
 export async function fetchAlertDatesAction() {
   return apiFetchAlertDates()
 }
+
+
+export async function syncMonthlyFromBitable(data?: any): Promise<any> {
+  const res = await fetch(process.env.API_BASE_URL + '/api/v1/energy/sync/monthly' || '/api/v1/energy/sync/monthly', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data || {}),
+  })
+  const json = await res.json()
+  return json.data
+}

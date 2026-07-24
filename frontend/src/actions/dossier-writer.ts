@@ -245,3 +245,15 @@ export async function toggleAssetUsage(
   revalidatePath('/registration/dossier-writer')
   return result
 }
+
+
+export async function uploadTemplates(dossierId: string, formData: FormData): Promise<any> {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
+    method: 'POST',
+    body: formData,
+  })
+  const json: any = await res.json()
+  if (json.code !== 200) throw new Error(json.message || '上传失败')
+  return json.data
+}
