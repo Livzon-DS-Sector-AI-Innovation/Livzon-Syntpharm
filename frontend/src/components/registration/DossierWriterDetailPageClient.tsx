@@ -17,10 +17,8 @@ import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
   getDownloadUrl, getChapterPreview, fetchChapterAssets,
   getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets,
-} import {
-  uploadChapterAsset, deleteChapterAsset, exportDossier, parseTemplates,
-  matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage,
-import { uploadTemplates } from '@/actions/dossier-writer'
+} from '@/lib/api/client/dossier-writer'
+import { uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, parseTemplates, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage } from '@/actions/dossier-writer'
 import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/types/dossier-writer'
 import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'

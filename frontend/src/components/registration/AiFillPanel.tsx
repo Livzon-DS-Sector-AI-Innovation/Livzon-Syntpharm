@@ -128,7 +128,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
         
         // 检查是否部分成功
         if (result.partial_success) {
-          message.warning(`部分提取成功: ${result.fields.length - result.failed_count}/${result.fields.length} 个字段，其余字段提取失败`)
+          message.warning(`部分提取成功: ${result.fields.length - (result.failed_count ?? 0)}/${result.fields.length} 个字段，其余字段提取失败`)
         } else {
           message.success(`提取完成: ${result.fields.length} 个字段`)
         }

@@ -379,8 +379,7 @@ export default function TrainingPage() {
     try {
       const values = await batchRecordForm.validateFields()
       const names = (values.employee_names || '')
-        .split('
-')
+        .split('\n')
         .map((s: string) => s.trim())
         .filter(Boolean)
 
@@ -959,10 +958,7 @@ export default function TrainingPage() {
             >
               <Input.TextArea
                 rows={6}
-                placeholder={"每行一个姓名，如：
-张三
-李四
-王五"}
+                placeholder="每行一个姓名，如：张三、李四、王五"
               />
             </Form.Item>
           </Form>
