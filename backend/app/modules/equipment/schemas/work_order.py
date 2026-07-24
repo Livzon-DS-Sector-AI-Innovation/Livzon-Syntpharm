@@ -114,7 +114,7 @@ class WorkOrderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse
+from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse  # noqa: E402
 
 WorkOrderResponse.model_rebuild()
 

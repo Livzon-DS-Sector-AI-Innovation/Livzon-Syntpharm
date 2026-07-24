@@ -1480,46 +1480,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/equipment/equipments/import/template": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 下载设备导入模板
-         * @description 下载设备台账 Excel 导入模板
-         */
-        get: operations["download_import_template_api_v1_equipment_equipments_import_template_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/equipment/equipments/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 批量导入设备
-         * @description 从 Excel 文件批量导入设备台账
-         */
-        post: operations["import_equipments_api_v1_equipment_equipments_import_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/equipment/spare-parts/": {
         parameters: {
             query?: never;
@@ -2150,7 +2110,7 @@ export interface paths {
             cookie?: never;
         };
         /** 查看工单图片文件 */
-        get: operations["get_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get"];
+        get: operations["serve_work_order_image_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2612,7 +2572,7 @@ export interface paths {
             cookie?: never;
         };
         /** 查看照片文件 */
-        get: operations["get_api_v1_equipment_inspection_photos__photo_id__file_get"];
+        get: operations["serve_photo_api_v1_equipment_inspection_photos__photo_id__file_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2697,10 +2657,10 @@ export interface paths {
             cookie?: never;
         };
         /** 获取路线定时任务列表 */
-        get: operations["handler_api_v1_equipment_inspection_routes__route_id__schedules_get"];
+        get: operations["list_schedules_api_v1_equipment_inspection_routes__route_id__schedules_get"];
         put?: never;
         /** 创建定时任务 */
-        post: operations["handler_api_v1_equipment_inspection_routes__route_id__schedules_post"];
+        post: operations["create_schedule_api_v1_equipment_inspection_routes__route_id__schedules_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2716,10 +2676,10 @@ export interface paths {
         };
         get?: never;
         /** 更新定时任务 */
-        put: operations["handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put"];
+        put: operations["update_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put"];
         post?: never;
         /** 删除定时任务 */
-        delete: operations["handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete"];
+        delete: operations["delete_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6251,6 +6211,26 @@ export interface paths {
          *     - 或 month: 月份表名（如 "2026-06"）
          */
         post: operations["cross_import_from_bitable_api_v1_energy_sync_bitable_cross_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/energy/sync/bitable/daily-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 从飞书表格导入每日数据并检查预警
+         * @description 手动触发从飞书表格导入每日数据，导入后自动检查预警
+         */
+        post: operations["daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17444,14 +17424,6 @@ export interface components {
             /** File */
             file: string;
         };
-        /** Body_import_equipments_api_v1_equipment_equipments_import_post */
-        Body_import_equipments_api_v1_equipment_equipments_import_post: {
-            /**
-             * File
-             * @description Excel 文件（.xlsx）
-             */
-            file: string;
-        };
         /** Body_import_product_outputs_api_v1_production_product_output_import_post */
         Body_import_product_outputs_api_v1_production_product_output_import_post: {
             /** File */
@@ -21660,7 +21632,7 @@ export interface components {
             name: string;
             /**
              * Asset No
-             * @description 设备编号（手动输入，需唯一）
+             * @description 资产编号（手动输入，需唯一）
              */
             asset_no: string;
             /**
@@ -21781,6 +21753,11 @@ export interface components {
              * @description 负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导
              */
             responsible_person_id?: string | null;
+            /**
+             * Responsible Person Name
+             * @description 负责人姓名
+             */
+            responsible_person_name?: string | null;
             /**
              * Label No
              * @description 标签号
@@ -21924,6 +21901,11 @@ export interface components {
              * @description 负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导
              */
             responsible_person_id?: string | null;
+            /**
+             * Responsible Person Name
+             * @description 负责人姓名
+             */
+            responsible_person_name?: string | null;
             /**
              * Label No
              * @description 标签号
@@ -25227,14 +25209,10 @@ export interface components {
         MaintenancePlanCreate: {
             /**
              * Equipment Id
-             * @description 设备ID（与 category_id 二选一）
+             * Format: uuid
+             * @description 设备ID
              */
-            equipment_id?: string | null;
-            /**
-             * Category Id
-             * @description 设备分类ID（与 equipment_id 二选一）
-             */
-            category_id?: string | null;
+            equipment_id: string;
             /**
              * Plan Name
              * @description 计划名称
@@ -25264,10 +25242,10 @@ export interface components {
              */
             last_maintenance_date?: string | null;
             /**
-             * Executor Id
-             * @description 执行人ID
+             * Responsible Person Id
+             * @description 负责人ID
              */
-            executor_id?: string | null;
+            responsible_person_id?: string | null;
             /**
              * Maintenance Content
              * @description 维护内容说明
@@ -25310,10 +25288,10 @@ export interface components {
              */
             last_maintenance_date?: string | null;
             /**
-             * Executor Id
-             * @description 执行人ID
+             * Responsible Person Id
+             * @description 负责人ID
              */
-            executor_id?: string | null;
+            responsible_person_id?: string | null;
             /**
              * Maintenance Content
              * @description 维护内容说明
@@ -34062,7 +34040,7 @@ export interface components {
              * @default 故障维修
              * @enum {string}
              */
-            order_type: "故障维修" | "计划维护" | "校准" | "异常处理" | "日常维护";
+            order_type: "故障维修" | "计划维护" | "巡检" | "校准" | "异常处理" | "日常维护";
             /**
              * Priority
              * @description 优先级
@@ -34125,7 +34103,7 @@ export interface components {
              * Order Type
              * @description 工单类型
              */
-            order_type?: ("故障维修" | "计划维护" | "校准" | "异常处理" | "日常维护") | null;
+            order_type?: ("故障维修" | "计划维护" | "巡检" | "校准" | "异常处理" | "日常维护") | null;
             /**
              * Priority
              * @description 优先级
@@ -37393,9 +37371,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37461,9 +37437,7 @@ export interface operations {
             path: {
                 category_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37567,9 +37541,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37635,9 +37607,7 @@ export interface operations {
             path: {
                 location_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37736,9 +37706,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37749,15 +37717,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -37782,9 +37741,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37848,9 +37805,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37863,15 +37818,6 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_equipment_api_v1_equipment_equipments__equipment_id__get: {
@@ -37881,9 +37827,7 @@ export interface operations {
             path: {
                 equipment_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -37977,72 +37921,6 @@ export interface operations {
             };
         };
     };
-    download_import_template_api_v1_equipment_equipments_import_template_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_equipments_api_v1_equipment_equipments_import_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_import_equipments_api_v1_equipment_equipments_import_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_spare_parts_api_v1_equipment_spare_parts__get: {
         parameters: {
             query?: {
@@ -38059,9 +37937,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38125,9 +38001,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38140,15 +38014,6 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_spare_part_api_v1_equipment_spare_parts__spare_part_id__get: {
@@ -38158,9 +38023,7 @@ export interface operations {
             path: {
                 spare_part_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38261,9 +38124,7 @@ export interface operations {
             path: {
                 spare_part_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38366,9 +38227,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38379,15 +38238,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -38434,9 +38284,7 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38535,9 +38383,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38548,15 +38394,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -38603,9 +38440,7 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38704,9 +38539,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38717,15 +38550,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -38772,9 +38596,7 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38873,8 +38695,6 @@ export interface operations {
             query?: {
                 /** @description 工单状态 */
                 status?: string | null;
-                /** @description 排除状态 */
-                exclude_status?: string | null;
                 /** @description 设备ID */
                 equipment_id?: string | null;
                 /** @description 优先级 */
@@ -38888,9 +38708,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38956,9 +38774,7 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -38989,9 +38805,7 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -39021,15 +38835,10 @@ export interface operations {
     };
     get_work_order_statistics_api_v1_equipment_maintenance_work_orders_statistics_get: {
         parameters: {
-            query?: {
-                /** @description 排除状态 */
-                exclude_status?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39040,15 +38849,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -39237,9 +39037,7 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39314,9 +39112,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39383,9 +39179,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39416,9 +39210,7 @@ export interface operations {
             path: {
                 plan_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39526,9 +39318,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39594,9 +39384,7 @@ export interface operations {
             path: {
                 record_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39625,8 +39413,6 @@ export interface operations {
             query?: {
                 /** @description 设备ID */
                 equipment_id?: string | null;
-                /** @description 分类ID */
-                category_id?: string | null;
                 /** @description 状态 */
                 status?: string | null;
                 /** @description 关键词搜索 */
@@ -39638,9 +39424,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39707,9 +39491,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39740,9 +39522,7 @@ export interface operations {
             path: {
                 plan_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39852,9 +39632,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -39920,9 +39698,7 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40167,9 +39943,7 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40230,7 +40004,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get: {
+    serve_work_order_image_api_v1_equipment_maintenance_work_orders__work_order_id__images__image_id__file_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -40238,9 +40012,7 @@ export interface operations {
                 work_order_id: string;
                 image_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40336,9 +40108,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40351,15 +40121,6 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     update_claim_timeout_api_v1_equipment_maintenance_config_claim_timeout_put: {
@@ -40367,9 +40128,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40402,9 +40161,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40415,15 +40172,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -40433,9 +40181,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40446,15 +40192,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -40471,9 +40208,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40502,9 +40237,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40539,9 +40272,7 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40572,9 +40303,7 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40609,9 +40338,7 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40649,9 +40376,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40680,9 +40405,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40720,9 +40443,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40753,9 +40474,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40786,9 +40505,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40823,9 +40540,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -40856,9 +40571,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40893,9 +40606,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40930,9 +40641,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -40967,9 +40676,7 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -41002,9 +40709,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41015,15 +40720,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -41044,9 +40740,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41112,9 +40806,7 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41145,9 +40837,7 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -41182,9 +40872,7 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41215,9 +40903,7 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -41269,9 +40955,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41337,9 +41021,7 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41586,9 +41268,7 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41649,16 +41329,14 @@ export interface operations {
             };
         };
     };
-    get_api_v1_equipment_inspection_photos__photo_id__file_get: {
+    serve_photo_api_v1_equipment_inspection_photos__photo_id__file_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 photo_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41724,9 +41402,7 @@ export interface operations {
                 task_id: string;
                 equipment_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -41774,9 +41450,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41807,9 +41481,7 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41833,16 +41505,14 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_equipment_inspection_routes__route_id__schedules_get: {
+    list_schedules_api_v1_equipment_inspection_routes__route_id__schedules_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 route_id: string;
             };
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -41866,7 +41536,7 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_equipment_inspection_routes__route_id__schedules_post: {
+    create_schedule_api_v1_equipment_inspection_routes__route_id__schedules_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -41903,7 +41573,7 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put: {
+    update_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -41941,7 +41611,7 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete: {
+    delete_schedule_api_v1_equipment_inspection_routes__route_id__schedules__schedule_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -50061,6 +49731,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

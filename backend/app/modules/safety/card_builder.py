@@ -217,8 +217,8 @@ async def _fetch_open_hazards_details(repo: Any) -> str:
     if not hazards:
         return "✅ 当前无未关闭隐患"
 
-    LEVEL_MAP = {"general": "一般", "major": "较大", "critical": "重大"}
-    STATUS_MAP = {
+    LEVEL_MAP = {"general": "一般", "major": "较大", "critical": "重大"}  # noqa: N806
+    STATUS_MAP = {  # noqa: N806
         "pending": "待整改",
         "in_progress": "整改中",
         "replied": "已回复",
@@ -238,7 +238,7 @@ async def _fetch_open_hazards_details(repo: Any) -> str:
         status = STATUS_MAP.get(h.rectification_status, h.rectification_status or "—")
 
         lines.append(
-            f"**{i}. {h.hazard_no}** | {'⚠️' if h.hazard_level == 'critical' else '🔶' if h.hazard_level == 'major' else '🔹'} {level}\n"
+            f"**{i}. {h.hazard_no}** | {'⚠️' if h.hazard_level == 'critical' else '🔶' if h.hazard_level == 'major' else '🔹'} {level}\n"  # noqa: E501
             f"描述：{desc}\n"
             f"责任：{dept} | 发现：{discovered} | 限期：{deadline} | {status}\n"
         )

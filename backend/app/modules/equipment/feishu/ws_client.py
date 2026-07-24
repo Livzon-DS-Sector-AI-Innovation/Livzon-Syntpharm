@@ -421,7 +421,7 @@ async def _handle_text_command(
         return
 
     # ── 1. 巡检路由 ──
-    _INSPECTION_COMMANDS = {
+    _INSPECTION_COMMANDS = {  # noqa: N806
         "开始",
         "开始巡检",
         "start",
