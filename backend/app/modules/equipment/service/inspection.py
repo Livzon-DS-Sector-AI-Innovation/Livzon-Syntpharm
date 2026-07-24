@@ -87,7 +87,9 @@ async def delete_route(db: AsyncSession, route_id: uuid.UUID) -> bool:
     return True
 
 
-async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]) -> list[RouteLocation]:
+async def set_route_locations(
+    db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]
+) -> list[RouteLocation]:
     await get_route_by_id(db, route_id)
     return await repo.set_route_locations(db, route_id, items)
 

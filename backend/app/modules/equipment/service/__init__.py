@@ -272,3 +272,4 @@ __all__ = [
     "update_personnel",
     "update_role",
 ]
+# ruff: noqa: F401

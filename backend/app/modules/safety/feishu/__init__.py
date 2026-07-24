@@ -33,3 +33,4 @@ __all__ = [
     "IdentityResolver",
     "ResolvedPerson",
 ]
+# ruff: noqa: F401

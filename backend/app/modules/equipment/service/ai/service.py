@@ -300,7 +300,9 @@ async def _get_inspection_items(
     return all_items
 
 
-async def get_inspection_items_for_session(db: AsyncSession, task_id: uuid.UUID, equipment_id: uuid.UUID) -> list[dict[str, Any]]:
+async def get_inspection_items_for_session(
+    db: AsyncSession, task_id: uuid.UUID, equipment_id: uuid.UUID
+) -> list[dict[str, Any]]:
     """获取检查项列表（供飞书会话使用），返回轻量 dict 列表。"""
     task = await _get_task(db, task_id)
     items = await _get_inspection_items(db, task, equipment_id)

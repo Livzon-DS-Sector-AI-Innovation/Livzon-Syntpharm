@@ -19,3 +19,4 @@ __all__ = [
     "PlatformCAdapter",
     "ADAPTERS",
 ]
+# ruff: noqa: F401

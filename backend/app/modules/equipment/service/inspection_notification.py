@@ -8,8 +8,7 @@ import logging
 import uuid
 from datetime import date as date_type
 from datetime import datetime
-from typing import Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

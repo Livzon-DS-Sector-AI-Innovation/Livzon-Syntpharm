@@ -470,7 +470,9 @@ async def get_equipment_names_by_ids(db: AsyncSession, equipment_ids: list[uuid.
 # ═══════════ 线路地点配置（新） ═══════════
 
 
-async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]) -> list[RouteLocation]:
+async def set_route_locations(
+    db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]
+) -> list[RouteLocation]:
     """全量替换路线的地点→设备→模板配置"""
     existing_locs = (await db.execute(select(RouteLocation).where(RouteLocation.route_id == route_id))).scalars().all()
     {r.id for r in existing_locs}
@@ -542,7 +544,9 @@ async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list
     return result
 
 
-async def _set_location_equipments(db: AsyncSession, route_location: RouteLocation, equipments: list[dict[str, Any]]) -> None:
+async def _set_location_equipments(
+    db: AsyncSession, route_location: RouteLocation, equipments: list[dict[str, Any]]
+) -> None:
     """替换某个地点下的设备→模板配置"""
     loc_id = route_location.id
     existing_eqs = (

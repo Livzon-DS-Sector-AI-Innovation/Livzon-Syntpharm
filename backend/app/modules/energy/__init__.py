@@ -9,3 +9,4 @@ __all__ = [
     "energy_collection_loop",
     "stop_energy_collection_flag",
 ]
+# ruff: noqa: F401

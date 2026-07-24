@@ -10365,7 +10365,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Serve Work Order Image Api V1 Equipment Maintenance Work Orders  Work Order Id  Images  Image Id  File Get"
+                }
               }
             }
           },
@@ -12589,7 +12591,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Serve Photo Api V1 Equipment Inspection Photos  Photo Id  File Get"
+                }
               }
             }
           },
@@ -12949,7 +12953,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Schedules Api V1 Equipment Inspection Routes  Route Id  Schedules Get"
+                }
               }
             }
           },
@@ -13014,7 +13020,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Create Schedule Api V1 Equipment Inspection Routes  Route Id  Schedules Post"
+                }
               }
             }
           },
@@ -13091,7 +13099,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Update Schedule Api V1 Equipment Inspection Routes  Route Id  Schedules  Schedule Id  Put"
+                }
               }
             }
           },
@@ -13156,7 +13166,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Delete Schedule Api V1 Equipment Inspection Routes  Route Id  Schedules  Schedule Id  Delete"
+                }
               }
             }
           },

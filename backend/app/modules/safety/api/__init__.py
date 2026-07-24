@@ -46,3 +46,4 @@ router.include_router(special_operation_reports_router)
 router.include_router(special_ops_permits_router)
 router.include_router(special_ops_personnel_router)
 router.include_router(trainings_router)
+# ruff: noqa: F401

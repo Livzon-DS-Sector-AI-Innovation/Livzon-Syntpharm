@@ -1131,7 +1131,9 @@ async def _send_confirm_card(
     )
 
 
-async def _send_confirm_card_from_results(open_id: str, task_no: str, equipment_name: str, results: list[dict[str, Any]]) -> None:
+async def _send_confirm_card_from_results(
+    open_id: str, task_no: str, equipment_name: str, results: list[dict[str, Any]]
+) -> None:
     """发送确认卡片（从结果列表，无需 ORM 对象）。"""
     normal = sum(1 for r in results if r["result"] == "正常")
     abnormal = sum(1 for r in results if r["result"] == "异常")
