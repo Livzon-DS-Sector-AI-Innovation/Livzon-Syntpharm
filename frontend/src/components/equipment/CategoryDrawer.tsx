@@ -8,7 +8,7 @@ import { createCategory, updateCategory } from '@/actions/equipment'
 
 const { TextArea } = Input
 
-export function CategoryDrawer() {
+export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const [submitting, setSubmitting] = useState(false)
@@ -20,7 +20,8 @@ export function CategoryDrawer() {
   } = useEquipmentStore()
 
   useEffect(() => {
-    if (categoryDrawerOpen) {
+    if (!categoryDrawerOpen) return
+    const timer = setTimeout(() => {
       if (editingCategory) {
         form.setFieldsValue({
           name: editingCategory.name,
@@ -31,7 +32,8 @@ export function CategoryDrawer() {
       } else {
         form.resetFields()
       }
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [categoryDrawerOpen, editingCategory, form])
 
   const handleSubmit = async () => {
@@ -47,6 +49,7 @@ export function CategoryDrawer() {
         message.success('创建分类成功')
       }
       closeCategoryDrawer()
+      onRefresh?.()
     } catch (err: any) {
       // Ant Design validation errors have an errorFields property
       if (err?.errorFields) return
@@ -56,12 +59,31 @@ export function CategoryDrawer() {
     }
   }
 
-  const parentOptions = categories
-    .filter((cat) => cat.id !== editingCategory?.id)
-    .map((cat) => ({
-      label: cat.name,
-      value: cat.id,
-    }))
+  // 递归展平分类树，用缩进前缀区分层级
+  function flattenTree(
+    items: typeof categories,
+    excludeId?: string,
+    depth = 0,
+  ): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = []
+    for (const cat of items) {
+      if (cat.id === excludeId) {
+        // 编辑时排除自身（避免循环引用），但仍递归处理其子节点
+        if (cat.children?.length) {
+          result.push(...flattenTree(cat.children, excludeId, depth))
+        }
+        continue
+      }
+      const prefix = depth > 0 ? '  '.repeat(depth) + '└ ' : ''
+      result.push({ label: prefix + cat.name, value: cat.id })
+      if (cat.children?.length) {
+        result.push(...flattenTree(cat.children, excludeId, depth + 1))
+      }
+    }
+    return result
+  }
+
+  const parentOptions = flattenTree(categories, editingCategory?.id)
 
   return (
     <Drawer

@@ -1,7 +1,5 @@
 """巡检照片 AI 分析提示词模板。"""
 
-from typing import Any
-
 SYSTEM_PROMPT = """你是一个设备巡检数据提取助手，服务于原料药生产企业的设备巡检工作。
 
 用户会上传一张巡检照片，并提供一份检查项列表。照片类型多样：
@@ -23,7 +21,7 @@ SYSTEM_PROMPT = """你是一个设备巡检数据提取助手，服务于原料�
 6. 只返回 JSON，不要输出任何其他内容"""
 
 
-def build_user_prompt(items: list[dict[str, Any]]) -> str:
+def build_user_prompt(items: list[dict]) -> str:
     """构建用户提示词。
 
     Args:
@@ -79,7 +77,7 @@ CORRECTION_SYSTEM_PROMPT = (
 )
 
 
-def build_correction_user_prompt(current_results: list[dict[str, Any]], user_text: str) -> str:
+def build_correction_user_prompt(current_results: list[dict], user_text: str) -> str:
     """构建修正用户提示词。
 
     Args:
@@ -146,7 +144,7 @@ MANUAL_SUBMIT_SYSTEM_PROMPT = (
 )
 
 
-def build_manual_submit_user_prompt(items: list[dict[str, Any]], user_text: str, equipment_name: str = "") -> str:
+def build_manual_submit_user_prompt(items: list[dict], user_text: str, equipment_name: str = "") -> str:
     """构建手动提交解析提示词。
 
     Args:

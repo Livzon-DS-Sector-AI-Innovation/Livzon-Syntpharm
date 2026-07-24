@@ -22,7 +22,7 @@ API_URL = "http://cxc.qhzl.net:8090/WebServices/YiChunWebServer.asmx/GetSiteData
 UNIT_CODE = "lzfxyy"
 PAGE_SIZE = 20000
 MAX_PAGES = 50
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(__import__("datetime").timedelta(hours=8))
 
 # 公式分隔符：按 + 或 - 拆分
@@ -174,7 +174,7 @@ def _extract_json(text: str) -> dict[str, Any]:
     match = re.search(r"<string[^>]*>(.+)</string>", text, re.DOTALL)
     if not match:
         raise RuntimeError(f"无法从智恒 API 响应中提取 JSON 数据: {text[:200]}")
-    return json.loads(match.group(1))  # type: ignore[no-any-return]
+    return json.loads(match.group(1))
 
 
 def _record_matches_hour(record: dict[str, Any], target_hour: datetime) -> bool:

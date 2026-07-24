@@ -96,7 +96,15 @@ export async function fetchAlertRules(params?: any): Promise<{ items: any[]; tot
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  // 直接使用 fetch 获取完整响应，保留 meta 信息
+  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
 export async function fetchAlertRuleById(id: string): Promise<any> {
@@ -115,7 +123,15 @@ export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; t
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  // 直接使用 fetch 获取完整响应，保留 meta 信息
+  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
 // ── 设备写操作 ──

@@ -104,6 +104,8 @@ class FeishuEnergyConfig(BaseModel):
     app_token: str = ""
     workshop_table_id: str = ""
     monthly_table_id: str = ""
+    alert_app_token: str = ""
+    daily_sync_hour: int = 17
 
 
 class FeishuProductConfig(BaseModel):
@@ -154,6 +156,7 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
+    ENERGY_AUTO_COLLECT_ENABLED: bool = False
     DEBUG: bool = False
 
     @field_validator("DEBUG", mode="before")

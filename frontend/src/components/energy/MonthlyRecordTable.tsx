@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { App, Table, Button, Space, Select, DatePicker } from 'antd'
 import { DeleteOutlined, ImportOutlined, SyncOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
-import type { MonthlyRecord, EnergyType } from '@/types/energy'
+import type { EnergyMonthlyRecord, EnergyType } from '@/types/energy'
 import { deleteMonthlyRecordAction } from '@/actions/energy'
-import { getMonthlyRecords } from '@/actions/energy'
+import { fetchMonthlyRecordsClient, fetchWorkshopsClient, fetchMonthlySummaryClient } from '@/lib/api/client/energy'
+import { syncMonthlyFromBitable } from '@/lib/api/client/energy'
 import { FeishuImportModal } from './FeishuImportModal'
 import { BitableCrossImportModal } from './BitableCrossImportModal'
 import dayjs from 'dayjs'
@@ -88,7 +89,7 @@ interface WorkshopOption {
 
 export function MonthlyRecordTable() {
   const { message, modal } = App.useApp()
-  const [records, setRecords] = useState<MonthlyRecord[]>([])
+  const [records, setRecords] = useState<EnergyMonthlyRecord[]>([])
   const [workshops, setWorkshops] = useState<WorkshopOption[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -105,7 +106,7 @@ export function MonthlyRecordTable() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const result: any = await getMonthlyRecords({
+      const result = await fetchMonthlyRecordsClient({
         workshop_id: workshopFilter,
         energy_type: energyTypeFilter,
         start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
@@ -124,7 +125,7 @@ export function MonthlyRecordTable() {
 
   const loadSummary = useCallback(async () => {
     try {
-      const result: any = await getMonthlyRecords({
+      const result = await fetchMonthlySummaryClient({
         workshop_id: workshopFilter,
         energy_type: energyTypeFilter,
         start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
@@ -138,7 +139,7 @@ export function MonthlyRecordTable() {
 
   const loadWorkshops = useCallback(async () => {
     try {
-      const result: any = await getMonthlyRecords({ page: 1, page_size: 500 })
+      const result = await fetchWorkshopsClient({ page: 1, page_size: 500 })
       setWorkshops((result.items || []).map((w: any) => ({ id: w.id, name: w.name })))
     } catch {
       // ignore
@@ -157,7 +158,7 @@ export function MonthlyRecordTable() {
     loadSummary()
   }, [loadSummary])
 
-  const handleDelete = (record: MonthlyRecord) => {
+  const handleDelete = (record: EnergyMonthlyRecord) => {
     modal.confirm({
       title: '确认删除',
       content: `确定要删除这条记录吗？`,
@@ -179,7 +180,7 @@ export function MonthlyRecordTable() {
   const handleSyncBitable = async () => {
     setSyncing(true)
     try {
-      const result: any = await getMonthlyRecords()
+      const result = await syncMonthlyFromBitable()
       if (result.status === 'disabled') {
         message.warning(result.message || '未配置飞书多维表格')
       } else {
@@ -193,7 +194,7 @@ export function MonthlyRecordTable() {
     }
   }
 
-  const columns: TableColumnsType<MonthlyRecord> = [
+  const columns: TableColumnsType<EnergyMonthlyRecord> = [
     {
       title: '车间',
       dataIndex: 'workshop_id',

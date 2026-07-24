@@ -48,7 +48,7 @@ async def get_failure_codes(
         .where(model_class.is_deleted == False)  # noqa: E712
         .order_by(model_class.sort_order, model_class.code)
     )
-    return list(result.scalars().all())
+    return list(result.scalars().all())  # type: ignore[arg-type]
 
 
 async def exists_failure_code_by_code(

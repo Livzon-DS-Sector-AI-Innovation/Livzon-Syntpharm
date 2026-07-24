@@ -1,3 +1,5 @@
+'use client'
+
 import { Card } from 'antd'
 import { Pie } from '@ant-design/charts'
 import { DistributionDataPoint } from '@/types/energy'
@@ -13,16 +15,44 @@ export function DistributionChart({
 }: DistributionChartProps) {
 
   const total = data.reduce((sum, d) => sum + d.value, 0)
+  
+  // 首尾交替排序：最大、最小、次大、次小...让标签均匀分布
+  const alternateSort = (arr: DistributionDataPoint[]) => {
+    const sorted = [...arr].sort((a, b) => b.value - a.value)
+    const result: DistributionDataPoint[] = []
+    let left = 0
+    let right = sorted.length - 1
+    
+    while (left <= right) {
+      if (left === right) {
+        result.push(sorted[left])
+      } else {
+        result.push(sorted[left])
+        result.push(sorted[right])
+      }
+      left++
+      right--
+    }
+    
+    return result
+  }
+  
+  const sortedData = alternateSort(data)
 
   const config = {
-    data,
+    data: sortedData,
     angleField: 'value',
     colorField: 'name',
-    radius: 0.85,
-    innerRadius: 0.55,
+    radius: 0.6,
+    innerRadius: 0.35,
     scale: {
       color: {
-        palette: ['#5645d4', '#0075de', '#1aae39', '#dd5b00', '#7b3ff2', '#2a9d99', '#f5d75e', '#ff64c8'],
+        palette: [
+        '#5645d4', '#0075de', '#1aae39', '#dd5b00', '#7b3ff2',
+        '#2a9d99', '#f5d75e', '#ff64c8', '#e63946', '#457b9d',
+        '#2a9d8f', '#e9c46a', '#f4a261', '#264659', '#606c38',
+        '#bc6c25', '#dda15e', '#6a994e', '#a7c957', '#386641'
+      ],
       },
     },
     label: {
@@ -32,16 +62,10 @@ export function DistributionChart({
       },
       position: 'outside' as const,
       transform: [{ type: 'overlapDodgeY' }],
-      style: { fill: '#5d5b54', fontSize: 11 },
+      style: { fill: '#5d5b54', fontSize: 11, fontWeight: 600 },
     },
-    legend: {
-      color: {
-        position: 'bottom' as const,
-        title: false,
-        itemLabelFill: '#5d5b54',
-        itemLabelFontSize: 12,
-      },
-    },
+    legend: false,
+    
     tooltip: {
       title: 'name',
       items: [
@@ -59,14 +83,14 @@ export function DistributionChart({
   return (
     <Card
       title={
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>
           区域分布
         </span>
       }
       loading={loading}
       styles={{
         header: { borderBottom: '1px solid #ede9e4', padding: '16px 20px' },
-        body: { padding: '16px 20px 20px' },
+        body: { padding: '60px 20px 20px' },
       }}
       style={{
         borderRadius: 12,
@@ -75,7 +99,7 @@ export function DistributionChart({
         height: '100%',
       }}
     >
-      <Pie {...config} height={280} />
+      <Pie {...config} height={450} autoFit style={{ marginTop: 80, marginLeft: -40 }} />
     </Card>
   )
 }

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Modal, Form, Input, Switch, Button, Steps, Result, Space, App, Alert, Typography } from 'antd'
-import { importFromFeishu } from '@/actions/energy'
+import { importFromFeishuAction } from '@/actions/energy'
+import type { FeishuImportResult } from '@/types/energy'
 
 const { Text } = Typography
 
@@ -19,8 +20,8 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
   const [form] = Form.useForm()
   const [step, setStep] = useState<ImportStep>('input')
   const [loading, setLoading] = useState(false)
-  const [dryRunResult, setDryRunResult] = useState<Record<string, any> | null>(null)
-  const [finalResult, setFinalResult] = useState<Record<string, any> | null>(null)
+  const [dryRunResult, setDryRunResult] = useState<FeishuImportResult | null>(null)
+  const [finalResult, setFinalResult] = useState<FeishuImportResult | null>(null)
 
   const handleClose = () => {
     setStep('input')
@@ -34,7 +35,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
     try {
       const values = await form.validateFields()
       setLoading(true)
-      const result = await importFromFeishu({
+      const result = await importFromFeishuAction({
         spreadsheet_token: values.spreadsheet_token,
         sheet_id: values.sheet_id || undefined,
         dry_run: true,
@@ -53,7 +54,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
     try {
       const values = form.getFieldsValue()
       setLoading(true)
-      const result = await importFromFeishu({
+      const result = await importFromFeishuAction({
         spreadsheet_token: values.spreadsheet_token,
         sheet_id: values.sheet_id || undefined,
         source: 'feishu',
@@ -161,7 +162,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
             <div style={{ marginTop: 16 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>解析问题：</Text>
               <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
-                {dryRunResult.errors.map((err: any, i: any) => (
+                {dryRunResult.errors.map((err, i) => (
                   <li key={i} style={{ color: '#dd5b00', fontSize: 13 }}>{err}</li>
                 ))}
               </ul>
@@ -188,7 +189,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
             <div style={{ textAlign: 'left' }}>
               <Text type="secondary" style={{ fontSize: 12 }}>导入问题：</Text>
               <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
-                {finalResult.errors.map((err: any, i: any) => (
+                {finalResult.errors.map((err, i) => (
                   <li key={i} style={{ color: '#dd5b00', fontSize: 13 }}>{err}</li>
                 ))}
               </ul>

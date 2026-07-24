@@ -35,7 +35,7 @@ from app.modules.energy.schemas import (
 
 logger = logging.getLogger(__name__)
 
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
 
 
@@ -493,7 +493,7 @@ async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> None:
 
 async def create_monthly_record(db: AsyncSession, data: EnergyMonthlyRecordCreate) -> EnergyMonthlyRecord:
     # 验证车间是否存在
-    workshop = await repo.get_workshop_by_id(db, data.workshop_id)  # type: ignore[arg-type]
+    workshop = await repo.get_workshop_by_id(db, data.workshop_id)
     if workshop is None:
         raise NotFoundException("车间", str(data.workshop_id))
     return await repo.create_monthly_record(db, data.model_dump())
@@ -505,7 +505,7 @@ async def batch_create_monthly_records(
     # 验证所有车间是否存在
     workshop_ids = {r.workshop_id for r in records}
     for workshop_id in workshop_ids:
-        workshop = await repo.get_workshop_by_id(db, workshop_id)  # type: ignore[arg-type]
+        workshop = await repo.get_workshop_by_id(db, workshop_id)
         if workshop is None:
             raise NotFoundException("车间", str(workshop_id))
 
@@ -526,8 +526,8 @@ async def list_monthly_records(
         db,
         workshop_id=workshop_id,
         energy_type=energy_type,
-        start_date=start_date,  # type: ignore[arg-type]
-        end_date=end_date,  # type: ignore[arg-type]
+        start_date=start_date,
+        end_date=end_date,
         page=page,
         page_size=page_size,
     )

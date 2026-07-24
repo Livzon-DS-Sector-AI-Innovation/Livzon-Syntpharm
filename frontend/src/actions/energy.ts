@@ -1,41 +1,56 @@
 'use server'
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
 
 import { revalidatePath } from 'next/cache'
 import {
   fetchEnergyDevices,
   fetchEnergyDeviceById,
+  createEnergyDevice as apiCreateDevice,
+  updateEnergyDevice as apiUpdateDevice,
+  deleteEnergyDevice as apiDeleteDevice,
   fetchEnergyData,
   fetchEnergyOverview,
+  triggerCollect as apiTriggerCollect,
   fetchCollectLogs,
   fetchAlertRules,
   fetchAlertRuleById,
+  createAlertRule as apiCreateAlertRule,
+  updateAlertRule as apiUpdateAlertRule,
+  deleteAlertRule as apiDeleteAlertRule,
   fetchAlertRecords,
-  createEnergyDevice as createEnergyDeviceServer,
-  updateEnergyDevice as updateEnergyDeviceServer,
-  deleteEnergyDevice as deleteEnergyDeviceServer,
-  triggerCollect as triggerCollectServer,
-  createAlertRule as createAlertRuleServer,
-  updateAlertRule as updateAlertRuleServer,
-  deleteAlertRule as deleteAlertRuleServer,
-  processAlertRecord as processAlertRecordServer,
+  processAlertRecord as apiProcessAlertRecord,
+  fetchWorkshops,
+  fetchWorkshopById,
+  createWorkshop as apiCreateWorkshop,
+  updateWorkshop as apiUpdateWorkshop,
+  deleteWorkshop as apiDeleteWorkshop,
+  fetchMonthlyRecords,
+  fetchMonthlyRecordById,
+  createMonthlyRecord as apiCreateMonthlyRecord,
+  deleteMonthlyRecord as apiDeleteMonthlyRecord,
+  importFromFeishu as apiImportFromFeishu,
+  crossImportFromBitable as apiCrossImportFromBitable,
+  syncBitableDailyData as apiSyncBitableDailyData,
+  checkAlerts as apiCheckAlerts,
+  fetchAlertDates as apiFetchAlertDates,
 } from '@/lib/api/server/energy'
 import type {
   CreateDeviceInput,
   UpdateDeviceInput,
   DeviceQueryParams,
-  DataQueryParams,
-  StatisticsParams,
-  LogQueryParams,
   CreateRuleInput,
   UpdateRuleInput,
-  ProcessRecordInput,
   RuleQueryParams,
-  RecordQueryParams,
+  ProcessRecordInput,
+  CreateWorkshopInput,
+  UpdateWorkshopInput,
+  WorkshopQueryParams,
+  CreateMonthlyRecordInput,
+  FeishuImportRequest,
 } from '@/types/energy'
 
 // 数据源配置 Server Actions
-export async function getEnergyDevices(params: DeviceQueryParams = {}) {
+
+export async function getEnergyDevices(params?: DeviceQueryParams) {
   return fetchEnergyDevices(params)
 }
 
@@ -44,44 +59,47 @@ export async function getEnergyDeviceById(id: string) {
 }
 
 export async function createEnergyDevice(data: CreateDeviceInput) {
-  const result = await createEnergyDeviceServer(data)
+  const result = await apiCreateDevice(data)
   revalidatePath('/energy/devices')
   return result
 }
 
 export async function updateEnergyDevice(id: string, data: UpdateDeviceInput) {
-  const result = await updateEnergyDeviceServer(id, data)
+  const result = await apiUpdateDevice(id, data)
   revalidatePath('/energy/devices')
   return result
 }
 
 export async function deleteEnergyDevice(id: string) {
-  await deleteEnergyDeviceServer(id)
+  await apiDeleteDevice(id)
   revalidatePath('/energy/devices')
 }
 
 // 能耗数据 Server Actions
-export async function getEnergyData(params: DataQueryParams = {}) {
+
+export async function getEnergyData(params: DeviceQueryParams) {
   return fetchEnergyData(params)
 }
 
-export async function getEnergyOverview(params: StatisticsParams = {}) {
+export async function getEnergyOverview(params: any = {}) {
   return fetchEnergyOverview(params)
 }
 
-// 数据采集 Server Actions
 export async function triggerCollect(platformCode?: string) {
-  const result = await triggerCollectServer(platformCode)
+  const result = await apiTriggerCollect(platformCode)
   revalidatePath('/energy/collect-logs')
   return result
 }
 
-export async function getCollectLogs(params: LogQueryParams = {}) {
+// 采集日志 Server Actions
+
+export async function getCollectLogs(params?: { page?: number; page_size?: number }) {
   return fetchCollectLogs(params)
 }
 
 // 预警规则 Server Actions
-export async function getAlertRules(params: RuleQueryParams = {}) {
+
+export async function getAlertRules(params?: RuleQueryParams) {
   return fetchAlertRules(params)
 }
 
@@ -90,94 +108,124 @@ export async function getAlertRuleById(id: string) {
 }
 
 export async function createAlertRule(data: CreateRuleInput) {
-  const result = await createAlertRuleServer(data)
-  revalidatePath('/energy/alerts')
+  const result = await apiCreateAlertRule(data)
+  revalidatePath('/energy/alert-rules')
   return result
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
-  const result = await updateAlertRuleServer(id, data)
-  revalidatePath('/energy/alerts')
+  const result = await apiUpdateAlertRule(id, data)
+  revalidatePath('/energy/alert-rules')
   return result
 }
 
 export async function deleteAlertRule(id: string) {
-  await deleteAlertRuleServer(id)
-  revalidatePath('/energy/alerts')
+  await apiDeleteAlertRule(id)
+  revalidatePath('/energy/alert-rules')
 }
 
 // 预警记录 Server Actions
-export async function getAlertRecords(params: RecordQueryParams = {}) {
+
+export async function getAlertRecords(params?: RuleQueryParams) {
   return fetchAlertRecords(params)
 }
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
-  const result = await processAlertRecordServer(id, data)
+  const result = await apiProcessAlertRecord(id, data)
+  revalidatePath('/energy/alert-records')
+  return result
+}
+
+// 车间管理 Server Actions
+
+export async function getWorkshops(params?: WorkshopQueryParams) {
+  return fetchWorkshops(params)
+}
+
+export async function getWorkshopById(id: string) {
+  return fetchWorkshopById(id)
+}
+
+export async function createWorkshopAction(data: CreateWorkshopInput) {
+  const result = await apiCreateWorkshop(data)
+  revalidatePath('/energy/workshops')
+  return result
+}
+
+export async function updateWorkshopAction(id: string, data: UpdateWorkshopInput) {
+  const result = await apiUpdateWorkshop(id, data)
+  revalidatePath('/energy/workshops')
+  return result
+}
+
+export async function deleteWorkshopAction(id: string) {
+  await apiDeleteWorkshop(id)
+  revalidatePath('/energy/workshops')
+}
+
+// 月度记录 Server Actions
+
+export async function getMonthlyRecords(params?: {
+  workshop_id?: string
+  energy_type?: string
+  start_date?: string
+  end_date?: string
+  page?: number
+  page_size?: number
+}) {
+  return fetchMonthlyRecords(params)
+}
+
+export async function getMonthlyRecordById(id: string) {
+  return fetchMonthlyRecordById(id)
+}
+
+export async function createMonthlyRecordAction(data: CreateMonthlyRecordInput) {
+  const result = await apiCreateMonthlyRecord(data)
+  revalidatePath('/energy/monthly')
+  return result
+}
+
+export async function deleteMonthlyRecordAction(id: string) {
+  await apiDeleteMonthlyRecord(id)
+  revalidatePath('/energy/monthly')
+}
+
+// ── 飞书导入 Server Action ──
+
+export async function importFromFeishuAction(data: FeishuImportRequest) {
+  const result = await apiImportFromFeishu(data)
+  if (!data.dry_run) {
+    revalidatePath('/energy/monthly')
+  }
+  return result
+}
+
+// ── 飞书多维表格交叉表导入 Server Action ──
+
+export async function crossImportFromBitableAction(data: {
+  year?: number
+  month?: string
+}) {
+  const result = await apiCrossImportFromBitable(data)
+  revalidatePath('/energy/monthly')
+  return result
+}
+
+// ── 数据导入和预警检查 ──
+
+export async function syncBitableDailyDataAction() {
+  const result = await apiSyncBitableDailyData()
   revalidatePath('/energy/alerts')
   return result
 }
 
-// ─── Workshop Actions ───
-
-export async function getWorkshops(params: Record<string, unknown> = {}) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return fetchWorkshops(params, headers)
+export async function checkAlertsAction(checkDate: string) {
+  const result = await apiCheckAlerts(checkDate)
+  revalidatePath('/energy/alerts')
+  return result
 }
 
-import { getAuthHeaders } from "@/lib/auth"
-import { fetchWorkshops, createWorkshop, updateWorkshop, deleteWorkshop, fetchMonthlyRecords } from "@/lib/api/server/energy"
-
-export async function createWorkshopAction(data: Record<string, unknown>) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return createWorkshop(data, headers)
-}
-
-export async function updateWorkshopAction(id: string, data: Record<string, unknown>) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return updateWorkshop(id, data, headers)
-}
-
-export async function deleteWorkshopAction(id: string) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return deleteWorkshop(id, headers)
-}
-
-// ─── Monthly Records ───
-
-
-export async function importFromBitable(params: Record<string, unknown>) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/import-from-bitable?app_token=${params.app_token || ""}&table_id=${params.table_id || ""}`, {
-    method: 'POST',
-    headers,
-  })
-}
-
-export async function importFromFeishu(params: Record<string, unknown>) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/import-from-feishu?spreadsheet_token=${params.spreadsheet_token || ''}&sheet_id=${params.sheet_id || ''}`, {
-    method: 'POST',
-    headers,
-  })
-}
-
-export async function deleteMonthlyRecordAction(id: string) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly/${id}`, {
-    method: 'DELETE',
-    headers,
-  })
-}
-
-export async function getMonthlyRecords(params: Record<string, unknown> = {}) {
-  'use server'
-  const headers = await getAuthHeaders()
-  return fetchMonthlyRecords(params, headers)
+export async function fetchAlertDatesAction() {
+  return apiFetchAlertDates()
 }

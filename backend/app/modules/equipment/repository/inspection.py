@@ -2,13 +2,11 @@
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
 
 from sqlalchemy import String, and_, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.inspection import (
     InspectionPhoto,
@@ -25,11 +23,10 @@ from app.modules.equipment.models.inspection_route_location import (
 from app.modules.equipment.models.inspection_template import (
     InspectionRecord,
 )
-from app.modules.equipment.service.data_scope import apply_equipment_scope
 
 
 # ═══════════ 路线 ═══════════
-async def create_route(db: AsyncSession, data: dict[str, Any]) -> InspectionRoute:
+async def create_route(db: AsyncSession, data: dict) -> InspectionRoute:
     # 清理同 name 的已软删除记录，避免重复添加→删除→添加→删除时违反唯一约束
     name = data.get("name")
     if name:
@@ -73,7 +70,6 @@ async def get_route_by_id(db: AsyncSession, route_id: uuid.UUID) -> InspectionRo
 
 async def get_routes(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     is_active: bool | None = None,
     location_id: uuid.UUID | None = None,
     keyword: str | None = None,
@@ -96,7 +92,6 @@ async def get_routes(
         conditions.append(InspectionRoute.name.ilike(f"%{keyword}%"))
 
     count_stmt = select(func.count(InspectionRoute.id)).where(and_(*conditions))
-    count_stmt = apply_equipment_scope(count_stmt, ctx, InspectionRoute.created_by, "user_id")
     total = (await db.execute(count_stmt)).scalar_one()
 
     stmt = (
@@ -109,12 +104,11 @@ async def get_routes(
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    stmt = apply_equipment_scope(stmt, ctx, InspectionRoute.created_by, "user_id")
     result = await db.execute(stmt)
     return list(result.scalars().all()), total
 
 
-async def update_route(db: AsyncSession, route_id: uuid.UUID, data: dict[str, Any]) -> InspectionRoute | None:
+async def update_route(db: AsyncSession, route_id: uuid.UUID, data: dict) -> InspectionRoute | None:
     route = await get_route_by_id(db, route_id)
     if not route:
         return None
@@ -147,7 +141,7 @@ async def delete_route(db: AsyncSession, route_id: uuid.UUID) -> bool:
 
 
 async def set_route_equipments(
-    db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]
+    db: AsyncSession, route_id: uuid.UUID, items: list[dict]
 ) -> list[InspectionRouteEquipment]:
     # 获取该路线所有记录（含已软删除的），避免重复添加→删除→添加时违反唯一约束
     all_result = await db.execute(
@@ -246,7 +240,7 @@ async def get_max_task_no(db: AsyncSession) -> str | None:
     return result.scalar_one_or_none()
 
 
-async def create_task(db: AsyncSession, data: dict[str, Any]) -> InspectionTask:
+async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
     task = InspectionTask(**data)
     db.add(task)
     await db.flush()
@@ -284,29 +278,8 @@ async def get_task_by_id(db: AsyncSession, task_id: uuid.UUID) -> InspectionTask
     return result.scalar_one_or_none()
 
 
-async def get_task_by_no(db: AsyncSession, task_no: str) -> InspectionTask | None:
-    """根据任务编号（如 IT-20260630-0001）查找任务。"""
-    stmt = (
-        select(InspectionTask)
-        .options(
-            selectinload(InspectionTask.route)
-            .selectinload(InspectionRoute.locations_rel)
-            .selectinload(RouteLocation.equipments),
-            selectinload(InspectionTask.equipment),
-            selectinload(InspectionTask.assignee),
-        )
-        .where(
-            InspectionTask.task_no == task_no,
-            InspectionTask.is_deleted == False,  # noqa: E712
-        )
-    )
-    result = await db.execute(stmt)
-    return result.scalar_one_or_none()
-
-
 async def get_tasks(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     status: str | None = None,
     exclude_status: str | None = None,
     route_id: uuid.UUID | None = None,
@@ -339,7 +312,6 @@ async def get_tasks(
         conditions.append(InspectionTask.planned_time <= planned_time_to)
 
     count_stmt = select(func.count(InspectionTask.id)).where(and_(*conditions))
-    count_stmt = apply_equipment_scope(count_stmt, ctx, InspectionTask.created_by, "user_id")
     total = (await db.execute(count_stmt)).scalar_one()
 
     stmt = (
@@ -359,7 +331,6 @@ async def get_tasks(
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    stmt = apply_equipment_scope(stmt, ctx, InspectionTask.created_by, "user_id")
     result = await db.execute(stmt)
     return list(result.scalars().all()), total
 
@@ -394,7 +365,7 @@ async def soft_delete_records_by_task_equipment(db: AsyncSession, task_id: uuid.
     await db.execute(stmt)
 
 
-async def create_inspection_records(db: AsyncSession, records_data: list[dict[str, Any]]) -> list[InspectionRecord]:
+async def create_inspection_records(db: AsyncSession, records_data: list[dict]) -> list[InspectionRecord]:
     objs = [InspectionRecord(**r) for r in records_data]
     db.add_all(objs)
     await db.flush()
@@ -416,7 +387,7 @@ async def get_records_by_task(db: AsyncSession, task_id: uuid.UUID) -> list[Insp
 
 
 # ═══════════ 照片 ═══════════
-async def create_photo(db: AsyncSession, data: dict[str, Any]) -> InspectionPhoto:
+async def create_photo(db: AsyncSession, data: dict) -> InspectionPhoto:
     # equipment_id 为 None 时（线路巡检照片）不传入构造
     if data.get("equipment_id") is None:
         data = {k: v for k, v in data.items() if k != "equipment_id" or v is not None}
@@ -495,26 +466,13 @@ async def get_equipment_names_by_ids(db: AsyncSession, equipment_ids: list[uuid.
     return {row[0]: row[1] for row in result.all()}
 
 
-async def get_equipment_nos_by_ids(db: AsyncSession, equipment_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
-    """根据设备ID列表批量获取设备编号映射"""
-    if not equipment_ids:
-        return {}
-    stmt = select(Equipment.id, Equipment.asset_no).where(
-        Equipment.id.in_(equipment_ids),
-        Equipment.is_deleted == False,  # noqa: E712
-    )
-    result = await db.execute(stmt)
-    return {row[0]: row[1] for row in result.all()}
-
-
 # ═══════════ 线路地点配置（新） ═══════════
 
 
-async def set_route_locations(
-    db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]
-) -> list[RouteLocation]:
+async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict]) -> list[RouteLocation]:
     """全量替换路线的地点→设备→模板配置"""
     existing_locs = (await db.execute(select(RouteLocation).where(RouteLocation.route_id == route_id))).scalars().all()
+    existing_loc_ids = {r.id for r in existing_locs}
     existing_by_loc_id: dict[uuid.UUID, RouteLocation] = {}
     for r in existing_locs:
         if r.location_id not in existing_by_loc_id or not r.is_deleted:
@@ -583,9 +541,7 @@ async def set_route_locations(
     return result
 
 
-async def _set_location_equipments(
-    db: AsyncSession, route_location: RouteLocation, equipments: list[dict[str, Any]]
-) -> None:
+async def _set_location_equipments(db: AsyncSession, route_location: RouteLocation, equipments: list[dict]) -> None:
     """替换某个地点下的设备→模板配置"""
     loc_id = route_location.id
     existing_eqs = (
@@ -635,7 +591,7 @@ async def _set_location_equipments(
 
 
 async def _set_equipment_templates(
-    db: AsyncSession, route_equipment: RouteLocationEquipment, template_ids: list[Any]
+    db: AsyncSession, route_equipment: RouteLocationEquipment, template_ids: list
 ) -> None:
     """替换某个设备的模板绑定"""
     existing = (
@@ -676,7 +632,7 @@ async def _set_equipment_templates(
 # ═══════════ 路线定时任务 ═══════════
 
 
-async def create_schedule(db: AsyncSession, data: dict[str, Any]) -> InspectionRouteSchedule:
+async def create_schedule(db: AsyncSession, data: dict) -> InspectionRouteSchedule:
     route_id = data.get("route_id")
     cron_expr = data.get("cron_expression")
     assigned_to = data.get("assigned_to")
@@ -747,7 +703,7 @@ async def get_schedule_by_id(db: AsyncSession, schedule_id: uuid.UUID) -> Inspec
 async def update_schedule(
     db: AsyncSession,
     schedule_id: uuid.UUID,
-    data: dict[str, Any],
+    data: dict,
     schedule: InspectionRouteSchedule | None = None,
 ) -> InspectionRouteSchedule | None:
     if schedule is None:
@@ -796,3 +752,17 @@ async def get_due_schedules(
         )
     )
     return list(result.scalars().all())
+
+
+# Alias for compatibility
+async def get_equipment_nos_by_ids(db: AsyncSession, ids: list) -> dict:
+    """根据ID列表获取设备编号映射。别名函数。"""
+    return await get_equipment_names_by_ids(db, ids)
+
+
+async def get_task_by_no(db: AsyncSession, task_no: str):
+    """根据任务编号获取巡检任务。"""
+    from app.modules.equipment.models.inspection import InspectionTask
+
+    result = await db.execute(select(InspectionTask).where(InspectionTask.task_no == task_no))
+    return result.scalar_one_or_none()

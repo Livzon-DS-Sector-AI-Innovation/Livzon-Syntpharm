@@ -92,7 +92,7 @@ class RouteLocationEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    asset_no: str | None = None
+    equipment_no: str | None = None
     templates: list[RouteEquipmentTemplateResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
@@ -131,7 +131,7 @@ class RouteEquipmentResponse(BaseModel):
     equipment_id: uuid.UUID
     sort_order: int
     equipment_name: str | None = None
-    asset_no: str | None = None
+    equipment_no: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -178,13 +178,10 @@ class InspectionTaskCreate(BaseModel):
     equipment_id: uuid.UUID | None = Field(default=None, description="单设备ID（兼容旧版，推荐用 equipment_ids）")
     equipment_ids: list[uuid.UUID] | None = Field(default=None, min_length=1, description="设备ID列表（多设备模式）")
     template_ids: list[uuid.UUID] | None = Field(
-        default=None,
-        min_length=1,
-        description="[DEPRECATED] 模板ID列表，推荐用 equipment_templates",
+        default=None, min_length=1, description="[DEPRECATED] 模板ID列表，推荐用 equipment_templates"
     )
     equipment_templates: dict[str, list[uuid.UUID]] | None = Field(
-        default=None,
-        description="设备-模板映射（设备巡检用）: {equipment_id: [template_id, ...]}",
+        default=None, description="设备-模板映射（设备巡检用）: {equipment_id: [template_id, ...]}"
     )
     plan_type: InspectionPlanType = Field(default="设备巡检", description="巡检类型")
     assigned_to: uuid.UUID | None = Field(default=None, description="巡检人员ID")
@@ -228,7 +225,7 @@ class InspectionTaskResponse(BaseModel):
     updated_at: datetime
     route_name: str | None = None
     equipment_name: str | None = None
-    asset_no: str | None = None
+    equipment_no: str | None = None
     assignee_name: str | None = None
     equipment_count: int = 0
     completed_count: int = 0

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { App, Drawer, Form, Input } from 'antd'
 import { EnvironmentOutlined, FileTextOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
-import { createInspectionRoute, updateInspectionRoute } from '@/actions/equipment'
+import { createInspectionRoute, updateInspectionRoute } from '@/actions/inspection'
 
 const C = {
   navy: '#0a1530',
@@ -42,12 +42,10 @@ export function InspectionRouteDrawer() {
     try {
       const values = await form.validateFields()
       if (editingRoute) {
-        const result = await updateInspectionRoute(editingRoute.id, values)
-        if (!result.success) { message.error(result.error); return }
+        await updateInspectionRoute(editingRoute.id, values)
         message.success('路线已更新')
       } else {
-        const result = await createInspectionRoute(values)
-        if (!result.success) { message.error(result.error); return }
+        await createInspectionRoute(values)
         message.success('路线已创建')
       }
       form.resetFields()

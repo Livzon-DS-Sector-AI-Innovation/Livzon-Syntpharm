@@ -1,9 +1,8 @@
 """Equipment personnel ORM models."""
 
 import uuid as _uuid
-from typing import Any
 
-from sqlalchemy import Boolean, Index, String, text
+from sqlalchemy import Boolean, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,19 +14,13 @@ class EquipmentRole(BaseModel):
 
     __tablename__ = "equipment_role"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做角色编码唯一性检查
-        Index(
-            "uq_equipment_role_code",
-            "code",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
-        ),
+        UniqueConstraint("code", name="uq_equipment_role_code"),
         Index("ix_equipment_role_scope_deleted", "scope", "is_deleted"),
         {"schema": "equipment"},
     )
 
     name: Mapped[str] = mapped_column(String(100), comment="角色名称")
-    code: Mapped[str] = mapped_column(String(50), comment="角色编码")
+    code: Mapped[str] = mapped_column(String(50), unique=True, comment="角色编码")
     description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="角色描述")
     scope: Mapped[str] = mapped_column(String(50), default="global", server_default="'global'", comment="作用域")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否启用")
@@ -55,7 +48,7 @@ class EquipmentPersonnel(BaseModel):
     )
     feishu_open_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书 open_id")
     mobile: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="冗余，手机号")
-    extended_attrs: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True, comment="扩展属性槽")
+    extended_attrs: Mapped[dict | None] = mapped_column(JSONB, nullable=True, comment="扩展属性槽")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否在岗")
 
 
@@ -64,13 +57,10 @@ class EquipmentPersonnelRole(BaseModel):
 
     __tablename__ = "equipment_personnel_role"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做人员+角色唯一性检查
-        Index(
-            "uq_equipment_personnel_role",
+        UniqueConstraint(
             "personnel_id",
             "role_id",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
+            name="uq_equipment_personnel_role",
         ),
         {"schema": "equipment"},
     )
@@ -84,14 +74,11 @@ class EquipmentPersonnelCategory(BaseModel):
 
     __tablename__ = "equipment_personnel_category"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做人员+角色+分类唯一性检查
-        Index(
-            "uq_equipment_personnel_category",
+        UniqueConstraint(
             "personnel_id",
             "role_id",
             "category_id",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
+            name="uq_equipment_personnel_category",
         ),
         {"schema": "equipment"},
     )

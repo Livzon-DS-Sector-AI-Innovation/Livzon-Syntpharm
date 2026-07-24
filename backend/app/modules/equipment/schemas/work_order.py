@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 # ==================== 维修工单 ====================
-WorkOrderType = Literal["故障维修", "计划维护", "校准", "异常处理", "日常维护"]
+WorkOrderType = Literal["故障维修", "计划维护", "巡检", "校准", "异常处理", "日常维护"]
 WorkOrderPriority = Literal["紧急", "高", "中", "低"]
 WorkOrderStatus = Literal["待处理", "执行中", "待验收", "已完成", "已关闭"]
 VerificationResult = Literal["合格", "不合格"]
@@ -100,7 +100,7 @@ class WorkOrderResponse(BaseModel):
     created_by: uuid.UUID | None
     updated_by: uuid.UUID | None
     equipment_name: str | None = None
-    asset_no: str | None = None
+    equipment_no: str | None = None
     reporter_name: str | None = None
     assignee_name: str | None = None
     responsible_person_id: uuid.UUID | None = None
@@ -114,7 +114,7 @@ class WorkOrderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse  # noqa: E402
+from app.modules.equipment.schemas.work_order_image import WorkOrderImageResponse
 
 WorkOrderResponse.model_rebuild()
 

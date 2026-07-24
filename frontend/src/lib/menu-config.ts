@@ -64,10 +64,10 @@ export const moduleMenus: ModuleMenu[] = [
     path: "/energy",
     children: [
       { key: "overview", label: "能源总览", path: "/energy" },
+      { key: "monthly", label: "月度记录", path: "/energy/monthly" },
       { key: "devices", label: "数据源配置", path: "/energy/devices" },
       { key: "alerts", label: "预警管理", path: "/energy/alerts" },
       { key: "collect-logs", label: "采集日志", path: "/energy/collect-logs" },
-      { key: "settings", label: "模块配置", path: "/energy/settings" },
     ],
   },
 

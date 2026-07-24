@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import date
-from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -12,6 +11,7 @@ from sqlalchemy import (
     Index,
     String,
     Text,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,11 +24,11 @@ class EquipmentCategory(BaseModel):
 
     __tablename__ = "equipment_categories"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
+        # 部分唯一索引：仅对未删除的记录做 code 唯一性检查
+        # 解决软删除后同名 code 无法再次删除的问题
         Index(
-            "uq_equipment_categories_code_dept",
+            "uq_equipment_categories_code",
             "code",
-            "department_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -37,9 +37,6 @@ class EquipmentCategory(BaseModel):
 
     name: Mapped[str] = mapped_column(String(100), comment="分类名称")
     code: Mapped[str] = mapped_column(String(50), comment="分类代码")
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
-    )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.equipment_categories.id"),
         nullable=True,
@@ -64,11 +61,10 @@ class Location(BaseModel):
 
     __tablename__ = "locations"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 (code, department_id) 唯一性检查
+        # 部分唯一索引：仅对未删除的记录做 code 唯一性检查
         Index(
-            "uq_locations_code_dept",
+            "uq_locations_code",
             "code",
-            "department_id",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -77,9 +73,6 @@ class Location(BaseModel):
 
     name: Mapped[str] = mapped_column(String(100), comment="位置名称")
     code: Mapped[str] = mapped_column(String(50), comment="位置代码")
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
-    )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("equipment.locations.id"),
         nullable=True,
@@ -104,13 +97,10 @@ class EquipmentCategoryLink(BaseModel):
 
     __tablename__ = "equipment_category_links"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做设备+分类唯一性检查
-        Index(
-            "uq_equipment_category_links",
+        UniqueConstraint(
             "equipment_id",
             "category_id",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
+            name="uq_equipment_category_links",
         ),
         {"schema": "equipment"},
     )
@@ -134,13 +124,7 @@ class Equipment(BaseModel):
 
     __tablename__ = "equipments"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做 asset_no 唯一性检查
-        Index(
-            "uq_equipments_asset_no",
-            "asset_no",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
-        ),
+        UniqueConstraint("asset_no", "is_deleted", name="uq_equipments_asset_no"),
         CheckConstraint(
             "status IN ('在用', '备用', '维修中', '停用', '报废')",
             name="ck_equipments_status",
@@ -184,14 +168,14 @@ class Equipment(BaseModel):
     current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
     book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
-    technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
+    technical_params: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )
     responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True,
-        comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
+        nullable=True, comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
     )
+    responsible_person_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="负责人姓名")
     label_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="标签号")
     scrap_status: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="报废状态")
     scrap_time: Mapped[date | None] = mapped_column(Date, nullable=True, comment="报废时间")

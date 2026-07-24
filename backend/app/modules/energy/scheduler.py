@@ -8,11 +8,11 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import async_session_factory
 from app.modules.energy import repository as repo
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.models import EnergyDeviceConfig
-from app.shared.config_reader import get_module_setting_bool
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ TICK_INTERVAL = 300
 MAX_BACKFILL_HOURS = 168
 
 stop_energy_collection_flag = asyncio.Event()
+
+stop_bitable_sync_flag = asyncio.Event()
 
 
 def _get_target_hours_since(last_collected_at: datetime | None) -> list[datetime]:
@@ -136,7 +138,8 @@ async def energy_collection_loop() -> None:
     每 TICK_INTERVAL 秒检查一次，对到达 collection_interval 的设备触发采集。
     支持补采：若设备上次采集时间距今超过 collection_interval，补采缺失的整点数据。
     """
-    if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
+    settings = get_settings()
+    if not settings.ENERGY_AUTO_COLLECT_ENABLED:
         logger.info("能耗自动采集已通过配置关闭（ENERGY_AUTO_COLLECT_ENABLED=false），跳过启动")
         return
 
@@ -144,7 +147,7 @@ async def energy_collection_loop() -> None:
 
     while not stop_energy_collection_flag.is_set():
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", False):
+        if not get_settings().ENERGY_AUTO_COLLECT_ENABLED:
             logger.debug("能耗自动采集已关闭，跳过本轮 tick")
             try:
                 await asyncio.wait_for(stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL)
@@ -165,8 +168,12 @@ async def energy_collection_loop() -> None:
                     devices_due: list[EnergyDeviceConfig] = []
                     oldest_last: datetime | None = None
 
+                    # 批量查询所有设备的最新数据（替代 N+1 查询）
+                    device_ids = [d.id for d in devices]
+                    latest_data_map = await repo.get_latest_energy_data_batch(db, device_ids)
+
                     for device in devices:
-                        latest = await repo.get_latest_energy_data(db, device.id)
+                        latest = latest_data_map.get(device.id)
                         if latest is None:
                             devices_due.append(device)
                         else:
@@ -205,3 +212,132 @@ async def energy_collection_loop() -> None:
             pass
 
     logger.info("能耗自动采集任务已停止")
+
+
+async def bitable_monthly_sync_loop() -> None:
+    """每日定时从飞书多维表格同步月度数据。
+
+    在 ENERGY_BITABLE_SYNC_HOUR 指定的小时执行同步（默认17点）。
+    每天只执行一次，通过 last_sync_date 防止重复。
+    """
+    settings = get_settings()
+    if not settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED:
+        logger.info("飞书多维表格月度同步已关闭（ENERGY_BITABLE_AUTO_SYNC_ENABLED=false）")
+        return
+
+    sync_hour = settings.ENERGY_BITABLE_SYNC_HOUR
+    logger.info("飞书多维表格月度同步任务已启动（每日 %d:00 执行）", sync_hour)
+
+    last_sync_date: str | None = None
+
+    while not stop_bitable_sync_flag.is_set():
+        try:
+            now = datetime.now(CST)
+            today_str = now.strftime("%Y-%m-%d")
+
+            # 检查是否到达同步时间且今天尚未同步
+            if now.hour == sync_hour and last_sync_date != today_str:
+                # 计算当月表名（格式：YYYY-MM）
+                month_table = now.strftime("%Y-%m")
+                logger.info("开始同步飞书多维表格月度数据: %s", month_table)
+
+                try:
+                    async with async_session_factory() as db:
+                        from app.modules.energy.bitable_cross_import import (
+                            EnergyBitableCrossImport,
+                        )
+
+                        importer = EnergyBitableCrossImport()
+                        result = await importer.import_month(db, month_table)
+
+                        logger.info(
+                            "月度数据同步完成: table=%s, created=%d, updated=%d, errors=%d",
+                            month_table,
+                            result.get("total_created", 0),
+                            result.get("total_updated", 0),
+                            len(result.get("errors", [])),
+                        )
+
+                        # 标记今天已同步
+                        last_sync_date = today_str
+
+                except Exception:
+                    logger.exception("月度数据同步异常: %s", month_table)
+
+        except Exception:
+            logger.exception("飞书多维表格同步循环异常")
+
+        # 等待60秒后再次检查
+        try:
+            await asyncio.wait_for(stop_bitable_sync_flag.wait(), timeout=60)
+        except TimeoutError:
+            pass
+
+    logger.info("飞书多维表格月度同步任务已停止")
+
+
+stop_bitable_daily_sync_flag = asyncio.Event()
+
+
+async def bitable_daily_sync_loop() -> None:
+    """每日定时从飞书表格导入数据并检查预警。
+
+    在 FEISHU_BITABLE_DAILY_SYNC_HOUR 指定的小时执行同步（默认17点）。
+    每天只执行一次，通过 last_sync_date 防止重复。
+    """
+    settings = get_settings()
+    sync_hour = settings.feishu.energy.daily_sync_hour
+    logger.info("飞书多维表格每日同步任务已启动（每日 %d:00 执行）", sync_hour)
+
+    last_sync_date: str | None = None
+
+    while not stop_bitable_daily_sync_flag.is_set():
+        try:
+            now = datetime.now(CST)
+            today_str = now.strftime("%Y-%m-%d")
+
+            # 检查是否到达同步时间且今天尚未同步
+            if now.hour == sync_hour and last_sync_date != today_str:
+                logger.info("开始同步飞书多维表格每日数据")
+
+                try:
+                    async with async_session_factory() as db:
+                        from app.modules.energy.bitable_daily_import import (
+                            EnergyBitableDailyImport,
+                        )
+
+                        importer = EnergyBitableDailyImport()
+
+                        # 1. 导入所有表格数据
+                        result = await importer.import_all_tables(db)
+                        logger.info(
+                            "每日数据导入完成: created=%d, updated=%d, errors=%d",
+                            result.get("total_created", 0),
+                            result.get("total_updated", 0),
+                            result.get("total_errors", 0),
+                        )
+
+                        # 2. 检查今日预警
+                        alert_records = await importer.check_alerts(db, now.date())
+                        if alert_records:
+                            logger.warning(
+                                "检测到 %d 条预警记录",
+                                len(alert_records),
+                            )
+
+                        # 标记今天已同步
+                        last_sync_date = today_str
+
+                except Exception:
+                    logger.exception("每日数据同步异常")
+
+        except Exception:
+            logger.exception("飞书多维表格每日同步循环异常")
+
+        # 等待60秒后再次检查
+        try:
+            await asyncio.wait_for(stop_bitable_daily_sync_flag.wait(), timeout=60)
+        except TimeoutError:
+            pass
+
+    logger.info("飞书多维表格每日同步任务已停止")

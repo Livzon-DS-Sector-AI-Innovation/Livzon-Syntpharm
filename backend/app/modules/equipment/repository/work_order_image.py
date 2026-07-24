@@ -1,7 +1,6 @@
 """Work order image repository."""
 
 import uuid
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.equipment.models.work_order_image import WorkOrderImage
 
 
-async def create_image(db: AsyncSession, data: dict[str, Any]) -> WorkOrderImage:
+async def create_image(db: AsyncSession, data: dict) -> WorkOrderImage:
     image = WorkOrderImage(**data)
     db.add(image)
     await db.flush()

@@ -39,7 +39,8 @@ const statusConfig: Record<CollectStatus, ReturnType<typeof luxuryPill>> = {
 const energyTypeConfig: Record<string, ReturnType<typeof luxuryPill>> = {
   electricity: luxuryPill('#0075de', '#dcecfa'),
   water: luxuryPill('#1aae39', '#d9f3e1'),
-  gas: luxuryPill('#dd5b00', '#ffe8d4'),
+  steam: luxuryPill('#dd5b00', '#ffe8d4'),
+  natural_gas: luxuryPill('#8b5cf6', '#ede9fe'),
 }
 
 // ── 表格样式 ──
@@ -217,10 +218,12 @@ export function CollectLogDetailDrawer({
           type === 'electricity'
             ? '电力'
             : type === 'water'
-              ? '水'
-              : type === 'gas'
-                ? '气体'
-                : type
+                ? '水'
+                : type === 'steam'
+                    ? '蒸汽'
+                    : type === 'natural_gas'
+                        ? '天然气'
+                        : type
         return s ? <span style={s}>{label}</span> : label
       },
     },

@@ -8,15 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundException
 from app.modules.equipment import repository as repo
-from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models import CalibrationPlan, CalibrationRecord
 from app.modules.equipment.schemas import (
     CalibrationPlanCreate,
     CalibrationPlanUpdate,
     CalibrationRecordCreate,
-)
-from app.modules.equipment.service.data_scope import (
-    verify_write_ownership,
 )
 
 
@@ -48,7 +44,6 @@ def _add_months(d: date_type, months: int) -> date_type:
 async def create_calibration_plan(
     db: AsyncSession,
     data: CalibrationPlanCreate,
-    ctx: EquipmentAccessContext,
 ) -> CalibrationPlan:
     """创建校准计划"""
     plan_data = data.model_dump()
@@ -73,7 +68,6 @@ async def get_calibration_plan_by_id(
 
 async def get_calibration_plans(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     equipment_id: uuid.UUID | None = None,
     status: str | None = None,
     page: int = 1,
@@ -82,7 +76,6 @@ async def get_calibration_plans(
     """获取校准计划列表"""
     return await repo.get_calibration_plans(
         db,
-        ctx=ctx,
         equipment_id=equipment_id,
         status=status,
         page=page,
@@ -94,11 +87,9 @@ async def update_calibration_plan(
     db: AsyncSession,
     plan_id: uuid.UUID,
     data: CalibrationPlanUpdate,
-    ctx: EquipmentAccessContext,
 ) -> CalibrationPlan:
     """更新校准计划"""
     plan = await get_calibration_plan_by_id(db, plan_id)
-    await verify_write_ownership(ctx, plan, "created_by", "user_id")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -121,28 +112,24 @@ async def update_calibration_plan(
 async def delete_calibration_plan(
     db: AsyncSession,
     plan_id: uuid.UUID,
-    ctx: EquipmentAccessContext,
 ) -> bool:
     """删除校准计划"""
-    plan = await get_calibration_plan_by_id(db, plan_id)
-    await verify_write_ownership(ctx, plan, "created_by", "user_id")
+    await get_calibration_plan_by_id(db, plan_id)
     return await repo.delete_calibration_plan(db, plan_id)
 
 
 async def get_overdue_calibration_plans(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     days: int = 30,
 ) -> list[CalibrationPlan]:
     """查询到期/逾期的校准计划"""
     threshold = date_type.today() + timedelta(days=days)
-    return await repo.get_calibration_plans_due(db, ctx, threshold)
+    return await repo.get_calibration_plans_due(db, threshold)
 
 
 async def create_calibration_record(
     db: AsyncSession,
     data: CalibrationRecordCreate,
-    ctx: EquipmentAccessContext,
 ) -> CalibrationRecord:
     """创建校准记录"""
     plan = await get_calibration_plan_by_id(db, data.calibration_plan_id)
@@ -177,7 +164,6 @@ async def get_calibration_record_by_id(
 
 async def get_calibration_records(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     equipment_id: uuid.UUID | None = None,
     plan_id: uuid.UUID | None = None,
     page: int = 1,
@@ -186,7 +172,6 @@ async def get_calibration_records(
     """获取校准记录列表"""
     return await repo.get_calibration_records(
         db,
-        ctx=ctx,
         equipment_id=equipment_id,
         plan_id=plan_id,
         page=page,

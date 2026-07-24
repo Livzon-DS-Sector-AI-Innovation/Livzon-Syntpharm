@@ -1,7 +1,6 @@
 """Work order Feishu bot service: query and complete work orders via chat."""
 
 import logging
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +14,7 @@ from app.modules.equipment.service.work_order import complete_work_order
 logger = logging.getLogger(__name__)
 
 
-async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> Any:
+async def _find_user_by_user_id(db: AsyncSession, user_id: str):
     """根据飞书 user_id（租户级）查找系统用户。"""
     from app.platform.identity.models import User
 
@@ -56,7 +55,7 @@ async def list_user_work_orders(
         return
 
     lines = [f"**共 {len(work_orders)} 个未关闭工单**\n"]
-    options: list[dict[str, Any]] = []
+    options: list[dict] = []
     for i, wo in enumerate(work_orders, 1):
         eq_name = wo.equipment.name if wo.equipment else "未知设备"
         status_icon = {"待处理": "⏳", "执行中": "🔄", "待验收": "✅"}.get(wo.status, "📋")
@@ -137,12 +136,8 @@ async def complete_work_order_by_no(
         detail = repair_detail or "通过飞书机器人完成"
         data = WorkOrderComplete(repair_detail=detail)
 
-        from app.modules.equipment.deps import EquipmentAccessContext
-
-        ctx = EquipmentAccessContext(user=user, data_scope="all")
-
         try:
-            completed_wo = await complete_work_order(db, wo.id, data, ctx)
+            completed_wo = await complete_work_order(db, wo.id, data)
             await db.commit()
         except Exception as e:
             logger.exception("完成工单失败: %s", e)

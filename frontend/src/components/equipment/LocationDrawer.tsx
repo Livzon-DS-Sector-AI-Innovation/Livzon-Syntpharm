@@ -7,7 +7,7 @@ import { createLocation, updateLocation } from '@/actions/equipment'
 
 const { TextArea } = Input
 
-export function LocationDrawer() {
+export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const [submitting, setSubmitting] = useState(false)
@@ -19,7 +19,8 @@ export function LocationDrawer() {
   } = useEquipmentStore()
 
   useEffect(() => {
-    if (locationDrawerOpen) {
+    if (!locationDrawerOpen) return
+    const timer = setTimeout(() => {
       if (editingLocation) {
         form.setFieldsValue({
           name: editingLocation.name,
@@ -30,7 +31,8 @@ export function LocationDrawer() {
       } else {
         form.resetFields()
       }
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [locationDrawerOpen, editingLocation, form])
 
   const handleSubmit = async () => {
@@ -46,6 +48,7 @@ export function LocationDrawer() {
         message.success('创建位置成功')
       }
       closeLocationDrawer()
+      onRefresh?.()
     } catch (err: any) {
       // Ant Design validation errors have an errorFields property
       if (err?.errorFields) return
@@ -55,12 +58,30 @@ export function LocationDrawer() {
     }
   }
 
-  const parentOptions = locations
-    .filter((loc) => loc.id !== editingLocation?.id)
-    .map((loc) => ({
-      label: loc.name,
-      value: loc.id,
-    }))
+  // 递归展平位置树，用缩进前缀区分层级
+  function flattenTree(
+    items: typeof locations,
+    excludeId?: string,
+    depth = 0,
+  ): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = []
+    for (const loc of items) {
+      if (loc.id === excludeId) {
+        if (loc.children?.length) {
+          result.push(...flattenTree(loc.children, excludeId, depth))
+        }
+        continue
+      }
+      const prefix = depth > 0 ? '  '.repeat(depth) + '└ ' : ''
+      result.push({ label: prefix + loc.name, value: loc.id })
+      if (loc.children?.length) {
+        result.push(...flattenTree(loc.children, excludeId, depth + 1))
+      }
+    }
+    return result
+  }
+
+  const parentOptions = flattenTree(locations, editingLocation?.id)
 
   return (
     <Drawer

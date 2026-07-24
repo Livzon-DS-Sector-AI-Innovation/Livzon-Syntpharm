@@ -30,3 +30,34 @@ export async function fetchPlatformsClient(): Promise<any[]> {
   const json = await res.json()
   return json.data
 }
+// ── 预警规则 ──
+
+export async function fetchAlertRules(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
+  const query = buildQueryString(params)
+  // 浏览器端使用相对路径
+  const fullUrl = `/api/v1/energy/alerts/rules${query}`
+  const res = await fetch(fullUrl)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
+}
+
+// ── 预警记录 ──
+
+export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
+  const query = buildQueryString(params)
+  // 浏览器端使用相对路径
+  const fullUrl = `/api/v1/energy/alerts/records${query}`
+  const res = await fetch(fullUrl)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
+}

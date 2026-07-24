@@ -5,19 +5,19 @@ import { App, Avatar, Card, DatePicker, Drawer, Form, Select, Tag, Typography } 
 import { UserOutlined, CheckSquareOutlined, CalendarOutlined } from '@ant-design/icons'
 import { PersonnelSelect } from '@/components/equipment'
 import { useInspectionStore } from '@/stores/inspection'
-import { createInspectionTask } from '@/actions/equipment'
-import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
-import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
+import { createInspectionTask } from '@/actions/inspection'
+import { fetchInspectionRoutes } from '@/lib/api/inspection'
+import { fetchPersonnelList } from '@/lib/api/equipment-personnel'
 import type { InspectionTemplate } from '@/types/equipment'
 import type { InspectionRoute } from '@/types/inspection'
-import type { Personnel } from '@/types/equipment'
+import type { Personnel } from '@/types/equipment-personnel'
 import dayjs from 'dayjs'
 
 const { Text } = Typography
 
 interface Props {
   templates: InspectionTemplate[]
-  equipments: { id: string; name: string; asset_no: string }[]
+  equipments: { id: string; name: string; equipment_no: string }[]
 }
 
 const C = { navy: '#0a1530', purple: '#5645d4', ink: '#1a1a1a', slate: '#5d5b54',
@@ -52,7 +52,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
         equipment_templates = values.equipment_templates
       }
 
-      const result = await createInspectionTask({
+      await createInspectionTask({
         route_id: isRoute ? values.route_id : undefined,
         equipment_ids: !isRoute && values.equipment_ids?.length ? values.equipment_ids : undefined,
         template_ids: !isRoute && !equipment_templates && values.template_ids?.length ? values.template_ids : undefined,
@@ -61,7 +61,6 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
         assigned_to: values.assigned_to || undefined,
         planned_time: values.planned_time.toISOString(),
       })
-      if (!result.success) { message.error(result.error); return }
       message.success('巡检任务已创建')
       form.resetFields()
       closeTaskDrawer()
@@ -120,7 +119,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
               <Form.Item name="equipment_ids" noStyle rules={[{ required: true, type: 'array', min: 1, message: '请至少选一台设备' }]}>
                 <Select mode="multiple" showSearch={{ optionFilterProp: 'label' }} placeholder="选择设备"
                   popupMatchSelectWidth={false} maxTagCount="responsive" style={{ width: '100%' }}
-                  options={equipments.map(e => ({ label: `${e.name} (${e.asset_no})`, value: e.id }))} />
+                  options={equipments.map(e => ({ label: `${e.name} (${e.equipment_no})`, value: e.id }))} />
               </Form.Item>
             </div>
           )}
@@ -158,7 +157,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
                     title={
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{eq.name}</span>
-                        <Tag style={{ fontSize: 10, margin: 0 }}>{eq.asset_no}</Tag>
+                        <Tag style={{ fontSize: 10, margin: 0 }}>{eq.equipment_no}</Tag>
                       </div>
                     }
                   >

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Modal, Form, Input, InputNumber, Select, Button, Steps, Result, Space, App, Alert, Typography } from 'antd'
-import { importFromBitable } from '@/actions/energy'
+import { crossImportFromBitableAction } from '@/actions/energy'
 
 const { Text } = Typography
 
@@ -53,7 +53,7 @@ export function BitableCrossImportModal({ open, onClose, onSuccess }: BitableCro
         ? { year: values.year }
         : { month: values.month }
       
-      const importResult = await importFromBitable(data)
+      const importResult = await crossImportFromBitableAction(data)
       setResult(importResult)
       setStep('result')
     } catch (error: any) {

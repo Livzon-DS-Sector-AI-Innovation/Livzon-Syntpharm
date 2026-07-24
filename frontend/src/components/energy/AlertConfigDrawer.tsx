@@ -14,8 +14,8 @@ interface AlertConfigDrawerProps {
 
 const energyTypeOptions = [
   { label: '电力', value: 'electricity' },
-  { label: '水', value: 'water' },
-  { label: '气体', value: 'gas' },
+  { label: '自来水', value: 'water' },
+  { label: '蒸汽', value: 'steam' },
 ]
 
 const monitorMetricOptions = [

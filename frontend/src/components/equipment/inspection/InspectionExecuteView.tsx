@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { App, Progress, Typography } from 'antd'
 import { ArrowLeftOutlined, CheckOutlined, CameraOutlined, AimOutlined, RobotOutlined, EnvironmentOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
-import { submitEquipmentCheck, uploadInspectionPhoto, completeInspectionTask, analyzeInspectionPhoto } from '@/actions/equipment'
+import { submitEquipmentCheck, uploadInspectionPhoto, completeInspectionTask, analyzeInspectionPhoto } from '@/actions/inspection'
 import type { InspectionRecordItem, InspectionAIItemResult } from '@/types/inspection'
 import type { InspectionTemplateItem } from '@/types/equipment'
 
@@ -17,7 +17,7 @@ const C = { navy: '#0a1530', purple: '#5645d4', purpleLight: '#e6e0f5', purpleDe
   orange: '#dd5b00', orangeBg: '#ffe8d4', greenBg: '#d9f3e1', yellowBg: '#fef7d6' }
 
 interface Props { onClose: () => void }
-interface VEq { equipment_id: string; equipment_name: string; asset_no?: string }
+interface VEq { equipment_id: string; equipment_name: string; equipment_no?: string }
 
 /* ══════════════════════════════════════════════════
    Unified execution view — line & device inspection
@@ -42,18 +42,18 @@ export function InspectionExecuteView({ onClose }: Props) {
         (loc.equipments || []).map(eq => ({
           equipment_id: eq.equipment_id,
           equipment_name: eq.equipment_name || '设备',
-          asset_no: eq.asset_no || undefined,
+          equipment_no: eq.equipment_no || undefined,
         }))
       )
     }
     if (executingEquipmentIds?.length) {
       const m = new Map(executingEquipments.map(e => [e.id, e]))
       return executingEquipmentIds.map(id => ({
-        equipment_id: id, equipment_name: m.get(id)?.name || id.slice(0, 8) + '…', asset_no: m.get(id)?.no,
+        equipment_id: id, equipment_name: m.get(id)?.name || id.slice(0, 8) + '…', equipment_no: m.get(id)?.no,
       }))
     }
     if (executingEquipmentId) {
-      return [{ equipment_id: executingEquipmentId, equipment_name: executingEquipmentName || executingEquipmentNo || '设备', asset_no: executingEquipmentNo }]
+      return [{ equipment_id: executingEquipmentId, equipment_name: executingEquipmentName || executingEquipmentNo || '设备', equipment_no: executingEquipmentNo }]
     }
     return []
   }, [isLine, executingRouteDetail, executingEquipmentIds, executingEquipments, executingEquipmentId, executingEquipmentName, executingEquipmentNo])
@@ -81,19 +81,16 @@ export function InspectionExecuteView({ onClose }: Props) {
 
   const submitCheck = useCallback(async (records: InspectionRecordItem[]) => {
     if (!executingTaskId || !cur) return
-    const result = await submitEquipmentCheck(executingTaskId, cur.equipment_id, { records })
-    if (!result.success) { message.error(result.error); return }
-    const photoResults = await Promise.all(
-      (photos[cur.equipment_id] || []).map(f => {
+    try {
+      await submitEquipmentCheck(executingTaskId, cur.equipment_id, { records })
+      for (const f of photos[cur.equipment_id] || []) {
         const fd = new FormData(); fd.append('file', f)
-        return uploadInspectionPhoto(executingTaskId, cur.equipment_id, fd)
-      }),
-    )
-    const firstFailure = photoResults.find(r => !r.success)
-    if (firstFailure) { message.error(firstFailure.error); return }
-    setDone(prev => new Set(prev).add(cur.equipment_id))
-    message.success(`${cur.equipment_name} 检查完成`)
-    if (step < total - 1) setStep(step + 1)
+        await uploadInspectionPhoto(executingTaskId, cur.equipment_id, fd)
+      }
+      setDone(prev => new Set(prev).add(cur.equipment_id))
+      message.success(`${cur.equipment_name} 检查完成`)
+      if (step < total - 1) setStep(step + 1)
+    } catch (err: unknown) { message.error((err as Error).message || '提交失败') }
   }, [executingTaskId, cur, step, total, photos, message])
 
   const finish = useCallback(() => {
@@ -105,10 +102,9 @@ export function InspectionExecuteView({ onClose }: Props) {
       okText: '确认提交', cancelText: '取消',
       onOk: async () => {
         setSubmitting(true)
-        const result = await completeInspectionTask(executingTaskId, {})
-        setSubmitting(false)
-        if (!result.success) { message.error(result.error); return }
-        message.success('巡检任务已完成'); clearExecuting(); onClose()
+        try { await completeInspectionTask(executingTaskId); message.success('巡检任务已完成'); clearExecuting(); onClose() }
+        catch (err: unknown) { message.error((err as Error).message || '提交失败') }
+        finally { setSubmitting(false) }
       },
     })
   }, [executingTaskId, doneN, total, clearExecuting, onClose, message, modal])
@@ -202,8 +198,8 @@ export function InspectionExecuteView({ onClose }: Props) {
       {cur && (
         <EquipmentCheckCard
           key={cur.equipment_id}
-          equipmentId={cur.equipment_id} equipmentName={cur.equipment_name} equipmentNo={cur.asset_no}
-          templateItems={executingTemplateItems[cur.equipment_id] || []} photos={curPhotos}
+          equipmentId={cur.equipment_id} equipmentName={cur.equipment_name} equipmentNo={cur.equipment_no}
+          templateItems={executingTemplateItems} photos={curPhotos}
           onAddPhoto={f => addPhoto(cur.equipment_id, f)} onRemovePhoto={i => rmPhoto(cur.equipment_id, i)}
           onSubmit={submitCheck} disabled={done.has(cur.equipment_id)}
         />
@@ -271,16 +267,14 @@ function EquipmentCheckCard({ equipmentId, equipmentName, equipmentNo, templateI
         r.onerror = () => reject(new Error('图片读取失败'))
         r.readAsDataURL(file)
       })
-      const aiResult = await analyzeInspectionPhoto(tid, equipmentId, b64, file.type || 'image/jpeg')
-      if (!aiResult.success) { message.error(aiResult.error); return }
-      const results = aiResult.data ?? []
+      const results = await analyzeInspectionPhoto(tid, equipmentId, b64, file.type || 'image/jpeg')
       const vals: typeof formVals = {}
       templateItems.forEach((item, i) => {
-        const ai = results.find((r: any) => r.template_item_id === item.id)
+        const ai = results.find(r => r.template_item_id === item.id)
         vals[i] = { result: ai?.result || '正常', actual_value: ai?.actual_value ?? '', remark: ai?.remark ?? '' }
       })
       setFormVals(vals)
-      const skips = results.filter((r: any) => r.result === '跳过').length
+      const skips = results.filter(r => r.result === '跳过').length
       message.success(skips > 0 ? `AI 分析完成，${skips} 项无法识别已标记"跳过"` : 'AI 分析完成')
     } catch (err: unknown) { message.error((err as Error).message || 'AI 分析失败') }
     finally { setAiLoading(false) }

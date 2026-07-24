@@ -98,8 +98,8 @@ export function WorkshopTable() {
         page,
         page_size: pageSize,
       })
-      setWorkshops((result as any).items || [])
-      setTotal((result as any).total || 0)
+      setWorkshops(result.items || [])
+      setTotal(result.total || 0)
     } catch (error) {
       message.error('加载车间列表失败')
     } finally {

@@ -1,9 +1,7 @@
-import '@/lib/http-server'
 import { EquipmentPage } from '@/components/equipment'
-import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/lib/api/server/equipment'
+import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/actions/equipment'
 import type { DepartmentOption } from '@/types/equipment'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment'
-import { getCurrentUser } from '@/actions/auth'
 
 // 强制动态渲染：不在构建时预渲染，每次请求都实时从后端获取数据
 export const dynamic = 'force-dynamic'
@@ -22,13 +20,6 @@ const defaultStatistics: EquipmentStatistics = {
   by_location: {},
 }
 
-/** 根据用户部门名称匹配部门列表中的 ID */
-function matchUserDepartment(departments: DepartmentOption[], userDeptName: string | null): string | null {
-  if (!userDeptName) return null
-  const dept = departments.find(d => d.name === userDeptName)
-  return dept?.id ?? null
-}
-
 export default async function EquipmentPageWrapper() {
   let categories: EquipmentCategory[] = []
   let locations: Location[] = []
@@ -37,47 +28,33 @@ export default async function EquipmentPageWrapper() {
   let statistics = defaultStatistics
   let departments: DepartmentOption[] = []
 
-  // Promise.allSettled：并行请求 + 独立容错，避免一个失败拖垮全部数据
-  const results = await Promise.allSettled([
-    fetchCategoryTree(),
-    fetchLocationTree(),
-    fetchEquipments({ page: 1, page_size: 20 }),
-    fetchEquipmentStatistics(),
-    fetchDepartments(),
-    getCurrentUser(),
-  ])
-
-  if (results[0].status === 'fulfilled') {
-    categories = results[0].value
-  } else {
-    console.warn('加载分类树失败:', results[0].reason)
+  // 每个 API 独立 try/catch，避免一个失败拖垮全部数据
+  try {
+    categories = await fetchCategoryTree()
+  } catch (error) {
+    console.warn('加载分类树失败:', error)
   }
-  if (results[1].status === 'fulfilled') {
-    locations = results[1].value
-  } else {
-    console.warn('加载位置树失败:', results[1].reason)
+  try {
+    locations = await fetchLocationTree()
+  } catch (error) {
+    console.warn('加载位置树失败:', error)
   }
-  if (results[2].status === 'fulfilled') {
-    equipments = results[2].value.items
-    total = results[2].value.total
-  } else {
-    console.warn('加载设备列表失败:', results[2].reason)
+  try {
+    const result = await fetchEquipments({ page: 1, page_size: 20 })
+    equipments = result.items
+    total = result.total
+  } catch (error) {
+    console.warn('加载设备列表失败:', error)
   }
-  if (results[3].status === 'fulfilled') {
-    statistics = results[3].value
-  } else {
-    console.warn('加载设备统计失败:', results[3].reason)
+  try {
+    statistics = await fetchEquipmentStatistics()
+  } catch (error) {
+    console.warn('加载设备统计失败:', error)
   }
-  if (results[4].status === 'fulfilled') {
-    departments = results[4].value
-  } else {
-    console.warn('加载部门列表失败:', results[4].reason)
-  }
-
-  // 获取当前用户部门，匹配部门 ID 用于新建设备时预填
-  let userDepartmentId: string | null = null
-  if (results[5].status === 'fulfilled' && results[5].value) {
-    userDepartmentId = matchUserDepartment(departments, results[5].value.department)
+  try {
+    departments = await fetchDepartments()
+  } catch (error) {
+    console.warn('加载部门列表失败:', error)
   }
 
   return (
@@ -88,7 +65,6 @@ export default async function EquipmentPageWrapper() {
       initialTotal={total}
       initialStatistics={statistics}
       initialDepartments={departments}
-      initialUserDepartmentId={userDepartmentId}
     />
   )
 }

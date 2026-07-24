@@ -15,6 +15,14 @@ import {
   CalibrationPlan,
   CalibrationPlanStatus,
   CalibrationRecord,
+  SparePart,
+  StockWarning,
+  MaintenancePlan,
+  MaintenancePlanStatus,
+  InspectionTemplate,
+  InspectionTemplateItem,
+  Maintainer,
+  DepartmentOption,
 } from '@/types/equipment'
 
 interface EquipmentStore {
@@ -28,6 +36,10 @@ interface EquipmentStore {
   selectedCategory: string | null
   selectedLocation: string | null
   statusFilter: EquipmentStatus | ''
+  departmentFilter: string | null
+  departments: DepartmentOption[]
+  setDepartmentFilter: (id: string | null) => void
+  setDepartments: (departments: DepartmentOption[]) => void
   keyword: string
   page: number
   pageSize: number
@@ -63,102 +75,6 @@ interface EquipmentStore {
   openLocationDrawer: (location?: Location) => void
   closeLocationDrawer: () => void
 
-  // ========== 部门管理 ==========
-  departments: Array<{ id: string; name: string; leader_id?: string; leader_name?: string }>
-  departmentFilter: string
-  setDepartments: (depts: Array<{ id: string; name: string; leader_id?: string; leader_name?: string }>) => void
-  setDepartmentFilter: (filter: string) => void
-
-  // ========== 巡检模板 ==========
-  inspectionTemplates: any[]
-  inspectionTemplateTotal: number
-  inspectionTemplatePage: number
-  inspectionTemplatePageSize: number
-  inspectionTemplateLoading: boolean
-  inspectionTemplateKeyword: string
-  setInspectionTemplates: (templates: any[]) => void
-  setInspectionTemplateTotal: (total: number) => void
-  setInspectionTemplatePage: (page: number) => void
-  setInspectionTemplatePageSize: (size: number) => void
-  setInspectionTemplateLoading: (loading: boolean) => void
-  setInspectionTemplateKeyword: (keyword: string) => void
-  inspectionTemplateDrawerOpen: boolean
-  editingInspectionTemplate: any
-  openInspectionTemplateDrawer: (template?: any) => void
-  closeInspectionTemplateDrawer: () => void
-
-  // ========== 巡检项 ==========
-  inspectionItemDrawerOpen: boolean
-  inspectionItemTemplateId: string
-  editingInspectionItem: any
-  openInspectionItemDrawer: (templateId: string, item?: any) => void
-  closeInspectionItemDrawer: () => void
-
-  // ========== 巡检完成 ==========
-  inspectionCompleteDrawerOpen: boolean
-  completingWorkOrderId: string
-  completingTemplateName: string
-  completingTemplateItems: any[]
-  openInspectionCompleteDrawer: (workOrderId: string, templateName: string, items: any[]) => void
-  closeInspectionCompleteDrawer: () => void
-
-  // ========== 维护计划 ==========
-  maintenancePlans: any[]
-  maintenancePlanTotal: number
-  maintenancePlanPage: number
-  maintenancePlanPageSize: number
-  maintenancePlanLoading: boolean
-  maintenancePlanKeyword: string
-  maintenancePlanStatusFilter: string
-  setMaintenancePlans: (plans: any[]) => void
-  setMaintenancePlanTotal: (total: number) => void
-  setMaintenancePlanPage: (page: number) => void
-  setMaintenancePlanPageSize: (size: number) => void
-  setMaintenancePlanLoading: (loading: boolean) => void
-  setMaintenancePlanKeyword: (keyword: string) => void
-  setMaintenancePlanStatusFilter: (status: string) => void
-  maintenancePlanDrawerOpen: boolean
-  editingMaintenancePlan: any
-  openMaintenancePlanDrawer: (plan?: any) => void
-  closeMaintenancePlanDrawer: () => void
-
-  // ========== 备件管理 ==========
-  spareParts: any[]
-  sparePartTotal: number
-  sparePartPage: number
-  sparePartPageSize: number
-  sparePartLoading: boolean
-  sparePartKeyword: string
-  setSpareParts: (parts: any[]) => void
-  setSparePartTotal: (total: number) => void
-  setSparePartPage: (page: number) => void
-  setSparePartPageSize: (size: number) => void
-  setSparePartLoading: (loading: boolean) => void
-  setSparePartKeyword: (keyword: string) => void
-  sparePartDrawerOpen: boolean
-  editingSparePart: any
-  openSparePartDrawer: (part?: any) => void
-  closeSparePartDrawer: () => void
-
-  // ========== 库存预警 ==========
-  stockWarnings: any[]
-  stockWarningsLoading: boolean
-  setStockWarnings: (warnings: any[]) => void
-
-  // ========== 维修抽屉 ==========
-  repairDrawerOpen: boolean
-  repairEquipmentId: string
-  openRepairDrawer: (equipmentId: string) => void
-  closeRepairDrawer: () => void
-
-  // ========== 入库抽屉 ==========
-  stockInboundDrawerOpen: boolean
-  stockInboundSparePartId: string
-  openStockInboundDrawer: (sparePartId: string) => void
-  closeStockInboundDrawer: () => void
-
-  // ========== 查看工单 ==========
-
   // ========== 维护模块 ==========
   maintenanceTab: string
   setMaintenanceTab: (tab: string) => void
@@ -186,6 +102,7 @@ interface EquipmentStore {
   workOrderDetailOpen: boolean
   editingWorkOrder: WorkOrder | null
   viewingWorkOrder: WorkOrder | null
+  setViewingWorkOrder: (order: WorkOrder | null) => void
   openWorkOrderDrawer: (order?: WorkOrder) => void
   closeWorkOrderDrawer: () => void
   openWorkOrderDetail: (order: WorkOrder) => void
@@ -235,6 +152,97 @@ interface EquipmentStore {
   editingCalibrationRecord: CalibrationRecord | null
   openCalibrationRecordDrawer: (record?: CalibrationRecord) => void
   closeCalibrationRecordDrawer: () => void
+
+  // ========== 备件管理 ==========
+  spareParts: SparePart[]
+  sparePartTotal: number
+  sparePartPage: number
+  sparePartPageSize: number
+  sparePartLoading: boolean
+  sparePartKeyword: string
+  stockWarnings: StockWarning[]
+  stockWarningsLoading: boolean
+  setSpareParts: (parts: SparePart[]) => void
+  setSparePartTotal: (total: number) => void
+  setSparePartPage: (page: number) => void
+  setSparePartPageSize: (size: number) => void
+  setSparePartLoading: (loading: boolean) => void
+  setSparePartKeyword: (keyword: string) => void
+  setStockWarnings: (warnings: StockWarning[]) => void
+  setStockWarningsLoading: (loading: boolean) => void
+  sparePartDrawerOpen: boolean
+  editingSparePart: SparePart | null
+  openSparePartDrawer: (part?: SparePart) => void
+  closeSparePartDrawer: () => void
+  stockInboundDrawerOpen: boolean
+  stockInboundSparePartId: string | null
+  openStockInboundDrawer: (sparePartId: string) => void
+  closeStockInboundDrawer: () => void
+
+  // ========== 维护计划 ==========
+  maintenancePlans: MaintenancePlan[]
+  maintenancePlanTotal: number
+  maintenancePlanPage: number
+  maintenancePlanPageSize: number
+  maintenancePlanLoading: boolean
+  maintenancePlanStatusFilter: MaintenancePlanStatus | ''
+  maintenancePlanKeyword: string
+  setMaintenancePlans: (plans: MaintenancePlan[]) => void
+  setMaintenancePlanTotal: (total: number) => void
+  setMaintenancePlanPage: (page: number) => void
+  setMaintenancePlanPageSize: (size: number) => void
+  setMaintenancePlanLoading: (loading: boolean) => void
+  setMaintenancePlanStatusFilter: (status: MaintenancePlanStatus | '') => void
+  setMaintenancePlanKeyword: (keyword: string) => void
+  maintenancePlanDrawerOpen: boolean
+  editingMaintenancePlan: MaintenancePlan | null
+  openMaintenancePlanDrawer: (plan?: MaintenancePlan) => void
+  closeMaintenancePlanDrawer: () => void
+
+  // ========== 巡检模板 ==========
+  inspectionTemplates: InspectionTemplate[]
+  inspectionTemplateTotal: number
+  inspectionTemplatePage: number
+  inspectionTemplatePageSize: number
+  inspectionTemplateLoading: boolean
+  inspectionTemplateKeyword: string
+  setInspectionTemplates: (templates: InspectionTemplate[]) => void
+  setInspectionTemplateTotal: (total: number) => void
+  setInspectionTemplatePage: (page: number) => void
+  setInspectionTemplatePageSize: (size: number) => void
+  setInspectionTemplateLoading: (loading: boolean) => void
+  setInspectionTemplateKeyword: (keyword: string) => void
+  inspectionTemplateDrawerOpen: boolean
+  editingInspectionTemplate: InspectionTemplate | null
+  openInspectionTemplateDrawer: (template?: InspectionTemplate) => void
+  closeInspectionTemplateDrawer: () => void
+  inspectionItemDrawerOpen: boolean
+  inspectionItemTemplateId: string | null
+  editingInspectionItem: InspectionTemplateItem | null
+  openInspectionItemDrawer: (templateId: string, item?: InspectionTemplateItem) => void
+  closeInspectionItemDrawer: () => void
+
+  // ========== 巡检完成 ==========
+  inspectionCompleteDrawerOpen: boolean
+  completingWorkOrderId: string | null
+  completingTemplateName: string | null
+  completingTemplateItems: InspectionTemplateItem[]
+  openInspectionCompleteDrawer: (workOrderId: string, templateName: string, items: InspectionTemplateItem[]) => void
+  closeInspectionCompleteDrawer: () => void
+
+  // ========== 报修抽屉 ==========
+  repairDrawerOpen: boolean
+  repairEquipmentId: string | null
+  openRepairDrawer: (equipmentId: string) => void
+  closeRepairDrawer: () => void
+
+  // ========== 超时配置 ==========
+  claimTimeoutConfig: { emergency: number; high: number; medium: number; low: number }
+  setClaimTimeoutConfig: (config: { emergency: number; high: number; medium: number; low: number }) => void
+
+  // ========== 维修人员 ==========
+  maintainers: Maintainer[]
+  setMaintainers: (maintainers: Maintainer[]) => void
 }
 
 export const useEquipmentStore = create<EquipmentStore>()(
@@ -248,6 +256,8 @@ export const useEquipmentStore = create<EquipmentStore>()(
       selectedCategory: null,
       selectedLocation: null,
       statusFilter: '',
+      departmentFilter: null,
+      departments: [],
       keyword: '',
       page: 1,
       pageSize: 20,
@@ -261,13 +271,15 @@ export const useEquipmentStore = create<EquipmentStore>()(
       editingLocation: null,
 
       // 操作
-      setCategories: (categories) => set({ categories: Array.isArray(categories) ? categories : [] }, false, 'equipment/setCategories'),
-      setLocations: (locations) => set({ locations: Array.isArray(locations) ? locations : [] }, false, 'equipment/setLocations'),
-      setEquipments: (equipments) => set({ equipments: Array.isArray(equipments) ? equipments : [] }, false, 'equipment/setEquipments'),
+      setCategories: (categories) => set({ categories }, false, 'equipment/setCategories'),
+      setLocations: (locations) => set({ locations }, false, 'equipment/setLocations'),
+      setEquipments: (equipments) => set({ equipments }, false, 'equipment/setEquipments'),
       setStatistics: (statistics) => set({ statistics }, false, 'equipment/setStatistics'),
       setSelectedCategory: (id) => set({ selectedCategory: id, page: 1 }, false, 'equipment/setSelectedCategory'),
       setSelectedLocation: (id) => set({ selectedLocation: id, page: 1 }, false, 'equipment/setSelectedLocation'),
       setStatusFilter: (status) => set({ statusFilter: status, page: 1 }, false, 'equipment/setStatusFilter'),
+      setDepartmentFilter: (id) => set({ departmentFilter: id, page: 1 }, false, 'equipment/setDepartmentFilter'),
+      setDepartments: (departments) => set({ departments }, false, 'equipment/setDepartments'),
       setKeyword: (keyword) => set({ keyword, page: 1 }, false, 'equipment/setKeyword'),
       setPage: (page) => set({ page }, false, 'equipment/setPage'),
       setPageSize: (pageSize) => set({ pageSize, page: 1 }, false, 'equipment/setPageSize'),
@@ -276,6 +288,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       resetFilters: () => set({
         selectedCategory: null,
         selectedLocation: null,
+        departmentFilter: null,
         statusFilter: '',
         keyword: '',
         page: 1,
@@ -312,104 +325,6 @@ export const useEquipmentStore = create<EquipmentStore>()(
           editingLocation: null,
         }, false, 'equipment/closeLocationDrawer'),
 
-
-      // ========== 部门管理 ==========
-      departments: [],
-      departmentFilter: '',
-      setDepartments: (depts) => set({ departments: Array.isArray(depts) ? depts : [] }, false, 'equipment/setDepartments'),
-      setDepartmentFilter: (filter) => set({ departmentFilter: filter }, false, 'equipment/setDepartmentFilter'),
-
-      // ========== 巡检模板 ==========
-      inspectionTemplates: [],
-      inspectionTemplateTotal: 0,
-      inspectionTemplatePage: 1,
-      inspectionTemplatePageSize: 20,
-      inspectionTemplateLoading: false,
-      inspectionTemplateKeyword: '',
-      setInspectionTemplates: (templates) => set({ inspectionTemplates: Array.isArray(templates) ? templates : [] }, false, 'equipment/setInspectionTemplates'),
-      setInspectionTemplateTotal: (total) => set({ inspectionTemplateTotal: total }, false, 'equipment/setInspectionTemplateTotal'),
-      setInspectionTemplatePage: (page) => set({ inspectionTemplatePage: page }, false, 'equipment/setInspectionTemplatePage'),
-      setInspectionTemplatePageSize: (size) => set({ inspectionTemplatePageSize: size, inspectionTemplatePage: 1 }, false, 'equipment/setInspectionTemplatePageSize'),
-      setInspectionTemplateLoading: (loading) => set({ inspectionTemplateLoading: loading }, false, 'equipment/setInspectionTemplateLoading'),
-      setInspectionTemplateKeyword: (keyword) => set({ inspectionTemplateKeyword: keyword, inspectionTemplatePage: 1 }, false, 'equipment/setInspectionTemplateKeyword'),
-      inspectionTemplateDrawerOpen: false,
-      editingInspectionTemplate: null,
-      openInspectionTemplateDrawer: (template) => set({ inspectionTemplateDrawerOpen: true, editingInspectionTemplate: template || null }, false, 'equipment/openInspectionTemplateDrawer'),
-      closeInspectionTemplateDrawer: () => set({ inspectionTemplateDrawerOpen: false, editingInspectionTemplate: null }, false, 'equipment/closeInspectionTemplateDrawer'),
-
-      // ========== 巡检项 ==========
-      inspectionItemDrawerOpen: false,
-      inspectionItemTemplateId: '',
-      editingInspectionItem: null,
-      openInspectionItemDrawer: (templateId, item) => set({ inspectionItemDrawerOpen: true, inspectionItemTemplateId: templateId, editingInspectionItem: item || null }, false, 'equipment/openInspectionItemDrawer'),
-      closeInspectionItemDrawer: () => set({ inspectionItemDrawerOpen: false, inspectionItemTemplateId: '', editingInspectionItem: null }, false, 'equipment/closeInspectionItemDrawer'),
-
-      // ========== 巡检完成 ==========
-      inspectionCompleteDrawerOpen: false,
-      completingWorkOrderId: '',
-      completingTemplateName: '',
-      completingTemplateItems: [],
-      openInspectionCompleteDrawer: (workOrderId, templateName, items) => set({ inspectionCompleteDrawerOpen: true, completingWorkOrderId: workOrderId, completingTemplateName: templateName, completingTemplateItems: items }, false, 'equipment/openInspectionCompleteDrawer'),
-      closeInspectionCompleteDrawer: () => set({ inspectionCompleteDrawerOpen: false, completingWorkOrderId: '', completingTemplateName: '', completingTemplateItems: [] }, false, 'equipment/closeInspectionCompleteDrawer'),
-
-      // ========== 维护计划 ==========
-      maintenancePlans: [],
-      maintenancePlanTotal: 0,
-      maintenancePlanPage: 1,
-      maintenancePlanPageSize: 20,
-      maintenancePlanLoading: false,
-      maintenancePlanKeyword: '',
-      maintenancePlanStatusFilter: '',
-      setMaintenancePlans: (plans) => set({ maintenancePlans: Array.isArray(plans) ? plans : [] }, false, 'equipment/setMaintenancePlans'),
-      setMaintenancePlanTotal: (total) => set({ maintenancePlanTotal: total }, false, 'equipment/setMaintenancePlanTotal'),
-      setMaintenancePlanPage: (page) => set({ maintenancePlanPage: page }, false, 'equipment/setMaintenancePlanPage'),
-      setMaintenancePlanPageSize: (size) => set({ maintenancePlanPageSize: size, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanPageSize'),
-      setMaintenancePlanLoading: (loading) => set({ maintenancePlanLoading: loading }, false, 'equipment/setMaintenancePlanLoading'),
-      setMaintenancePlanKeyword: (keyword) => set({ maintenancePlanKeyword: keyword, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanKeyword'),
-      setMaintenancePlanStatusFilter: (status) => set({ maintenancePlanStatusFilter: status, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanStatusFilter'),
-      maintenancePlanDrawerOpen: false,
-      editingMaintenancePlan: null,
-      openMaintenancePlanDrawer: (plan) => set({ maintenancePlanDrawerOpen: true, editingMaintenancePlan: plan || null }, false, 'equipment/openMaintenancePlanDrawer'),
-      closeMaintenancePlanDrawer: () => set({ maintenancePlanDrawerOpen: false, editingMaintenancePlan: null }, false, 'equipment/closeMaintenancePlanDrawer'),
-
-      // ========== 备件管理 ==========
-      spareParts: [],
-      sparePartTotal: 0,
-      sparePartPage: 1,
-      sparePartPageSize: 20,
-      sparePartLoading: false,
-      sparePartKeyword: '',
-      setSpareParts: (parts) => set({ spareParts: Array.isArray(parts) ? parts : [] }, false, 'equipment/setSpareParts'),
-      setSparePartTotal: (total) => set({ sparePartTotal: total }, false, 'equipment/setSparePartTotal'),
-      setSparePartPage: (page) => set({ sparePartPage: page }, false, 'equipment/setSparePartPage'),
-      setSparePartPageSize: (size) => set({ sparePartPageSize: size, sparePartPage: 1 }, false, 'equipment/setSparePartPageSize'),
-      setSparePartLoading: (loading) => set({ sparePartLoading: loading }, false, 'equipment/setSparePartLoading'),
-      setSparePartKeyword: (keyword) => set({ sparePartKeyword: keyword, sparePartPage: 1 }, false, 'equipment/setSparePartKeyword'),
-      sparePartDrawerOpen: false,
-      editingSparePart: null,
-      openSparePartDrawer: (part) => set({ sparePartDrawerOpen: true, editingSparePart: part || null }, false, 'equipment/openSparePartDrawer'),
-      closeSparePartDrawer: () => set({ sparePartDrawerOpen: false, editingSparePart: null }, false, 'equipment/closeSparePartDrawer'),
-
-      // ========== 库存预警 ==========
-      stockWarnings: [],
-      stockWarningsLoading: false,
-      setStockWarnings: (warnings) => set({ stockWarnings: Array.isArray(warnings) ? warnings : [] }, false, 'equipment/setStockWarnings'),
-
-      // ========== 维修抽屉 ==========
-      repairDrawerOpen: false,
-      repairEquipmentId: '',
-      openRepairDrawer: (equipmentId) => set({ repairDrawerOpen: true, repairEquipmentId: equipmentId }, false, 'equipment/openRepairDrawer'),
-      closeRepairDrawer: () => set({ repairDrawerOpen: false, repairEquipmentId: '' }, false, 'equipment/closeRepairDrawer'),
-
-      // ========== 入库抽屉 ==========
-      stockInboundDrawerOpen: false,
-      stockInboundSparePartId: '',
-      openStockInboundDrawer: (sparePartId) => set({ stockInboundDrawerOpen: true, stockInboundSparePartId: sparePartId }, false, 'equipment/openStockInboundDrawer'),
-      closeStockInboundDrawer: () => set({ stockInboundDrawerOpen: false, stockInboundSparePartId: '' }, false, 'equipment/closeStockInboundDrawer'),
-
-      // ========== 查看工单 ==========
-      viewingWorkOrder: null,
-      setViewingWorkOrder: (order: any) => set({ viewingWorkOrder: order }, false, 'equipment/setViewingWorkOrder'),
       // ========== 维护模块 ==========
       maintenanceTab: 'work-orders',
       setMaintenanceTab: (tab) => set({ maintenanceTab: tab }, false, 'equipment/setMaintenanceTab'),
@@ -424,7 +339,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       workOrderStatusFilter: '',
       workOrderPriorityFilter: '',
       workOrderTypeFilter: '',
-      setWorkOrders: (orders) => set({ workOrders: Array.isArray(orders) ? orders : [] }, false, 'equipment/setWorkOrders'),
+      setWorkOrders: (orders) => set({ workOrders: orders }, false, 'equipment/setWorkOrders'),
       setWorkOrderTotal: (total) => set({ workOrderTotal: total }, false, 'equipment/setWorkOrderTotal'),
       setWorkOrderPage: (page) => set({ workOrderPage: page }, false, 'equipment/setWorkOrderPage'),
       setWorkOrderPageSize: (size) => set({ workOrderPageSize: size, workOrderPage: 1 }, false, 'equipment/setWorkOrderPageSize'),
@@ -436,14 +351,18 @@ export const useEquipmentStore = create<EquipmentStore>()(
       workOrderDrawerOpen: false,
       workOrderDetailOpen: false,
       editingWorkOrder: null,
+      viewingWorkOrder: null,
+      setViewingWorkOrder: (order) => set({ viewingWorkOrder: order }, false, 'equipment/setViewingWorkOrder'),
       openWorkOrderDrawer: (order) => set({ workOrderDrawerOpen: true, editingWorkOrder: order || null }, false, 'equipment/openWorkOrderDrawer'),
+      closeWorkOrderDrawer: () => set({ workOrderDrawerOpen: false, editingWorkOrder: null }, false, 'equipment/closeWorkOrderDrawer'),
+      openWorkOrderDetail: (order) => set({ workOrderDetailOpen: true, viewingWorkOrder: order }, false, 'equipment/openWorkOrderDetail'),
       closeWorkOrderDetail: () => set({ workOrderDetailOpen: false, viewingWorkOrder: null }, false, 'equipment/closeWorkOrderDetail'),
 
       // 故障代码
       failureCodes: { symptoms: [], causes: [], actions: [] },
       failureCodeLoading: false,
       setFailureCodes: (type, codes) => set(
-        (state) => ({ failureCodes: { ...state.failureCodes, [type]: Array.isArray(codes) ? codes : [] } }),
+        (state) => ({ failureCodes: { ...state.failureCodes, [type]: codes } }),
         false,
         'equipment/setFailureCodes',
       ),
@@ -468,7 +387,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       calibrationPlanPageSize: 20,
       calibrationPlanLoading: false,
       calibrationPlanStatusFilter: '',
-      setCalibrationPlans: (plans) => set({ calibrationPlans: Array.isArray(plans) ? plans : [] }, false, 'equipment/setCalibrationPlans'),
+      setCalibrationPlans: (plans) => set({ calibrationPlans: plans }, false, 'equipment/setCalibrationPlans'),
       setCalibrationPlanTotal: (total) => set({ calibrationPlanTotal: total }, false, 'equipment/setCalibrationPlanTotal'),
       setCalibrationPlanPage: (page) => set({ calibrationPlanPage: page }, false, 'equipment/setCalibrationPlanPage'),
       setCalibrationPlanPageSize: (size) => set({ calibrationPlanPageSize: size, calibrationPlanPage: 1 }, false, 'equipment/setCalibrationPlanPageSize'),
@@ -491,7 +410,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       calibrationRecordPage: 1,
       calibrationRecordPageSize: 20,
       calibrationRecordLoading: false,
-      setCalibrationRecords: (records) => set({ calibrationRecords: Array.isArray(records) ? records : [] }, false, 'equipment/setCalibrationRecords'),
+      setCalibrationRecords: (records) => set({ calibrationRecords: records }, false, 'equipment/setCalibrationRecords'),
       setCalibrationRecordTotal: (total) => set({ calibrationRecordTotal: total }, false, 'equipment/setCalibrationRecordTotal'),
       setCalibrationRecordPage: (page) => set({ calibrationRecordPage: page }, false, 'equipment/setCalibrationRecordPage'),
       setCalibrationRecordPageSize: (size) => set({ calibrationRecordPageSize: size, calibrationRecordPage: 1 }, false, 'equipment/setCalibrationRecordPageSize'),
@@ -506,6 +425,145 @@ export const useEquipmentStore = create<EquipmentStore>()(
         calibrationRecordDrawerOpen: false,
         editingCalibrationRecord: null,
       }, false, 'equipment/closeCalibrationRecordDrawer'),
+
+      // ========== 备件管理 ==========
+      spareParts: [],
+      sparePartTotal: 0,
+      sparePartPage: 1,
+      sparePartPageSize: 20,
+      sparePartLoading: false,
+      sparePartKeyword: '',
+      stockWarnings: [],
+      stockWarningsLoading: false,
+      setSpareParts: (parts) => set({ spareParts: parts }, false, 'equipment/setSpareParts'),
+      setSparePartTotal: (total) => set({ sparePartTotal: total }, false, 'equipment/setSparePartTotal'),
+      setSparePartPage: (page) => set({ sparePartPage: page }, false, 'equipment/setSparePartPage'),
+      setSparePartPageSize: (size) => set({ sparePartPageSize: size, sparePartPage: 1 }, false, 'equipment/setSparePartPageSize'),
+      setSparePartLoading: (loading) => set({ sparePartLoading: loading }, false, 'equipment/setSparePartLoading'),
+      setSparePartKeyword: (keyword) => set({ sparePartKeyword: keyword, sparePartPage: 1 }, false, 'equipment/setSparePartKeyword'),
+      setStockWarnings: (warnings) => set({ stockWarnings: warnings }, false, 'equipment/setStockWarnings'),
+      setStockWarningsLoading: (loading) => set({ stockWarningsLoading: loading }, false, 'equipment/setStockWarningsLoading'),
+      sparePartDrawerOpen: false,
+      editingSparePart: null,
+      openSparePartDrawer: (part) => set({
+        sparePartDrawerOpen: true,
+        editingSparePart: part || null,
+      }, false, 'equipment/openSparePartDrawer'),
+      closeSparePartDrawer: () => set({
+        sparePartDrawerOpen: false,
+        editingSparePart: null,
+      }, false, 'equipment/closeSparePartDrawer'),
+      stockInboundDrawerOpen: false,
+      stockInboundSparePartId: null,
+      openStockInboundDrawer: (sparePartId) => set({
+        stockInboundDrawerOpen: true,
+        stockInboundSparePartId: sparePartId,
+      }, false, 'equipment/openStockInboundDrawer'),
+      closeStockInboundDrawer: () => set({
+        stockInboundDrawerOpen: false,
+        stockInboundSparePartId: null,
+      }, false, 'equipment/closeStockInboundDrawer'),
+
+      // ========== 维护计划 ==========
+      maintenancePlans: [],
+      maintenancePlanTotal: 0,
+      maintenancePlanPage: 1,
+      maintenancePlanPageSize: 20,
+      maintenancePlanLoading: false,
+      maintenancePlanStatusFilter: '',
+      maintenancePlanKeyword: '',
+      setMaintenancePlans: (plans) => set({ maintenancePlans: plans }, false, 'equipment/setMaintenancePlans'),
+      setMaintenancePlanTotal: (total) => set({ maintenancePlanTotal: total }, false, 'equipment/setMaintenancePlanTotal'),
+      setMaintenancePlanPage: (page) => set({ maintenancePlanPage: page }, false, 'equipment/setMaintenancePlanPage'),
+      setMaintenancePlanPageSize: (size) => set({ maintenancePlanPageSize: size, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanPageSize'),
+      setMaintenancePlanLoading: (loading) => set({ maintenancePlanLoading: loading }, false, 'equipment/setMaintenancePlanLoading'),
+      setMaintenancePlanStatusFilter: (status) => set({ maintenancePlanStatusFilter: status, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanStatusFilter'),
+      setMaintenancePlanKeyword: (keyword) => set({ maintenancePlanKeyword: keyword, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanKeyword'),
+      maintenancePlanDrawerOpen: false,
+      editingMaintenancePlan: null,
+      openMaintenancePlanDrawer: (plan) => set({
+        maintenancePlanDrawerOpen: true,
+        editingMaintenancePlan: plan || null,
+      }, false, 'equipment/openMaintenancePlanDrawer'),
+      closeMaintenancePlanDrawer: () => set({
+        maintenancePlanDrawerOpen: false,
+        editingMaintenancePlan: null,
+      }, false, 'equipment/closeMaintenancePlanDrawer'),
+
+      // ========== 巡检模板 ==========
+      inspectionTemplates: [],
+      inspectionTemplateTotal: 0,
+      inspectionTemplatePage: 1,
+      inspectionTemplatePageSize: 20,
+      inspectionTemplateLoading: false,
+      inspectionTemplateKeyword: '',
+      setInspectionTemplates: (templates) => set({ inspectionTemplates: templates }, false, 'equipment/setInspectionTemplates'),
+      setInspectionTemplateTotal: (total) => set({ inspectionTemplateTotal: total }, false, 'equipment/setInspectionTemplateTotal'),
+      setInspectionTemplatePage: (page) => set({ inspectionTemplatePage: page }, false, 'equipment/setInspectionTemplatePage'),
+      setInspectionTemplatePageSize: (size) => set({ inspectionTemplatePageSize: size, inspectionTemplatePage: 1 }, false, 'equipment/setInspectionTemplatePageSize'),
+      setInspectionTemplateLoading: (loading) => set({ inspectionTemplateLoading: loading }, false, 'equipment/setInspectionTemplateLoading'),
+      setInspectionTemplateKeyword: (keyword) => set({ inspectionTemplateKeyword: keyword, inspectionTemplatePage: 1 }, false, 'equipment/setInspectionTemplateKeyword'),
+      inspectionTemplateDrawerOpen: false,
+      editingInspectionTemplate: null,
+      openInspectionTemplateDrawer: (template) => set({
+        inspectionTemplateDrawerOpen: true,
+        editingInspectionTemplate: template || null,
+      }, false, 'equipment/openInspectionTemplateDrawer'),
+      closeInspectionTemplateDrawer: () => set({
+        inspectionTemplateDrawerOpen: false,
+        editingInspectionTemplate: null,
+      }, false, 'equipment/closeInspectionTemplateDrawer'),
+      inspectionItemDrawerOpen: false,
+      inspectionItemTemplateId: null,
+      editingInspectionItem: null,
+      openInspectionItemDrawer: (templateId, item) => set({
+        inspectionItemDrawerOpen: true,
+        inspectionItemTemplateId: templateId,
+        editingInspectionItem: item || null,
+      }, false, 'equipment/openInspectionItemDrawer'),
+      closeInspectionItemDrawer: () => set({
+        inspectionItemDrawerOpen: false,
+        inspectionItemTemplateId: null,
+        editingInspectionItem: null,
+      }, false, 'equipment/closeInspectionItemDrawer'),
+
+      // ========== 巡检完成 ==========
+      inspectionCompleteDrawerOpen: false,
+      completingWorkOrderId: null,
+      completingTemplateName: null,
+      completingTemplateItems: [],
+      openInspectionCompleteDrawer: (workOrderId, templateName, items) => set({
+        inspectionCompleteDrawerOpen: true,
+        completingWorkOrderId: workOrderId,
+        completingTemplateName: templateName,
+        completingTemplateItems: items,
+      }, false, 'equipment/openInspectionCompleteDrawer'),
+      closeInspectionCompleteDrawer: () => set({
+        inspectionCompleteDrawerOpen: false,
+        completingWorkOrderId: null,
+        completingTemplateName: null,
+        completingTemplateItems: [],
+      }, false, 'equipment/closeInspectionCompleteDrawer'),
+
+      // ========== 报修抽屉 ==========
+      repairDrawerOpen: false,
+      repairEquipmentId: null,
+      openRepairDrawer: (equipmentId) => set({
+        repairDrawerOpen: true,
+        repairEquipmentId: equipmentId,
+      }, false, 'equipment/openRepairDrawer'),
+      closeRepairDrawer: () => set({
+        repairDrawerOpen: false,
+        repairEquipmentId: null,
+      }, false, 'equipment/closeRepairDrawer'),
+
+      // ========== 超时配置 ==========
+      claimTimeoutConfig: { emergency: 15, high: 30, medium: 60, low: 120 },
+      setClaimTimeoutConfig: (config) => set({ claimTimeoutConfig: config }, false, 'equipment/setClaimTimeoutConfig'),
+
+      // ========== 维修人员 ==========
+      maintainers: [],
+      setMaintainers: (maintainers) => set({ maintainers }, false, 'equipment/setMaintainers'),
     }),
     { name: 'equipment-store' },
   ),

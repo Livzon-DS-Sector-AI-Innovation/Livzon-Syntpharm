@@ -5,19 +5,18 @@ import { App, Button, Space, Table, Tooltip } from 'antd'
 import { PlayCircleOutlined, CloseCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useInspectionStore } from '@/stores/inspection'
-import { startInspectionTask, closeInspectionTask } from '@/actions/equipment'
+import { startInspectionTask, closeInspectionTask } from '@/actions/inspection'
 import {
   fetchInspectionTasks, fetchInspectionRouteById,
   fetchInspectionTemplateByIdClient, fetchInspectionTaskById,
-} from '@/lib/api/client/inspection'
-import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkSuccess, linkWarning, linkMuted } from '@/components/equipment/shared/shared-styles'
+} from '@/lib/api/inspection'
+import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkSuccess, linkWarning, linkMuted } from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionTaskStatus } from '@/types/inspection'
 import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment'
 
-
 interface Props {
   templates: InspectionTemplate[]
-  equipments: { id: string; name: string; asset_no: string }[]
+  equipments: { id: string; name: string; equipment_no: string }[]
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string; icon: string }> = {
@@ -61,86 +60,48 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
 
   const enterExecuteView = useCallback(async (record: InspectionTask) => {
     let routeDetail = null
-    const items: Record<string, InspectionTemplateItem[]> = {}
+    const items: InspectionTemplateItem[] = []
+    const seen = new Set<string>()
 
     if (record.route_id) {
-      // 线路巡检：按设备收集各自绑定的模板检查项
+      // 线路巡检：从路线地点→设备→模板绑定获取检查项
       try { routeDetail = await fetchInspectionRouteById(record.route_id) } catch { /* */ }
       if (routeDetail?.locations) {
-        // 缓存已加载的模板（同模板可被多设备共享）
-        const tplCache = new Map<string, InspectionTemplateItem[]>()
         for (const loc of routeDetail.locations) {
           for (const eq of (loc.equipments || [])) {
-            const eqId = eq.equipment_id
-            if (!items[eqId]) items[eqId] = []
             for (const rt of (eq.templates || [])) {
-              if (!rt.template_id) continue
-              if (!tplCache.has(rt.template_id)) {
+              if (rt.template_id && !seen.has(rt.template_id)) {
+                seen.add(rt.template_id)
                 try {
                   const tpl = await fetchInspectionTemplateByIdClient(rt.template_id)
-                  tplCache.set(rt.template_id, tpl?.items || [])
-                } catch { tplCache.set(rt.template_id, []) }
-              }
-              const tplItems = tplCache.get(rt.template_id) || []
-              for (const item of tplItems) {
-                if (!items[eqId].some(i => i.id === item.id)) {
-                  items[eqId].push(item)
-                }
+                  if (tpl?.items) items.push(...tpl.items)
+                } catch { /* */ }
               }
             }
           }
         }
       }
     } else {
-      // 设备巡检：按 equipment_templates 收集各设备的检查项
-      const tplCache = new Map<string, InspectionTemplateItem[]>()
-      const allEqIds = record.equipment_ids || (record.equipment_id ? [record.equipment_id] : [])
+      // 设备巡检：从 template_ids（旧）或 equipment_templates（新）获取
+      const tids = new Set<string>()
+      if (record.template_ids) {
+        for (const tid of record.template_ids) tids.add(tid)
+      }
       if (record.equipment_templates) {
-        // 新方式：每个设备有各自的模板列表
-        for (const eqId of allEqIds) {
-          if (!items[eqId]) items[eqId] = []
-          const tids = record.equipment_templates[eqId] || []
-          for (const tid of tids) {
-            if (!tplCache.has(tid)) {
-              try {
-                const tpl = await fetchInspectionTemplateByIdClient(tid)
-                tplCache.set(tid, tpl?.items || [])
-              } catch { tplCache.set(tid, []) }
-            }
-            const tplItems = tplCache.get(tid) || []
-            for (const item of tplItems) {
-              if (!items[eqId].some(i => i.id === item.id)) {
-                items[eqId].push(item)
-              }
-            }
-          }
+        for (const tplIds of Object.values(record.equipment_templates)) {
+          for (const tid of tplIds) tids.add(tid)
         }
       }
-      // 兼容旧数据：template_ids 扁平列表 → 所有设备共用
-      if (record.template_ids && record.template_ids.length > 0) {
-        const shared: InspectionTemplateItem[] = []
-        for (const tid of record.template_ids) {
-          if (!tplCache.has(tid)) {
-            try {
-              const tpl = await fetchInspectionTemplateByIdClient(tid)
-              tplCache.set(tid, tpl?.items || [])
-            } catch { tplCache.set(tid, []) }
-          }
-          shared.push(...(tplCache.get(tid) || []))
-        }
-        for (const eqId of allEqIds) {
-          if (!items[eqId]) items[eqId] = []
-          for (const item of shared) {
-            if (!items[eqId].some(i => i.id === item.id)) {
-              items[eqId].push(item)
-            }
-          }
-        }
+      for (const tid of tids) {
+        try {
+          const tpl = await fetchInspectionTemplateByIdClient(tid)
+          if (tpl?.items) items.push(...tpl.items)
+        } catch { /* */ }
       }
     }
     const eqIds = record.equipment_ids || undefined
     const eqInfos = eqIds
-      ? allEquipments.filter(e => eqIds.includes(e.id)).map(e => ({ id: e.id, name: e.name, no: e.asset_no }))
+      ? allEquipments.filter(e => eqIds.includes(e.id)).map(e => ({ id: e.id, name: e.name, no: e.equipment_no }))
       : undefined
     // 获取任务详情以拿到已完成设备列表
     let completedIds: string[] = []
@@ -148,11 +109,10 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
       const taskDetail = await fetchInspectionTaskById(record.id)
       completedIds = taskDetail.completed_equipment_ids || []
     } catch { /* 获取失败不阻塞 */ }
-    const totalItemCount = Object.values(items).reduce((sum, arr) => sum + arr.length, 0)
     setExecutingTask(
       record.id, record.plan_type, routeDetail, items,
-      totalItemCount > 0 ? '合并模板' : '检查模板',
-      record.equipment_id, record.equipment_name, record.asset_no,
+      items.length > 0 ? '合并模板' : '检查模板',
+      record.equipment_id, record.equipment_name, record.equipment_no,
       eqIds, eqInfos, completedIds,
     )
   }, [allEquipments, setExecutingTask])
@@ -162,8 +122,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
     setStartingIds(prev => new Set(prev).add(record.id))
     try {
       if (record.status === '待执行') {
-        const result = await startInspectionTask(record.id)
-        if (!result.success) { message.error(result.error); return }
+        await startInspectionTask(record.id)
         message.success('已开始巡检')
         triggerTasksRefresh()
       }
@@ -186,13 +145,13 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
       cancelText: '返回',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await closeInspectionTask(record.id)
-        if (!result.success) {
-          message.error(result.error)
-          return
+        try {
+          await closeInspectionTask(record.id)
+          message.success(isCancelling ? '任务已取消' : '任务已关闭')
+          loadTasks()
+        } catch (err: unknown) {
+          message.error((err as Error).message || '操作失败')
         }
-        message.success(isCancelling ? '任务已取消' : '任务已关闭')
-        loadTasks()
       },
     })
   }, [modal, message, loadTasks])
@@ -250,8 +209,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
     },
     {
       title: '操作', key: 'action', width: 140, fixed: 'end' as const,
-      render: (_: unknown, record: InspectionTask) => {
-        return (
+      render: (_: unknown, record: InspectionTask) => (
         <Space size={12}>
           {(record.status === '待执行' || record.status === '执行中') && (
             startingIds.has(record.id) ? (
@@ -276,8 +234,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
             </span>
           )}
         </Space>
-        )
-      },
+      ),
     },
   ]
 

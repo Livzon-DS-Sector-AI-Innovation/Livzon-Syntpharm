@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
 
 logger = logging.getLogger(__name__)
 
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
 
 stop_maintenance_plan_flag = asyncio.Event()
@@ -24,7 +24,7 @@ async def maintenance_plan_loop() -> None:
     减少并发数据库连接压力。
     """
     settings = get_settings()
-    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
@@ -68,7 +68,7 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 
@@ -99,7 +99,7 @@ stop_timeout_flag = asyncio.Event()
 
 async def scan_timeout_work_orders() -> None:
     """扫描超时未接单的工单"""
-    from datetime import UTC, datetime
+    from datetime import datetime
 
     from sqlalchemy import select
 
@@ -110,7 +110,7 @@ async def scan_timeout_work_orders() -> None:
     from app.platform.integrations.feishu.message import send_timeout_notification
 
     settings = get_settings()
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
+    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
     if not dept_id:
         return
 

@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     JSON,
     CheckConstraint,
     DateTime,
     ForeignKey,
-    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
-    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,13 +34,7 @@ class InspectionRoute(BaseModel):
 
     __tablename__ = "inspection_routes"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做路线名称唯一性检查
-        Index(
-            "uq_inspection_routes_name",
-            "name",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
-        ),
+        UniqueConstraint("name", "is_deleted", name="uq_inspection_routes_name"),
         {"schema": "equipment"},
     )
 
@@ -63,13 +56,11 @@ class InspectionRouteSchedule(BaseModel):
 
     __tablename__ = "inspection_route_schedules"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做路线+cron唯一性检查
-        Index(
-            "uq_route_schedules_route_cron_deleted",
+        UniqueConstraint(
             "route_id",
             "cron_expression",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
+            "is_deleted",
+            name="uq_route_schedules_route_cron_deleted",
         ),
         {"schema": "equipment"},
     )
@@ -112,13 +103,11 @@ class InspectionRouteEquipment(BaseModel):
 
     __tablename__ = "inspection_route_equipments"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做路线+设备唯一性检查
-        Index(
-            "uq_route_equipments_route_equipment",
+        UniqueConstraint(
             "route_id",
             "equipment_id",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
+            "is_deleted",
+            name="uq_route_equipments_route_equipment",
         ),
         {"schema": "equipment"},
     )
@@ -143,13 +132,7 @@ class InspectionTask(BaseModel):
 
     __tablename__ = "inspection_tasks"
     __table_args__ = (
-        # 部分唯一索引：仅对未删除的记录做任务编号唯一性检查
-        Index(
-            "uq_inspection_tasks_task_no",
-            "task_no",
-            unique=True,
-            postgresql_where=text("is_deleted = false"),
-        ),
+        UniqueConstraint("task_no", "is_deleted", name="uq_inspection_tasks_task_no"),
         CheckConstraint(
             "status IN ('待执行', '执行中', '已完成', '已关闭')",
             name="ck_inspection_tasks_status",
@@ -176,13 +159,13 @@ class InspectionTask(BaseModel):
         nullable=True,
         comment="单设备ID（单设备模式，兼容旧数据）",
     )
-    equipment_ids: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="设备ID列表（多设备模式）")
-    template_ids: Mapped[list[Any] | None] = mapped_column(
+    equipment_ids: Mapped[list | None] = mapped_column(JSON, nullable=True, comment="设备ID列表（多设备模式）")
+    template_ids: Mapped[list | None] = mapped_column(
         JSON,
         nullable=True,
         comment="[DEPRECATED] 模板ID列表，推荐用 equipment_templates",
     )
-    equipment_templates: Mapped[dict[str, Any] | None] = mapped_column(
+    equipment_templates: Mapped[dict | None] = mapped_column(
         JSON, nullable=True, comment="设备-模板绑定 {equipment_id: [template_id,...]}"
     )
     plan_type: Mapped[str] = mapped_column(

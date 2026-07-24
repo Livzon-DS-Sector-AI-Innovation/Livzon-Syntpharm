@@ -8,15 +8,15 @@ import {
   HolderOutlined,
 } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
-import { setRouteLocations } from '@/actions/equipment'
-import { fetchInspectionRouteById } from '@/lib/api/client/inspection'
+import { setRouteLocations } from '@/actions/inspection'
+import { fetchInspectionRouteById } from '@/lib/api/inspection'
 import type { RouteLocationItem } from '@/types/inspection'
 import type { InspectionTemplate as InspectionTemplateType } from '@/types/equipment'
 
 interface LocationOption { id: string; name: string; code: string }
 
 interface Props {
-  equipments: { id: string; name: string; asset_no: string; location_id: string }[]
+  equipments: { id: string; name: string; equipment_no: string }[]
   locations: LocationOption[]
   templates: InspectionTemplateType[]
 }
@@ -27,7 +27,7 @@ interface LocationRow {
 }
 interface EquipmentRow {
   key: string; equipment_id: string; equipment_name?: string
-  asset_no?: string; sort_order: number; template_ids: string[]
+  equipment_no?: string; sort_order: number; template_ids: string[]
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -78,7 +78,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
         equipments: (loc.equipments || []).map(eq => ({
           key: eq.id, equipment_id: eq.equipment_id,
           equipment_name: eq.equipment_name || undefined,
-          asset_no: eq.asset_no || undefined,
+          equipment_no: eq.equipment_no || undefined,
           sort_order: eq.sort_order,
           template_ids: (eq.templates || []).map(t => t.template_id),
         })),
@@ -134,17 +134,16 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
       message.warning('请至少配置一个地点且每个地点至少一台设备'); return
     }
     setSaving(true)
-    const result = await setRouteLocations(editingRouteId, items)
-    setSaving(false)
-    if (!result.success) { message.error(result.error); return }
-    message.success('路线配置已保存'); closeRouteEquipmentDrawer(); triggerRoutesRefresh()
+    try {
+      await setRouteLocations(editingRouteId, items)
+      message.success('路线配置已保存'); closeRouteEquipmentDrawer(); triggerRoutesRefresh()
+    } catch (err: unknown) { message.error((err as Error).message || '保存失败') }
+    finally { setSaving(false) }
   }
 
   /* ── helpers ── */
   const tplOptions = templates.map(t => ({ label: t.name, value: t.id }))
-  const eqOptions = (locationId: string) => equipments
-    .filter(e => e.location_id === locationId)
-    .map(e => ({ label: `${e.name} (${e.asset_no})`, value: e.id }))
+  const eqOptions = equipments.map(e => ({ label: `${e.name} (${e.equipment_no})`, value: e.id }))
   const locOptions = locations.map(l => ({ label: `${l.name} (${l.code})`, value: l.id }))
 
   return (
@@ -343,13 +342,13 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                               const e = equipments.find(ee => ee.id === v)
                               updEq(loc.key, eq.key, 'equipment_id', v)
                               updEq(loc.key, eq.key, 'equipment_name', e?.name)
-                              updEq(loc.key, eq.key, 'asset_no', e?.asset_no)
+                              updEq(loc.key, eq.key, 'equipment_no', e?.equipment_no)
                             }}
-                            options={eqOptions(loc.location_id)}
+                            options={eqOptions}
                           />
                           {eq.equipment_name && (
                             <div style={{ fontSize: 11, color: C.stone, marginTop: 2, paddingLeft: 2 }}>
-                              {eq.equipment_name} · {eq.asset_no}
+                              {eq.equipment_name} · {eq.equipment_no}
                             </div>
                           )}
                         </div>

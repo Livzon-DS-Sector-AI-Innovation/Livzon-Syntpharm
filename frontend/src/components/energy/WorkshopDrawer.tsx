@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Drawer, Form, Input, Select, InputNumber, Switch, Button, Space, Spin, App } from 'antd'
 import {
-  getWorkshops,
   createWorkshopAction,
   updateWorkshopAction,
-  deleteWorkshopAction,
+  getWorkshopById,
 } from '@/actions/energy'
 import type { WorkshopCategory } from '@/types/energy'
 
@@ -33,7 +32,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   useEffect(() => {
     if (open && workshopId) {
       setLoading(true)
-      getWorkshops({}).then((res: any) => (res.data || []).find((w: any) => w.id === workshopId))
+      getWorkshopById(workshopId)
         .then((data) => {
           form.setFieldsValue({
             code: data.code,

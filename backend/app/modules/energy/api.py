@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -616,5 +616,38 @@ async def cross_import_from_bitable(
         result = await importer.import_month(db, body.month)
     else:
         return error_response("请提供 year 或 month 参数", 400)
+
+    return success_response(result)
+
+
+@router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
+async def daily_import_from_bitable(
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """手动触发从飞书表格导入每日数据，导入后自动检查预警"""
+    from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
+
+    importer = EnergyBitableDailyImport()
+    result = await importer.import_all_tables(db)
+
+    # 导入后自动检查所有有预警数据的日期
+    from sqlalchemy import distinct, select
+
+    from app.modules.energy.models import EnergyDailyData
+
+    dates_result = await db.execute(
+        select(distinct(EnergyDailyData.date))
+        .where(EnergyDailyData.is_alert == True, EnergyDailyData.alert_record_id.is_(None))
+        .order_by(EnergyDailyData.date.desc())
+    )
+    dates_to_check = [str(d) for d in dates_result.scalars().all()]
+
+    total_alerts = 0
+    for date_str in dates_to_check:
+        check_date = date.fromisoformat(date_str)
+        alert_records = await importer.check_alerts(db, check_date)
+        total_alerts += len(alert_records)
+
+    result["auto_check_alerts"] = total_alerts
 
     return success_response(result)
