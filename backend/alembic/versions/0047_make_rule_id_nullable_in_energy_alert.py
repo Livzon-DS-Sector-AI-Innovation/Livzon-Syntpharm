@@ -1,6 +1,6 @@
 """Make rule_id nullable in energy_alert_records
 
-Revision ID: 04577ff74e3d
+Revision ID: 0047_make_rule_id_nullable_in_energy_alert
 Revises: 78dece9ae0a3
 Create Date: 2026-07-22 08:08:44.725867
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '04577ff74e3d'
-down_revision: Union[str, None] = '78dece9ae0a3'
+revision: str = '0047_make_rule_id_nullable_in_energy_alert'
+down_revision: Union[str, None] = '0046_add_energy_daily_data_table'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

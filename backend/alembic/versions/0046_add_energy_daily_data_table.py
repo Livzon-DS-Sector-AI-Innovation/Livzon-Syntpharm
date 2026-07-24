@@ -1,6 +1,6 @@
 """Add EnergyDailyData table
 
-Revision ID: 78dece9ae0a3
+Revision ID: 0046_add_energy_daily_data_table
 Revises: 49684887bf7e
 Create Date: 2026-07-22 08:02:02.952294
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '78dece9ae0a3'
+revision: str = '0046_add_energy_daily_data_table'
 down_revision: Union[str, None] = '0045_energy_add_workshop_and_steam'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

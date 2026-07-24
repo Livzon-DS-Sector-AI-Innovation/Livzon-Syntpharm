@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -377,7 +379,8 @@ export default function TrainingPage() {
     try {
       const values = await batchRecordForm.validateFields()
       const names = (values.employee_names || '')
-        .split('\n')
+        .split('
+')
         .map((s: string) => s.trim())
         .filter(Boolean)
 
@@ -956,7 +959,10 @@ export default function TrainingPage() {
             >
               <Input.TextArea
                 rows={6}
-                placeholder={"每行一个姓名，如：\n张三\n李四\n王五"}
+                placeholder={"每行一个姓名，如：
+张三
+李四
+王五"}
               />
             </Form.Item>
           </Form>
