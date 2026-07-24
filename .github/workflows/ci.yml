@@ -2,11 +2,11 @@
 # │ CI Groups (documentation only — not executable)                     │
 # │                                                                     │
 # │  quick  = backend-lint + backend-typecheck                          │
-# │         + frontend-lint + frontend-typecheck                        │
+# │         + backend-migration-scope + frontend-lint                   │
+# │         + frontend-typecheck + openapi                              │
 # │                                                                     │
-# │  full   = quick + openapi + backend-migration-scope                 │
-# │         + backend-alembic + backend-test + frontend-build           │
-# │         + frontend-e2e                                              │
+# │  full   = quick + backend-alembic + backend-test                    │
+# │         + frontend-build + frontend-e2e                             │
 # │                                                                     │
 # │  To run locally:                                                    │
 # │    bash scripts/ci.sh openapi                                       │
