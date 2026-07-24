@@ -5,10 +5,9 @@
 面向丽珠合成制药厂，覆盖生产、质量、安全、人事等核心业务模块。
 
 
+## 业务模块
 
-## Business Modules
-
-| Module | Backend | Frontend |
+| 模块 | 后端 | 前端 |
 |---|---|---|
 | **Production** | 批次管理、工序记录、物料平衡 | 批次管理、工序记录、物料平衡 |
 | **Equipment** | 设备台账、保养维修、巡检、备件 | 设备台账、保养维修、巡检、备件 |
@@ -24,26 +23,26 @@
 | **Warehouse** | 仓库管理、库存 | 仓库管理 |
 
 
-## Tech Stack
+## 技术栈
 
-### Backend
+### 后端
 - **Python 3.12+** + FastAPI
 - **PostgreSQL 17** + Redis + MinIO (S3 兼容对象存储)
-- **SQLAlchemy 2.0** (async) + Alembic (migrations)
-- **Pydantic v2** for validation
-- **uv** for package management
-- PaddleOCR for document parsing
+- **SQLAlchemy 2.0** (async) + Alembic (数据库迁移)
+- **Pydantic v2** 数据校验
+- **uv** 包管理
+- PaddleOCR 文档解析
 
-### Frontend
+### 前端
 - **Next.js 16** + React 19 + TypeScript
 - **Ant Design V6** 组件库
 - **Tailwind CSS** 工具样式
 - **Zustand** 客户端状态管理
 - **React Query** 服务端数据请求
-- **pnpm** for package management
+- **pnpm** 包管理
 
 
-## Repository Structure
+## 仓库结构
 
 ```
 Livzon-Syntpharm/
@@ -74,109 +73,111 @@ Livzon-Syntpharm/
 ```
 
 
-## Deployment
+## 部署
 
-All services run via Docker Compose.
+所有服务通过 Docker Compose 运行。
 
-### Quick Start
+### 快速开始
 
 ```bash
-# 1. Configure environment
+# 1. 配置环境变量
 cp .env.example .env
-# Edit .env with real values
+# 编辑 .env 填入实际值
 
-# 2. Production
+# 2. 生产环境
 docker compose up -d --build
 
-# 3. Development (hot-reload)
+# 3. 开发环境（热更新）
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
-### Access Points
+### 访问地址
 
-- **Frontend**: http://your-server-ip (Nginx port 80)
-- **Backend API**: http://your-server-ip/api/v1/
-- **API Docs**: http://your-server-ip/docs
-- **MinIO Console**: http://your-server-ip:9001
+- **前端**: http://your-server-ip (Nginx 80 端口)
+- **后端 API**: http://your-server-ip/api/v1/
+- **API 文档**: http://your-server-ip/docs
+- **MinIO 控制台**: http://your-server-ip:9001
 
-### Services
+### 服务列表
 
-| Service | Container | Port | Description |
+| 服务 | 容器名 | 端口 | 说明 |
 |---|---|---|---|
 | postgres | erp-postgres | 5432 | PostgreSQL 17 |
-| redis | erp-redis | 6379 | Redis cache |
-| minio | erp-minio | 9000, 9001 | S3-compatible object storage |
-| migrate | erp-migrate | - | Runs DB migrations on startup |
-| backend | erp-backend | 8000 | FastAPI backend |
-| edbo-service | erp-edbo-service | 8001 | EDBO optimization service |
-| frontend | erp-frontend | 3000 | Next.js frontend |
-| nginx | erp-nginx | 80 | Reverse proxy |
+| redis | erp-redis | 6379 | Redis 缓存 |
+| minio | erp-minio | 9000, 9001 | S3 兼容对象存储 |
+| migrate | erp-migrate | - | 启动时执行数据库迁移 |
+| backend | erp-backend | 8000 | FastAPI 后端 |
+| edbo-service | erp-edbo-service | 8001 | EDBO 优化服务 |
+| frontend | erp-frontend | 3000 | Next.js 前端 |
+| nginx | erp-nginx | 80 | 反向代理 |
 
-### Troubleshooting
+### 故障排查
 
 ```bash
-docker compose ps                  # container status
-docker logs erp-backend            # backend logs
-docker logs erp-frontend           # frontend logs
-docker compose restart backend     # restart service
-docker stats                       # resource usage
+docker compose ps                  # 容器状态
+docker logs erp-backend            # 后端日志
+docker logs erp-frontend           # 前端日志
+docker compose restart backend     # 重启服务
+docker stats                       # 资源使用
 ```
 
-## Backend Development
 
-### Prerequisites
+## 后端开发
+
+### 环境要求
 
 - Python >= 3.12
-- Docker + Docker Compose (recommended)
-- Or local: PostgreSQL 17, Redis, [uv](https://docs.astral.sh/uv/)
+- Docker + Docker Compose（推荐）
+- 本地开发可选：PostgreSQL 17、Redis、[uv](https://docs.astral.sh/uv/)
 
-### Local Setup
+### 本地配置
 
 ```bash
 cd backend
 uv sync
-cp ../.env.example .env  # or set env vars directly
+cp ../.env.example .env  # 或直接设置环境变量
 
-# Database migration
+# 执行数据库迁移
 uv run alembic upgrade head
 
-# Start dev server
+# 启动开发服务器
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Testing & Linting
+### 测试与代码检查
 
 ```bash
-uv run pytest                                    # all tests
-uv run pytest tests/modules/<module>/            # single module
-uv run pytest tests/modules/<module>/ -k "name"  # single test
+uv run pytest                                    # 全部测试
+uv run pytest tests/modules/<module>/            # 单模块
+uv run pytest tests/modules/<module>/ -k "name"  # 单个用例
 
-uv run ruff check .        # lint
-uv run ruff format .       # format
-uv run mypy app/           # type check
+uv run ruff check .        # 代码检查
+uv run ruff format .       # 代码格式化
+uv run mypy app/           # 类型检查
 ```
 
-### Database Migrations
+### 数据库迁移
 
 ```bash
-# Create migration after model changes
-uv run alembic revision --autogenerate -m "description"
+# 模型变更后创建迁移
+uv run alembic revision --autogenerate -m "描述"
 
-# Apply
+# 应用迁移
 uv run alembic upgrade head
 
-# Rollback
+# 回滚
 uv run alembic downgrade -1
 ```
 
-## Frontend Development
 
-### Prerequisites
+## 前端开发
+
+### 环境要求
 
 - Node.js >= 22
-- pnpm (specified in package.json)
+- pnpm（见 package.json）
 
-### Local Setup
+### 本地配置
 
 ```bash
 cd frontend
@@ -184,47 +185,49 @@ pnpm install
 pnpm dev --port 3000
 ```
 
-The dev server proxies `/api/v1/*` to the backend at `http://localhost:8000`.
+开发服务器将 `/api/v1/*` 请求代理到后端 `http://localhost:8000`。
 
-### Testing & Linting
+### 测试与代码检查
 
 ```bash
-pnpm typecheck    # TypeScript type check
+pnpm typecheck    # TypeScript 类型检查
 pnpm lint         # ESLint
-pnpm test:e2e     # Playwright E2E tests
+pnpm test:e2e     # Playwright E2E 测试
 ```
 
-### API Types
+### API 类型
 
-Frontend API types are generated from the backend OpenAPI spec:
+前端 API 类型通过后端 OpenAPI 规范自动生成：
 
 ```bash
-# In backend/:
+# 在 backend/ 目录导出最新规范
 uv run python scripts/ci/export_openapi.py
 
-# In frontend/:
+# 在 frontend/ 目录重新生成类型
 cp ../backend/openapi.json src/types/generated/openapi.json
 pnpm generate:api
 ```
 
-Generated types are committed to the repo and checked in CI.
+生成的类型已提交至仓库，CI 会检查其是否与后端同步。
 
-## Data Persistence
 
-The following directories are created at runtime (not in Git):
+## 数据持久化
 
-- `postgres-data/` — PostgreSQL data
-- `redis-data/` — Redis data
-- `minio-data/` — MinIO object storage
-- `uploads/` — User uploads
-- `storage/` — Application storage
-- `logs/` — Log files
-- `backups/` — Database backups
+以下目录由运行时创建（未纳入 Git）：
 
-## Notes
+- `postgres-data/` — PostgreSQL 数据
+- `redis-data/` — Redis 数据
+- `minio-data/` — MinIO 对象存储
+- `uploads/` — 用户上传
+- `storage/` — 应用存储
+- `logs/` — 日志文件
+- `backups/` — 数据库备份
 
-- All containers run in detached mode (`-d`)
-- Database migrations run automatically on backend startup
-- Nginx proxies frontend and backend requests, avoiding CORS issues
-- `.env` contains sensitive information — never commit to Git
-- AI coding standards: see [AGENTS.md](AGENTS.md)
+
+## 注意事项
+
+- 所有容器以分离模式运行（`-d`）
+- 数据库迁移在后端启动时自动执行
+- Nginx 代理前端和后端请求，避免 CORS 问题
+- `.env` 包含敏感信息，切勿提交到 Git
+- AI 编码规范：参见 [AGENTS.md](AGENTS.md)
