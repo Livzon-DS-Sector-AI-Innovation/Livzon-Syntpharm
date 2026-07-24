@@ -100,7 +100,7 @@ export function MaintenancePage({
   useEffect(() => {
     // 如果服务端没拿到设备数据，客户端重新获取
     if (initialEquipments.length === 0) {
-      fetchEquipmentsClient({ page: 1, page_size: 200 }).then((res) => {
+      fetchEquipmentsClient({ page: 1, page_size: 200 }).then((res: any) => {
         setEquipmentsState(res.items)
       }).catch(() => {})
     }

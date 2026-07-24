@@ -84,7 +84,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
         remark: values.remark || undefined,
         status: values.status,
       }
-      const result = await updateMaintenancePlan(editingMaintenancePlan.id, data)
+      const result: any = await updateMaintenancePlan(editingMaintenancePlan.id, data)
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
@@ -100,7 +100,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
         maintenance_content: values.maintenance_content || undefined,
         remark: values.remark || undefined,
       }
-      const result = await createMaintenancePlan(data)
+      const result: any = await createMaintenancePlan(data)
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }

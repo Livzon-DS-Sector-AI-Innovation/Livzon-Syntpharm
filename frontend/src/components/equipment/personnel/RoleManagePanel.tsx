@@ -79,10 +79,10 @@ export function RoleManagePanel({ roles }: Props) {
         if (values.description !== editingRole.description) data.description = values.description
         if (values.scope !== editingRole.scope) data.scope = values.scope
         if (values.is_active !== editingRole.is_active) data.is_active = values.is_active
-        await updateRole(editingRole.id, data)
+        await updateRole(editingRole.id, data as unknown as Record<string, unknown>)
         message.success('角色已更新')
       } else {
-        await createRole(values as CreateRoleInput)
+        await createRole(values as unknown as Record<string, unknown>)
         message.success('角色已创建')
       }
       queryClient.invalidateQueries({ queryKey: ['equipment-roles'] })

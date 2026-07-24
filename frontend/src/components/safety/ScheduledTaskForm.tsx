@@ -56,12 +56,12 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
 
   // Load reference data
   useEffect(() => {
-    getDataSourceOptions().then((res) => {
+    getDataSourceOptions().then((res: any) => {
       if (res.code === 200 && res.data) {
         setDataSourceOptions(res.data)
       }
     })
-    getFeishuChats().then((res) => {
+    getFeishuChats().then((res: any) => {
       if (res.code === 200 && res.data) {
         setFeishuChats(res.data)
       }
@@ -157,9 +157,9 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
 
       let res
       if (isEdit && editData) {
-        res = await updateScheduledTask(editData.id, payload)
+        res = await updateScheduledTask(editData.id, payload as unknown as Record<string, unknown>)
       } else {
-        res = await createScheduledTask(payload)
+        res = await createScheduledTask(payload as unknown as Record<string, unknown>)
       }
 
       if (res.code === 200) {
@@ -259,7 +259,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
           <Select
             value={headerColor}
             onChange={(v) => setHeaderColor(v as HeaderColor)}
-            options={HEADER_COLOR_OPTIONS.map((c) => ({
+            options={HEADER_COLOR_OPTIONS.map((c: any) => ({
               value: c.value,
               label: (
                 <Space>

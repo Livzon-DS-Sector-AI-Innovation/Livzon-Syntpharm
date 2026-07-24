@@ -25,7 +25,7 @@ export function SparePartTable({ onRefresh }: Props) {
       title: '确认删除', content: '确定要删除此备件吗？',
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await deleteSparePart(record.id)
+        const result: any = await deleteSparePart(record.id)
         if (!result.success) { message.error(result.error); return }
         message.success('删除成功')
         onRefresh?.()

@@ -654,3 +654,168 @@ export async function fetchOverdueMaintenancePlans(): Promise<any> {
   const json = await res.json()
   return json.data || []
 }
+
+// ==================== 设备导入 ====================
+export async function previewEquipmentImport(data: any) {
+  const token = await getServerToken()
+  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).message || '预览失败')
+  }
+  const json = await res.json()
+  return json.data
+}
+
+export async function batchImportEquipment(data: any) {
+  const token = await getServerToken()
+  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).message || '导入失败')
+  }
+  revalidatePath('/equipment')
+  const json = await res.json()
+  return json.data
+}
+
+export async function downloadImportTemplate() {
+  const token = await getServerToken()
+  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import/template`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('下载模板失败')
+  return res
+}
+
+export async function importEquipments(data: any) {
+  const token = await getServerToken()
+  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).message || '导入失败')
+  }
+  revalidatePath('/equipment')
+  const json = await res.json()
+  return json.data
+}
+
+// ==================== 人员管理 ====================
+export async function addPersonnel(data: Record<string, unknown>) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function deletePersonnel(id: string) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${id}`, {
+    method: 'DELETE',
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function assignRoles(personnelId: string, data: Record<string, unknown>) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/roles`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function assignCategories(personnelId: string, data: Record<string, unknown>) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/categories`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function refreshFeishu() {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/refresh-feishu`, {
+    method: 'POST',
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+// ==================== 角色管理 ====================
+export async function createRole(data: Record<string, unknown>) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function updateRole(id: string, data: Record<string, unknown>) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function deleteRole(id: string) {
+  const result = await actionFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+    method: 'DELETE',
+  })
+  revalidatePath('/equipment')
+  return result
+}
+
+// ==================== 巡检线路设备 ====================
+export interface RouteLocationEquipment {
+  id: string
+  equipment_id: string
+  route_id: string
+  sort_order: number
+  equipment_name?: string
+  asset_no?: string
+}
+
+// ==================== 巡检任务 ====================
+export interface InspectionTask {
+  id: string
+  equipment_id: string
+  route_id?: string
+  task_no: string
+  status: string
+  assigned_to?: string
+  assigned_name?: string
+  scheduled_at?: string
+  started_at?: string | null
+  completed_at?: string | null
+  equipment_name?: string
+  asset_no?: string
+}
+
+// ==================== 库存预警 ====================
+export interface StockWarning {
+  id: string
+  name: string
+  quantity: number
+  min_quantity: number
+  part_no?: string
+  equipment_name?: string
+}

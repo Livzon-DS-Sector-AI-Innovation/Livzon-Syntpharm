@@ -1494,4 +1494,222 @@ export async function triggerGraphGeneration(data: any, authHeaders?: Record<str
   })
 }
 
+// ============ AI Workflow Config APIs ============
+
+export async function getAIWorkflowConfigs(params: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>(`/safety/ai-workflow-configs${buildQueryString(params)}`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function createAIWorkflowConfig(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>('/safety/ai-workflow-configs', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateAIWorkflowConfig(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/ai-workflow-configs/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteAIWorkflowConfig(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/ai-workflow-configs/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders,
+  })
+}
+
+// ============ Scheduled Task APIs ============
+
+export async function getScheduledTasks(params: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>(`/safety/scheduled-tasks${buildQueryString(params)}`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function getScheduledTask(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/scheduled-tasks/${id}`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function createScheduledTask(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>('/safety/scheduled-tasks', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateScheduledTask(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/scheduled-tasks/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteScheduledTask(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/scheduled-tasks/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders,
+  })
+}
+
+export async function toggleScheduledTask(id: string, enabled: boolean, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/scheduled-tasks/${id}/toggle`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_enabled: enabled }),
+  })
+}
+
+export async function runScheduledTaskNow(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/scheduled-tasks/${id}/run`, {
+    method: 'POST',
+    headers: authHeaders,
+  })
+}
+
+export async function getScheduledTaskLogs(taskId: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>(`/safety/scheduled-tasks/${taskId}/logs`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function getDataSourceOptions(authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>('/safety/scheduled-tasks/data-sources', {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function getFeishuChats(authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>('/safety/scheduled-tasks/feishu-chats', {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function previewCard(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>('/safety/scheduled-tasks/preview-card', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+// ============ Hazard Legacy APIs ============
+
+export async function completeRectification(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazards/${id}/complete`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function verifyRectification(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazards/${id}/verify`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+// ============ Hazard Revision APIs ============
+
+export async function getHazardRevisionRecords(params: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>(`/safety/hazard-revision-records${buildQueryString(params)}`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function createHazardRevisionRecord(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>('/safety/hazard-revision-records', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-records/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteHazardRevisionRecord(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-records/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders,
+  })
+}
+
+export async function approveHazardRevision(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-records/${id}/approve`, {
+    method: 'PUT',
+    headers: authHeaders,
+  })
+}
+
+export async function uploadHazardRevisionDocument(id: string, formData: FormData, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-records/${id}/upload-document`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: formData,
+  })
+}
+
+export async function linkRevisionToArchive(revisionId: string, archiveId: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-records/${revisionId}/link-archive`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ archive_id: archiveId }),
+  })
+}
+
+export async function getHazardRevisionArchives(params: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any[]>(`/safety/hazard-revision-archives${buildQueryString(params)}`, {
+    method: 'GET',
+    headers: authHeaders,
+  })
+}
+
+export async function createHazardRevisionArchive(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>('/safety/hazard-revision-archives', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-archives/${id}`, {
+    method: 'PUT',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteHazardRevisionArchive(id: string, authHeaders?: Record<string, string>) {
+  return safeApiFetch<any>(`/safety/hazard-revision-archives/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders,
+  })
+}
+
 export { buildQueryString, API_BASE }

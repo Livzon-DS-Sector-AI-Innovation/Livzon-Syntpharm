@@ -191,7 +191,7 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
   } = useEquipmentStore()
 
   const handleDelete = async (node: TreeNodeData) => {
-    const result = await deleteLocation(node.id)
+    const result: any = await deleteLocation(node.id)
     if (!result.success) {
       message.error(result.error)
       return

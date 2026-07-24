@@ -38,7 +38,7 @@ export default function AIWorkflowCard({
 
   const menuInfo = WORKFLOW_MENU_MAP[workflow.module_code]
   const icon = WORKFLOW_ICONS[workflow.module_code] || '🤖'
-  const scriptCount = workflow.script_configs?.filter((s) => s.is_enabled).length || 0
+  const scriptCount = workflow.script_configs?.filter((s: any) => s.is_enabled).length || 0
   const totalScripts = workflow.script_configs?.length || 0
 
   const handleToggle = async (checked: boolean) => {

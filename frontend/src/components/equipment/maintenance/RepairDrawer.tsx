@@ -58,7 +58,7 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         fault_description: values.fault_description || undefined,
         responsible_person_id: values.responsible_person_id,
       }
-      const createResult = await createWorkOrder(data)
+      const createResult: any = await createWorkOrder(data)
       if (!createResult.success) { message.error(createResult.error); return }
       const workOrderId = (createResult.data as { id?: string })?.id
 

@@ -1,7 +1,7 @@
 import type { WorkOrderImage } from './common'
 
 // ==================== 维修工单 ====================
-export type WorkOrderType = '故障维修' | '计划维护' | '校准' | '异常处理' | '日常维护'
+export type WorkOrderType = '故障维修' | '计划维护' | '巡检' | '校准' | '异常处理' | '日常维护'
 export type WorkOrderPriority = '紧急' | '高' | '中' | '低'
 export type WorkOrderStatus = '待处理' | '已指派' | '执行中' | '维修中' | '待验收' | '已完成' | '已关闭'
 export type VerificationResult = '合格' | '不合格'

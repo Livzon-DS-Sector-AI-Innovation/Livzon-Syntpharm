@@ -31,7 +31,7 @@ export function FailureCodePanel({ onRefresh }: FailureCodePanelProps) {
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await deleteFailureCode(path, record.id)
+        const result: any = await deleteFailureCode(path, record.id)
         if (!result.success) { message.error(result.error); return }
         message.success('删除成功')
         onRefresh?.()

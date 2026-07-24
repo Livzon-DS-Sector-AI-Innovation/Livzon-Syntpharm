@@ -95,7 +95,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
       cancelText: '取消',
       onOk: async () => {
         if (!assigneeId) { message.warning('请选择维修人员'); return }
-        const result = await assignWorkOrder(wo.id, { assignee_id: assigneeId })
+        const result: any = await assignWorkOrder(wo.id, { assignee_id: assigneeId })
         if (!result.success) { message.error(result.error); return }
         message.success('指派成功')
         await refreshDetail(wo.id)
@@ -104,7 +104,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
   }
 
   const handleStart = async () => {
-    const result = await startWorkOrder(wo.id)
+    const result: any = await startWorkOrder(wo.id)
     if (!result.success) { message.error(result.error); return }
     message.success('已开始维修')
     await refreshDetail(wo.id)
@@ -159,7 +159,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
           const uploadResult = await uploadWorkOrderImages(wo.id, formData)
           if (!uploadResult.success) { message.error(uploadResult.error); return }
         }
-        const result = await completeWorkOrder(wo.id, { repair_detail: repairDetail })
+        const result: any = await completeWorkOrder(wo.id, { repair_detail: repairDetail })
         if (!result.success) { message.error(result.error); return }
         message.success('已提交验收')
         await refreshDetail(wo.id)
@@ -186,7 +186,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
       okButtonProps: result === '不合格' ? { danger: true } : {},
       onOk: async () => {
         if (result === '不合格' && !remark.trim()) { message.warning('请填写不通过原因'); return }
-        const actionResult = await verifyWorkOrder(wo.id, { result, remark: remark || undefined })
+        const actionResult: any = await verifyWorkOrder(wo.id, { result, remark: remark || undefined })
         if (!actionResult.success) { message.error(actionResult.error); return }
         message.success(result === '合格' ? '验收通过' : '已打回重修')
         await refreshDetail(wo.id)
@@ -195,14 +195,14 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
   }
 
   const handleClose = async () => {
-    const result = await closeWorkOrder(wo.id)
+    const result: any = await closeWorkOrder(wo.id)
     if (!result.success) { message.error(result.error); return }
     message.success('工单已关闭')
     await refreshDetail(wo.id)
   }
 
   const handleClaim = async () => {
-    const result = await claimWorkOrder(wo.id)
+    const result: any = await claimWorkOrder(wo.id)
     if (!result.success) { message.error(result.error); return }
     message.success('抢单成功')
     await refreshDetail(wo.id)

@@ -10,7 +10,7 @@ interface CronInputProps {
 }
 
 export default function CronInput({ value = '', onChange, onPresetSelect }: CronInputProps) {
-  const selectedPreset = CRON_PRESETS.find((p) => p.value === value)
+  const selectedPreset = CRON_PRESETS.find((p: any) => p.value === value)
 
   const handlePresetClick = (preset: (typeof CRON_PRESETS)[number]) => {
     onChange?.(preset.value)
@@ -26,7 +26,7 @@ export default function CronInput({ value = '', onChange, onPresetSelect }: Cron
         style={{ fontFamily: 'monospace' }}
       />
       <Space wrap size={[8, 4]}>
-        {CRON_PRESETS.map((preset) => (
+        {CRON_PRESETS.map((preset: any) => (
           <Button
             key={preset.label}
             size="small"

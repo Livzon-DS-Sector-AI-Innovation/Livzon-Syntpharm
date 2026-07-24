@@ -110,9 +110,9 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
       completedIds = taskDetail.completed_equipment_ids || []
     } catch { /* 获取失败不阻塞 */ }
     setExecutingTask(
-      record.id, record.plan_type, routeDetail, items,
+      record.id, record.plan_type, routeDetail, items as unknown as Record<string, InspectionTemplateItem[]>,
       items.length > 0 ? '合并模板' : '检查模板',
-      record.equipment_id, record.equipment_name, record.equipment_no,
+      record.equipment_id, record.equipment_name, record.equipment_name,
       eqIds, eqInfos, completedIds,
     )
   }, [allEquipments, setExecutingTask])

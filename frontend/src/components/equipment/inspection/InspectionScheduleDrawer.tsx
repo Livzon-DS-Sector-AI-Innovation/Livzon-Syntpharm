@@ -116,7 +116,7 @@ export function InspectionScheduleDrawer() {
     try {
       for (const t of times) {
         const cron = buildCron(freqType, t, weekDays, monthDays)
-        await createSchedule(scheduleRouteId, { cron_expression: cron, assigned_to: assigneeId })
+        await createSchedule(scheduleRouteId, { cron_expression: cron, assigned_to: assigneeId, is_active: true })
       }
       message.success(`已添加 ${times.length} 个定时任务`)
       setTimes(['09:00']); setWeekDays([1]); setMonthDays([1]); setAssigneeId(undefined)

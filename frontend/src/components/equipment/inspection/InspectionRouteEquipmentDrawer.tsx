@@ -78,7 +78,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
         equipments: (loc.equipments || []).map(eq => ({
           key: eq.id, equipment_id: eq.equipment_id,
           equipment_name: eq.equipment_name || undefined,
-          equipment_no: eq.equipment_no || undefined,
+          asset_no: undefined,
           sort_order: eq.sort_order,
           template_ids: (eq.templates || []).map(t => t.template_id),
         })),

@@ -38,7 +38,7 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
     try {
       setLoading(true)
       const data: MaterialConsumeInput = { items }
-      const result = await consumeMaterials(workOrderId, data)
+      const result: any = await consumeMaterials(workOrderId, data)
       if (!result.success) { message.error(result.error); return }
       message.success('领料成功')
       setOpen(false)

@@ -790,7 +790,7 @@ function WarningPanels({
       items: overduePlans.slice(0, 5).map(p => ({
         key: p.id,
         label: p.plan_name || p.equipment_name || '',
-        sub: p.equipment_name || p.equipment_no || '',
+        sub: p.equipment_name || p.asset_no || '',
         meta: (
           <span style={{ color: '#dd5b00', fontWeight: 600, fontSize: 13 }}>
             应于 {p.next_maintenance_date || '—'}
@@ -812,7 +812,7 @@ function WarningPanels({
         )
         return {
           key: c.id,
-          label: c.equipment_name || c.equipment_no || '',
+          label: c.equipment_name || c.asset_no || '',
           sub: c.calibration_type,
           meta: (
             <span
@@ -1015,7 +1015,7 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {order.equipment_name || order.equipment_no} · {order.order_type}
+                {order.equipment_name || order.asset_no || order.equipment_id} · {order.order_type}
               </div>
             </div>
             <span

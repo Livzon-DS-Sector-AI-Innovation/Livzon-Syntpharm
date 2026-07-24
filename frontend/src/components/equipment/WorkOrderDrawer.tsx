@@ -34,7 +34,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
 
   useEffect(() => {
     if (workOrderDrawerOpen) {
-      fetchAllUsersClient().then((list) => {
+      fetchAllUsersClient().then((list: any[]) => {
         setMaintainers(list)
         // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
         if (editingWorkOrder?.responsible_person_id) {

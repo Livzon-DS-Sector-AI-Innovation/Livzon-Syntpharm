@@ -86,7 +86,7 @@ export function MaintenancePage({
   const { message: configMsg } = App.useApp()
 
   const handleSaveConfig = async () => {
-    const result = await updateClaimTimeoutConfig(claimTimeoutConfig)
+    const result: any = await updateClaimTimeoutConfig(claimTimeoutConfig)
     if (!result.success) {
       configMsg.error(result.error)
       return

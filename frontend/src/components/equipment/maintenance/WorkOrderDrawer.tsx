@@ -80,7 +80,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         fault_description: values.fault_description || undefined,
         responsible_person_id: values.responsible_person_id || undefined,
       }
-      const result = await updateWorkOrder(editingWorkOrder.id, data)
+      const result: any = await updateWorkOrder(editingWorkOrder.id, data)
       if (!result.success) { message.error(result.error); return }
       message.success('更新工单成功')
     } else {
@@ -92,7 +92,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         fault_description: values.fault_description || undefined,
         responsible_person_id: values.responsible_person_id || undefined,
       }
-      const result = await createWorkOrder(data)
+      const result: any = await createWorkOrder(data)
       if (!result.success) { message.error(result.error); return }
       message.success('创建工单成功')
     }

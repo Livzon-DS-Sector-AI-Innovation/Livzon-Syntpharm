@@ -188,7 +188,7 @@ export function EquipmentDrawer({ onRefresh, defaultDepartmentId }: EquipmentDra
           : undefined,
       }
 
-      const result = editingEquipment
+      const result: any = editingEquipment
         ? await updateEquipment(editingEquipment.id, submitData)
         : await createEquipment(submitData)
       if (!result.success) {

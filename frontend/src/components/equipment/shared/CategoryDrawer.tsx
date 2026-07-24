@@ -45,7 +45,7 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
     }
     setSubmitting(true)
     try {
-      const result = editingCategory
+      const result: any = editingCategory
         ? await updateCategory(editingCategory.id, values)
         : await createCategory(values)
       if (!result.success) {

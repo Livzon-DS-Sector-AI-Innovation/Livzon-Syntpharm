@@ -83,17 +83,17 @@ export function EquipmentPage({
       const tasks: Promise<void>[] = []
       if (!categories.length) {
         tasks.push(
-          fetchCategoriesClient().then(cats => { setCategories(cats) }).catch(e => { console.warn('客户端加载分类失败:', e) })
+          fetchCategoriesClient().then((cats: any[]) => { setCategories(cats) }).catch((e: any) => { console.warn('客户端加载分类失败:', e) })
         )
       }
       if (!locations.length) {
         tasks.push(
-          fetchLocationsClient().then(locs => { setLocations(locs) }).catch(e => { console.warn('客户端加载位置失败:', e) })
+          fetchLocationsClient().then((locs: any[]) => { setLocations(locs) }).catch((e: any) => { console.warn('客户端加载位置失败:', e) })
         )
       }
       if (!departments.length) {
         tasks.push(
-          fetchDepartmentsClient().then(depts => { setDepartments(depts) }).catch(e => { console.warn('客户端加载部门失败:', e) })
+          fetchDepartmentsClient().then((depts: any[]) => { setDepartments(depts) }).catch((e: any) => { console.warn('客户端加载部门失败:', e) })
         )
       }
       if (tasks.length) {

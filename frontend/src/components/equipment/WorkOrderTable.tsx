@@ -9,7 +9,9 @@ import { statusPill, pillSuccess, pillError, pillWarning, pillPurple, pillNeutra
 
 const statusColorMap: Record<WorkOrderStatus, React.CSSProperties> = {
   '待处理': pillError,
+  '已指派': pillPurple,
   '执行中': pillWarning,
+  '维修中': pillWarning,
   '待验收': statusPill('#d4b106', '#fffbe6'),
   '已完成': pillSuccess,
   '已关闭': pillNeutral,

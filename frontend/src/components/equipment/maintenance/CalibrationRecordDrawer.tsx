@@ -65,7 +65,7 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
       calibrated_by: values.calibrated_by || undefined,
       remark: values.remark || undefined,
     }
-    const result = await createCalibrationRecord(data)
+    const result: any = await createCalibrationRecord(data)
     if (!result.success) { message.error(result.error); return }
     message.success('创建校准记录成功')
     closeCalibrationRecordDrawer()

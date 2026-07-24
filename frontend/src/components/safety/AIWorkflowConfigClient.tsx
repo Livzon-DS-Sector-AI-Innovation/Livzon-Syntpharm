@@ -38,14 +38,14 @@ export default function AIWorkflowConfigClient({
     try {
       const res = await getAIWorkflowConfigs({ page_size: 500 })
       setWorkflows(
-        (res.data || []).filter((w) => !EXCLUDED_MODULE_CODES.has(w.module_code)),
+        (res.data || []).filter((w: any) => !EXCLUDED_MODULE_CODES.has(w.module_code)),
       )
     } catch {
       message.error('刷新失败')
     }
   }, [])
 
-  // Merge DB configs with built-in workflows
+      // Merge DB configs with built-in workflows
   const allWorkflows = [...workflows]
   for (const builtIn of BUILT_IN_WORKFLOWS) {
     if (!allWorkflows.find((w) => w.module_code === builtIn.module_code)) {
@@ -53,10 +53,10 @@ export default function AIWorkflowConfigClient({
         id: `builtin-${builtIn.module_code}`,
         module_code: builtIn.module_code,
         workflow_name: builtIn.workflow_name,
-        workflow_description: builtIn.workflow_description,
-        trigger_event: builtIn.trigger_event,
+        workflow_description: builtIn.workflow_description || '',
+        trigger_event: builtIn.trigger_event || '',
         is_enabled: true,
-        script_configs: builtIn.script_configs,
+        script_configs: builtIn.script_configs || [],
         sort_order: 99,
         notes: '内置工作流（点击编辑可创建数据库配置）',
         created_at: '',

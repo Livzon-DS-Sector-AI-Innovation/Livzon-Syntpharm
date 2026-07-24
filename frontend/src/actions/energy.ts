@@ -139,7 +139,7 @@ export async function processAlertRecord(id: string, data: ProcessRecordInput) {
 // 车间管理 Server Actions
 
 export async function getWorkshops(params?: WorkshopQueryParams) {
-  return fetchWorkshops(params)
+  return fetchWorkshops(params !== null && params !== void 0 ? params as Record<string, unknown> : undefined)
 }
 
 export async function getWorkshopById(id: string) {
@@ -147,13 +147,13 @@ export async function getWorkshopById(id: string) {
 }
 
 export async function createWorkshopAction(data: CreateWorkshopInput) {
-  const result = await apiCreateWorkshop(data)
+  const result = await apiCreateWorkshop(data as unknown as Record<string, unknown>)
   revalidatePath('/energy/workshops')
   return result
 }
 
 export async function updateWorkshopAction(id: string, data: UpdateWorkshopInput) {
-  const result = await apiUpdateWorkshop(id, data)
+  const result = await apiUpdateWorkshop(id, data as Record<string, unknown>)
   revalidatePath('/energy/workshops')
   return result
 }
@@ -173,7 +173,7 @@ export async function getMonthlyRecords(params?: {
   page?: number
   page_size?: number
 }) {
-  return fetchMonthlyRecords(params)
+  return fetchMonthlyRecords(params as Record<string, unknown> | undefined)
 }
 
 export async function getMonthlyRecordById(id: string) {
@@ -181,7 +181,7 @@ export async function getMonthlyRecordById(id: string) {
 }
 
 export async function createMonthlyRecordAction(data: CreateMonthlyRecordInput) {
-  const result = await apiCreateMonthlyRecord(data)
+  const result = await apiCreateMonthlyRecord(data as unknown as Record<string, unknown>)
   revalidatePath('/energy/monthly')
   return result
 }
@@ -194,7 +194,7 @@ export async function deleteMonthlyRecordAction(id: string) {
 // ── 飞书导入 Server Action ──
 
 export async function importFromFeishuAction(data: FeishuImportRequest) {
-  const result = await apiImportFromFeishu(data)
+  const result = await apiImportFromFeishu(data as unknown as Record<string, unknown>)
   if (!data.dry_run) {
     revalidatePath('/energy/monthly')
   }
@@ -207,7 +207,7 @@ export async function crossImportFromBitableAction(data: {
   year?: number
   month?: string
 }) {
-  const result = await apiCrossImportFromBitable(data)
+  const result = await apiCrossImportFromBitable(data as Record<string, unknown>)
   revalidatePath('/energy/monthly')
   return result
 }

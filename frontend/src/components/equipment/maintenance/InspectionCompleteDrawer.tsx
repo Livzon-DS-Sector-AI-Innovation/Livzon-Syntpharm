@@ -51,7 +51,7 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
       actual_value: row.actual_value || undefined,
       remark: row.remark || undefined,
     }))
-    const result = await completeInspection(completingWorkOrderId!, { records })
+    const result: any = await completeInspection(completingWorkOrderId!, { records })
     if (!result.success) { message.error(result.error); return }
     message.success('巡检完成')
     closeInspectionCompleteDrawer()

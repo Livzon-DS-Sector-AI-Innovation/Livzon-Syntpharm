@@ -34,7 +34,7 @@ export function StockInboundDrawer({ onRefresh }: StockInboundDrawerProps) {
       warehouse_location: values.warehouse_location || undefined,
       remark: values.remark || undefined,
     }
-    const result = await stockInbound(stockInboundSparePartId, data)
+    const result: any = await stockInbound(stockInboundSparePartId, data)
     if (!result.success) { message.error(result.error); return }
     message.success('入库成功')
     closeStockInboundDrawer()

@@ -42,7 +42,7 @@ export function InspectionExecuteView({ onClose }: Props) {
         (loc.equipments || []).map(eq => ({
           equipment_id: eq.equipment_id,
           equipment_name: eq.equipment_name || '设备',
-          equipment_no: eq.equipment_no || undefined,
+          equipment_no: undefined,
         }))
       )
     }
@@ -199,7 +199,7 @@ export function InspectionExecuteView({ onClose }: Props) {
         <EquipmentCheckCard
           key={cur.equipment_id}
           equipmentId={cur.equipment_id} equipmentName={cur.equipment_name} equipmentNo={cur.equipment_no}
-          templateItems={executingTemplateItems} photos={curPhotos}
+          templateItems={executingTemplateItems as unknown as InspectionTemplateItem[]} photos={curPhotos}
           onAddPhoto={f => addPhoto(cur.equipment_id, f)} onRemovePhoto={i => rmPhoto(cur.equipment_id, i)}
           onSubmit={submitCheck} disabled={done.has(cur.equipment_id)}
         />

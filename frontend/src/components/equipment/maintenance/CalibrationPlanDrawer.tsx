@@ -53,7 +53,7 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
         remark: values.remark || undefined,
         status: values.status,
       }
-      const result = await updateCalibrationPlan(editingCalibrationPlan.id, data)
+      const result: any = await updateCalibrationPlan(editingCalibrationPlan.id, data)
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
@@ -65,7 +65,7 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
         responsible_person_id: values.responsible_person_id || undefined,
         remark: values.remark || undefined,
       }
-      const result = await createCalibrationPlan(data)
+      const result: any = await createCalibrationPlan(data)
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }

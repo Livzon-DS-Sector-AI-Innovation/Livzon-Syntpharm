@@ -16,7 +16,9 @@ const { TextArea } = Input
 
 const statusConfig: Record<WorkOrderStatus, { color: string; label: string }> = {
   '待处理': { color: '#e03131', label: '待处理' },
+  '已指派': { color: '#5645d4', label: '已指派' },
   '执行中': { color: '#dd5b00', label: '执行中' },
+  '维修中': { color: '#dd5b00', label: '维修中' },
   '待验收': { color: '#d4b106', label: '待验收' },
   '已完成': { color: '#1aae39', label: '已完成' },
   '已关闭': { color: '#787671', label: '已关闭' },

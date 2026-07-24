@@ -30,11 +30,11 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
 
   useEffect(() => {
     if (!maintenancePlanDrawerOpen) return
-    fetchAllUsersClient().then((list) => {
+    fetchAllUsersClient().then((list: any[]) => {
       setAllUsers(list)
       // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
-      if (editingMaintenancePlan?.responsible_person_id) {
-        form.setFieldsValue({ responsible_person_id: editingMaintenancePlan.responsible_person_id })
+      if (editingMaintenancePlan?.executor_id) {
+        form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
       }
     }).catch(() => {})
 
@@ -48,7 +48,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: editingMaintenancePlan.frequency,
           frequency_unit: editingMaintenancePlan.frequency_unit,
           last_maintenance_date: editingMaintenancePlan.last_maintenance_date ? dayjs(editingMaintenancePlan.last_maintenance_date) : undefined,
-          responsible_person_id: editingMaintenancePlan.responsible_person_id,
+          executor_id: editingMaintenancePlan.executor_id,
           maintenance_content: editingMaintenancePlan.maintenance_content,
           remark: editingMaintenancePlan.remark,
           status: editingMaintenancePlan.status,
@@ -71,7 +71,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          responsible_person_id: values.responsible_person_id,
+          executor_id: values.executor_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
           status: values.status,
@@ -86,7 +86,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          responsible_person_id: values.responsible_person_id,
+          executor_id: values.executor_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
         }
@@ -150,7 +150,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
         <Form.Item name="last_maintenance_date" label="上次维护日期">
           <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="选择日期" />
         </Form.Item>
-        <Form.Item name="responsible_person_id" label="责任人" rules={[{ required: true, message: '请选择责任人' }]}>
+        <Form.Item name="executor_id" label="责任人" rules={[{ required: true, message: '请选择责任人' }]}>
           <Select
             placeholder="选择责任人"
             showSearch

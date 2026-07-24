@@ -139,8 +139,8 @@ export function MonthlyRecordTable() {
 
   const loadWorkshops = useCallback(async () => {
     try {
-      const result = await fetchWorkshopsClient({ page: 1, page_size: 500 })
-      setWorkshops((result.items || []).map((w: any) => ({ id: w.id, name: w.name })))
+      const result = await fetchWorkshopsClient()
+      setWorkshops((Array.isArray(result) ? result : []).map((w: any) => ({ id: w.id, name: w.name })))
     } catch {
       // ignore
     }
