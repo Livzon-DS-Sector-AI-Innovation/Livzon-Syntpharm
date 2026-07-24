@@ -96,13 +96,13 @@ class ScheduledTaskService:
         return await self.repo.get_task_logs(task_id, skip, limit)
 
     @staticmethod
-    def get_data_source_options() -> list[dict]:
+    def get_data_source_options() -> list[dict[str, Any]]:
         from app.modules.safety.card_builder import DATA_SOURCE_DEFINITIONS
 
         return DATA_SOURCE_DEFINITIONS
 
     @staticmethod
-    async def preview_card(data: CardPreviewRequest) -> dict:
+    async def preview_card(data: CardPreviewRequest) -> dict[str, Any]:
         from datetime import datetime as dt
 
         from app.modules.safety.card_builder import (

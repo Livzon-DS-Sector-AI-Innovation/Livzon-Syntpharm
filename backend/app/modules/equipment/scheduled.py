@@ -5,6 +5,9 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.equipment.models.inspection import InspectionRouteSchedule
 from app.modules.equipment.repository.inspection import get_due_schedules
 from app.modules.equipment.service.inspection import (
     compute_next_cron,
@@ -27,10 +30,10 @@ class InspectionScheduleGenerator(TaskGenerator):
         interval_seconds=30,
     )
 
-    async def find_due(self, session):
+    async def find_due(self, session: AsyncSession) -> list[InspectionRouteSchedule]:
         return await get_due_schedules(session)
 
-    async def execute_one(self, session, item) -> None:
+    async def execute_one(self, session: AsyncSession, item: InspectionRouteSchedule) -> None:
         now = datetime.now(_CST)
 
         task = await create_task(

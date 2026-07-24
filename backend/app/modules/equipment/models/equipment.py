@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -168,7 +169,7 @@ class Equipment(BaseModel):
     current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
     book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
-    technical_params: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
+    technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
     )

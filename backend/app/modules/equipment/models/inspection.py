@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     JSON,
@@ -159,13 +159,13 @@ class InspectionTask(BaseModel):
         nullable=True,
         comment="单设备ID（单设备模式，兼容旧数据）",
     )
-    equipment_ids: Mapped[list | None] = mapped_column(JSON, nullable=True, comment="设备ID列表（多设备模式）")
-    template_ids: Mapped[list | None] = mapped_column(
+    equipment_ids: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="设备ID列表（多设备模式）")
+    template_ids: Mapped[list[Any] | None] = mapped_column(
         JSON,
         nullable=True,
         comment="[DEPRECATED] 模板ID列表，推荐用 equipment_templates",
     )
-    equipment_templates: Mapped[dict | None] = mapped_column(
+    equipment_templates: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, nullable=True, comment="设备-模板绑定 {equipment_id: [template_id,...]}"
     )
     plan_type: Mapped[str] = mapped_column(

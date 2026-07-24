@@ -12,6 +12,7 @@ TTL 2 小时，每次交互自动续期。
 
 import json
 import logging
+from typing import Any
 
 from app.core.redis import cache_delete, cache_get, cache_set
 
@@ -49,12 +50,12 @@ async def save_session(
     plan_type: str,
     task_no: str,
     route_name: str = "",
-    equipment_order: list[dict],
+    equipment_order: list[dict[str, Any]],
     completed_equipment_ids: list[str] | None = None,
     skipped_equipment_ids: list[str] | None = None,
     current_equipment_index: int = 0,
     state: str = SessionState.GUIDING,
-    pending_results: list[dict] | None = None,
+    pending_results: list[dict[str, Any]] | None = None,
 ) -> None:
     """创建或覆盖巡检会话。
 
@@ -90,7 +91,7 @@ async def save_session(
     )
 
 
-async def get_session(open_id: str) -> dict | None:
+async def get_session(open_id: str) -> dict[str, Any] | None:
     """读取巡检会话，不存在返回 None。自动续期 TTL。"""
     raw = await cache_get(_session_key(open_id))
     if raw is None:
@@ -104,7 +105,7 @@ async def get_session(open_id: str) -> dict | None:
         return None
 
 
-async def update_session(open_id: str, **kwargs) -> bool:
+async def update_session(open_id: str, **kwargs: Any) -> bool:
     """部分更新会话字段，会话不存在返回 False。自动续期。"""
     session = await get_session(open_id)
     if session is None:
@@ -127,7 +128,7 @@ async def clear_session(open_id: str) -> None:
 # ═══════════ 会话便捷操作 ═══════════
 
 
-async def set_pending_results(open_id: str, results: list[dict]) -> bool:
+async def set_pending_results(open_id: str, results: list[dict[str, Any]]) -> bool:
     """设置当前设备的待确认结果，状态切换为 confirming。"""
     return await update_session(
         open_id,
@@ -166,7 +167,7 @@ async def mark_equipment_skipped(open_id: str, equipment_id: str) -> bool:
     )
 
 
-async def advance_to_next_equipment(open_id: str) -> dict | None:
+async def advance_to_next_equipment(open_id: str) -> dict[str, Any] | None:
     """将当前设备索引前进到下一个未完成设备，返回更新后的会话或 None。"""
     session = await get_session(open_id)
     if session is None:
@@ -192,7 +193,7 @@ async def advance_to_next_equipment(open_id: str) -> dict | None:
     return None
 
 
-def get_current_equipment(session: dict) -> dict | None:
+def get_current_equipment(session: dict[str, Any]) -> dict[str, Any] | None:
     """从会话中获取当前设备信息。"""
     order = session.get("equipment_order", [])
     idx = session.get("current_equipment_index", 0)
@@ -201,7 +202,7 @@ def get_current_equipment(session: dict) -> dict | None:
     return None
 
 
-def get_progress(session: dict) -> dict:
+def get_progress(session: dict[str, Any]) -> dict[str, Any]:
     """从会话中提取进度信息。"""
     order = session.get("equipment_order", [])
     completed = set(session.get("completed_equipment_ids", []))
@@ -213,7 +214,7 @@ def get_progress(session: dict) -> dict:
     remaining = total - done_n - skip_n
 
     # 按地点分组
-    locations: list[dict] = []
+    locations: list[dict[str, Any]] = []
     current_loc: str | None = None
     for eq in order:
         loc_name = eq.get("location_name", "")
@@ -255,7 +256,7 @@ async def save_selection(
     open_id: str,
     *,
     select_type: str,  # "inspection" | "work_order"
-    options: list[dict],
+    options: list[dict[str, Any]],
 ) -> None:
     """暂存选择列表（多个巡检任务或工单时的数字选择）。"""
     data = {
@@ -270,7 +271,7 @@ async def save_selection(
     )
 
 
-async def get_selection(open_id: str) -> dict | None:
+async def get_selection(open_id: str) -> dict[str, Any] | None:
     """读取选择会话。"""
     raw = await cache_get(_SELECTION_PREFIX + open_id)
     if raw is None:

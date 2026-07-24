@@ -10,11 +10,12 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment.feishu.notification import send_user_card
 from app.modules.equipment.schemas import WorkOrderComplete
 from app.modules.equipment.service.work_order import complete_work_order
+from app.platform.identity.models import User
 
 logger = logging.getLogger(__name__)
 
 
-async def _find_user_by_user_id(db: AsyncSession, user_id: str):
+async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> User | None:
     """根据飞书 user_id（租户级）查找系统用户。"""
     from app.platform.identity.models import User
 
@@ -55,7 +56,7 @@ async def list_user_work_orders(
         return
 
     lines = [f"**共 {len(work_orders)} 个未关闭工单**\n"]
-    options: list[dict] = []
+    options: list[dict[str, Any]] = []
     for i, wo in enumerate(work_orders, 1):
         eq_name = wo.equipment.name if wo.equipment else "未知设备"
         status_icon = {"待处理": "⏳", "执行中": "🔄", "待验收": "✅"}.get(wo.status, "📋")

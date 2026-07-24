@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import ssl
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -89,7 +90,7 @@ def _build_ping_frame(service_id: int) -> bytes:
     return frame.SerializeToString()
 
 
-async def _ping_loop(ws, service_id: int) -> None:
+async def _ping_loop(ws: Any, service_id: int) -> None:
     """定期发送 protobuf PING 帧保持连接。"""
     while not _stop.is_set():
         try:
@@ -106,7 +107,7 @@ async def _ping_loop(ws, service_id: int) -> None:
             pass
 
 
-def _build_ack_frame(frame, biz_rt: int) -> bytes:
+def _build_ack_frame(frame: Any, biz_rt: int) -> bytes:
     """构建 DATA 帧的 ACK 回复。"""
     from lark_oapi.ws.const import HEADER_BIZ_RT
 
@@ -198,7 +199,7 @@ async def start_equipment_ws() -> None:
     logger.info("设备机器人 WebSocket 客户端已停止")
 
 
-async def _handle_binary_message(ws, message: bytes) -> None:
+async def _handle_binary_message(ws: Any, message: bytes) -> None:
     """处理 protobuf 帧（区分 CONTROL 和 DATA）。"""
     try:
         from lark_oapi.ws.client import _get_by_key
@@ -245,7 +246,7 @@ async def _handle_binary_message(ws, message: bytes) -> None:
         )
 
 
-async def _dispatch_event(event: dict) -> None:
+async def _dispatch_event(event: dict[str, Any]) -> None:
     """解析事件并分发给设备模块事件处理器。"""
     header = event.get("header", {})
     event_type = header.get("event_type", "")
@@ -261,7 +262,7 @@ async def _dispatch_event(event: dict) -> None:
         logger.info("设备机器人忽略事件: %s", event_type)
 
 
-async def _handle_message_event(event_data: dict) -> None:
+async def _handle_message_event(event_data: dict[str, Any]) -> None:
     """处理 im.message.receive_v1 事件。"""
     message = event_data.get("message", {})
     sender = event_data.get("sender", {})

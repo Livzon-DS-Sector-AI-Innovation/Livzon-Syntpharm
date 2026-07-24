@@ -10,7 +10,7 @@ async def send_user_card(
     open_id: str,
     title: str,
     content: str,
-    elements: list[dict] | None = None,
+    elements: list[dict[str, Any]] | None = None,
     receive_id_type: str = "user_id",
 ) -> bool:
     """使用设备机器人发送卡片消息给单个用户（DM）。

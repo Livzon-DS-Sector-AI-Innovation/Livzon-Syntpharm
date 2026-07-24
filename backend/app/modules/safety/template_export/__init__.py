@@ -18,7 +18,7 @@ Excel 标准化输出 — 通用模板填充 + PDF 导出插件。
     # 给模板 + 数据，自动检测结构并导出 PDF
     pdf_path = quick_export(
         template="危险源辨识管控清单模板.xlsx",
-        data=hazard_records,      # list[dict]
+        data=hazard_records,      # list[dict[str, Any]]
         output="output.pdf",
     )
 

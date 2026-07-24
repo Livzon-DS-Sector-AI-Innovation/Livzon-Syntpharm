@@ -83,7 +83,7 @@ class ScheduledTaskResponse(BaseModel):
     feishu_chat_id: str
     feishu_chat_name: str | None
     header_color: str
-    data_sources: list | None
+    data_sources: list[Any] | None
     card_template: str | None
     is_enabled: bool
     last_run_at: datetime | None
@@ -105,7 +105,7 @@ class ScheduledTaskLogResponse(BaseModel):
     started_at: datetime
     completed_at: datetime | None
     status: str
-    data_snapshot: dict | None
+    data_snapshot: dict[str, Any] | None
     card_content: str | None
     feishu_msg_id: str | None
     error_message: str | None

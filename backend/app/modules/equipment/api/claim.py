@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException, ForbiddenException
@@ -25,7 +25,7 @@ async def claim_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-    settings=Depends(get_settings),
+    settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     if not current_user:
         raise AppException(message="需要登录", status_code=401)

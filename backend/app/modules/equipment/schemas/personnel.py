@@ -56,14 +56,14 @@ class PersonnelAddResult(BaseModel):
 
     added: list[uuid.UUID]
     skipped: list[uuid.UUID] = Field(default_factory=list)
-    errors: list[dict] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class PersonnelUpdate(BaseModel):
     """更新人员请求"""
 
     is_active: bool | None = Field(None, description="是否在岗")
-    extended_attrs: dict | None = Field(None, description="扩展属性")
+    extended_attrs: dict[str, Any] | None = Field(None, description="扩展属性")
 
 
 class PersonnelRoleAssign(BaseModel):
@@ -118,7 +118,7 @@ class PersonnelResponse(BaseModel):
     feishu_user_id: str | None
     feishu_open_id: str | None
     mobile: str | None
-    extended_attrs: dict | None
+    extended_attrs: dict[str, Any] | None
     is_active: bool
     roles: list[PersonnelRoleInfo] = Field(default_factory=list)
     categories: list[PersonnelCategoryInfo] = Field(default_factory=list)
@@ -161,4 +161,4 @@ class FeishuRefreshResult(BaseModel):
     updated: int = Field(description="成功更新数")
     skipped: int = Field(description="跳过（无变更）")
     unmatched: int = Field(description="未匹配（identity 中找不到）")
-    errors: list[dict] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list)

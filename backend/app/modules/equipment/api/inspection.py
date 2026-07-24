@@ -3,6 +3,7 @@
 import os
 import uuid
 from io import BytesIO
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -13,6 +14,7 @@ from app.core.deps import CurrentUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.equipment import repository as repo
+from app.modules.equipment.models.inspection import InspectionTask
 from app.modules.equipment.schemas.inspection import (
     EquipmentCheckResult,
     InspectionAIAnalyzeRequest,
@@ -47,7 +49,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
     return current_user.id
 
 
-def _task_to_response(task) -> InspectionTaskResponse:
+def _task_to_response(task: InspectionTask) -> InspectionTaskResponse:
     """将 ORM InspectionTask 转为响应对象，填充关联名称。
     要求调用方已通过 selectinload 预加载 route/equipment/template 关系。"""
     resp = InspectionTaskResponse.model_validate(task)
@@ -402,7 +404,7 @@ async def get_task_photos(
 async def serve_photo(
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
 
@@ -556,7 +558,7 @@ async def get_history_detail(
 async def list_schedules(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     schedules = await inspection_svc.get_schedules_by_route(db, route_id)
     return success_response(schedules)
 
@@ -570,7 +572,7 @@ async def create_schedule(
     body: InspectionScheduleCreate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-):
+) -> Any:
     _require_user(current_user)
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.create_schedule(db, route_id, data)
@@ -587,7 +589,7 @@ async def update_schedule(
     body: InspectionScheduleUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-):
+) -> Any:
     _require_user(current_user)
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.update_schedule(db, schedule_id, data)
@@ -605,7 +607,7 @@ async def delete_schedule(
     schedule_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-):
+) -> Any:
     _require_user(current_user)
     schedule = await repo.get_schedule_by_id(db, schedule_id)
     if not schedule or str(schedule.route_id) != str(route_id):

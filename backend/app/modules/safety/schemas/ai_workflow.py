@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +15,7 @@ class AIWorkflowConfigBase(BaseModel):
     workflow_description: str | None = Field(None, description="工作流描述")
     trigger_event: str | None = Field(None, max_length=64, description="触发事件")
     is_enabled: bool = Field(True, description="是否启用")
-    script_configs: list[dict] | dict | None = Field(None, description="脚本配置 JSON")
+    script_configs: list[dict[str, Any]] | dict[str, Any] | None = Field(None, description="脚本配置 JSON")
     sort_order: int = Field(0, description="排序顺序")
     notes: str | None = Field(None, description="备注")
 
@@ -27,7 +28,7 @@ class AIWorkflowConfigCreate(BaseModel):
     workflow_description: str | None = Field(None, description="工作流描述")
     trigger_event: str | None = Field(None, max_length=64, description="触发事件")
     is_enabled: bool = Field(True, description="是否启用")
-    script_configs: list[dict] | dict | None = Field(None, description="脚本配置 JSON")
+    script_configs: list[dict[str, Any]] | dict[str, Any] | None = Field(None, description="脚本配置 JSON")
     sort_order: int = Field(0, description="排序顺序")
     notes: str | None = Field(None, description="备注")
 
@@ -40,7 +41,7 @@ class AIWorkflowConfigUpdate(BaseModel):
     workflow_description: str | None = Field(None, description="工作流描述")
     trigger_event: str | None = Field(None, max_length=64, description="触发事件")
     is_enabled: bool | None = Field(None, description="是否启用")
-    script_configs: list[dict] | dict | None = Field(None, description="脚本配置 JSON")
+    script_configs: list[dict[str, Any]] | dict[str, Any] | None = Field(None, description="脚本配置 JSON")
     sort_order: int | None = Field(None, description="排序顺序")
     notes: str | None = Field(None, description="备注")
 

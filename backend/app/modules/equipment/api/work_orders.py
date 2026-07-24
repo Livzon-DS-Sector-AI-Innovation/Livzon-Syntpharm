@@ -14,6 +14,7 @@ from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
 from app.core.response import paginated_response, success_response
 from app.modules.equipment import service
+from app.modules.equipment.models.work_order import WorkOrder
 from app.modules.equipment.schemas import (
     MaterialConsumeRequest,
     MaterialConsumeResponse,
@@ -34,7 +35,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
     return current_user.id
 
 
-def _to_response(wo) -> WorkOrderResponse:
+def _to_response(wo: WorkOrder) -> WorkOrderResponse:
     """将 ORM WorkOrder 转为响应对象，填充关联名称"""
     # 异步环境下写操作返回的对象可能未 eager load images 关系
     # 提前检测，直接跳过懒加载赋值，在 resp 上补充空列表

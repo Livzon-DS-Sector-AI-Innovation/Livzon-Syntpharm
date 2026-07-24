@@ -1,6 +1,7 @@
 """Equipment personnel repository."""
 
 import uuid
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -238,7 +239,7 @@ async def soft_delete_personnel_roles(db: AsyncSession, personnel_id: uuid.UUID)
 async def add_personnel_categories(
     db: AsyncSession,
     personnel_id: uuid.UUID,
-    items: list[dict],  # [{"role_id": ..., "category_id": ...}]
+    items: list[dict[str, Any]],  # [{"role_id": ..., "category_id": ...}]
 ) -> list[EquipmentPersonnelCategory]:
     records: list[EquipmentPersonnelCategory] = []
     for item in items:
@@ -309,7 +310,7 @@ async def get_candidates(
     db: AsyncSession,
     role_ids: list[uuid.UUID],
     category_id: uuid.UUID | None = None,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """按角色查找可分配人员，支持设备分类过滤"""
     base = (
         select(
@@ -337,7 +338,7 @@ async def get_candidates(
     result = await db.execute(base)
     rows = result.all()
 
-    candidates: dict[uuid.UUID, dict] = {}
+    candidates: dict[uuid.UUID, dict[str, Any]] = {}
     for personnel, role in rows:
         pid = personnel.id
         if pid not in candidates:
@@ -369,7 +370,7 @@ async def get_candidates(
         )
         matched = {(r.personnel_id, r.role_id) for r in matched_result.scalars().all()}
 
-        filtered: dict[uuid.UUID, dict] = {}
+        filtered: dict[uuid.UUID, dict[str, Any]] = {}
         for pid, info in candidates.items():
             if pid not in constrained_ids:
                 # 无约束 → 入选

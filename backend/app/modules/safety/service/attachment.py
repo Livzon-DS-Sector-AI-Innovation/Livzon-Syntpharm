@@ -4,7 +4,9 @@ import logging
 import os
 import uuid
 from datetime import datetime
+from typing import Any
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.document_parser import (
@@ -29,11 +31,11 @@ class AttachmentService:
     UPLOAD_DIR = os.path.join("uploads", "safety", "ai-workflow")
     MD_SUBDIR = "md"
 
-    def __init__(self):
+    def __init__(self) -> None:
         os.makedirs(self.UPLOAD_DIR, exist_ok=True)
         os.makedirs(os.path.join(self.UPLOAD_DIR, self.MD_SUBDIR), exist_ok=True)
 
-    async def upload_attachment(self, file) -> dict:
+    async def upload_attachment(self, file: UploadFile) -> dict[str, Any]:
         """上传附件并转换为 Markdown。
 
         流程：
@@ -122,7 +124,7 @@ class AttachmentService:
             return matches[0]
         return None
 
-    async def create_knowledge_attachments(self, knowledge_ids: list[str], db: AsyncSession) -> list[dict]:
+    async def create_knowledge_attachments(self, knowledge_ids: list[str], db: AsyncSession) -> list[dict[str, Any]]:
         """从知识库文章创建附件引用。
 
         流程：
@@ -132,7 +134,7 @@ class AttachmentService:
         """
 
         repo = SafetyRepository(db)
-        results: list[dict] = []
+        results: list[dict[str, Any]] = []
 
         for kid in knowledge_ids:
             try:

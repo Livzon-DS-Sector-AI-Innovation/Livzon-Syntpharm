@@ -44,7 +44,7 @@ _VALID_TRANSITIONS: dict[str, list[str]] = {
 
 
 # ═══════════ 路线 ═══════════
-async def create_route(db: AsyncSession, data: dict) -> InspectionRoute:
+async def create_route(db: AsyncSession, data: dict[str, Any]) -> InspectionRoute:
     return await repo.create_route(db, data)
 
 
@@ -73,7 +73,7 @@ async def get_routes(
     )
 
 
-async def update_route(db: AsyncSession, route_id: uuid.UUID, data: dict) -> InspectionRoute:
+async def update_route(db: AsyncSession, route_id: uuid.UUID, data: dict[str, Any]) -> InspectionRoute:
     route = await repo.update_route(db, route_id, data)
     if not route:
         raise NotFoundException("巡检路线", str(route_id))
@@ -86,7 +86,7 @@ async def delete_route(db: AsyncSession, route_id: uuid.UUID) -> bool:
     return True
 
 
-async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict]) -> list[RouteLocation]:
+async def set_route_locations(db: AsyncSession, route_id: uuid.UUID, items: list[dict[str, Any]]) -> list[RouteLocation]:
     await get_route_by_id(db, route_id)
     return await repo.set_route_locations(db, route_id, items)
 
@@ -115,7 +115,7 @@ def _validate_transition(current: str, target: str) -> None:
         raise AppException(message=f"状态不允许从 '{current}' 转换到 '{target}'")
 
 
-async def create_task(db: AsyncSession, data: dict) -> InspectionTask:
+async def create_task(db: AsyncSession, data: dict[str, Any]) -> InspectionTask:
     plan_type = data.get("plan_type", "设备巡检")
     has_route = data.get("route_id")
     has_equipment = data.get("equipment_id") or data.get("equipment_ids")
@@ -403,7 +403,7 @@ async def submit_equipment_check(
     db: AsyncSession,
     task_id: uuid.UUID,
     equipment_id: uuid.UUID,
-    records: list[dict],
+    records: list[dict[str, Any]],
 ) -> list[InspectionRecord]:
     task = await _get_task(db, task_id)
     if task.status != "执行中":
@@ -619,7 +619,7 @@ async def get_history(
     return list(result_set.scalars().all()), total
 
 
-async def get_task_detail(db: AsyncSession, task_id: uuid.UUID) -> dict:
+async def get_task_detail(db: AsyncSession, task_id: uuid.UUID) -> dict[str, Any]:
     task = await _get_task(db, task_id)
     records = await repo.get_records_by_task(db, task_id)
     photos = await repo.get_photos_by_task(db, task_id)
@@ -675,7 +675,7 @@ async def _batch_fetch_user_names(
 async def create_schedule(
     db: AsyncSession,
     route_id: uuid.UUID,
-    data: dict,
+    data: dict[str, Any],
 ) -> InspectionRouteSchedule:
     await get_route_by_id(db, route_id)  # validate route exists
     _validate_cron(data["cron_expression"])
@@ -707,7 +707,7 @@ async def get_schedules_by_route(
 async def update_schedule(
     db: AsyncSession,
     schedule_id: uuid.UUID,
-    data: dict,
+    data: dict[str, Any],
 ) -> InspectionRouteSchedule:
     schedule = await repo.get_schedule_by_id(db, schedule_id)
     if not schedule:

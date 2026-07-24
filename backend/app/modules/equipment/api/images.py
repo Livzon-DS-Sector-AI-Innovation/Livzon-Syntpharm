@@ -3,6 +3,7 @@
 import os
 import uuid
 from io import BytesIO
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -51,7 +52,7 @@ async def serve_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-):
+) -> Any:
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
 

@@ -118,7 +118,7 @@ class EquipmentCreate(BaseModel):
     current_cost: float | None = Field(default=None, ge=0, description="当前成本（元）")
     book_value: float | None = Field(default=None, ge=0, description="账面净值（元）")
     depreciation_years: int | None = Field(default=None, ge=1, description="折旧年限")
-    technical_params: dict | None = Field(default=None, description="技术参数")
+    technical_params: dict[str, Any] | None = Field(default=None, description="技术参数")
     department_id: uuid.UUID | None = Field(default=None, description="归属部门ID，逻辑引用 identity.departments.id")
     responsible_person_id: uuid.UUID | None = Field(
         default=None, description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
@@ -153,7 +153,7 @@ class EquipmentUpdate(BaseModel):
     current_cost: float | None = Field(default=None, ge=0, description="当前成本（元）")
     book_value: float | None = Field(default=None, ge=0, description="账面净值（元）")
     depreciation_years: int | None = Field(default=None, ge=1, description="折旧年限")
-    technical_params: dict | None = Field(default=None, description="技术参数")
+    technical_params: dict[str, Any] | None = Field(default=None, description="技术参数")
     department_id: uuid.UUID | None = Field(default=None, description="归属部门ID，逻辑引用 identity.departments.id")
     responsible_person_id: uuid.UUID | None = Field(
         default=None, description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
@@ -191,7 +191,7 @@ class EquipmentResponse(BaseModel):
     current_cost: float | None
     book_value: float | None
     depreciation_years: int | None
-    technical_params: dict | None
+    technical_params: dict[str, Any] | None
     department_id: uuid.UUID | None = None
     department_name: str | None = None
     responsible_person_id: uuid.UUID | None = None

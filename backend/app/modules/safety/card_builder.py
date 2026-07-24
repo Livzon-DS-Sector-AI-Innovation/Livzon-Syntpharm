@@ -1,6 +1,8 @@
 """Scheduled task card builder — template rendering and data aggregation."""
 
 import logging
+from datetime import date
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +10,7 @@ logger = logging.getLogger(__name__)
 # Each entry defines a data key that can be selected in the UI.
 # The `fetcher` is a callable(repo) -> str | int that returns the aggregated value.
 
-DATA_SOURCE_DEFINITIONS: list[dict] = [
+DATA_SOURCE_DEFINITIONS: list[dict[str, Any]] = [
     {
         "key": "hazard_open_count",
         "label": "未关闭隐患数",
@@ -90,7 +92,7 @@ DATA_SOURCE_DEFINITIONS: list[dict] = [
 ]
 
 
-async def fetch_data_sources(repo, enabled_keys: list[str]) -> dict[str, str]:
+async def fetch_data_sources(repo: Any, enabled_keys: list[str]) -> dict[str, str]:
     """Fetch all enabled data sources and return a dict of {key: formatted_value}."""
     from datetime import date, timedelta
 
@@ -138,7 +140,7 @@ def get_data_source_label(key: str) -> str:
     return key
 
 
-def build_default_template(enabled_sources: list[dict]) -> str:
+def build_default_template(enabled_sources: list[dict[str, Any]]) -> str:
     """Auto-generate a default card template from enabled data sources."""
     lines = ["**📊 安全数据简报**", ""]
     for src in enabled_sources:
@@ -154,7 +156,7 @@ def render_template(template: str, variables: dict[str, str]) -> str:
     """Replace {{ key }} placeholders with actual values."""
     import re
 
-    def replacer(match: re.Match) -> str:
+    def replacer(match: re.Match[str]) -> str:
         key = match.group(1).strip()
         return variables.get(key, f"{{{{{key}}}}}")
 
@@ -178,7 +180,7 @@ async def build_card_json(
 # ── Internal fetcher helpers ──
 
 
-async def _count_pending_hazards(repo) -> int:
+async def _count_pending_hazards(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import HazardReport
@@ -195,7 +197,7 @@ async def _count_pending_hazards(repo) -> int:
     return result.scalar() or 0
 
 
-async def _fetch_open_hazards_details(repo) -> str:
+async def _fetch_open_hazards_details(repo: Any) -> str:
     """Query all open hazards and return a markdown-formatted detail list."""
     from sqlalchemy import select
 
@@ -244,7 +246,7 @@ async def _fetch_open_hazards_details(repo) -> str:
     return "\n".join(lines)
 
 
-async def _count_total_hazards(repo) -> int:
+async def _count_total_hazards(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import HazardReport
@@ -254,7 +256,7 @@ async def _count_total_hazards(repo) -> int:
     return result.scalar() or 0
 
 
-async def _count_checks_since(repo, since_date) -> int:
+async def _count_checks_since(repo: Any, since_date: date) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import SafetyCheck
@@ -271,7 +273,7 @@ async def _count_checks_since(repo, since_date) -> int:
     return result.scalar() or 0
 
 
-async def _count_accidents_since(repo, since_date) -> int:
+async def _count_accidents_since(repo: Any, since_date: date) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import Accident
@@ -288,7 +290,7 @@ async def _count_accidents_since(repo, since_date) -> int:
     return result.scalar() or 0
 
 
-async def _count_due_trainings(repo) -> int:
+async def _count_due_trainings(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import SafetyTraining
@@ -305,7 +307,7 @@ async def _count_due_trainings(repo) -> int:
     return result.scalar() or 0
 
 
-async def _count_trainings_since(repo, since_date) -> int:
+async def _count_trainings_since(repo: Any, since_date: date) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import SafetyTraining
@@ -322,7 +324,7 @@ async def _count_trainings_since(repo, since_date) -> int:
     return result.scalar() or 0
 
 
-async def _count_pending_ehs_changes(repo) -> int:
+async def _count_pending_ehs_changes(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import EhsChange
@@ -339,7 +341,7 @@ async def _count_pending_ehs_changes(repo) -> int:
     return result.scalar() or 0
 
 
-async def _count_active_special_ops(repo) -> int:
+async def _count_active_special_ops(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import SpecialOperationPermit
@@ -356,7 +358,7 @@ async def _count_active_special_ops(repo) -> int:
     return result.scalar() or 0
 
 
-async def _count_active_contractors(repo) -> int:
+async def _count_active_contractors(repo: Any) -> int:
     from sqlalchemy import func, select
 
     from app.modules.safety.models import Contractor
@@ -373,7 +375,7 @@ async def _count_active_contractors(repo) -> int:
     return result.scalar() or 0
 
 
-async def _count_due_oh_exams(repo) -> int:
+async def _count_due_oh_exams(repo: Any) -> int:
     from datetime import date
 
     from sqlalchemy import func, select

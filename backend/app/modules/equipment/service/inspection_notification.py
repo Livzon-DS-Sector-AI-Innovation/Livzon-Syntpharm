@@ -61,7 +61,7 @@ async def _collect_equipment_names(db: AsyncSession, task: InspectionTask) -> li
     return names
 
 
-async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[dict]:
+async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[dict[str, Any]]:
     """获取模板检查项列表。
 
     优先使用已加载的 template.items 关系；若未加载则查询数据库。
@@ -110,7 +110,7 @@ async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[di
             tid = uuid.UUID(t) if isinstance(t, str) else t
             template_id_set.add(tid)
 
-    all_items: list[dict] = []
+    all_items: list[dict[str, Any]] = []
     seen: set[str] = set()
     for tid in template_id_set:
         template = await repo.get_inspection_template_by_id(db, tid)
@@ -131,8 +131,8 @@ async def _get_template_items(db: AsyncSession, task: InspectionTask) -> list[di
 def _build_card_content(
     task: InspectionTask,
     equipment_names: list[str],
-    items: list[dict],
-    locations_info: list[dict] | None = None,
+    items: list[dict[str, Any]],
+    locations_info: list[dict[str, Any]] | None = None,
 ) -> str:
     """构建飞书卡片 markdown 正文。
 
@@ -238,11 +238,11 @@ async def send_inspection_start_notification(
         logger.info("  Collected %d template items", len(items))
 
         # 线路巡检：收集地点层级信息
-        locations_info: list[dict] | None = None
+        locations_info: list[dict[str, Any]] | None = None
         if task.plan_type == "线路巡检" and task.route and task.route.locations_rel:
             locations_info = []
             for loc in sorted(task.route.locations_rel, key=lambda x: x.sort_order):
-                eq_list: list[dict] = []
+                eq_list: list[dict[str, Any]] = []
                 for eq in sorted((loc.equipments or []), key=lambda x: x.sort_order):
                     if eq.equipment and not eq.equipment.is_deleted:
                         eq_list.append(

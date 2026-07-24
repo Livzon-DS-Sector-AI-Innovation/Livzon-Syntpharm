@@ -39,7 +39,7 @@ COLUMN_MAPPING = {
 }
 
 
-def get_column_value(row: dict, field_name: str) -> any:
+def get_column_value(row: dict[str, Any], field_name: str) -> any:
     """从行数据中获取字段值，支持多种列名变体"""
     possible_names = COLUMN_MAPPING.get(field_name, [field_name])
     for name in possible_names:
@@ -175,7 +175,7 @@ async def preview_import(
     data: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> dict:
+) -> dict[str, Any]:
     """
     预览导入数据，返回转换后的结果（不入库）
 
@@ -297,7 +297,7 @@ async def batch_import(
     data: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> dict:
+) -> dict[str, Any]:
     """
     批量导入设备（先预览，再导入）
 
