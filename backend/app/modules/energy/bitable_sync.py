@@ -179,9 +179,9 @@ class EnergyBitableSync:
 
             if existing:
                 # 更新
-                existing.value = value
-                existing.unit = unit
-                existing.remark = remark
+                existing.value = value  # type: ignore[attr-defined]
+                existing.unit = unit  # type: ignore[attr-defined]
+                existing.remark = remark  # type: ignore[attr-defined]
                 updated += 1
             else:
                 # 创建

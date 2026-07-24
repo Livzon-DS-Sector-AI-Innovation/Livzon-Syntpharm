@@ -9,14 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse
-from app.modules.safety.schemas import (
+from app.modules.safety.schemas import (  # type: ignore[attr-defined]
     CardPreviewRequest,
     ScheduledTaskCreate,
     ScheduledTaskLogResponse,
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
 )
-from app.modules.safety.service import (
+from app.modules.safety.service import (  # type: ignore[attr-defined]
     ScheduledTaskService,
 )
 
@@ -55,17 +55,17 @@ async def get_feishu_chats(
     settings = get_settings()
     chats: list[dict[str, Any]] = []
     # Include configured chats
-    if settings.FEISHU_EQUIPMENT_CHAT_ID:
+    if settings.FEISHU_EQUIPMENT_CHAT_ID:  # type: ignore[attr-defined]
         chats.append(
             {
-                "chat_id": settings.FEISHU_EQUIPMENT_CHAT_ID,
+                "chat_id": settings.FEISHU_EQUIPMENT_CHAT_ID,  # type: ignore[attr-defined]
                 "name": "设备管理群",
             }
         )
-    if settings.FEISHU_SAFETY_CHAT_ID:
+    if settings.FEISHU_SAFETY_CHAT_ID:  # type: ignore[attr-defined]
         chats.append(
             {
-                "chat_id": settings.FEISHU_SAFETY_CHAT_ID,
+                "chat_id": settings.FEISHU_SAFETY_CHAT_ID,  # type: ignore[attr-defined]
                 "name": "安全模块功能测试群",
             }
         )

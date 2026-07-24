@@ -146,7 +146,7 @@ async def outbound_stock(
     if stock.current_qty < quantity:
         raise AppException(message=f"库存不足，当前库存 {stock.current_qty}，出库数量 {quantity}")
 
-    stock = await repo.update_stock_qty(db, spare_part_id, -quantity)
+    stock = await repo.update_stock_qty(db, spare_part_id, -quantity)  # type: ignore[assignment]
     if not stock:
         raise NotFoundException("库存记录", str(spare_part_id))
 
@@ -175,7 +175,7 @@ async def adjust_stock(
     diff = data.new_qty - stock.current_qty
 
     if diff != 0:
-        stock = await repo.update_stock_qty(db, spare_part_id, diff)
+        stock = await repo.update_stock_qty(db, spare_part_id, diff)  # type: ignore[assignment]
         if not stock:
             raise NotFoundException("库存记录", str(spare_part_id))
 

@@ -15,8 +15,8 @@ async def get_equipment_feishu_client() -> lark.Client:
     """获取设备模块飞书客户端（使用设备机器人凭证）。"""
     return (
         lark.Client.builder()
-        .app_id(settings.EQUIPMENT_FEISHU_APP_ID)
-        .app_secret(settings.EQUIPMENT_FEISHU_APP_SECRET)
+        .app_id(settings.EQUIPMENT_FEISHU_APP_ID)  # type: ignore[attr-defined]
+        .app_secret(settings.EQUIPMENT_FEISHU_APP_SECRET)  # type: ignore[attr-defined]
         .domain(lark.FEISHU_DOMAIN)
         .app_type(lark.AppType.SELF)
         .build()
@@ -34,8 +34,8 @@ async def get_equipment_tenant_token(client: lark.Client) -> str:
         InternalTenantAccessTokenRequest.builder()
         .request_body(
             InternalTenantAccessTokenRequestBody.builder()
-            .app_id(settings.EQUIPMENT_FEISHU_APP_ID)
-            .app_secret(settings.EQUIPMENT_FEISHU_APP_SECRET)
+            .app_id(settings.EQUIPMENT_FEISHU_APP_ID)  # type: ignore[attr-defined]
+            .app_secret(settings.EQUIPMENT_FEISHU_APP_SECRET)  # type: ignore[attr-defined]
             .build()
         )
         .build()
@@ -47,5 +47,5 @@ async def get_equipment_tenant_token(client: lark.Client) -> str:
         data = json.loads(resp.raw.content.decode("utf-8"))
         token = data.get("tenant_access_token", "")
         if token:
-            return token
+            return token  # type: ignore[no-any-return]
     raise RuntimeError("设备机器人 token 响应为空")

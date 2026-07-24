@@ -98,7 +98,7 @@ async def get_session(open_id: str) -> dict[str, Any] | None:
         return None
     try:
         await _renew_ttl(open_id)
-        return json.loads(raw)  # type: ignore[return-value]
+        return json.loads(raw)  # type: ignore[no-any-return]
     except (json.JSONDecodeError, TypeError):
         logger.warning("巡检会话数据损坏: open_id=%s", open_id)
         await clear_session(open_id)
@@ -198,7 +198,7 @@ def get_current_equipment(session: dict[str, Any]) -> dict[str, Any] | None:
     order = session.get("equipment_order", [])
     idx = session.get("current_equipment_index", 0)
     if 0 <= idx < len(order):
-        return order[idx]
+        return order[idx]  # type: ignore[no-any-return]
     return None
 
 
@@ -277,7 +277,7 @@ async def get_selection(open_id: str) -> dict[str, Any] | None:
     if raw is None:
         return None
     try:
-        return json.loads(raw)  # type: ignore[return-value]
+        return json.loads(raw)  # type: ignore[no-any-return]
     except (json.JSONDecodeError, TypeError):
         await clear_selection(open_id)
         return None

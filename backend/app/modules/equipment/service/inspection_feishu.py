@@ -815,16 +815,15 @@ async def _cmd_modify(open_id: str, session: dict[str, Any], user_text: str) -> 
         return
 
     # 使用 AI 解析修改
-    from app.modules.equipment.service.ai.client import AIAnalysisError, QwenClient
+    from app.modules.equipment.service.ai.client import AIAnalysisError, parse_correction
     from app.modules.equipment.service.ai.prompts import (
         CORRECTION_SYSTEM_PROMPT,
         build_correction_user_prompt,
     )
 
-    client = QwenClient()
     try:
         user_prompt = build_correction_user_prompt(current_results, user_text)
-        raw_response = await client.parse_correction(
+        raw_response = await parse_correction(
             system_prompt=CORRECTION_SYSTEM_PROMPT,
             user_prompt=user_prompt,
         )
@@ -839,8 +838,6 @@ async def _cmd_modify(open_id: str, session: dict[str, Any], user_text: str) -> 
         logger.exception("AI 修正请求失败: open_id=%s", open_id)
         await _reply_text(open_id, f"AI 服务暂时不可用：{e}\n请稍后再试。")
         return
-    finally:
-        await client.close()
 
     # 解析 AI 响应
     try:
@@ -1261,7 +1258,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         loc_rows = (await db.execute(loc_stmt)).all()
         for loc, loc_name in loc_rows:
             eq_stmt = (
-                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_no)
+                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_no)  # type: ignore[attr-defined]
                 .join(Equipment, RouteLocationEquipment.equipment_id == Equipment.id)
                 .where(
                     RouteLocationEquipment.route_location_id == loc.id,
@@ -1287,7 +1284,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         for eid_str in task.equipment_ids:
             eid = uuid.UUID(eid_str) if isinstance(eid_str, str) else eid_str
             eq_result = await db.execute(
-                select(Equipment.name, Equipment.equipment_no).where(
+                select(Equipment.name, Equipment.equipment_no).where(  # type: ignore[attr-defined]
                     Equipment.id == eid,
                     Equipment.is_deleted == False,  # noqa: E712
                 )
@@ -1307,7 +1304,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         from app.modules.equipment.models.equipment import Equipment
 
         eq_result = await db.execute(
-            select(Equipment.name, Equipment.equipment_no).where(
+            select(Equipment.name, Equipment.equipment_no).where(  # type: ignore[attr-defined]
                 Equipment.id == task.equipment_id,
                 Equipment.is_deleted == False,  # noqa: E712
             )

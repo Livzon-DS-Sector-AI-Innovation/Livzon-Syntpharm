@@ -170,7 +170,7 @@ async def energy_collection_loop() -> None:
 
                     # 批量查询所有设备的最新数据（替代 N+1 查询）
                     device_ids = [d.id for d in devices]
-                    latest_data_map = await repo.get_latest_energy_data_batch(db, device_ids)
+                    latest_data_map = await repo.get_latest_energy_data_batch(db, device_ids)  # type: ignore[attr-defined]
 
                     for device in devices:
                         latest = latest_data_map.get(device.id)
@@ -221,11 +221,11 @@ async def bitable_monthly_sync_loop() -> None:
     每天只执行一次，通过 last_sync_date 防止重复。
     """
     settings = get_settings()
-    if not settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED:
+    if not settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED:  # type: ignore[attr-defined]
         logger.info("飞书多维表格月度同步已关闭（ENERGY_BITABLE_AUTO_SYNC_ENABLED=false）")
         return
 
-    sync_hour = settings.ENERGY_BITABLE_SYNC_HOUR
+    sync_hour = settings.ENERGY_BITABLE_SYNC_HOUR  # type: ignore[attr-defined]
     logger.info("飞书多维表格月度同步任务已启动（每日 %d:00 执行）", sync_hour)
 
     last_sync_date: str | None = None

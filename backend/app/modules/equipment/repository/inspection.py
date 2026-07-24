@@ -758,7 +758,7 @@ async def get_due_schedules(
 # Alias for compatibility
 async def get_equipment_nos_by_ids(db: AsyncSession, ids: list[Any]) -> dict[str, Any]:
     """根据ID列表获取设备编号映射。别名函数。"""
-    return await get_equipment_names_by_ids(db, ids)
+    return await get_equipment_names_by_ids(db, ids)  # type: ignore[return-value]
 
 
 async def get_task_by_no(db: AsyncSession, task_no: str) -> InspectionTask | None:

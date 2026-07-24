@@ -1,6 +1,7 @@
 """Work order Feishu bot service: query and complete work orders via chat."""
 
 import logging
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -402,7 +402,7 @@ async def refresh_feishu(db: AsyncSession) -> FeishuRefreshResult:
     user_map = {u.id: u for u in users_result.scalars().all()}
 
     for p in rows:
-        user = user_map.get(p.user_id)
+        user = user_map.get(p.user_id)  # type: ignore[arg-type]
         if not user:
             result.unmatched += 1
             continue

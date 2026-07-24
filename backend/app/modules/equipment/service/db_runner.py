@@ -7,7 +7,7 @@
 import asyncio
 import threading
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 

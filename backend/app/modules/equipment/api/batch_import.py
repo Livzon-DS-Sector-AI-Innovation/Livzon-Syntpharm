@@ -39,7 +39,7 @@ COLUMN_MAPPING = {
 }
 
 
-def get_column_value(row: dict[str, Any], field_name: str) -> any:
+def get_column_value(row: dict[str, Any], field_name: str) -> Any:
     """从行数据中获取字段值，支持多种列名变体"""
     possible_names = COLUMN_MAPPING.get(field_name, [field_name])
     for name in possible_names:
@@ -108,7 +108,7 @@ async def get_department_id_by_name(db: AsyncSession, dept_name: str) -> uuid.UU
     result = await db.execute(
         select(Department.id).where(
             Department.name == dept_name,
-            not Department.is_deleted,
+            not Department.is_deleted,  # type: ignore[arg-type]
         )
     )
     return result.scalar_one_or_none()
@@ -240,7 +240,7 @@ async def preview_import(
         equipment_class = map_equipment_class_raw(equipment_class_raw) or map_equipment_class(category_desc)
 
         # 构建预览项
-        preview_item = {
+        preview_item: dict[str, Any] = {
             "row_index": idx,
             "asset_no": asset_no,
             "label_no": label_no,
@@ -282,7 +282,7 @@ async def preview_import(
     valid_count = sum(1 for item in preview_items if not item["validation_errors"])
     invalid_count = len(preview_items) - valid_count
 
-    return success_response(
+    return success_response(  # type: ignore[return-value]
         data={
             "total": len(preview_items),
             "valid_count": valid_count,
@@ -390,7 +390,7 @@ async def batch_import(
             skipped_count += 1
             errors.append({"row": idx, "error": str(e)})
 
-    return success_response(
+    return success_response(  # type: ignore[return-value]
         data={
             "created_count": created_count,
             "skipped_count": skipped_count,

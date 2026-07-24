@@ -246,7 +246,7 @@ async def update_equipment(
     if "responsible_person_name" in update_data and "responsible_person_id" not in update_data:
         update_data["responsible_person_id"] = None
 
-    return await repo.update_equipment(db, equipment_id, update_data)
+    return await repo.update_equipment(db, equipment_id, update_data)  # type: ignore[return-value]
 
 
 async def delete_equipment(

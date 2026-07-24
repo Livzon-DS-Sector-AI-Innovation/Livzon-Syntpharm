@@ -174,7 +174,7 @@ def _extract_json(text: str) -> dict[str, Any]:
     match = re.search(r"<string[^>]*>(.+)</string>", text, re.DOTALL)
     if not match:
         raise RuntimeError(f"无法从智恒 API 响应中提取 JSON 数据: {text[:200]}")
-    return json.loads(match.group(1))
+    return json.loads(match.group(1))  # type: ignore[no-any-return]
 
 
 def _record_matches_hour(record: dict[str, Any], target_hour: datetime) -> bool:

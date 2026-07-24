@@ -30,7 +30,7 @@ async def claim_work_order(
     if not current_user:
         raise AppException(message="需要登录", status_code=401)
 
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
+    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
     if not dept_id:
         raise AppException(message="设备部未配置")
 

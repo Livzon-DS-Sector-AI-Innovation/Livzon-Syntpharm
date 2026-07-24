@@ -442,7 +442,7 @@ async def get_collect_log_detail(
     result = await db.execute(query)
     rows = list(result.all())
 
-    return log, rows
+    return log, rows  # type: ignore[return-value]
 
 
 # ── 预警规则 ──

@@ -102,7 +102,7 @@ async def create_work_order(
             if data.order_type != "异常处理":
                 await _update_equipment_status(db, data.equipment_id, "维修中")
             # eager re-fetch，避免返回对象触发懒加载 MissingGreenlet
-            return await repo.get_work_order_by_id(db, work_order.id)
+            return await repo.get_work_order_by_id(db, work_order.id)  # type: ignore[return-value]
         except IntegrityError:
             if attempt < _MAX_RETRIES - 1:
                 await db.rollback()
@@ -206,7 +206,7 @@ async def complete_work_order(
                 )
             )
 
-    return await repo.get_work_order_by_id(db, wo.id)
+    return await repo.get_work_order_by_id(db, wo.id)  # type: ignore[return-value]
 
 
 async def _update_maintenance_plan_on_completion(

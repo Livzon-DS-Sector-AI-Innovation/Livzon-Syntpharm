@@ -4,6 +4,7 @@ import os
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as dt_timezone
+from typing import Any
 
 from croniter import croniter  # type: ignore[import-untyped]
 from fastapi import UploadFile
@@ -729,7 +730,7 @@ async def delete_schedule(
     return True
 
 
-async def save_photo_from_base64(db: AsyncSession, photo_data: str, task_id: uuid.UUID = None) -> str:
+async def save_photo_from_base64(db: AsyncSession, photo_data: str, task_id: uuid.UUID | None = None) -> str:
     """保存 base64 编码的照片。返回照片 URL。"""
     import base64
 
@@ -747,6 +748,6 @@ async def save_photo_from_base64(db: AsyncSession, photo_data: str, task_id: uui
     filename = f"inspection_photos/{photo_hash}.jpg"
 
     # Upload to storage
-    await upload_object("equipment", filename, photo_bytes, "image/jpeg")
+    await upload_object("equipment", filename, photo_bytes, "image/jpeg")  # type: ignore[misc, arg-type]
 
     return f"/storage/equipment/{filename}"

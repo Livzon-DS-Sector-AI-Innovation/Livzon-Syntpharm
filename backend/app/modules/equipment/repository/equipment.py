@@ -318,7 +318,7 @@ async def create_equipment(
     await db.flush()
 
     # eager re-fetch
-    return await _refetch_equipment(db, equipment.id)
+    return await _refetch_equipment(db, equipment.id)  # type: ignore[return-value]
 
 
 async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equipment | None:
@@ -545,12 +545,12 @@ async def get_max_equipment_no_by_category(
     """获取指定分类的最大设备编号"""
     pattern = f"EQ-{category_code}-%"
     result = await db.execute(
-        select(Equipment.equipment_no)
+        select(Equipment.equipment_no)  # type: ignore[attr-defined]
         .where(
-            Equipment.equipment_no.like(pattern),
+            Equipment.equipment_no.like(pattern),  # type: ignore[attr-defined]
             Equipment.is_deleted == False,  # noqa: E712
         )
-        .order_by(Equipment.equipment_no.desc())
+        .order_by(Equipment.equipment_no.desc())  # type: ignore[attr-defined]
         .limit(1)
     )
     return result.scalar_one_or_none()
