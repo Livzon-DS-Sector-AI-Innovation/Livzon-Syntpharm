@@ -279,5 +279,3 @@ def quick_export(  # type: ignore[no-untyped-def]
     # 仅 xlsx
     filler = ExcelTemplateFiller(config)
     return filler.fill_and_save(template, data, output_path)
-
-
