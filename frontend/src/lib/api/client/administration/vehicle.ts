@@ -11,31 +11,11 @@ export async function fetchVehicles(params?: { keyword?: string; status?: string
   return res.json()
 }
 
-export async function createVehicle(data: any) {
-  const res = await fetch(`${API_BASE}/administration/vehicles`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建车辆失败')
-  return res.json()
-}
 
-export async function updateVehicle(id: string, data: any) {
-  const res = await fetch(`${API_BASE}/administration/vehicles/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新车辆失败')
-  return res.json()
-}
 
-export async function deleteVehicle(id: string) {
-  const res = await fetch(`${API_BASE}/administration/vehicles/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除车辆失败')
-  return res.json()
-}
+
+
+
 
 export async function batchImportVehicles(file: File) {
   const formData = new FormData()

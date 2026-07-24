@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Input, Tag, Space, Modal, Form, message, Popconfirm, Select } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
-import { fetchGiftInventories, createGiftInventory, updateGiftInventory, deleteGiftInventory } from '@/lib/api/client/administration/gift-inventory'
+import { fetchGiftInventories } from '@/lib/api/client/administration/gift-inventory'
+import { createGiftInventory, updateGiftInventory, deleteGiftInventory } from '@/actions/administration'
 
 const STATUS_OPTIONS = [
   { label: '全部', value: '' },

@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
-import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle, batchImportVehicles } from '@/lib/api/client/administration/vehicle'
+import { fetchVehicles, batchImportVehicles } from '@/lib/api/client/administration/vehicle'
+import { createVehicle, updateVehicle, deleteVehicle } from '@/actions/administration'
 import { UploadFile } from 'antd'
 
 const STATUS_COLORS: Record<string, string> = {

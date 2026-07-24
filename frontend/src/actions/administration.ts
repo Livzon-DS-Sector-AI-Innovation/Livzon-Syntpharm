@@ -65,3 +65,62 @@ export async function extractRegulationText(data: { file_name?: string; file_typ
   if (!res.ok) throw new Error('提取文件内容失败')
   return res.json() as Promise<{ code: number; message: string; data: { text: string; source: string } }>
 }
+
+
+export async function createGiftInventory(data: any) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('创建库存记录失败')
+  return res.json()
+}
+
+export async function updateGiftInventory(id: string, data: any) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('更新库存记录失败')
+  return res.json()
+}
+
+export async function deleteGiftInventory(id: string) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('删除库存记录失败')
+  return res.json()
+}
+
+export async function createVehicle(data: any) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('创建车辆记录失败')
+  return res.json()
+}
+
+export async function updateVehicle(id: string, data: any) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('更新车辆记录失败')
+  return res.json()
+}
+
+export async function deleteVehicle(id: string) {
+  const API_BASE = process.env.API_BASE_URL || ''
+  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('删除车辆记录失败')
+  return res.json()
+}
