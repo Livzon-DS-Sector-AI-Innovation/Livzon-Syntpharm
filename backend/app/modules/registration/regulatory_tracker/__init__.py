@@ -24,7 +24,7 @@ async def _start_regulatory_scheduler() -> Any:
 
 async def _stop_regulatory_scheduler() -> Any:
     """Stop regulatory tracker's scheduler."""
-    from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (  # type: ignore[attr-defined]
+    from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
         stop_scheduler,
     )
 

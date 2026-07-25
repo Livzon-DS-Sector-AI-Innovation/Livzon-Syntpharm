@@ -137,3 +137,11 @@ async def run_scheduler() -> Any:
         logger.error("Scheduler engine not initialized")
         return
     await _scheduler_engine.run()
+
+
+def stop_scheduler() -> None:
+    """Stop the scheduler engine (called from registered background worker shutdown)."""
+    global _scheduler_engine
+    if _scheduler_engine is not None:
+        _scheduler_engine.stop()
+        _scheduler_engine = None
