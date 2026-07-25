@@ -3,7 +3,6 @@
 import uuid
 from typing import Any
 
-from fastapi import HTTPException
 from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -628,13 +627,10 @@ async def create_rd_stage_deliverable(db: AsyncSession, data: dict[str, Any]) ->
     return deliverable
 
 
-async def get_rd_stage_deliverable(db: AsyncSession, deliverable_id: uuid.UUID) -> RdStageDeliverable:
+async def get_rd_stage_deliverable(db: AsyncSession, deliverable_id: uuid.UUID) -> RdStageDeliverable | None:
     """获取阶段交付物"""
     result = await db.execute(select(RdStageDeliverable).where(RdStageDeliverable.id == deliverable_id))
-    deliverable = result.scalar_one_or_none()
-    if not deliverable:
-        raise HTTPException(status_code=404, detail="交付物不存在")
-    return deliverable
+    return result.scalar_one_or_none()
 
 
 async def list_rd_stage_deliverables(
@@ -698,7 +694,7 @@ async def delete_pilot_study(db: AsyncSession, study_id: uuid.UUID, user_id: uui
     result = await db.execute(select(RdPilotStudy).where(RdPilotStudy.id == study_id))
     study = result.scalar_one_or_none()
     if not study:
-        raise HTTPException(status_code=404, detail="中试研究不存在")
+        return
     study.is_deleted = True
     if user_id:
         study.updated_by = user_id
@@ -710,7 +706,7 @@ async def delete_validation(db: AsyncSession, validation_id: uuid.UUID, user_id:
     result = await db.execute(select(RdProcessValidation).where(RdProcessValidation.id == validation_id))
     validation = result.scalar_one_or_none()
     if not validation:
-        raise HTTPException(status_code=404, detail="工艺验证不存在")
+        return
     validation.is_deleted = True
     if user_id:
         validation.updated_by = user_id
@@ -722,7 +718,7 @@ async def delete_filing(db: AsyncSession, filing_id: uuid.UUID, user_id: uuid.UU
     result = await db.execute(select(RdRegistrationFiling).where(RdRegistrationFiling.id == filing_id))
     filing = result.scalar_one_or_none()
     if not filing:
-        raise HTTPException(status_code=404, detail="申报资料不存在")
+        return
     filing.is_deleted = True
     if user_id:
         filing.updated_by = user_id

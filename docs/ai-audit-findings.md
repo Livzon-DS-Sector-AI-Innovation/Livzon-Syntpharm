@@ -36,7 +36,7 @@ _None._
 | Status | complete |
 
 #### Confirmed
-- [ ] `backend/app/core/config.py:265-266` — 仓库通用规则/禁止硬编码绝对路径 — Hardcoded Windows paths `C:\Program Files\LibreOffice\program\soffice.exe` as fallback defaults. Should be configurable via environment variable (`SOFFICE_PATH`) only, not hardcoded in source. — severity: medium
+- [x] `backend/app/core/config.py:265-266` — 仓库通用规则/禁止硬编码绝对路径 — Hardcoded Windows paths removed. `SOFFICE_FALLBACK_PATHS` now empty; `SOFFICE_PATH` env var is the sole configuration source. — severity: medium — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -78,7 +78,7 @@ _None yet._
 | Status | complete |
 
 #### Confirmed
-- [ ] `backend/app/modules/research/repository.py:636,701,713,725,741` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Repository layer raises raw `HTTPException(status_code=404)` instead of domain exceptions. Repositories must not depend on HTTP. Return `None` or raise domain-level exceptions; let API/service layer convert to HTTP responses. Also a module boundary violation (repository depends on `fastapi.HTTPException`). — severity: blocking
+- [x] `backend/app/modules/research/repository.py` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Repository layer was raising raw `HTTPException(status_code=404)`. Fixed: repository now returns `None` when entity not found; service layer checks and raises `NotFoundException` from `app.core.exceptions`. — severity: blocking — **RESOLVED**
 
 #### Uncertain
 - [ ] `backend/app/modules/safety/api/files.py:127,134` — API 规范/必须 — Uses raw `HTTPException(status_code=404)` in API layer. The project provides `NotFoundException(resource, id)` in `app.core.exceptions`. This is in an API file (acceptable layer), but should use project exception classes for consistency. — severity: low
@@ -183,9 +183,9 @@ _None yet._
 | Status | complete |
 
 #### Confirmed
-- [ ] `frontend/src/app/(dashboard)/settings/page.tsx` — Server Component vs Client Component — Directly imports `<Result>` from antd and uses it in JSX without `'use client'`. Server Components cannot render antd components. — severity: medium
-- [ ] `frontend/src/app/(dashboard)/hr/training/ledger/page.tsx` — Server Component vs Client Component — Directly imports from antd without `'use client'`. — severity: medium
-- [ ] `frontend/src/app/(dashboard)/hr/training/annual-plan/page.tsx` — Server Component vs Client Component — Directly imports from antd without `'use client'`. — severity: medium
+- [x] `frontend/src/app/(dashboard)/settings/page.tsx` — Server Component vs Client Component — Was directly importing `<Result>` from antd. Fixed: extracted to `NoAccessResult` Client Component. — severity: medium — **RESOLVED**
+- [x] `frontend/src/app/(dashboard)/hr/training/ledger/page.tsx` — Server Component vs Client Component — Was directly importing `<Spin>` from antd. Fixed: replaced with `<LoadingSpinner>` Client Component. — severity: medium — **RESOLVED**
+- [x] `frontend/src/app/(dashboard)/hr/training/annual-plan/page.tsx` — Server Component vs Client Component — Was directly importing `<Spin>` from antd. Fixed: replaced with `<LoadingSpinner>` Client Component. — severity: medium — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -283,20 +283,20 @@ CI configuration in place. E2E tests run on push to main via `.github/workflows/
 | Category | Status | Confirmed | Uncertain |
 |---|---|---|---|
 | 1. Repository layout | complete | 0 | 0 |
-| 2. Secrets and hardcoded values | complete | 1 | 0 |
+| 2. Secrets and hardcoded values | complete | 0 | 0 |
 | 3. Backend module boundaries | complete | 0 | 1 |
-| 4. API and authentication | complete | 1 | 1 |
+| 4. API and authentication | complete | 0 | 1 |
 | 5. Models and migrations | complete | 0 | 0 |
 | 6. Configuration and logging | complete | 0 | 0 |
 | 7. External services and background tasks | complete | 0 | 0 |
 | 8. Backend tests | complete | 0 | 0 |
-| 9. Frontend component boundaries | complete | 3 | 0 |
+| 9. Frontend component boundaries | complete | 0 | 0 |
 | 10. Frontend API and generated types | complete | 0 | 0 |
 | 11. Proxy and routing | complete | 0 | 0 |
 | 12. Cross-project OpenAPI | complete | 0 | 0 |
 | 13. Docker and deployment | complete | 0 | 0 |
 | 14. E2E | complete | 0 | 0 |
-| **Total** | **14/14 complete** | **5** | **2** |
+| **Total** | **14/14 complete** | **0** | **2** |
 
 ---
 

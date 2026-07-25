@@ -889,7 +889,10 @@ async def create_rd_stage_deliverable(
 
 async def get_rd_stage_deliverable(db: AsyncSession, deliverable_id: UUID) -> RdStageDeliverable:
     """获取阶段交付物"""
-    return await repo.get_rd_stage_deliverable(db, deliverable_id)
+    deliverable = await repo.get_rd_stage_deliverable(db, deliverable_id)
+    if not deliverable:
+        raise NotFoundException("阶段交付物", str(deliverable_id))
+    return deliverable
 
 
 async def list_rd_stage_deliverables(
