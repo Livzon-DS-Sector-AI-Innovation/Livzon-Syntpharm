@@ -1,8 +1,8 @@
 
 import { Suspense } from 'react'
-import { Spin } from 'antd'
 import { TrainingLedgerClient } from '@/components/hr'
 import { fetchEmployeeByNumberApi as fetchEmployeeByNumber } from '@/lib/api/server/hr'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 export const dynamic = 'force-dynamic'
 
 
@@ -60,11 +60,7 @@ export default async function TrainingLedgerPage({ searchParams }: PageProps) {
           </p>
         </div>
         <Suspense
-          fallback={
-            <div className="flex items-center justify-center py-20">
-              <Spin size="large" tip="加载中..." />
-            </div>
-          }
+          fallback={<LoadingSpinner description="加载中..." />}
         >
           <TrainingLedgerClient employeeNumber="" />
         </Suspense>
@@ -84,11 +80,7 @@ export default async function TrainingLedgerPage({ searchParams }: PageProps) {
       </div>
 
       <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-20">
-            <Spin size="large" description="加载中..." />
-          </div>
-        }
+        fallback={<LoadingSpinner description="加载中..." />}
       >
         <TrainingLedgerClient employeeNumber={employeeNumber} />
       </Suspense>

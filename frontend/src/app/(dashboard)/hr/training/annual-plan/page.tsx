@@ -1,10 +1,10 @@
 
 import { Suspense } from 'react'
-import { Spin } from 'antd'
 import { AnnualPlanListClient } from '@/components/hr'
 import { AnnualPlanDeptClient } from '@/components/hr'
 import { AnnualPlanDetailClient } from '@/components/hr'
 import { fetchAnnualTrainingPlanByIdApi as fetchAnnualTrainingPlanById } from '@/lib/api/server/hr'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 export const dynamic = 'force-dynamic'
 
 
@@ -67,11 +67,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
         </div>
 
         <Suspense
-          fallback={
-            <div className="flex items-center justify-center py-20">
-              <Spin size="large" description="加载中..." />
-            </div>
-          }
+          fallback={<LoadingSpinner description="加载中..." />}
         >
           <AnnualPlanDetailClient planId={planId} plan={plan} />
         </Suspense>
@@ -93,11 +89,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
         </div>
 
         <Suspense
-          fallback={
-            <div className="flex items-center justify-center py-20">
-              <Spin size="large" description="加载中..." />
-            </div>
-          }
+          fallback={<LoadingSpinner description="加载中..." />}
         >
           <AnnualPlanDeptClient department={dept} />
         </Suspense>
@@ -118,11 +110,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
       </div>
 
       <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-20">
-            <Spin size="large" description="加载中..." />
-          </div>
-        }
+        fallback={<LoadingSpinner description="加载中..." />}
       >
         <AnnualPlanListClient />
       </Suspense>

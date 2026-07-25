@@ -261,10 +261,7 @@ class Settings(BaseSettings):
 
     # LibreOffice
     SOFFICE_PATH: str = ""
-    SOFFICE_FALLBACK_PATHS: list[str] = [
-        "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
-        "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
-    ]
+    SOFFICE_FALLBACK_PATHS: list[str] = []
 
     # API
     API_V1_PREFIX: str = "/api/v1"
