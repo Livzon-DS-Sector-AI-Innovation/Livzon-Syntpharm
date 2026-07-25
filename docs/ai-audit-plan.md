@@ -1010,17 +1010,38 @@ These AGENTS.md sections are architectural guidance, procedural documentation, o
 
 ---
 
+## Explicit exceptions from AGENTS.md
+
+AGENTS.md includes exception clauses that auditors must check before reporting a rule violation. A finding is NOT a violation if it matches one of these exceptions.
+
+| Exception | Rule it modifies | Category |
+|---|---|---|
+| Prompt/knowledge base/test fixture files excluded from E501 line length check. Maintained in `pyproject.toml` `[tool.ruff.lint.per-file-ignores]`. | 代码格式规范 — 120 char limit | 3 |
+| `0001_baseline_full_schema` migration allowed to span all schemas. | 迁移规范 — 单模块原则 | 5 |
+| Cross-module FK, `platform`/`core`/`shared`-level changes can span schemas with architecture lead approval. | 迁移规范 — 单模块原则 | 5 |
+| Historical migrations may be modified "除非用户明确要求" (only when user explicitly requires). | 迁移规范 — 禁止修改历史 migration | 5 |
+| `os.getenv()` allowed for setting subprocess environment variables. | 配置管理 — 禁止 os.getenv() | 6 |
+| `asyncio.create_task()` allowed in long-running background worker processes for heartbeats, event dispatch, and infrastructure tasks. | 异步任务 — 禁止 asyncio.create_task() | 7 |
+| Soft delete default; physical delete allowed "除非需求明确要求" (when requirements explicitly require). | API 规范 — 强制软删除 | 4 |
+| `current_user` may be `None` in Phase 1. | 认证与权限 — 默认需要登录 | 4 |
+| SSE/ReadableStream streaming responses and upload progress tracking allowed to use direct fetch in `lib/api/client/`. | 写操作必须用 Server Actions | 10 |
+| `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
+| Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
+
+---
+
 ## Audit procedure
 
 ### Baseline audit (run once for the full repository)
 
 For each category 1–14 in sequence:
 1. Read this category's section above
-2. Read the referenced AGENTS.md sections
-3. Inspect all listed directories
-4. Answer every question
-5. Report counts: files inspected, not inspected, rules evaluated, not evaluated
-6. Record findings in `docs/ai-audit-findings.md`
+2. Read the referenced AGENTS.md sections (including any exception clauses)
+3. Check the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table for this category
+4. Inspect all listed directories
+5. Answer every question — if a candidate matches a listed exception, do NOT report it as a finding
+6. Report counts: files inspected, not inspected, rules evaluated, not evaluated
+7. Record findings in `docs/ai-audit-findings.md`
 
 After all 14 categories:
 - Fix confirmed violations that should be corrected immediately
@@ -1034,9 +1055,10 @@ After all 14 categories:
 3. For each affected category, feed AI:
    - The PR diff (files in that category's scope)
    - This category's section from this document (rules + questions)
-   - The applicable AGENTS.md rules text
+   - The applicable AGENTS.md rules text (including exception clauses)
+   - The [Explicit exceptions](#explicit-exceptions-from-agentsmd) table
    - The baseline findings for that category from `docs/ai-audit-findings.md`
-4. Ask: "Report only violations introduced or worsened by this diff."
+4. Ask: "Report only violations introduced or worsened by this diff. Do not report candidates that match a listed AGENTS.md exception."
 5. Append findings to `docs/ai-audit-findings.md` under a new PR section
 
 ### Second review (important PRs only)
