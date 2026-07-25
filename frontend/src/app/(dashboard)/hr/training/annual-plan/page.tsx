@@ -110,11 +110,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
       </div>
 
       <Suspense
-        fallback={
-          <div className="flex items-center justify-center py-20">
-            <Spin size="large" description="加载中..." />
-          </div>
-        }
+        fallback={<LoadingSpinner description="加载中..." />}
       >
         <AnnualPlanListClient />
       </Suspense>
