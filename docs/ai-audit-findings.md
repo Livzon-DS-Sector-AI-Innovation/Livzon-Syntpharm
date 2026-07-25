@@ -31,7 +31,7 @@ _None._
 | Files not inspected | 0 |
 | Rules evaluated | 9 (all Q1-Q9) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 1 |
+| Confirmed findings | 0 |
 | Uncertain findings | 0 |
 | Status | complete |
 
@@ -73,7 +73,7 @@ _None yet._
 | Files not inspected | 0 |
 | Rules evaluated | 7 (all Q1-Q7) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 1 |
+| Confirmed findings | 0 |
 | Uncertain findings | 1 |
 | Status | complete |
 
@@ -81,7 +81,7 @@ _None yet._
 - [x] `backend/app/modules/research/repository.py` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Repository layer was raising raw `HTTPException(status_code=404)`. Fixed: repository now returns `None` when entity not found; service layer checks and raises `NotFoundException` from `app.core.exceptions`. — severity: blocking — **RESOLVED**
 
 #### Uncertain
-- [ ] `backend/app/modules/safety/api/files.py:127,134` — API 规范/必须 — Uses raw `HTTPException(status_code=404)` in API layer. The project provides `NotFoundException(resource, id)` in `app.core.exceptions`. This is in an API file (acceptable layer), but should use project exception classes for consistency. — severity: low
+- [ ] `backend/app/modules/safety/api/files.py:127,134` — API 规范/必须 — Uses raw `HTTPException(status_code=404)` in API layer. AGENTS.md requires "业务异常" to use `app.core.exceptions`. A file-not-found 404 in a file-serving endpoint may be considered an HTTP-level response, not a business exception. The project provides `NotFoundException(resource, id)` for business entities; whether file retrieval qualifies is debatable. — severity: low
 
 #### Accepted exceptions
 _None yet._
@@ -178,7 +178,7 @@ _None yet._
 | Files not inspected | 0 |
 | Rules evaluated | 8 (all Q1-Q8) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 3 |
+| Confirmed findings | 0 |
 | Uncertain findings | 0 |
 | Status | complete |
 
