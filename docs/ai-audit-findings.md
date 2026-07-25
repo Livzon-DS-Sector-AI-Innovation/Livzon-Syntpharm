@@ -11,17 +11,17 @@
 | Rules evaluated | 9 (Q1-Q9 covering all listed rules) |
 | Rules not evaluated | 1 (training template dir presence — confirmed, not audited in depth) |
 | Confirmed findings | 0 |
-| Uncertain findings | 1 |
+| Uncertain findings | 0 |
 | Status | complete |
 
 #### Confirmed
 _None._
 
 #### Uncertain
-- [ ] `backend/scripts/run_edbo.py` — 仓库组织/脚本 — Standalone script in `scripts/` root, not in a purpose-specific subdirectory (ci/seed/migration/sync/import/test/regulatory_poc). May belong in `scripts/test/` or could be intentionally kept at root as an EDBO+ runner. — severity: low
+_None._
 
 #### Accepted exceptions
-_None yet._
+- `backend/scripts/run_edbo.py` — 仓库组织/脚本 — Standalone EDBO+ runner script kept at `scripts/` root intentionally. Not a violation.
 
 ---
 
@@ -32,14 +32,14 @@ _None yet._
 | Rules evaluated | 9 (all Q1-Q9) |
 | Rules not evaluated | 0 |
 | Confirmed findings | 1 |
-| Uncertain findings | 1 |
+| Uncertain findings | 0 |
 | Status | complete |
 
 #### Confirmed
-- [ ] `.env.example:111` — 后端/LLM_ENCRYPTION_KEY — `LLM_ENCRYPTION_KEY=change-me-in-production` is present in `.env.example`. AGENTS.md prohibits: "LLM_ENCRYPTION_KEY 必须存放在部署环境变量中，不进入 .env.example". — severity: blocking
+- [ ] `backend/app/core/config.py:265-266` — 仓库通用规则/禁止硬编码绝对路径 — Hardcoded Windows paths `C:\Program Files\LibreOffice\program\soffice.exe` as fallback defaults. Should be configurable via environment variable (`SOFFICE_PATH`) only, not hardcoded in source. — severity: medium
 
 #### Uncertain
-- [ ] `backend/app/core/config.py:265-266` — 仓库通用规则/禁止硬编码绝对路径 — Hardcoded Windows paths `C:\Program Files\LibreOffice\program\soffice.exe`. These are in `core/config.py` (the configuration layer), so they're in the correct file. However, they are hardcoded string literals rather than sourced from environment variables. — severity: low
+_None._
 
 #### Accepted exceptions
 _None yet._
@@ -282,8 +282,8 @@ CI configuration in place. E2E tests run on push to main via `.github/workflows/
 
 | Category | Status | Confirmed | Uncertain |
 |---|---|---|---|
-| 1. Repository layout | complete | 0 | 1 |
-| 2. Secrets and hardcoded values | complete | 1 | 1 |
+| 1. Repository layout | complete | 0 | 0 |
+| 2. Secrets and hardcoded values | complete | 1 | 0 |
 | 3. Backend module boundaries | complete | 0 | 1 |
 | 4. API and authentication | complete | 1 | 1 |
 | 5. Models and migrations | complete | 0 | 0 |
@@ -296,7 +296,7 @@ CI configuration in place. E2E tests run on push to main via `.github/workflows/
 | 12. Cross-project OpenAPI | complete | 0 | 0 |
 | 13. Docker and deployment | complete | 0 | 0 |
 | 14. E2E | complete | 0 | 0 |
-| **Total** | **14/14 complete** | **5** | **4** |
+| **Total** | **14/14 complete** | **5** | **2** |
 
 ---
 
