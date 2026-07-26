@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
+  App,
   Table,
   Button,
   Space,
@@ -11,7 +12,6 @@ import {
   DatePicker,
   Modal,
   Form,
-  message,
   Tag,
   Popconfirm,
   Row,
@@ -47,6 +47,7 @@ import {
 const { RangePicker } = DatePicker
 
 export default function MaterialReportPage() {
+  const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<ReportListItem[]>([])
   const [pagination, setPagination] = useState({ total: 0, page: 1, pageSize: 20 })
@@ -290,7 +291,7 @@ export default function MaterialReportPage() {
         {/* 数据表格 */}
         <Table
           columns={columns}
-          dataSource={data}
+          dataSource={Array.isArray(data) ? data : []}
           rowKey="id"
           loading={loading}
           scroll={{ x: 1200 }}
