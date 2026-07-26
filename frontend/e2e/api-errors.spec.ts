@@ -26,16 +26,13 @@ test.describe('API 错误监控', () => {
       const status = response.status()
       if (!url.includes('/api/')) return
       if (status < 400) return
-      // Skip expected: 401 (unauth), 403 (no permission), 404 (missing resource)
-      if ([401, 403, 404].includes(status)) return
-      errors.push(`[${status}] ${url}`)
+      errors.push(`[${status}] ${response.request().method()} ${url}`)
     })
 
     for (const path of PAGES) {
       await page.goto(path, { timeout: 60000, waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(1000)
     }
 
-    expect(errors, `Unexpected API 500 errors across all pages:\n${errors.join('\n')}`).toEqual([])
+    expect(errors, `Unexpected API errors across all pages:\n${errors.join('\n')}`).toEqual([])
   })
 })

@@ -37,8 +37,11 @@ async def test_login(
     settings: Settings = Depends(get_settings),
     x_e2e_secret: str | None = Header(None, alias="X-E2E-Secret"),
 ) -> dict[str, Any]:
-    """Return a JWT for the e2e test user. Requires APP_ENV=development/test + X-E2E-Secret header."""
-    if settings.APP_ENV not in ("development", "test", "e2e"):
+    """Return a JWT for the e2e test user. Requires APP_ENV=test/e2e + X-E2E-Secret header."""
+    if settings.APP_ENV not in ("test", "e2e"):
+        raise HTTPException(status_code=404)
+
+    if not settings.E2E_AUTH_SECRET:
         raise HTTPException(status_code=404)
 
     expected_secret = settings.E2E_AUTH_SECRET
