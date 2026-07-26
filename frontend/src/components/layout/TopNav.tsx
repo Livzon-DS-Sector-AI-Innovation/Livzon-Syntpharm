@@ -79,6 +79,9 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
           <span className="text-[var(--color-charcoal)] text-[15px] font-semibold tracking-tight leading-tight">
             原料药
           </span>
+          <span className="text-[var(--color-steel)] text-[11px] leading-tight">
+            珠海保税区丽珠合成制药有限公司
+          </span>
         </div>
       </div>
 

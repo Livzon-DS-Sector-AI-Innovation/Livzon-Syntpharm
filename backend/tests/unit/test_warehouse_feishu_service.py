@@ -73,7 +73,6 @@ class FakeRecordClient:
         }
 
 
-@pytest.mark.asyncio
 async def test_read_all_records_reads_all_pages() -> None:
     service = WarehouseService.__new__(WarehouseService)
     client = FakeRecordClient()
@@ -101,7 +100,6 @@ class FakeRepo:
         self.session = FakeSession()
 
 
-@pytest.mark.asyncio
 async def test_set_feishu_tables_enabled_updates_unique_tables_without_sync() -> None:
     service = WarehouseService.__new__(WarehouseService)
     table_a_id = uuid4()
@@ -130,7 +128,6 @@ async def test_set_feishu_tables_enabled_updates_unique_tables_without_sync() ->
     assert service.repo.session.commits == 1
 
 
-@pytest.mark.asyncio
 async def test_sync_feishu_table_marks_failed_when_sync_timeout(monkeypatch) -> None:
     service = WarehouseService.__new__(WarehouseService)
     table_id = uuid4()

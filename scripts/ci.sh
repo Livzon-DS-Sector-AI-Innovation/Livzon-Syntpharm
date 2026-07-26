@@ -83,63 +83,93 @@ run_e2e() {
     log_section "E2E Tests"
     cd "$REPO_ROOT"
 
-    # Start CI postgres
-    log_info "Starting CI postgres..."
-    docker compose -f docker-compose.ci.yml up -d postgres
-    trap 'docker compose -f docker-compose.ci.yml down -v postgres 2>/dev/null || true' EXIT
+    # ── Cleanup trap ────────────────────────────────────────────────────
+    cleanup() {
+        kill "${FRONTEND_PID:-}" 2>/dev/null || true
+        kill "${BACKEND_PID:-}" 2>/dev/null || true
+        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans 2>/dev/null || true
+    }
+    trap cleanup EXIT
 
-    for i in $(seq 1 30); do
-        if docker compose -f docker-compose.ci.yml exec -T postgres pg_isready -U postgres -d dazah_ci > /dev/null 2>&1; then
+    # ── Start E2E postgres ──────────────────────────────────────────────
+    log_info "Starting E2E postgres (port 15432)..."
+    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d postgres
+
+    postgres_ready=false
+    for _ in $(seq 1 30); do
+        if docker compose -p dazah-e2e -f docker-compose.ci.yml exec -T postgres pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
+            postgres_ready=true
             break
         fi
         sleep 1
     done
-    log_info "CI postgres ready"
+    if [[ "$postgres_ready" != true ]]; then
+        log_error "PostgreSQL did not become ready"
+        exit 1
+    fi
+    log_info "E2E postgres ready"
 
-    # Start backend
-    log_info "Starting backend..."
+    # ── Start backend ───────────────────────────────────────────────────
+    log_info "Starting backend (port 18000)..."
     cd "$REPO_ROOT/backend"
-    export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
+    export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:15432/dazah_e2e
     export FEISHU__PLATFORM__APP_ID=ci_dummy
     export FEISHU__PLATFORM__APP_SECRET=ci_dummy
-    export FEISHU__PLATFORM__REDIRECT_URI=http://localhost:3000/auth/callback
-    export FRONTEND_URL=http://localhost:3000
+    export FEISHU__PLATFORM__REDIRECT_URI=http://127.0.0.1:13000/auth/callback
+    export FRONTEND_URL=http://127.0.0.1:13000
+    export APP_ENV=e2e
+    export E2E_AUTH_SECRET="e2e-secret"
 
     check_command uv || return 1
     uv sync --dev 2>/dev/null
     uv run alembic upgrade head
-    uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+    uv run uvicorn app.main:app --host 127.0.0.1 --port 18000 \
+        > "$REPO_ROOT/e2e-backend.log" 2>&1 &
     BACKEND_PID=$!
     log_info "Backend PID: $BACKEND_PID"
 
-    for i in $(seq 1 30); do
-        if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
-            log_info "Backend ready"
+    backend_ready=false
+    for _ in $(seq 1 30); do
+        if curl -sf http://127.0.0.1:18000/health > /dev/null 2>&1; then
+            backend_ready=true
             break
         fi
         sleep 2
     done
+    if [[ "$backend_ready" != true ]]; then
+        log_error "Backend did not become ready"
+        exit 1
+    fi
+    log_info "Backend ready"
 
-    # Start frontend
-    log_info "Starting frontend..."
+    # ── Start frontend ──────────────────────────────────────────────────
+    log_info "Starting frontend (port 13000)..."
     cd "$REPO_ROOT/frontend"
+    export E2E_AUTH_SECRET="e2e-secret"
+    export E2E_BACKEND_URL="http://127.0.0.1:18000"
+    export E2E_FRONTEND_URL="http://127.0.0.1:13000"
+    export API_BASE_URL="http://127.0.0.1:18000"
+
     check_command pnpm || return 1
-    pnpm dev &>/dev/null &
+    pnpm exec next dev -H 0.0.0.0 -p 13000 > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
     FRONTEND_PID=$!
     log_info "Frontend PID: $FRONTEND_PID"
 
-    for i in $(seq 1 30); do
-        if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-            log_info "Frontend ready"
+    frontend_ready=false
+    for _ in $(seq 1 30); do
+        if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
+            frontend_ready=true
             break
         fi
         sleep 2
     done
+    if [[ "$frontend_ready" != true ]]; then
+        log_error "Frontend did not become ready"
+        exit 1
+    fi
+    log_info "Frontend ready"
 
-    # Pre-warm callback route
-    curl -s http://localhost:3000/auth/callback?token=test > /dev/null 2>&1 || true
-
-    # Run Playwright
+    # ── Run Playwright ──────────────────────────────────────────────────
     log_info "Running Playwright tests..."
     if ! pnpm exec playwright test; then
         log_error "E2E tests failed!"
@@ -147,12 +177,6 @@ run_e2e() {
     else
         log_info "E2E tests passed"
     fi
-
-    # Cleanup
-    log_info "Stopping frontend (PID $FRONTEND_PID)..."
-    kill $FRONTEND_PID 2>/dev/null || true
-    log_info "Stopping backend (PID $BACKEND_PID)..."
-    kill $BACKEND_PID 2>/dev/null || true
 
     cd "$REPO_ROOT"
 }

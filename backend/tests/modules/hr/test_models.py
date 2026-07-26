@@ -5,13 +5,11 @@ from __future__ import annotations
 
 from datetime import date
 
-import pytest
 from sqlalchemy import select
 
 from app.modules.hr.models import Employee
 
 
-@pytest.mark.asyncio
 async def test_employee_model_creation(db_session, sample_employee_data):
     employee = Employee(**sample_employee_data)
     db_session.add(employee)

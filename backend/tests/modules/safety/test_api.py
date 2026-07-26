@@ -3,18 +3,15 @@
 
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
 class TestSafetyCheckAPI:
-    @pytest.mark.asyncio
     async def test_get_checks_returns_200(self, auth_client: AsyncClient) -> None:
         """GET /api/v1/safety/checks returns 200 with authentication."""
         response = await auth_client.get("/api/v1/safety/checks")
         assert response.status_code == 200
 
-    @pytest.mark.asyncio
     async def test_get_checks_anonymous(self, auth_client: AsyncClient) -> None:
         """GET /api/v1/safety/checks returns 200 — Phase 1 auth not enforced."""
         response = await auth_client.get("/api/v1/safety/checks")
@@ -22,7 +19,6 @@ class TestSafetyCheckAPI:
 
 
 class TestHazardAPI:
-    @pytest.mark.asyncio
     async def test_get_hazards_returns_200(self, auth_client: AsyncClient) -> None:
         """GET /api/v1/safety/hazards returns 200 with authentication."""
         response = await auth_client.get("/api/v1/safety/hazards")

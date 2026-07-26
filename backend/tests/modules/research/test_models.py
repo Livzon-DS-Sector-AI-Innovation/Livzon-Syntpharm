@@ -3,13 +3,11 @@
 
 from __future__ import annotations
 
-import pytest
 from sqlalchemy import select
 
 from app.modules.research.models import ResearchProject
 
 
-@pytest.mark.asyncio
 async def test_project_model_creation(db_session, sample_project_data):
     project = ResearchProject(**sample_project_data)
     db_session.add(project)

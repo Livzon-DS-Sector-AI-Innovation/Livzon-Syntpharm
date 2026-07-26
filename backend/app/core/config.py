@@ -170,7 +170,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = "change-me-in-production"
     ENCRYPTION_KEY: str | None = None
-    E2E_AUTH_SECRET: str = "dazah-e2e-secret-2024"
+    E2E_AUTH_SECRET: str | None = None
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/dazah"

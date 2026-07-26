@@ -12,7 +12,7 @@
 # │    bash scripts/ci.sh openapi                                       │
 # │    bash scripts/ci.sh e2e                                           │
 # │    cd backend && bash scripts/ci/ci.sh test                         │
-# │    cd frontend && bash scripts/ci/ci.sh lint                        │
+# │    cd frontend && bash scripts/ci.sh lint                           │
 # └──────────────────────────────────────────────────────────────────────┘
 
 name: CI

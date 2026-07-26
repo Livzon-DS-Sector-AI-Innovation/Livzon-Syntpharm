@@ -3,12 +3,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-import pytest
-
 from app.modules.energy import repository as repo
 
 
-@pytest.mark.asyncio
 async def test_create_and_get_device_config(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
     assert created.id is not None
@@ -19,7 +16,6 @@ async def test_create_and_get_device_config(db_session, sample_device_config_dat
     assert fetched.platform_device_code == "WD-001"
 
 
-@pytest.mark.asyncio
 async def test_list_device_configs_with_filters(db_session, sample_device_config_data):
     await repo.create_device_config(db_session, sample_device_config_data)
 
@@ -35,14 +31,12 @@ async def test_list_device_configs_with_filters(db_session, sample_device_config
     assert items[0].workshop == "发酵车间"
 
 
-@pytest.mark.asyncio
 async def test_update_device_config(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
     updated = await repo.update_device_config(db_session, created.id, {"device_name": "新名称"})
     assert updated.device_name == "新名称"
 
 
-@pytest.mark.asyncio
 async def test_soft_delete_device_config(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
     result = await repo.delete_device_config(db_session, created.id)
@@ -52,7 +46,6 @@ async def test_soft_delete_device_config(db_session, sample_device_config_data):
     assert fetched is None
 
 
-@pytest.mark.asyncio
 async def test_exists_device_config(db_session, sample_device_config_data):
     await repo.create_device_config(db_session, sample_device_config_data)
     exists = await repo.exists_device_config(db_session, "zhiheng", "WD-001")
@@ -62,14 +55,12 @@ async def test_exists_device_config(db_session, sample_device_config_data):
     assert not_exists is False
 
 
-@pytest.mark.asyncio
 async def test_exists_device_config_exclude_id(db_session, sample_device_config_data):
     created = await repo.create_device_config(db_session, sample_device_config_data)
     exists = await repo.exists_device_config(db_session, "zhiheng", "WD-001", exclude_id=created.id)
     assert exists is False
 
 
-@pytest.mark.asyncio
 async def test_upsert_energy_data(db_session, sample_device_config_data):
     config = await repo.create_device_config(db_session, sample_device_config_data)
     config_id = config.id
@@ -87,7 +78,6 @@ async def test_upsert_energy_data(db_session, sample_device_config_data):
     assert float(data2.value) == 150.0
 
 
-@pytest.mark.asyncio
 async def test_get_enabled_devices_by_platform(db_session, sample_device_config_data):
     await repo.create_device_config(db_session, sample_device_config_data)
 

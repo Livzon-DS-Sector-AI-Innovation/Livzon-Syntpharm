@@ -133,7 +133,6 @@ def _user(*, name: str, open_id: str | None) -> User:
     return User(id=uuid.uuid4(), name=name, feishu_open_id=open_id)
 
 
-@pytest.mark.anyio
 async def test_send_livzon_feishu_message_requires_livzon_config(
     monkeypatch,
 ) -> None:
@@ -150,7 +149,6 @@ async def test_send_livzon_feishu_message_requires_livzon_config(
     assert "Livzon 助手飞书" in str(exc_info.value.detail)
 
 
-@pytest.mark.anyio
 async def test_send_livzon_feishu_text_message_uses_local_open_id(
     monkeypatch,
 ) -> None:
@@ -187,7 +185,6 @@ async def test_send_livzon_feishu_text_message_uses_local_open_id(
     assert json.loads(sent_payloads[0]["content"]) == {"text": "测试消息"}
 
 
-@pytest.mark.anyio
 async def test_send_livzon_feishu_message_skips_user_without_open_id(
     monkeypatch,
 ) -> None:
@@ -222,7 +219,6 @@ async def test_send_livzon_feishu_message_skips_user_without_open_id(
     assert send_calls == []
 
 
-@pytest.mark.anyio
 async def test_send_livzon_feishu_card_message_builds_interactive_card(
     monkeypatch,
 ) -> None:
@@ -264,7 +260,6 @@ async def test_send_livzon_feishu_card_message_builds_interactive_card(
     assert card["elements"][1]["actions"][0]["url"] == "https://example.com/ticket/1"
 
 
-@pytest.mark.anyio
 async def test_unified_feishu_message_routes_low_value_short_text(monkeypatch) -> None:
     calls = []
 
@@ -287,7 +282,6 @@ async def test_unified_feishu_message_routes_low_value_short_text(monkeypatch) -
     assert calls[0][0] == "text"
 
 
-@pytest.mark.anyio
 async def test_unified_feishu_message_routes_structured_card(monkeypatch) -> None:
     calls = []
 
@@ -311,7 +305,6 @@ async def test_unified_feishu_message_routes_structured_card(monkeypatch) -> Non
     assert calls[0]["title"] == "库存汇总"
 
 
-@pytest.mark.anyio
 async def test_unified_feishu_message_rejects_forced_wrong_shape() -> None:
     with pytest.raises(HTTPException) as exc_info:
         await service.send_livzon_feishu_message(
@@ -351,7 +344,6 @@ def test_build_callback_card_content_has_controlled_values() -> None:
     assert "confirm" in button
 
 
-@pytest.mark.anyio
 async def test_callback_card_requires_callback_config(monkeypatch) -> None:
     monkeypatch.setattr(service, "_feishu_config_repo", FakeFeishuConfigRepo(_config()))
     monkeypatch.setattr(
@@ -372,7 +364,6 @@ async def test_callback_card_requires_callback_config(monkeypatch) -> None:
     assert "Verification Token" in str(exc_info.value.detail)
 
 
-@pytest.mark.anyio
 async def test_callback_action_updates_status_and_writes_audit(monkeypatch) -> None:
     action = SimpleNamespace(
         id=uuid.uuid4(),
@@ -418,7 +409,6 @@ async def test_callback_action_updates_status_and_writes_audit(monkeypatch) -> N
     assert db.added
 
 
-@pytest.mark.anyio
 async def test_ws_card_action_updates_without_callback_token(monkeypatch) -> None:
     action = SimpleNamespace(
         id=uuid.uuid4(),
@@ -459,7 +449,6 @@ async def test_ws_card_action_updates_without_callback_token(monkeypatch) -> Non
     assert db.added
 
 
-@pytest.mark.anyio
 async def test_callback_rejects_invalid_token(monkeypatch) -> None:
     monkeypatch.setattr(
         service,
@@ -477,7 +466,6 @@ async def test_callback_rejects_invalid_token(monkeypatch) -> None:
     assert exc_info.value.status_code == 401
 
 
-@pytest.mark.anyio
 async def test_callback_duplicate_click_is_idempotent(monkeypatch) -> None:
     action = SimpleNamespace(
         id=uuid.uuid4(),
@@ -519,7 +507,6 @@ async def test_callback_duplicate_click_is_idempotent(monkeypatch) -> None:
     assert action.clicked_open_id == "ou_old"
 
 
-@pytest.mark.anyio
 async def test_callback_expired_action_is_rejected(monkeypatch) -> None:
     from datetime import UTC, datetime, timedelta
 
@@ -563,7 +550,6 @@ async def test_callback_expired_action_is_rejected(monkeypatch) -> None:
     assert result["toast"]["type"] == "warning"
 
 
-@pytest.mark.anyio
 async def test_send_livzon_feishu_message_reports_partial_failure(
     monkeypatch,
 ) -> None:
