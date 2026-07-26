@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """AI 整改初审插件 — 独立测试套件。
 
 不依赖数据库、飞书或 FastAPI，仅测试插件核心逻辑。
