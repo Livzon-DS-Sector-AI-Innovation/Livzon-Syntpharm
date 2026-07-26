@@ -57,6 +57,7 @@ async def test_get_verification(db_session, verification_data):
 @pytest.mark.asyncio
 async def test_get_verification_not_found(db_session):
     from app.core.exceptions import NotFoundException
+
     svc = LabelVerificationService(session=db_session)
     with pytest.raises(NotFoundException):
         await svc.get_verification(uuid.uuid4())
@@ -81,6 +82,7 @@ async def test_list_verifications(db_session, verification_data):
 @pytest.mark.asyncio
 async def test_delete_verification(db_session, verification_data):
     from app.core.exceptions import NotFoundException
+
     svc = LabelVerificationService(session=db_session)
     created = await svc.create_verification(verification_data)
     await svc.delete_verification(created.id)

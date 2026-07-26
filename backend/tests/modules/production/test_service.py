@@ -72,24 +72,30 @@ async def test_list_batches(svc, sample_batch_create):
 @pytest.mark.asyncio
 async def test_add_batch_material(svc, sample_batch_create):
     batch = await svc.create_batch(sample_batch_create)
-    mat = await svc.add_batch_material(batch.id, {
-        "material_code": "MAT-001",
-        "material_name": "原料A",
-        "planned_qty": 50.0,
-        "unit": "kg",
-    })
+    mat = await svc.add_batch_material(
+        batch.id,
+        {
+            "material_code": "MAT-001",
+            "material_name": "原料A",
+            "planned_qty": 50.0,
+            "unit": "kg",
+        },
+    )
     assert mat.material_code == "MAT-001"
 
 
 @pytest.mark.asyncio
 async def test_get_batch_materials(svc, sample_batch_create):
     batch = await svc.create_batch(sample_batch_create)
-    await svc.add_batch_material(batch.id, {
-        "material_code": "MAT-001",
-        "material_name": "原料A",
-        "planned_qty": 50.0,
-        "unit": "kg",
-    })
+    await svc.add_batch_material(
+        batch.id,
+        {
+            "material_code": "MAT-001",
+            "material_name": "原料A",
+            "planned_qty": 50.0,
+            "unit": "kg",
+        },
+    )
     materials = await svc.get_batch_materials(batch.id)
     assert len(materials) >= 1
 
@@ -130,20 +136,24 @@ async def test_delete_plan(svc, sample_plan_create):
 @pytest.mark.asyncio
 async def test_create_task(svc, sample_plan_create, sample_plan_task_data):
     plan = await svc.create_plan(sample_plan_create)
-    task = await svc.create_task(PlanTaskCreate(
-        plan_id=plan.id,
-        **sample_plan_task_data,
-    ))
+    task = await svc.create_task(
+        PlanTaskCreate(
+            plan_id=plan.id,
+            **sample_plan_task_data,
+        )
+    )
     assert task.product_code == "PROD-001"
 
 
 @pytest.mark.asyncio
 async def test_get_tasks(svc, sample_plan_create, sample_plan_task_data):
     plan = await svc.create_plan(sample_plan_create)
-    await svc.create_task(PlanTaskCreate(
-        plan_id=plan.id,
-        **sample_plan_task_data,
-    ))
+    await svc.create_task(
+        PlanTaskCreate(
+            plan_id=plan.id,
+            **sample_plan_task_data,
+        )
+    )
     tasks = await svc.get_tasks(plan.id)
     assert len(tasks) >= 1
 
@@ -176,10 +186,12 @@ async def test_delete_process_spec(svc, sample_process_spec_create):
 @pytest.mark.asyncio
 async def test_create_process_step(svc, sample_process_spec_create, sample_process_step_data):
     spec = await svc.create_process_spec(sample_process_spec_create)
-    step = await svc.create_process_step(ProcessStepCreate(
-        spec_id=spec.id,
-        **sample_process_step_data,
-    ))
+    step = await svc.create_process_step(
+        ProcessStepCreate(
+            spec_id=spec.id,
+            **sample_process_step_data,
+        )
+    )
     assert step.step_name == "发酵"
 
 
@@ -189,8 +201,10 @@ async def test_create_process_step(svc, sample_process_spec_create, sample_proce
 @pytest.mark.asyncio
 async def test_create_production_record(svc, sample_batch_create, sample_production_record_data):
     batch = await svc.create_batch(sample_batch_create)
-    record = await svc.create_production_record(ProductionRecordCreate(
-        batch_id=batch.id,
-        **sample_production_record_data,
-    ))
+    record = await svc.create_production_record(
+        ProductionRecordCreate(
+            batch_id=batch.id,
+            **sample_production_record_data,
+        )
+    )
     assert record.record_no == "REC-001"

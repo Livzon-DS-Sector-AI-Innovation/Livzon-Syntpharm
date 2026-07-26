@@ -35,6 +35,7 @@ async def test_get_department(db_session, dept_data):
 @pytest.mark.asyncio
 async def test_delete_department(db_session, dept_data):
     from app.core.exceptions import NotFoundException
+
     svc = DepartmentService(session=db_session)
     dept = await svc.create_department(dept_data)
     await svc.delete_department(dept.id)

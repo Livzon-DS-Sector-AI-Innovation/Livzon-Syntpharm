@@ -28,6 +28,7 @@ async def test_create_and_get_batch(repo, sample_batch_data):
 @pytest.mark.asyncio
 async def test_get_batch_not_found(repo):
     import uuid
+
     result = await repo.get_batch_by_id(uuid.uuid4())
     assert result is None
 
@@ -83,13 +84,15 @@ async def test_create_batch_material(repo, sample_batch_data):
 @pytest.mark.asyncio
 async def test_get_batch_materials(repo, sample_batch_data):
     batch = await repo.create_batch(sample_batch_data)
-    await repo.create_batch_material({
-        "batch_id": batch.id,
-        "material_code": "MAT-001",
-        "material_name": "原料A",
-        "planned_qty": 50.0,
-        "unit": "kg",
-    })
+    await repo.create_batch_material(
+        {
+            "batch_id": batch.id,
+            "material_code": "MAT-001",
+            "material_name": "原料A",
+            "planned_qty": 50.0,
+            "unit": "kg",
+        }
+    )
     materials = await repo.get_batch_materials(batch.id)
     assert len(materials) >= 1
 
@@ -110,6 +113,7 @@ async def test_create_and_get_plan(repo, sample_production_plan_data):
 @pytest.mark.asyncio
 async def test_get_plan_not_found(repo):
     import uuid
+
     result = await repo.get_plan_by_id(uuid.uuid4())
     assert result is None
 
