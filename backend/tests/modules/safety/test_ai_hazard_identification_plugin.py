@@ -26,6 +26,7 @@ from app.modules.safety.ai_hazard_identification.rules import (
     auto_correct,
 )
 from app.modules.safety.ai_hazard_identification.schemas import (
+    DefectSubstanceEnum,
     HazardCategoryEnum,
     HazardIdentificationInput,
     HazardIdentificationOutput,
@@ -49,6 +50,8 @@ VALID_OUTPUT_DICT = {
         "preventive": "修订防爆设备巡检制度，将封堵检查纳入周检，建立防爆设备全生命周期台账",
     },
     "major_hazard_basis": "《化工和危险化学品生产经营单位重大生产安全事故隐患判定标准》第十条：爆炸危险场所未按国家标准安装使用防爆电气设备；GB 3836.1-2010 第15章",
+    "defect_substance": "substantive",
+    "defect_substance_reasoning": "接线口未封堵是直接物理安全缺陷，积尘增加爆炸风险，推断链仅需一步",
 }
 
 
@@ -155,11 +158,13 @@ class TestPrompts:
         assert "hazard_level" in keys
         assert "rectification_suggestion" in keys
         assert "major_hazard_basis" in keys
-        assert len(keys) == 6
+        assert "defect_substance" in keys
+        assert "defect_substance_reasoning" in keys
+        assert len(keys) == 8
 
     def test_fewshot_examples_complete(self) -> Any:
-        """4 个 few-shot 示例应覆盖 4 种隐患分类。"""
-        assert len(FEWSHOT_EXAMPLES) == 4
+        """Few-shot 示例应覆盖隐患分类。"""
+        assert len(FEWSHOT_EXAMPLES) == 5
         types = {ex["output"]["hazard_type"] for ex in FEWSHOT_EXAMPLES}
         assert types == {
             "unsafe_condition",
@@ -483,6 +488,8 @@ class TestQualityBenchmarks:
                 preventive="修订防爆电气设备巡检制度，将引入口封堵状态纳入每周例行检查项，建立防爆设备全生命周期台账",
             ),
             major_hazard_basis="《化工和危险化学品生产经营单位重大生产安全事故隐患判定标准》第十条：爆炸危险场所未按国家标准安装使用防爆电气设备；GB 3836.1-2010 第15章：电气设备引入装置的密封要求",
+            defect_substance=DefectSubstanceEnum.SUBSTANTIVE,
+            defect_substance_reasoning="引入口未封堵是直接的物理安全缺陷，积尘增加爆炸风险，推断链仅需一步物理因果",
         )
         result = self.engine.validate(make_input("防爆电箱接线口未封堵"), output)
         assert result.is_valid, f"示例1验证失败: {result.errors}"
@@ -499,6 +506,8 @@ class TestQualityBenchmarks:
                 preventive="在车间高处作业区域统一设置固定式安全绳挂点装置，纳入每日班前安全检查项；修订《高处作业安全管理规定》，明确安全带使用具体要求",
             ),
             major_hazard_basis="GB 30871-2022 第5.2条：高处作业人员应正确佩戴符合国家标准的安全带；《安全生产法》第四十五条",
+            defect_substance=DefectSubstanceEnum.SUBSTANTIVE,
+            defect_substance_reasoning="未佩戴安全带在高处作业是直接的人身伤害风险，坠落后果是确定性的物理伤害",
         )
         result = self.engine.validate(make_input("高处作业未佩戴安全带"), output)
         assert result.is_valid, f"示例2验证失败: {result.errors}"
@@ -515,6 +524,8 @@ class TestQualityBenchmarks:
                 preventive="修订车间定置管理制度，明确消防疏散通道净宽≥1.4m的硬性指标，由安全员每月专项检查并拍照留档",
             ),
             major_hazard_basis="GB 50016-2014（2018年版）第7.3.1条：疏散通道的净宽度不应小于1.1m；《安全生产法》第四十二条",
+            defect_substance=DefectSubstanceEnum.SUBSTANTIVE,
+            defect_substance_reasoning="消防通道堵塞直接阻碍紧急疏散，火灾时会导致无法逃生的确定性危险",
         )
         result = self.engine.validate(make_input("消防通道堆放物料"), output)
         assert result.is_valid, f"示例3验证失败: {result.errors}"
@@ -531,6 +542,8 @@ class TestQualityBenchmarks:
                 preventive="建立特殊作业票证三级审核制度，每周对已归档票证做10%随机抽查；检查结果纳入月度安全绩效考核",
             ),
             major_hazard_basis="GB 30871-2022 第4.7条：特殊作业审批手续应齐全；《安全生产法》第四十六条",
+            defect_substance=DefectSubstanceEnum.PROCEDURAL,
+            defect_substance_reasoning="签章缺失属于管理流程瑕疵，不直接构成物理安全威胁，但可能导致动火作业缺乏有效监管",
         )
         result = self.engine.validate(make_input("动火作业票证审批签章不完整"), output)
         assert result.is_valid, f"示例4验证失败: {result.errors}"

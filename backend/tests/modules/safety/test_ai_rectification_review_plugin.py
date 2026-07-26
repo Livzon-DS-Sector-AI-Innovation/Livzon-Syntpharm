@@ -189,7 +189,7 @@ class TestPrompts:
 
     def test_expected_keys(self) -> Any:
         keys = get_expected_keys()
-        assert len(keys) == 8
+        assert len(keys) == 10
         assert "photo_match_analysis" in keys
         assert "review_conclusion" in keys
 
