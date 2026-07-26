@@ -118,10 +118,10 @@ run_e2e() {
     export FEISHU__PLATFORM__REDIRECT_URI=http://127.0.0.1:13000/auth/callback
     export FRONTEND_URL=http://127.0.0.1:13000
     export APP_ENV=e2e
-    export E2E_AUTH_SECRET="e2e-secret"
+    export E2E_AUTH_SECRET="${E2E_AUTH_SECRET:-$(openssl rand -hex 32)}"
 
     check_command uv || return 1
-    uv sync --dev 2>/dev/null
+    uv sync --dev
     uv run alembic upgrade head
     uv run uvicorn app.main:app --host 127.0.0.1 --port 18000 \
         > "$REPO_ROOT/e2e-backend.log" 2>&1 &
@@ -145,7 +145,6 @@ run_e2e() {
     # ── Start frontend ──────────────────────────────────────────────────
     log_info "Starting frontend (port 13000)..."
     cd "$REPO_ROOT/frontend"
-    export E2E_AUTH_SECRET="e2e-secret"
     export E2E_BACKEND_URL="http://127.0.0.1:18000"
     export E2E_FRONTEND_URL="http://127.0.0.1:13000"
     export API_BASE_URL="http://127.0.0.1:18000"

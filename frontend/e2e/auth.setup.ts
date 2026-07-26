@@ -1,10 +1,10 @@
-import { chromium, FullConfig } from '@playwright/test'
+import { chromium, expect, FullConfig } from '@playwright/test'
 import path from 'path'
 
 const AUTH_FILE = path.join(__dirname, '.auth', 'storageState.json')
 
 export default async function globalSetup(config: FullConfig) {
-  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000'
+  const baseURL = config.projects[0]?.use?.baseURL || 'http://127.0.0.1:13000'
   const apiURL = process.env.E2E_BACKEND_URL || 'http://127.0.0.1:18000'
   const secret = process.env.E2E_AUTH_SECRET
 
@@ -39,7 +39,22 @@ export default async function globalSetup(config: FullConfig) {
 
   const { token } = body as { token: string }
 
-  await page.goto(`${baseURL}/auth/callback?token=${token}`, { waitUntil: 'commit', timeout: 60000 })
+  await page.goto(`${baseURL}/auth/callback?token=${token}`, { timeout: 60_000 })
+
+  await page.waitForTimeout(2000)
+
+  const cookies = await context.cookies()
+  const authCookie = cookies.find(c => c.name === 'auth_token')
+
+  if (!authCookie) {
+    throw new Error('Authentication callback did not create auth_token cookie')
+  }
+
+  await page.goto(`${baseURL}/production`, { timeout: 30_000 })
+  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
+  await expect(
+    page.getByRole('heading', { name: '生产管理' }).first(),
+  ).toBeVisible()
 
   await context.storageState({ path: AUTH_FILE })
   await browser.close()

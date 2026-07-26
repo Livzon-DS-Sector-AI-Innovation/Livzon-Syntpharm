@@ -7,7 +7,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: process.env.CI
+    ? [['line'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   use: {
     baseURL: process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000',
     trace: 'on-first-retry',
