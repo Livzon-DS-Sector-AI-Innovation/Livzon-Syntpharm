@@ -20,7 +20,7 @@ from app.modules.quality.qms.material_report_schemas import (
     TemplateCreate,
     TemplateUpdate,
 )
-from app.modules.quality.word_generator import generate_report_bytes  # type: ignore[import-not-found]
+from app.modules.quality.qms.word_generator import generate_report_bytes  # type: ignore[import-not-found]
 
 logger = logging.getLogger(__name__)
 
@@ -458,7 +458,7 @@ class ReportTemplateService:
 
     async def parse_template(self, template_id: UUID) -> dict | None:  # type: ignore[type-arg]
         """解析模板获取字段配置"""
-        from app.modules.quality.word_generator import get_template_fields
+        from app.modules.quality.qms.word_generator import get_template_fields
 
         template = await self.template_repo.get_by_id(template_id)
         if not template:

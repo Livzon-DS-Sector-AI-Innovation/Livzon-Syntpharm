@@ -29,6 +29,7 @@ from app.modules.quality import (
     static_data_router,
 )
 from app.modules.quality.label_verification import router as label_verification_router
+from app.modules.quality.qms.material_report_api import router as material_report_router
 from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
 from app.modules.registration.dossier_writer import router as dossier_writer_router
@@ -94,6 +95,7 @@ api_router.include_router(instrument_router, prefix="/quality", tags=["质量管
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
 api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])
 api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])
+api_router.include_router(material_report_router, tags=["质量管理 - 原料报告单"])
 api_router.include_router(
     workshop_product_router,
     prefix="/production",
