@@ -3,12 +3,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from app.core.tasks import spawn_task
 
 
-@pytest.mark.asyncio
 async def test_spawn_task_success():
     """Test that spawn_task executes the coroutine successfully."""
     result = []
@@ -22,7 +19,6 @@ async def test_spawn_task_success():
     assert result == ["executed"]
 
 
-@pytest.mark.asyncio
 async def test_spawn_task_error_handling():
     """Test that spawn_task catches and logs exceptions."""
 
@@ -37,7 +33,6 @@ async def test_spawn_task_error_handling():
     assert task.done()
 
 
-@pytest.mark.asyncio
 async def test_spawn_task_with_name():
     """Test that spawn_task accepts and uses custom names."""
 
@@ -49,7 +44,6 @@ async def test_spawn_task_with_name():
     await task
 
 
-@pytest.mark.asyncio
 async def test_spawn_task_default_name():
     """Test that spawn_task generates default names."""
 

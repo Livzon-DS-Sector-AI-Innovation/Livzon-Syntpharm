@@ -116,7 +116,6 @@ def _record(
     )
 
 
-@pytest.mark.anyio
 async def test_generate_and_store_contract_persists_record_and_local_file(
     tmp_path,
     monkeypatch,
@@ -158,7 +157,6 @@ async def test_generate_and_store_contract_persists_record_and_local_file(
     assert (tmp_path / "procurement" / "contracts" / str(record.id) / filename).read_bytes() == b"contract-bytes"
 
 
-@pytest.mark.anyio
 async def test_list_contract_records_searches_title_number_and_seller() -> None:
     repository = FakeContractRecordRepository(FakeDb())
     await repository.create(
@@ -191,7 +189,6 @@ async def test_list_contract_records_searches_title_number_and_seller() -> None:
     assert seller_records[0].title == "耗材采购合同"
 
 
-@pytest.mark.anyio
 async def test_get_contract_record_file_reads_local_file(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(procurement_service, "minio_enabled", lambda: False)
     file_path = tmp_path / "contract.docx"

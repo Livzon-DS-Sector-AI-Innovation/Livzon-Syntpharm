@@ -222,7 +222,6 @@ async def _approve_request(request_id: uuid.UUID) -> None:
     )
 
 
-@pytest.mark.anyio
 async def test_purchase_request_amount_and_two_step_approval_flow() -> None:
     created = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -267,7 +266,6 @@ async def test_purchase_request_amount_and_two_step_approval_flow() -> None:
     assert len(leader_approved.approvals) == 2
 
 
-@pytest.mark.anyio
 async def test_purchase_request_reject_persists_approval_record() -> None:
     created = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -292,7 +290,6 @@ async def test_purchase_request_reject_persists_approval_record() -> None:
     assert rejected.approvals[0].opinion == "用途不清"
 
 
-@pytest.mark.anyio
 async def test_purchase_request_role_approval_views() -> None:
     created = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -336,7 +333,6 @@ async def test_purchase_request_role_approval_views() -> None:
     assert leader_pending[0].id == created.id
 
 
-@pytest.mark.anyio
 async def test_purchase_request_role_rejected_view() -> None:
     created = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -380,7 +376,6 @@ async def test_purchase_request_role_rejected_view() -> None:
     assert leader_rejected == []
 
 
-@pytest.mark.anyio
 async def test_purchase_order_lines_include_only_approved_requests_in_month() -> None:
     approved = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -415,7 +410,6 @@ async def test_purchase_order_lines_include_only_approved_requests_in_month() ->
     assert draft.id not in {line.request_id for line in lines}
 
 
-@pytest.mark.anyio
 async def test_purchase_order_lines_filter_category_and_paginate() -> None:
     hardware = await procurement_service.create_purchase_request(
         FakeDb(),
@@ -455,7 +449,6 @@ async def test_purchase_order_lines_filter_category_and_paginate() -> None:
     assert office_lines[0].category_label == "办公用品"
 
 
-@pytest.mark.anyio
 async def test_purchase_order_xlsx_export_uses_reference_layout() -> None:
     created = await procurement_service.create_purchase_request(
         FakeDb(),

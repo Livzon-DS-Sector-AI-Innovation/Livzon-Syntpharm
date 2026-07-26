@@ -111,7 +111,6 @@ def patch_dependencies(monkeypatch: pytest.MonkeyPatch) -> FakeRedis:
     return fake_redis
 
 
-@pytest.mark.asyncio
 async def test_tenant_token_is_cached_for_90_minutes(
     patch_dependencies: FakeRedis,
 ) -> None:
@@ -130,7 +129,6 @@ async def test_tenant_token_is_cached_for_90_minutes(
     assert list(patch_dependencies.ttls.values()) == [TOKEN_TTL_SECONDS]
 
 
-@pytest.mark.asyncio
 async def test_tenant_token_force_refresh_overwrites_cache() -> None:
     client = WarehouseFeishuClient(
         app_id="cli_123",
@@ -144,7 +142,6 @@ async def test_tenant_token_force_refresh_overwrites_cache() -> None:
     assert FakeAsyncClient.token_calls == 2
 
 
-@pytest.mark.asyncio
 async def test_list_tables_reads_all_pages() -> None:
     client = WarehouseFeishuClient(
         app_id="cli_123",
@@ -157,7 +154,6 @@ async def test_list_tables_reads_all_pages() -> None:
     assert [item["table_id"] for item in tables] == ["tbl1", "tbl2"]
 
 
-@pytest.mark.asyncio
 async def test_search_records_returns_raw_items() -> None:
     client = WarehouseFeishuClient(
         app_id="cli_123",
@@ -171,7 +167,6 @@ async def test_search_records_returns_raw_items() -> None:
     assert result["total"] == 1
 
 
-@pytest.mark.asyncio
 async def test_search_records_sends_pagination_in_query_params() -> None:
     client = WarehouseFeishuClient(
         app_id="cli_123",

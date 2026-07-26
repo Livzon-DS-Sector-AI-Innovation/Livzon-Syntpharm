@@ -154,7 +154,6 @@ def test_parse_invoice_text_handles_reversed_seller_and_dense_amounts() -> None:
     assert result.line_items[0].quantity == Decimal("345.02")
 
 
-@pytest.mark.asyncio
 async def test_recognize_and_store_invoice_pdf_rejects_duplicate_invoice() -> None:
     db = AsyncMock()
     existing_record = SimpleNamespace(
@@ -193,7 +192,6 @@ async def test_recognize_and_store_invoice_pdf_rejects_duplicate_invoice() -> No
     repo.create.assert_not_called()
 
 
-@pytest.mark.asyncio
 async def test_recognize_invoice_api_rejects_oversized_pdf(
     auth_client: AsyncClient,
 ) -> None:
@@ -207,7 +205,6 @@ async def test_recognize_invoice_api_rejects_oversized_pdf(
     assert "不能超过" in response.json()["message"]
 
 
-@pytest.mark.asyncio
 async def test_recognize_invoice_api_maps_duplicate_to_409(
     auth_client: AsyncClient,
 ) -> None:
@@ -232,7 +229,6 @@ async def test_recognize_invoice_api_maps_duplicate_to_409(
     assert "发票已识别过" in response.json()["message"]
 
 
-@pytest.mark.asyncio
 async def test_delete_invoice_recognition_record_delegates_to_repository() -> None:
     db = AsyncMock()
     record_id = uuid.uuid4()
@@ -249,7 +245,6 @@ async def test_delete_invoice_recognition_record_delegates_to_repository() -> No
     repo.delete_record.assert_awaited_once_with(record_id)
 
 
-@pytest.mark.asyncio
 async def test_batch_delete_invoice_records_delegates_to_repository() -> None:
     db = AsyncMock()
     record_ids = [uuid.uuid4(), uuid.uuid4()]

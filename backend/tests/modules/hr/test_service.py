@@ -5,8 +5,8 @@ import uuid
 
 import pytest
 
-from app.modules.hr.service import DepartmentService
 from app.modules.hr.schemas import DepartmentCreate
+from app.modules.hr.service import DepartmentService
 
 
 @pytest.fixture
@@ -17,14 +17,12 @@ def dept_data():
     )
 
 
-@pytest.mark.asyncio
 async def test_create_department(db_session, dept_data):
     svc = DepartmentService(session=db_session)
     dept = await svc.create_department(dept_data)
     assert dept.name == "研发部"
 
 
-@pytest.mark.asyncio
 async def test_get_department(db_session, dept_data):
     svc = DepartmentService(session=db_session)
     dept = await svc.create_department(dept_data)
@@ -32,7 +30,6 @@ async def test_get_department(db_session, dept_data):
     assert fetched.name == "研发部"
 
 
-@pytest.mark.asyncio
 async def test_delete_department(db_session, dept_data):
     from app.core.exceptions import NotFoundException
 

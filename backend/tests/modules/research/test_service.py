@@ -7,17 +7,15 @@ import pytest
 
 from app.modules.research import service
 from app.modules.research.schemas import (
+    RdExperimentLogCreate,
+    RdPilotStudyCreate,
     RdProjectCreate,
     RdStageDeliverableCreate,
-    RdPilotStudyCreate,
-    RdExperimentLogCreate,
 )
-
 
 # ============ RdProject ============
 
 
-@pytest.mark.asyncio
 async def test_create_and_get_rd_project(db_session):
     proj = await service.create_rd_project(
         db_session,
@@ -31,7 +29,6 @@ async def test_create_and_get_rd_project(db_session):
     assert fetched.name == proj.name
 
 
-@pytest.mark.asyncio
 async def test_get_rd_project_not_found(db_session):
     from app.core.exceptions import NotFoundException
 
@@ -39,7 +36,6 @@ async def test_get_rd_project_not_found(db_session):
         await service.get_rd_project(db_session, uuid.uuid4())
 
 
-@pytest.mark.asyncio
 async def test_delete_rd_project(db_session):
     from app.core.exceptions import NotFoundException
 
@@ -58,7 +54,6 @@ async def test_delete_rd_project(db_session):
 # ============ RdStageDeliverable ============
 
 
-@pytest.mark.asyncio
 async def test_create_deliverable(db_session):
     proj = await service.create_rd_project(
         db_session,
@@ -79,7 +74,6 @@ async def test_create_deliverable(db_session):
     assert deliverable.title == "工艺开发报告"
 
 
-@pytest.mark.asyncio
 async def test_get_deliverable(db_session):
     proj = await service.create_rd_project(
         db_session,
@@ -104,7 +98,6 @@ async def test_get_deliverable(db_session):
 # ============ RdPilotStudy ============
 
 
-@pytest.mark.asyncio
 async def test_create_pilot_study(db_session):
     proj = await service.create_rd_project(
         db_session,
@@ -126,7 +119,6 @@ async def test_create_pilot_study(db_session):
 # ============ RdExperimentLog ============
 
 
-@pytest.mark.asyncio
 async def test_create_experiment_log(db_session):
     proj = await service.create_rd_project(
         db_session,

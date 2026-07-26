@@ -6,8 +6,8 @@ from datetime import date, datetime
 
 import pytest
 
-from app.modules.quality.label_verification.service import LabelVerificationService
 from app.modules.quality.label_verification.schemas import LabelVerificationCreate
+from app.modules.quality.label_verification.service import LabelVerificationService
 
 
 @pytest.fixture
@@ -39,14 +39,12 @@ def verification_data():
     )
 
 
-@pytest.mark.asyncio
 async def test_create_verification(db_session, verification_data):
     svc = LabelVerificationService(session=db_session)
     result = await svc.create_verification(verification_data)
     assert result.batch_number == verification_data.batch_number
 
 
-@pytest.mark.asyncio
 async def test_get_verification(db_session, verification_data):
     svc = LabelVerificationService(session=db_session)
     created = await svc.create_verification(verification_data)
@@ -54,7 +52,6 @@ async def test_get_verification(db_session, verification_data):
     assert result.id == created.id
 
 
-@pytest.mark.asyncio
 async def test_get_verification_not_found(db_session):
     from app.core.exceptions import NotFoundException
 
@@ -63,7 +60,6 @@ async def test_get_verification_not_found(db_session):
         await svc.get_verification(uuid.uuid4())
 
 
-@pytest.mark.asyncio
 async def test_create_duplicate_video_is_idempotent(db_session, verification_data):
     svc = LabelVerificationService(session=db_session)
     first = await svc.create_verification(verification_data)
@@ -71,7 +67,6 @@ async def test_create_duplicate_video_is_idempotent(db_session, verification_dat
     assert second.id == first.id
 
 
-@pytest.mark.asyncio
 async def test_list_verifications(db_session, verification_data):
     svc = LabelVerificationService(session=db_session)
     await svc.create_verification(verification_data)
@@ -79,7 +74,6 @@ async def test_list_verifications(db_session, verification_data):
     assert total >= 1
 
 
-@pytest.mark.asyncio
 async def test_delete_verification(db_session, verification_data):
     from app.core.exceptions import NotFoundException
 

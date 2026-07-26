@@ -5,20 +5,19 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
-from datetime import datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.core.database import get_db
 from app.main import app
-from app.platform.identity.deps import get_current_user
-from app.platform.identity.models import User
 from app.modules.production.schemas import (
     BatchCreate,
-    ProductionPlanCreate,
     ProcessSpecCreate,
+    ProductionPlanCreate,
 )
+from app.platform.identity.deps import get_current_user
+from app.platform.identity.models import User
 
 
 @pytest.fixture

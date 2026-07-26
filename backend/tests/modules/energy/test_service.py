@@ -14,14 +14,12 @@ from app.modules.energy.schemas import (
 )
 
 
-@pytest.mark.asyncio
 async def test_create_device_config_service(db_session, sample_device_config_data):
     data = EnergyDeviceConfigCreate(**sample_device_config_data)
     obj = await service.create_device_config(db_session, data)
     assert obj.platform_code == "zhiheng"
 
 
-@pytest.mark.asyncio
 async def test_create_duplicate_raises(db_session, sample_device_config_data):
     data = EnergyDeviceConfigCreate(**sample_device_config_data)
     await service.create_device_config(db_session, data)
@@ -30,13 +28,11 @@ async def test_create_duplicate_raises(db_session, sample_device_config_data):
         await service.create_device_config(db_session, data)
 
 
-@pytest.mark.asyncio
 async def test_get_device_config_not_found(db_session):
     with pytest.raises(NotFoundException):
         await service.get_device_config(db_session, uuid4())
 
 
-@pytest.mark.asyncio
 async def test_update_device_config_service(db_session, sample_device_config_data):
     data = EnergyDeviceConfigCreate(**sample_device_config_data)
     created = await service.create_device_config(db_session, data)
@@ -46,7 +42,6 @@ async def test_update_device_config_service(db_session, sample_device_config_dat
     assert updated.device_name == "更新后的名称"
 
 
-@pytest.mark.asyncio
 async def test_delete_device_config_service(db_session, sample_device_config_data):
     data = EnergyDeviceConfigCreate(**sample_device_config_data)
     created = await service.create_device_config(db_session, data)
@@ -56,7 +51,6 @@ async def test_delete_device_config_service(db_session, sample_device_config_dat
         await service.get_device_config(db_session, created.id)
 
 
-@pytest.mark.asyncio
 async def test_trigger_collection_no_devices(db_session):
     request = CollectTriggerRequest(platform_code="zhiheng")
     result = await service.trigger_collection(db_session, request)
@@ -64,7 +58,6 @@ async def test_trigger_collection_no_devices(db_session):
     assert result["zhiheng"]["device_count"] == 0
 
 
-@pytest.mark.asyncio
 async def test_trigger_collection_unknown_platform(db_session):
     request = CollectTriggerRequest(platform_code="unknown")
     result = await service.trigger_collection(db_session, request)

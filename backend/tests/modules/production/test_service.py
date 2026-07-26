@@ -5,16 +5,11 @@ import uuid
 
 import pytest
 
-from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.production.schemas import (
-    BatchCreate,
     BatchUpdate,
-    ProductionPlanCreate,
-    ProductionPlanUpdate,
-    ProcessSpecCreate,
-    ProcessSpecUpdate,
-    ProcessStepCreate,
     PlanTaskCreate,
+    ProcessStepCreate,
+    ProductionPlanUpdate,
     ProductionRecordCreate,
 )
 from app.modules.production.service import ProductionService
@@ -28,20 +23,17 @@ def svc(db_session):
 # ============ Batch Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_batch(svc, sample_batch_create):
     batch = await svc.create_batch(sample_batch_create)
     assert batch.batch_no == sample_batch_create.batch_no
     assert batch.product_code == "PROD-001"
 
 
-@pytest.mark.asyncio
 async def test_get_batch_not_found(svc):
     batch = await svc.get_batch(uuid.uuid4())
     assert batch is None
 
 
-@pytest.mark.asyncio
 async def test_update_batch(svc, sample_batch_create):
     created = await svc.create_batch(sample_batch_create)
     update = BatchUpdate(batch_no="BATCH-UPDATED")
@@ -49,7 +41,6 @@ async def test_update_batch(svc, sample_batch_create):
     assert updated.batch_no == "BATCH-UPDATED"
 
 
-@pytest.mark.asyncio
 async def test_delete_batch(svc, sample_batch_create):
     created = await svc.create_batch(sample_batch_create)
     result = await svc.delete_batch(created.id)
@@ -59,7 +50,6 @@ async def test_delete_batch(svc, sample_batch_create):
     assert deleted is None
 
 
-@pytest.mark.asyncio
 async def test_list_batches(svc, sample_batch_create):
     await svc.create_batch(sample_batch_create)
     items, total = await svc.get_batches()
@@ -69,7 +59,6 @@ async def test_list_batches(svc, sample_batch_create):
 # ============ BatchMaterial Operations ============
 
 
-@pytest.mark.asyncio
 async def test_add_batch_material(svc, sample_batch_create):
     batch = await svc.create_batch(sample_batch_create)
     mat = await svc.add_batch_material(
@@ -84,7 +73,6 @@ async def test_add_batch_material(svc, sample_batch_create):
     assert mat.material_code == "MAT-001"
 
 
-@pytest.mark.asyncio
 async def test_get_batch_materials(svc, sample_batch_create):
     batch = await svc.create_batch(sample_batch_create)
     await svc.add_batch_material(
@@ -103,19 +91,16 @@ async def test_get_batch_materials(svc, sample_batch_create):
 # ============ ProductionPlan Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_plan(svc, sample_plan_create):
     plan = await svc.create_plan(sample_plan_create)
     assert plan.plan_name == "7月生产计划"
 
 
-@pytest.mark.asyncio
 async def test_get_plan_not_found(svc):
     plan = await svc.get_plan(uuid.uuid4())
     assert plan is None
 
 
-@pytest.mark.asyncio
 async def test_update_plan(svc, sample_plan_create):
     created = await svc.create_plan(sample_plan_create)
     update = ProductionPlanUpdate(plan_name="更新后计划")
@@ -123,7 +108,6 @@ async def test_update_plan(svc, sample_plan_create):
     assert updated.plan_name == "更新后计划"
 
 
-@pytest.mark.asyncio
 async def test_delete_plan(svc, sample_plan_create):
     created = await svc.create_plan(sample_plan_create)
     result = await svc.delete_plan(created.id)
@@ -133,7 +117,6 @@ async def test_delete_plan(svc, sample_plan_create):
 # ============ PlanTask Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_task(svc, sample_plan_create, sample_plan_task_data):
     plan = await svc.create_plan(sample_plan_create)
     task = await svc.create_task(
@@ -145,7 +128,6 @@ async def test_create_task(svc, sample_plan_create, sample_plan_task_data):
     assert task.product_code == "PROD-001"
 
 
-@pytest.mark.asyncio
 async def test_get_tasks(svc, sample_plan_create, sample_plan_task_data):
     plan = await svc.create_plan(sample_plan_create)
     await svc.create_task(
@@ -161,19 +143,16 @@ async def test_get_tasks(svc, sample_plan_create, sample_plan_task_data):
 # ============ ProcessSpec Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_process_spec(svc, sample_process_spec_create):
     spec = await svc.create_process_spec(sample_process_spec_create)
     assert spec.product_code == "PROD-001"
 
 
-@pytest.mark.asyncio
 async def test_get_process_spec_not_found(svc):
     spec = await svc.get_process_spec(uuid.uuid4())
     assert spec is None
 
 
-@pytest.mark.asyncio
 async def test_delete_process_spec(svc, sample_process_spec_create):
     created = await svc.create_process_spec(sample_process_spec_create)
     result = await svc.delete_process_spec(created.id)
@@ -183,7 +162,6 @@ async def test_delete_process_spec(svc, sample_process_spec_create):
 # ============ ProcessStep Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_process_step(svc, sample_process_spec_create, sample_process_step_data):
     spec = await svc.create_process_spec(sample_process_spec_create)
     step = await svc.create_process_step(
@@ -198,7 +176,6 @@ async def test_create_process_step(svc, sample_process_spec_create, sample_proce
 # ============ ProductionRecord Operations ============
 
 
-@pytest.mark.asyncio
 async def test_create_production_record(svc, sample_batch_create, sample_production_record_data):
     batch = await svc.create_batch(sample_batch_create)
     record = await svc.create_production_record(
