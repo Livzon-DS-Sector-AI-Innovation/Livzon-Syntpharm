@@ -97,7 +97,7 @@ export interface paths {
         put?: never;
         /**
          * E2E 测试登录（仅开发/测试环境）
-         * @description Return a JWT for the e2e test user. Requires APP_ENV=development/test + X-E2E-Secret header.
+         * @description Return a JWT for the e2e test user. Requires APP_ENV=test/e2e + X-E2E-Secret header.
          */
         post: operations["test_login_api_v1_identity_auth_test_login_post"];
         delete?: never;
