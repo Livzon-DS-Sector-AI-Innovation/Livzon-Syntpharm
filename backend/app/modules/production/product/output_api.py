@@ -36,7 +36,7 @@ async def get_workshops() -> Any:
 @router.get("/product-output", summary="获取产量记录列表")
 async def get_product_outputs(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=200),
+    page_size: int = Query(20, ge=1, le=5000),
     workshop: str | None = None,
     product_id: uuid.UUID | None = None,
     product_name: str | None = None,

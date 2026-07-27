@@ -58,7 +58,7 @@ class ProductOutputQueryParams(BaseModel):
     """查询参数"""
 
     page: int = Field(1, ge=1)
-    page_size: int = Field(20, ge=1, le=200)
+    page_size: int = Field(20, ge=1, le=5000)
     workshop: str | None = Field(None, description="车间筛选")
     product_id: uuid.UUID | None = Field(None, description="产品筛选")
     product_name: str | None = Field(None, description="产品名称搜索")
