@@ -85,19 +85,18 @@ run_e2e() {
 
     # ── Cleanup trap ────────────────────────────────────────────────────
     cleanup() {
-        kill "${FRONTEND_PID:-}" 2>/dev/null || true
         kill "${BACKEND_PID:-}" 2>/dev/null || true
-        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans 2>/dev/null || true
+        docker compose -p dazah-e2e -f docker-compose.e2e.yml down -v --remove-orphans 2>/dev/null || true
     }
     trap cleanup EXIT
 
     # ── Start E2E postgres ──────────────────────────────────────────────
     log_info "Starting E2E postgres (port 15432)..."
-    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d postgres
+    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d postgres-e2e
 
     postgres_ready=false
     for _ in $(seq 1 30); do
-        if docker compose -p dazah-e2e -f docker-compose.ci.yml exec -T postgres pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f docker-compose.e2e.yml exec -T postgres-e2e pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
             postgres_ready=true
             break
         fi
@@ -144,15 +143,11 @@ run_e2e() {
 
     # ── Start frontend ──────────────────────────────────────────────────
     log_info "Starting frontend (port 13000)..."
-    cd "$REPO_ROOT/frontend"
+    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d --build frontend-e2e
+
     export E2E_BACKEND_URL="http://127.0.0.1:18000"
     export E2E_FRONTEND_URL="http://127.0.0.1:13000"
     export API_BASE_URL="http://127.0.0.1:18000"
-
-    check_command pnpm || return 1
-    pnpm exec next dev -H 0.0.0.0 -p 13000 > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
-    FRONTEND_PID=$!
-    log_info "Frontend PID: $FRONTEND_PID"
 
     frontend_ready=false
     for _ in $(seq 1 30); do
@@ -170,6 +165,7 @@ run_e2e() {
 
     # ── Run Playwright ──────────────────────────────────────────────────
     log_info "Running Playwright tests..."
+    cd "$REPO_ROOT/frontend"
     if ! pnpm exec playwright test; then
         log_error "E2E tests failed!"
         FAILED=1
