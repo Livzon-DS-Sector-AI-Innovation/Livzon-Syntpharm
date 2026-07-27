@@ -387,3 +387,35 @@ Files changed: 93 files across all categories
 | 12. OpenAPI | 0 | CI passes |
 | 13. Docker | 0 | |
 | 14. E2E | 0 | CI updated |
+
+### PR #11: Ruanjiaheng — E2E rework (head: ruanjiaheng, date: 2026-07-27)
+
+Files changed: 98 files across all 14 categories
+
+#### New findings
+
+_None._
+
+#### Category summaries
+
+| Category | New violations | Note |
+|---|---|---|
+| 1. Repository layout | 0 | |
+| 2. Secrets | 0 | CI-only 127.0.0.1 references excluded |
+| 3. Module boundaries | 0 | |
+| 4. API & auth | 0 | |
+| 5. Models & migrations | 0 | 0046 migration CI-validated |
+| 6. Config & logging | 0 | |
+| 7. External services | 0 | |
+| 8. Backend tests | 0 | |
+| 9. Frontend boundaries | 0 | NoAccessResult barrel export resolved in PR #10 |
+| 10. Frontend API & types | 0 | |
+| 11. Proxy & routing | 0 | proxy.ts untouched |
+| 12. OpenAPI | 0 | CI passes |
+| 13. Docker | 0 | |
+| 14. E2E | 0 | CI passes |
+
+#### Previously resolved from PR #10, still resolved
+
+- Category 9: NoAccessResult barrel — ✓ fixed
+
