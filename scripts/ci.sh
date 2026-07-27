@@ -122,7 +122,7 @@ run_e2e() {
     check_command uv || return 1
     uv sync --dev
     uv run alembic upgrade head
-    uv run uvicorn app.main:app --host 127.0.0.1 --port 18000 \
+    uv run uvicorn app.main:app --host 0.0.0.0 --port 18000 \
         > "$REPO_ROOT/e2e-backend.log" 2>&1 &
     BACKEND_PID=$!
     log_info "Backend PID: $BACKEND_PID"
@@ -143,6 +143,7 @@ run_e2e() {
 
     # ── Start frontend ──────────────────────────────────────────────────
     log_info "Starting frontend (port 13000)..."
+    cd "$REPO_ROOT"
     docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d --build frontend-e2e
 
     export E2E_BACKEND_URL="http://127.0.0.1:18000"

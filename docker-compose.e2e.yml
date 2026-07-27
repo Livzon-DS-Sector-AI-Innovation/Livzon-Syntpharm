@@ -21,13 +21,14 @@ services:
       - "13000:13000"
     volumes:
       - ./frontend:/app
-      - frontend_e2e_node_modules:/app/node_modules
+      - /app/node_modules
       - frontend_e2e_next:/app/.next
     environment:
       NODE_ENV: development
       API_BASE_URL: http://host.docker.internal:18000
-    command: sh -c "pnpm install --frozen-lockfile && npx next dev -H 0.0.0.0 -p 13000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: sh -c "npx next dev -H 0.0.0.0 -p 13000"
 
 volumes:
-  frontend_e2e_node_modules:
   frontend_e2e_next:

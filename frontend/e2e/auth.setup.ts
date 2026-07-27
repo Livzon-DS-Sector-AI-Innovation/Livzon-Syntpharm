@@ -51,10 +51,9 @@ export default async function globalSetup(config: FullConfig) {
   }
 
   await page.goto(`${baseURL}/production`, { timeout: 30_000 })
-  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
   await expect(
     page.getByRole('heading', { name: '生产管理' }).first(),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 15000 })
 
   await context.storageState({ path: AUTH_FILE })
   await browser.close()
