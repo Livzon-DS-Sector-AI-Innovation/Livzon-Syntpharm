@@ -360,3 +360,30 @@ Categories affected: all 14
 | 12. OpenAPI | 0 | ✓ |
 | 13. Docker | 0 | ✓ |
 | 14. E2E | 0 | ✓ |
+
+### PR #10: Ruanjiaheng (base: main, head: ruanjiaheng, date: 2026-07-27)
+
+Files changed: 93 files across all categories
+
+#### New findings (not in baseline)
+
+- [ ] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — Imported via `@/components/settings/NoAccessResult` (direct path) instead of through `settings/index.ts` barrel. Barrel exports `LLMConfigClient` and `ModuleSettingsClient` but not `NoAccessResult`. — severity: low
+
+#### Category summaries
+
+| Category | New violations | Note |
+|---|---|---|
+| 1. Repository layout | 0 | |
+| 2. Secrets | 0 | CI-only credentials, in scope |
+| 3. Module boundaries | 0 | |
+| 4. API & auth | 0 | E2E auth hardening |
+| 5. Models & migrations | 0 | Migration CI passes |
+| 6. Config & logging | 0 | |
+| 7. External services | 0 | |
+| 8. Backend tests | 0 | |
+| 9. Frontend boundaries | 1 | NoAccessResult barrel missing |
+| 10. Frontend API & types | 0 | |
+| 11. Proxy & routing | 0 | |
+| 12. OpenAPI | 0 | CI passes |
+| 13. Docker | 0 | |
+| 14. E2E | 0 | CI updated |
