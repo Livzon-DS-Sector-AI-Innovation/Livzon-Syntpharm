@@ -150,20 +150,32 @@ run_e2e() {
     log_info "Starting E2E backend (port 18000)..."
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
+    local start_time=$SECONDS
+    local timeout=600
     local backend_ready=false
-    for i in $(seq 1 60); do
+
+    while (( SECONDS - start_time < timeout )); do
+        if ! docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" ps backend-e2e --status running --format json 2>/dev/null | grep -q .; then
+            log_error "Backend container exited during startup"
+            docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs backend-e2e 2>/dev/null | tail -30
+            exit 1
+        fi
+
         if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e curl -sf http://localhost:8000/health > /dev/null 2>&1; then
             backend_ready=true
             break
         fi
+
         sleep 5
     done
+
     if [[ "$backend_ready" != true ]]; then
-        log_error "Backend did not become ready"
+        log_error "Backend did not become ready within ${timeout}s"
         docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs backend-e2e 2>/dev/null | tail -30
         exit 1
     fi
-    log_info "Backend ready"
+
+    log_info "Backend ready ($(( SECONDS - start_time ))s)"
 
     # ── Build frontend into .next-e2e ───────────────────────────────────
     log_info "Building E2E frontend (dist: .next-e2e)..."
