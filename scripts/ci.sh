@@ -180,6 +180,7 @@ run_e2e() {
     log_info "Starting E2E frontend on port 13000..."
     cd "$REPO_ROOT/frontend"
 
+    NODE_OPTIONS="--no-deprecation" \
     NEXT_DIST_DIR=".next-e2e" \
     API_BASE_URL="http://127.0.0.1:18000" \
         pnpm exec next start -H 127.0.0.1 -p 13000 \
