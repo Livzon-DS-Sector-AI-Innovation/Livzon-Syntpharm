@@ -29,7 +29,6 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       ALLOWED_DEV_ORIGINS: "8.138.238.190"
     command: pnpm dev
-    user: node
 
 volumes:
   frontend_dev_next:

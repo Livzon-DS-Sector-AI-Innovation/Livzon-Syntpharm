@@ -14,8 +14,7 @@ services:
       retries: 5
 
   backend-e2e:
-    build:
-      context: ./backend
+    image: livzon-syntpharm-backend
     volumes:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
