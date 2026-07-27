@@ -367,7 +367,7 @@ Files changed: 93 files across all categories
 
 #### New findings (not in baseline)
 
-- [ ] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — Imported via `@/components/settings/NoAccessResult` (direct path) instead of through `settings/index.ts` barrel. Barrel exports `LLMConfigClient` and `ModuleSettingsClient` but not `NoAccessResult`. — severity: low
+- [x] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — Imported via `@/components/settings/NoAccessResult` (direct path) instead of through `settings/index.ts` barrel. — severity: low — **RESOLVED** (added to barrel, import updated to `@/components/settings`)
 
 #### Category summaries
 
