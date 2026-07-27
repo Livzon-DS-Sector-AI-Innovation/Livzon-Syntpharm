@@ -16,6 +16,7 @@ from app.modules.production.product.sync_config_api import router as product_syn
 from app.modules.quality import (
     cpv_router,
     deviation_router,
+    deviation_settings_router,
     doc_check_router,
     fqc_router,
     instrument_router,
@@ -86,6 +87,7 @@ api_router.include_router(ipqc_router, prefix="/quality", tags=["质量管理 - 
 api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - FQC"])
 api_router.include_router(stability_router, prefix="/quality", tags=["质量管理 - 稳定性"])
 api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
+api_router.include_router(deviation_settings_router, prefix="/quality", tags=["质量管理 - 偏差设置"])
 api_router.include_router(quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"])
 api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"])
 api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])

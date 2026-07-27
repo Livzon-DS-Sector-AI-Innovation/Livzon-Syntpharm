@@ -13,6 +13,10 @@ from app.modules.quality.qms.deviation_automation_models import (
     DevTask,
     SOPRule,
 )
+from app.modules.quality.qms.deviation_settings_models import (
+    DeviationLeaderConfig,
+    DeviationQAConfig,
+)
 from app.modules.quality.qms.inspection_table_models import (
     InspectionTable,
     InspectionTableRow,
