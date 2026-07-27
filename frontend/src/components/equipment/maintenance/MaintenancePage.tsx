@@ -342,7 +342,7 @@ export function MaintenancePage({
           <Tabs activeKey={maintenanceTab} onChange={setMaintenanceTab} items={tabItems} />
         </div>
 
-        <WorkOrderDrawer equipments={equipments} symptoms={initialFailureCodes.symptoms} onRefresh={fetchWorkOrderData} />
+        <WorkOrderDrawer equipments={equipments} symptoms={initialFailureCodes.symptoms ?? []} onRefresh={fetchWorkOrderData} />
         <WorkOrderDetailDrawer onRefresh={fetchWorkOrderData} />
         <FailureCodeDrawer onRefresh={fetchFailureCodeData} />
         <CalibrationPlanDrawer equipments={equipments} onRefresh={fetchCalibrationPlanData} />

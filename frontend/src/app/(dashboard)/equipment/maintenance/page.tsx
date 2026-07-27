@@ -62,13 +62,13 @@ export default async function MaintenancePageWrapper() {
       workOrderStatistics = results[2].value
     } else { console.warn('加载工单统计失败:', results[2].reason) }
     if (results[3].status === 'fulfilled') {
-      failureCodes.symptoms = results[3].value
+      failureCodes.symptoms = Array.isArray(results[3].value) ? results[3].value : []
     } else { console.warn('加载故障现象失败:', results[3].reason) }
     if (results[4].status === 'fulfilled') {
-      failureCodes.causes = results[4].value
+      failureCodes.causes = Array.isArray(results[4].value) ? results[4].value : []
     } else { console.warn('加载故障原因失败:', results[4].reason) }
     if (results[5].status === 'fulfilled') {
-      failureCodes.actions = results[5].value
+      failureCodes.actions = Array.isArray(results[5].value) ? results[5].value : []
     } else { console.warn('加载处理措施失败:', results[5].reason) }
     if (results[6].status === 'fulfilled') {
       calibrationPlans = results[6].value.items
