@@ -152,11 +152,11 @@ run_e2e() {
 
     local backend_ready=false
     for i in $(seq 1 60); do
-        if curl -sf http://127.0.0.1:18000/health > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e curl -sf http://localhost:8000/health > /dev/null 2>&1; then
             backend_ready=true
             break
         fi
-        sleep 2
+        sleep 5
     done
     if [[ "$backend_ready" != true ]]; then
         log_error "Backend did not become ready"
@@ -193,7 +193,7 @@ run_e2e() {
             frontend_ready=true
             break
         fi
-        sleep 2
+        sleep 5
     done
     if [[ "$frontend_ready" != true ]]; then
         log_error "Frontend did not become ready"
