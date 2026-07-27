@@ -49,6 +49,8 @@ from app.modules.quality.sop_ai.models import (
 )
 
 __all__ = [
+    "DeviationLeaderConfig",
+    "DeviationQAConfig",
     "InspectionTable",
     "InspectionTableRow",
     "MaterialReport",

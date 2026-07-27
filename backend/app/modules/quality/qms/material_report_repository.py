@@ -243,12 +243,12 @@ class ReportTemplateRepository:
         page_size: int = 100,
     ) -> tuple[list[ReportTemplate], int]:
         """获取模板列表"""
-        q = select(ReportTemplate).where(ReportTemplate.is_deleted == False)
-        cnt = select(func.count()).select_from(ReportTemplate).where(ReportTemplate.is_deleted == False)
+        q = select(ReportTemplate).where(not ReportTemplate.is_deleted)
+        cnt = select(func.count()).select_from(ReportTemplate).where(not ReportTemplate.is_deleted)
         if is_active is not None:
             q = q.where(ReportTemplate.is_active == is_active)
             cnt = cnt.where(ReportTemplate.is_active == is_active)
-        q = q.order_by(ReportTemplate.created_at.desc()).offset((page-1)*page_size).limit(page_size)
+        q = q.order_by(ReportTemplate.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
         results = await self.session.execute(q)
         total = (await self.session.execute(cnt)).scalar() or 0
         return list(results.scalars().all()), total

@@ -245,8 +245,8 @@ async def get(  # noqa: F811
     return ApiResponse(data=report)
 
 
-@router.put("/{report_id}", summary="更新报告单")
-async def put(
+@router.put("/{report_id}", summary="更新报告单")  # type: ignore[no-redef]
+async def put(  # noqa: F811
     report_id: UUID,
     data: ReportUpdate,
     session: AsyncSession = Depends(get_db),
@@ -261,8 +261,8 @@ async def put(
     return ApiResponse(data=report)
 
 
-@router.delete("/{report_id}", summary="删除报告单")
-async def delete(
+@router.delete("/{report_id}", summary="删除报告单")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
     report_id: UUID,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
