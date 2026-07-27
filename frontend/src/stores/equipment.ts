@@ -443,7 +443,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       failureCodes: { symptoms: [], causes: [], actions: [] },
       failureCodeLoading: false,
       setFailureCodes: (type, codes) => set(
-        (state) => ({ failureCodes: { ...state.failureCodes, [type]: codes } }),
+        (state) => ({ failureCodes: { ...state.failureCodes, [type]: Array.isArray(codes) ? codes : [] } }),
         false,
         'equipment/setFailureCodes',
       ),
