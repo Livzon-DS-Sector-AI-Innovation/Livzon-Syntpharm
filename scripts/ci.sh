@@ -101,7 +101,7 @@ run_e2e() {
             wait "$E2E_BACKEND_PID" 2>/dev/null || true
         fi
 
-        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans || true
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true
 
         rm -rf "$REPO_ROOT/frontend/.next-e2e"
 
@@ -113,7 +113,7 @@ run_e2e() {
     rm -rf "$REPO_ROOT/frontend/.next-e2e"
 
     # ── Clean stale E2E Compose resources ───────────────────────────────
-    docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans || true
+    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true
 
     # ── Port conflict detection ─────────────────────────────────────────
     for port in 15432 18000 13000; do
@@ -129,11 +129,11 @@ run_e2e() {
 
     # ── Start PostgreSQL ────────────────────────────────────────────────
     log_info "Starting E2E PostgreSQL (port 15432)..."
-    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d postgres
+    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d postgres
 
     local pg_ready=false
     for i in $(seq 1 30); do
-        if docker compose -p dazah-e2e -f docker-compose.ci.yml exec -T postgres pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T postgres pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
             pg_ready=true
             break
         fi
@@ -141,14 +141,14 @@ run_e2e() {
     done
     if [[ "$pg_ready" != true ]]; then
         log_error "PostgreSQL did not become ready"
-        docker compose -p dazah-e2e -f docker-compose.ci.yml logs postgres 2>/dev/null | tail -20
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs postgres 2>/dev/null | tail -20
         exit 1
     fi
     log_info "PostgreSQL ready"
 
     # ── Start backend (Docker) ──────────────────────────────────────────
     log_info "Starting E2E backend (port 18000)..."
-    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d backend-e2e
+    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
     local backend_ready=false
     for i in $(seq 1 60); do
@@ -160,7 +160,7 @@ run_e2e() {
     done
     if [[ "$backend_ready" != true ]]; then
         log_error "Backend did not become ready"
-        docker compose -p dazah-e2e -f docker-compose.ci.yml logs backend-e2e 2>/dev/null | tail -30
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs backend-e2e 2>/dev/null | tail -30
         exit 1
     fi
     log_info "Backend ready"
@@ -180,6 +180,7 @@ run_e2e() {
     log_info "Starting E2E frontend on port 13000..."
     cd "$REPO_ROOT/frontend"
 
+    NEXT_DIST_DIR=".next-e2e" \
     API_BASE_URL="http://127.0.0.1:18000" \
         pnpm exec next start -H 127.0.0.1 -p 13000 \
         > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
