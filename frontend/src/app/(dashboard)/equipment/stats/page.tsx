@@ -74,7 +74,7 @@ export default async function StatsPage() {
     }
 
     if (swResult.status === 'fulfilled') {
-      stockWarnings = swResult.value
+      stockWarnings = Array.isArray(swResult.value) ? swResult.value : []
     } else {
       console.warn('库存预警加载失败:', swResult.reason)
     }

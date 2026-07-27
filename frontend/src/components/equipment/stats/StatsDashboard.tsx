@@ -457,7 +457,7 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
         }}
       >
         {orderPipelineStages.map((stage, idx) => {
-          const count = statistics.by_status[stage.status as keyof typeof statistics.by_status] || 0
+          const count = statistics.by_status?.[stage.status as keyof typeof statistics.by_status] || 0
           const pct = total > 0 ? ((count / total) * 100).toFixed(0) : '0'
 
           return (
@@ -667,8 +667,8 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
             }}
           >
             {Object.entries(priorityConfig).map(([priority, config], i) => {
-              const count = statistics.by_priority[priority as keyof typeof statistics.by_priority] || 0
-              const maxPriority = Math.max(...Object.values(statistics.by_priority), 1)
+              const count = statistics.by_priority?.[priority as keyof typeof statistics.by_priority] || 0
+              const maxPriority = Math.max(...Object.values(statistics.by_priority ?? {}), 1)
               const pct = ((count / maxPriority) * 100).toFixed(0)
               return (
                 <div
@@ -1048,20 +1048,20 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
 // ============================================================
 export function StatsDashboard({ initialData }: StatsDashboardProps) {
   const {
-    equipmentStats,
-    workOrderStats,
-    stockWarnings,
-    overduePlans,
-    calibrationPlans,
-    recentWorkOrders,
+    equipmentStats = null,
+    workOrderStats = null,
+    stockWarnings = [],
+    overduePlans = [],
+    calibrationPlans = [],
+    recentWorkOrders = [],
   } = initialData
 
-  const eq = equipmentStats || { total: 0, by_status: {} as Record<EquipmentStatus, number>, by_category: {} as Record<string, number>, by_location: {} as Record<string, number> }
-  const wo = workOrderStats || { total: 0, by_status: {} as Record<WorkOrderStatus, number>, by_type: {} as Record<WorkOrderType, number>, by_priority: {} as Record<WorkOrderPriority, number> }
-  const onlineCount = (eq.by_status['在用'] || 0) + (eq.by_status['备用'] || 0)
+  const eq = { total: equipmentStats?.total ?? 0, by_status: equipmentStats?.by_status ?? {}, by_category: equipmentStats?.by_category ?? {}, by_location: equipmentStats?.by_location ?? {} }
+  const wo = { total: workOrderStats?.total ?? 0, by_status: workOrderStats?.by_status ?? {}, by_type: workOrderStats?.by_type ?? {}, by_priority: workOrderStats?.by_priority ?? {} }
+  const onlineCount = (eq.by_status?.['在用'] || 0) + (eq.by_status?.['备用'] || 0)
   const onlineRate = eq.total > 0 ? ((onlineCount / eq.total) * 100).toFixed(1) : '0'
-  const pendingOrders = wo.by_status['待处理'] || 0
-  const urgentOrders = wo.by_priority['紧急'] || 0
+  const pendingOrders = wo.by_status?.['待处理'] || 0
+  const urgentOrders = wo.by_priority?.['紧急'] || 0
 
   const quickLinks = [
     { label: '设备台账', href: '/equipment/assets', icon: <ApartmentOutlined />, accent: '#5645d4', bg: '#ede9f8' },
