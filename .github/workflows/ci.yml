@@ -6,7 +6,7 @@
 # │         + frontend-typecheck + openapi                              │
 # │                                                                     │
 # │  full   = quick + backend-alembic + backend-test                    │
-# │         + frontend-build + frontend-e2e                             │
+# │         + frontend-build + e2e                             │
 # │                                                                     │
 # │  To run locally:                                                    │
 # │    bash scripts/ci.sh openapi                                       │
@@ -180,7 +180,7 @@ jobs:
         env:
           API_BASE_URL: http://localhost:8000
 
-  frontend-e2e:
+  e2e:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
