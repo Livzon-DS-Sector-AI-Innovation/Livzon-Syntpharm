@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/actions/auth'
 import SettingsAdminClient from '@/components/settings/SettingsAdminClient'
-import { NoAccessResult } from '@/components/settings/NoAccessResult'
+import { NoAccessResult } from '@/components/settings'
 
 export const dynamic = 'force-dynamic'
 
