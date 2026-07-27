@@ -42,23 +42,3 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
-  frontend-e2e:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    ports:
-      - "13000:13000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - frontend_e2e_next:/app/.next
-    environment:
-      NODE_ENV: development
-      API_BASE_URL: http://backend-e2e:8000
-    command: sh -c "npx next dev -H 0.0.0.0 -p 13000"
-    depends_on:
-      - backend-e2e
-
-volumes:
-  frontend_e2e_next:

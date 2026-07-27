@@ -1,224 +1,344 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, Locator, Page } from '@playwright/test'
 
-const ROUTES = [
-  '/administration',
-  '/administration/approval',
-  '/administration/it-tickets',
-  '/administration/login-logs',
-  '/administration/meeting',
-  '/administration/meeting/ledger',
-  '/administration/meeting/requests',
-  '/administration/meeting/requisitions',
-  '/administration/notice',
-  '/administration/vehicle-requests',
-  '/administration/vehicles',
-  '/energy',
-  '/energy/alerts',
-  '/energy/collect-logs',
-  '/energy/devices',
-  '/energy/monthly',
-  '/energy/settings',
-  '/energy/workshops',
-  '/environment',
-  '/equipment',
-  '/equipment/assets',
-  '/equipment/inspection',
-  '/equipment/maintenance',
-  '/equipment/personnel',
-  '/equipment/settings',
-  '/equipment/spare-parts',
-  '/equipment/stats',
-  '/hr',
-  '/hr/attendance',
-  '/hr/departments',
-  '/hr/departure',
-  '/hr/new/departments',
-  '/hr/new/departure',
-  '/hr/new/offboarding',
-  '/hr/new/onboarding',
-  '/hr/new/profile',
-  '/hr/offboarding',
-  '/hr/onboarding',
-  '/hr/profile',
-  '/hr/recruitment',
-  '/hr/roster',
-  '/hr/settings',
-  '/hr/system/settings',
-  '/hr/training',
-  '/hr/training/ai-exam',
-  '/hr/training/annual-plan',
-  '/hr/training/annual-plan/new',
-  '/hr/training/evaluation-form',
-  '/hr/training/ledger',
-  '/hr/training/ledger/new',
-  '/hr/training/notification',
-  '/hr/training/onboarding',
-  '/hr/training/records',
-  '/hr/training/select-tasks',
-  '/hr/training/sign-in',
-  '/hr/training/sop-catalog',
-  '/hr/training/specialists',
-  '/hr/training/trainers',
-  '/procurement',
-  '/procurement/contract-summary',
-  '/procurement/invoice-recognition',
-  '/procurement/order',
-  '/procurement/supplier',
-  '/production',
-  '/production/balance',
-  '/production/batches',
-  '/production/label-verification',
-  '/production/plan',
-  '/production/pressure',
-  '/production/pressure/audit',
-  '/production/pressure/manual-input',
-  '/production/pressure/ocr-input',
-  '/production/pressure/point-management',
-  '/production/pressure/records',
-  '/production/process',
-  '/production/product-output',
-  '/production/product-output/all-products',
-  '/production/records',
-  '/quality',
-  '/quality/ai-config',
-  '/quality/ai-log',
-  '/quality/calculator',
-  '/quality/cpv',
-  '/quality/department-contacts',
-  '/quality/deviation',
-  '/quality/deviation-automation/create',
-  '/quality/deviation-automation/history',
-  '/quality/deviation-automation/sop',
-  '/quality/deviation-automation/templates',
-  '/quality/deviation-flow/create',
-  '/quality/deviation-flow/progress',
-  '/quality/deviation-flow/query',
-  '/quality/deviation-flow/settings',
-  '/quality/deviation/report',
-  '/quality/doc-check',
-  '/quality/doc-check/new',
-  '/quality/fqc',
-  '/quality/inspection',
-  '/quality/inspection/standards',
-  '/quality/inspection-table',
-  '/quality/instrument',
-  '/quality/instrument/list',
-  '/quality/instrument/list/create',
-  '/quality/instrument/list/edit',
-  '/quality/instrument/records',
-  '/quality/instrument/settings',
-  '/quality/ipqc',
-  '/quality/iqc',
-  '/quality/material-report',
-  '/quality/material-report/create',
-  '/quality/material-report/template',
-  '/quality/reagent',
-  '/quality/reagent/reminder',
-  '/quality/retention',
-  '/quality/sampling',
-  '/quality/sop-ai/batch',
-  '/quality/sop-ai/preview',
-  '/quality/sop-ai/records',
-  '/quality/stability',
-  '/quality/stability/plan',
-  '/quality/stability/report',
-  '/quality/stability/result',
-  '/quality/stability/settings',
-  '/quality/static-data',
-  '/quality/static-data/audit',
-  '/quality/static-data/chrom-column',
-  '/quality/static-data/hplc-reference',
-  '/quality/static-data/medium',
-  '/quality/static-data/standard',
-  '/quality/static-data/storage-condition',
-  '/registration',
-  '/registration/authorization-letter',
-  '/registration/dossier-writer',
-  '/registration/ledger',
-  '/registration/projects',
-  '/registration/reference-standard',
-  '/registration/regulation',
-  '/registration/regulation/list',
-  '/registration/review',
-  '/registration/supplementary-reply',
-  '/registration/validation-audit',
-  '/registration/validation-audit/new',
-  '/research',
-  '/research/bayesian',
-  '/research/deliverable-templates',
-  '/research/ich-analysis',
-  '/research/initiations',
-  '/research/pilot-workflow',
-  '/research/process-optimization',
-  '/research/process-validation',
-  '/research/projects',
-  '/research/registration-filing',
-  '/research/reports',
-  '/research/research-tracks',
-  '/research/route-development',
-  '/safety',
-  '/safety/accident',
-  '/safety/check',
-  '/safety/contractor',
-  '/safety/ehs-change',
-  '/safety/hazard',
-  '/safety/hazard-identification',
-  '/safety/hazard-identification/ledger',
-  '/safety/hazard-identification/new',
-  '/safety/hazard-ledger',
-  '/safety/knowledge-base',
-  '/safety/knowledge-base/graph',
-  '/safety/occupational-health',
-  '/safety/regulation',
-  '/safety/regulation/generator',
-  '/safety/risk-reporting',
-  '/safety/settings',
-  '/safety/special-ops',
-  '/safety/special-ops/personnel',
-  '/safety/training',
-  '/settings',
-  '/warehouse',
-  '/warehouse/feishu-config',
-  '/warehouse/packaging',
-  '/warehouse/product',
-  '/warehouse/raw-material',
+type RouteKind = 'normal' | 'redirect' | 'external-iframe'
+
+type RouteCase = {
+  path: string
+  module: string
+  kind: RouteKind
+  expectedPath?: string
+  expected: (page: Page) => Locator
+  heading?: string
+}
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+async function checkRoute(page: Page, route: RouteCase) {
+  const startURL = page.url()
+
+  const httpErrors: string[] = []
+  const networkFailures: string[] = []
+
+  const isApplicationUrl = (url: string) =>
+    url.startsWith('http://127.0.0.1:13000') ||
+    url.includes('/api/')
+
+  page.on('response', (response) => {
+    if (isApplicationUrl(response.url()) && response.status() >= 400) {
+      const req = response.request()
+      httpErrors.push(`[${response.status()}] ${req.method()} ${req.url()}`)
+    }
+  })
+
+  page.on('requestfailed', (request) => {
+    if (isApplicationUrl(request.url())) {
+      networkFailures.push(
+        `${request.method()} ${request.url()}: ${request.failure()?.errorText ?? 'unknown error'}`,
+      )
+    }
+  })
+
+  const response = await page.goto(route.path, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30_000,
+  })
+
+  if (route.kind === 'redirect') {
+    const dest = route.expectedPath!
+    await expect(page).toHaveURL(
+      new RegExp(`${escapeRegex(dest)}(?:\\?.*)?$`),
+      { timeout: 10_000 },
+    )
+    await expect(route.expected(page)).toBeVisible({ timeout: 15_000 })
+  } else if (route.kind === 'external-iframe') {
+    expect(response).not.toBeNull()
+    expect(response!.status()).toBeLessThan(400)
+    await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
+    if (route.heading) {
+      await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible({ timeout: 10_000 })
+    }
+  } else {
+    expect(response).not.toBeNull()
+    expect(response!.status()).toBeLessThan(400)
+    await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
+  }
+
+  await expect(page.getByText('页面加载出错')).not.toBeVisible()
+  await expect(page.getByText('应用加载出错')).not.toBeVisible()
+
+  expect(httpErrors.length, `HTTP errors on ${route.path}:\n${httpErrors.join('\n')}`).toBe(0)
+  expect(networkFailures.length, `Failed requests on ${route.path}:\n${networkFailures.join('\n')}`).toBe(0)
+}
+
+const heading =
+  (name: string) =>
+  (page: Page): Locator =>
+    page.getByRole('heading', { name }).first()
+
+const text = (t: string) => (page: Page): Locator => page.getByText(t).first()
+
+const iframe = (title: string) => (page: Page): Locator =>
+  page.locator(`iframe[title="${title}"]`)
+
+// ═══════════════════════════════════════════════════════════════
+// Route definitions
+// ═══════════════════════════════════════════════════════════════
+
+const productionRoutes: RouteCase[] = [
+  { path: '/production', module: 'production', kind: 'normal', expected: heading('生产管理') },
+  { path: '/production/batches', module: 'production', kind: 'normal', expected: heading('批次管理') },
+  { path: '/production/product-output', module: 'production', kind: 'normal', expected: heading('产品管理') },
+  { path: '/production/product-output/all-products', module: 'production', kind: 'normal', expected: heading('全部产品') },
+  { path: '/production/label-verification', module: 'production', kind: 'normal', expected: heading('标签复核') },
+  { path: '/production/pressure', module: 'production', kind: 'normal', expected: heading('压差统计') },
+  { path: '/production/pressure/audit', module: 'production', kind: 'normal', expected: heading('压差审计') },
+  { path: '/production/pressure/manual-input', module: 'production', kind: 'normal', expected: heading('手动录入') },
+  { path: '/production/pressure/ocr-input', module: 'production', kind: 'normal', expected: heading('OCR录入') },
+  { path: '/production/pressure/point-management', module: 'production', kind: 'normal', expected: heading('测点管理') },
+  { path: '/production/pressure/records', module: 'production', kind: 'normal', expected: heading('压差记录') },
+  // Disabled/unfinished routes — excluded from E2E
+  // /production/plan — 生产计划（开发中）
+  // /production/process — 工艺规程（开发中）
+  // /production/records — 生产记录（开发中）
+  // /production/balance — 物料平衡（开发中）
 ]
 
-test.describe('路由冒烟测试', () => {
-  for (const path of ROUTES) {
-    test(`${path} 页面加载`, async ({ page }) => {
-      test.setTimeout(30000)
+const equipmentRoutes: RouteCase[] = [
+  { path: '/equipment', module: 'equipment', kind: 'redirect', expectedPath: '/equipment/stats', expected: heading('设备仪表盘') },
+  { path: '/equipment/stats', module: 'equipment', kind: 'normal', expected: heading('设备仪表盘') },
+  { path: '/equipment/assets', module: 'equipment', kind: 'normal', expected: heading('设备台账') },
+  { path: '/equipment/maintenance', module: 'equipment', kind: 'normal', expected: heading('维护保养') },
+  { path: '/equipment/inspection', module: 'equipment', kind: 'normal', expected: heading('设备巡检') },
+  { path: '/equipment/spare-parts', module: 'equipment', kind: 'normal', expected: heading('备件管理') },
+  { path: '/equipment/personnel', module: 'equipment', kind: 'normal', expected: heading('人员配置') },
+  { path: '/equipment/settings', module: 'equipment', kind: 'normal', expected: heading('模块配置') },
+]
 
-      const httpErrors: string[] = []
-      const failedRequests: string[] = []
+const energyRoutes: RouteCase[] = [
+  { path: '/energy', module: 'energy', kind: 'normal', expected: heading('能源总览') },
+  { path: '/energy/devices', module: 'energy', kind: 'normal', expected: heading('数据源配置') },
+  { path: '/energy/alerts', module: 'energy', kind: 'normal', expected: heading('预警管理') },
+  { path: '/energy/collect-logs', module: 'energy', kind: 'normal', expected: heading('采集日志') },
+  { path: '/energy/settings', module: 'energy', kind: 'normal', expected: heading('模块配置') },
+]
 
-      page.on('response', (response) => {
-        if (response.url().includes('/api/') && response.status() >= 400) {
-          httpErrors.push(
-            `[${response.status()}] ${response.request().method()} ${response.url()}`,
-          )
-        }
-      })
+const administrationRoutes: RouteCase[] = [
+  { path: '/administration', module: 'administration', kind: 'normal', expected: heading('行政概览') },
+  { path: '/administration/meeting', module: 'administration', kind: 'redirect', expectedPath: '/administration/meeting/ledger', expected: heading('物品台账') },
+  { path: '/administration/meeting/ledger', module: 'administration', kind: 'normal', expected: heading('物品台账') },
+  { path: '/administration/meeting/requests', module: 'administration', kind: 'normal', expected: heading('领用记录') },
+  { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用申请') },
+  { path: '/administration/approval', module: 'administration', kind: 'normal', expected: heading('文件审批') },
+  { path: '/administration/it-tickets', module: 'administration', kind: 'external-iframe', expected: text('报修温馨提示'), heading: 'IT工单' },
+  { path: '/administration/login-logs', module: 'administration', kind: 'normal', expected: heading('登录日志') },
+  { path: '/administration/notice', module: 'administration', kind: 'normal', expected: heading('公告通知') },
+  { path: '/administration/vehicle-requests', module: 'administration', kind: 'normal', expected: heading('用车申请') },
+  { path: '/administration/vehicles', module: 'administration', kind: 'normal', expected: heading('车辆信息') },
+]
 
-      page.on('requestfailed', (request) => {
-        const url = request.url()
-        if (url.includes('/api/')) {
-          failedRequests.push(
-            `${request.method()} ${url}: ${request.failure()?.errorText ?? 'unknown error'}`,
-          )
-        }
-      })
+const environmentRoutes: RouteCase[] = [
+  { path: '/environment', module: 'environment', kind: 'normal', expected: heading('环保管理') },
+]
 
-      const response = await page.goto(path)
-      expect(response?.status()).toBe(200)
+const warehouseRoutes: RouteCase[] = [
+  { path: '/warehouse', module: 'warehouse', kind: 'normal', expected: heading('库房管理') },
+  { path: '/warehouse/raw-material', module: 'warehouse', kind: 'normal', expected: heading('原料库房') },
+  { path: '/warehouse/product', module: 'warehouse', kind: 'normal', expected: heading('成品库房') },
+  { path: '/warehouse/packaging', module: 'warehouse', kind: 'normal', expected: heading('包材库房') },
+  { path: '/warehouse/feishu-config', module: 'warehouse', kind: 'normal', expected: heading('飞书配置') },
+]
 
-      await expect(page.locator('h1, h2, h3, h4').first()).toBeVisible({ timeout: 10000 })
+const settingsRoutes: RouteCase[] = [
+  { path: '/settings', module: 'settings', kind: 'normal', expected: heading('后台管理') },
+]
 
-      await expect(page.getByText('页面加载出错')).not.toBeVisible()
-      await expect(page.getByText('应用加载出错')).not.toBeVisible()
+const hrRoutes: RouteCase[] = [
+  { path: '/hr', module: 'hr', kind: 'normal', expected: heading('人力资源') },
+  { path: '/hr/attendance', module: 'hr', kind: 'normal', expected: heading('考勤报表') },
+  { path: '/hr/departments', module: 'hr', kind: 'normal', expected: heading('部门管理') },
+  { path: '/hr/departure', module: 'hr', kind: 'normal', expected: heading('离职管理') },
+  { path: '/hr/offboarding', module: 'hr', kind: 'normal', expected: heading('离职办理') },
+  { path: '/hr/onboarding', module: 'hr', kind: 'normal', expected: heading('入职办理') },
+  { path: '/hr/profile', module: 'hr', kind: 'normal', expected: heading('员工档案') },
+  { path: '/hr/recruitment', module: 'hr', kind: 'normal', expected: heading('招聘管理') },
+  { path: '/hr/roster', module: 'hr', kind: 'normal', expected: heading('员工名册') },
+  { path: '/hr/settings', module: 'hr', kind: 'normal', expected: heading('模块配置') },
+  { path: '/hr/training', module: 'hr', kind: 'normal', expected: heading('培训管理') },
+  { path: '/hr/training/ai-exam', module: 'hr', kind: 'normal', expected: heading('AI出题') },
+  { path: '/hr/training/annual-plan', module: 'hr', kind: 'normal', expected: heading('年度计划') },
+  { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('评价表设置') },
+  { path: '/hr/training/ledger', module: 'hr', kind: 'normal', expected: heading('培训台账') },
+  { path: '/hr/training/notification', module: 'hr', kind: 'normal', expected: heading('消息通知') },
+  { path: '/hr/training/onboarding', module: 'hr', kind: 'normal', expected: heading('入职培训') },
+  { path: '/hr/training/records', module: 'hr', kind: 'normal', expected: heading('培训记录') },
+  { path: '/hr/training/sign-in', module: 'hr', kind: 'normal', expected: heading('培训签到') },
+  { path: '/hr/training/sop-catalog', module: 'hr', kind: 'normal', expected: heading('SOP目录') },
+  { path: '/hr/training/specialists', module: 'hr', kind: 'normal', expected: heading('专家组') },
+  { path: '/hr/training/trainers', module: 'hr', kind: 'normal', expected: heading('培训师') },
+  // Excluded (form/create pages requiring data fixtures):
+  // /hr/training/annual-plan/new
+  // /hr/training/ledger/new
+  // /hr/training/select-tasks
+  // /hr/new/* — duplicate aliases
+  // /hr/system/settings — duplicate alias
+]
 
-      expect(httpErrors, `Unexpected API errors on ${path}:\n${httpErrors.join('\n')}`).toEqual([])
-      expect(failedRequests, `Failed requests on ${path}:\n${failedRequests.join('\n')}`).toEqual([])
-    })
-  }
+const procurementRoutes: RouteCase[] = [
+  { path: '/procurement', module: 'procurement', kind: 'normal', expected: heading('采购管理') },
+  { path: '/procurement/supplier', module: 'procurement', kind: 'normal', expected: heading('供应商管理') },
+  { path: '/procurement/order', module: 'procurement', kind: 'normal', expected: heading('采购订单') },
+  { path: '/procurement/contract-summary', module: 'procurement', kind: 'normal', expected: heading('合同台账') },
+  { path: '/procurement/invoice-recognition', module: 'procurement', kind: 'normal', expected: heading('发票识别') },
+]
+
+const qualityRoutes: RouteCase[] = [
+  { path: '/quality', module: 'quality', kind: 'normal', expected: heading('质量管理') },
+  { path: '/quality/deviation', module: 'quality', kind: 'normal', expected: heading('偏差管理') },
+  { path: '/quality/deviation/report', module: 'quality', kind: 'normal', expected: heading('偏差报告') },
+  { path: '/quality/deviation-flow/settings', module: 'quality', kind: 'normal', expected: heading('流程配置') },
+  { path: '/quality/deviation-flow/query', module: 'quality', kind: 'normal', expected: heading('流程查询') },
+  { path: '/quality/deviation-flow/progress', module: 'quality', kind: 'normal', expected: heading('流程进度') },
+  { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: heading('模板管理') },
+  { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: heading('历史记录') },
+  { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: heading('SOP管理') },
+  { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
+  { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
+  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门通讯录') },
+  { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
+  { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
+  { path: '/quality/inspection', module: 'quality', kind: 'normal', expected: heading('检验管理') },
+  { path: '/quality/inspection/standards', module: 'quality', kind: 'normal', expected: heading('检验标准') },
+  { path: '/quality/inspection-table', module: 'quality', kind: 'normal', expected: heading('检验项目表') },
+  { path: '/quality/instrument', module: 'quality', kind: 'normal', expected: heading('仪器管理') },
+  { path: '/quality/instrument/list', module: 'quality', kind: 'normal', expected: heading('仪器清单') },
+  { path: '/quality/instrument/records', module: 'quality', kind: 'normal', expected: heading('使用记录') },
+  { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('模块配置') },
+  { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC') },
+  { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC') },
+  { path: '/quality/material-report', module: 'quality', kind: 'normal', expected: heading('物料报告') },
+  { path: '/quality/material-report/template', module: 'quality', kind: 'normal', expected: heading('报告模板') },
+  { path: '/quality/reagent', module: 'quality', kind: 'normal', expected: heading('试剂管理') },
+  { path: '/quality/reagent/reminder', module: 'quality', kind: 'normal', expected: heading('试剂提醒') },
+  { path: '/quality/retention', module: 'quality', kind: 'normal', expected: heading('留样管理') },
+  { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理') },
+  { path: '/quality/sop-ai/records', module: 'quality', kind: 'normal', expected: heading('检查记录') },
+  { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性') },
+  { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性计划') },
+  { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性数据') },
+  { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('基础数据') },
+  { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: heading('审核记录') },
+  { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: heading('AI配置') },
+  { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI日志') },
+  // Excluded (form/create pages):
+  // /quality/deviation-automation/create
+  // /quality/deviation-flow/create
+  // /quality/material-report/create
+  // /quality/doc-check/new
+  // /quality/instrument/list/create
+  // /quality/instrument/list/edit
+  // /quality/sop-ai/batch
+  // /quality/sop-ai/preview
+]
+
+const registrationRoutes: RouteCase[] = [
+  { path: '/registration', module: 'registration', kind: 'normal', expected: heading('注册申报') },
+  { path: '/registration/ledger', module: 'registration', kind: 'normal', expected: heading('批件台账') },
+  { path: '/registration/projects', module: 'registration', kind: 'normal', expected: heading('项目管理') },
+  { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规标准') },
+  { path: '/registration/regulation/list', module: 'registration', kind: 'normal', expected: heading('法规清单') },
+  { path: '/registration/authorization-letter', module: 'registration', kind: 'normal', expected: heading('授权书') },
+  { path: '/registration/dossier-writer', module: 'registration', kind: 'normal', expected: heading('申报撰写') },
+  { path: '/registration/reference-standard', module: 'registration', kind: 'normal', expected: heading('对照品') },
+  { path: '/registration/review', module: 'registration', kind: 'normal', expected: heading('文件审核') },
+  { path: '/registration/supplementary-reply', module: 'registration', kind: 'normal', expected: heading('发补回复') },
+  { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证审计') },
+  // Excluded: /registration/validation-audit/new — form page
+]
+
+const researchRoutes: RouteCase[] = [
+  { path: '/research', module: 'research', kind: 'normal', expected: heading('研发管理') },
+  { path: '/research/projects', module: 'research', kind: 'normal', expected: heading('项目管理') },
+  { path: '/research/initiations', module: 'research', kind: 'normal', expected: heading('立项申请') },
+  { path: '/research/research-tracks', module: 'research', kind: 'normal', expected: heading('研究跟踪') },
+  { path: '/research/reports', module: 'research', kind: 'normal', expected: heading('研究报告') },
+  { path: '/research/deliverable-templates', module: 'research', kind: 'normal', expected: heading('交付模板') },
+  { path: '/research/process-optimization', module: 'research', kind: 'normal', expected: heading('工艺优化') },
+  { path: '/research/process-validation', module: 'research', kind: 'normal', expected: heading('工艺验证') },
+  { path: '/research/route-development', module: 'research', kind: 'normal', expected: heading('路线开发') },
+  { path: '/research/registration-filing', module: 'research', kind: 'normal', expected: heading('注册申报') },
+  { path: '/research/bayesian', module: 'research', kind: 'normal', expected: heading('贝叶斯分析') },
+  { path: '/research/ich-analysis', module: 'research', kind: 'normal', expected: heading('ICH分析') },
+  { path: '/research/pilot-workflow', module: 'research', kind: 'normal', expected: heading('中试工作流') },
+]
+
+const safetyRoutes: RouteCase[] = [
+  { path: '/safety', module: 'safety', kind: 'normal', expected: heading('安全生产') },
+  { path: '/safety/hazard', module: 'safety', kind: 'normal', expected: heading('隐患管理') },
+  { path: '/safety/hazard-identification', module: 'safety', kind: 'normal', expected: heading('风险辨识') },
+  { path: '/safety/hazard-identification/ledger', module: 'safety', kind: 'normal', expected: heading('风险台账') },
+  { path: '/safety/hazard-ledger', module: 'safety', kind: 'normal', expected: heading('隐患台账') },
+  { path: '/safety/accident', module: 'safety', kind: 'normal', expected: heading('事故管理') },
+  { path: '/safety/check', module: 'safety', kind: 'normal', expected: heading('安全检查') },
+  { path: '/safety/contractor', module: 'safety', kind: 'normal', expected: heading('承包商') },
+  { path: '/safety/ehs-change', module: 'safety', kind: 'normal', expected: heading('变更管理') },
+  { path: '/safety/knowledge-base', module: 'safety', kind: 'normal', expected: heading('知识库') },
+  { path: '/safety/knowledge-base/graph', module: 'safety', kind: 'normal', expected: heading('知识图谱') },
+  { path: '/safety/occupational-health', module: 'safety', kind: 'normal', expected: heading('职业健康') },
+  { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('法规管理') },
+  { path: '/safety/regulation/generator', module: 'safety', kind: 'normal', expected: heading('法规生成') },
+  { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('风险报告') },
+  { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('模块配置') },
+  { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
+  { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },
+  { path: '/safety/training', module: 'safety', kind: 'normal', expected: heading('安全培训') },
+  // Excluded: /safety/hazard-identification/new — form page
+]
+
+const allModuleRouteSets: { name: string; routes: RouteCase[] }[] = [
+  { name: 'production', routes: productionRoutes },
+  { name: 'equipment', routes: equipmentRoutes },
+  { name: 'energy', routes: energyRoutes },
+  { name: 'administration', routes: administrationRoutes },
+  { name: 'environment', routes: environmentRoutes },
+  { name: 'warehouse', routes: warehouseRoutes },
+  { name: 'settings', routes: settingsRoutes },
+  { name: 'hr', routes: hrRoutes },
+  { name: 'procurement', routes: procurementRoutes },
+  { name: 'quality', routes: qualityRoutes },
+  { name: 'registration', routes: registrationRoutes },
+  { name: 'research', routes: researchRoutes },
+  { name: 'safety', routes: safetyRoutes },
+]
+
+// ═══════════════════════════════════════════════════════════════
+// Tests
+// ═══════════════════════════════════════════════════════════════
+
+test('root redirects to /production', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
 })
+
+for (const { name, routes } of allModuleRouteSets) {
+  test(`${name} routes load`, async ({ page }) => {
+    const failures: { path: string; error: string }[] = []
+
+    for (const route of routes) {
+      await test.step(route.path, async () => {
+        try {
+          await checkRoute(page, route)
+        } catch (error) {
+          failures.push({
+            path: route.path,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      })
+    }
+
+    expect(
+      failures.length,
+      `${name} route failures:\n${failures.map(f => `  ${f.path}: ${f.error}`).join('\n')}`,
+    ).toBe(0)
+  })
+}

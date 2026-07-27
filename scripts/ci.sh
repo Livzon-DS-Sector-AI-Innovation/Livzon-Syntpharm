@@ -83,19 +83,75 @@ run_e2e() {
     log_section "E2E Tests"
     cd "$REPO_ROOT"
 
-    # ── Cleanup trap ────────────────────────────────────────────────────
-    cleanup() {
-        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans 2>/dev/null || true
+    # ── Cleanup trap (preserves exit code) ──────────────────────────────
+    local E2E_FRONTEND_PID=""
+    local E2E_BACKEND_PID=""
+
+    cleanup_e2e() {
+        local exit_code=$?
+        trap - EXIT INT TERM
+
+        if [[ -n "${E2E_FRONTEND_PID:-}" ]]; then
+            kill "$E2E_FRONTEND_PID" 2>/dev/null || true
+            wait "$E2E_FRONTEND_PID" 2>/dev/null || true
+        fi
+
+        if [[ -n "${E2E_BACKEND_PID:-}" ]]; then
+            kill "$E2E_BACKEND_PID" 2>/dev/null || true
+            wait "$E2E_BACKEND_PID" 2>/dev/null || true
+        fi
+
+        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans || true
+
+        rm -rf "$REPO_ROOT/frontend/.next-e2e"
+
+        exit "$exit_code"
     }
-    trap cleanup EXIT
+    trap cleanup_e2e EXIT INT TERM
 
-    # ── Start E2E services ──────────────────────────────────────────────
-    log_info "Starting E2E services (postgres + backend + frontend)..."
-    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d --build
+    # ── Remove stale .next-e2e ──────────────────────────────────────────
+    rm -rf "$REPO_ROOT/frontend/.next-e2e"
 
-    # ── Wait for backend ────────────────────────────────────────────────
-    backend_ready=false
-    for _ in $(seq 1 60); do
+    # ── Clean stale E2E Compose resources ───────────────────────────────
+    docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans || true
+
+    # ── Port conflict detection ─────────────────────────────────────────
+    for port in 15432 18000 13000; do
+        if ss -tlnp "sport = :$port" 2>/dev/null | grep -q LISTEN; then
+            log_error "Port $port is already in use — cannot start E2E services"
+            echo "  Occupied by: $(ss -tlnp "sport = :$port" 2>/dev/null | grep LISTEN)"
+            exit 1
+        fi
+    done
+
+    # ── Auth secret ─────────────────────────────────────────────────────
+    export E2E_AUTH_SECRET="${E2E_AUTH_SECRET:-e2e-test-secret}"
+
+    # ── Start PostgreSQL ────────────────────────────────────────────────
+    log_info "Starting E2E PostgreSQL (port 15432)..."
+    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d postgres
+
+    local pg_ready=false
+    for i in $(seq 1 30); do
+        if docker compose -p dazah-e2e -f docker-compose.ci.yml exec -T postgres pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
+            pg_ready=true
+            break
+        fi
+        sleep 1
+    done
+    if [[ "$pg_ready" != true ]]; then
+        log_error "PostgreSQL did not become ready"
+        docker compose -p dazah-e2e -f docker-compose.ci.yml logs postgres 2>/dev/null | tail -20
+        exit 1
+    fi
+    log_info "PostgreSQL ready"
+
+    # ── Start backend (Docker) ──────────────────────────────────────────
+    log_info "Starting E2E backend (port 18000)..."
+    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d backend-e2e
+
+    local backend_ready=false
+    for i in $(seq 1 60); do
         if curl -sf http://127.0.0.1:18000/health > /dev/null 2>&1; then
             backend_ready=true
             break
@@ -104,13 +160,33 @@ run_e2e() {
     done
     if [[ "$backend_ready" != true ]]; then
         log_error "Backend did not become ready"
+        docker compose -p dazah-e2e -f docker-compose.ci.yml logs backend-e2e 2>/dev/null | tail -30
         exit 1
     fi
     log_info "Backend ready"
 
-    # ── Wait for frontend ───────────────────────────────────────────────
-    frontend_ready=false
-    for _ in $(seq 1 30); do
+    # ── Build frontend into .next-e2e ───────────────────────────────────
+    log_info "Building E2E frontend (dist: .next-e2e)..."
+    cd "$REPO_ROOT/frontend"
+    check_command pnpm || exit 1
+
+    if ! NEXT_DIST_DIR=".next-e2e" pnpm build; then
+        log_error "Frontend build failed"
+        exit 1
+    fi
+    log_info "Frontend build complete"
+
+    # ── Start frontend on host ──────────────────────────────────────────
+    log_info "Starting E2E frontend on port 13000..."
+    cd "$REPO_ROOT/frontend"
+
+    API_BASE_URL="http://127.0.0.1:18000" \
+        pnpm exec next start -H 127.0.0.1 -p 13000 \
+        > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
+    E2E_FRONTEND_PID=$!
+
+    local frontend_ready=false
+    for i in $(seq 1 30); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
             frontend_ready=true
             break
@@ -119,25 +195,40 @@ run_e2e() {
     done
     if [[ "$frontend_ready" != true ]]; then
         log_error "Frontend did not become ready"
+        tail -30 "$REPO_ROOT/e2e-frontend.log" 2>/dev/null || true
         exit 1
     fi
     log_info "Frontend ready"
 
+    cd "$REPO_ROOT"
+
     # ── Run Playwright ──────────────────────────────────────────────────
     export E2E_BACKEND_URL="http://127.0.0.1:18000"
     export E2E_FRONTEND_URL="http://127.0.0.1:13000"
-    export E2E_AUTH_SECRET="e2e-test-secret"
 
     log_info "Running Playwright tests..."
     cd "$REPO_ROOT/frontend"
+
+    local e2e_exit_code=0
     if ! pnpm exec playwright test; then
+        e2e_exit_code=$?
+    fi
+
+    # ── Collect E2E frontend log ────────────────────────────────────────
+    if [[ -f "$REPO_ROOT/e2e-frontend.log" ]]; then
+        cp "$REPO_ROOT/e2e-frontend.log" "$REPO_ROOT/e2e-frontend.log" 2>/dev/null || true
+    fi
+
+    cd "$REPO_ROOT"
+
+    if [[ $e2e_exit_code -ne 0 ]]; then
         log_error "E2E tests failed!"
         FAILED=1
     else
         log_info "E2E tests passed"
     fi
 
-    cd "$REPO_ROOT"
+    exit $e2e_exit_code
 }
 
 # ── Help ─────────────────────────────────────────────────────────────────────
