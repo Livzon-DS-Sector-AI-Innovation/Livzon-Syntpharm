@@ -85,50 +85,17 @@ run_e2e() {
 
     # ── Cleanup trap ────────────────────────────────────────────────────
     cleanup() {
-        kill "${BACKEND_PID:-}" 2>/dev/null || true
         docker compose -p dazah-e2e -f docker-compose.e2e.yml down -v --remove-orphans 2>/dev/null || true
     }
     trap cleanup EXIT
 
-    # ── Start E2E postgres ──────────────────────────────────────────────
-    log_info "Starting E2E postgres (port 15432)..."
-    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d postgres-e2e
+    # ── Start E2E services ──────────────────────────────────────────────
+    log_info "Starting E2E services (postgres + backend + frontend)..."
+    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d --build
 
-    postgres_ready=false
-    for _ in $(seq 1 30); do
-        if docker compose -p dazah-e2e -f docker-compose.e2e.yml exec -T postgres-e2e pg_isready -U postgres -d dazah_e2e > /dev/null 2>&1; then
-            postgres_ready=true
-            break
-        fi
-        sleep 1
-    done
-    if [[ "$postgres_ready" != true ]]; then
-        log_error "PostgreSQL did not become ready"
-        exit 1
-    fi
-    log_info "E2E postgres ready"
-
-    # ── Start backend ───────────────────────────────────────────────────
-    log_info "Starting backend (port 18000)..."
-    cd "$REPO_ROOT/backend"
-    export DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:15432/dazah_e2e
-    export FEISHU__PLATFORM__APP_ID=ci_dummy
-    export FEISHU__PLATFORM__APP_SECRET=ci_dummy
-    export FEISHU__PLATFORM__REDIRECT_URI=http://127.0.0.1:13000/auth/callback
-    export FRONTEND_URL=http://127.0.0.1:13000
-    export APP_ENV=e2e
-    export E2E_AUTH_SECRET="${E2E_AUTH_SECRET:-$(openssl rand -hex 32)}"
-
-    check_command uv || return 1
-    uv sync --dev
-    uv run alembic upgrade head
-    uv run uvicorn app.main:app --host 0.0.0.0 --port 18000 \
-        > "$REPO_ROOT/e2e-backend.log" 2>&1 &
-    BACKEND_PID=$!
-    log_info "Backend PID: $BACKEND_PID"
-
+    # ── Wait for backend ────────────────────────────────────────────────
     backend_ready=false
-    for _ in $(seq 1 30); do
+    for _ in $(seq 1 60); do
         if curl -sf http://127.0.0.1:18000/health > /dev/null 2>&1; then
             backend_ready=true
             break
@@ -141,15 +108,7 @@ run_e2e() {
     fi
     log_info "Backend ready"
 
-    # ── Start frontend ──────────────────────────────────────────────────
-    log_info "Starting frontend (port 13000)..."
-    cd "$REPO_ROOT"
-    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d --build frontend-e2e
-
-    export E2E_BACKEND_URL="http://127.0.0.1:18000"
-    export E2E_FRONTEND_URL="http://127.0.0.1:13000"
-    export API_BASE_URL="http://127.0.0.1:18000"
-
+    # ── Wait for frontend ───────────────────────────────────────────────
     frontend_ready=false
     for _ in $(seq 1 30); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
@@ -165,6 +124,10 @@ run_e2e() {
     log_info "Frontend ready"
 
     # ── Run Playwright ──────────────────────────────────────────────────
+    export E2E_BACKEND_URL="http://127.0.0.1:18000"
+    export E2E_FRONTEND_URL="http://127.0.0.1:13000"
+    export E2E_AUTH_SECRET="e2e-test-secret"
+
     log_info "Running Playwright tests..."
     cd "$REPO_ROOT/frontend"
     if ! pnpm exec playwright test; then
