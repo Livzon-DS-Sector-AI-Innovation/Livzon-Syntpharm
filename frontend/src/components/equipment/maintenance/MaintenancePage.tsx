@@ -50,12 +50,12 @@ interface MaintenancePageProps {
 }
 
 export function MaintenancePage({
-  initialEquipments,
-  initialWorkOrders, initialWorkOrderTotal, initialWorkOrderStatistics,
+  initialEquipments = [],
+  initialWorkOrders = [], initialWorkOrderTotal = 0, initialWorkOrderStatistics,
   initialFailureCodes,
-  initialCalibrationPlans, initialCalibrationPlanTotal,
-  initialCalibrationRecords, initialCalibrationRecordTotal,
-  initialMaintenancePlans, initialMaintenancePlanTotal,
+  initialCalibrationPlans = [], initialCalibrationPlanTotal = 0,
+  initialCalibrationRecords = [], initialCalibrationRecordTotal = 0,
+  initialMaintenancePlans = [], initialMaintenancePlanTotal = 0,
 }: MaintenancePageProps) {
   const {
     maintenanceTab, setMaintenanceTab,
