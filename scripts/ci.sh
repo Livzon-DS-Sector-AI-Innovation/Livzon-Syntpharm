@@ -85,13 +85,13 @@ run_e2e() {
 
     # ── Cleanup trap ────────────────────────────────────────────────────
     cleanup() {
-        docker compose -p dazah-e2e -f docker-compose.e2e.yml down -v --remove-orphans 2>/dev/null || true
+        docker compose -p dazah-e2e -f docker-compose.ci.yml down -v --remove-orphans 2>/dev/null || true
     }
     trap cleanup EXIT
 
     # ── Start E2E services ──────────────────────────────────────────────
     log_info "Starting E2E services (postgres + backend + frontend)..."
-    docker compose -p dazah-e2e -f docker-compose.e2e.yml up -d --build
+    docker compose -p dazah-e2e -f docker-compose.ci.yml up -d --build
 
     # ── Wait for backend ────────────────────────────────────────────────
     backend_ready=false

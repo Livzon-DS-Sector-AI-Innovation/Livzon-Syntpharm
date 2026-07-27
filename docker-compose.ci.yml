@@ -19,3 +19,46 @@ services:
       interval: 1s
       timeout: 5s
       retries: 30
+
+  backend-e2e:
+    image: livzon-syntpharm-backend
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini
+    ports:
+      - "18000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dazah_e2e
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU__PLATFORM__REDIRECT_URI: http://127.0.0.1:13000/auth/callback
+      FRONTEND_URL: http://127.0.0.1:13000
+      APP_ENV: e2e
+      E2E_AUTH_SECRET: e2e-test-secret
+    command: >
+      sh -c "uv run alembic upgrade head &&
+      uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend-e2e:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "13000:13000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - frontend_e2e_next:/app/.next
+    environment:
+      NODE_ENV: development
+      API_BASE_URL: http://backend-e2e:8000
+    command: sh -c "npx next dev -H 0.0.0.0 -p 13000"
+    depends_on:
+      - backend-e2e
+
+volumes:
+  frontend_e2e_next:
