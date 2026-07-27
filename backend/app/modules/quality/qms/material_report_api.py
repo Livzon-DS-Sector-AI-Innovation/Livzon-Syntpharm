@@ -181,7 +181,7 @@ async def get(  # noqa: F811
     return ApiResponse(data=template)
 
 
-@router.put("/template/{template_id}", summary="更新模板")  # type: ignore[no-redef]
+@router.put("/template/{template_id}", summary="更新模板")
 async def put(  # noqa: F811
     template_id: UUID,
     data: TemplateUpdate,
@@ -197,7 +197,7 @@ async def put(  # noqa: F811
     return ApiResponse(data=template)
 
 
-@router.delete("/template/{template_id}", summary="删除模板")  # type: ignore[no-redef]
+@router.delete("/template/{template_id}", summary="删除模板")
 async def delete(  # noqa: F811
     template_id: UUID,
     session: AsyncSession = Depends(get_db),

@@ -243,8 +243,8 @@ class ReportTemplateRepository:
         page_size: int = 100,
     ) -> tuple[list[ReportTemplate], int]:
         """获取模板列表"""
-        q = select(ReportTemplate).where(not ReportTemplate.is_deleted)
-        cnt = select(func.count()).select_from(ReportTemplate).where(not ReportTemplate.is_deleted)
+        q = select(ReportTemplate).where(ReportTemplate.is_deleted == False)  # noqa: E712
+        cnt = select(func.count()).select_from(ReportTemplate).where(ReportTemplate.is_deleted == False)  # noqa: E712
         if is_active is not None:
             q = q.where(ReportTemplate.is_active == is_active)
             cnt = cnt.where(ReportTemplate.is_active == is_active)

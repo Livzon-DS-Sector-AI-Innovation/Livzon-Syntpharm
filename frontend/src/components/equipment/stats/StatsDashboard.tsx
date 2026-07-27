@@ -1056,8 +1056,18 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
     recentWorkOrders = [],
   } = initialData
 
-  const eq = { total: equipmentStats?.total ?? 0, by_status: equipmentStats?.by_status ?? {}, by_category: equipmentStats?.by_category ?? {}, by_location: equipmentStats?.by_location ?? {} }
-  const wo = { total: workOrderStats?.total ?? 0, by_status: workOrderStats?.by_status ?? {}, by_type: workOrderStats?.by_type ?? {}, by_priority: workOrderStats?.by_priority ?? {} }
+  const eq = {
+    total: equipmentStats?.total ?? 0,
+    by_status: equipmentStats?.by_status ?? {} as Record<EquipmentStatus, number>,
+    by_category: equipmentStats?.by_category ?? {} as Record<string, number>,
+    by_location: equipmentStats?.by_location ?? {} as Record<string, number>,
+  }
+  const wo = {
+    total: workOrderStats?.total ?? 0,
+    by_status: workOrderStats?.by_status ?? {} as Record<WorkOrderStatus, number>,
+    by_type: workOrderStats?.by_type ?? {} as Record<WorkOrderType, number>,
+    by_priority: workOrderStats?.by_priority ?? {} as Record<WorkOrderPriority, number>,
+  }
   const onlineCount = (eq.by_status?.['在用'] || 0) + (eq.by_status?.['备用'] || 0)
   const onlineRate = eq.total > 0 ? ((onlineCount / eq.total) * 100).toFixed(1) : '0'
   const pendingOrders = wo.by_status?.['待处理'] || 0
