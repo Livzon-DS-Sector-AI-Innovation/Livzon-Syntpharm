@@ -71,7 +71,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          executor_id: values.executor_id,
+          responsible_person_id: values.executor_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
           status: values.status,
@@ -86,7 +86,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          executor_id: values.executor_id,
+          responsible_person_id: values.executor_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
         }

@@ -41,7 +41,7 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
         await updateInspectionTemplate(editingInspectionTemplate.id, { name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: v.is_active })
         message.success('更新成功')
       } else {
-        await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: false })
+        await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined })
         message.success('创建成功')
       }
       closeInspectionTemplateDrawer(); onRefresh?.()

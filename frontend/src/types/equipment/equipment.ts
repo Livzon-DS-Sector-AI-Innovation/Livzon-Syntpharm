@@ -1,4 +1,9 @@
 import type { components } from '@/types/generated/schema'
+export type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
+export type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
+export type CreateEquipmentInput = components['schemas']['EquipmentCreate']
+export type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
+
 export type CreateLocationInput = components['schemas']['LocationCreate']
 export type UpdateLocationInput = components['schemas']['LocationUpdate']
 

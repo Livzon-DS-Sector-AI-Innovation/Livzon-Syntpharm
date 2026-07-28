@@ -44,8 +44,7 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
-      // @ts-expect-error is_active not in InspectionTemplateCreate schema
-      const result: any = await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: false })
+      const result: any = await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined })
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }
