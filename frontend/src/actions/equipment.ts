@@ -2,8 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
+import type { components } from '@/types/generated/schema'
+type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
+type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
+type CreateEquipmentInput = components['schemas']['EquipmentCreate']
+type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
 import {
-  CreateCategoryInput, UpdateCategoryInput, CreateLocationInput, UpdateLocationInput, CreateEquipmentInput, UpdateEquipmentInput,
+  CreateLocationInput, UpdateLocationInput,
   CreateFailureCodeInput, UpdateFailureCodeInput,
   CreateWorkOrderInput, UpdateWorkOrderInput, AssignWorkOrderInput, CompleteWorkOrderInput, VerifyWorkOrderInput,
   CreateCalibrationPlanInput, UpdateCalibrationPlanInput, CreateCalibrationRecordInput,

@@ -33,19 +33,20 @@ import {
   checkAlerts as apiCheckAlerts,
   fetchAlertDates as apiFetchAlertDates,
 } from '@/lib/api/server/energy'
+import type { components } from '@/types/generated/schema'
+type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
+type UpdateDeviceInput = components['schemas']['EnergyDeviceConfigUpdate']
+type CreateRuleInput = components['schemas']['EnergyAlertRuleCreate']
+type UpdateRuleInput = components['schemas']['EnergyAlertRuleUpdate']
+type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
+type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
+type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
+type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
 import type {
-  CreateDeviceInput,
-  UpdateDeviceInput,
   DeviceQueryParams,
-  CreateRuleInput,
-  UpdateRuleInput,
   RuleQueryParams,
   ProcessRecordInput,
-  CreateWorkshopInput,
-  UpdateWorkshopInput,
   WorkshopQueryParams,
-  CreateMonthlyRecordInput,
-  FeishuImportRequest,
 } from '@/types/energy'
 
 // 数据源配置 Server Actions

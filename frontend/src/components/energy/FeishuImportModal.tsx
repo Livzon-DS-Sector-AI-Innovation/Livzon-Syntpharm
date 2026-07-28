@@ -38,6 +38,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
       const result = await importFromFeishuAction({
         spreadsheet_token: values.spreadsheet_token,
         sheet_id: values.sheet_id || undefined,
+        source: 'feishu_bitable',
         dry_run: true,
       })
       setDryRunResult(result)

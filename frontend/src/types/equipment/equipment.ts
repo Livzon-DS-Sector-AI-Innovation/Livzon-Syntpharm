@@ -1,3 +1,10 @@
+import type { components } from '@/types/generated/schema'
+export type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
+export type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
+export type CreateEquipmentInput = components['schemas']['EquipmentCreate']
+export type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
+
+
 // 设备分类
 export interface EquipmentCategory {
   id: string
@@ -17,19 +24,7 @@ export interface EquipmentCategory {
   children?: EquipmentCategory[]
 }
 
-export interface CreateCategoryInput {
-  name: string
-  code: string
-  parent_id?: string
-  description?: string
-}
 
-export interface UpdateCategoryInput {
-  name?: string
-  code?: string
-  parent_id?: string
-  description?: string
-}
 
 // 位置管理
 export interface Location {
@@ -110,40 +105,7 @@ export interface Equipment {
   location?: Location
 }
 
-export interface CreateEquipmentInput {
-  name: string
-  asset_no: string
-  category_ids: string[]
-  location_id: string
-  status?: EquipmentStatus
-  importance?: EquipmentImportance
-  model?: string
-  specification?: string
-  manufacturer?: string
-  supplier?: string
-  production_date?: string
-  commissioning_date?: string
-  description?: string
-  department_id?: string
-  responsible_person_id?: string
-}
 
-export interface UpdateEquipmentInput {
-  name?: string
-  category_ids?: string[]
-  location_id?: string
-  status?: EquipmentStatus
-  importance?: EquipmentImportance
-  model?: string
-  specification?: string
-  manufacturer?: string
-  supplier?: string
-  production_date?: string
-  commissioning_date?: string
-  description?: string
-  department_id?: string
-  responsible_person_id?: string | null
-}
 
 // 列表和筛选
 export interface EquipmentFilters {

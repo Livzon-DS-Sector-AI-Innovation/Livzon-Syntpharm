@@ -426,7 +426,8 @@ Files changed: 281 across categories 1–14 (backend: energy, equipment, quality
 #### New findings
 
 - [x] `backend/app/modules/energy/api.py:624` — §4 API & Auth / 认证与权限 — `daily_import_from_bitable()` has no `current_user: CurrentUser` parameter. Per AGENTS.md: "未声明的业务接口按 require_user 处理". — severity: blocking — **RESOLVED** (added `current_user: CurrentUser` parameter)
-- [ ] `frontend/src/actions/energy.ts`, `frontend/src/actions/equipment.ts` — §10 Frontend API / 类型系统 — Use handwritten types instead of `@/types/generated/schema`. These energy/equipment types are NOT exported by the backend OpenAPI spec. Backend needs `response_model` annotations on energy/equipment API endpoints before frontend can import types. Pre-existing lzhc-zhuang gap. — severity: medium (requires backend schema export work)
+- [x] `frontend/src/actions/energy.ts` (8 types), `frontend/src/actions/equipment.ts` (4 types) — §10 — 12 API types now use `components["schemas"]["..."]` from generated schema. Local type files now re-export via same pattern. **RESOLVED** for types in OpenAPI.
+- [ ] ~18 equipment types still handwritten — need backend Pydantic schemas added to OpenAPI spec before they can be imported from generated schema. Deferred. — severity: medium
 
 #### Category summaries
 

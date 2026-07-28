@@ -1,3 +1,14 @@
+import type { components } from '@/types/generated/schema'
+export type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
+export type UpdateDeviceInput = components['schemas']['EnergyDeviceConfigUpdate']
+export type CreateRuleInput = components['schemas']['EnergyAlertRuleCreate']
+export type UpdateRuleInput = components['schemas']['EnergyAlertRuleUpdate']
+export type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
+export type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
+export type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
+export type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
+
+
 // 能源类型枚举
 export type EnergyType = 'electricity' | 'water' | 'steam' | 'natural_gas'
 
@@ -24,36 +35,8 @@ export interface EnergyDeviceConfig {
 }
 
 // 创建数据源配置输入
-export interface CreateDeviceInput {
-  platform_code: string
-  platform_device_code: string
-  device_name: string
-  energy_type: EnergyType
-  api_endpoint: string
-  workshop: string
-  production_line?: string
-  monitor_level: MonitorLevel
-  unit: string
-  collection_interval: number
-  is_enabled?: boolean
-  remark?: string
-}
 
 // 更新数据源配置输入
-export interface UpdateDeviceInput {
-  platform_code?: string
-  platform_device_code?: string
-  device_name?: string
-  energy_type?: EnergyType
-  api_endpoint?: string
-  workshop?: string
-  production_line?: string
-  monitor_level?: MonitorLevel
-  unit?: string
-  collection_interval?: number
-  is_enabled?: boolean
-  remark?: string
-}
 
 // 设备查询参数
 export interface DeviceQueryParams {
@@ -206,42 +189,8 @@ export interface AlertRule {
 }
 
 // 创建预警规则输入
-export interface CreateRuleInput {
-  rule_name: string
-  rule_description?: string
-  energy_type: EnergyType
-  monitor_metric: MonitorMetric
-  threshold_type: ThresholdType
-  threshold_value: number
-  unit: string
-  alert_level: AlertLevel
-  notify_method: string[]
-  notify_users: string[]
-  notify_frequency: NotifyFrequency
-  effective_time: EffectiveTimeType
-  custom_time_start?: string
-  custom_time_end?: string
-  is_enabled?: boolean
-}
 
 // 更新预警规则输入
-export interface UpdateRuleInput {
-  rule_name?: string
-  rule_description?: string
-  energy_type?: EnergyType
-  monitor_metric?: MonitorMetric
-  threshold_type?: ThresholdType
-  threshold_value?: number
-  unit?: string
-  alert_level?: AlertLevel
-  notify_method?: string[]
-  notify_users?: string[]
-  notify_frequency?: NotifyFrequency
-  effective_time?: EffectiveTimeType
-  custom_time_start?: string
-  custom_time_end?: string
-  is_enabled?: boolean
-}
 
 // 预警规则查询参数
 export interface RuleQueryParams {
@@ -331,24 +280,8 @@ export interface EnergyWorkshop {
 }
 
 // 创建车间输入
-export interface CreateWorkshopInput {
-  code: string
-  name: string
-  category: WorkshopCategory
-  parent_id?: string | null
-  sort_order?: number
-  is_active?: boolean
-}
 
 // 更新车间输入
-export interface UpdateWorkshopInput {
-  code?: string
-  name?: string
-  category?: WorkshopCategory
-  parent_id?: string | null
-  sort_order?: number
-  is_active?: boolean
-}
 
 // 车间查询参数
 export interface WorkshopQueryParams {
@@ -376,16 +309,6 @@ export interface EnergyMonthlyRecord {
 }
 
 // 创建月度记录输入
-export interface CreateMonthlyRecordInput {
-  workshop_id: string
-  energy_type: EnergyType
-  record_date: string
-  date_range_end?: string | null
-  value: number
-  unit: string
-  source?: string
-  remark?: string | null
-}
 
 // 月度记录查询参数
 export interface MonthlyRecordQueryParams {
@@ -398,12 +321,6 @@ export interface MonthlyRecordQueryParams {
 }
 
 // 飞书导入请求
-export interface FeishuImportRequest {
-  spreadsheet_token: string
-  sheet_id?: string
-  source?: string
-  dry_run?: boolean
-}
 
 // 飞书导入结果
 export interface FeishuImportResult {
