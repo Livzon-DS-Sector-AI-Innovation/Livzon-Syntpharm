@@ -1,10 +1,7 @@
-export const dynamic = 'force-dynamic'
 
-'use client'
 
 "use client"
 
-'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { Select, Button } from 'antd'
