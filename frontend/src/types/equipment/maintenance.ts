@@ -1,3 +1,7 @@
+import type { components } from '@/types/generated/schema'
+export type CreateMaintenancePlanInput = components['schemas']['MaintenancePlanCreate']
+export type UpdateMaintenancePlanInput = components['schemas']['MaintenancePlanUpdate']
+
 // ==================== 维护计划 ====================
 export type MaintenancePlanType = '预防性维护' | '预测性维护'
 export type MaintenancePlanStatus = '启用' | '停用' | '已完成'
@@ -27,30 +31,7 @@ export interface MaintenancePlan {
   asset_no?: string
 }
 
-export interface CreateMaintenancePlanInput {
-  equipment_id?: string
-  category_id?: string
-  plan_name: string
-  plan_type?: MaintenancePlanType
-  frequency: number
-  frequency_unit: FrequencyUnit
-  last_maintenance_date?: string
-  executor_id?: string
-  maintenance_content?: string
-  remark?: string
-}
 
-export interface UpdateMaintenancePlanInput {
-  plan_name?: string
-  plan_type?: MaintenancePlanType
-  frequency?: number
-  frequency_unit?: FrequencyUnit
-  last_maintenance_date?: string
-  executor_id?: string
-  maintenance_content?: string
-  status?: MaintenancePlanStatus
-  remark?: string
-}
 
 export interface MaintenancePlanFilters {
   equipment_id?: string

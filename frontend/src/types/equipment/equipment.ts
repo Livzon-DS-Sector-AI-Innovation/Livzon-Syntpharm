@@ -1,8 +1,6 @@
 import type { components } from '@/types/generated/schema'
-export type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
-export type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
-export type CreateEquipmentInput = components['schemas']['EquipmentCreate']
-export type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
+export type CreateLocationInput = components['schemas']['LocationCreate']
+export type UpdateLocationInput = components['schemas']['LocationUpdate']
 
 
 // 设备分类
@@ -45,19 +43,7 @@ export interface Location {
   children?: Location[]
 }
 
-export interface CreateLocationInput {
-  name: string
-  code: string
-  parent_id?: string
-  description?: string
-}
 
-export interface UpdateLocationInput {
-  name?: string
-  code?: string
-  parent_id?: string
-  description?: string
-}
 
 // 设备管理
 export type EquipmentStatus = '在用' | '备用' | '维修中' | '停用' | '报废'

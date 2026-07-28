@@ -3,19 +3,37 @@
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
 import type { components } from '@/types/generated/schema'
+type CreateRoleInput = components['schemas']['RoleCreate']
+type UpdateRoleInput = components['schemas']['RoleUpdate']
+type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
 type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
 type CreateEquipmentInput = components['schemas']['EquipmentCreate']
 type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
-import {
-  CreateLocationInput, UpdateLocationInput,
-  CreateFailureCodeInput, UpdateFailureCodeInput,
-  CreateWorkOrderInput, UpdateWorkOrderInput, AssignWorkOrderInput, CompleteWorkOrderInput, VerifyWorkOrderInput,
-  CreateCalibrationPlanInput, UpdateCalibrationPlanInput, CreateCalibrationRecordInput,
-  CreateSparePartInput, UpdateSparePartInput, StockInboundInput, StockAdjustInput,
-  CreateMaintenancePlanInput, UpdateMaintenancePlanInput,
-  CreateInspectionTemplateInput, UpdateInspectionTemplateInput,
-  CreateInspectionTemplateItemInput, UpdateInspectionTemplateItemInput,
+
+type CreateLocationInput = components['schemas']['LocationCreate']
+type UpdateLocationInput = components['schemas']['LocationUpdate']
+type CreateWorkOrderInput = components['schemas']['WorkOrderCreate']
+type UpdateWorkOrderInput = components['schemas']['WorkOrderUpdate']
+type AssignWorkOrderInput = components['schemas']['WorkOrderAssign']
+type CompleteWorkOrderInput = components['schemas']['WorkOrderComplete']
+type VerifyWorkOrderInput = components['schemas']['WorkOrderVerify']
+type CreateCalibrationPlanInput = components['schemas']['CalibrationPlanCreate']
+type UpdateCalibrationPlanInput = components['schemas']['CalibrationPlanUpdate']
+type CreateCalibrationRecordInput = components['schemas']['app__modules__equipment__schemas__calibration__CalibrationRecordCreate']
+type CreateSparePartInput = components['schemas']['SparePartCreate']
+type UpdateSparePartInput = components['schemas']['SparePartUpdate']
+type StockInboundInput = components['schemas']['StockInboundRequest']
+type StockAdjustInput = components['schemas']['StockAdjustRequest']
+type CreateMaintenancePlanInput = components['schemas']['MaintenancePlanCreate']
+type UpdateMaintenancePlanInput = components['schemas']['MaintenancePlanUpdate']
+type CreateInspectionTemplateInput = components['schemas']['InspectionTemplateCreate']
+type UpdateInspectionTemplateInput = components['schemas']['InspectionTemplateUpdate']
+type CreateInspectionTemplateItemInput = components['schemas']['InspectionTemplateItemCreate']
+type UpdateInspectionTemplateItemInput = components['schemas']['InspectionTemplateItemUpdate']
+type CreateFailureCodeInput = components['schemas']['FailureCodeCreate']
+type UpdateFailureCodeInput = components['schemas']['FailureCodeUpdate']
+import type {
   InspectionCompleteInput, MaterialConsumeInput,
 } from '@/types/equipment'
 

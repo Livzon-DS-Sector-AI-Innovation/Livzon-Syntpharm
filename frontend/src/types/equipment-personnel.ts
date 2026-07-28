@@ -1,3 +1,8 @@
+import type { components } from '@/types/generated/schema'
+export type CreateRoleInput = components['schemas']['RoleCreate']
+export type UpdateRoleInput = components['schemas']['RoleUpdate']
+export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
+
 // 角色
 export interface EquipmentRole {
   id: string
@@ -10,20 +15,7 @@ export interface EquipmentRole {
   updated_at: string
 }
 
-export interface CreateRoleInput {
-  name: string
-  code: string
-  description?: string
-  scope?: string
-  is_active?: boolean
-}
 
-export interface UpdateRoleInput {
-  name?: string
-  description?: string
-  scope?: string
-  is_active?: boolean
-}
 
 // 人员
 export interface PersonnelRoleInfo {
@@ -66,9 +58,6 @@ export interface PersonnelListResponse {
   page_size: number
 }
 
-export interface AddPersonnelInput {
-  user_ids: string[]
-}
 
 export interface AssignRolesInput {
   role_ids: string[]

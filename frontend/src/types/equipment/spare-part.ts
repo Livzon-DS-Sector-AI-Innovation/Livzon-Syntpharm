@@ -1,3 +1,9 @@
+import type { components } from '@/types/generated/schema'
+export type CreateSparePartInput = components['schemas']['SparePartCreate']
+export type UpdateSparePartInput = components['schemas']['SparePartUpdate']
+export type StockInboundInput = components['schemas']['StockInboundRequest']
+export type StockAdjustInput = components['schemas']['StockAdjustRequest']
+
 // ==================== 备件管理 ====================
 export interface SparePart {
   id: string
@@ -17,27 +23,7 @@ export interface SparePart {
   updated_by: string | null
 }
 
-export interface CreateSparePartInput {
-  code: string
-  name: string
-  specification?: string
-  unit: string
-  category?: string
-  default_supplier?: string
-  unit_price?: number
-  is_active?: boolean
-}
 
-export interface UpdateSparePartInput {
-  code?: string
-  name?: string
-  specification?: string
-  unit?: string
-  category?: string
-  default_supplier?: string
-  unit_price?: number
-  is_active?: boolean
-}
 
 export interface SparePartFilters {
   category?: string
@@ -54,16 +40,7 @@ export interface SparePartListResponse {
   page_size: number
 }
 
-export interface StockInboundInput {
-  quantity: number
-  warehouse_location?: string
-  remark?: string
-}
 
-export interface StockAdjustInput {
-  new_qty: number
-  remark?: string
-}
 
 export interface StockWarning {
   spare_part_id: string
