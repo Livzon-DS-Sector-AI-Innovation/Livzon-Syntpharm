@@ -3,6 +3,7 @@
 from app.modules.quality.cpv import router as cpv_router
 from app.modules.quality.qms import (
     deviation_router,
+    deviation_settings_router,
     doc_check_router,
     fqc_router,
     instrument_router,
@@ -25,6 +26,7 @@ __all__ = [
     "fqc_router",
     "stability_router",
     "deviation_router",
+    "deviation_settings_router",
     "quality_reagent_router",
     "doc_check_router",
     "static_data_router",

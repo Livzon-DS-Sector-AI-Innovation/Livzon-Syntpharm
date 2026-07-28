@@ -27,3 +27,4 @@ deploy-venv/
 Thumbs.db
 e2e-backend.log
 e2e-frontend.log
+/.next/

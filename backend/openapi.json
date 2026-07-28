@@ -59128,6 +59128,1323 @@
         }
       }
     },
+    "/api/v1/quality/deviation-settings/qa-users": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6QA\u4eba\u5458\u5217\u8868",
+        "description": "\u83b7\u53d6\u6240\u6709QA\u4eba\u5458\u914d\u7f6e",
+        "operationId": "get_qa_users_api_v1_quality_deviation_settings_qa_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Qa Users Api V1 Quality Deviation Settings Qa Users Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6dfb\u52a0QA\u4eba\u5458",
+        "description": "\u6dfb\u52a0QA\u4eba\u5458\u914d\u7f6e",
+        "operationId": "post_api_v1_quality_deviation_settings_qa_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QAUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Qa Users Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/qa-users/{id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0QA\u4eba\u5458",
+        "description": "\u66f4\u65b0QA\u4eba\u5458\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_qa_users__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QAUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Qa Users  Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664QA\u4eba\u5458",
+        "description": "\u5220\u9664QA\u4eba\u5458\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_qa_users__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Qa Users  Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/qa-users/{id}/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528QA\u4eba\u5458",
+        "description": "\u5207\u6362QA\u4eba\u5458\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_qa_users__id__toggle_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Qa Users  Id  Toggle Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/leaders": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u90e8\u95e8\u8d1f\u8d23\u4eba\u5217\u8868",
+        "description": "\u83b7\u53d6\u6240\u6709\u90e8\u95e8\u8d1f\u8d23\u4eba\u914d\u7f6e",
+        "operationId": "get_leaders_api_v1_quality_deviation_settings_leaders_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Leaders Api V1 Quality Deviation Settings Leaders Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6dfb\u52a0\u90e8\u95e8\u8d1f\u8d23\u4eba",
+        "description": "\u6dfb\u52a0\u90e8\u95e8\u8d1f\u8d23\u4eba\u914d\u7f6e",
+        "operationId": "post_api_v1_quality_deviation_settings_leaders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Leaders Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/leaders/{id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u90e8\u95e8\u8d1f\u8d23\u4eba",
+        "description": "\u66f4\u65b0\u90e8\u95e8\u8d1f\u8d23\u4eba\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_leaders__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Leaders  Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u90e8\u95e8\u8d1f\u8d23\u4eba",
+        "description": "\u5220\u9664\u90e8\u95e8\u8d1f\u8d23\u4eba\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_leaders__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Leaders  Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/leaders/{id}/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u90e8\u95e8\u8d1f\u8d23\u4eba",
+        "description": "\u5207\u6362\u90e8\u95e8\u8d1f\u8d23\u4eba\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_leaders__id__toggle_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Leaders  Id  Toggle Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/rules": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u63d0\u9192\u89c4\u5219\u5217\u8868",
+        "description": "\u83b7\u53d6\u6240\u6709\u63d0\u9192\u89c4\u5219\u914d\u7f6e",
+        "operationId": "get_rules_api_v1_quality_deviation_settings_rules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Rules Api V1 Quality Deviation Settings Rules Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6dfb\u52a0\u63d0\u9192\u89c4\u5219",
+        "description": "\u6dfb\u52a0\u63d0\u9192\u89c4\u5219\u914d\u7f6e",
+        "operationId": "post_api_v1_quality_deviation_settings_rules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Rules Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/rules/{id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u63d0\u9192\u89c4\u5219",
+        "description": "\u66f4\u65b0\u63d0\u9192\u89c4\u5219\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_rules__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderRuleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Rules  Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u63d0\u9192\u89c4\u5219",
+        "description": "\u5220\u9664\u63d0\u9192\u89c4\u5219\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_rules__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Rules  Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/rules/{id}/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u63d0\u9192\u89c4\u5219",
+        "description": "\u5207\u6362\u63d0\u9192\u89c4\u5219\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_rules__id__toggle_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Rules  Id  Toggle Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/auto-triggers": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u5217\u8868",
+        "description": "\u83b7\u53d6\u6240\u6709\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u914d\u7f6e",
+        "operationId": "get_auto_triggers_api_v1_quality_deviation_settings_auto_triggers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Auto Triggers Api V1 Quality Deviation Settings Auto Triggers Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6dfb\u52a0\u81ea\u52a8\u63d0\u9192\u89e6\u53d1",
+        "description": "\u6dfb\u52a0\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u914d\u7f6e",
+        "operationId": "post_api_v1_quality_deviation_settings_auto_triggers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoTriggerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Auto Triggers Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/auto-triggers/{id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u81ea\u52a8\u63d0\u9192\u89e6\u53d1",
+        "description": "\u66f4\u65b0\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_auto_triggers__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoTriggerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Auto Triggers  Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u81ea\u52a8\u63d0\u9192\u89e6\u53d1",
+        "description": "\u5220\u9664\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_auto_triggers__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Auto Triggers  Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/auto-triggers/{id}/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u81ea\u52a8\u63d0\u9192\u89e6\u53d1",
+        "description": "\u5207\u6362\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_auto_triggers__id__toggle_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Auto Triggers  Id  Toggle Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/message-templates": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u6d88\u606f\u6a21\u677f\u5217\u8868",
+        "description": "\u83b7\u53d6\u6240\u6709\u6d88\u606f\u6a21\u677f\u914d\u7f6e",
+        "operationId": "get_message_templates_api_v1_quality_deviation_settings_message_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Message Templates Api V1 Quality Deviation Settings Message Templates Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6dfb\u52a0\u6d88\u606f\u6a21\u677f",
+        "description": "\u6dfb\u52a0\u6d88\u606f\u6a21\u677f\u914d\u7f6e",
+        "operationId": "post_api_v1_quality_deviation_settings_message_templates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Message Templates Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/message-templates/{id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u6d88\u606f\u6a21\u677f",
+        "description": "\u66f4\u65b0\u6d88\u606f\u6a21\u677f\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_message_templates__id__put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageTemplateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Message Templates  Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u6d88\u606f\u6a21\u677f",
+        "description": "\u5220\u9664\u6d88\u606f\u6a21\u677f\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_message_templates__id__delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Message Templates  Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/message-templates/{id}/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u6d88\u606f\u6a21\u677f",
+        "description": "\u5207\u6362\u6d88\u606f\u6a21\u677f\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_message_templates__id__toggle_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Message Templates  Id  Toggle Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/message-templates/{id}/set-default": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u8bbe\u4e3a\u9ed8\u8ba4\u6a21\u677f",
+        "description": "\u5c06\u6a21\u677f\u8bbe\u4e3a\u9ed8\u8ba4",
+        "operationId": "put_api_v1_quality_deviation_settings_message_templates__id__set_default_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Message Templates  Id  Set Default Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/feishu-bot": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e",
+        "description": "\u83b7\u53d6\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\uff08\u53ea\u8fd4\u56de\u4e00\u6761\uff09",
+        "operationId": "get_feishu_bot_config_api_v1_quality_deviation_settings_feishu_bot_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Feishu Bot Config Api V1 Quality Deviation Settings Feishu Bot Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u66f4\u65b0\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e",
+        "description": "\u66f4\u65b0\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e",
+        "operationId": "put_api_v1_quality_deviation_settings_feishu_bot_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuBotConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Feishu Bot Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u521b\u5efa\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e",
+        "description": "\u521b\u5efa\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\uff08\u53ea\u5141\u8bb8\u4e00\u6761\uff09",
+        "operationId": "post_api_v1_quality_deviation_settings_feishu_bot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuBotConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Deviation Settings Feishu Bot Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u5220\u9664\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e",
+        "description": "\u5220\u9664\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_api_v1_quality_deviation_settings_feishu_bot_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Deviation Settings Feishu Bot Delete"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/feishu-bot/toggle": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u673a\u5668\u4eba",
+        "description": "\u5207\u6362\u673a\u5668\u4eba\u542f\u7528\u72b6\u6001",
+        "operationId": "put_api_v1_quality_deviation_settings_feishu_bot_toggle_put",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Deviation Settings Feishu Bot Toggle Put"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/options": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6\u9009\u9879\u5217\u8868",
+        "description": "\u83b7\u53d6\u504f\u5dee\u7c7b\u578b\u3001\u7d27\u6025\u7b49\u7ea7\u7b49\u9009\u9879",
+        "operationId": "get_options_api_v1_quality_deviation_settings_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Options Api V1 Quality Deviation Settings Options Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/feishu-user/by-mobile": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u6839\u636e\u624b\u673a\u53f7\u67e5\u8be2\u98de\u4e66\u7528\u6237",
+        "description": "\u6839\u636e\u624b\u673a\u53f7\u67e5\u8be2\u98de\u4e66\u7528\u6237\u4fe1\u606f\uff0c\u8fd4\u56deopen_id\u548c\u59d3\u540d",
+        "operationId": "get_api_v1_quality_deviation_settings_feishu_user_by_mobile_get",
+        "parameters": [
+          {
+            "name": "mobile",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u624b\u673a\u53f7",
+              "title": "Mobile"
+            },
+            "description": "\u624b\u673a\u53f7"
+          },
+          {
+            "name": "country_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u56fd\u5bb6\u7801",
+              "default": "86",
+              "title": "Country Code"
+            },
+            "description": "\u56fd\u5bb6\u7801"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Deviation Settings Feishu User By Mobile Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-settings/reminder/trigger": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u8bbe\u7f6e",
+          "\u504f\u5dee\u63d0\u9192\u8bbe\u7f6e"
+        ],
+        "summary": "\u624b\u52a8\u89e6\u53d1\u504f\u5dee\u63d0\u9192",
+        "description": "\u624b\u52a8\u89e6\u53d1\u504f\u5dee\u586b\u62a5\u4eba\u63d0\u9192\u68c0\u67e5\u5e76\u53d1\u9001\u98de\u4e66\u6d88\u606f",
+        "operationId": "trigger_deviation_reminder_api_v1_quality_deviation_settings_reminder_trigger_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Trigger Deviation Reminder Api V1 Quality Deviation Settings Reminder Trigger Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/reagent/recognize": {
       "post": {
         "tags": [
@@ -69299,6 +70616,889 @@
         }
       }
     },
+    "/api/v1/quality/material-report/": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u62a5\u544a\u5355\u5217\u8868",
+        "description": "\u83b7\u53d6\u62a5\u544a\u5355\u5217\u8868",
+        "operationId": "get_api_v1_quality_material_report__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Keyword"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u521b\u5efa\u62a5\u544a\u5355",
+        "description": "\u521b\u5efa\u62a5\u544a\u5355",
+        "operationId": "post_api_v1_quality_material_report__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/statistics": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u7edf\u8ba1\u6570\u636e",
+        "description": "\u83b7\u53d6\u7edf\u8ba1\u6570\u636e",
+        "operationId": "get_api_v1_quality_material_report_statistics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report Statistics Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/template": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u6a21\u677f\u5217\u8868",
+        "description": "\u83b7\u53d6\u6a21\u677f\u5217\u8868",
+        "operationId": "get_api_v1_quality_material_report_template_get",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Active"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report Template Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/template/": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u4e0a\u4f20Word\u6a21\u677f",
+        "description": "\u4e0a\u4f20Word\u6a21\u677f",
+        "operationId": "post_api_v1_quality_material_report_template__post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_api_v1_quality_material_report_template__post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report Template  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/template/{template_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u6a21\u677f\u8be6\u60c5",
+        "description": "\u83b7\u53d6\u6a21\u677f\u8be6\u60c5",
+        "operationId": "get_api_v1_quality_material_report_template__template_id__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report Template  Template Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u66f4\u65b0\u6a21\u677f",
+        "description": "\u66f4\u65b0\u6a21\u677f",
+        "operationId": "put_api_v1_quality_material_report_template__template_id__put",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Material Report Template  Template Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u5220\u9664\u6a21\u677f",
+        "description": "\u5220\u9664\u6a21\u677f",
+        "operationId": "delete_api_v1_quality_material_report_template__template_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Material Report Template  Template Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/template/{template_id}/preview": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u9884\u89c8\u6a21\u677f\u5b57\u6bb5",
+        "description": "\u89e3\u6790\u6a21\u677f\u83b7\u53d6\u5b57\u6bb5\u914d\u7f6e",
+        "operationId": "get_api_v1_quality_material_report_template__template_id__preview_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report Template  Template Id  Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/{report_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u62a5\u544a\u5355\u8be6\u60c5",
+        "description": "\u83b7\u53d6\u62a5\u544a\u5355\u8be6\u60c5",
+        "operationId": "get_api_v1_quality_material_report__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report  Report Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u66f4\u65b0\u62a5\u544a\u5355",
+        "description": "\u66f4\u65b0\u62a5\u544a\u5355",
+        "operationId": "put_api_v1_quality_material_report__report_id__put",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Api V1 Quality Material Report  Report Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u5220\u9664\u62a5\u544a\u5355",
+        "description": "\u5220\u9664\u62a5\u544a\u5355",
+        "operationId": "delete_api_v1_quality_material_report__report_id__delete",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Api V1 Quality Material Report  Report Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/{report_id}/items": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u6279\u91cf\u4fdd\u5b58\u660e\u7ec6\u6570\u636e",
+        "description": "\u6279\u91cf\u4fdd\u5b58\u660e\u7ec6\u6570\u636e",
+        "operationId": "post_api_v1_quality_material_report__report_id__items_post",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportItemsBatchSave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report  Report Id  Items Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/{report_id}/generate": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u751f\u6210\u62a5\u544a\u5355\u6587\u4ef6",
+        "description": "\u751f\u6210\u62a5\u544a\u5355Word\u6587\u4ef6\u5e76\u4e0b\u8f7d",
+        "operationId": "post_api_v1_quality_material_report__report_id__generate_post",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report  Report Id  Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/{report_id}/submit": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u63d0\u4ea4\u62a5\u544a\u5355",
+        "description": "\u63d0\u4ea4\u62a5\u544a\u5355",
+        "operationId": "post_api_v1_quality_material_report__report_id__submit_post",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report  Report Id  Submit Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/material-report/{report_id}/images": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u4e0a\u4f20\u56fe\u7247\u5e76AI\u8bc6\u522b",
+        "description": "\u4e0a\u4f20\u56fe\u7247\u5e76\u8fdb\u884cAI\u8bc6\u522b",
+        "operationId": "post_api_v1_quality_material_report__report_id__images_post",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_api_v1_quality_material_report__report_id__images_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Api V1 Quality Material Report  Report Id  Images Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u539f\u6599\u62a5\u544a\u5355",
+          "\u539f\u6599\u62a5\u544a\u5355"
+        ],
+        "summary": "\u83b7\u53d6\u62a5\u544a\u5355\u56fe\u7247\u5217\u8868",
+        "description": "\u83b7\u53d6\u62a5\u544a\u5355\u7684\u6240\u6709\u56fe\u7247\u8bb0\u5f55",
+        "operationId": "get_api_v1_quality_material_report__report_id__images_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Api V1 Quality Material Report  Report Id  Images Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/production/products": {
       "get": {
         "tags": [
@@ -69700,7 +71900,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 5000,
               "minimum": 1,
               "default": 20,
               "title": "Page Size"
@@ -76139,6 +78339,69 @@
         "title": "AutoCompareRequest",
         "description": "\u81ea\u52a8\u5bf9\u6bd4\u8bf7\u6c42\u4f53"
       },
+      "AutoTriggerRequest": {
+        "properties": {
+          "trigger_type": {
+            "type": "string",
+            "title": "Trigger Type",
+            "description": "\u89e6\u53d1\u7c7b\u578b"
+          },
+          "trigger_condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Condition",
+            "description": "\u89e6\u53d1\u6761\u4ef6"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "description": "\u662f\u5426\u542f\u7528",
+            "default": true
+          },
+          "notify_qa": {
+            "type": "boolean",
+            "title": "Notify Qa",
+            "description": "\u901a\u77e5QA",
+            "default": true
+          },
+          "notify_leader": {
+            "type": "boolean",
+            "title": "Notify Leader",
+            "description": "\u901a\u77e5\u90e8\u95e8\u8d1f\u8d23\u4eba",
+            "default": true
+          },
+          "notify_reporter": {
+            "type": "boolean",
+            "title": "Notify Reporter",
+            "description": "\u901a\u77e5\u586b\u62a5\u4eba",
+            "default": false
+          },
+          "custom_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Message",
+            "description": "\u81ea\u5b9a\u4e49\u6d88\u606f"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trigger_type"
+        ],
+        "title": "AutoTriggerRequest",
+        "description": "\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u8bf7\u6c42"
+      },
       "BatchAuditRequest": {
         "properties": {
           "ids": {
@@ -77471,6 +79734,102 @@
           "file"
         ],
         "title": "Body_post_api_v1_quality_instrument_recognize_post"
+      },
+      "Body_post_api_v1_quality_material_report__report_id__images_post": {
+        "properties": {
+          "field_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Key",
+            "description": "\u5bf9\u5e94\u5b57\u6bb5key"
+          },
+          "row_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Index",
+            "description": "\u5bf9\u5e94\u884c\u5e8f\u53f7"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u56fe\u7247\u6587\u4ef6"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_post_api_v1_quality_material_report__report_id__images_post"
+      },
+      "Body_post_api_v1_quality_material_report_template__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Word\u6a21\u677f\u6587\u4ef6"
+          },
+          "template_name": {
+            "type": "string",
+            "title": "Template Name",
+            "description": "\u6a21\u677f\u540d\u79f0"
+          },
+          "template_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Description",
+            "description": "\u6a21\u677f\u63cf\u8ff0"
+          },
+          "field_mapping": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Mapping",
+            "description": "\u9759\u6001\u5b57\u6bb5\u6620\u5c04JSON"
+          },
+          "table_fields": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Fields",
+            "description": "\u52a8\u6001\u8868\u683c\u5b57\u6bb5JSON"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "template_name"
+        ],
+        "title": "Body_post_api_v1_quality_material_report_template__post"
       },
       "Body_post_api_v1_quality_reagent_recognize_post": {
         "properties": {
@@ -90140,6 +92499,75 @@
         "title": "FailureCodeUpdate",
         "description": "\u66f4\u65b0\u6545\u969c\u4ee3\u7801\u8bf7\u6c42"
       },
+      "FeishuBotConfigRequest": {
+        "properties": {
+          "bot_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Name",
+            "description": "\u673a\u5668\u4eba\u540d\u79f0"
+          },
+          "app_id": {
+            "type": "string",
+            "title": "App Id",
+            "description": "App ID"
+          },
+          "app_secret": {
+            "type": "string",
+            "title": "App Secret",
+            "description": "App Secret"
+          },
+          "bot_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Token",
+            "description": "Bot Token"
+          },
+          "encrypt_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypt Key",
+            "description": "\u52a0\u5bc6\u5bc6\u94a5"
+          },
+          "verification_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Token",
+            "description": "\u9a8c\u8bc1Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_id",
+          "app_secret"
+        ],
+        "title": "FeishuBotConfigRequest",
+        "description": "\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\u8bf7\u6c42"
+      },
       "FeishuEnergyImportRequest": {
         "properties": {
           "spreadsheet_token": {
@@ -97224,6 +99652,33 @@
         "title": "LabelVerificationUpdate",
         "description": "\u66f4\u65b0\u6807\u7b7e\u590d\u6838\u8bb0\u5f55"
       },
+      "LeaderRequest": {
+        "properties": {
+          "open_id": {
+            "type": "string",
+            "title": "Open Id",
+            "description": "\u98de\u4e66OpenID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\u59d3\u540d"
+          },
+          "department": {
+            "type": "string",
+            "title": "Department",
+            "description": "\u8d1f\u8d23\u90e8\u95e8"
+          }
+        },
+        "type": "object",
+        "required": [
+          "open_id",
+          "name",
+          "department"
+        ],
+        "title": "LeaderRequest",
+        "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u8bf7\u6c42"
+      },
       "LedgerExportRequest": {
         "properties": {
           "natural_query": {
@@ -98159,6 +100614,45 @@
         "type": "object",
         "title": "MediumUpdate",
         "description": "Update Medium"
+      },
+      "MessageTemplateRequest": {
+        "properties": {
+          "template_type": {
+            "type": "string",
+            "title": "Template Type",
+            "description": "\u6a21\u677f\u7c7b\u578b"
+          },
+          "template_name": {
+            "type": "string",
+            "title": "Template Name",
+            "description": "\u6a21\u677f\u540d\u79f0"
+          },
+          "title_template": {
+            "type": "string",
+            "title": "Title Template",
+            "description": "\u6807\u9898\u6a21\u677f"
+          },
+          "content_template": {
+            "type": "string",
+            "title": "Content Template",
+            "description": "\u5185\u5bb9\u6a21\u677f"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "\u662f\u5426\u9ed8\u8ba4\u6a21\u677f",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_type",
+          "template_name",
+          "title_template",
+          "content_template"
+        ],
+        "title": "MessageTemplateRequest",
+        "description": "\u6d88\u606f\u6a21\u677f\u8bf7\u6c42"
       },
       "ModuleSettingCreate": {
         "properties": {
@@ -103321,6 +105815,39 @@
         },
         "type": "object",
         "title": "PurchaseRequestUpdate"
+      },
+      "QAUserRequest": {
+        "properties": {
+          "open_id": {
+            "type": "string",
+            "title": "Open Id",
+            "description": "\u98de\u4e66OpenID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\u59d3\u540d"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u90e8\u95e8"
+          }
+        },
+        "type": "object",
+        "required": [
+          "open_id",
+          "name"
+        ],
+        "title": "QAUserRequest",
+        "description": "QA\u4eba\u5458\u8bf7\u6c42"
       },
       "QualificationLevelEnum": {
         "type": "string",
@@ -108572,6 +111099,152 @@
         "title": "ReminderConfigUpdate",
         "description": "\u66f4\u65b0\u63d0\u9192\u914d\u7f6e"
       },
+      "ReminderRuleRequest": {
+        "properties": {
+          "deviation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type",
+            "description": "\u504f\u5dee\u7c7b\u578b"
+          },
+          "urgency_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level",
+            "description": "\u7d27\u6025\u7b49\u7ea7"
+          },
+          "auto_reminder": {
+            "type": "boolean",
+            "title": "Auto Reminder",
+            "description": "\u662f\u5426\u81ea\u52a8\u63d0\u9192",
+            "default": true
+          },
+          "reminder_time": {
+            "type": "string",
+            "title": "Reminder Time",
+            "description": "\u63d0\u9192\u65f6\u95f4",
+            "default": "08:30"
+          },
+          "message_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Template",
+            "description": "\u6d88\u606f\u6a21\u677f"
+          }
+        },
+        "type": "object",
+        "title": "ReminderRuleRequest",
+        "description": "\u63d0\u9192\u89c4\u5219\u8bf7\u6c42"
+      },
+      "ReportCreate": {
+        "properties": {
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "report_title": {
+            "type": "string",
+            "title": "Report Title"
+          },
+          "report_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Report Date"
+          },
+          "static_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Static Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_title",
+          "report_date"
+        ],
+        "title": "ReportCreate",
+        "description": "\u62a5\u544a\u5355\u521b\u5efa"
+      },
+      "ReportItemData": {
+        "properties": {
+          "row_index": {
+            "type": "integer",
+            "title": "Row Index"
+          },
+          "field_key": {
+            "type": "string",
+            "title": "Field Key"
+          },
+          "field_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_index",
+          "field_key"
+        ],
+        "title": "ReportItemData",
+        "description": "\u62a5\u544a\u5355\u660e\u7ec6\u6570\u636e"
+      },
+      "ReportItemsBatchSave": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportItemData"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReportItemsBatchSave",
+        "description": "\u6279\u91cf\u4fdd\u5b58\u660e\u7ec6\u6570\u636e"
+      },
       "ReportStatus": {
         "type": "string",
         "enum": [
@@ -108582,6 +111255,71 @@
         ],
         "title": "ReportStatus",
         "description": "\u62a5\u5907\u72b6\u6001\u679a\u4e3e"
+      },
+      "ReportUpdate": {
+        "properties": {
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "report_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Title"
+          },
+          "report_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Date"
+          },
+          "static_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Static Data"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "ReportUpdate",
+        "description": "\u62a5\u544a\u5355\u66f4\u65b0"
       },
       "ResearchProjectCreate": {
         "properties": {
@@ -115135,6 +117873,70 @@
         },
         "type": "object",
         "title": "TeamUpdate"
+      },
+      "TemplateUpdate": {
+        "properties": {
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
+          "template_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Description"
+          },
+          "field_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Mapping"
+          },
+          "table_fields": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Fields"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "TemplateUpdate",
+        "description": "\u6a21\u677f\u66f4\u65b0"
       },
       "TrainingEvaluationInput": {
         "properties": {

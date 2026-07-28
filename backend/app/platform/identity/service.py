@@ -1368,7 +1368,7 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
         feishu_open_id="test-user-e2e",
         feishu_user_id="test-user-e2e",
         status="active",
-        auth_source="e2e-test",
+        auth_source="local",
         email="e2e-test@dazah.local",
     )
     db.add(user)

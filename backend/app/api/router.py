@@ -16,6 +16,7 @@ from app.modules.production.product.sync_config_api import router as product_syn
 from app.modules.quality import (
     cpv_router,
     deviation_router,
+    deviation_settings_router,
     doc_check_router,
     fqc_router,
     instrument_router,
@@ -29,6 +30,7 @@ from app.modules.quality import (
     static_data_router,
 )
 from app.modules.quality.label_verification import router as label_verification_router
+from app.modules.quality.qms.material_report_api import router as material_report_router
 from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
 from app.modules.registration.dossier_writer import router as dossier_writer_router
@@ -85,6 +87,7 @@ api_router.include_router(ipqc_router, prefix="/quality", tags=["质量管理 - 
 api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - FQC"])
 api_router.include_router(stability_router, prefix="/quality", tags=["质量管理 - 稳定性"])
 api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
+api_router.include_router(deviation_settings_router, prefix="/quality", tags=["质量管理 - 偏差设置"])
 api_router.include_router(quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"])
 api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"])
 api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])
@@ -94,6 +97,7 @@ api_router.include_router(instrument_router, prefix="/quality", tags=["质量管
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
 api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])
 api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])
+api_router.include_router(material_report_router, tags=["质量管理 - 原料报告单"])
 api_router.include_router(
     workshop_product_router,
     prefix="/production",

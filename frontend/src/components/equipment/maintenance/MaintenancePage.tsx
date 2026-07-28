@@ -50,12 +50,12 @@ interface MaintenancePageProps {
 }
 
 export function MaintenancePage({
-  initialEquipments,
-  initialWorkOrders, initialWorkOrderTotal, initialWorkOrderStatistics,
+  initialEquipments = [],
+  initialWorkOrders = [], initialWorkOrderTotal = 0, initialWorkOrderStatistics,
   initialFailureCodes,
-  initialCalibrationPlans, initialCalibrationPlanTotal,
-  initialCalibrationRecords, initialCalibrationRecordTotal,
-  initialMaintenancePlans, initialMaintenancePlanTotal,
+  initialCalibrationPlans = [], initialCalibrationPlanTotal = 0,
+  initialCalibrationRecords = [], initialCalibrationRecordTotal = 0,
+  initialMaintenancePlans = [], initialMaintenancePlanTotal = 0,
 }: MaintenancePageProps) {
   const {
     maintenanceTab, setMaintenanceTab,
@@ -342,7 +342,7 @@ export function MaintenancePage({
           <Tabs activeKey={maintenanceTab} onChange={setMaintenanceTab} items={tabItems} />
         </div>
 
-        <WorkOrderDrawer equipments={equipments} symptoms={initialFailureCodes.symptoms} onRefresh={fetchWorkOrderData} />
+        <WorkOrderDrawer equipments={equipments} symptoms={initialFailureCodes.symptoms ?? []} onRefresh={fetchWorkOrderData} />
         <WorkOrderDetailDrawer onRefresh={fetchWorkOrderData} />
         <FailureCodeDrawer onRefresh={fetchFailureCodeData} />
         <CalibrationPlanDrawer equipments={equipments} onRefresh={fetchCalibrationPlanData} />

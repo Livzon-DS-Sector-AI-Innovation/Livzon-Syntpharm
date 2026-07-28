@@ -26,7 +26,7 @@ export function StatsCards({ statistics }: StatsCardsProps) {
     <Row gutter={16} style={{ marginBottom: 16 }}>
       {statusCards.map(({ key, label, color, bgColor }) => {
         const isActive = statusFilter === key
-        const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
+        const value = key === '' ? statistics.total : (statistics.by_status?.[key] || 0)
 
         return (
           <Col span={6} key={key}>

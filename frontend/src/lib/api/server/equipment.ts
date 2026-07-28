@@ -967,7 +967,7 @@ export async function fetchCalibrationPlans(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/calibration/plans${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/plans${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchCalibrationRecords(filters: any = {}) {
@@ -977,7 +977,7 @@ export async function fetchCalibrationRecords(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/calibration/records${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/records${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchMaintenancePlans(filters: any = {}) {

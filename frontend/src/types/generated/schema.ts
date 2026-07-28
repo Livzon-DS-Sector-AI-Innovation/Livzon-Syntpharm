@@ -12135,6 +12135,478 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation-settings/qa-users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取QA人员列表
+         * @description 获取所有QA人员配置
+         */
+        get: operations["get_qa_users_api_v1_quality_deviation_settings_qa_users_get"];
+        put?: never;
+        /**
+         * 添加QA人员
+         * @description 添加QA人员配置
+         */
+        post: operations["post_api_v1_quality_deviation_settings_qa_users_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/qa-users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新QA人员
+         * @description 更新QA人员配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_qa_users__id__put"];
+        post?: never;
+        /**
+         * 删除QA人员
+         * @description 删除QA人员（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_qa_users__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/qa-users/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用QA人员
+         * @description 切换QA人员启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_qa_users__id__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/leaders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取部门负责人列表
+         * @description 获取所有部门负责人配置
+         */
+        get: operations["get_leaders_api_v1_quality_deviation_settings_leaders_get"];
+        put?: never;
+        /**
+         * 添加部门负责人
+         * @description 添加部门负责人配置
+         */
+        post: operations["post_api_v1_quality_deviation_settings_leaders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/leaders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新部门负责人
+         * @description 更新部门负责人配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_leaders__id__put"];
+        post?: never;
+        /**
+         * 删除部门负责人
+         * @description 删除部门负责人（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_leaders__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/leaders/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用部门负责人
+         * @description 切换部门负责人启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_leaders__id__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取提醒规则列表
+         * @description 获取所有提醒规则配置
+         */
+        get: operations["get_rules_api_v1_quality_deviation_settings_rules_get"];
+        put?: never;
+        /**
+         * 添加提醒规则
+         * @description 添加提醒规则配置
+         */
+        post: operations["post_api_v1_quality_deviation_settings_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新提醒规则
+         * @description 更新提醒规则配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_rules__id__put"];
+        post?: never;
+        /**
+         * 删除提醒规则
+         * @description 删除提醒规则（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_rules__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/rules/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用提醒规则
+         * @description 切换提醒规则启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_rules__id__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/auto-triggers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取自动提醒触发列表
+         * @description 获取所有自动提醒触发配置
+         */
+        get: operations["get_auto_triggers_api_v1_quality_deviation_settings_auto_triggers_get"];
+        put?: never;
+        /**
+         * 添加自动提醒触发
+         * @description 添加自动提醒触发配置
+         */
+        post: operations["post_api_v1_quality_deviation_settings_auto_triggers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/auto-triggers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新自动提醒触发
+         * @description 更新自动提醒触发配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_auto_triggers__id__put"];
+        post?: never;
+        /**
+         * 删除自动提醒触发
+         * @description 删除自动提醒触发（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_auto_triggers__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/auto-triggers/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用自动提醒触发
+         * @description 切换自动提醒触发启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_auto_triggers__id__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/message-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取消息模板列表
+         * @description 获取所有消息模板配置
+         */
+        get: operations["get_message_templates_api_v1_quality_deviation_settings_message_templates_get"];
+        put?: never;
+        /**
+         * 添加消息模板
+         * @description 添加消息模板配置
+         */
+        post: operations["post_api_v1_quality_deviation_settings_message_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/message-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 更新消息模板
+         * @description 更新消息模板配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_message_templates__id__put"];
+        post?: never;
+        /**
+         * 删除消息模板
+         * @description 删除消息模板（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_message_templates__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/message-templates/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用消息模板
+         * @description 切换消息模板启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_message_templates__id__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/message-templates/{id}/set-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 设为默认模板
+         * @description 将模板设为默认
+         */
+        put: operations["put_api_v1_quality_deviation_settings_message_templates__id__set_default_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/feishu-bot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取飞书机器人配置
+         * @description 获取飞书机器人配置（只返回一条）
+         */
+        get: operations["get_feishu_bot_config_api_v1_quality_deviation_settings_feishu_bot_get"];
+        /**
+         * 更新飞书机器人配置
+         * @description 更新飞书机器人配置
+         */
+        put: operations["put_api_v1_quality_deviation_settings_feishu_bot_put"];
+        /**
+         * 创建飞书机器人配置
+         * @description 创建飞书机器人配置（只允许一条）
+         */
+        post: operations["post_api_v1_quality_deviation_settings_feishu_bot_post"];
+        /**
+         * 删除飞书机器人配置
+         * @description 删除飞书机器人配置（软删除）
+         */
+        delete: operations["delete_api_v1_quality_deviation_settings_feishu_bot_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/feishu-bot/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用/禁用机器人
+         * @description 切换机器人启用状态
+         */
+        put: operations["put_api_v1_quality_deviation_settings_feishu_bot_toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取选项列表
+         * @description 获取偏差类型、紧急等级等选项
+         */
+        get: operations["get_options_api_v1_quality_deviation_settings_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/feishu-user/by-mobile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 根据手机号查询飞书用户
+         * @description 根据手机号查询飞书用户信息，返回open_id和姓名
+         */
+        get: operations["get_api_v1_quality_deviation_settings_feishu_user_by_mobile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-settings/reminder/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 手动触发偏差提醒
+         * @description 手动触发偏差填报人提醒检查并发送飞书消息
+         */
+        post: operations["trigger_deviation_reminder_api_v1_quality_deviation_settings_reminder_trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/reagent/recognize": {
         parameters: {
             query?: never;
@@ -14319,6 +14791,250 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/material-report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取报告单列表
+         * @description 获取报告单列表
+         */
+        get: operations["get_api_v1_quality_material_report__get"];
+        put?: never;
+        /**
+         * 创建报告单
+         * @description 创建报告单
+         */
+        post: operations["post_api_v1_quality_material_report__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取统计数据
+         * @description 获取统计数据
+         */
+        get: operations["get_api_v1_quality_material_report_statistics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取模板列表
+         * @description 获取模板列表
+         */
+        get: operations["get_api_v1_quality_material_report_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/template/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 上传Word模板
+         * @description 上传Word模板
+         */
+        post: operations["post_api_v1_quality_material_report_template__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/template/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取模板详情
+         * @description 获取模板详情
+         */
+        get: operations["get_api_v1_quality_material_report_template__template_id__get"];
+        /**
+         * 更新模板
+         * @description 更新模板
+         */
+        put: operations["put_api_v1_quality_material_report_template__template_id__put"];
+        post?: never;
+        /**
+         * 删除模板
+         * @description 删除模板
+         */
+        delete: operations["delete_api_v1_quality_material_report_template__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/template/{template_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 预览模板字段
+         * @description 解析模板获取字段配置
+         */
+        get: operations["get_api_v1_quality_material_report_template__template_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取报告单详情
+         * @description 获取报告单详情
+         */
+        get: operations["get_api_v1_quality_material_report__report_id__get"];
+        /**
+         * 更新报告单
+         * @description 更新报告单
+         */
+        put: operations["put_api_v1_quality_material_report__report_id__put"];
+        post?: never;
+        /**
+         * 删除报告单
+         * @description 删除报告单
+         */
+        delete: operations["delete_api_v1_quality_material_report__report_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/{report_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量保存明细数据
+         * @description 批量保存明细数据
+         */
+        post: operations["post_api_v1_quality_material_report__report_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/{report_id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成报告单文件
+         * @description 生成报告单Word文件并下载
+         */
+        post: operations["post_api_v1_quality_material_report__report_id__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/{report_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 提交报告单
+         * @description 提交报告单
+         */
+        post: operations["post_api_v1_quality_material_report__report_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/material-report/{report_id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取报告单图片列表
+         * @description 获取报告单的所有图片记录
+         */
+        get: operations["get_api_v1_quality_material_report__report_id__images_get"];
+        put?: never;
+        /**
+         * 上传图片并AI识别
+         * @description 上传图片并进行AI识别
+         */
+        post: operations["post_api_v1_quality_material_report__report_id__images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/production/products": {
         parameters: {
             query?: never;
@@ -16133,6 +16849,51 @@ export interface components {
              */
             total_weight?: number | null;
         };
+        /**
+         * AutoTriggerRequest
+         * @description 自动提醒触发请求
+         */
+        AutoTriggerRequest: {
+            /**
+             * Trigger Type
+             * @description 触发类型
+             */
+            trigger_type: string;
+            /**
+             * Trigger Condition
+             * @description 触发条件
+             */
+            trigger_condition?: string | null;
+            /**
+             * Is Enabled
+             * @description 是否启用
+             * @default true
+             */
+            is_enabled: boolean;
+            /**
+             * Notify Qa
+             * @description 通知QA
+             * @default true
+             */
+            notify_qa: boolean;
+            /**
+             * Notify Leader
+             * @description 通知部门负责人
+             * @default true
+             */
+            notify_leader: boolean;
+            /**
+             * Notify Reporter
+             * @description 通知填报人
+             * @default false
+             */
+            notify_reporter: boolean;
+            /**
+             * Custom Message
+             * @description 自定义消息
+             */
+            custom_message?: string | null;
+        };
         /** BatchAuditRequest */
         BatchAuditRequest: {
             /** Ids */
@@ -16758,6 +17519,52 @@ export interface components {
              * @description 仪器标签图片
              */
             file: string;
+        };
+        /** Body_post_api_v1_quality_material_report__report_id__images_post */
+        Body_post_api_v1_quality_material_report__report_id__images_post: {
+            /**
+             * Field Key
+             * @description 对应字段key
+             */
+            field_key?: string | null;
+            /**
+             * Row Index
+             * @description 对应行序号
+             */
+            row_index?: number | null;
+            /**
+             * File
+             * @description 图片文件
+             */
+            file: string;
+        };
+        /** Body_post_api_v1_quality_material_report_template__post */
+        Body_post_api_v1_quality_material_report_template__post: {
+            /**
+             * File
+             * @description Word模板文件
+             */
+            file: string;
+            /**
+             * Template Name
+             * @description 模板名称
+             */
+            template_name: string;
+            /**
+             * Template Description
+             * @description 模板描述
+             */
+            template_description?: string | null;
+            /**
+             * Field Mapping
+             * @description 静态字段映射JSON
+             */
+            field_mapping?: string | null;
+            /**
+             * Table Fields
+             * @description 动态表格字段JSON
+             */
+            table_fields?: string | null;
         };
         /** Body_post_api_v1_quality_reagent_recognize_post */
         Body_post_api_v1_quality_reagent_recognize_post: {
@@ -21633,6 +22440,42 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * FeishuBotConfigRequest
+         * @description 飞书机器人配置请求
+         */
+        FeishuBotConfigRequest: {
+            /**
+             * Bot Name
+             * @description 机器人名称
+             */
+            bot_name?: string | null;
+            /**
+             * App Id
+             * @description App ID
+             */
+            app_id: string;
+            /**
+             * App Secret
+             * @description App Secret
+             */
+            app_secret: string;
+            /**
+             * Bot Token
+             * @description Bot Token
+             */
+            bot_token?: string | null;
+            /**
+             * Encrypt Key
+             * @description 加密密钥
+             */
+            encrypt_key?: string | null;
+            /**
+             * Verification Token
+             * @description 验证Token
+             */
+            verification_token?: string | null;
+        };
+        /**
          * FeishuEnergyImportRequest
          * @description 飞书表格导入请求
          */
@@ -24248,6 +25091,27 @@ export interface components {
             remarks?: string | null;
         };
         /**
+         * LeaderRequest
+         * @description 部门负责人请求
+         */
+        LeaderRequest: {
+            /**
+             * Open Id
+             * @description 飞书OpenID
+             */
+            open_id: string;
+            /**
+             * Name
+             * @description 姓名
+             */
+            name: string;
+            /**
+             * Department
+             * @description 负责部门
+             */
+            department: string;
+        };
+        /**
          * LedgerExportRequest
          * @description 台账导出请求 — AI自然语言筛选
          */
@@ -24655,6 +25519,38 @@ export interface components {
             attach_file?: string | null;
             /** Remark */
             remark?: string | null;
+        };
+        /**
+         * MessageTemplateRequest
+         * @description 消息模板请求
+         */
+        MessageTemplateRequest: {
+            /**
+             * Template Type
+             * @description 模板类型
+             */
+            template_type: string;
+            /**
+             * Template Name
+             * @description 模板名称
+             */
+            template_name: string;
+            /**
+             * Title Template
+             * @description 标题模板
+             */
+            title_template: string;
+            /**
+             * Content Template
+             * @description 内容模板
+             */
+            content_template: string;
+            /**
+             * Is Default
+             * @description 是否默认模板
+             * @default false
+             */
+            is_default: boolean;
         };
         /**
          * ModuleSettingCreate
@@ -26955,6 +27851,27 @@ export interface components {
             items?: components["schemas"]["PurchaseRequestItemInput"][] | null;
         };
         /**
+         * QAUserRequest
+         * @description QA人员请求
+         */
+        QAUserRequest: {
+            /**
+             * Open Id
+             * @description 飞书OpenID
+             */
+            open_id: string;
+            /**
+             * Name
+             * @description 姓名
+             */
+            name: string;
+            /**
+             * Department
+             * @description 部门
+             */
+            department?: string | null;
+        };
+        /**
          * QualificationLevelEnum
          * @description 资质等级枚举
          * @enum {string}
@@ -28727,11 +29644,101 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * ReminderRuleRequest
+         * @description 提醒规则请求
+         */
+        ReminderRuleRequest: {
+            /**
+             * Deviation Type
+             * @description 偏差类型
+             */
+            deviation_type?: string | null;
+            /**
+             * Urgency Level
+             * @description 紧急等级
+             */
+            urgency_level?: string | null;
+            /**
+             * Auto Reminder
+             * @description 是否自动提醒
+             * @default true
+             */
+            auto_reminder: boolean;
+            /**
+             * Reminder Time
+             * @description 提醒时间
+             * @default 08:30
+             */
+            reminder_time: string;
+            /**
+             * Message Template
+             * @description 消息模板
+             */
+            message_template?: string | null;
+        };
+        /**
+         * ReportCreate
+         * @description 报告单创建
+         */
+        ReportCreate: {
+            /** Template Id */
+            template_id?: string | null;
+            /** Report Title */
+            report_title: string;
+            /**
+             * Report Date
+             * Format: date
+             */
+            report_date: string;
+            /** Static Data */
+            static_data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ReportItemData
+         * @description 报告单明细数据
+         */
+        ReportItemData: {
+            /** Row Index */
+            row_index: number;
+            /** Field Key */
+            field_key: string;
+            /** Field Value */
+            field_value?: string | null;
+        };
+        /**
+         * ReportItemsBatchSave
+         * @description 批量保存明细数据
+         */
+        ReportItemsBatchSave: {
+            /** Items */
+            items: components["schemas"]["ReportItemData"][];
+        };
+        /**
          * ReportStatus
          * @description 报备状态枚举
          * @enum {string}
          */
         ReportStatus: "draft" | "submitted" | "approved" | "rejected";
+        /**
+         * ReportUpdate
+         * @description 报告单更新
+         */
+        ReportUpdate: {
+            /** Template Id */
+            template_id?: string | null;
+            /** Report Title */
+            report_title?: string | null;
+            /** Report Date */
+            report_date?: string | null;
+            /** Static Data */
+            static_data?: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status?: string | null;
+        };
         /**
          * ResearchProjectCreate
          * @description 创建研发项目请求
@@ -31468,6 +32475,26 @@ export interface components {
             description?: string | null;
             /** Department Id */
             department_id?: string | null;
+        };
+        /**
+         * TemplateUpdate
+         * @description 模板更新
+         */
+        TemplateUpdate: {
+            /** Template Name */
+            template_name?: string | null;
+            /** Template Description */
+            template_description?: string | null;
+            /** Field Mapping */
+            field_mapping?: {
+                [key: string]: unknown;
+            } | null;
+            /** Table Fields */
+            table_fields?: {
+                [key: string]: unknown;
+            } | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** TrainingEvaluationInput */
         TrainingEvaluationInput: {
@@ -63919,6 +64946,987 @@ export interface operations {
             };
         };
     };
+    get_qa_users_api_v1_quality_deviation_settings_qa_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_qa_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QAUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_qa_users__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QAUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_qa_users__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_qa_users__id__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_leaders_api_v1_quality_deviation_settings_leaders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_leaders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_leaders__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_leaders__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_leaders__id__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rules_api_v1_quality_deviation_settings_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_rules__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_rules__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_rules__id__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_triggers_api_v1_quality_deviation_settings_auto_triggers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_auto_triggers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoTriggerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_auto_triggers__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoTriggerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_auto_triggers__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_auto_triggers__id__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_message_templates_api_v1_quality_deviation_settings_message_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_message_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_message_templates__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_message_templates__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_message_templates__id__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_message_templates__id__set_default_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feishu_bot_config_api_v1_quality_deviation_settings_feishu_bot_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_feishu_bot_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeishuBotConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_deviation_settings_feishu_bot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeishuBotConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_deviation_settings_feishu_bot_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    put_api_v1_quality_deviation_settings_feishu_bot_toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_options_api_v1_quality_deviation_settings_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_api_v1_quality_deviation_settings_feishu_user_by_mobile_get: {
+        parameters: {
+            query: {
+                /** @description 手机号 */
+                mobile: string;
+                /** @description 国家码 */
+                country_code?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_deviation_reminder_api_v1_quality_deviation_settings_reminder_trigger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     post_api_v1_quality_reagent_recognize_post: {
         parameters: {
             query?: never;
@@ -69046,6 +71054,550 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AutoCompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report__get: {
+        parameters: {
+            query?: {
+                template_id?: string | null;
+                status?: string | null;
+                start_date?: string | null;
+                end_date?: string | null;
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report_statistics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report_template_get: {
+        parameters: {
+            query?: {
+                is_active?: boolean | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report_template__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_api_v1_quality_material_report_template__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report_template__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_material_report_template__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_material_report_template__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report_template__template_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_api_v1_quality_material_report__report_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_api_v1_quality_material_report__report_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report__report_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportItemsBatchSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report__report_id__generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report__report_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_quality_material_report__report_id__images_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_quality_material_report__report_id__images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_api_v1_quality_material_report__report_id__images_post"];
             };
         };
         responses: {

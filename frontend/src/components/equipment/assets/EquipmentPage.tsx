@@ -268,7 +268,7 @@ export function EquipmentPage({
         <CategoryDrawer onRefresh={refreshCategoriesAndLocations} />
         <LocationDrawer onRefresh={refreshCategoriesAndLocations} />
         <RepairDrawer
-          equipments={equipments.map(e => ({
+          equipments={(equipments ?? []).map(e => ({
             id: e.id, asset_no: e.asset_no, name: e.name, importance: e.importance,
           }))}
           symptoms={failureCodes.symptoms}

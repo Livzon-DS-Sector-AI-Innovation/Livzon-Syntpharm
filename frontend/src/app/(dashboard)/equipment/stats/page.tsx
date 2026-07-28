@@ -74,25 +74,25 @@ export default async function StatsPage() {
     }
 
     if (swResult.status === 'fulfilled') {
-      stockWarnings = swResult.value
+      stockWarnings = Array.isArray(swResult.value) ? swResult.value : []
     } else {
       console.warn('库存预警加载失败:', swResult.reason)
     }
 
     if (overdueResult.status === 'fulfilled') {
-      overduePlans = overdueResult.value
+      overduePlans = Array.isArray(overdueResult.value) ? overdueResult.value : []
     } else {
       console.warn('逾期维护计划加载失败:', overdueResult.reason)
     }
 
     if (calResult.status === 'fulfilled') {
-      calibrationPlans = calResult.value.items || []
+      calibrationPlans = Array.isArray(calResult.value?.items) ? calResult.value.items : []
     } else {
       console.warn('校准计划加载失败:', calResult.reason)
     }
 
     if (ordersResult.status === 'fulfilled') {
-      recentWorkOrders = ordersResult.value.items || []
+      recentWorkOrders = Array.isArray(ordersResult.value?.items) ? ordersResult.value.items : []
     } else {
       console.warn('近期工单加载失败:', ordersResult.reason)
     }

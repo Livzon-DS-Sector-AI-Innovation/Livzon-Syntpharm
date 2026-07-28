@@ -28,7 +28,7 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         {statusCards.map(({ key, label, color, dotColor }) => {
           const isActive = statusFilter === key
-          const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
+          const value = key === '' ? statistics.total : (statistics.by_status?.[key] || 0)
 
           return (
             <button
@@ -76,7 +76,7 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
     <Row gutter={16} style={{ marginBottom: 16 }}>
       {statusCards.map(({ key, label, color }) => {
         const isActive = statusFilter === key
-        const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
+        const value = key === '' ? statistics.total : (statistics.by_status?.[key] || 0)
 
         return (
           <Col span={6} key={key}>

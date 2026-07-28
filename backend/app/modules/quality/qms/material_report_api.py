@@ -91,114 +91,7 @@ async def get(  # noqa: F811
     return ApiResponse(data=stats)
 
 
-@router.get("/{report_id}", summary="获取报告单详情")  # type: ignore[no-redef]
-async def get(  # noqa: F811
-    report_id: UUID,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """获取报告单详情"""
-    service = MaterialReportService(session)
-    report = await service.get_report(report_id)
-
-    if not report:
-        raise NotFoundException(resource="报告单不存在")
-
-    return ApiResponse(data=report)
-
-
-@router.put("/{report_id}", summary="更新报告单")
-async def put(
-    report_id: UUID,
-    data: ReportUpdate,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """更新报告单"""
-    service = MaterialReportService(session)
-    report = await service.update_report(report_id, data)
-
-    if not report:
-        raise NotFoundException(resource="报告单不存在")
-
-    return ApiResponse(data=report)
-
-
-@router.delete("/{report_id}", summary="删除报告单")
-async def delete(
-    report_id: UUID,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """删除报告单"""
-    service = MaterialReportService(session)
-    success = await service.delete_report(report_id)
-
-    if not success:
-        raise NotFoundException(resource="报告单不存在")
-
-    return ApiResponse(message="删除成功")
-
-
-@router.post("/{report_id}/items", summary="批量保存明细数据")  # type: ignore[no-redef]
-async def post(  # noqa: F811
-    report_id: UUID,
-    data: ReportItemsBatchSave,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """批量保存明细数据"""
-    service = MaterialReportService(session)
-
-    # 检查报告单是否存在
-    report = await service.get_report(report_id)
-    if not report:
-        raise NotFoundException(resource="报告单不存在")
-
-    items = await service.save_items(report_id, data)
-    return ApiResponse(data={"items": items})
-
-
-@router.post("/{report_id}/generate", summary="生成报告单文件")  # type: ignore[no-redef]
-async def post(  # noqa: F811
-    report_id: UUID,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """生成报告单Word文件并下载"""
-    service = MaterialReportService(session)
-
-    try:
-        content = await service.generate_report(report_id)
-    except ValueError as e:
-        raise AppException(status_code=400, message=str(e))
-
-    # 获取报告单信息用于文件名
-    report = await service.get_report(report_id)
-    filename = f"{report['report_no']}.docx"
-
-    return StreamingResponse(
-        iter([content]),
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
-    )
-
-
-@router.post("/{report_id}/submit", summary="提交报告单")  # type: ignore[no-redef]
-async def post(  # noqa: F811
-    report_id: UUID,
-    session: AsyncSession = Depends(get_db),
-) -> Any:
-    """提交报告单"""
-    service = MaterialReportService(session)
-
-    try:
-        report = await service.submit_report(report_id)
-    except ValueError as e:
-        raise AppException(status_code=400, message=str(e))
-
-    return ApiResponse(data=report)
-
-
-# ============ 模板管理 API ============
-
-
-@router.get("/template/", summary="获取模板列表")  # type: ignore[no-redef]
+@router.get("/template", summary="获取模板列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     is_active: bool | None = None,
     page: int = 1,
@@ -288,7 +181,7 @@ async def get(  # noqa: F811
     return ApiResponse(data=template)
 
 
-@router.put("/template/{template_id}", summary="更新模板")  # type: ignore[no-redef]
+@router.put("/template/{template_id}", summary="更新模板")
 async def put(  # noqa: F811
     template_id: UUID,
     data: TemplateUpdate,
@@ -304,7 +197,7 @@ async def put(  # noqa: F811
     return ApiResponse(data=template)
 
 
-@router.delete("/template/{template_id}", summary="删除模板")  # type: ignore[no-redef]
+@router.delete("/template/{template_id}", summary="删除模板")
 async def delete(  # noqa: F811
     template_id: UUID,
     session: AsyncSession = Depends(get_db),
@@ -335,6 +228,113 @@ async def get(  # noqa: F811
 
 
 # ============ 图片上传与AI识别 API ============
+
+
+@router.get("/{report_id}", summary="获取报告单详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
+    report_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """获取报告单详情"""
+    service = MaterialReportService(session)
+    report = await service.get_report(report_id)
+
+    if not report:
+        raise NotFoundException(resource="报告单不存在")
+
+    return ApiResponse(data=report)
+
+
+@router.put("/{report_id}", summary="更新报告单")  # type: ignore[no-redef]
+async def put(  # noqa: F811
+    report_id: UUID,
+    data: ReportUpdate,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """更新报告单"""
+    service = MaterialReportService(session)
+    report = await service.update_report(report_id, data)
+
+    if not report:
+        raise NotFoundException(resource="报告单不存在")
+
+    return ApiResponse(data=report)
+
+
+@router.delete("/{report_id}", summary="删除报告单")  # type: ignore[no-redef]
+async def delete(  # noqa: F811
+    report_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """删除报告单"""
+    service = MaterialReportService(session)
+    success = await service.delete_report(report_id)
+
+    if not success:
+        raise NotFoundException(resource="报告单不存在")
+
+    return ApiResponse(message="删除成功")
+
+
+@router.post("/{report_id}/items", summary="批量保存明细数据")  # type: ignore[no-redef]
+async def post(  # noqa: F811
+    report_id: UUID,
+    data: ReportItemsBatchSave,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量保存明细数据"""
+    service = MaterialReportService(session)
+
+    # 检查报告单是否存在
+    report = await service.get_report(report_id)
+    if not report:
+        raise NotFoundException(resource="报告单不存在")
+
+    items = await service.save_items(report_id, data)
+    return ApiResponse(data={"items": items})
+
+
+@router.post("/{report_id}/generate", summary="生成报告单文件")  # type: ignore[no-redef]
+async def post(  # noqa: F811
+    report_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """生成报告单Word文件并下载"""
+    service = MaterialReportService(session)
+
+    try:
+        content = await service.generate_report(report_id)
+    except ValueError as e:
+        raise AppException(status_code=400, message=str(e))
+
+    # 获取报告单信息用于文件名
+    report = await service.get_report(report_id)
+    filename = f"{report['report_no']}.docx"
+
+    return StreamingResponse(
+        iter([content]),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+    )
+
+
+@router.post("/{report_id}/submit", summary="提交报告单")  # type: ignore[no-redef]
+async def post(  # noqa: F811
+    report_id: UUID,
+    session: AsyncSession = Depends(get_db),
+) -> Any:
+    """提交报告单"""
+    service = MaterialReportService(session)
+
+    try:
+        report = await service.submit_report(report_id)
+    except ValueError as e:
+        raise AppException(status_code=400, message=str(e))
+
+    return ApiResponse(data=report)
+
+
+# ============ 模板管理 API ============
 
 
 @router.post("/{report_id}/images", summary="上传图片并AI识别")  # type: ignore[no-redef]

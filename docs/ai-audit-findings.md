@@ -321,3 +321,101 @@ Categories affected: ...
 #### Worsened findings (existed in baseline, now worse)
 - [ ] `file:line` — <rule> — <baseline evidence> → <new evidence>
 ```
+
+### PR #10: Ruanjiaheng (base: main, head: ruanjiaheng, date: 2026-07-27)
+
+Files changed: 93 files (see `git diff --stat main...ruanjiaheng`)
+
+Categories affected: all 14
+
+#### New findings (not in baseline)
+
+- [x] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — `NoAccessResult` is imported via `@/components/settings/NoAccessResult` (direct path) instead of through the `settings/index.ts` barrel. The barrel currently exports `LLMConfigClient` and `ModuleSettingsClient` but not `NoAccessResult`. Add the export to `index.ts` and update all imports to use `@/components/settings`. — severity: low — **RESOLVED** (barrel updated, import fixed)
+
+#### Worsened findings (none)
+
+#### Previously resolved, still resolved
+
+- Category 2: `SOFFICE_FALLBACK_PATHS` hardcoded Windows paths — removed ✓
+- Category 4: Repository `HTTPException` → service `NotFoundException` — fixed ✓  
+- Category 9: `settings/page.tsx` antd Result → NoAccessResult — fixed ✓
+- Category 9: `training/ledger/page.tsx` antd Spin → LoadingSpinner — fixed ✓
+- Category 9: `training/annual-plan/page.tsx` antd Spin → LoadingSpinner — fixed ✓
+
+#### Category summaries
+
+| Category | New violations | Status |
+|---|---|---|
+| 1. Repository layout | 0 | ✓ |
+| 2. Secrets | 0 | ✓ |
+| 3. Module boundaries | 0 | ✓ |
+| 4. API & auth | 0 | ✓ |
+| 5. Models & migrations | 0 | ✓ |
+| 6. Configuration & logging | 0 | ✓ |
+| 7. External services & tasks | 0 | ✓ |
+| 8. Backend tests | 0 | ✓ |
+| 9. Frontend boundaries | 0 | ✓ |
+| 10. Frontend API & types | 0 | ✓ |
+| 11. Proxy & routing | 0 | ✓ |
+| 12. OpenAPI | 0 | ✓ |
+| 13. Docker | 0 | ✓ |
+| 14. E2E | 0 | ✓ |
+
+### PR #10: Ruanjiaheng (base: main, head: ruanjiaheng, date: 2026-07-27)
+
+Files changed: 93 files across all categories
+
+#### New findings (not in baseline)
+
+- [x] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — Imported via `@/components/settings/NoAccessResult` (direct path) instead of through `settings/index.ts` barrel. — severity: low — **RESOLVED** (added to barrel, import updated to `@/components/settings`)
+
+#### Category summaries
+
+| Category | New violations | Note |
+|---|---|---|
+| 1. Repository layout | 0 | |
+| 2. Secrets | 0 | CI-only credentials, in scope |
+| 3. Module boundaries | 0 | |
+| 4. API & auth | 0 | E2E auth hardening |
+| 5. Models & migrations | 0 | Migration CI passes |
+| 6. Config & logging | 0 | |
+| 7. External services | 0 | |
+| 8. Backend tests | 0 | |
+| 9. Frontend boundaries | 1 | NoAccessResult barrel missing |
+| 10. Frontend API & types | 0 | |
+| 11. Proxy & routing | 0 | |
+| 12. OpenAPI | 0 | CI passes |
+| 13. Docker | 0 | |
+| 14. E2E | 0 | CI updated |
+
+### PR #11: Ruanjiaheng — E2E rework (head: ruanjiaheng, date: 2026-07-27)
+
+Files changed: 98 files across all 14 categories
+
+#### New findings
+
+_None._
+
+#### Category summaries
+
+| Category | New violations | Note |
+|---|---|---|
+| 1. Repository layout | 0 | |
+| 2. Secrets | 0 | CI-only 127.0.0.1 references excluded |
+| 3. Module boundaries | 0 | |
+| 4. API & auth | 0 | |
+| 5. Models & migrations | 0 | 0046 migration CI-validated |
+| 6. Config & logging | 0 | |
+| 7. External services | 0 | |
+| 8. Backend tests | 0 | |
+| 9. Frontend boundaries | 0 | NoAccessResult barrel export resolved in PR #10 |
+| 10. Frontend API & types | 0 | |
+| 11. Proxy & routing | 0 | proxy.ts untouched |
+| 12. OpenAPI | 0 | CI passes |
+| 13. Docker | 0 | |
+| 14. E2E | 0 | CI passes |
+
+#### Previously resolved from PR #10, still resolved
+
+- Category 9: NoAccessResult barrel — ✓ fixed
+

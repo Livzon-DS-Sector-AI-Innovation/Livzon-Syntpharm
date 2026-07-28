@@ -261,9 +261,9 @@ export const useEquipmentStore = create<EquipmentStore>()(
       editingLocation: null,
 
       // 操作
-      setCategories: (categories) => set({ categories }, false, 'equipment/setCategories'),
-      setLocations: (locations) => set({ locations }, false, 'equipment/setLocations'),
-      setEquipments: (equipments) => set({ equipments }, false, 'equipment/setEquipments'),
+      setCategories: (categories) => set({ categories: Array.isArray(categories) ? categories : [] }, false, 'equipment/setCategories'),
+      setLocations: (locations) => set({ locations: Array.isArray(locations) ? locations : [] }, false, 'equipment/setLocations'),
+      setEquipments: (equipments) => set({ equipments: Array.isArray(equipments) ? equipments : [] }, false, 'equipment/setEquipments'),
       setStatistics: (statistics) => set({ statistics }, false, 'equipment/setStatistics'),
       setSelectedCategory: (id) => set({ selectedCategory: id, page: 1 }, false, 'equipment/setSelectedCategory'),
       setSelectedLocation: (id) => set({ selectedLocation: id, page: 1 }, false, 'equipment/setSelectedLocation'),
@@ -316,7 +316,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       // ========== 部门管理 ==========
       departments: [],
       departmentFilter: '',
-      setDepartments: (depts) => set({ departments: depts }, false, 'equipment/setDepartments'),
+      setDepartments: (depts) => set({ departments: Array.isArray(depts) ? depts : [] }, false, 'equipment/setDepartments'),
       setDepartmentFilter: (filter) => set({ departmentFilter: filter }, false, 'equipment/setDepartmentFilter'),
 
       // ========== 巡检模板 ==========
@@ -326,7 +326,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       inspectionTemplatePageSize: 20,
       inspectionTemplateLoading: false,
       inspectionTemplateKeyword: '',
-      setInspectionTemplates: (templates) => set({ inspectionTemplates: templates }, false, 'equipment/setInspectionTemplates'),
+      setInspectionTemplates: (templates) => set({ inspectionTemplates: Array.isArray(templates) ? templates : [] }, false, 'equipment/setInspectionTemplates'),
       setInspectionTemplateTotal: (total) => set({ inspectionTemplateTotal: total }, false, 'equipment/setInspectionTemplateTotal'),
       setInspectionTemplatePage: (page) => set({ inspectionTemplatePage: page }, false, 'equipment/setInspectionTemplatePage'),
       setInspectionTemplatePageSize: (size) => set({ inspectionTemplatePageSize: size, inspectionTemplatePage: 1 }, false, 'equipment/setInspectionTemplatePageSize'),
@@ -360,7 +360,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       maintenancePlanLoading: false,
       maintenancePlanKeyword: '',
       maintenancePlanStatusFilter: '',
-      setMaintenancePlans: (plans) => set({ maintenancePlans: plans }, false, 'equipment/setMaintenancePlans'),
+      setMaintenancePlans: (plans) => set({ maintenancePlans: Array.isArray(plans) ? plans : [] }, false, 'equipment/setMaintenancePlans'),
       setMaintenancePlanTotal: (total) => set({ maintenancePlanTotal: total }, false, 'equipment/setMaintenancePlanTotal'),
       setMaintenancePlanPage: (page) => set({ maintenancePlanPage: page }, false, 'equipment/setMaintenancePlanPage'),
       setMaintenancePlanPageSize: (size) => set({ maintenancePlanPageSize: size, maintenancePlanPage: 1 }, false, 'equipment/setMaintenancePlanPageSize'),
@@ -379,7 +379,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       sparePartPageSize: 20,
       sparePartLoading: false,
       sparePartKeyword: '',
-      setSpareParts: (parts) => set({ spareParts: parts }, false, 'equipment/setSpareParts'),
+      setSpareParts: (parts) => set({ spareParts: Array.isArray(parts) ? parts : [] }, false, 'equipment/setSpareParts'),
       setSparePartTotal: (total) => set({ sparePartTotal: total }, false, 'equipment/setSparePartTotal'),
       setSparePartPage: (page) => set({ sparePartPage: page }, false, 'equipment/setSparePartPage'),
       setSparePartPageSize: (size) => set({ sparePartPageSize: size, sparePartPage: 1 }, false, 'equipment/setSparePartPageSize'),
@@ -393,7 +393,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       // ========== 库存预警 ==========
       stockWarnings: [],
       stockWarningsLoading: false,
-      setStockWarnings: (warnings) => set({ stockWarnings: warnings }, false, 'equipment/setStockWarnings'),
+      setStockWarnings: (warnings) => set({ stockWarnings: Array.isArray(warnings) ? warnings : [] }, false, 'equipment/setStockWarnings'),
 
       // ========== 维修抽屉 ==========
       repairDrawerOpen: false,
@@ -424,7 +424,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       workOrderStatusFilter: '',
       workOrderPriorityFilter: '',
       workOrderTypeFilter: '',
-      setWorkOrders: (orders) => set({ workOrders: orders }, false, 'equipment/setWorkOrders'),
+      setWorkOrders: (orders) => set({ workOrders: Array.isArray(orders) ? orders : [] }, false, 'equipment/setWorkOrders'),
       setWorkOrderTotal: (total) => set({ workOrderTotal: total }, false, 'equipment/setWorkOrderTotal'),
       setWorkOrderPage: (page) => set({ workOrderPage: page }, false, 'equipment/setWorkOrderPage'),
       setWorkOrderPageSize: (size) => set({ workOrderPageSize: size, workOrderPage: 1 }, false, 'equipment/setWorkOrderPageSize'),
@@ -443,7 +443,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       failureCodes: { symptoms: [], causes: [], actions: [] },
       failureCodeLoading: false,
       setFailureCodes: (type, codes) => set(
-        (state) => ({ failureCodes: { ...state.failureCodes, [type]: codes } }),
+        (state) => ({ failureCodes: { ...state.failureCodes, [type]: Array.isArray(codes) ? codes : [] } }),
         false,
         'equipment/setFailureCodes',
       ),
@@ -468,7 +468,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       calibrationPlanPageSize: 20,
       calibrationPlanLoading: false,
       calibrationPlanStatusFilter: '',
-      setCalibrationPlans: (plans) => set({ calibrationPlans: plans }, false, 'equipment/setCalibrationPlans'),
+      setCalibrationPlans: (plans) => set({ calibrationPlans: Array.isArray(plans) ? plans : [] }, false, 'equipment/setCalibrationPlans'),
       setCalibrationPlanTotal: (total) => set({ calibrationPlanTotal: total }, false, 'equipment/setCalibrationPlanTotal'),
       setCalibrationPlanPage: (page) => set({ calibrationPlanPage: page }, false, 'equipment/setCalibrationPlanPage'),
       setCalibrationPlanPageSize: (size) => set({ calibrationPlanPageSize: size, calibrationPlanPage: 1 }, false, 'equipment/setCalibrationPlanPageSize'),
@@ -491,7 +491,7 @@ export const useEquipmentStore = create<EquipmentStore>()(
       calibrationRecordPage: 1,
       calibrationRecordPageSize: 20,
       calibrationRecordLoading: false,
-      setCalibrationRecords: (records) => set({ calibrationRecords: records }, false, 'equipment/setCalibrationRecords'),
+      setCalibrationRecords: (records) => set({ calibrationRecords: Array.isArray(records) ? records : [] }, false, 'equipment/setCalibrationRecords'),
       setCalibrationRecordTotal: (total) => set({ calibrationRecordTotal: total }, false, 'equipment/setCalibrationRecordTotal'),
       setCalibrationRecordPage: (page) => set({ calibrationRecordPage: page }, false, 'equipment/setCalibrationRecordPage'),
       setCalibrationRecordPageSize: (size) => set({ calibrationRecordPageSize: size, calibrationRecordPage: 1 }, false, 'equipment/setCalibrationRecordPageSize'),

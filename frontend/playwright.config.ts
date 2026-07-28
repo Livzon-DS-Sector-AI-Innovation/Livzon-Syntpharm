@@ -5,9 +5,11 @@ export default defineConfig({
   globalSetup: './e2e/auth.setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: 0,
+  workers: 1,
+  reporter: process.env.CI
+    ? [['line'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   use: {
     baseURL: process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000',
     trace: 'on-first-retry',

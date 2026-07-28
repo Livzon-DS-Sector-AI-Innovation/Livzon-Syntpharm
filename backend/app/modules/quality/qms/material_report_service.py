@@ -20,7 +20,7 @@ from app.modules.quality.qms.material_report_schemas import (
     TemplateCreate,
     TemplateUpdate,
 )
-from app.modules.quality.word_generator import generate_report_bytes  # type: ignore[import-not-found]
+from app.modules.quality.qms.word_generator import generate_report_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +232,7 @@ class MaterialReportService:
         output_path = f"reports/{report.report_no}.docx"
         await self.report_repo.update(report_id, {"generated_file_url": output_path})
 
-        return content  # type: ignore[no-any-return]
+        return content
 
     async def submit_report(self, report_id: UUID) -> dict:  # type: ignore[type-arg]
         """提交报告单"""
@@ -437,7 +437,7 @@ class ReportTemplateService:
         page_size: int = 20,
     ) -> tuple[list[dict], int]:  # type: ignore[type-arg]
         """获取模板列表"""
-        templates, total = await self.template_repo.list_all(  # type: ignore[attr-defined]
+        templates, total = await self.template_repo.list_all(
             is_active=is_active,
             page=page,
             page_size=page_size,
@@ -458,7 +458,7 @@ class ReportTemplateService:
 
     async def parse_template(self, template_id: UUID) -> dict | None:  # type: ignore[type-arg]
         """解析模板获取字段配置"""
-        from app.modules.quality.word_generator import get_template_fields
+        from app.modules.quality.qms.word_generator import get_template_fields
 
         template = await self.template_repo.get_by_id(template_id)
         if not template:
