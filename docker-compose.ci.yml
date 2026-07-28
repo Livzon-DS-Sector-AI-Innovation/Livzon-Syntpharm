@@ -32,6 +32,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dazah_e2e
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FEISHU_EQUIPMENT_DEPT_ID: ci_dummy
       FEISHU__PLATFORM__REDIRECT_URI: http://127.0.0.1:13000/auth/callback
       FRONTEND_URL: http://127.0.0.1:13000
       APP_ENV: e2e
