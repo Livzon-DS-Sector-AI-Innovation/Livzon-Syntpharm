@@ -579,7 +579,7 @@ export default function DeviationSettingsPage() {
         width={isMobile ? '95vw' : 480}
         className="settings-modal"
       >
-        <Alert message="输入手机号查询，自动获取飞书用户信息" type="info" showIcon style={{ marginBottom: 16 }} />
+        <Alert title="输入手机号查询，自动获取飞书用户信息" type="info" showIcon style={{ marginBottom: 16 }} />
         <Form form={form} layout="vertical">
           <Form.Item label="手机号">
             <Space.Compact style={{ width: '100%' }}>
@@ -615,7 +615,7 @@ export default function DeviationSettingsPage() {
         width={isMobile ? '95vw' : 480}
         className="settings-modal"
       >
-        <Alert message="输入手机号查询，自动获取飞书用户信息" type="info" showIcon style={{ marginBottom: 16 }} />
+        <Alert title="输入手机号查询，自动获取飞书用户信息" type="info" showIcon style={{ marginBottom: 16 }} />
         <Form form={form} layout="vertical">
           <Form.Item label="手机号">
             <Space.Compact style={{ width: '100%' }}>
@@ -752,7 +752,7 @@ export default function DeviationSettingsPage() {
         width={isMobile ? '95vw' : 520}
         className="settings-modal"
       >
-        <Alert message="前往飞书开放平台创建企业自建应用，获取 App ID 和 App Secret" type="info" showIcon style={{ marginBottom: 16 }} />
+        <Alert title="前往飞书开放平台创建企业自建应用，获取 App ID 和 App Secret" type="info" showIcon style={{ marginBottom: 16 }} />
         <Form form={botForm} layout="vertical">
           <Form.Item name="bot_name" label="机器人名称">
             <Input placeholder="如：偏差管理机器人" />

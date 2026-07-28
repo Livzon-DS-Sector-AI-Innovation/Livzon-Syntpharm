@@ -140,7 +140,7 @@ export function BitableCrossImportModal({ open, onClose, onSuccess }: BitableCro
           <Alert
             type="info"
             showIcon
-            message="导入说明"
+            title="导入说明"
             description={
               <div style={{ fontSize: 12, marginTop: 4 }}>
                 <div>• 从飞书多维表格的交叉表格式导入能耗数据</div>

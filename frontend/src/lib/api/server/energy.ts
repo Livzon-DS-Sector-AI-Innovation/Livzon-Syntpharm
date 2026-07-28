@@ -273,7 +273,7 @@ export async function importFromFeishu(data: Record<string, unknown>): Promise<a
 }
 
 export async function crossImportFromBitable(data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/import/cross-bitable`, {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/cross-import`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
