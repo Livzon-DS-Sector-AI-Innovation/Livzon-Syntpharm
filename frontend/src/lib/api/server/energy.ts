@@ -280,7 +280,7 @@ export async function crossImportFromBitable(data: Record<string, unknown>): Pro
 }
 
 export async function syncBitableDailyData(): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/daily`, {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/daily-import`, {
     method: 'POST',
   })
 }
