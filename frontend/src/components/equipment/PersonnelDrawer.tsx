@@ -66,6 +66,7 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
     }
     setSubmitting(true)
     try {
+      // @ts-expect-error user_ids not in OpenAPI create schema
       await addPersonnel({ user_ids: selectedIds })
       message.success('人员添加成功')
       queryClient.invalidateQueries({ queryKey: ['equipment-personnel'] })
