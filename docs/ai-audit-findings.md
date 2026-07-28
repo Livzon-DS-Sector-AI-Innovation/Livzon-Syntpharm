@@ -419,3 +419,31 @@ _None._
 
 - Category 9: NoAccessResult barrel — ✓ fixed
 
+### PR #12: lzhc-zhuang — Energy, Safety, Equipment sync (head: lzhc-zhuang, date: 2026-07-28)
+
+Files changed: 281 across categories 1–14 (backend: energy, equipment, quality, safety; frontend: energy, equipment, safety, administration, registration)
+
+#### New findings
+
+- [x] `backend/app/modules/energy/api.py:624` — §4 API & Auth / 认证与权限 — `daily_import_from_bitable()` has no `current_user: CurrentUser` parameter. Per AGENTS.md: "未声明的业务接口按 require_user 处理". — severity: blocking — **RESOLVED** (added `current_user: CurrentUser` parameter)
+- [ ] `frontend/src/actions/energy.ts`, `frontend/src/actions/equipment.ts` — §10 Frontend API / 类型系统 — Use handwritten types instead of `@/types/generated/schema`. These energy/equipment types are NOT exported by the backend OpenAPI spec. Backend needs `response_model` annotations on energy/equipment API endpoints before frontend can import types. Pre-existing lzhc-zhuang gap. — severity: medium (requires backend schema export work)
+
+#### Category summaries
+
+| Category | New violations | Note |
+|---|---|---|
+| 1. Repository layout | 0 | |
+| 2. Secrets | 0 | LLM_ENCRYPTION_KEY in .env.example is disputed rule, not a violation |
+| 3. Module boundaries | 0 | No cross-module direct imports |
+| 4. API & auth | 1 | daily_import_from_bitable missing auth (blocking) |
+| 5. Models & migrations | 0 | Both migrations use NNNN format |
+| 6. Config & logging | 0 | os.environ in converter.py is allowed subprocess exception |
+| 7. External services | 0 | asyncio.create_task only in infrastructure |
+| 8. Backend tests | 0 | |
+| 9. Frontend boundaries | 0 | force-dynamic conflicts resolved |
+| 10. Frontend API & types | 1 | Handwritten types in energy/equipment actions |
+| 11. Proxy & routing | 0 | proxy.ts unchanged |
+| 12. OpenAPI | 0 | CI passes |
+| 13. Docker | 0 | nginx timeout + Feishu timeout changes |
+| 14. E2E | 0 | CI passes |
+

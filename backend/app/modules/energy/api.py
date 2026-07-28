@@ -622,6 +622,7 @@ async def cross_import_from_bitable(
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
 async def daily_import_from_bitable(
+    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """手动触发从飞书表格导入每日数据，导入后自动检查预警"""
