@@ -29895,12 +29895,40 @@
         "summary": "\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\u5e76\u68c0\u67e5\u9884\u8b66",
         "description": "\u624b\u52a8\u89e6\u53d1\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\uff0c\u5bfc\u5165\u540e\u81ea\u52a8\u68c0\u67e5\u9884\u8b66",
         "operationId": "daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
