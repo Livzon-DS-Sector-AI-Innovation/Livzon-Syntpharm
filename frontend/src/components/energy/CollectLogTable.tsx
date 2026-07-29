@@ -135,6 +135,7 @@ export function CollectLogTable({
   onRetry,
 }: CollectLogTableProps) {
   const { logFilters, setLogFilters, openCollectLogDrawer } = useEnergyStore()
+
   const columns: TableColumnsType<CollectLog> = [
     {
       title: '平台编码',

@@ -1544,3 +1544,187 @@ export async function parseSpecialOpsExportQuery(query: string) {
 export async function exportSpecialOpsLedger(filters: Record<string, unknown>): Promise<Blob> {
   return safetyApi.exportSpecialOpsLedger(filters)
 }
+
+// ============ AI Workflow Config Actions ============
+
+export async function getAIWorkflowConfigs(params?: { page_size?: number; page?: number }) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders)
+}
+
+export async function createAIWorkflowConfig(data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createAIWorkflowConfig(data, authHeaders)
+  revalidatePath('/safety/ai-workflow-config')
+  return response
+}
+
+export async function updateAIWorkflowConfig(id: string, data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.updateAIWorkflowConfig(id, data, authHeaders)
+  revalidatePath('/safety/ai-workflow-config')
+  return response
+}
+
+export async function deleteAIWorkflowConfig(id: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.deleteAIWorkflowConfig(id, authHeaders)
+  revalidatePath('/safety/ai-workflow-config')
+  return response
+}
+
+// ============ Scheduled Task Actions ============
+
+export async function getScheduledTasks(params: { page?: number; page_size?: number }) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getScheduledTasks(params, authHeaders)
+}
+
+export async function getScheduledTask(id: string) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getScheduledTask(id, authHeaders)
+}
+
+export async function createScheduledTask(data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createScheduledTask(data, authHeaders)
+  revalidatePath('/safety/scheduled-tasks')
+  return response
+}
+
+export async function updateScheduledTask(id: string, data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.updateScheduledTask(id, data, authHeaders)
+  revalidatePath('/safety/scheduled-tasks')
+  return response
+}
+
+export async function deleteScheduledTask(id: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.deleteScheduledTask(id, authHeaders)
+  revalidatePath('/safety/scheduled-tasks')
+  return response
+}
+
+export async function toggleScheduledTask(id: string, enabled: boolean) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.toggleScheduledTask(id, enabled, authHeaders)
+}
+
+export async function runScheduledTaskNow(id: string) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.runScheduledTaskNow(id, authHeaders)
+}
+
+export async function getScheduledTaskLogs(taskId: string) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getScheduledTaskLogs(taskId, authHeaders)
+}
+
+export async function getDataSourceOptions() {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getDataSourceOptions(authHeaders)
+}
+
+export async function getFeishuChats() {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getFeishuChats(authHeaders)
+}
+
+export async function previewCard(data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.previewCard(data, authHeaders)
+}
+
+// ============ Hazard Legacy Actions ============
+
+export async function completeRectification(id: string, data?: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.completeRectification(id, data || {}, authHeaders)
+  revalidatePath('/safety/hazard')
+  return response
+}
+
+export async function verifyRectification(id: string, data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.verifyRectification(id, data, authHeaders)
+  revalidatePath('/safety/hazard')
+  return response
+}
+
+// ============ Hazard Revision Actions ============
+
+export async function getHazardRevisionRecords(params: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getHazardRevisionRecords(params, authHeaders)
+}
+
+export async function createHazardRevisionRecord(data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createHazardRevisionRecord(data, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.updateHazardRevisionRecord(id, data, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function deleteHazardRevisionRecord(id: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.deleteHazardRevisionRecord(id, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function approveHazardRevision(id: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.approveHazardRevision(id, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function uploadHazardRevisionDocument(id: string, file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.uploadHazardRevisionDocument(id, formData, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function linkRevisionToArchive(revisionId: string, archiveId: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.linkRevisionToArchive(revisionId, archiveId, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function getHazardRevisionArchives(params: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  return safetyApi.getHazardRevisionArchives(params, authHeaders)
+}
+
+export async function createHazardRevisionArchive(data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createHazardRevisionArchive(data, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.updateHazardRevisionArchive(id, data, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}
+
+export async function deleteHazardRevisionArchive(id: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.deleteHazardRevisionArchive(id, authHeaders)
+  revalidatePath('/safety/hazard-identification-legacy')
+  return response
+}

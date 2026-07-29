@@ -1,31 +1,21 @@
-// Energy module types
-// API input types are aliased from generated schema for single-source-of-truth.
-// UI-specific types (query params, response wrappers, display types) remain hand-written.
-
 import type { components } from '@/types/generated/schema'
-
-// ── API Input Types (from generated schema) ──
-
 export type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
 export type UpdateDeviceInput = components['schemas']['EnergyDeviceConfigUpdate']
 export type CreateRuleInput = components['schemas']['EnergyAlertRuleCreate']
 export type UpdateRuleInput = components['schemas']['EnergyAlertRuleUpdate']
-export type ProcessRecordInput = components['schemas']['AlertRecordProcessRequest']
+export type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
+export type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
+export type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
+export type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
 
-// ── Enum / Literal Types (matching generated schema) ──
 
+// 能源类型枚举
 export type EnergyType = 'electricity' | 'water' | 'steam' | 'natural_gas'
+
+// 监控级别
 export type MonitorLevel = 'normal' | 'important' | 'urgent'
-export type AlertLevel = 'info' | 'warning' | 'critical' | 'emergency'
-export type MonitorMetric = 'instant' | 'daily_total' | 'monthly_total'
-export type ThresholdType = 'greater_than' | 'less_than' | 'equal'
-export type NotifyFrequency = 'first' | 'every' | 'daily_summary'
-export type EffectiveTimeType = 'all_day' | 'custom'
-export type CollectStatus = 'success' | 'partial' | 'failed'
-export type AlertRecordStatus = 'pending' | 'processed' | 'ignored'
 
-// ── Response / Display Types (not in generated schema) ──
-
+// 数据源配置
 export interface EnergyDeviceConfig {
   id: string
   platform_code: string
@@ -44,6 +34,11 @@ export interface EnergyDeviceConfig {
   updated_at: string
 }
 
+// 创建数据源配置输入
+
+// 更新数据源配置输入
+
+// 设备查询参数
 export interface DeviceQueryParams {
   keyword?: string
   energy_type?: EnergyType
@@ -53,6 +48,7 @@ export interface DeviceQueryParams {
   page_size?: number
 }
 
+// 能耗数据
 export interface EnergyData {
   id: string
   config_id: string
@@ -66,6 +62,7 @@ export interface EnergyData {
   created_at: string
 }
 
+// 能耗数据查询参数
 export interface DataQueryParams {
   energy_type?: EnergyType
   workshop?: string
@@ -76,6 +73,7 @@ export interface DataQueryParams {
   page_size?: number
 }
 
+// 能耗统计
 export interface EnergyStatistics {
   total_electricity: number
   total_water: number
@@ -83,18 +81,24 @@ export interface EnergyStatistics {
   total_natural_gas: number
 }
 
+// 总览数据
 export interface EnergyOverviewData {
   summary: EnergyStatistics
   trend: TrendDataPoint[]
   distribution: DistributionDataPoint[]
 }
 
+// 统计查询参数
 export interface StatisticsParams {
   start_time?: string
   end_time?: string
   energy_type?: EnergyType
 }
 
+// 采集状态
+export type CollectStatus = 'success' | 'partial' | 'failed'
+
+// 采集日志
 export interface CollectLog {
   id: string
   platform_code: string
@@ -106,6 +110,7 @@ export interface CollectLog {
   created_at: string
 }
 
+// 采集日志设备详情
 export interface CollectLogDeviceDetail {
   device_name: string
   platform_device_code: string
@@ -115,6 +120,7 @@ export interface CollectLogDeviceDetail {
   data_timestamp: string
 }
 
+// 采集日志详情（含设备数据）
 export interface CollectLogDetail {
   id: string
   platform_code: string
@@ -129,6 +135,7 @@ export interface CollectLogDetail {
   time_range_end: string | null
 }
 
+// 采集日志查询参数
 export interface LogQueryParams {
   platform_code?: string
   status?: CollectStatus
@@ -136,6 +143,7 @@ export interface LogQueryParams {
   page_size?: number
 }
 
+// 分页响应
 export interface PaginatedResponse<T> {
   items: T[]
   total: number
@@ -143,6 +151,22 @@ export interface PaginatedResponse<T> {
   page_size: number
 }
 
+// 预警等级
+export type AlertLevel = 'info' | 'warning' | 'critical' | 'emergency'
+
+// 监控指标
+export type MonitorMetric = 'instant' | 'daily_total' | 'monthly_total'
+
+// 阈值类型
+export type ThresholdType = 'greater_than' | 'less_than' | 'equal'
+
+// 通知频率
+export type NotifyFrequency = 'first' | 'every' | 'daily_summary'
+
+// 生效时间类型
+export type EffectiveTimeType = 'all_day' | 'custom'
+
+// 预警规则
 export interface AlertRule {
   id: string
   rule_name: string
@@ -164,6 +188,11 @@ export interface AlertRule {
   updated_at: string
 }
 
+// 创建预警规则输入
+
+// 更新预警规则输入
+
+// 预警规则查询参数
 export interface RuleQueryParams {
   energy_type?: EnergyType
   alert_level?: AlertLevel
@@ -172,6 +201,10 @@ export interface RuleQueryParams {
   page_size?: number
 }
 
+// 预警记录状态
+export type AlertRecordStatus = 'pending' | 'processed' | 'ignored'
+
+// 预警记录
 export interface AlertRecord {
   id: string
   rule_id: string
@@ -191,6 +224,13 @@ export interface AlertRecord {
   created_at: string
 }
 
+// 处理预警记录输入
+export interface ProcessRecordInput {
+  status: 'processed' | 'ignored'
+  process_note?: string
+}
+
+// 预警记录查询参数
 export interface RecordQueryParams {
   energy_type?: EnergyType
   alert_level?: AlertLevel
@@ -201,47 +241,92 @@ export interface RecordQueryParams {
   page_size?: number
 }
 
+// 趋势数据点
 export interface TrendDataPoint {
   time: string
   value: number
   type: string
 }
 
+// 分布数据点
 export interface DistributionDataPoint {
   name: string
   value: number
 }
 
+// 设备排行数据
 export interface DeviceRankItem {
   device_name: string
   value: number
   unit: string
 }
 
-// ─── Workshop & Monthly ───
+// ── 车间管理 ──
 
+// 车间分类
 export type WorkshopCategory = 'workshop' | 'position' | 'support' | 'utility'
 
+// 车间
 export interface EnergyWorkshop {
   id: string
-  name: string
   code: string
+  name: string
   category: WorkshopCategory
   parent_id: string | null
+  sort_order: number
+  is_active: boolean
   created_at: string
   updated_at: string
 }
 
-export interface MonthlyRecord {
+// 创建车间输入
+
+// 更新车间输入
+
+// 车间查询参数
+export interface WorkshopQueryParams {
+  category?: WorkshopCategory
+  is_active?: boolean
+  page?: number
+  page_size?: number
+}
+
+// ── 月度记录 ──
+
+// 月度记录
+export interface EnergyMonthlyRecord {
   id: string
   workshop_id: string
+  energy_type: EnergyType
   record_date: string
-  date_range_end: string
-  electricity: number
-  water: number
-  steam: number
-  natural_gas: number
+  date_range_end: string | null
+  value: number
   unit: string
+  source: string
+  remark: string | null
   created_at: string
   updated_at: string
+}
+
+// 创建月度记录输入
+
+// 月度记录查询参数
+export interface MonthlyRecordQueryParams {
+  workshop_id?: string
+  energy_type?: EnergyType
+  start_date?: string
+  end_date?: string
+  page?: number
+  page_size?: number
+}
+
+// 飞书导入请求
+
+// 飞书导入结果
+export interface FeishuImportResult {
+  workshops_created: number
+  workshops_existing: number
+  records_created: number
+  records_skipped: number
+  errors: string[]
 }

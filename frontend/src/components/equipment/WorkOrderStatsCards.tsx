@@ -74,7 +74,7 @@ const statusCardConfig: {
 }[] = [
   { key: 'total', title: '全部工单', icon: <FileTextOutlined />, color: '#5645d4', bgColor: '#ede9f7', statusFilter: '' },
   { key: 'pending', title: '待处理', icon: <ExclamationCircleOutlined />, color: '#e03131', bgColor: '#fff1f0', statusFilter: '待处理' },
-  { key: 'in_progress', title: '维修中', icon: <ToolOutlined />, color: '#dd5b00', bgColor: '#fff7e6', statusFilter: '维修中' },
+  { key: 'executing', title: '执行中', icon: <ToolOutlined />, color: '#dd5b00', bgColor: '#fff7e6', statusFilter: '执行中' },
   { key: 'pending_verify', title: '待验收', icon: <ClockCircleOutlined />, color: '#d4b106', bgColor: '#fffbe6', statusFilter: '待验收' },
   { key: 'completed', title: '已完成', icon: <CheckCircleOutlined />, color: '#1aae39', bgColor: '#e6f7e6', statusFilter: '已完成' },
   { key: 'closed', title: '已关闭', icon: <StopOutlined />, color: '#787671', bgColor: '#f0eeec', statusFilter: '已关闭' },

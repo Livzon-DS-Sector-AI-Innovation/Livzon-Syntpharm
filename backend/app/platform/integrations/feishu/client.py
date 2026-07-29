@@ -24,7 +24,7 @@ class FeishuClient(IntegrationClient):
             self._client = httpx.AsyncClient(
                 base_url=self.base_url,
                 limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
-                timeout=httpx.Timeout(15.0, connect=5.0),
+                timeout=httpx.Timeout(120.0, connect=30.0),
             )
         return self._client
 

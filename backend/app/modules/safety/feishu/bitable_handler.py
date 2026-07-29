@@ -341,7 +341,7 @@ def _extract_select_values(value: Any) -> str:
     return ""
 
 
-def _extract_attachments(value: Any) -> list[dict]:  # type: ignore[type-arg]
+def _extract_attachments(value: Any) -> list[dict[str, Any]]:  # type: ignore[type-arg]
     """从 Bitable attachment 字段提取附件列表。"""
     if isinstance(value, list):
         return [
@@ -1182,7 +1182,7 @@ async def _create_hazard_from_bitable(
         # 解决安全应用与全局应用 open_id 命名空间不一致的问题。
         from app.modules.safety.feishu.bitable_id_mapper import get_bitable_person_value
 
-        responsible_person_value: list[dict] | None = None  # type: ignore[type-arg]
+        responsible_person_value: list[dict[str, Any]] | None = None  # type: ignore[type-arg]
         if _resolved_leader_user_id or _resolved_leader_open_id:
             # 自动判定：通过 user_id 查 Bitable open_id
             # ⚠️ 不使用 fallback_to_identity——全局应用 open_id 与安全应用 Bitable
@@ -1889,13 +1889,13 @@ def _resolve_option_ids(
 
 
 def _convert_after_value_to_fields(
-    after_value: list[dict],  # type: ignore[type-arg]
+    after_value: list[dict[str, Any]],  # type: ignore[type-arg]
     field_map: dict[str, str],
 ) -> dict[str, Any]:
     """将飞书 action_list 的 after_value [{field_id, field_value}] 转为 {field_name: value}。
 
     处理特殊字段类型：
-    - attachment: field_value 是 JSON 字符串，解析为 list[dict]
+    - attachment: field_value 是 JSON 字符串，解析为 list[dict[str, Any]]
     - select/multi_select: 选项 ID → 选项名称（依赖 _option_map_cache / _field_type_cache）
     - 其他类型: field_value 已是正确的 Python 值
     """
@@ -1924,7 +1924,7 @@ def _convert_after_value_to_fields(
 
 
 def _extract_field_value(
-    item: dict,  # type: ignore[type-arg]
+    item: dict[str, Any],  # type: ignore[type-arg]
     field_id: str,
     field_map: dict[str, str],
 ) -> dict[str, Any]:
@@ -2017,7 +2017,7 @@ def _match_target(file_token: str, table_id: str) -> bool:
 async def _get_fields_fallback(
     bitable: SafetyBitableClient,
     record_id: str,
-    event_fields: dict,  # type: ignore[type-arg]
+    event_fields: dict[str, Any],  # type: ignore[type-arg]
 ) -> dict[str, Any]:
     """获取记录字段：优先用事件自带的 fields，缺失时调 API 拉取。"""
     if event_fields:
@@ -2215,7 +2215,7 @@ async def _handle_single_record_action(
 
 
 @on_event("drive.file.bitable_record_changed_v1")  # type: ignore[untyped-decorator]
-async def handle_bitable_record_changed(event: dict) -> None:  # type: ignore[type-arg]
+async def handle_bitable_record_changed(event: dict[str, Any]) -> None:  # type: ignore[type-arg]
     """处理多维表格记录变更事件。
 
     飞书实际 payload 结构（v2 action_list 格式）：
@@ -2319,7 +2319,7 @@ async def handle_bitable_record_changed(event: dict) -> None:  # type: ignore[ty
 
 
 @on_event("drive.file.bitable_field_changed_v1")  # type: ignore[untyped-decorator]
-async def handle_bitable_field_changed(event: dict) -> None:  # type: ignore[type-arg]
+async def handle_bitable_field_changed(event: dict[str, Any]) -> None:  # type: ignore[type-arg]
     """处理多维表格字段级变更事件（补充处理器）。
 
     当记录的部分字段被修改时触发，比 record_changed_v1 更细粒度。
@@ -2474,7 +2474,7 @@ _LEVEL_LABELS = {1: "一级（部门负责人）", 2: "二级（分管领导）"
 
 
 @on_event("card.action.trigger")  # type: ignore[untyped-decorator]
-async def handle_card_action(event: dict) -> dict | None:  # type: ignore[type-arg]
+async def handle_card_action(event: dict[str, Any]) -> dict[str, Any] | None:  # type: ignore[type-arg]
     """处理复核通知卡片中的「同意 / 驳回」按钮点击。
 
     收到按钮点击后：
@@ -2584,7 +2584,7 @@ async def handle_card_action(event: dict) -> dict | None:  # type: ignore[type-a
 
 async def _patch_card_async(
     open_message_id: str,
-    card: dict,  # type: ignore[type-arg]
+    card: dict[str, Any],  # type: ignore[type-arg]
     hazard_no: str,
     level: int,
     button_state: str,
@@ -2630,7 +2630,7 @@ async def _handle_approve_background(
     level: int,
     button_state: str,
     open_message_id: str,
-    updated_card: dict | None,  # type: ignore[type-arg]
+    updated_card: dict[str, Any] | None,  # type: ignore[type-arg]
     hazard_no: str,
 ) -> None:
     """后台执行 Bitable 更新 + 卡片 PATCH 确认/恢复。

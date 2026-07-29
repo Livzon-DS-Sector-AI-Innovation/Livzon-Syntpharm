@@ -98,7 +98,7 @@ class EquipmentCreate(BaseModel):
     """创建设备请求"""
 
     name: str = Field(..., min_length=1, max_length=200, description="设备名称")
-    asset_no: str = Field(..., min_length=1, max_length=50, description="设备编号（手动输入，需唯一）")
+    asset_no: str = Field(..., min_length=1, max_length=50, description="资产编号（手动输入，需唯一）")
     equipment_tag: str | None = Field(default=None, max_length=100, description="设备位号")
     equipment_class: EquipmentClass = Field(default="C", description="设备分类：A/B/C")
     category_description: str | None = Field(default=None, max_length=200, description="资产类别说明")
@@ -121,9 +121,9 @@ class EquipmentCreate(BaseModel):
     technical_params: dict[str, Any] | None = Field(default=None, description="技术参数")
     department_id: uuid.UUID | None = Field(default=None, description="归属部门ID，逻辑引用 identity.departments.id")
     responsible_person_id: uuid.UUID | None = Field(
-        default=None,
-        description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
+        default=None, description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
     )
+    responsible_person_name: str | None = Field(default=None, max_length=100, description="负责人姓名")
     label_no: str | None = Field(default=None, max_length=100, description="标签号")
     scrap_status: str | None = Field(default=None, max_length=20, description="报废状态")
     scrap_time: date | None = Field(default=None, description="报废时间")
@@ -156,9 +156,9 @@ class EquipmentUpdate(BaseModel):
     technical_params: dict[str, Any] | None = Field(default=None, description="技术参数")
     department_id: uuid.UUID | None = Field(default=None, description="归属部门ID，逻辑引用 identity.departments.id")
     responsible_person_id: uuid.UUID | None = Field(
-        default=None,
-        description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导",
+        default=None, description="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"
     )
+    responsible_person_name: str | None = Field(default=None, max_length=100, description="负责人姓名")
     label_no: str | None = Field(default=None, max_length=100, description="标签号")
     scrap_status: str | None = Field(default=None, max_length=20, description="报废状态")
     scrap_time: date | None = Field(default=None, description="报废时间")
@@ -214,20 +214,3 @@ class EquipmentStatistics(BaseModel):
     by_status: dict[str, int]
     by_category: dict[str, int]
     by_location: dict[str, int]
-
-
-# ==================== Excel 导入 ====================
-class ImportRowError(BaseModel):
-    """单行导入错误"""
-
-    row: int = Field(..., description="Excel 行号（从 2 开始，第 1 行为表头）")
-    message: str = Field(..., description="错误描述")
-
-
-class EquipmentImportResponse(BaseModel):
-    """Excel 导入结果"""
-
-    imported: int = Field(..., description="成功导入数量")
-    skipped: int = Field(..., description="跳过数量")
-    errors: list[ImportRowError] = Field(default_factory=list, description="错误明细")
-    warnings: list[ImportRowError] = Field(default_factory=list, description="警告明细")

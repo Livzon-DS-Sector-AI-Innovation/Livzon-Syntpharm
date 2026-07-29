@@ -93,13 +93,13 @@ export function WorkshopTable() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await getWorkshops({
+      const result: any = await getWorkshops({
         category: categoryFilter,
         page,
         page_size: pageSize,
       })
-      setWorkshops((result as any).items || [])
-      setTotal((result as any).total || 0)
+      setWorkshops(result.items || [])
+      setTotal(result.total || 0)
     } catch (error) {
       message.error('加载车间列表失败')
     } finally {

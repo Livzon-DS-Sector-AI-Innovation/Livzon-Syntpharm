@@ -46,7 +46,7 @@ class EnergyBitableCrossImport:
 
     def __init__(self, app_token: str | None = None) -> None:
         self.client = FeishuClient()
-        self.app_token = app_token or _settings.FEISHU_BITABLE_ENERGY_APP_TOKEN  # type: ignore[attr-defined]
+        self.app_token = app_token or _settings.feishu.energy.app_token
 
     async def list_tables(self) -> list[dict[str, Any]]:
         """获取多维表格中的所有数据表（自动分页）。"""

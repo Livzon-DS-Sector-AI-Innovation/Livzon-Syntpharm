@@ -158,7 +158,10 @@ class DeviationReporterReminderService:
         for i, d in enumerate(deviations[:5], 1):  # 最多显示5条
             status_label = self._get_status_label(d["status"])
             remaining = d.get("remaining_days", 0)
-            deviation_list_md += f"{i}. **{d['deviation_no']}** - {d['theme'][:20]}...\n   当前状态：{status_label} | 剩余完成天数：{remaining}天\n"  # noqa: E501
+            deviation_list_md += (
+                f"{i}. **{d['deviation_no']}** - {d['theme'][:20]}...\n"
+                f"   当前状态：{status_label} | 剩余完成天数：{remaining}天\n"
+            )
 
         if count > 5:
             deviation_list_md += f"\n...还有 {count - 5} 条偏差任务待处理"

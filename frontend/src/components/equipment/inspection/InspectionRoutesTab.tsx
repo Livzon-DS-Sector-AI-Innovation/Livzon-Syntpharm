@@ -5,16 +5,15 @@ import { App, Button, Space, Table, Input } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useInspectionStore } from '@/stores/inspection'
-import { deleteInspectionRoute } from '@/actions/equipment'
-import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
-import { statusPill, pillSuccess, pillNeutral, linkPurple, linkPrimary, linkDanger } from '@/components/equipment/shared/shared-styles'
+import { deleteInspectionRoute } from '@/actions/inspection'
+import { fetchInspectionRoutes } from '@/lib/api/inspection'
+import { statusPill, pillSuccess, pillNeutral, linkPurple, linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
 import type { InspectionRoute } from '@/types/inspection'
 import type { InspectionTemplate } from '@/types/equipment'
 
-
 interface Props {
   templates: InspectionTemplate[]
-  equipments: { id: string; name: string; asset_no: string }[]
+  equipments: { id: string; name: string; equipment_no: string }[]
 }
 
 export function InspectionRoutesTab({ templates, equipments }: Props) {
@@ -47,9 +46,8 @@ export function InspectionRoutesTab({ templates, equipments }: Props) {
       okText: '确认删除', cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await deleteInspectionRoute(r.id)
-        if (!result.success) { message.error(result.error); return }
-        message.success('已删除'); load()
+        try { await deleteInspectionRoute(r.id); message.success('已删除'); load() }
+        catch (err: unknown) { message.error((err as Error).message || '删除失败') }
       },
     })
   }, [modal, message, load])

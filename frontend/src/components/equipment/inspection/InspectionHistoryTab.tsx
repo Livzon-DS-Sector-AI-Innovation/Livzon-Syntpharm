@@ -6,16 +6,16 @@ import { EyeOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { useInspectionStore } from '@/stores/inspection'
-import { fetchInspectionHistory } from '@/lib/api/client/inspection'
-import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkPrimary } from '@/components/equipment/shared/shared-styles'
+import { fetchInspectionHistory } from '@/lib/api/inspection'
+import { fetchPersonnelList } from '@/lib/api/equipment-personnel'
+import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkPrimary } from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionOverallResult } from '@/types/inspection'
-import type { Personnel } from '@/types/equipment'
+import type { Personnel } from '@/types/equipment-personnel'
 
 const { RangePicker } = DatePicker
 
 interface Props {
-  equipments: { id: string; name: string; asset_no: string }[]
+  equipments: { id: string; name: string; equipment_no: string }[]
 }
 
 export function InspectionHistoryTab({ equipments }: Props) {
@@ -132,7 +132,7 @@ export function InspectionHistoryTab({ equipments }: Props) {
           onChange={(e) => {
             const v = e.target.value
             if (!v) { setHistoryEquipmentId(null); return }
-            const eq = equipments.find(x => x.name.includes(v) || x.asset_no.includes(v))
+            const eq = equipments.find(x => x.name.includes(v) || x.equipment_no.includes(v))
             setHistoryEquipmentId(eq?.id || null)
           }}
         />

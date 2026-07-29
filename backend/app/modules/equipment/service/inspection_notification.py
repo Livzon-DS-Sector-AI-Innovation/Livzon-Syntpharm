@@ -138,7 +138,7 @@ def _build_card_content(
 
     Args:
         locations_info: 线路巡检的地点信息列表，每项:
-            {location_name, sort_order, equipment: [{name, asset_no}]}
+            {location_name, sort_order, equipment: [{name, equipment_no}]}
     """
     plan_type = task.plan_type or "设备巡检"
     lines = [
@@ -185,7 +185,7 @@ def _build_card_content(
     # 检查项目
     lines.append("")
     lines.append("---")
-    lines.append("**📋 所有检查项目：**")
+    lines.append("**📋 检查项目：**")
     lines.append("")
 
     if items:
@@ -196,6 +196,14 @@ def _build_card_content(
             lines.append(f"> 还有 {len(items) - 20} 项，请在系统中查看")
     else:
         lines.append("请在系统中查看检查项目详情")
+
+    # 引导提示
+    lines.append("")
+    lines.append("---")
+    lines.append("**💡 开始巡检：**")
+    lines.append("到达设备现场后，回复「**开始**」进入逐台引导模式。")
+    lines.append("或直接发送设备照片，AI 将自动识别检查项。")
+    lines.append("回复「**帮助**」查看完整命令列表。")
 
     return "\n".join(lines)
 
@@ -219,7 +227,7 @@ async def send_inspection_start_notification(
         task.status,
         task.assignee.name if task.assignee else "N/A",
         task.assignee.feishu_user_id if task.assignee else "N/A",
-        settings.feishu.platform.equipment_chat_id or "(not set)",
+        settings.FEISHU_EQUIPMENT_CHAT_ID or "(not set)",  # type: ignore[attr-defined]
     )
 
     try:
@@ -240,7 +248,7 @@ async def send_inspection_start_notification(
                         eq_list.append(
                             {
                                 "name": eq.equipment.name,
-                                "asset_no": eq.equipment.asset_no or "",
+                                "equipment_no": eq.equipment.equipment_tag or "",
                             }
                         )
                 locations_info.append(
@@ -287,7 +295,7 @@ async def send_inspection_start_notification(
             )
 
         # 2) 群聊通知
-        chat_id = settings.feishu.platform.equipment_chat_id
+        chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID  # type: ignore[attr-defined]
         if chat_id:
             logger.info("  Sending group notification to chat_id=%s...", chat_id)
             group_ok = await send_group_card(chat_id, title, content)
@@ -344,7 +352,7 @@ async def send_work_order_notification(
         lines = [
             f"**工单编号：**{work_order.work_order_no}",
             f"**设备名称：**{equipment.name}",
-            f"**设备编号：**{equipment.asset_no}",
+            f"**设备编号：**{equipment.equipment_tag}",
             f"**优先级：**{work_order.priority}",
             f"**异常描述：**{work_order.fault_description or '-'}",
             f"**来源巡检：**{task.task_no}",

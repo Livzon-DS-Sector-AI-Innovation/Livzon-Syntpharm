@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Work order repository functions."""
 
 import uuid
@@ -9,9 +8,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models import WorkOrder
-from app.modules.equipment.service.data_scope import apply_equipment_scope
+from app.modules.equipment.models.spare_part import SparePartTransaction
 
 
 async def create_work_order(
@@ -85,9 +83,7 @@ async def count_open_work_orders_by_equipment(
 
 async def get_work_orders(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     status: str | None = None,
-    exclude_status: str | None = None,
     equipment_id: uuid.UUID | None = None,
     priority: str | None = None,
     order_type: str | None = None,
@@ -110,13 +106,8 @@ async def get_work_orders(
         .where(WorkOrder.is_deleted == False)  # noqa: E712
     )
 
-    # Apply data scope filtering based on reporter_id
-    query = apply_equipment_scope(query, ctx, WorkOrder.reporter_id, "user_id")
-
     if status:
         query = query.where(WorkOrder.status == status)
-    if exclude_status:
-        query = query.where(WorkOrder.status != exclude_status)
     if equipment_id:
         query = query.where(WorkOrder.equipment_id == equipment_id)
     if priority:
@@ -134,38 +125,32 @@ async def get_work_orders(
     return list(result.scalars().all()), total
 
 
-async def get_work_order_statistics(
-    db: AsyncSession,
-    ctx: EquipmentAccessContext,
-    exclude_status: str | None = None,
-) -> dict[str, Any]:
-    """获取工单统计（按数据范围过滤）"""
-    base_where = WorkOrder.is_deleted == False  # noqa: E712
-    if exclude_status:
-        base_where = base_where & (WorkOrder.status != exclude_status)
-
-    # 按 reporter_id（user_id 模式）过滤数据范围
-    def _apply_scope(q):
-        return apply_equipment_scope(q, ctx, WorkOrder.reporter_id, "user_id")
-
-    total_query = _apply_scope(select(func.count()).where(base_where))
-    total_result = await db.execute(total_query)
+async def get_work_order_statistics(db: AsyncSession) -> dict[str, Any]:
+    """获取工单统计"""
+    total_result = await db.execute(
+        select(func.count()).where(WorkOrder.is_deleted == False)  # noqa: E712
+    )
     total = total_result.scalar() or 0
 
-    status_query = _apply_scope(select(WorkOrder.status, func.count()).where(base_where).group_by(WorkOrder.status))
-    status_result = await db.execute(status_query)
+    status_result = await db.execute(
+        select(WorkOrder.status, func.count())
+        .where(WorkOrder.is_deleted == False)  # noqa: E712
+        .group_by(WorkOrder.status)
+    )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
-    type_query = _apply_scope(
-        select(WorkOrder.order_type, func.count()).where(base_where).group_by(WorkOrder.order_type)
+    type_result = await db.execute(
+        select(WorkOrder.order_type, func.count())
+        .where(WorkOrder.is_deleted == False)  # noqa: E712
+        .group_by(WorkOrder.order_type)
     )
-    type_result = await db.execute(type_query)
     by_type = {row[0]: row[1] for row in type_result.all()}
 
-    priority_query = _apply_scope(
-        select(WorkOrder.priority, func.count()).where(base_where).group_by(WorkOrder.priority)
+    priority_result = await db.execute(
+        select(WorkOrder.priority, func.count())
+        .where(WorkOrder.is_deleted == False)  # noqa: E712
+        .group_by(WorkOrder.priority)
     )
-    priority_result = await db.execute(priority_query)
     by_priority = {row[0]: row[1] for row in priority_result.all()}
 
     return {
@@ -179,10 +164,8 @@ async def get_work_order_statistics(
 async def create_material_consumption(
     db: AsyncSession,
     data: dict[str, Any],
-) -> "SparePartTransaction":  # noqa: F821
+) -> SparePartTransaction:  # noqa: F821
     """创建领料记录"""
-    from app.modules.equipment.models.spare_part import SparePartTransaction
-
     transaction = SparePartTransaction(**data)
     db.add(transaction)
     await db.flush()
@@ -192,9 +175,8 @@ async def create_material_consumption(
 async def get_material_consumptions(
     db: AsyncSession,
     work_order_id: uuid.UUID,
-) -> list["SparePartTransaction"]:  # noqa: F821
+) -> list[SparePartTransaction]:  # noqa: F821
     """获取工单领料记录"""
-    from app.modules.equipment.models.spare_part import SparePartTransaction
 
     result = await db.execute(
         select(SparePartTransaction)
@@ -246,11 +228,7 @@ async def get_user_work_orders(
 
     result = await db.execute(
         select(WorkOrder)
-        .options(
-            selectinload(WorkOrder.equipment),
-            selectinload(WorkOrder.assignee),
-            selectinload(WorkOrder.reporter),
-        )
+        .options(selectinload(WorkOrder.equipment))
         .where(
             or_(
                 WorkOrder.assignee_id == user_id,
@@ -287,21 +265,3 @@ async def get_work_order_by_no(
         )
     )
     return result.scalar_one_or_none()
-
-
-async def count_open_fault_work_orders(
-    db: AsyncSession,
-    equipment_id: uuid.UUID,
-) -> int:
-    """统计设备未关闭的故障维修工单数"""
-    result = await db.execute(
-        select(func.count())
-        .select_from(WorkOrder)
-        .where(
-            WorkOrder.equipment_id == equipment_id,
-            WorkOrder.order_type == "故障维修",
-            WorkOrder.status.notin_(["已完成", "已关闭"]),
-            WorkOrder.is_deleted == False,  # noqa: E712
-        )
-    )
-    return result.scalar() or 0

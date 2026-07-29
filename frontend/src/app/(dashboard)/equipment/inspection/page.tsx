@@ -1,13 +1,13 @@
 import { InspectionPage } from '@/components/equipment/inspection'
-import { fetchInspectionTemplates } from '@/lib/api/server/equipment'
-import { fetchEquipments, fetchCategories, fetchLocationTree } from '@/lib/api/server/equipment'
+import { fetchInspectionTemplates } from '@/actions/equipment'
+import { fetchEquipments, fetchCategories, fetchLocationTree } from '@/actions/equipment'
 import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment'
 
 export const dynamic = 'force-dynamic'
 
 export default async function InspectionPageWrapper() {
   let templates: InspectionTemplate[] = []
-  let equipments: { id: string; name: string; asset_no: string; location_id: string }[] = []
+  let equipments: { id: string; name: string; equipment_no: string }[] = []
   let categories: EquipmentCategory[] = []
   let locations: { id: string; name: string; code: string }[] = []
 
@@ -22,8 +22,7 @@ export default async function InspectionPageWrapper() {
     equipments = (equipmentsResult.items || []).map((e: any) => ({
       id: e.id,
       name: e.name,
-      asset_no: e.asset_no,
-      location_id: e.location_id,
+      equipment_no: e.equipment_no,
     }))
     categories = categoriesResult || []
     locations = (locationsResult || []).map((l: any) => ({

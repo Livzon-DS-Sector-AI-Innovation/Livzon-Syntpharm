@@ -1,6 +1,5 @@
 """Work order image service."""
 
-import logging
 import os
 import uuid
 
@@ -11,8 +10,6 @@ from app.core.config import get_settings
 from app.core.exceptions import AppException, NotFoundException
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models.work_order_image import WorkOrderImage
-
-logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 
@@ -99,7 +96,7 @@ async def delete_image(db: AsyncSession, image_id: uuid.UUID) -> None:
         try:
             delete_object("equipment", image.file_path)
         except Exception:
-            logger.warning("Failed to delete image from MinIO")
+            pass
     elif os.path.exists(image.file_path):
         os.remove(image.file_path)
 

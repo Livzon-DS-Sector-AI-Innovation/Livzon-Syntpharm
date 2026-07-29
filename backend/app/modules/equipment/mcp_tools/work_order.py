@@ -187,7 +187,7 @@ async def operate_work_order(
     eq_name = wo.equipment.name if wo.equipment else "未知设备"
 
     if action == "start":
-        result = await start_work_order(db, wo.id, ctx)
+        result = await start_work_order(db, wo.id, ctx)  # type: ignore[call-arg]
         await db.commit()
         return ToolResult(
             content=f"工单 {result.work_order_no} 已开始维修（{eq_name}），状态：待处理 → {result.status}",
@@ -209,7 +209,7 @@ async def operate_work_order(
     from app.modules.equipment.schemas.work_order import WorkOrderComplete
 
     data = WorkOrderComplete(repair_detail=repair_detail.strip())
-    result = await complete_work_order(db, wo.id, data, ctx)
+    result = await complete_work_order(db, wo.id, data, ctx)  # type: ignore[call-arg]
     await db.commit()
     return ToolResult(
         content=f"工单 {result.work_order_no} 维修完成（{eq_name}），状态：执行中 → {result.status}",

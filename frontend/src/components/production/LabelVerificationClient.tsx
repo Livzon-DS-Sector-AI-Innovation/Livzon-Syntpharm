@@ -354,7 +354,7 @@ export default function LabelVerificationClient({
         </Descriptions>
 
         {result.notes && (
-          <Alert type="info" message={result.notes} style={{ marginTop: 8 }} showIcon />
+          <Alert type="info" title={result.notes} style={{ marginTop: 8 }} showIcon />
         )}
 
         {result.confidence < 70 && (

@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import { App, Drawer, Select, Checkbox, Button, Switch, Popconfirm, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
-import { fetchRouteSchedules } from '@/lib/api/client/inspection'
-import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import { createSchedule, updateSchedule, deleteSchedule } from '@/actions/equipment'
+import { fetchRouteSchedules } from '@/lib/api/inspection'
+import { fetchPersonnelList } from '@/lib/api/equipment-personnel'
+import { createSchedule, updateSchedule, deleteSchedule } from '@/actions/inspection'
 import { PersonnelSelect } from '@/components/equipment'
 import type { InspectionRouteSchedule } from '@/types/inspection'
-import type { Personnel } from '@/types/equipment'
+import type { Personnel } from '@/types/equipment-personnel'
 
 const C = {
   navy: '#0a1530',
@@ -113,36 +113,32 @@ export function InspectionScheduleDrawer() {
     if (!scheduleRouteId) return
     if (!assigneeId) { message.warning('请选择巡检人员'); return }
     if (times.length === 0) { message.warning('请选择时间'); return }
-    let created = 0
-    for (const t of times) {
-      try {
+    try {
+      for (const t of times) {
         const cron = buildCron(freqType, t, weekDays, monthDays)
-        const result = await createSchedule(scheduleRouteId, { cron_expression: cron, assigned_to: assigneeId, is_active: true })
-        if (!result.success) { message.error(`添加 ${t} 失败: ${result.error}`); return }
-        created++
-      } catch (e: unknown) {
-        message.error(`构建定时表达式失败 (${t}): ${(e as Error).message || '未知错误'}`)
-        return
+        await createSchedule(scheduleRouteId, { cron_expression: cron, assigned_to: assigneeId, is_active: true })
       }
-    }
-    message.success(`已添加 ${created} 个定时任务`)
-    setTimes(['09:00']); setWeekDays([1]); setMonthDays([1]); setAssigneeId(undefined)
-    load()
+      message.success(`已添加 ${times.length} 个定时任务`)
+      setTimes(['09:00']); setWeekDays([1]); setMonthDays([1]); setAssigneeId(undefined)
+      load()
+    } catch (e: unknown) { message.error((e as Error).message || '添加失败') }
   }
 
   const handleToggle = async (s: InspectionRouteSchedule) => {
     if (!scheduleRouteId) return
-    const result = await updateSchedule(scheduleRouteId, s.id, { is_active: !s.is_active })
-    if (!result.success) { message.error(result.error); return }
-    load()
+    try {
+      await updateSchedule(scheduleRouteId, s.id, { is_active: !s.is_active })
+      load()
+    } catch (e: unknown) { message.error((e as Error).message || '操作失败') }
   }
 
   const handleDelete = async (s: InspectionRouteSchedule) => {
     if (!scheduleRouteId) return
-    const result = await deleteSchedule(scheduleRouteId, s.id)
-    if (!result.success) { message.error(result.error); return }
-    message.success('已删除')
-    load()
+    try {
+      await deleteSchedule(scheduleRouteId, s.id)
+      message.success('已删除')
+      load()
+    } catch (e: unknown) { message.error((e as Error).message || '删除失败') }
   }
 
   return (

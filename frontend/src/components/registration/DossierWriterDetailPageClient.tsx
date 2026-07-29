@@ -16,12 +16,9 @@ import dayjs from 'dayjs'
 import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
   getDownloadUrl, getChapterPreview, fetchChapterAssets,
-  getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets, uploadTemplatesClient,
+  getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets,
 } from '@/lib/api/client/dossier-writer'
-import {
-  uploadChapterAsset, deleteChapterAsset, exportDossier, parseTemplates,
-  matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage,
-} from '@/actions/dossier-writer'
+import { uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, parseTemplates, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage } from '@/actions/dossier-writer'
 import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/types/dossier-writer'
 import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
@@ -296,7 +293,7 @@ export function DossierWriterDetailPageClient() {
     setParsing(true)
     try {
       const fileArray = Array.from(files)
-      const result: UploadResponse = await uploadTemplatesClient(dossierId, files)
+      const result: UploadResponse = await uploadTemplates(dossierId, files)
       if (result.success_count > 0) {
         message.success(`上传成功 ${result.success_count} 个文件，已自动匹配 ${result.matched_count || 0} 个章节`)
       }

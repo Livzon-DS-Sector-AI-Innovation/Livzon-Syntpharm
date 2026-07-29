@@ -89,9 +89,9 @@ export async function deleteProductDossier(id: string): Promise<void> {
 }
 
 // ====== Template Upload & Parsing ======
-export async function uploadTemplates(dossierId: string, files: File[]): Promise<UploadResponse> {
+export async function uploadTemplates(dossierId: string, files: any): Promise<UploadResponse> {
   const formData = new FormData()
-  files.forEach(file => formData.append('files', file))
+  files.forEach((file: any) => formData.append('files', file))
 
   const res = await fetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
     method: 'POST',
@@ -114,10 +114,10 @@ export async function parseTemplates(dossierId: string): Promise<ParseResult> {
 // ====== Chapter Asset ======
 export async function uploadChapterAsset(
   chapterId: string,
-  files: File[]
+  files: any
 ): Promise<{ assets: ChapterAsset[]; count: number }> {
   const formData = new FormData()
-  files.forEach(file => formData.append('files', file))
+  files.forEach((file: any) => formData.append('files', file))
 
   const res = await fetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`, {
     method: 'POST',
@@ -245,3 +245,4 @@ export async function toggleAssetUsage(
   revalidatePath('/registration/dossier-writer')
   return result
 }
+

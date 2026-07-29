@@ -44,7 +44,7 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
     }
     setSubmitting(true)
     try {
-      const result = editingLocation
+      const result: any = editingLocation
         ? await updateLocation(editingLocation.id, values)
         : await createLocation(values)
       if (!result.success) {

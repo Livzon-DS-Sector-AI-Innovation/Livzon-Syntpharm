@@ -96,7 +96,15 @@ export async function fetchAlertRules(params?: any): Promise<{ items: any[]; tot
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  // 直接使用 fetch 获取完整响应，保留 meta 信息
+  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
 export async function fetchAlertRuleById(id: string): Promise<any> {
@@ -115,7 +123,15 @@ export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; t
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  // 直接使用 fetch 获取完整响应，保留 meta 信息
+  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
 // ── 设备写操作 ──
@@ -182,36 +198,102 @@ export async function processAlertRecord(id: string, data: ProcessRecordInput) {
 
 // ─── Workshop ───
 
-export async function fetchWorkshops(params: Record<string, unknown>, headers: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops`, { headers })
+export async function fetchWorkshops(params?: Record<string, unknown>): Promise<any> {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) searchParams.set(k, String(v))
+    })
+  }
+  const qs = searchParams.toString()
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
 }
 
-export async function createWorkshop(data: Record<string, unknown>, headers: Record<string, string>) {
+export async function fetchWorkshopById(id: string): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`)
+}
+
+export async function createWorkshop(data: Record<string, unknown>): Promise<any> {
   return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops`, {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: { ...headers, 'Content-Type': 'application/json' },
   })
 }
 
-export async function updateWorkshop(id: string, data: Record<string, unknown>, headers: Record<string, string>) {
+export async function updateWorkshop(id: string, data: Record<string, unknown>): Promise<any> {
   return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
-    headers: { ...headers, 'Content-Type': 'application/json' },
   })
 }
 
-export async function deleteWorkshop(id: string, headers: Record<string, string>) {
+export async function deleteWorkshop(id: string): Promise<any> {
   return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`, {
     method: 'DELETE',
-    headers,
   })
 }
 
 // ─── Monthly Records ───
 
-export async function fetchMonthlyRecords(params: Record<string, unknown>, headers: Record<string, string>) {
-  const qs = new URLSearchParams(params as Record<string, string>).toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly${qs ? '?' + qs : ''}`, { headers })
+export async function fetchMonthlyRecords(params?: Record<string, unknown>): Promise<any> {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) searchParams.set(k, String(v))
+    })
+  }
+  const qs = searchParams.toString()
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
+}
+
+export async function fetchMonthlyRecordById(id: string): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly/${id}`)
+}
+
+export async function createMonthlyRecord(data: Record<string, unknown>): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteMonthlyRecord(id: string): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+// ─── Feishu Import ───
+
+export async function importFromFeishu(data: Record<string, unknown>): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/import/feishu`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function crossImportFromBitable(data: Record<string, unknown>): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/cross-import`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function syncBitableDailyData(): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/daily-import`, {
+    method: 'POST',
+  })
+}
+
+// ─── Alerts ───
+
+export async function checkAlerts(checkDate: string): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/check`, {
+    method: 'POST',
+    body: JSON.stringify({ check_date: checkDate }),
+  })
+}
+
+export async function fetchAlertDates(): Promise<any> {
+  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/dates`)
 }

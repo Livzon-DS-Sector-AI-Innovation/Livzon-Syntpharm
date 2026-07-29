@@ -23,9 +23,9 @@ class EnergyBitableSync:
 
     def __init__(self) -> None:
         self.client = FeishuClient()
-        self.app_token = _settings.FEISHU_BITABLE_ENERGY_APP_TOKEN  # type: ignore[attr-defined]
-        self.workshop_table_id = _settings.FEISHU_BITABLE_ENERGY_WORKSHOP_TABLE_ID  # type: ignore[attr-defined]
-        self.monthly_table_id = _settings.FEISHU_BITABLE_ENERGY_MONTHLY_TABLE_ID  # type: ignore[attr-defined]
+        self.app_token = _settings.feishu.energy.app_token
+        self.workshop_table_id = _settings.feishu.energy.workshop_table_id
+        self.monthly_table_id = _settings.feishu.energy.monthly_table_id
 
     def _is_enabled(self) -> bool:
         return bool(self.app_token)

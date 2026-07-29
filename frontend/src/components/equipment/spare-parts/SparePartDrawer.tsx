@@ -51,7 +51,7 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
         unit_price: values.unit_price ?? undefined,
         is_active: values.is_active,
       }
-      const result = await updateSparePart(editingSparePart.id, data)
+      const result: any = await updateSparePart(editingSparePart.id, data)
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
@@ -65,7 +65,7 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
         unit_price: values.unit_price ?? undefined,
         is_active: values.is_active,
       }
-      const result = await createSparePart(data)
+      const result: any = await createSparePart(data)
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }

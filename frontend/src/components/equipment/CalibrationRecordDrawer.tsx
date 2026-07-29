@@ -20,8 +20,10 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
   const { calibrationRecordDrawerOpen, editingCalibrationRecord, closeCalibrationRecordDrawer } = useEquipmentStore()
 
   useEffect(() => {
-    if (calibrationRecordDrawerOpen) {
-      if (editingCalibrationRecord) {
+    if (!calibrationRecordDrawerOpen) return
+    const timer = setTimeout(() => {
+      if (editingCalibrationRecord && editingCalibrationRecord.id) {
+        // 真正的编辑模式（有 id 的记录）
         form.setFieldsValue({
           calibration_plan_id: editingCalibrationRecord.calibration_plan_id,
           calibration_type: editingCalibrationRecord.calibration_type,
@@ -32,10 +34,18 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
           remark: editingCalibrationRecord.remark,
         })
       } else {
+        // 新建模式（可能从计划预填 calibration_plan_id）
         form.resetFields()
-        form.setFieldsValue({ calibration_date: dayjs(), result: '合格' })
+        const prefill = editingCalibrationRecord as { calibration_plan_id?: string; calibration_type?: string } | null
+        form.setFieldsValue({
+          calibration_date: dayjs(),
+          result: '合格',
+          calibration_plan_id: prefill?.calibration_plan_id,
+          calibration_type: prefill?.calibration_type,
+        })
       }
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [calibrationRecordDrawerOpen, editingCalibrationRecord, form])
 
   const handlePlanChange = (planId: string) => {

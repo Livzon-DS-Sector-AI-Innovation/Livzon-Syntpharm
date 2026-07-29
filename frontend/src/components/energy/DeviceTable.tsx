@@ -27,7 +27,7 @@ const energyTypeConfig: Record<EnergyType, ReturnType<typeof luxuryPill>> = {
   electricity: luxuryPill('#0075de', '#dcecfa'),
   water: luxuryPill('#1aae39', '#d9f3e1'),
   steam: luxuryPill('#dd5b00', '#ffe8d4'),
-  natural_gas: luxuryPill('#9900cc', '#f3e8ff'),
+  natural_gas: luxuryPill('#8b5cf6', '#ede9fe'),
 }
 
 const monitorConfig: Record<string, ReturnType<typeof luxuryPill>> = {

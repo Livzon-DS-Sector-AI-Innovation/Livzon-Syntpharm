@@ -1,3 +1,9 @@
+import type { components } from '@/types/generated/schema'
+export type CreateInspectionTemplateInput = components['schemas']['InspectionTemplateCreate']
+export type UpdateInspectionTemplateInput = components['schemas']['InspectionTemplateUpdate']
+export type CreateInspectionTemplateItemInput = components['schemas']['InspectionTemplateItemCreate']
+export type UpdateInspectionTemplateItemInput = components['schemas']['InspectionTemplateItemUpdate']
+
 // ==================== 巡检模板 ====================
 export interface InspectionTemplate {
   id: string
@@ -26,36 +32,9 @@ export interface InspectionTemplateItem {
   updated_at: string
 }
 
-export interface CreateInspectionTemplateInput {
-  name: string
-  description?: string
-  equipment_category_id?: string
-  is_active?: boolean
-  items?: CreateInspectionTemplateItemInput[]
-}
 
-export interface UpdateInspectionTemplateInput {
-  name?: string
-  description?: string
-  equipment_category_id?: string
-  is_active?: boolean
-}
 
-export interface CreateInspectionTemplateItemInput {
-  item_name: string
-  item_description?: string
-  expected_result?: string
-  check_method?: string
-  sort_order?: number
-}
 
-export interface UpdateInspectionTemplateItemInput {
-  item_name?: string
-  item_description?: string
-  expected_result?: string
-  check_method?: string
-  sort_order?: number
-}
 
 export interface InspectionTemplateFilters {
   equipment_category_id?: string

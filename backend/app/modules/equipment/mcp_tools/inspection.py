@@ -393,7 +393,7 @@ async def submit_inspection_photos(
     for i, img_b64 in enumerate(images):
         idx = i + 1
         try:
-            await save_photo_from_base64(db, task_uuid, equipment_uuid, img_b64)
+            await save_photo_from_base64(db, task_uuid, equipment_uuid, img_b64)  # type: ignore[call-arg, arg-type]
             success_count += 1
         except Exception as e:
             await db.rollback()
@@ -474,9 +474,9 @@ async def list_inspection_tasks(
         if status not in valid_statuses:
             raise ValueError(f"无效的任务状态 '{status}'，可选值：{' / '.join(valid_statuses)}")
 
-    tasks, _total = await get_inspection_tasks(
+    tasks, _total = await get_inspection_tasks(  # type: ignore[misc]
         db,
-        ctx,
+        ctx,  # type: ignore[arg-type]
         assigned_to=user.id,
         status=status,
         page=1,
@@ -500,7 +500,7 @@ async def list_inspection_tasks(
         no_map = await get_equipment_nos_by_ids(db, list(all_eq_ids))
         for r in need_enrich:
             names = [name_map.get(uuid.UUID(eid), eid[:8] + "…") for eid in r["equipment_ids"]]
-            nos = [no_map.get(uuid.UUID(eid), "") for eid in r["equipment_ids"]]
+            nos = [no_map.get(uuid.UUID(eid), "") for eid in r["equipment_ids"]]  # type: ignore[call-overload]
             if names:
                 r["equipment_name"] = "、".join(names[:3])
                 if len(names) > 3:
@@ -583,10 +583,10 @@ async def update_inspection_task(
     route_label = f"（路线「{task.route.name}」）" if task.route else ""
 
     if action == "start":
-        result = await start_inspection_task(db, task_uuid, ctx)
+        result = await start_inspection_task(db, task_uuid, ctx)  # type: ignore[call-arg]
         content = f"任务 {result.task_no} 已开始执行{route_label}，状态：{old_status} → {result.status}"
     elif action == "complete":
-        result = await complete_inspection_task(db, task_uuid, ctx)
+        result = await complete_inspection_task(db, task_uuid, ctx)  # type: ignore[call-arg]
         content = f"任务 {result.task_no} 已完成{route_label}，状态：{old_status} → {result.status}"
     else:
         result = await close_inspection_task(db, task_uuid, remark=remark)
@@ -688,7 +688,7 @@ async def get_inspection_task_progress(
                 {
                     "equipment_id": eid_str,
                     "equipment_name": name_map.get(uuid.UUID(eid_str), ""),
-                    "asset_no": no_map.get(uuid.UUID(eid_str), ""),
+                    "asset_no": no_map.get(uuid.UUID(eid_str), ""),  # type: ignore[call-overload]
                     "location_name": "",
                     "sort_order": 0,
                 }

@@ -16,16 +16,13 @@ import { InspectionRouteDrawer } from './InspectionRouteDrawer'
 import { InspectionScheduleDrawer } from './InspectionScheduleDrawer'
 import { InspectionRouteEquipmentDrawer } from './InspectionRouteEquipmentDrawer'
 import { InspectionDetailDrawer } from './InspectionDetailDrawer'
-import { InspectionTemplateTable } from './InspectionTemplateTable'
-import { InspectionTemplateDrawer } from './InspectionTemplateDrawer'
-import { InspectionItemDrawer } from './InspectionItemDrawer'
-import { fetchInspectionTemplatesClient } from '@/lib/api/client/equipment'
+import { InspectionTemplateTable, InspectionTemplateDrawer, InspectionItemDrawer } from '@/components/equipment'
+import { fetchInspectionTemplatesClient } from '@/lib/api/equipment-client'
 import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment'
-
 
 interface Props {
   initialTemplates: InspectionTemplate[]
-  initialEquipments: { id: string; name: string; asset_no: string; location_id: string }[]
+  initialEquipments: { id: string; name: string; equipment_no: string }[]
   initialCategories: EquipmentCategory[]
   initialLocations: { id: string; name: string; code: string }[]
 }

@@ -1,7 +1,14 @@
+import type { components } from '@/types/generated/schema'
+export type CreateWorkOrderInput = components['schemas']['WorkOrderCreate']
+export type UpdateWorkOrderInput = components['schemas']['WorkOrderUpdate']
+export type AssignWorkOrderInput = components['schemas']['WorkOrderAssign']
+export type CompleteWorkOrderInput = components['schemas']['WorkOrderComplete']
+export type VerifyWorkOrderInput = components['schemas']['WorkOrderVerify']
+
 import type { WorkOrderImage } from './common'
 
 // ==================== 维修工单 ====================
-export type WorkOrderType = '故障维修' | '计划维护' | '校准' | '异常处理' | '日常维护'
+export type WorkOrderType = '故障维修' | '计划维护' | '巡检' | '校准' | '异常处理' | '日常维护'
 export type WorkOrderPriority = '紧急' | '高' | '中' | '低'
 export type WorkOrderStatus = '待处理' | '已指派' | '执行中' | '维修中' | '待验收' | '已完成' | '已关闭'
 export type VerificationResult = '合格' | '不合格'
@@ -49,45 +56,10 @@ export interface WorkOrder {
   images?: WorkOrderImage[]
 }
 
-export interface CreateWorkOrderInput {
-  equipment_id: string
-  order_type?: WorkOrderType
-  priority?: WorkOrderPriority
-  fault_symptom_id?: string
-  fault_cause_id?: string
-  fault_action_id?: string
-  fault_description?: string
-  maintenance_plan_id?: string
-  planned_start_date?: string
-  checklist_template_id?: string
-  responsible_person_id: string
-}
 
-export interface UpdateWorkOrderInput {
-  equipment_id?: string
-  order_type?: WorkOrderType
-  priority?: WorkOrderPriority
-  status?: WorkOrderStatus
-  fault_symptom_id?: string
-  fault_cause_id?: string
-  fault_action_id?: string
-  fault_description?: string
-  planned_start_date?: string
-  responsible_person_id?: string
-}
 
-export interface AssignWorkOrderInput {
-  assignee_id: string
-}
 
-export interface CompleteWorkOrderInput {
-  repair_detail: string
-}
 
-export interface VerifyWorkOrderInput {
-  result: VerificationResult
-  remark?: string
-}
 
 export interface WorkOrderFilters {
   status?: WorkOrderStatus

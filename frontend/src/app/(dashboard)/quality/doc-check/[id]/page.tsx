@@ -422,7 +422,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/quality/doc-check')}>
           返回列表
         </Button>
-        <Alert type="error" message="未找到该记录" style={{ marginTop: 16 }} />
+        <Alert type="error" title="未找到该记录" style={{ marginTop: 16 }} />
       </div>
     )
   }

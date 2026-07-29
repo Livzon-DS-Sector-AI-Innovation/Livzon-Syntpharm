@@ -1,3 +1,5 @@
+'use client'
+
 import { Skeleton } from 'antd'
 import {
   ThunderboltOutlined,
@@ -34,16 +36,25 @@ const cards: StatCardDef[] = [
   },
   {
     key: 'total_steam',
-    title: '气体消耗',
-    suffix: 'm³',
+    title: '蒸汽消耗',
+    suffix: 't',
     icon: <FireOutlined />,
     color: '#dd5b00',
     tint: '#ffe8d4',
   },
+  {
+    key: 'total_natural_gas',
+    title: '天然气消耗',
+    suffix: 'Nm³',
+    icon: <FireOutlined />,
+    color: '#8b5cf6',
+    tint: '#ede9fe',
+  },
 ]
 
 // ── 格式化数值 ──
-function formatValue(v: number): string {
+function formatValue(v: number | undefined | null): string {
+  if (v == null || isNaN(v)) return "0"
   if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(2) + 'M'
   if (Math.abs(v) >= 10_000) return (v / 1_000).toFixed(1) + 'k'
   return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
@@ -59,7 +70,7 @@ export function StatsCards({ statistics, loading = false }: StatsCardsProps) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: 16,
         marginBottom: 20,
       }}

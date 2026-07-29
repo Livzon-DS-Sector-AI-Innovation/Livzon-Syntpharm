@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { App, Drawer, Image, Typography } from 'antd'
 import { ClockCircleOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, CameraOutlined, FileTextOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
-import { fetchInspectionHistoryDetail, getInspectionPhotoUrl } from '@/lib/api/client/inspection'
+import { fetchInspectionHistoryDetail, getInspectionPhotoUrl } from '@/lib/api/inspection'
 import type { InspectionTaskDetail, InspectionRecord } from '@/types/inspection'
 import dayjs from 'dayjs'
 

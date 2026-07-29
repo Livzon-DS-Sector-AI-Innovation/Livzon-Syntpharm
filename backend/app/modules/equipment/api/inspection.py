@@ -10,13 +10,11 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.exceptions import NotFoundException
+from app.core.deps import CurrentUser
+from app.core.exceptions import AppException, NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.equipment import repository as repo
-from app.modules.equipment.deps import (
-    EquipmentAccessContext,
-    require_equipment_access,
-)
+from app.modules.equipment.models.inspection import InspectionTask
 from app.modules.equipment.schemas.inspection import (
     EquipmentCheckResult,
     InspectionAIAnalyzeRequest,
@@ -45,7 +43,13 @@ from app.modules.equipment.service import inspection as inspection_svc
 router = APIRouter()
 
 
-def _task_to_response(task) -> Any:  # type: ignore[no-untyped-def]
+def _require_user(current_user: CurrentUser) -> uuid.UUID:
+    if not current_user:
+        raise AppException(message="需要登录才能执行此操作", status_code=401)
+    return current_user.id
+
+
+def _task_to_response(task: InspectionTask) -> InspectionTaskResponse:
     """将 ORM InspectionTask 转为响应对象，填充关联名称。
     要求调用方已通过 selectinload 预加载 route/equipment/template 关系。"""
     resp = InspectionTaskResponse.model_validate(task)
@@ -60,7 +64,7 @@ def _task_to_response(task) -> Any:  # type: ignore[no-untyped-def]
         resp.route_name = task.route.name
     if task.equipment:
         resp.equipment_name = task.equipment.name
-        resp.asset_no = task.equipment.asset_no
+        resp.equipment_no = task.equipment.equipment_tag
     if hasattr(task, "assignee") and task.assignee:
         resp.assignee_name = task.assignee.name
     return resp
@@ -94,11 +98,9 @@ async def _enrich_multi_device_names(db: AsyncSession, responses: list[Inspectio
 async def create_route(
     data: InspectionRouteCreate,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    route = await inspection_svc.create_route(db, data.model_dump(), ctx)
+    route = await inspection_svc.create_route(db, data.model_dump())
     return success_response(data=InspectionRouteResponse.model_validate(route))
 
 
@@ -110,13 +112,9 @@ async def list_routes(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     routes, total = await inspection_svc.get_routes(
         db,
-        ctx=ctx,
         is_active=is_active,
         location_id=location_id,
         keyword=keyword,
@@ -145,9 +143,6 @@ async def list_routes(
 async def get_route(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     route = await inspection_svc.get_route_by_id(db, route_id)
     resp = InspectionRouteDetailResponse.model_validate(route)
@@ -163,7 +158,9 @@ async def get_route(
                     equipment_id=eq.equipment_id,
                     sort_order=eq.sort_order,
                     equipment_name=(eq.equipment.name if (eq.equipment and not eq.equipment.is_deleted) else None),
-                    asset_no=(eq.equipment.asset_no if (eq.equipment and not eq.equipment.is_deleted) else None),
+                    equipment_no=(
+                        eq.equipment.equipment_tag if (eq.equipment and not eq.equipment.is_deleted) else None
+                    ),
                     templates=[
                         RouteEquipmentTemplateResponse(
                             id=rt.id,
@@ -186,12 +183,9 @@ async def update_route(
     route_id: uuid.UUID,
     data: InspectionRouteUpdate,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
 ) -> JSONResponse:
     update_data = data.model_dump(exclude_unset=True)
-    route = await inspection_svc.update_route(db, route_id, update_data, ctx)
+    route = await inspection_svc.update_route(db, route_id, update_data)
     return success_response(data=InspectionRouteResponse.model_validate(route))
 
 
@@ -199,11 +193,8 @@ async def update_route(
 async def delete_route(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:delete"),
-    ),
 ) -> JSONResponse:
-    await inspection_svc.delete_route(db, route_id, ctx)
+    await inspection_svc.delete_route(db, route_id)
     return success_response(message="删除成功")
 
 
@@ -212,12 +203,9 @@ async def set_route_locations(
     route_id: uuid.UUID,
     data: RouteLocationsBatch,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
 ) -> JSONResponse:
     items = [item.model_dump() for item in data.locations]
-    locations = await inspection_svc.set_route_locations(db, route_id, items, ctx)
+    locations = await inspection_svc.set_route_locations(db, route_id, items)
     resp_list = [
         RouteLocationResponse(
             id=loc.id,
@@ -230,7 +218,7 @@ async def set_route_locations(
                     equipment_id=eq.equipment_id,
                     sort_order=eq.sort_order,
                     equipment_name=eq.equipment.name if eq.equipment else None,
-                    asset_no=eq.equipment.asset_no if eq.equipment else None,
+                    equipment_no=eq.equipment.equipment_tag if eq.equipment else None,
                     templates=[
                         RouteEquipmentTemplateResponse(
                             id=rt.id,
@@ -253,11 +241,9 @@ async def set_route_locations(
 async def create_task(
     data: InspectionTaskCreate,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    task = await inspection_svc.create_task(db, data.model_dump(), ctx)
+    task = await inspection_svc.create_task(db, data.model_dump())
     return success_response(data=_task_to_response(task))
 
 
@@ -273,9 +259,6 @@ async def list_tasks(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     from datetime import datetime as dt_type
 
@@ -284,7 +267,6 @@ async def list_tasks(
 
     tasks, total = await inspection_svc.get_tasks(
         db,
-        ctx=ctx,
         status=status,
         exclude_status=exclude_status,
         route_id=route_id,
@@ -309,14 +291,11 @@ async def list_tasks(
 async def get_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     task = await inspection_svc.get_task_by_id(db, task_id)
     resp = _task_to_response(task)
     # 填充已完成设备列表
-    completed_ids = await repo.get_task_equipment_completed_ids(db, task_id)  # type: ignore[attr-defined]
+    completed_ids = await repo.get_task_equipment_completed_ids(db, task_id)
     resp.completed_equipment_ids = list(completed_ids)
     resp.completed_count = len(completed_ids)
     return success_response(data=resp)
@@ -326,11 +305,9 @@ async def get_task(
 async def start_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    task = await inspection_svc.start_task(db, task_id, ctx)
+    task = await inspection_svc.start_task(db, task_id)
     return success_response(data=_task_to_response(task))
 
 
@@ -338,11 +315,9 @@ async def start_task(
 async def complete_task(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    task = await inspection_svc.complete_task(db, task_id, ctx)
+    task = await inspection_svc.complete_task(db, task_id)
     return success_response(data=_task_to_response(task))
 
 
@@ -351,11 +326,9 @@ async def submit_route_check(
     task_id: uuid.UUID,
     data: RouteCheckSubmit,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    task = await inspection_svc.submit_route_check(db, task_id, data.overall_result, data.route_summary, ctx)
+    task = await inspection_svc.submit_route_check(db, task_id, data.overall_result, data.route_summary)
     return success_response(data=_task_to_response(task))
 
 
@@ -364,11 +337,9 @@ async def close_task(
     task_id: uuid.UUID,
     data: InspectionTaskClose | None = None,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    task = await inspection_svc.close_task(db, task_id, data.closure_remark if data else None, ctx)
+    task = await inspection_svc.close_task(db, task_id, data.closure_remark if data else None)
     return success_response(data=_task_to_response(task))
 
 
@@ -382,12 +353,10 @@ async def submit_equipment_check(
     equipment_id: uuid.UUID,
     data: EquipmentCheckResult,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     records = [r.model_dump() for r in data.records]
-    result = await inspection_svc.submit_equipment_check(db, task_id, equipment_id, records, ctx)
+    result = await inspection_svc.submit_equipment_check(db, task_id, equipment_id, records)
     return success_response(data=[InspectionRecordResponse.model_validate(r) for r in result])
 
 
@@ -400,10 +369,9 @@ async def upload_equipment_photo(
     equipment_id: uuid.UUID,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
@@ -416,10 +384,9 @@ async def upload_task_photo(
     task_id: uuid.UUID,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
@@ -428,26 +395,20 @@ async def upload_task_photo(
 async def get_task_photos(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
     return success_response(data=[InspectionPhotoResponse.model_validate(p) for p in photos])
 
 
 @router.get("/photos/{photo_id}/file", summary="查看照片文件")
-async def get(
+async def serve_photo(
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> Any:
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
 
-    photo = await repo.get_photo_by_id(db, photo_id)  # type: ignore[attr-defined]
+    photo = await repo.get_photo_by_id(db, photo_id)
     if not photo:
         raise NotFoundException("照片", str(photo_id))
 
@@ -469,11 +430,10 @@ async def remove_photo(
     task_id: uuid.UUID,
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    await inspection_svc.delete_photo(db, photo_id, ctx)
+    _require_user(current_user)
+    await inspection_svc.delete_photo(db, photo_id)
     return success_response(message="照片已删除")
 
 
@@ -487,9 +447,6 @@ async def ai_analyze_photo(
     equipment_id: uuid.UUID,
     data: InspectionAIAnalyzeRequest,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
 ) -> JSONResponse:
     from app.modules.equipment.service.ai import analyze_inspection_photo
 
@@ -526,9 +483,6 @@ async def get_history(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     from datetime import date as date_type
 
@@ -537,7 +491,6 @@ async def get_history(
 
     tasks, total = await inspection_svc.get_history(
         db,
-        ctx=ctx,
         date_from=d_from,
         date_to=d_to,
         equipment_id=equipment_id,
@@ -560,9 +513,6 @@ async def get_history(
 async def get_history_detail(
     task_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> JSONResponse:
     detail = await inspection_svc.get_task_detail(db, task_id)
     resp = _task_to_response(detail["task"])
@@ -582,7 +532,7 @@ async def get_history_detail(
                 id=r.id,
                 task_id=r.task_id,
                 equipment_id=r.equipment_id,
-                equipment_name=(eq_name_map.get(r.equipment_id) if r.equipment_id else None),
+                equipment_name=eq_name_map.get(r.equipment_id) if r.equipment_id else None,
                 template_item_id=r.template_item_id,
                 result=r.result,
                 actual_value=r.actual_value,
@@ -605,47 +555,42 @@ async def get_history_detail(
     "/routes/{route_id}/schedules",
     summary="获取路线定时任务列表",
 )
-async def handler(
+async def list_schedules(
     route_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:read"),
-    ),
 ) -> Any:
     schedules = await inspection_svc.get_schedules_by_route(db, route_id)
     return success_response(schedules)
 
 
-@router.post(  # type: ignore[no-redef]
+@router.post(
     "/routes/{route_id}/schedules",
     summary="创建定时任务",
 )
-async def handler(  # noqa: F811
+async def create_schedule(
     route_id: uuid.UUID,
     body: InspectionScheduleCreate,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> Any:
+    _require_user(current_user)
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.create_schedule(db, route_id, data)
     return success_response(InspectionScheduleResponse.model_validate(schedule))
 
 
-@router.put(  # type: ignore[no-redef]
+@router.put(
     "/routes/{route_id}/schedules/{schedule_id}",
     summary="更新定时任务",
 )
-async def handler(  # noqa: F811
+async def update_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
     body: InspectionScheduleUpdate,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> Any:
+    _require_user(current_user)
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.update_schedule(db, schedule_id, data)
     if str(schedule.route_id) != str(route_id):
@@ -653,18 +598,17 @@ async def handler(  # noqa: F811
     return success_response(InspectionScheduleResponse.model_validate(schedule))
 
 
-@router.delete(  # type: ignore[no-redef]
+@router.delete(
     "/routes/{route_id}/schedules/{schedule_id}",
     summary="删除定时任务",
 )
-async def handler(  # noqa: F811
+async def delete_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:inspection:delete"),
-    ),
+    current_user: CurrentUser = None,
 ) -> Any:
+    _require_user(current_user)
     schedule = await repo.get_schedule_by_id(db, schedule_id)
     if not schedule or str(schedule.route_id) != str(route_id):
         raise NotFoundException("定时任务", str(schedule_id))

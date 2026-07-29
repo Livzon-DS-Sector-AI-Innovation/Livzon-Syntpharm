@@ -81,7 +81,7 @@ export function EquipmentTable({ loading = false, onPageChange, onImportClick, r
       okText: '确认', cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await deleteEquipment(record.id)
+        const result: any = await deleteEquipment(record.id)
         if (!result.success) {
           message.error(result.error)
           return

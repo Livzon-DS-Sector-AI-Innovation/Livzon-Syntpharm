@@ -35,7 +35,7 @@ from app.modules.energy.schemas import (
 
 logger = logging.getLogger(__name__)
 
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
 
 
@@ -495,6 +495,7 @@ async def create_monthly_record(db: AsyncSession, data: EnergyMonthlyRecordCreat
     # 验证车间是否存在
     workshop = await repo.get_workshop_by_id(db, data.workshop_id)  # type: ignore[arg-type]
     if workshop is None:
+        raise NotFoundException("车间", data.workshop_id)
         raise NotFoundException("车间", str(data.workshop_id))
     return await repo.create_monthly_record(db, data.model_dump())
 

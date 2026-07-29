@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
 
 logger = logging.getLogger(__name__)
 
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
 
 stop_maintenance_plan_flag = asyncio.Event()
@@ -99,7 +99,7 @@ stop_timeout_flag = asyncio.Event()
 
 async def scan_timeout_work_orders() -> None:
     """扫描超时未接单的工单"""
-    from datetime import UTC, datetime
+    from datetime import datetime
 
     from sqlalchemy import select
 

@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException, DuplicateException, NotFoundException
 from app.modules.equipment import repository as repo
-from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.models.spare_part import (
     SparePart,
     SparePartStock,
@@ -18,7 +17,6 @@ from app.modules.equipment.schemas.spare_part import (
     StockInboundRequest,
     StockWarningResponse,
 )
-from app.modules.equipment.service.data_scope import verify_write_ownership
 
 
 async def create_spare_part(
@@ -49,7 +47,6 @@ async def get_spare_part_by_id(
 
 async def get_spare_parts(
     db: AsyncSession,
-    ctx: EquipmentAccessContext,
     category: str | None = None,
     keyword: str | None = None,
     is_active: bool | None = None,
@@ -59,7 +56,6 @@ async def get_spare_parts(
     """获取备件列表"""
     return await repo.get_spare_parts(
         db,
-        ctx,
         category=category,
         keyword=keyword,
         is_active=is_active,
@@ -72,11 +68,9 @@ async def update_spare_part(
     db: AsyncSession,
     spare_part_id: uuid.UUID,
     data: SparePartUpdate,
-    ctx: EquipmentAccessContext,
 ) -> SparePart:
     """更新备件"""
-    spare_part = await get_spare_part_by_id(db, spare_part_id)
-    await verify_write_ownership(ctx, spare_part, "created_by", "user_id")
+    await get_spare_part_by_id(db, spare_part_id)
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -94,11 +88,9 @@ async def update_spare_part(
 async def delete_spare_part(
     db: AsyncSession,
     spare_part_id: uuid.UUID,
-    ctx: EquipmentAccessContext,
 ) -> bool:
     """删除备件"""
-    spare_part = await get_spare_part_by_id(db, spare_part_id)
-    await verify_write_ownership(ctx, spare_part, "created_by", "user_id")
+    await get_spare_part_by_id(db, spare_part_id)
     return await repo.delete_spare_part(db, spare_part_id)
 
 
@@ -117,12 +109,9 @@ async def inbound_stock(
     db: AsyncSession,
     spare_part_id: uuid.UUID,
     data: StockInboundRequest,
-    ctx: EquipmentAccessContext | None = None,
 ) -> SparePartStock:
     """入库"""
-    spare_part = await get_spare_part_by_id(db, spare_part_id)
-    if ctx:
-        await verify_write_ownership(ctx, spare_part, "created_by", "user_id")
+    await get_spare_part_by_id(db, spare_part_id)
 
     stock = await repo.update_stock_qty(db, spare_part_id, data.quantity)
     if not stock:
@@ -179,13 +168,8 @@ async def adjust_stock(
     db: AsyncSession,
     spare_part_id: uuid.UUID,
     data: StockAdjustRequest,
-    ctx: EquipmentAccessContext | None = None,
 ) -> SparePartStock:
     """盘点调整"""
-    spare_part = await get_spare_part_by_id(db, spare_part_id)
-    if ctx:
-        await verify_write_ownership(ctx, spare_part, "created_by", "user_id")
-
     stock = await get_stock_by_spare_part_id(db, spare_part_id)
 
     diff = data.new_qty - stock.current_qty

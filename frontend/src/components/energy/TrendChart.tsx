@@ -1,3 +1,5 @@
+'use client'
+
 import { Card } from 'antd'
 import { Line } from '@ant-design/charts'
 import { TrendDataPoint } from '@/types/energy'
@@ -26,14 +28,14 @@ export function TrendChart({ data, loading = false }: TrendChartProps) {
           text: '消耗量',
           style: { fill: '#a4a097', fontSize: 12 },
         },
-        labelStyle: { fill: '#a4a097', fontSize: 11 },
+        labelStyle: { fill: '#a4a097', fontSize: 11, fontWeight: 600 },
         grid: {
           stroke: '#ede9e4',
           lineWidth: 0.5,
         },
       },
       x: {
-        labelStyle: { fill: '#a4a097', fontSize: 11 },
+        labelStyle: { fill: '#a4a097', fontSize: 11 }, fontWeight: 600,
         line: { stroke: '#ede9e4' },
       },
     },
@@ -62,7 +64,7 @@ export function TrendChart({ data, loading = false }: TrendChartProps) {
   return (
     <Card
       title={
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>
           能耗趋势
         </span>
       }

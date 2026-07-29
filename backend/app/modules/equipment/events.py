@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _handle_work_order_created(data: dict[str, Any]) -> None:
-    from app.modules.equipment.service.work_order import _notify_new_work_order
+    from app.modules.equipment.service.work_order import _notify_new_work_order  # type: ignore[attr-defined]
 
     await _notify_new_work_order(
         responsible_person_id=data["responsible_person_id"],
@@ -19,7 +19,7 @@ async def _handle_work_order_created(data: dict[str, Any]) -> None:
 
 
 async def _handle_work_order_assigned(data: dict[str, Any]) -> None:
-    from app.modules.equipment.service.work_order import _notify_assignment
+    from app.modules.equipment.service.work_order import _notify_assignment  # type: ignore[attr-defined]
 
     await _notify_assignment(
         assignee_id=data["assignee_id"],
@@ -33,7 +33,7 @@ async def _handle_work_order_assigned(data: dict[str, Any]) -> None:
 async def _handle_work_order_verification_needed(data: dict[str, Any]) -> None:
     from app.modules.equipment.service.work_order import _notify_verification
 
-    await _notify_verification(
+    await _notify_verification(  # type: ignore[call-arg]
         feishu_user_id=data["feishu_user_id"],
         work_order_no=data["work_order_no"],
         equipment_name=data["equipment_name"],
@@ -46,7 +46,7 @@ async def _handle_work_order_verification_needed(data: dict[str, Any]) -> None:
 
 
 async def _handle_work_order_rejected(data: dict[str, Any]) -> None:
-    from app.modules.equipment.service.work_order import _notify_rejection
+    from app.modules.equipment.service.work_order import _notify_rejection  # type: ignore[attr-defined]
 
     await _notify_rejection(
         feishu_user_id=data["feishu_user_id"],

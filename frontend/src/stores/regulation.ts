@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import {
   fetchRegulations,
+  type Regulation,
+} from '@/lib/api/client/administration/regulation'
+import {
   createRegulation,
   updateRegulation,
   deleteRegulation,
-  type Regulation,
-} from '@/lib/api/client/administration/regulation'
+} from '@/actions/administration'
 
 interface RegulationState {
   regulations: Regulation[]

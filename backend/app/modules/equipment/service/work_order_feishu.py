@@ -11,11 +11,12 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment.feishu.notification import send_user_card
 from app.modules.equipment.schemas import WorkOrderComplete
 from app.modules.equipment.service.work_order import complete_work_order
+from app.platform.identity.models import User
 
 logger = logging.getLogger(__name__)
 
 
-async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> Any:
+async def _find_user_by_user_id(db: AsyncSession, user_id: str) -> User | None:
     """根据飞书 user_id（租户级）查找系统用户。"""
     from app.platform.identity.models import User
 
@@ -137,12 +138,8 @@ async def complete_work_order_by_no(
         detail = repair_detail or "通过飞书机器人完成"
         data = WorkOrderComplete(repair_detail=detail)
 
-        from app.modules.equipment.deps import EquipmentAccessContext
-
-        ctx = EquipmentAccessContext(user=user, data_scope="all")
-
         try:
-            completed_wo = await complete_work_order(db, wo.id, data, ctx)
+            completed_wo = await complete_work_order(db, wo.id, data)
             await db.commit()
         except Exception as e:
             logger.exception("完成工单失败: %s", e)

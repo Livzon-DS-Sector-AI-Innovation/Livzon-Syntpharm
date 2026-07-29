@@ -57,7 +57,7 @@ class PersonnelAddResult(BaseModel):
 
     added: list[uuid.UUID]
     skipped: list[uuid.UUID] = Field(default_factory=list)
-    errors: list[dict[str, Any]] = Field(default_factory=list[Any])
+    errors: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class PersonnelUpdate(BaseModel):
@@ -162,4 +162,4 @@ class FeishuRefreshResult(BaseModel):
     updated: int = Field(description="成功更新数")
     skipped: int = Field(description="跳过（无变更）")
     unmatched: int = Field(description="未匹配（identity 中找不到）")
-    errors: list[dict[str, Any]] = Field(default_factory=list[Any])
+    errors: list[dict[str, Any]] = Field(default_factory=list)

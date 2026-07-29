@@ -87,7 +87,7 @@ export default function EvaluationFormPage() {
       <h1 className="text-[22px] font-semibold">培训效果评估表</h1>
 
       {pendingList.length > 0 && (
-        <Alert type="info" showIcon message={`${pendingList.length} 条培训待评估，选择后自动填表`} />
+        <Alert type="info" showIcon title={`${pendingList.length} 条培训待评估，选择后自动填表`} />
       )}
 
       <Card size="small" title="从年度计划选择（自动填表）">

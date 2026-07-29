@@ -12,28 +12,7 @@ export async function fetchGiftRequisitions(params?: { department?: string; item
   return res.json()
 }
 
-export async function createGiftRequisition(data: any) {
-  const res = await fetch(`${API_BASE}/administration/gift-requisitions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建领用记录失败')
-  return res.json()
-}
 
-export async function updateGiftRequisition(id: string, data: any) {
-  const res = await fetch(`${API_BASE}/administration/gift-requisitions/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新领用记录失败')
-  return res.json()
-}
 
-export async function deleteGiftRequisition(id: string) {
-  const res = await fetch(`${API_BASE}/administration/gift-requisitions/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除领用记录失败')
-  return res.json()
-}
+
+

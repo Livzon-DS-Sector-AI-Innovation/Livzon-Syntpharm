@@ -34,7 +34,7 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
     setS(true)
     try {
       const data = { item_name: v.item_name, item_description: v.item_description || undefined, expected_result: v.expected_result || undefined, check_method: v.check_method || undefined, sort_order: v.sort_order }
-      const result = mode === 'create'
+      const result: any = mode === 'create'
         ? await createInspectionTemplateItem(templateId, data)
         : await updateInspectionTemplateItem(mode, data)
       if (!result.success) { message.error(result.error); return }
@@ -88,7 +88,7 @@ export function InspectionItemDrawer() {
   const cancelEdit = () => { setFormMode(null); setEditingData(null) }
   const onFormSuccess = () => { setFormMode(null); setEditingData(null); load() }
   const handleDelete = async (item: InspectionTemplateItem) => {
-    const result = await deleteInspectionTemplateItem(item.id)
+    const result: any = await deleteInspectionTemplateItem(item.id)
     if (!result.success) { message.error(result.error); return }
     message.success('已删除')
     await load()

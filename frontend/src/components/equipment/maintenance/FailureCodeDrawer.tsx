@@ -49,7 +49,7 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
         description: values.description || undefined,
         sort_order: values.sort_order, is_active: values.is_active,
       }
-      const result = await updateFailureCode(failureCodeDrawerType, editingFailureCode.id, data)
+      const result: any = await updateFailureCode(failureCodeDrawerType, editingFailureCode.id, data)
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
@@ -58,7 +58,7 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
         description: values.description || undefined,
         sort_order: values.sort_order, is_active: values.is_active,
       }
-      const result = await createFailureCode(failureCodeDrawerType, data)
+      const result: any = await createFailureCode(failureCodeDrawerType, data)
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }

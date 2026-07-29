@@ -461,7 +461,7 @@ async def restart_ws() -> dict[str, Any]:
     return {
         "status": "ok",
         "message": "安全飞书 WebSocket 连接已重新启动",
-        "registered_events": list(_handlers.keys()),
+        "registered_events": list[Any](_handlers.keys()),
     }
 
 
@@ -478,7 +478,7 @@ async def get_ws_status() -> dict[str, Any]:
     return {
         "connected": task_alive,
         "subscription_ok": _subscription_ok,
-        "registered_events": list(_handlers.keys()),
+        "registered_events": list[Any](_handlers.keys()),
         "mode": "unlimited",  # 无限重连模式，与设备交互机器人一致
         "frame_stats": _get_frame_stats(),
         "last_pong_seconds_ago": round(pong_ago, 1) if pong_ago is not None else None,

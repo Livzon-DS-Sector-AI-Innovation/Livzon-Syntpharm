@@ -266,7 +266,7 @@ export function FeishuRawRecordTable({
   )
 
   if (error) {
-    return <Alert type="warning" showIcon message={error} />
+    return <Alert type="warning" showIcon title={error} />
   }
 
   return (

@@ -1,3 +1,8 @@
+import type { components } from '@/types/generated/schema'
+export type CreateCalibrationPlanInput = components['schemas']['CalibrationPlanCreate']
+export type UpdateCalibrationPlanInput = components['schemas']['CalibrationPlanUpdate']
+export type CreateCalibrationRecordInput = components['schemas']['app__modules__equipment__schemas__calibration__CalibrationRecordCreate']
+
 // ==================== 校准管理 ====================
 export type CalibrationType = '内部校准' | '外部检定'
 export type CalibrationResult = '合格' | '不合格'
@@ -22,23 +27,7 @@ export interface CalibrationPlan {
   responsible_person_name?: string
 }
 
-export interface CreateCalibrationPlanInput {
-  equipment_id: string
-  calibration_type: CalibrationType
-  cycle_months: number
-  last_calibration_date?: string
-  responsible_person_id?: string
-  remark?: string
-}
 
-export interface UpdateCalibrationPlanInput {
-  calibration_type?: CalibrationType
-  cycle_months?: number
-  last_calibration_date?: string
-  responsible_person_id?: string
-  status?: CalibrationPlanStatus
-  remark?: string
-}
 
 export interface CalibrationPlanFilters {
   equipment_id?: string
@@ -73,15 +62,6 @@ export interface CalibrationRecord {
   asset_no?: string
 }
 
-export interface CreateCalibrationRecordInput {
-  calibration_plan_id: string
-  calibration_date: string
-  calibration_type: CalibrationType
-  result: CalibrationResult
-  certificate_no?: string
-  calibrated_by?: string
-  remark?: string
-}
 
 export interface CalibrationRecordFilters {
   equipment_id?: string

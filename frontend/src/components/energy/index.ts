@@ -9,19 +9,20 @@ export { CollectLogTable } from './CollectLogTable'
 export { CollectLogDetailDrawer } from './CollectLogDetailDrawer'
 export { AlertRuleTable } from './AlertRuleTable'
 export { AlertConfigDrawer } from './AlertConfigDrawer'
+export { WorkshopTable } from './WorkshopTable'
+export { WorkshopDrawer } from './WorkshopDrawer'
+export { MonthlyRecordTable } from './MonthlyRecordTable'
+export { FeishuImportModal } from './FeishuImportModal'
 export {
   statusPill,
   pillSuccess,
   pillWarning,
   pillError,
   pillNeutral,
-  pillInfo,
-  pillPurple,
   actionLink,
   linkPrimary,
   linkDanger,
   linkPurple,
-} from './sharedStyles'
-export { AlertsPageClient } from './AlertsPageClient'
-export { CollectLogsPageClient } from './CollectLogsPageClient'
-export { DevicesPageClient } from './DevicesPageClient'
+} from './shared-styles'
+export { BitableCrossImportModal } from './BitableCrossImportModal'
+export { AlertRecordTable } from './AlertRecordTable'

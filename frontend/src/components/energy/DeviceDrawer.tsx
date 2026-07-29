@@ -327,8 +327,8 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
               <Select
                 options={[
                   { label: '电力', value: 'electricity' },
-                  { label: '水', value: 'water' },
-                  { label: '气体', value: 'gas' },
+                  { label: '自来水', value: 'water' },
+                  { label: '蒸汽', value: 'steam' },
                 ]}
                 style={{ height: 44 }}
               />

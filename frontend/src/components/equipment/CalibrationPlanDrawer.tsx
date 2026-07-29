@@ -21,7 +21,8 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
   const { calibrationPlanDrawerOpen, editingCalibrationPlan, closeCalibrationPlanDrawer } = useEquipmentStore()
 
   useEffect(() => {
-    if (calibrationPlanDrawerOpen) {
+    if (!calibrationPlanDrawerOpen) return
+    const timer = setTimeout(() => {
       if (editingCalibrationPlan) {
         form.setFieldsValue({
           equipment_id: editingCalibrationPlan.equipment_id,
@@ -36,7 +37,8 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
         form.resetFields()
         form.setFieldsValue({ calibration_type: '内部校准', cycle_months: 6 })
       }
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [calibrationPlanDrawerOpen, editingCalibrationPlan, form])
 
   const handleSubmit = async () => {
@@ -101,6 +103,9 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
         </Form.Item>
         <Form.Item name="last_calibration_date" label="上次校准日期">
           <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="选择日期" />
+        </Form.Item>
+        <Form.Item name="responsible_person_id" label="责任人">
+          <Input placeholder="责任人 ID（可选）" />
         </Form.Item>
         {editingCalibrationPlan && (
           <Form.Item name="status" label="状态">

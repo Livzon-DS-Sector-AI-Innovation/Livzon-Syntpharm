@@ -9,10 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.response import success_response
-from app.modules.equipment.deps import (
-    EquipmentAccessContext,
-    require_equipment_access,
-)
 from app.modules.equipment.models.personnel import EquipmentPersonnel
 from app.platform.identity.models import User
 
@@ -24,9 +20,6 @@ router = APIRouter()
 @router.get("/maintainers", summary="获取设备模块维修人员列表")
 async def list_maintainers(
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:maintenance:read"),
-    ),
 ) -> JSONResponse:
     """从人员配置中获取所有在岗人员，供工单指派维修人时选择。"""
     result = await db.execute(
@@ -56,9 +49,6 @@ async def list_maintainers(
 @router.get("/all-users", summary="获取全体员工列表")
 async def list_all_users(
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:maintenance:read"),
-    ),
 ) -> JSONResponse:
     """返回所有本地用户，供工单责任人选择。"""
     result = await db.execute(

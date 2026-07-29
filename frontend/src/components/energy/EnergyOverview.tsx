@@ -77,7 +77,7 @@ export function EnergyOverview() {
     <div
       style={{
         padding: '28px 32px',
-        maxWidth: 1280,
+        maxWidth: 1600,
         minHeight: '100%',
         background: '#fafaf9',
       }}
@@ -172,8 +172,9 @@ export function EnergyOverview() {
           options={[
             { label: '全部能源', value: 'all' },
             { label: '电力', value: 'electricity' },
-            { label: '水', value: 'water' },
-            { label: '气体', value: 'steam' },
+            { label: '自来水', value: 'water' },
+            { label: '蒸汽', value: 'steam' },
+            { label: '天然气', value: 'natural_gas' },
           ]}
         />
 

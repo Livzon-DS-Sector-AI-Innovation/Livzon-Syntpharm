@@ -7,9 +7,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import CurrentUser
 from app.core.response import success_response
 from app.modules.equipment import service
-from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.models import FailureAction, FailureCause, FailureSymptom
 from app.modules.equipment.schemas import (
     FailureCodeCreate,
@@ -31,9 +31,7 @@ def _register_failure_code_routes(
     async def create(
         data: FailureCodeCreate,
         db: AsyncSession = Depends(get_db),
-        ctx: EquipmentAccessContext = Depends(
-            require_equipment_access("equipment:maintenance:update"),
-        ),
+        current_user: CurrentUser = None,
     ) -> JSONResponse:
         result = await service.create_failure_code(db, model_class, data)
         return success_response(data=FailureCodeResponse.model_validate(result))
@@ -41,9 +39,6 @@ def _register_failure_code_routes(
     @router.get(f"/{path}", summary=f"查询{summary_prefix}列表")
     async def list_codes(
         db: AsyncSession = Depends(get_db),
-        ctx: EquipmentAccessContext = Depends(
-            require_equipment_access("equipment:maintenance:read"),
-        ),
     ) -> JSONResponse:
         codes = await service.get_failure_codes(db, model_class)
         return success_response(data=[FailureCodeResponse.model_validate(c) for c in codes])
@@ -52,9 +47,6 @@ def _register_failure_code_routes(
     async def get_one(
         code_id: uuid.UUID,
         db: AsyncSession = Depends(get_db),
-        ctx: EquipmentAccessContext = Depends(
-            require_equipment_access("equipment:maintenance:read"),
-        ),
     ) -> JSONResponse:
         result = await service.get_failure_code_by_id(db, model_class, code_id)
         return success_response(data=FailureCodeResponse.model_validate(result))
@@ -64,9 +56,7 @@ def _register_failure_code_routes(
         code_id: uuid.UUID,
         data: FailureCodeUpdate,
         db: AsyncSession = Depends(get_db),
-        ctx: EquipmentAccessContext = Depends(
-            require_equipment_access("equipment:maintenance:update"),
-        ),
+        current_user: CurrentUser = None,
     ) -> JSONResponse:
         result = await service.update_failure_code(db, model_class, code_id, data)
         return success_response(data=FailureCodeResponse.model_validate(result))
@@ -75,9 +65,7 @@ def _register_failure_code_routes(
     async def delete(
         code_id: uuid.UUID,
         db: AsyncSession = Depends(get_db),
-        ctx: EquipmentAccessContext = Depends(
-            require_equipment_access("equipment:maintenance:update"),
-        ),
+        current_user: CurrentUser = None,
     ) -> JSONResponse:
         await service.delete_failure_code(db, model_class, code_id)
         return success_response(message="删除成功")

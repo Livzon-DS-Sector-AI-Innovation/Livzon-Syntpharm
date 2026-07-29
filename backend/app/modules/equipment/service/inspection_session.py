@@ -61,7 +61,7 @@ async def save_session(
 
     Args:
         equipment_order: 设备顺序列表，每项:
-            {equipment_id, equipment_name, asset_no, location_name, location_sort_order}
+            {equipment_id, equipment_name, equipment_no, location_name, location_sort_order}
         pending_results: 当前设备的待确认结果，None 表示处于引导状态
     """
     data = {
@@ -105,7 +105,7 @@ async def get_session(open_id: str) -> dict[str, Any] | None:
         return None
 
 
-async def update_session(open_id: str, **kwargs) -> Any:  # type: ignore[no-untyped-def]
+async def update_session(open_id: str, **kwargs: Any) -> bool:
     """部分更新会话字段，会话不存在返回 False。自动续期。"""
     session = await get_session(open_id)
     if session is None:
@@ -130,7 +130,7 @@ async def clear_session(open_id: str) -> None:
 
 async def set_pending_results(open_id: str, results: list[dict[str, Any]]) -> bool:
     """设置当前设备的待确认结果，状态切换为 confirming。"""
-    return await update_session(  # type: ignore[no-any-return]
+    return await update_session(
         open_id,
         pending_results=results,
         state=SessionState.CONFIRMING,
@@ -144,7 +144,7 @@ async def mark_equipment_completed(open_id: str, equipment_id: str) -> bool:
         return False
     completed = set(session.get("completed_equipment_ids", []))
     completed.add(equipment_id)
-    return await update_session(  # type: ignore[no-any-return]
+    return await update_session(
         open_id,
         completed_equipment_ids=list(completed),
         pending_results=None,
@@ -159,7 +159,7 @@ async def mark_equipment_skipped(open_id: str, equipment_id: str) -> bool:
         return False
     skipped = set(session.get("skipped_equipment_ids", []))
     skipped.add(equipment_id)
-    return await update_session(  # type: ignore[no-any-return]
+    return await update_session(
         open_id,
         skipped_equipment_ids=list(skipped),
         pending_results=None,
@@ -232,7 +232,7 @@ def get_progress(session: dict[str, Any]) -> dict[str, Any]:
             {
                 "equipment_id": eid,
                 "equipment_name": eq["equipment_name"],
-                "asset_no": eq.get("asset_no", ""),
+                "equipment_no": eq.get("equipment_no", ""),
                 "status": status,
             }
         )

@@ -1,20 +1,23 @@
 'use client'
 
-import { App, Drawer, Descriptions, Tag, Timeline, Button, Space, Select, Input, Modal } from 'antd'
+import { useState, useEffect } from 'react'
+import { App, Drawer, Descriptions, Tag, Timeline, Button, Space, Select, Input, Image } from 'antd'
 import {
   ClockCircleOutlined, UserOutlined, ToolOutlined,
   CheckCircleOutlined, CloseCircleOutlined, StopOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
 import { useEquipmentStore } from '@/stores/equipment'
-import { assignWorkOrder, startWorkOrder, completeWorkOrder, verifyWorkOrder, closeWorkOrder } from '@/actions/equipment'
-import { WorkOrderStatus, WorkOrderPriority } from '@/types/equipment'
+import { assignWorkOrder, startWorkOrder, completeWorkOrder, verifyWorkOrder, closeWorkOrder, claimWorkOrder } from '@/actions/equipment'
+import { WorkOrderStatus, WorkOrderPriority, Maintainer } from '@/types/equipment'
+import { fetchMaintainersClient, fetchWorkOrderByIdClient } from '@/lib/api/equipment-client'
 
 const { TextArea } = Input
 
 const statusConfig: Record<WorkOrderStatus, { color: string; label: string }> = {
   '待处理': { color: '#e03131', label: '待处理' },
   '已指派': { color: '#5645d4', label: '已指派' },
-  '执行中': { color: '#1677ff', label: '执行中' },
+  '执行中': { color: '#dd5b00', label: '执行中' },
   '维修中': { color: '#dd5b00', label: '维修中' },
   '待验收': { color: '#d4b106', label: '待验收' },
   '已完成': { color: '#1aae39', label: '已完成' },
@@ -47,7 +50,22 @@ interface WorkOrderDetailDrawerProps {
 
 export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps) {
   const { message, modal } = App.useApp()
-  const { workOrderDetailOpen, viewingWorkOrder, closeWorkOrderDetail } = useEquipmentStore()
+  const { workOrderDetailOpen, viewingWorkOrder, closeWorkOrderDetail, setViewingWorkOrder } = useEquipmentStore()
+
+  const [maintainers, setMaintainersState] = useState<Maintainer[]>([])
+
+  const refreshDetail = async (id: string) => {
+    try {
+      const updated = await fetchWorkOrderByIdClient(id)
+      setViewingWorkOrder(updated)
+    } catch { /* 静默失败，列表刷新已覆盖 */ }
+    onRefresh?.()
+  }
+  useEffect(() => {
+    if (workOrderDetailOpen) {
+      fetchMaintainersClient().then(setMaintainersState).catch(() => {})
+    }
+  }, [workOrderDetailOpen])
 
   if (!viewingWorkOrder) return null
 
@@ -62,22 +80,26 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
       content: (
         <div style={{ marginTop: 16 }}>
           <Select
-            placeholder="输入维修人ID"
+            placeholder="选择维修人员"
             style={{ width: '100%' }}
+            showSearch
+            optionFilterProp="label"
             onChange={(val) => { assigneeId = val }}
-            options={[]}
+            options={maintainers.map((m) => ({
+              label: `${m.name} (${m.employee_no || '-'})`,
+              value: m.user_id,
+            }))}
           />
-          <div style={{ marginTop: 8, fontSize: 12, color: '#787671' }}>请输入维修人员的用户ID</div>
         </div>
       ),
       okText: '确认指派',
       cancelText: '取消',
       onOk: async () => {
-        if (!assigneeId) { message.warning('请输入维修人ID'); throw new Error() }
+        if (!assigneeId) { message.warning('请选择维修人员'); throw new Error('请选择维修人员') }
         try {
           await assignWorkOrder(wo.id, { assignee_id: assigneeId })
           message.success('指派成功')
-          onRefresh?.()
+          await refreshDetail(wo.id)
         } catch (error: any) {
           message.error(error?.message || '指派失败')
           throw error
@@ -90,7 +112,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     try {
       await startWorkOrder(wo.id)
       message.success('已开始维修')
-      onRefresh?.()
+      await refreshDetail(wo.id)
     } catch (error: any) {
       message.error(error?.message || '操作失败')
     }
@@ -119,7 +141,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
         try {
           await completeWorkOrder(wo.id, { repair_detail: repairDetail })
           message.success('已提交验收')
-          onRefresh?.()
+          await refreshDetail(wo.id)
         } catch (error: any) {
           message.error(error?.message || '操作失败')
           throw error
@@ -150,7 +172,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
         try {
           await verifyWorkOrder(wo.id, { result, remark: remark || undefined })
           message.success(result === '合格' ? '验收通过' : '已打回重修')
-          onRefresh?.()
+          await refreshDetail(wo.id)
         } catch (error: any) {
           message.error(error?.message || '操作失败')
           throw error
@@ -163,9 +185,19 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     try {
       await closeWorkOrder(wo.id)
       message.success('工单已关闭')
-      onRefresh?.()
+      await refreshDetail(wo.id)
     } catch (error: any) {
       message.error(error?.message || '操作失败')
+    }
+  }
+
+  const handleClaim = async () => {
+    try {
+      await claimWorkOrder(wo.id)
+      message.success('抢单成功')
+      await refreshDetail(wo.id)
+    } catch (error: any) {
+      message.error(error?.message || '抢单失败')
     }
   }
 
@@ -174,7 +206,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     timelineItems.push({
       color: '#e03131',
       icon: <ClockCircleOutlined style={{ fontSize: 14 }} />,
-      children: (
+      content: (
         <div>
           <div style={{ fontWeight: 500, color: '#1a1a1a' }}>报修</div>
           <div style={{ fontSize: 13, color: '#787671' }}>{formatTime(wo.reported_at)}</div>
@@ -186,7 +218,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     timelineItems.push({
       color: '#5645d4',
       icon: <UserOutlined style={{ fontSize: 14 }} />,
-      children: (
+      content: (
         <div>
           <div style={{ fontWeight: 500, color: '#1a1a1a' }}>已指派</div>
           <div style={{ fontSize: 13, color: '#787671' }}>{formatTime(wo.assigned_at)}</div>
@@ -198,7 +230,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     timelineItems.push({
       color: '#dd5b00',
       icon: <ToolOutlined style={{ fontSize: 14 }} />,
-      children: (
+      content: (
         <div>
           <div style={{ fontWeight: 500, color: '#1a1a1a' }}>开始维修</div>
           <div style={{ fontSize: 13, color: '#787671' }}>{formatTime(wo.started_at)}</div>
@@ -210,7 +242,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     timelineItems.push({
       color: '#d4b106',
       icon: <CheckCircleOutlined style={{ fontSize: 14 }} />,
-      children: (
+      content: (
         <div>
           <div style={{ fontWeight: 500, color: '#1a1a1a' }}>提交完成</div>
           <div style={{ fontSize: 13, color: '#787671' }}>{formatTime(wo.completed_at)}</div>
@@ -225,7 +257,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
       icon: wo.verification_result === '合格'
         ? <CheckCircleOutlined style={{ fontSize: 14 }} />
         : <CloseCircleOutlined style={{ fontSize: 14 }} />,
-      children: (
+      content: (
         <div>
           <div style={{ fontWeight: 500, color: '#1a1a1a' }}>
             验收 - <Tag color={wo.verification_result === '合格' ? 'success' : 'error'}>{wo.verification_result}</Tag>
@@ -240,7 +272,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     timelineItems.push({
       color: '#787671',
       icon: <StopOutlined style={{ fontSize: 14 }} />,
-      children: <div><div style={{ fontWeight: 500, color: '#1a1a1a' }}>已关闭</div></div>,
+      content: <div><div style={{ fontWeight: 500, color: '#1a1a1a' }}>已关闭</div></div>,
     })
   }
 
@@ -262,8 +294,12 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
       <Descriptions column={2} size="small" styles={{ label: { color: '#787671', fontSize: 13 }, content: { color: '#1a1a1a', fontSize: 14 } }}>
         <Descriptions.Item label="工单类型">
           <Tag style={{
-            color: wo.order_type === '故障维修' ? '#dd5b00' : '#5645d4',
-            background: wo.order_type === '故障维修' ? '#fff7e6' : '#ede9f7',
+            color: wo.order_type === '故障维修' || wo.order_type === '异常处理' ? '#dd5b00'
+                 : wo.order_type === '日常维护' ? '#0075de'
+                 : '#5645d4',
+            background: wo.order_type === '故障维修' || wo.order_type === '异常处理' ? '#fff7e6'
+                      : wo.order_type === '日常维护' ? '#dcecfa'
+                      : '#ede9f7',
             border: 'none', borderRadius: 4,
           }}>{wo.order_type}</Tag>
         </Descriptions.Item>
@@ -273,9 +309,30 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
         <Descriptions.Item label="关联设备" span={2}>{wo.equipment_name || wo.equipment_id}</Descriptions.Item>
         <Descriptions.Item label="故障现象" span={2}>{wo.symptom_name || '-'}</Descriptions.Item>
         <Descriptions.Item label="故障描述" span={2}>{wo.fault_description || '-'}</Descriptions.Item>
+        <Descriptions.Item label="报修人">{wo.reporter_name || '-'}</Descriptions.Item>
+        <Descriptions.Item label="维修人">{wo.assignee_name || '-'}</Descriptions.Item>
+        <Descriptions.Item label="责任人">{wo.responsible_person_name || '-'}</Descriptions.Item>
         <Descriptions.Item label="报修时间">{formatTime(wo.reported_at)}</Descriptions.Item>
         <Descriptions.Item label="维修耗时">{formatDuration(wo.actual_duration)}</Descriptions.Item>
       </Descriptions>
+
+      {wo.images && wo.images.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 12 }}>故障图片</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {wo.images.map((img) => (
+              <Image
+                key={img.id}
+                src={`/api/v1/equipment/maintenance/work-orders/${wo.id}/images/${img.id}/file`}
+                alt={img.file_name}
+                width={100}
+                height={100}
+                style={{ objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: 24, marginBottom: 24 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 16 }}>工单进度</div>
@@ -284,9 +341,14 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
 
       <div style={{ borderTop: '1px solid #ede9e4', paddingTop: 16 }}>
         <Space wrap>
-          {wo.status === '待处理' && <Button type="primary" onClick={handleAssign}>指派维修人</Button>}
-          {wo.status === '已指派' && <Button type="primary" onClick={handleStart}>开始维修</Button>}
-          {wo.status === '维修中' && <Button type="primary" onClick={handleComplete}>提交完成</Button>}
+          {wo.status === '待处理' && (
+            <>
+              <Button type="primary" onClick={handleStart}>开始执行</Button>
+              <Button onClick={handleAssign}>指派维修人</Button>
+              <Button icon={<ThunderboltOutlined />} onClick={handleClaim}>抢单</Button>
+            </>
+          )}
+          {wo.status === '执行中' && <Button type="primary" onClick={handleComplete}>提交完成</Button>}
           {wo.status === '待验收' && (
             <>
               <Button type="primary" onClick={() => handleVerify('合格')}>验收通过</Button>

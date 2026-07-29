@@ -26,12 +26,13 @@ export function EquipmentImportModal({ open, onClose, onImported }: EquipmentImp
   const handleDownloadTemplate = async () => {
     setDownloading(true)
     try {
-      const res = await downloadImportTemplate()
-      if (!res.success) {
-        message.error(res.error)
+      const res: any = await downloadImportTemplate()
+      const json = await res.json()
+      if (!json.success) {
+        message.error(json.error)
         return
       }
-      const base64 = res.data!
+      const base64 = json.data!
       const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
       const blob = new Blob([bytes], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

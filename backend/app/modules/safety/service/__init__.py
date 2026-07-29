@@ -32,3 +32,4 @@ __all__ = [
     "OhHazardMonitorService",
     "OhHealthExamService",
 ]
+# ruff: noqa: F401

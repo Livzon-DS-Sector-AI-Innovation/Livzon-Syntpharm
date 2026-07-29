@@ -455,3 +455,4 @@ from app.modules.safety.schemas.trainings import (
     TrainingRecordResponse,
     TrainingRecordUpdate,
 )
+# ruff: noqa: F401

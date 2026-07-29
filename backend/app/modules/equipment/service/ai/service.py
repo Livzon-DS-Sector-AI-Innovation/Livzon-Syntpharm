@@ -164,12 +164,11 @@ async def parse_manual_submission(
         for item in items
     ]
 
-    from app.modules.equipment.service.ai.client import QwenClient  # type: ignore[attr-defined]
+    from app.modules.equipment.service.ai.client import AIAnalysisError, parse_correction
 
-    client = QwenClient()
+    user_prompt = build_manual_submit_user_prompt(items_list, user_text, equipment_name)
     try:
-        user_prompt = build_manual_submit_user_prompt(items_list, user_text, equipment_name)
-        raw_response = await client.parse_correction(
+        raw_response = await parse_correction(
             system_prompt=MANUAL_SUBMIT_SYSTEM_PROMPT,
             user_prompt=user_prompt,
         )
@@ -180,8 +179,6 @@ async def parse_manual_submission(
             message=f"AI 服务连接失败: {str(e)}",
             status_code=502,
         ) from e
-    finally:
-        await client.close()
 
     # 解析 AI 响应
     try:

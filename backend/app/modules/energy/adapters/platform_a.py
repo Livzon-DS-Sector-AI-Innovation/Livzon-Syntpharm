@@ -22,7 +22,7 @@ API_URL = "http://cxc.qhzl.net:8090/WebServices/YiChunWebServer.asmx/GetSiteData
 UNIT_CODE = "lzfxyy"
 PAGE_SIZE = 20000
 MAX_PAGES = 50
-# 中国标准时间 UTC+8
+# 中国标准时间 timezone.utc+8
 CST = timezone(__import__("datetime").timedelta(hours=8))
 
 # 公式分隔符：按 + 或 - 拆分

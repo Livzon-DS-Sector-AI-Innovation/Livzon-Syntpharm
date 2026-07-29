@@ -1,3 +1,7 @@
+import type { components } from '@/types/generated/schema'
+export type CreateFailureCodeInput = components['schemas']['FailureCodeCreate']
+export type UpdateFailureCodeInput = components['schemas']['FailureCodeUpdate']
+
 // ==================== 故障代码 ====================
 export type FailureCodeType = 'symptom' | 'cause' | 'action'
 
@@ -14,18 +18,4 @@ export interface FailureCode {
   updated_by: string | null
 }
 
-export interface CreateFailureCodeInput {
-  code: string
-  name: string
-  description?: string
-  sort_order?: number
-  is_active?: boolean
-}
 
-export interface UpdateFailureCodeInput {
-  code?: string
-  name?: string
-  description?: string
-  sort_order?: number
-  is_active?: boolean
-}

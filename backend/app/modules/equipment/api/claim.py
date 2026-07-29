@@ -1,39 +1,40 @@
 """抢单 API 路由."""
 
+import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.events import event_bus
+from app.core.deps import CurrentUser
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
-from app.core.tasks import spawn_task
 from app.modules.equipment import service
-from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.integrations.feishu.contact import is_department_member
+from app.platform.integrations.feishu.message import send_claim_notification
 
 router = APIRouter()
 
 
 @router.put("/{work_order_id}/claim", summary="抢单（维修人员自主接单）")
-async def claim_work_order(  # type: ignore[no-untyped-def]
+async def claim_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    settings=Depends(get_settings),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:work_order:update"),
-    ),
+    current_user: CurrentUser = None,
+    settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID
+    if not current_user:
+        raise AppException(message="需要登录", status_code=401)
+
+    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
     if not dept_id:
         raise AppException(message="设备部未配置")
 
-    feishu_id = ctx.user.feishu_user_id or ""
+    feishu_id = current_user.feishu_user_id or ""
     if not feishu_id:
         raise ForbiddenException(message="用户未关联飞书账号")
 
@@ -41,17 +42,9 @@ async def claim_work_order(  # type: ignore[no-untyped-def]
     if not is_member:
         raise ForbiddenException(message="只有设备部成员才能接单")
 
-    wo = await service.claim_work_order(db, work_order_id, ctx.user.id)  # type: ignore[arg-type]
+    wo = await service.claim_work_order(db, work_order_id, current_user.id)
 
-    spawn_task(
-        event_bus.publish(
-            "equipment.work_order.claimed",
-            {
-                "work_order_no": wo.work_order_no,
-                "user_name": ctx.user.name,
-            },
-        )
-    )
+    asyncio.ensure_future(send_claim_notification(wo.work_order_no, current_user.name))
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

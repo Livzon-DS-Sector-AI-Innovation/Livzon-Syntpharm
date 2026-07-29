@@ -10,14 +10,20 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.exceptions import NotFoundException
+from app.core.deps import CurrentUser
+from app.core.exceptions import AppException, NotFoundException
 from app.core.response import success_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
-from app.modules.equipment.deps import EquipmentAccessContext, require_equipment_access
 from app.modules.equipment.schemas import WorkOrderImageResponse
 
 router = APIRouter()
+
+
+def _require_user(current_user: CurrentUser) -> uuid.UUID:
+    if not current_user:
+        raise AppException(message="需要登录才能执行此操作", status_code=401)
+    return current_user.id
 
 
 @router.post("/{work_order_id}/images", summary="上传工单图片")
@@ -25,10 +31,9 @@ async def upload_work_order_images(
     work_order_id: uuid.UUID,
     files: list[UploadFile] = File(..., description="图片文件"),
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:work_order:create"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     images = await service.upload_images(db, work_order_id, files)
     return success_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
@@ -37,22 +42,16 @@ async def upload_work_order_images(
 async def list_work_order_images(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:work_order:read"),
-    ),
 ) -> JSONResponse:
     images = await service.get_work_order_images(db, work_order_id)
     return success_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
 
 @router.get("/{work_order_id}/images/{image_id}/file", summary="查看工单图片文件")
-async def get(
+async def serve_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:work_order:read"),
-    ),
 ) -> Any:
     from app.core.storage import get_object
     from app.core.storage import is_enabled as minio_enabled
@@ -78,9 +77,8 @@ async def remove_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    ctx: EquipmentAccessContext = Depends(
-        require_equipment_access("equipment:work_order:update"),
-    ),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     await service.delete_work_order_image(db, image_id)
     return success_response(message="图片已删除")

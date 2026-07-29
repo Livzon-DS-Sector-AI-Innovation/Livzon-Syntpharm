@@ -268,10 +268,10 @@ class EnergyAlertRecord(BaseModel):
         {"schema": "energy"},
     )
 
-    rule_id: Mapped[UUIDType] = mapped_column(
+    rule_id: Mapped[UUIDType | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("energy.energy_alert_rules.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         comment="预警规则ID",
     )
     device_config_id: Mapped[UUIDType | None] = mapped_column(
@@ -289,3 +289,36 @@ class EnergyAlertRecord(BaseModel):
     processed_by: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="处理人")
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="处理时间")
     process_note: Mapped[str | None] = mapped_column(Text, nullable=True, comment="处理备注")
+
+
+class EnergyDailyData(BaseModel):
+    """每日能耗数据表（用于预警）"""
+
+    __tablename__ = "energy_daily_data"
+    __table_args__ = (
+        UniqueConstraint(
+            "date",
+            "energy_type",
+            "category",
+            name="uq_energy_daily_data_date_type_category",
+        ),
+        {"schema": "energy"},
+    )
+
+    date: Mapped[date] = mapped_column(Date, nullable=False, comment="数据日期")
+    energy_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, comment="能源类型: water/electricity/steam/natural_gas"
+    )
+    category: Mapped[str] = mapped_column(String(50), nullable=False, comment="类别（如'水（吨）'）")
+    total_value: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, comment="总数（实际用量）")
+    alert_threshold: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, comment="警戒线（预警阈值）")
+    cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True, comment="费用")
+    municipal_meter: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True, comment="市政总表")
+    error_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True, comment="误差")
+    source_table: Mapped[str] = mapped_column(String(50), nullable=False, comment="来源表（水表/电表等）")
+    is_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, comment="是否触发预警")
+    alert_record_id: Mapped[UUIDType | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        comment="关联预警记录ID",
+    )
