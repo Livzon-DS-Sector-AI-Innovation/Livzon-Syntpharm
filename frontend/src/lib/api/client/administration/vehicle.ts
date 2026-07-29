@@ -10,23 +10,3 @@ export async function fetchVehicles(params?: { keyword?: string; status?: string
   if (!res.ok) throw new Error('获取车辆列表失败')
   return res.json()
 }
-
-
-
-
-
-
-
-export async function batchImportVehicles(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const res = await fetch(`${API_BASE}/administration/vehicles/batch-import`, {
-    method: 'POST',
-    body: formData,
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`批量导入失败 (HTTP ${res.status}): ${text}`)
-  }
-  return res.json()
-}

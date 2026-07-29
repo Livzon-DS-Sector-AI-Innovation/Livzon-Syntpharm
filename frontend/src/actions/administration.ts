@@ -124,3 +124,19 @@ export async function deleteVehicle(id: string) {
   if (!res.ok) throw new Error('删除车辆记录失败')
   return res.json()
 }
+
+
+export async function batchImportVehicles(file: any): Promise<any> {
+  const API_BASE = process.env.API_BASE_URL || ''
+    const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/batch-import`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`批量导入失败 (HTTP ${res.status}): ${text}`)
+  }
+  return res.json()
+}

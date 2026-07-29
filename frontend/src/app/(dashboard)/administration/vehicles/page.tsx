@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
-import { fetchVehicles, batchImportVehicles } from '@/lib/api/client/administration/vehicle'
+import { fetchVehicles } from '@/lib/api/client/administration/vehicle'
+import { batchImportVehicles } from '@/actions/administration'
 import { createVehicle, updateVehicle, deleteVehicle } from '@/actions/administration'
 import { UploadFile } from 'antd'
 
