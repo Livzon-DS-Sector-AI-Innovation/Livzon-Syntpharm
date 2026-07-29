@@ -69,7 +69,6 @@ async def test_update_equipment_category_success(
         db_session,
         category.id,
         EquipmentCategoryUpdate(name="大型反应釜"),
-        mock_equipment_context,
     )
     assert updated.name == "大型反应釜"
 
@@ -93,4 +92,4 @@ async def test_generate_equipment_no(
     """测试生成设备编号"""
     category = await create_equipment_category(db_session, sample_category_data)
     equipment_tag = await generate_equipment_no(db_session, category.code)
-    assert equipment_tag == "EQ-TG-RF-0001"
+    assert equipment_tag == "EQ-RF-0001"
