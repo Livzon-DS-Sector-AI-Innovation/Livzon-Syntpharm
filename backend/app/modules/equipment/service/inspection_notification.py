@@ -248,7 +248,7 @@ async def send_inspection_start_notification(
                         eq_list.append(
                             {
                                 "name": eq.equipment.name,
-                                "equipment_no": eq.equipment.equipment_no or "",  # type: ignore[attr-defined]
+                                "equipment_no": eq.equipment.equipment_tag or "",  # type: ignore[attr-defined]
                             }
                         )
                 locations_info.append(

@@ -58,7 +58,7 @@ def _to_response(wo: WorkOrder) -> WorkOrderResponse:
         resp.responsible_person_name = wo.responsible_person.name
     if wo.equipment:
         resp.equipment_name = wo.equipment.name
-        resp.equipment_no = wo.equipment.equipment_no  # type: ignore[attr-defined]
+        resp.equipment_no = wo.equipment.equipment_tag  # type: ignore[attr-defined]
     if wo.fault_symptom:
         resp.symptom_name = wo.fault_symptom.name
     if wo.fault_cause:
