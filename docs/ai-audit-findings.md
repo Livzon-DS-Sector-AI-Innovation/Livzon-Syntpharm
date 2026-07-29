@@ -427,7 +427,7 @@ Files changed: 281 across categories 1–14 (backend: energy, equipment, quality
 
 - [x] `backend/app/modules/energy/api.py:624` — §4 API & Auth / 认证与权限 — `daily_import_from_bitable()` has no `current_user: CurrentUser` parameter. Per AGENTS.md: "未声明的业务接口按 require_user 处理". — severity: blocking — **RESOLVED** (added `current_user: CurrentUser` parameter)
 - [x] `frontend/src/actions/energy.ts` (8 types), `frontend/src/actions/equipment.ts` (4 types) — §10 — 12 API types now use `components["schemas"]["..."]` from generated schema. Local type files now re-export via same pattern. **RESOLVED** for types in OpenAPI.
-- [ ] ~18 equipment types still handwritten — need backend Pydantic schemas added to OpenAPI spec before they can be imported from generated schema. Deferred. — severity: medium
+- [x] ~18 equipment types — all have OpenAPI equivalents, local type files now re-export via `components["schemas"]`. — severity: medium — **RESOLVED**
 
 #### Category summaries
 
