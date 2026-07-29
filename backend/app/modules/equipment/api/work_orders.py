@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.attributes import NO_VALUE
+from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
