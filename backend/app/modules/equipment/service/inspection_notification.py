@@ -227,7 +227,7 @@ async def send_inspection_start_notification(
         task.status,
         task.assignee.name if task.assignee else "N/A",
         task.assignee.feishu_user_id if task.assignee else "N/A",
-        settings.FEISHU_EQUIPMENT_CHAT_ID or "(not set)",  # type: ignore[attr-defined]
+        settings.FEISHU_EQUIPMENT_CHAT_ID or "(not set)",
     )
 
     try:
@@ -248,7 +248,7 @@ async def send_inspection_start_notification(
                         eq_list.append(
                             {
                                 "name": eq.equipment.name,
-                                "equipment_no": eq.equipment.equipment_tag or "",  # type: ignore[attr-defined]
+                                "equipment_no": eq.equipment.equipment_tag or "",
                             }
                         )
                 locations_info.append(
@@ -295,7 +295,7 @@ async def send_inspection_start_notification(
             )
 
         # 2) 群聊通知
-        chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID  # type: ignore[attr-defined]
+        chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID
         if chat_id:
             logger.info("  Sending group notification to chat_id=%s...", chat_id)
             group_ok = await send_group_card(chat_id, title, content)
@@ -352,7 +352,7 @@ async def send_work_order_notification(
         lines = [
             f"**工单编号：**{work_order.work_order_no}",
             f"**设备名称：**{equipment.name}",
-            f"**设备编号：**{equipment.equipment_no}",  # type: ignore[attr-defined]
+            f"**设备编号：**{equipment.equipment_no}",
             f"**优先级：**{work_order.priority}",
             f"**异常描述：**{work_order.fault_description or '-'}",
             f"**来源巡检：**{task.task_no}",

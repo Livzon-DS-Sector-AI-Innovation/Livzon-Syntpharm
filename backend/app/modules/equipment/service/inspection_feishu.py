@@ -1260,7 +1260,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         loc_rows = (await db.execute(loc_stmt)).all()
         for loc, loc_name in loc_rows:
             eq_stmt = (
-                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_tag)  # type: ignore[attr-defined]
+                select(RouteLocationEquipment, Equipment.name, Equipment.equipment_tag)
                 .join(Equipment, RouteLocationEquipment.equipment_id == Equipment.id)
                 .where(
                     RouteLocationEquipment.route_location_id == loc.id,
@@ -1286,7 +1286,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         for eid_str in task.equipment_ids:
             eid = uuid.UUID(eid_str) if isinstance(eid_str, str) else eid_str
             eq_result = await db.execute(
-                select(Equipment.name, Equipment.equipment_tag).where(  # type: ignore[attr-defined]
+                select(Equipment.name, Equipment.equipment_tag).where(
                     Equipment.id == eid,
                     Equipment.is_deleted == False,  # noqa: E712
                 )
@@ -1306,7 +1306,7 @@ async def _build_equipment_order(db: AsyncSession, task: InspectionTask) -> list
         from app.modules.equipment.models.equipment import Equipment
 
         eq_result = await db.execute(
-            select(Equipment.name, Equipment.equipment_tag).where(  # type: ignore[attr-defined]
+            select(Equipment.name, Equipment.equipment_tag).where(
                 Equipment.id == task.equipment_id,
                 Equipment.is_deleted == False,  # noqa: E712
             )

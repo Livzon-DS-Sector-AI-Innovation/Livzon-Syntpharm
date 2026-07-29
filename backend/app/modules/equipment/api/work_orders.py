@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
+from sqlalchemy.orm.attributes import NO_VALUE
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
@@ -58,7 +58,7 @@ def _to_response(wo: WorkOrder) -> WorkOrderResponse:
         resp.responsible_person_name = wo.responsible_person.name
     if wo.equipment:
         resp.equipment_name = wo.equipment.name
-        resp.equipment_no = wo.equipment.equipment_tag  # type: ignore[attr-defined]
+        resp.equipment_no = wo.equipment.equipment_tag
     if wo.fault_symptom:
         resp.symptom_name = wo.fault_symptom.name
     if wo.fault_cause:
