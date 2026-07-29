@@ -15,7 +15,7 @@ from app.modules.equipment.schemas import (
 from app.modules.equipment.service import (
     create_equipment_category,
     delete_equipment_category,
-    generate_equipment_tag,
+    generate_equipment_no,
     get_equipment_category_by_id,
     update_equipment_category,
 )
@@ -85,12 +85,12 @@ async def test_delete_equipment_category_success(
     assert result is True
 
 
-async def test_generate_equipment_tag(
+async def test_generate_equipment_no(
     db_session: AsyncSession,
     mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试生成设备编号"""
     category = await create_equipment_category(db_session, sample_category_data)
-    equipment_tag = await generate_equipment_tag(db_session, category.code)
+    equipment_tag = await generate_equipment_no(db_session, category.code)
     assert equipment_tag == "EQ-TG-RF-0001"
