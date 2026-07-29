@@ -442,7 +442,7 @@ Files changed: 281 across categories 1–14 (backend: energy, equipment, quality
 | 7. External services | 0 | asyncio.create_task only in infrastructure |
 | 8. Backend tests | 0 | |
 | 9. Frontend boundaries | 0 | force-dynamic conflicts resolved |
-| 10. Frontend API & types | 1 | Handwritten types in energy/equipment actions |
+| 10. Frontend API & types | 0 | 12 API types fixed, ~18 re-exported from generated schema |
 | 11. Proxy & routing | 0 | proxy.ts unchanged |
 | 12. OpenAPI | 0 | CI passes |
 | 13. Docker | 0 | nginx timeout + Feishu timeout changes |
