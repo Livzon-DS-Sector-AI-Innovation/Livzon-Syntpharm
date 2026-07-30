@@ -6,8 +6,8 @@ import { ToolOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icon
 import type { ColumnsType } from 'antd/es/table'
 import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment'
 import type { InspectionTask } from '@/types/inspection'
-import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/equipment-client'
-import { fetchInspectionHistory } from '@/lib/api/inspection'
+import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/client/equipment'
+import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import { monoFont, pillNeutral, pillSuccess, pillWarning, pillError, pillInfo, statusPill } from '@/components/equipment/shared-styles'
 import type { EquipmentStatus } from '@/types/equipment'
 

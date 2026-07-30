@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createMaintenancePlan, updateMaintenancePlan } from '@/actions/equipment'
 import { CreateMaintenancePlanInput, UpdateMaintenancePlanInput, Maintainer } from '@/types/equipment'
-import { fetchAllUsersClient } from '@/lib/api/equipment-client'
+import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 

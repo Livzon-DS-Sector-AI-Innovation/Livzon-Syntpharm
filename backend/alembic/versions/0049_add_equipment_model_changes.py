@@ -31,7 +31,6 @@ def upgrade() -> None:
     op.create_unique_constraint('uq_equipment_personnel_role', 'equipment_personnel_role', ['personnel_id', 'role_id'], schema='equipment')
     op.drop_index(op.f('uq_equipment_role_code'), table_name='equipment_role', schema='equipment', postgresql_where='(is_deleted = false)')
     op.create_unique_constraint('uq_equipment_role_code', 'equipment_role', ['code'], schema='equipment')
-    op.create_unique_constraint(None, 'equipment_role', ['code'], schema='equipment')
     op.add_column('equipments', sa.Column('responsible_person_name', sa.String(length=100), nullable=True, comment='负责人姓名'), schema='equipment')
     op.drop_index(op.f('uq_equipments_asset_no'), table_name='equipments', schema='equipment', postgresql_where='(is_deleted = false)')
     op.create_unique_constraint('uq_equipments_asset_no', 'equipments', ['asset_no', 'is_deleted'], schema='equipment')

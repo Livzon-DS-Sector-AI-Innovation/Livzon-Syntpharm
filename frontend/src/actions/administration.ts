@@ -1,134 +1,69 @@
 'use server'
 
-const API_BASE = process.env.API_BASE_URL || ''
+import type { OperationRegulationCreate, OperationRegulationUpdate } from '@/types/generated/schema'
+import {
+  createGiftRequisitionApi, updateGiftRequisitionApi, deleteGiftRequisitionApi,
+  createRegulationApi, updateRegulationApi, deleteRegulationApi,
+  extractRegulationTextApi,
+  createGiftInventoryApi, updateGiftInventoryApi, deleteGiftInventoryApi,
+  createVehicleApi, updateVehicleApi, deleteVehicleApi,
+} from '@/lib/api/server/administration'
 
 export async function createGiftRequisition(data: any) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-requisitions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建领用记录失败')
-  return res.json()
+  return createGiftRequisitionApi(data)
 }
 
 export async function updateGiftRequisition(id: string, data: any) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-requisitions/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新领用记录失败')
-  return res.json()
+  return updateGiftRequisitionApi(id, data)
 }
 
 export async function deleteGiftRequisition(id: string) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-requisitions/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除领用记录失败')
-  return res.json()
+  return deleteGiftRequisitionApi(id)
 }
 
-export async function createRegulation(data: any) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/regulations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建法规制度失败')
-  return res.json()
+export async function createRegulation(data: OperationRegulationCreate) {
+  return createRegulationApi(data)
 }
 
-export async function updateRegulation(id: string, data: any) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/regulations/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新法规制度失败')
-  return res.json()
+export async function updateRegulation(id: string, data: OperationRegulationUpdate) {
+  return updateRegulationApi(id, data)
 }
 
 export async function deleteRegulation(id: string) {
-  const res = await fetch(`${API_BASE}/api/v1/administration/regulations/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除法规制度失败')
-  return res.json()
+  return deleteRegulationApi(id)
 }
-
 
 export async function extractRegulationText(data: { file_name?: string; file_type?: string; file_data?: string }) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/regulations/extract`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('提取文件内容失败')
-  return res.json() as Promise<{ code: number; message: string; data: { text: string; source: string } }>
+  return extractRegulationTextApi(data) as Promise<{ code: number; message: string; data: { text: string; source: string } }>
 }
 
-
 export async function createGiftInventory(data: any) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建库存记录失败')
-  return res.json()
+  return createGiftInventoryApi(data)
 }
 
 export async function updateGiftInventory(id: string, data: any) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新库存记录失败')
-  return res.json()
+  return updateGiftInventoryApi(id, data)
 }
 
 export async function deleteGiftInventory(id: string) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/gift-inventories/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除库存记录失败')
-  return res.json()
+  return deleteGiftInventoryApi(id)
 }
 
 export async function createVehicle(data: any) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('创建车辆记录失败')
-  return res.json()
+  return createVehicleApi(data)
 }
 
 export async function updateVehicle(id: string, data: any) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('更新车辆记录失败')
-  return res.json()
+  return updateVehicleApi(id, data)
 }
 
 export async function deleteVehicle(id: string) {
-  const API_BASE = process.env.API_BASE_URL || ''
-  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('删除车辆记录失败')
-  return res.json()
+  return deleteVehicleApi(id)
 }
-
 
 export async function batchImportVehicles(file: any): Promise<any> {
   const API_BASE = process.env.API_BASE_URL || ''
-    const formData = new FormData()
+  const formData = new FormData()
   formData.append('file', file)
   const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/batch-import`, {
     method: 'POST',

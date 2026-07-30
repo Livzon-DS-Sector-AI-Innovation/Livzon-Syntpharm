@@ -221,6 +221,13 @@ from app.modules.safety.schemas.accidents import (
     AccidentResponse,
     AccidentUpdate,
 )
+from app.modules.safety.schemas.ai_workflow import (
+    AIWorkflowConfigCreate,
+    AIWorkflowConfigResponse,
+    AIWorkflowConfigUpdate,
+    KnowledgeAttachmentRequest,
+    ReferenceAttachmentResponse,
+)
 from app.modules.safety.schemas.checks import (
     SafetyCheckBase,
     SafetyCheckCreate,
@@ -432,6 +439,18 @@ from app.modules.safety.schemas.risk_reports import (
     SpecialOperationReportCreate,
     SpecialOperationReportResponse,
     SpecialOperationReportUpdate,
+)
+from app.modules.safety.schemas.scheduled_tasks import (
+    HEADER_COLOR_OPTIONS,
+    CardPreviewRequest,
+    DataSourceItem,
+    DataSourceOption,
+    HeaderColorEnum,
+    ScheduledTaskCreate,
+    ScheduledTaskLogResponse,
+    ScheduledTaskResponse,
+    ScheduledTaskUpdate,
+    TaskStatusEnum,
 )
 from app.modules.safety.schemas.special_ops_permits import (
     SpecialOperationPermitBase,

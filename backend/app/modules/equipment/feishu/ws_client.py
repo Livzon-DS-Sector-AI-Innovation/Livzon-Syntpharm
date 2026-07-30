@@ -218,7 +218,7 @@ async def _handle_binary_message(ws: Any, message: bytes) -> None:
                 type_val = _get_by_key(frame.headers, HEADER_TYPE)
                 logger.debug("设备机器人 CONTROL 帧: %s", type_val)
             except Exception:
-                pass
+                logger.debug("Failed to parse CONTROL frame headers")
             return
 
         if ft == FrameType.DATA:
@@ -230,14 +230,16 @@ async def _handle_binary_message(ws: Any, message: bytes) -> None:
 
             if msg_type == MessageType.EVENT:
                 event = json.loads(frame.payload.decode("utf-8"))
+                # Send ACK BEFORE dispatch to prevent Feishu retry timeouts during AI analysis
+                end_ms = int(round(time.time() * 1000))
+                ack_data = _build_ack_frame(frame, end_ms - start_ms)
+                await ws.send(ack_data)
                 await _dispatch_event(event)
             else:
                 logger.info("设备机器人 DATA 帧: type=%s", msg_type)
-
-            # 发送 ACK
-            end_ms = int(round(time.time() * 1000))
-            ack_data = _build_ack_frame(frame, end_ms - start_ms)
-            await ws.send(ack_data)
+                end_ms = int(round(time.time() * 1000))
+                ack_data = _build_ack_frame(frame, end_ms - start_ms)
+                await ws.send(ack_data)
 
     except Exception:
         logger.exception(
@@ -259,6 +261,7 @@ async def _dispatch_event(event: dict[str, Any]) -> None:
         event_data = event.get("event", event)
         await _handle_message_event(event_data)
     else:
+        # Card actions handled via HTTP webhook endpoint, not WS
         logger.info("设备机器人忽略事件: %s", event_type)
 
 

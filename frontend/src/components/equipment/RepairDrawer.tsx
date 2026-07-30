@@ -7,7 +7,7 @@ import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
 import { CreateWorkOrderInput, FailureCode, Maintainer } from '@/types/equipment'
-import { fetchAllUsersClient } from '@/lib/api/equipment-client'
+import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 

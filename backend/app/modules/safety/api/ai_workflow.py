@@ -9,8 +9,9 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.deps import CurrentUser
+from app.core.exceptions import AppException, NotFoundException
+from app.core.response import ApiResponse, paginated_response, success_response
 from app.modules.safety.schemas import (  # type: ignore[attr-defined]
     AIWorkflowConfigCreate,
     AIWorkflowConfigResponse,
@@ -26,6 +27,12 @@ from app.modules.safety.service import (
 ai_workflow_router = APIRouter()
 
 
+def _require_user(current_user: "CurrentUser") -> "uuid.UUID":
+    if not current_user:
+        raise AppException(message="需要登录才能执行此操作", status_code=401)
+    return current_user.id
+
+
 @ai_workflow_router.get(
     "/ai-workflow-configs",
     response_model=ApiResponse,
@@ -37,15 +44,18 @@ async def get_ai_workflow_configs(
     module_code: str | None = Query(None, description="模块代码"),
     is_enabled: bool | None = Query(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """获取 AI 工作流配置列表，可按模块代码过滤"""
+    _require_user(current_user)
     service = ConfigService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_ai_workflow_configs(skip, page_size, module_code, is_enabled)
-    return ApiResponse(
+    return paginated_response(
         data=[AIWorkflowConfigResponse.model_validate(item) for item in items],
-        meta={"page": page, "page_size": page_size, "total": total},
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 
@@ -57,14 +67,15 @@ async def get_ai_workflow_configs(
 async def get_ai_workflow_config(
     config_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """获取单个 AI 工作流配置详情"""
+    _require_user(current_user)
     service = ConfigService(db)
     item = await service.get_ai_workflow_config(config_id)
     if not item:
-        return ApiResponse(code=404, message="配置不存在")
-    return ApiResponse(data=AIWorkflowConfigResponse.model_validate(item))
+        raise NotFoundException(resource="配置")
+    return success_response(data=AIWorkflowConfigResponse.model_validate(item))
 
 
 @ai_workflow_router.post(
@@ -75,13 +86,14 @@ async def get_ai_workflow_config(
 async def create_ai_workflow_config(
     data: AIWorkflowConfigCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """创建新的 AI 工作流配置"""
+    _require_user(current_user)
     service = ConfigService(db)
     item = await service.create_ai_workflow_config(data)
     await db.commit()
-    return ApiResponse(data=AIWorkflowConfigResponse.model_validate(item))
+    return success_response(data=AIWorkflowConfigResponse.model_validate(item))
 
 
 @ai_workflow_router.put(
@@ -93,15 +105,16 @@ async def update_ai_workflow_config(
     config_id: uuid.UUID,
     data: AIWorkflowConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """更新 AI 工作流配置"""
+    _require_user(current_user)
     service = ConfigService(db)
     item = await service.update_ai_workflow_config(config_id, data)
     if not item:
-        return ApiResponse(code=404, message="配置不存在")
+        raise NotFoundException(resource="配置")
     await db.commit()
-    return ApiResponse(data=AIWorkflowConfigResponse.model_validate(item))
+    return success_response(data=AIWorkflowConfigResponse.model_validate(item))
 
 
 @ai_workflow_router.delete(
@@ -112,15 +125,16 @@ async def update_ai_workflow_config(
 async def delete_ai_workflow_config(
     config_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """删除 AI 工作流配置"""
+    _require_user(current_user)
     service = ConfigService(db)
     result = await service.delete_ai_workflow_config(config_id)
     if not result:
-        return ApiResponse(code=404, message="配置不存在")
+        raise NotFoundException(resource="配置")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return success_response(message="删除成功")
 
 
 # ==================== AI 工作流附件 Routes ====================
@@ -134,18 +148,19 @@ async def delete_ai_workflow_config(
 async def upload_workflow_attachment(
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """上传调用文档附件（PDF/Word/Excel/TXT/MD），自动转换为 Markdown 供 AI 读取。
 
     返回附件元数据，前端将其存入 reference_docs.attachments 列表。
     """
+    _require_user(current_user)
     service = AttachmentService()
     try:
         metadata = await service.upload_attachment(file)
-        return ApiResponse(data=ReferenceAttachmentResponse(**metadata).model_dump())
+        return success_response(data=ReferenceAttachmentResponse(**metadata).model_dump())
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise AppException(message=str(e), status_code=400)
 
 
 @ai_workflow_router.get(
@@ -155,9 +170,10 @@ async def upload_workflow_attachment(
 async def preview_workflow_attachment(
     attachment_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """预览上传的附件原始文件（浏览器内嵌预览或触发下载）。"""
+    _require_user(current_user)
     service = AttachmentService()
     file_path = service.get_preview_path(attachment_id)
 
@@ -168,7 +184,7 @@ async def preview_workflow_attachment(
             with open(md_path, encoding="utf-8") as f:
                 content = f.read()
             return PlainTextResponse(content, media_type="text/plain; charset=utf-8")
-        return ApiResponse(code=404, message="附件不存在或已被删除")
+        raise AppException(message="附件不存在或已被删除", status_code=404)
 
     # 根据文件类型设置 media_type
     ext = os.path.splitext(file_path)[1].lower()
@@ -195,14 +211,15 @@ async def preview_workflow_attachment(
 async def delete_workflow_attachment(
     attachment_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """删除附件及其关联的原始文件和 Markdown 文件。"""
+    _require_user(current_user)
     service = AttachmentService()
     deleted = await service.delete_attachment(attachment_id)
     if not deleted:
-        return ApiResponse(code=404, message="附件不存在或已被删除")
-    return ApiResponse(message="附件已删除")
+        raise AppException(message="附件不存在或已被删除", status_code=404)
+    return success_response(message="附件已删除")
 
 
 @ai_workflow_router.post(
@@ -213,15 +230,16 @@ async def delete_workflow_attachment(
 async def create_workflow_attachments_from_knowledge(
     body: KnowledgeAttachmentRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: CurrentUser = None,
 ) -> Any:
     """选择知识库文章作为调用文档附件，自动转为 Markdown 供 AI 读取。
 
     返回附件元数据列表，前端将其追加到 reference_docs.attachments。
     """
+    _require_user(current_user)
     service = AttachmentService()
     results = await service.create_knowledge_attachments(body.knowledge_ids, db)
-    return ApiResponse(
+    return success_response(
         data=[ReferenceAttachmentResponse(**r).model_dump() for r in results],
         meta={"total": len(results)},
     )

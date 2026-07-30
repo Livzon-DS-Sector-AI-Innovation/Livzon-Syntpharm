@@ -17,7 +17,7 @@ import {
   fetchEquipmentsClient,
   fetchCategoriesClient,
   fetchClaimTimeoutConfigClient,
-} from '@/lib/api/equipment-client'
+} from '@/lib/api/client/equipment'
 import { updateClaimTimeoutConfig } from '@/actions/equipment'
 import { EquipmentCategory } from '@/types/equipment'
 import { WorkOrderStatsCards } from './WorkOrderStatsCards'

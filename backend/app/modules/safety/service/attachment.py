@@ -68,6 +68,7 @@ class AttachmentService:
         try:
             md_content = _extract_to_markdown(original_path)
         except Exception:
+            logger.exception("Document parsing failed")
             md_content = f"# 📎 {original_name}\n\n> 未能解析文档内容，请查看原始文件。"
 
         # 3. 保存 MD 文件

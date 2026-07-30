@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
 import { setRouteLocations } from '@/actions/inspection'
-import { fetchInspectionRouteById } from '@/lib/api/inspection'
+import { fetchInspectionRouteById } from '@/lib/api/client/inspection'
 import type { RouteLocationItem } from '@/types/inspection'
 import type { InspectionTemplate as InspectionTemplateType } from '@/types/equipment'
 

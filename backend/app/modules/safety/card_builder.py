@@ -125,7 +125,7 @@ async def fetch_data_sources(repo: Any, enabled_keys: list[str]) -> dict[str, st
                 value = await fetcher()  # type: ignore[no-untyped-call]
                 results[key] = str(value)
             except Exception as e:
-                logger.error("Error fetching data source %s: %s", key, e)
+                logger.error("Error fetching data source", extra={"key": key, "error": str(e)})
                 results[key] = "—"
         else:
             results[key] = "—"

@@ -51,9 +51,7 @@ monthly_router = APIRouter()
 
 
 @router.get("/platforms", summary="获取已登记的平台列表")
-async def list_platforms(
-    current_user: CurrentUser,
-) -> JSONResponse:
+async def list_platforms() -> JSONResponse:
     data = [{"code": code, "name": adapter.platform_name} for code, adapter in ADAPTERS.items()]
     return success_response(data)
 
@@ -63,9 +61,9 @@ async def list_platforms(
 
 @device_router.post("", summary="新增设备配置")
 async def create_device_config(
-    current_user: CurrentUser,
     data: EnergyDeviceConfigCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.create_device_config(db, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -73,7 +71,6 @@ async def create_device_config(
 
 @device_router.get("", summary="查询设备配置列表")
 async def list_device_configs(
-    current_user: CurrentUser,
     platform_code: str | None = Query(default=None, description="平台标识"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     workshop: str | None = Query(default=None, description="车间"),
@@ -82,6 +79,7 @@ async def list_device_configs(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_device_configs(
         db,
@@ -99,9 +97,9 @@ async def list_device_configs(
 
 @device_router.get("/{config_id}", summary="查询单个设备配置")
 async def get_device_config(
-    current_user: CurrentUser,
     config_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.get_device_config(db, config_id)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -109,10 +107,10 @@ async def get_device_config(
 
 @device_router.put("/{config_id}", summary="修改设备配置")
 async def update_device_config(
-    current_user: CurrentUser,
     config_id: UUID,
     data: EnergyDeviceConfigUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.update_device_config(db, config_id, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
@@ -120,9 +118,9 @@ async def update_device_config(
 
 @device_router.delete("/{config_id}", summary="删除设备配置")
 async def delete_device_config(
-    current_user: CurrentUser,
     config_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     await service.delete_device_config(db, config_id)
     return success_response(None, message="删除成功")
@@ -133,7 +131,6 @@ async def delete_device_config(
 
 @data_router.get("", summary="查询能耗数据")
 async def list_energy_data(
-    current_user: CurrentUser,
     device_config_id: UUID | None = Query(default=None, description="设备配置ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     workshop: str | None = Query(default=None, description="车间"),
@@ -142,6 +139,7 @@ async def list_energy_data(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_energy_data(
         db,
@@ -159,12 +157,12 @@ async def list_energy_data(
 
 @data_router.get("/statistics", summary="能耗统计")
 async def get_energy_statistics(
-    current_user: CurrentUser,
     group_by: str = Query(default="workshop", description="分组维度: workshop/production_line/device"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     result = await service.get_energy_statistics(
         db,
@@ -181,9 +179,9 @@ async def get_energy_statistics(
 
 @collect_router.post("/trigger", summary="手动触发采集")
 async def trigger_collection(
-    current_user: CurrentUser,
     request: CollectTriggerRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     result = await service.trigger_collection(db, request)
     return success_response(result, message="采集任务已执行")
@@ -191,12 +189,12 @@ async def trigger_collection(
 
 @collect_router.get("/logs", summary="查询采集日志")
 async def list_collect_logs(
-    current_user: CurrentUser,
     platform_code: str | None = Query(default=None, description="平台标识"),
     status: str | None = Query(default=None, description="状态"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_collect_logs(
         db,
@@ -211,9 +209,9 @@ async def list_collect_logs(
 
 @collect_router.get("/logs/{log_id}/detail", summary="查询采集日志详情")
 async def get_collect_log_detail(
-    current_user: CurrentUser,
     log_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     result = await service.get_collect_log_detail(db, log_id)
     return success_response(result)
@@ -224,11 +222,11 @@ async def get_collect_log_detail(
 
 @router.get("/overview", summary="能源总览数据")
 async def get_energy_overview(
-    current_user: CurrentUser,
     energy_type: str | None = Query(default=None, description="能源类型筛选"),
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     result = await service.get_overview(
         db,
@@ -244,9 +242,9 @@ async def get_energy_overview(
 
 @alert_router.post("", summary="新增预警规则")
 async def create_alert_rule(
-    current_user: CurrentUser,
     data: EnergyAlertRuleCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.create_alert_rule(db, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -254,13 +252,13 @@ async def create_alert_rule(
 
 @alert_router.get("", summary="查询预警规则列表")
 async def list_alert_rules(
-    current_user: CurrentUser,
     energy_type: str | None = Query(default=None, description="能源类型"),
     alert_level: str | None = Query(default=None, description="预警等级"),
     is_enabled: bool | None = Query(default=None, description="是否启用"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_alert_rules(
         db,
@@ -276,9 +274,9 @@ async def list_alert_rules(
 
 @alert_router.get("/{rule_id}", summary="查询单个预警规则")
 async def get_alert_rule(
-    current_user: CurrentUser,
     rule_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.get_alert_rule(db, rule_id)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -286,10 +284,10 @@ async def get_alert_rule(
 
 @alert_router.put("/{rule_id}", summary="修改预警规则")
 async def update_alert_rule(
-    current_user: CurrentUser,
     rule_id: UUID,
     data: EnergyAlertRuleUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
@@ -297,9 +295,9 @@ async def update_alert_rule(
 
 @alert_router.delete("/{rule_id}", summary="删除预警规则")
 async def delete_alert_rule(
-    current_user: CurrentUser,
     rule_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     await service.delete_alert_rule(db, rule_id)
     return success_response(None, message="删除成功")
@@ -310,7 +308,6 @@ async def delete_alert_rule(
 
 @alert_record_router.get("", summary="查询预警记录列表")
 async def list_alert_records(
-    current_user: CurrentUser,
     energy_type: str | None = Query(default=None, description="能源类型"),
     alert_level: str | None = Query(default=None, description="预警等级"),
     status: str | None = Query(default=None, description="处理状态"),
@@ -319,6 +316,7 @@ async def list_alert_records(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_alert_records(
         db,
@@ -336,10 +334,10 @@ async def list_alert_records(
 
 @alert_record_router.put("/{record_id}/process", summary="处理预警记录")
 async def process_alert_record(
-    current_user: CurrentUser,
     record_id: UUID,
     request: AlertRecordProcessRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.process_alert_record(db, record_id, request)
     return success_response(
@@ -359,9 +357,9 @@ router.include_router(alert_record_router, prefix="/alerts/records")
 
 @workshop_router.post("", summary="新增车间")
 async def create_workshop(
-    current_user: CurrentUser,
     data: EnergyWorkshopCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.create_workshop(db, data)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
@@ -369,12 +367,12 @@ async def create_workshop(
 
 @workshop_router.get("", summary="查询车间列表")
 async def list_workshops(
-    current_user: CurrentUser,
     category: str | None = Query(default=None, description="分类"),
     is_active: bool | None = Query(default=None, description="是否启用"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=100, ge=1, le=500, description="每页条数"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     items, total = await service.list_workshops(
         db,
@@ -389,9 +387,9 @@ async def list_workshops(
 
 @workshop_router.get("/{workshop_id}", summary="查询单个车间")
 async def get_workshop(
-    current_user: CurrentUser,
     workshop_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.get_workshop(db, workshop_id)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
@@ -399,10 +397,10 @@ async def get_workshop(
 
 @workshop_router.put("/{workshop_id}", summary="修改车间")
 async def update_workshop(
-    current_user: CurrentUser,
     workshop_id: UUID,
     data: EnergyWorkshopUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.update_workshop(db, workshop_id, data)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
@@ -410,9 +408,9 @@ async def update_workshop(
 
 @workshop_router.delete("/{workshop_id}", summary="删除车间")
 async def delete_workshop(
-    current_user: CurrentUser,
     workshop_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     await service.delete_workshop(db, workshop_id)
     return success_response(None, message="删除成功")
@@ -423,9 +421,9 @@ async def delete_workshop(
 
 @monthly_router.post("", summary="新增月度记录")
 async def create_monthly_record(
-    current_user: CurrentUser,
     data: EnergyMonthlyRecordCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.create_monthly_record(db, data)
     return success_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
@@ -433,9 +431,9 @@ async def create_monthly_record(
 
 @monthly_router.post("/batch", summary="批量新增月度记录")
 async def batch_create_monthly_records(
-    current_user: CurrentUser,
     data: EnergyMonthlyRecordBatchCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     objs = await service.batch_create_monthly_records(db, data.records)
     result = [EnergyMonthlyRecordResponse.model_validate(o).model_dump() for o in objs]
@@ -444,7 +442,6 @@ async def batch_create_monthly_records(
 
 @monthly_router.get("", summary="查询月度记录列表")
 async def list_monthly_records(
-    current_user: CurrentUser,
     workshop_id: UUID | None = Query(default=None, description="车间ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_date: str | None = Query(default=None, description="开始日期(YYYY-MM-DD)"),
@@ -452,6 +449,7 @@ async def list_monthly_records(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=100, ge=1, le=500, description="每页条数"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     from datetime import date as date_type
 
@@ -473,12 +471,12 @@ async def list_monthly_records(
 
 @monthly_router.get("/summary", summary="月度记录汇总")
 async def get_monthly_summary(
-    current_user: CurrentUser,
     workshop_id: UUID | None = Query(default=None, description="车间ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_date: str | None = Query(default=None, description="开始日期(YYYY-MM-DD)"),
     end_date: str | None = Query(default=None, description="结束日期(YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     from datetime import date as date_type
 
@@ -497,9 +495,9 @@ async def get_monthly_summary(
 
 @monthly_router.get("/{record_id}", summary="查询单个月度记录")
 async def get_monthly_record(
-    current_user: CurrentUser,
     record_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     obj = await service.get_monthly_record(db, record_id)
     return success_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
@@ -507,9 +505,9 @@ async def get_monthly_record(
 
 @monthly_router.delete("/{record_id}", summary="删除月度记录")
 async def delete_monthly_record(
-    current_user: CurrentUser,
     record_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     await service.delete_monthly_record(db, record_id)
     return success_response(None, message="删除成功")
@@ -524,9 +522,9 @@ router.include_router(workshop_router, prefix="/workshops", tags=["车间管理"
 
 @monthly_router.post("/import/feishu", summary="从飞书表格导入能耗数据")
 async def import_from_feishu(
-    current_user: CurrentUser,
     data: FeishuEnergyImportRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     from app.modules.energy.feishu_import import FeishuEnergyImporter
 
@@ -557,8 +555,8 @@ router.include_router(monthly_router, prefix="/monthly", tags=["月度记录"])
 
 @router.post("/sync/bitable", summary="从飞书多维表格同步数据")
 async def sync_from_bitable(
-    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """从飞书多维表格同步车间和月度记录数据。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
@@ -570,8 +568,8 @@ async def sync_from_bitable(
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
 async def sync_workshops_from_bitable(
-    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """从飞书多维表格同步车间数据。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
@@ -583,8 +581,8 @@ async def sync_workshops_from_bitable(
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
 async def sync_monthly_from_bitable(
-    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """从飞书多维表格同步月度能耗记录。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
@@ -596,9 +594,9 @@ async def sync_monthly_from_bitable(
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
 async def cross_import_from_bitable(
-    current_user: CurrentUser,
     body: BitableCrossImportRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """从飞书多维表格交叉表导入能源数据。
 
@@ -622,8 +620,8 @@ async def cross_import_from_bitable(
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
 async def daily_import_from_bitable(
-    current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """手动触发从飞书表格导入每日数据，导入后自动检查预警"""
     from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
