@@ -36,7 +36,7 @@ async def claim_work_order(
     _require_user(current_user)
     assert current_user is not None
 
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
+    dept_id = settings.equipment_dept_id
     if not dept_id:
         raise AppException(message="设备部未配置")
 
