@@ -28,8 +28,8 @@ _ping_interval: int = 120
 
 async def _get_ws_url_and_config() -> tuple[str | None, str]:
     """获取 WS URL 并解析 service_id。返回 (url, service_id)。"""
-    app_id = settings.EQUIPMENT_FEISHU_APP_ID  # type: ignore[attr-defined]
-    app_secret = settings.EQUIPMENT_FEISHU_APP_SECRET  # type: ignore[attr-defined]
+    app_id = settings.feishu.equipment.credentials.app_id
+    app_secret = settings.feishu.equipment.credentials.app_secret
 
     if not app_id or not app_secret:
         logger.error("设备机器人 APP_ID/APP_SECRET 未配置")
@@ -125,12 +125,12 @@ async def start_equipment_ws() -> None:
     global _stop
     _stop = asyncio.Event()
 
-    if not settings.EQUIPMENT_FEISHU_WS_ENABLED:  # type: ignore[attr-defined]
+    if not settings.feishu.equipment.ws_enabled:
         logger.info("设备机器人 WS 已禁用 (EQUIPMENT_FEISHU_WS_ENABLED=false)，跳过")
         return
 
-    app_id = settings.EQUIPMENT_FEISHU_APP_ID  # type: ignore[attr-defined]
-    app_secret = settings.EQUIPMENT_FEISHU_APP_SECRET  # type: ignore[attr-defined]
+    app_id = settings.feishu.equipment.credentials.app_id
+    app_secret = settings.feishu.equipment.credentials.app_secret
 
     if not app_id or not app_secret:
         logger.warning("设备机器人凭证未配置，跳过 WebSocket 启动")

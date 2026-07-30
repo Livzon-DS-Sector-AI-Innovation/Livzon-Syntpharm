@@ -227,7 +227,7 @@ async def send_inspection_start_notification(
         task.status,
         task.assignee.name if task.assignee else "N/A",
         task.assignee.feishu_user_id if task.assignee else "N/A",
-        settings.FEISHU_EQUIPMENT_CHAT_ID or "(not set)",  # type: ignore[attr-defined]
+        settings.feishu.platform.equipment_chat_id or "(not set)",
     )
 
     try:
@@ -295,7 +295,7 @@ async def send_inspection_start_notification(
             )
 
         # 2) 群聊通知
-        chat_id = settings.FEISHU_EQUIPMENT_CHAT_ID  # type: ignore[attr-defined]
+        chat_id = settings.feishu.platform.equipment_chat_id
         if chat_id:
             logger.info("  Sending group notification to chat_id=%s...", chat_id)
             group_ok = await send_group_card(chat_id, title, content)

@@ -24,7 +24,9 @@ async def maintenance_plan_loop() -> None:
     减少并发数据库连接压力。
     """
     settings = get_settings()
-    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+    from app.shared.config_reader import get_module_setting_bool
+    enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
+    if not enabled:
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
@@ -68,7 +70,9 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+        from app.shared.config_reader import get_module_setting_bool
+        enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
+        if not enabled:
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 
