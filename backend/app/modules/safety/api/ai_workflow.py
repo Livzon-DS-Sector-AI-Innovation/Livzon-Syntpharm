@@ -18,7 +18,7 @@ from app.modules.safety.schemas import (  # type: ignore[attr-defined]
     KnowledgeAttachmentRequest,
     ReferenceAttachmentResponse,
 )
-from app.modules.safety.service import (  # type: ignore[attr-defined]
+from app.modules.safety.service import (
     AttachmentService,
     ConfigService,
 )

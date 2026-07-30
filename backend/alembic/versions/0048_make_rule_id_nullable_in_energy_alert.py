@@ -1,7 +1,7 @@
-"""Make rule_id nullable in energy_alert_records
+"""0048_make_rule_id_nullable_in_energy_alert
 
-Revision ID: 0049_make_rule_id_nullable_in_energy_alert
-Revises: 0046_qms_deviation_settings
+Revision ID: 0048_make_rule_id_nullable_in_energy_alert
+Revises: 0047_add_energy_daily_data_table
 Create Date: 2026-07-22 08:08:44.725867
 """
 from typing import Sequence, Union

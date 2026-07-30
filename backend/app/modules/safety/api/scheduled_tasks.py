@@ -16,7 +16,7 @@ from app.modules.safety.schemas import (  # type: ignore[attr-defined]
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
 )
-from app.modules.safety.service import (  # type: ignore[attr-defined]
+from app.modules.safety.service import (
     ScheduledTaskService,
 )
 
@@ -26,7 +26,7 @@ scheduled_tasks_router = APIRouter()
 @scheduled_tasks_router.get(
     "/scheduled-tasks/data-source-options", response_model=ApiResponse, summary="获取可用数据来源选项"
 )
-async def get_data_source_options() -> Any:
+async def get_data_source_options(current_user: CurrentUser | None = Depends(get_current_user)) -> Any:
     """获取可用的数据来源列表（供前端下拉选择）"""
     options = ScheduledTaskService.get_data_source_options()
     return ApiResponse(data=options)
@@ -221,7 +221,7 @@ async def restart_feishu_ws(
 
 
 @scheduled_tasks_router.get("/feishu/ws/status", response_model=ApiResponse, summary="查询飞书 WebSocket 连接状态")
-async def get_feishu_ws_status() -> Any:
+async def get_feishu_ws_status(current_user: CurrentUser | None = Depends(get_current_user)) -> Any:
     """查询安全模块飞书 WebSocket 当前状态。
 
     返回是否已连接、已注册事件类型、最大重试次数。

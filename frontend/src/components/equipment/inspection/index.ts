@@ -1,3 +1,4 @@
+'use client'
 export { InspectionPage } from './InspectionPage'
 export { InspectionTasksTab } from './InspectionTasksTab'
 export { InspectionRoutesTab } from './InspectionRoutesTab'

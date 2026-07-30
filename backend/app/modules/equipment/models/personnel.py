@@ -21,7 +21,7 @@ class EquipmentRole(BaseModel):
     )
 
     name: Mapped[str] = mapped_column(String(100), comment="角色名称")
-    code: Mapped[str] = mapped_column(String(50), unique=True, comment="角色编码")
+    code: Mapped[str] = mapped_column(String(50), comment="角色编码")
     description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="角色描述")
     scope: Mapped[str] = mapped_column(String(50), default="global", server_default="'global'", comment="作用域")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", comment="是否启用")

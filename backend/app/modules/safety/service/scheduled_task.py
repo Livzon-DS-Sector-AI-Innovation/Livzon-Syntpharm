@@ -41,7 +41,7 @@ class ScheduledTaskService:
 
     async def create_task(self, data: ScheduledTaskCreate) -> ScheduledTask:
         from app.modules.safety.card_builder import build_default_template
-        from app.modules.safety.scheduler import compute_next_run  # type: ignore[attr-defined]
+        from app.modules.safety.scheduler import compute_next_run
 
         task_data = data.model_dump()
         # Auto-generate default template if not provided
@@ -53,7 +53,7 @@ class ScheduledTaskService:
         return await self.repo.create_scheduled_task(task_data)  # type: ignore[attr-defined]
 
     async def update_task(self, task_id: uuid.UUID, data: ScheduledTaskUpdate) -> ScheduledTask | None:
-        from app.modules.safety.scheduler import compute_next_run  # type: ignore[attr-defined]
+        from app.modules.safety.scheduler import compute_next_run
 
         update_data = data.model_dump(exclude_unset=True)
         # Recompute next_run_at if cron or enabled changed
@@ -68,16 +68,16 @@ class ScheduledTaskService:
         return await self.repo.delete_scheduled_task(task_id)  # type: ignore[attr-defined,no-any-return]
 
     async def toggle_task(self, task_id: uuid.UUID, enabled: bool) -> ScheduledTask | None:
-        from app.modules.safety.scheduler import compute_next_run  # type: ignore[attr-defined]
+        from app.modules.safety.scheduler import compute_next_run
 
         task = await self.repo.get_scheduled_task_by_id(task_id)  # type: ignore[attr-defined]
         if not task:
             return None
-        update_data = {"is_enabled": enabled}
+        update_data: dict[str, Any] = {"is_enabled": enabled}
         if enabled:
             update_data["next_run_at"] = compute_next_run(task.cron_expression)
         else:
-            update_data["next_run_at"] = None  # type: ignore[assignment]
+            update_data["next_run_at"] = None
         return await self.repo.update_scheduled_task(task_id, update_data)  # type: ignore[attr-defined]
 
     async def run_task_now(self, task_id: uuid.UUID) -> ScheduledTaskLog | None:

@@ -224,11 +224,9 @@ export interface AlertRecord {
   created_at: string
 }
 
-// 处理预警记录输入
-export interface ProcessRecordInput {
-  status: 'processed' | 'ignored'
-  process_note?: string
-}
+// 处理预警记录输入 — use AlertRecordProcessRequest from @/types/generated/schema
+export type { components } from '@/types/generated/schema'
+export type ProcessRecordInput = components['schemas']['AlertRecordProcessRequest']
 
 // 预警记录查询参数
 export interface RecordQueryParams {

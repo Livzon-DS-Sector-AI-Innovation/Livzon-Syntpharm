@@ -157,6 +157,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
     ENERGY_AUTO_COLLECT_ENABLED: bool = False
+    ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
+    ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
 
     @field_validator("DEBUG", mode="before")

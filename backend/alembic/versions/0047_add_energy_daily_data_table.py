@@ -1,7 +1,7 @@
-"""Add EnergyDailyData table
+"""0047_add_energy_daily_data_table
 
-Revision ID: 0048_add_energy_daily_data_table
-Revises: 49684887bf7e
+Revision ID: 0047_add_energy_daily_data_table
+Revises: 0046_qms_deviation_settings
 Create Date: 2026-07-22 08:02:02.952294
 """
 from typing import Sequence, Union
