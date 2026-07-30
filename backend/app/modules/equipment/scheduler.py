@@ -23,8 +23,8 @@ async def maintenance_plan_loop() -> None:
     选择 00:05 而非 00:00 是为了避开飞书成员同步（00:00）的执行窗口，
     减少并发数据库连接压力。
     """
-    settings = get_settings()
     from app.shared.config_reader import get_module_setting_bool
+
     enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
     if not enabled:
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
@@ -71,6 +71,7 @@ async def maintenance_plan_loop() -> None:
 
         # 每次 tick 重新读取配置，支持运行时动态开关
         from app.shared.config_reader import get_module_setting_bool
+
         enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
         if not enabled:
             logger.debug("维护计划自动生成已关闭，跳过本轮")
@@ -107,7 +108,6 @@ async def scan_timeout_work_orders() -> None:
 
     from sqlalchemy import select
 
-    from app.core.config import get_settings
     from app.core.database import async_session_factory
     from app.modules.equipment.models.work_order import WorkOrder
     from app.platform.integrations.feishu.contact import get_department_leader
