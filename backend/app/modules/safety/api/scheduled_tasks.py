@@ -65,17 +65,17 @@ async def get_feishu_chats(
     settings = get_settings()
     chats: list[dict[str, Any]] = []
     # Include configured chats
-    if settings.FEISHU_EQUIPMENT_CHAT_ID:  # type: ignore[attr-defined]
+    if settings.feishu.platform.equipment_chat_id:
         chats.append(
             {
-                "chat_id": settings.FEISHU_EQUIPMENT_CHAT_ID,  # type: ignore[attr-defined]
+                "chat_id": settings.feishu.platform.equipment_chat_id,
                 "name": "设备管理群",
             }
         )
-    if settings.FEISHU_SAFETY_CHAT_ID:  # type: ignore[attr-defined]
+    if settings.feishu.platform.safety_chat_id:
         chats.append(
             {
-                "chat_id": settings.FEISHU_SAFETY_CHAT_ID,  # type: ignore[attr-defined]
+                "chat_id": settings.feishu.platform.safety_chat_id,
                 "name": "安全模块功能测试群",
             }
         )
