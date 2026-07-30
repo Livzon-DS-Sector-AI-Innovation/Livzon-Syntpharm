@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse, paginated_response, success_response
-from app.modules.safety.schemas import (  # type: ignore[attr-defined]
+from app.modules.safety.schemas import (
     CardPreviewRequest,
     ScheduledTaskCreate,
     ScheduledTaskLogResponse,

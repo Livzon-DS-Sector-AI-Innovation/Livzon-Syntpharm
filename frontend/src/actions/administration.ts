@@ -1,6 +1,5 @@
 'use server'
 
-import type { OperationRegulationCreate, OperationRegulationUpdate } from '@/types/generated/schema'
 import {
   createGiftRequisitionApi, updateGiftRequisitionApi, deleteGiftRequisitionApi,
   createRegulationApi, updateRegulationApi, deleteRegulationApi,
@@ -21,12 +20,12 @@ export async function deleteGiftRequisition(id: string) {
   return deleteGiftRequisitionApi(id)
 }
 
-export async function createRegulation(data: OperationRegulationCreate) {
-  return createRegulationApi(data)
+export async function createRegulation(data: Record<string, unknown>): Promise<unknown> {
+  return createRegulationApi(data as Record<string, unknown>)
 }
 
-export async function updateRegulation(id: string, data: OperationRegulationUpdate) {
-  return updateRegulationApi(id, data)
+export async function updateRegulation(id: string, data: Record<string, unknown>): Promise<unknown> {
+  return updateRegulationApi(id, data as Record<string, unknown>)
 }
 
 export async function deleteRegulation(id: string) {
