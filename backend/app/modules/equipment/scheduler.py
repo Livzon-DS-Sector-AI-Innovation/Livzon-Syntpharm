@@ -110,7 +110,7 @@ async def scan_timeout_work_orders() -> None:
     from app.platform.integrations.feishu.message import send_timeout_notification
 
     settings = get_settings()
-    dept_id = settings.equipment_dept_id
+    dept_id = settings.feishu.platform.equipment_dept_id
     if not dept_id:
         return
 
