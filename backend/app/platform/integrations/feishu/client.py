@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+from uuid import uuid4
 
 import httpx
 
@@ -100,6 +101,28 @@ class FeishuClient(IntegrationClient):
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def _e2e_response(self, method: str, path: str) -> dict[str, Any]:
+        """Return fake Feishu API response when running in e2e mode."""
+        if path.startswith("/auth/v3/tenant_access_token/internal"):
+            return {"code": 0, "msg": "ok", "tenant_access_token": "e2e-fake-token", "expire": 9999999999}
+        if path.startswith("/auth/v3/app_access_token/internal"):
+            return {"code": 0, "msg": "ok", "app_access_token": "e2e-fake-app-token", "expire": 9999999999}
+        if "/bitable/" in path:
+            return {"code": 0, "msg": "ok", "data": {"items": [], "total": 0, "has_more": False}}
+        if "contact" in path:
+            return {"code": 0, "msg": "ok", "data": {}}
+        if "im/v1/messages" in path:
+            return {"code": 0, "msg": "ok", "data": {"message_id": f"e2e-msg-{uuid4().hex[:12]}"}}
+        if "drive/v1/medias" in path:
+            return {"code": 0, "msg": "ok", "data": {"file_token": "e2e-file-token", "tmp_download_url": ""}}
+        if "sheets/v2/spreadsheets" in path:
+            return {"code": 0, "msg": "ok", "data": {}}
+        if "authen/v1" in path:
+            return {"code": 0, "msg": "ok", "data": {"access_token": "e2e-oauth-token"}}
+        if "websocket" in path or "event/v1" in path:
+            return {"code": 0, "msg": "ok", "data": {}}
+        return {"code": 0, "msg": "ok", "data": {}}
+
     async def request(
         self,
         method: str,
@@ -110,6 +133,10 @@ class FeishuClient(IntegrationClient):
         headers: dict[str, Any] | None = None,
         timeout: float = 15.0,
     ) -> dict[str, Any]:
+        from app.core.config import get_settings
+
+        if get_settings().APP_ENV == "e2e":
+            return self._e2e_response(method, path)
         token = await self._auth.get_token()
         default_headers = {
             "Authorization": f"Bearer {token}",

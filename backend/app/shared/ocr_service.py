@@ -231,8 +231,31 @@ class OCRService:
             raise ValueError(f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'")
 
 
+class FakeOCRService:
+    """No-op OCR service for e2e — returns empty/fake results, no model download."""
+
+    def extract_text(self, image_input: str | Path | Image.Image) -> str:
+        return ""
+
+    def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
+        return []
+
+    def extract_structure(self, image_input: str | Path | Image.Image) -> dict[str, Any]:
+        return {"markdown": "", "tables": []}
+
+    def extract_markdown(self, image_input: str | Path | Image.Image) -> str:
+        return ""
+
+    def extract(
+        self, image_input: str | Path | Image.Image, output_format: str = "text", **kwargs: Any
+    ) -> str | dict[str, Any]:
+        if output_format == "text":
+            return ""
+        return {"markdown": "", "tables": []}
+
+
 # Global instance
-_ocr_service = None
+_ocr_service: OCRService | FakeOCRService | None = None
 _ocr_lock = threading.Lock()
 _ocr_initializing = False
 
@@ -245,6 +268,14 @@ def init_ocr() -> None:
             return
         _ocr_initializing = True
     try:
+        from app.core.config import get_settings
+
+        if get_settings().APP_ENV == "e2e":
+            logger.info("e2e mode: using FakeOCRService (no model download)")
+            with _ocr_lock:
+                _ocr_service = FakeOCRService()
+                _ocr_initializing = False
+            return
         logger.info("Initializing OCR service...")
         service = OCRService()
         with _ocr_lock:
@@ -257,7 +288,7 @@ def init_ocr() -> None:
         logger.exception("Failed to initialize OCR service")
 
 
-def get_ocr_service() -> OCRService:
+def get_ocr_service() -> OCRService | FakeOCRService:
     """Get the OCR service instance."""
     if _ocr_service is None:
         if _ocr_initializing:

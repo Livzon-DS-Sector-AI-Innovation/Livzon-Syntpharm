@@ -125,6 +125,12 @@ async def start_equipment_ws() -> None:
     global _stop
     _stop = asyncio.Event()
 
+    from app.core.config import get_settings
+
+    if get_settings().APP_ENV == "e2e":
+        logger.info("e2e mode: skipping WebSocket client")
+        return
+
     if not settings.feishu.equipment.ws_enabled:
         logger.info("设备机器人 WS 已禁用 (EQUIPMENT_FEISHU_WS_ENABLED=false)，跳过")
         return
