@@ -13,7 +13,7 @@ export default async function AuthorizationLetterPage() {
     <AuthorizationLetterClient
       initialLetters={lettersRes?.data || []}
       initialTotal={lettersRes?.meta?.total || 0}
-      products={productsRes || []}
+      products={productsRes?.data || []}
     />
   )
 }
