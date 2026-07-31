@@ -151,7 +151,7 @@ run_e2e() {
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
     local start_time=$SECONDS
-    local timeout=600
+    local timeout=120
     local backend_ready=false
 
     while (( SECONDS - start_time < timeout )); do
@@ -161,7 +161,7 @@ run_e2e() {
             exit 1
         fi
 
-        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e uv run python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)" > /dev/null 2>&1; then
             backend_ready=true
             break
         fi
@@ -224,9 +224,7 @@ run_e2e() {
     cd "$REPO_ROOT/frontend"
 
     local e2e_exit_code=0
-    if ! pnpm exec playwright test; then
-        e2e_exit_code=$?
-    fi
+    pnpm exec playwright test || e2e_exit_code=$?
 
     # ── Collect E2E frontend log ────────────────────────────────────────
     if [[ -f "$REPO_ROOT/e2e-frontend.log" ]]; then

@@ -363,3 +363,20 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health/live")
+async def health_live() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready() -> dict[str, str]:
+    from sqlalchemy import text
+
+    from app.core.database import engine
+
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
+
+    return {"status": "ok"}

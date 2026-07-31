@@ -12,7 +12,7 @@ export default defineConfig({
     : [['html', { open: 'never' }]],
   use: {
     baseURL: process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },

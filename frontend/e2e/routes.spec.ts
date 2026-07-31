@@ -14,8 +14,6 @@ type RouteCase = {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 async function checkRoute(page: Page, route: RouteCase) {
-  const startURL = page.url()
-
   const httpErrors: string[] = []
   const networkFailures: string[] = []
 
@@ -23,51 +21,59 @@ async function checkRoute(page: Page, route: RouteCase) {
     url.startsWith('http://127.0.0.1:13000') ||
     url.includes('/api/')
 
-  page.on('response', (response) => {
+  const onResponse = (response: any) => {
     if (isApplicationUrl(response.url()) && response.status() >= 400) {
       const req = response.request()
       httpErrors.push(`[${response.status()}] ${req.method()} ${req.url()}`)
     }
-  })
+  }
 
-  page.on('requestfailed', (request) => {
+  const onRequestFailed = (request: any) => {
     if (isApplicationUrl(request.url())) {
       networkFailures.push(
         `${request.method()} ${request.url()}: ${request.failure()?.errorText ?? 'unknown error'}`,
       )
     }
-  })
-
-  const response = await page.goto(route.path, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30_000,
-  })
-
-  if (route.kind === 'redirect') {
-    const dest = route.expectedPath!
-    await expect(page).toHaveURL(
-      new RegExp(`${escapeRegex(dest)}(?:\\?.*)?$`),
-      { timeout: 10_000 },
-    )
-    await expect(route.expected(page)).toBeVisible({ timeout: 15_000 })
-  } else if (route.kind === 'external-iframe') {
-    expect(response).not.toBeNull()
-    expect(response!.status()).toBeLessThan(400)
-    await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
-    if (route.heading) {
-      await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible({ timeout: 10_000 })
-    }
-  } else {
-    expect(response).not.toBeNull()
-    expect(response!.status()).toBeLessThan(400)
-    await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
   }
 
-  await expect(page.getByText('页面加载出错')).not.toBeVisible()
-  await expect(page.getByText('应用加载出错')).not.toBeVisible()
+  page.on('response', onResponse)
+  page.on('requestfailed', onRequestFailed)
 
-  expect(httpErrors.length, `HTTP errors on ${route.path}:\n${httpErrors.join('\n')}`).toBe(0)
-  expect(networkFailures.length, `Failed requests on ${route.path}:\n${networkFailures.join('\n')}`).toBe(0)
+  try {
+    const response = await page.goto(route.path, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30_000,
+    })
+
+    if (route.kind === 'redirect') {
+      const dest = route.expectedPath!
+      await expect(page).toHaveURL(
+        new RegExp(`${escapeRegex(dest)}(?:\\?.*)?$`),
+        { timeout: 10_000 },
+      )
+      await expect(route.expected(page)).toBeVisible({ timeout: 15_000 })
+    } else if (route.kind === 'external-iframe') {
+      expect(response).not.toBeNull()
+      expect(response!.status()).toBeLessThan(400)
+      await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
+      if (route.heading) {
+        await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible({ timeout: 10_000 })
+      }
+    } else {
+      expect(response).not.toBeNull()
+      expect(response!.status()).toBeLessThan(400)
+      await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
+    }
+
+    await expect(page.getByText('页面加载出错')).not.toBeVisible()
+    await expect(page.getByText('应用加载出错')).not.toBeVisible()
+
+    expect(httpErrors.length, `HTTP errors on ${route.path}:\n${httpErrors.join('\n')}`).toBe(0)
+    expect(networkFailures.length, `Failed requests on ${route.path}:\n${networkFailures.join('\n')}`).toBe(0)
+  } finally {
+    page.off('response', onResponse)
+    page.off('requestfailed', onRequestFailed)
+  }
 }
 
 const heading =
