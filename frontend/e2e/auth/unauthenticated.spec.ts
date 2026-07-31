@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test'
 
 const PROTECTED_ROUTES = [
+  { path: '/production', name: '生产管理' },
+  { path: '/equipment/stats', name: '设备仪表盘' },
+  { path: '/energy', name: '能源总览' },
   { path: '/administration', name: '行政管理' },
-  { path: '/procurement/contract-summary', name: '采购合同汇总' },
-  { path: '/hr', name: '人事管理' },
-  { path: '/procurement/invoice-recognition', name: '采购发票识别' },
-  { path: '/hr/training', name: '培训管理' },
+  { path: '/environment', name: '环保管理' },
+  { path: '/warehouse', name: '库房管理' },
+  { path: '/settings', name: '后台管理' },
+  { path: '/hr', name: '人力资源' },
+  { path: '/procurement', name: '采购管理' },
+  { path: '/quality', name: '质量管理' },
+  { path: '/registration', name: '注册申报' },
+  { path: '/research', name: '研发管理' },
+  { path: '/safety', name: '安全生产' },
 ]
 
 for (const { path, name } of PROTECTED_ROUTES) {

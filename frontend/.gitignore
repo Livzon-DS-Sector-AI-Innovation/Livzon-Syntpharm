@@ -31,6 +31,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# e2e
+e2e/.auth/
+.next-e2e/
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
@@ -61,5 +65,4 @@ src/types/generated/openapi.json
 .codex/
 playwright-report/
 test-results/
-e2e/.auth/
 /.next-e2e/

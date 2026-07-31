@@ -1,11 +1,4 @@
 services:
-  ci-build:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    environment:
-      NODE_ENV: production
-
   postgres:
     image: postgres:17
     ports:

@@ -30,9 +30,12 @@ async function checkRoute(page: Page, route: RouteCase) {
   }
 
   const onRequestFailed = (request: any) => {
-    if (isApplicationUrl(request.url())) {
+    // net::ERR_ABORTED occurs when navigating away — pending requests from the
+    // previous route are legitimately cancelled. Only flag real failures.
+    const errorText = request.failure()?.errorText ?? ''
+    if (isApplicationUrl(request.url()) && errorText !== 'net::ERR_ABORTED') {
       networkFailures.push(
-        `${request.method()} ${request.url()}: ${request.failure()?.errorText ?? 'unknown error'}`,
+        `${request.method()} ${request.url()}: ${errorText}`,
       )
     }
   }
@@ -42,11 +45,13 @@ async function checkRoute(page: Page, route: RouteCase) {
 
   try {
     const response = await page.goto(route.path, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30_000,
     })
 
     if (route.kind === 'redirect') {
+      expect(response).not.toBeNull()
+      expect(response!.status()).toBeLessThan(400)
       const dest = route.expectedPath!
       await expect(page).toHaveURL(
         new RegExp(`${escapeRegex(dest)}(?:\\?.*)?$`),
