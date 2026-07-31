@@ -14,17 +14,17 @@ test('empty token redirects to /login?error=callback_failed', async ({ page }) =
 })
 
 test('garbage token set as cookie → dashboard rejects → redirects to /login', async ({ page }) => {
-  await page.evaluate(() => {
-    document.cookie = 'auth_token=not-a-valid-jwt; path=/'
-  })
+  await page.context().addCookies([
+    { name: 'auth_token', value: 'not-a-valid-jwt', path: '/', domain: '127.0.0.1' },
+  ])
   await page.goto('/production')
   await expect(page).toHaveURL(LOGIN_URL)
 })
 
 test('tampered JWT set as cookie → dashboard rejects → redirects to /login', async ({ page }) => {
-  await page.evaluate(() => {
-    document.cookie = 'auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.tampered_signature_here; path=/'
-  })
+  await page.context().addCookies([
+    { name: 'auth_token', value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.tampered_signature_here', path: '/', domain: '127.0.0.1' },
+  ])
   await page.goto('/production')
   await expect(page).toHaveURL(LOGIN_URL)
 })

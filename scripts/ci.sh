@@ -177,7 +177,7 @@ run_e2e() {
 
     log_info "Backend ready ($(( SECONDS - start_time ))s)"
 
-    # ── Build frontend into .next-e2e ───────────────────────────────────
+    # ── Build frontend into .next-e2e (standalone output) ──────────────
     log_info "Building E2E frontend (dist: .next-e2e)..."
     cd "$REPO_ROOT/frontend"
     check_command pnpm || exit 1
@@ -188,16 +188,21 @@ run_e2e() {
     fi
     log_info "Frontend build complete"
 
-    # ── Start frontend on host ──────────────────────────────────────────
-    log_info "Starting E2E frontend on port 13000..."
-    cd "$REPO_ROOT/frontend"
+    # ── Prepare standalone runtime (mimics production Dockerfile) ─────
+    cp -r .next-e2e/static .next-e2e/standalone/.next/static
+    cp -r public .next-e2e/standalone/public
 
-    NODE_OPTIONS="--no-deprecation" \
-    NEXT_DIST_DIR=".next-e2e" \
+    # ── Start frontend using standalone Node.js server ────────────────
+    log_info "Starting E2E frontend on port 13000..."
+    cd "$REPO_ROOT/frontend/.next-e2e/standalone"
+
+    PORT=13000 HOSTNAME=127.0.0.1 \
     API_BASE_URL="http://127.0.0.1:18000" \
-        pnpm exec next start -H 127.0.0.1 -p 13000 \
+        node server.js \
         > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
     E2E_FRONTEND_PID=$!
+
+    cd "$REPO_ROOT"
 
     local frontend_ready=false
     for i in $(seq 1 30); do
@@ -213,8 +218,6 @@ run_e2e() {
         exit 1
     fi
     log_info "Frontend ready"
-
-    cd "$REPO_ROOT"
 
     # ── Run Playwright ──────────────────────────────────────────────────
     export E2E_BACKEND_URL="http://127.0.0.1:18000"

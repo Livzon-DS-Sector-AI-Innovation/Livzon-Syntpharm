@@ -485,11 +485,22 @@ export const dynamic = 'force-dynamic'
 ## 新增页面的步骤
 
 1. 在 `app/(dashboard)/<模块>/` 下新建目录和 `page.tsx`
+   - **每个页面必须包含一个语义化 `<h1>` 标题**（符合 WCAG 2.4.2/2.4.6 无障碍标准）。
+   - 使用 `<h1>标题文本</h1>` 或 antd 的 `<Title level={1}>标题文本</Title>`。
+   - 标题文本必须与 E2E 测试期望的 heading 文本一致。
 2. `page.tsx` 里 fetch 数据，传给 `components/<模块>/` 里的组件
 3. 组件写在 `components/<模块>/` 里，需要交互的加 `'use client'`
 4. 如果有写操作，写在 `actions/<模块>.ts` 里
 5. 类型定义更新到 `types/<模块>.ts`
 6. 新增的对外组件记得在 `components/<模块>/index.ts` 里导出
+
+### 页面标题规范
+
+每个页面必须有一个 `<h1>` 标题：
+- 使用 `<h1>标题文本</h1>` 或 `<Title level={1}>标题文本</Title>`
+- 标题描述页面核心功能（如"批次管理"、"采购管理工作台"）
+- 禁止使用 `<Card title="...">` 替代页面标题（Card title 不生成语义化 heading 元素）
+- 禁止页面没有标题（影响无障碍访问和 E2E 测试可断言性）
 
 ## API 调用架构
 

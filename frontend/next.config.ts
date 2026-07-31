@@ -2,9 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
-  turbopack: {
-    root: '.',
-  },
   output: 'standalone',
   reactCompiler: false,
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(',').filter(Boolean) || ['localhost', '127.0.0.1'],

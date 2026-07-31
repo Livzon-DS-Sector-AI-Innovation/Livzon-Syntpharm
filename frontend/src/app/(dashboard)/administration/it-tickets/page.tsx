@@ -4,6 +4,9 @@ export default function ITTicketPage() {
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
+      <div className="px-6 py-4 shrink-0">
+        <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">IT工单</h1>
+      </div>
       <div className="px-6 py-3 border-b border-gray-200 bg-blue-50 shrink-0">
         <div className="flex items-start gap-2 text-sm text-blue-800">
           <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

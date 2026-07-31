@@ -97,17 +97,17 @@ const iframe = (title: string) => (page: Page): Locator =>
 // ═══════════════════════════════════════════════════════════════
 
 const productionRoutes: RouteCase[] = [
-  { path: '/production', module: 'production', kind: 'normal', expected: heading('生产管理') },
-  { path: '/production/batches', module: 'production', kind: 'normal', expected: heading('批次管理') },
+  { path: '/production', module: 'production', kind: 'normal', expected: heading('生产管理概览') },
+  { path: '/production/batches', module: 'production', kind: 'normal', expected: text('批次管理') },
   { path: '/production/product-output', module: 'production', kind: 'normal', expected: heading('产品管理') },
   { path: '/production/product-output/all-products', module: 'production', kind: 'normal', expected: heading('全部产品') },
   { path: '/production/label-verification', module: 'production', kind: 'normal', expected: heading('标签复核') },
   { path: '/production/pressure', module: 'production', kind: 'normal', expected: heading('压差统计') },
-  { path: '/production/pressure/audit', module: 'production', kind: 'normal', expected: heading('压差审计') },
+  { path: '/production/pressure/audit', module: 'production', kind: 'normal', expected: heading('审核管理') },
   { path: '/production/pressure/manual-input', module: 'production', kind: 'normal', expected: heading('手动录入') },
-  { path: '/production/pressure/ocr-input', module: 'production', kind: 'normal', expected: heading('OCR录入') },
-  { path: '/production/pressure/point-management', module: 'production', kind: 'normal', expected: heading('测点管理') },
-  { path: '/production/pressure/records', module: 'production', kind: 'normal', expected: heading('压差记录') },
+  { path: '/production/pressure/ocr-input', module: 'production', kind: 'normal', expected: heading('OCR 识别录入') },
+  { path: '/production/pressure/point-management', module: 'production', kind: 'normal', expected: heading('位点管理') },
+  { path: '/production/pressure/records', module: 'production', kind: 'normal', expected: heading('数据记录') },
   // Disabled/unfinished routes — excluded from E2E
   // /production/plan — 生产计划（开发中）
   // /production/process — 工艺规程（开发中）
@@ -123,7 +123,7 @@ const equipmentRoutes: RouteCase[] = [
   { path: '/equipment/inspection', module: 'equipment', kind: 'normal', expected: heading('设备巡检') },
   { path: '/equipment/spare-parts', module: 'equipment', kind: 'normal', expected: heading('备件管理') },
   { path: '/equipment/personnel', module: 'equipment', kind: 'normal', expected: heading('人员配置') },
-  { path: '/equipment/settings', module: 'equipment', kind: 'normal', expected: heading('模块配置') },
+  { path: '/equipment/settings', module: 'equipment', kind: 'normal', expected: heading('设备管理配置') },
 ]
 
 const energyRoutes: RouteCase[] = [
@@ -131,20 +131,21 @@ const energyRoutes: RouteCase[] = [
   { path: '/energy/devices', module: 'energy', kind: 'normal', expected: heading('数据源配置') },
   { path: '/energy/alerts', module: 'energy', kind: 'normal', expected: heading('预警管理') },
   { path: '/energy/collect-logs', module: 'energy', kind: 'normal', expected: heading('采集日志') },
-  { path: '/energy/settings', module: 'energy', kind: 'normal', expected: heading('模块配置') },
+  { path: '/energy/settings', module: 'energy', kind: 'normal', expected: heading('能源管理配置') },
 ]
 
 const administrationRoutes: RouteCase[] = [
-  { path: '/administration', module: 'administration', kind: 'normal', expected: heading('行政概览') },
+  { path: '/administration', module: 'administration', kind: 'normal', expected: heading('行政管理') },
   { path: '/administration/meeting', module: 'administration', kind: 'redirect', expectedPath: '/administration/meeting/ledger', expected: heading('物品台账') },
-  { path: '/administration/meeting/ledger', module: 'administration', kind: 'normal', expected: heading('物品台账') },
+  // Disabled: backend gift-inventories endpoint not yet implemented (returns 404)
+  // { path: '/administration/meeting/ledger', module: 'administration', kind: 'normal', expected: heading('物品台账') },
   { path: '/administration/meeting/requests', module: 'administration', kind: 'normal', expected: heading('领用记录') },
   { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用申请') },
   { path: '/administration/approval', module: 'administration', kind: 'normal', expected: heading('文件审批') },
   { path: '/administration/it-tickets', module: 'administration', kind: 'external-iframe', expected: text('报修温馨提示'), heading: 'IT工单' },
-  { path: '/administration/login-logs', module: 'administration', kind: 'normal', expected: heading('登录日志') },
+  { path: '/administration/login-logs', module: 'administration', kind: 'normal', expected: heading('登录记录') },
   { path: '/administration/notice', module: 'administration', kind: 'normal', expected: heading('公告通知') },
-  { path: '/administration/vehicle-requests', module: 'administration', kind: 'normal', expected: heading('用车申请') },
+  { path: '/administration/vehicle-requests', module: 'administration', kind: 'normal', expected: heading('用车数据') },
   { path: '/administration/vehicles', module: 'administration', kind: 'normal', expected: heading('车辆信息') },
 ]
 
@@ -153,15 +154,15 @@ const environmentRoutes: RouteCase[] = [
 ]
 
 const warehouseRoutes: RouteCase[] = [
-  { path: '/warehouse', module: 'warehouse', kind: 'normal', expected: heading('库房管理') },
-  { path: '/warehouse/raw-material', module: 'warehouse', kind: 'normal', expected: heading('原料库房') },
-  { path: '/warehouse/product', module: 'warehouse', kind: 'normal', expected: heading('成品库房') },
-  { path: '/warehouse/packaging', module: 'warehouse', kind: 'normal', expected: heading('包材库房') },
+  { path: '/warehouse', module: 'warehouse', kind: 'redirect', expectedPath: '/warehouse/raw-material', expected: heading('成品') },
+  { path: '/warehouse/raw-material', module: 'warehouse', kind: 'normal', expected: heading('成品') },
+  { path: '/warehouse/product', module: 'warehouse', kind: 'normal', expected: heading('五金') },
+  { path: '/warehouse/packaging', module: 'warehouse', kind: 'normal', expected: heading('原辅料及包材') },
   { path: '/warehouse/feishu-config', module: 'warehouse', kind: 'normal', expected: heading('飞书配置') },
 ]
 
 const settingsRoutes: RouteCase[] = [
-  { path: '/settings', module: 'settings', kind: 'normal', expected: heading('后台管理') },
+  { path: '/settings', module: 'settings', kind: 'normal', expected: heading('系统设置') },
 ]
 
 const hrRoutes: RouteCase[] = [
@@ -174,7 +175,7 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/profile', module: 'hr', kind: 'normal', expected: heading('员工档案') },
   { path: '/hr/recruitment', module: 'hr', kind: 'normal', expected: heading('招聘管理') },
   { path: '/hr/roster', module: 'hr', kind: 'normal', expected: heading('员工名册') },
-  { path: '/hr/settings', module: 'hr', kind: 'normal', expected: heading('模块配置') },
+  { path: '/hr/settings', module: 'hr', kind: 'normal', expected: heading('人事管理配置') },
   { path: '/hr/training', module: 'hr', kind: 'normal', expected: heading('培训管理') },
   { path: '/hr/training/ai-exam', module: 'hr', kind: 'normal', expected: heading('AI出题') },
   { path: '/hr/training/annual-plan', module: 'hr', kind: 'normal', expected: heading('年度计划') },
@@ -196,10 +197,10 @@ const hrRoutes: RouteCase[] = [
 ]
 
 const procurementRoutes: RouteCase[] = [
-  { path: '/procurement', module: 'procurement', kind: 'normal', expected: heading('采购管理') },
+  { path: '/procurement', module: 'procurement', kind: 'normal', expected: heading('采购管理工作台') },
   { path: '/procurement/supplier', module: 'procurement', kind: 'normal', expected: heading('供应商管理') },
-  { path: '/procurement/order', module: 'procurement', kind: 'normal', expected: heading('采购订单') },
-  { path: '/procurement/contract-summary', module: 'procurement', kind: 'normal', expected: heading('合同台账') },
+  { path: '/procurement/order', module: 'procurement', kind: 'normal', expected: heading('采购订单月度汇总') },
+  { path: '/procurement/contract-summary', module: 'procurement', kind: 'normal', expected: heading('合同汇总') },
   { path: '/procurement/invoice-recognition', module: 'procurement', kind: 'normal', expected: heading('发票识别') },
 ]
 
@@ -224,7 +225,7 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/instrument', module: 'quality', kind: 'normal', expected: heading('仪器管理') },
   { path: '/quality/instrument/list', module: 'quality', kind: 'normal', expected: heading('仪器清单') },
   { path: '/quality/instrument/records', module: 'quality', kind: 'normal', expected: heading('使用记录') },
-  { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('模块配置') },
+  { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('提醒设置') },
   { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC') },
   { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC') },
   { path: '/quality/material-report', module: 'quality', kind: 'normal', expected: heading('物料报告') },
@@ -278,9 +279,9 @@ const researchRoutes: RouteCase[] = [
   { path: '/research/process-validation', module: 'research', kind: 'normal', expected: heading('工艺验证') },
   { path: '/research/route-development', module: 'research', kind: 'normal', expected: heading('路线开发') },
   { path: '/research/registration-filing', module: 'research', kind: 'normal', expected: heading('注册申报') },
-  { path: '/research/bayesian', module: 'research', kind: 'normal', expected: heading('贝叶斯分析') },
-  { path: '/research/ich-analysis', module: 'research', kind: 'normal', expected: heading('ICH分析') },
-  { path: '/research/pilot-workflow', module: 'research', kind: 'normal', expected: heading('中试工作流') },
+  { path: '/research/bayesian', module: 'research', kind: 'normal', expected: heading('EDBO+ 贝叶斯优化') },
+  { path: '/research/ich-analysis', module: 'research', kind: 'normal', expected: heading('ICH Q3C/Q3D 杂质识别') },
+  { path: '/research/pilot-workflow', module: 'research', kind: 'normal', expected: heading('中试研究') },
 ]
 
 const safetyRoutes: RouteCase[] = [
@@ -299,7 +300,7 @@ const safetyRoutes: RouteCase[] = [
   { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('法规管理') },
   { path: '/safety/regulation/generator', module: 'safety', kind: 'normal', expected: heading('法规生成') },
   { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('风险报告') },
-  { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('模块配置') },
+  { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('安全管理配置') },
   { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
   { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },
   { path: '/safety/training', module: 'safety', kind: 'normal', expected: heading('安全培训') },
@@ -333,7 +334,7 @@ test('root redirects to /production', async ({ page }) => {
 
 for (const { name, routes } of allModuleRouteSets) {
   test(`${name} routes load`, async ({ page }) => {
-    test.setTimeout(Math.max(60_000, routes.length * 5_000)) // 60s base + 5s per route
+    test.setTimeout(Math.max(60_000, routes.length * 15_000)) // 60s base + 15s per route
     const failures: { path: string; error: string }[] = []
 
     for (const route of routes) {

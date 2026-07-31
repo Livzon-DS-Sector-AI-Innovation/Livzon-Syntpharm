@@ -372,6 +372,7 @@ export default function LabelVerificationClient({
 
   return (
     <div className="space-y-4">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">标签复核</h1>
       {/* 统计卡片 */}
       {statistics && (
         <Row gutter={16}>
