@@ -18,8 +18,9 @@ async function checkRoute(page: Page, route: RouteCase) {
   const networkFailures: string[] = []
 
   const isApplicationUrl = (url: string) =>
-    url.startsWith('http://127.0.0.1:13000') ||
-    url.includes('/api/')
+    (url.startsWith('http://127.0.0.1:13000') ||
+    url.includes('/api/')) &&
+    !url.includes('?_rsc=') // exclude Next.js RSC prefetch requests that are legitimately aborted on navigation
 
   const onResponse = (response: any) => {
     if (isApplicationUrl(response.url()) && response.status() >= 400) {
@@ -327,6 +328,7 @@ test('root redirects to /production', async ({ page }) => {
 
 for (const { name, routes } of allModuleRouteSets) {
   test(`${name} routes load`, async ({ page }) => {
+    test.setTimeout(Math.max(60_000, routes.length * 5_000)) // 60s base + 5s per route
     const failures: { path: string; error: string }[] = []
 
     for (const route of routes) {
