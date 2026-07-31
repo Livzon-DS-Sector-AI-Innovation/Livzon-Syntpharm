@@ -24,6 +24,8 @@ from app.modules.safety.models import (
     SafetyCheck,
     SafetyKnowledgeArticle,
     SafetyTraining,
+    ScheduledTask,
+    ScheduledTaskLog,
     SpecialOperationPermit,
     SpecialOperationPersonnel,
     SpecialOperationReport,
@@ -2034,3 +2036,74 @@ class SafetyRepository:
         )
         result = await self.session.execute(query)
         return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+
+    # ==================== ScheduledTask Operations ====================
+
+    async def get_scheduled_tasks(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        is_enabled: bool | None = None,
+        search: str | None = None,
+    ) -> tuple[list[ScheduledTask], int]:
+        query = select(ScheduledTask).where(~ScheduledTask.is_deleted)
+        if is_enabled is not None:
+            query = query.where(ScheduledTask.is_enabled == is_enabled)
+        if search:
+            query = query.where(ScheduledTask.name.ilike(f"%{search}%"))
+        count_query = select(func.count(ScheduledTask.id)).where(~ScheduledTask.is_deleted)
+        if is_enabled is not None:
+            count_query = count_query.where(ScheduledTask.is_enabled == is_enabled)
+        if search:
+            count_query = count_query.where(ScheduledTask.name.ilike(f"%{search}%"))
+        total = await self.session.scalar(count_query)
+        query = query.offset(skip).limit(limit).order_by(ScheduledTask.created_at.desc())
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+        return items, total or 0
+
+    async def get_scheduled_task_by_id(self, task_id: uuid.UUID) -> ScheduledTask | None:
+        query = select(ScheduledTask).where(ScheduledTask.id == task_id, ~ScheduledTask.is_deleted)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def create_scheduled_task(self, data: dict[str, Any]) -> ScheduledTask:
+        item = ScheduledTask(**data)
+        self.session.add(item)
+        await self.session.flush()
+        stmt = select(ScheduledTask).where(ScheduledTask.id == item.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    async def update_scheduled_task(self, task_id: uuid.UUID, data: dict[str, Any]) -> ScheduledTask | None:
+        query = (
+            update(ScheduledTask)
+            .where(ScheduledTask.id == task_id, ~ScheduledTask.is_deleted)
+            .values(**data, updated_at=func.now())
+            .returning(ScheduledTask)
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def delete_scheduled_task(self, task_id: uuid.UUID) -> bool:
+        query = (
+            update(ScheduledTask).where(ScheduledTask.id == task_id, ~ScheduledTask.is_deleted).values(is_deleted=True)
+        )
+        result = await self.session.execute(query)
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+
+    async def get_task_logs(
+        self,
+        task_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[list[ScheduledTaskLog], int]:
+        query = select(ScheduledTaskLog).where(ScheduledTaskLog.task_id == task_id, ~ScheduledTaskLog.is_deleted)
+        count_query = select(func.count(ScheduledTaskLog.id)).where(
+            ScheduledTaskLog.task_id == task_id, ~ScheduledTaskLog.is_deleted
+        )
+        total = await self.session.scalar(count_query)
+        query = query.offset(skip).limit(limit).order_by(ScheduledTaskLog.created_at.desc())
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+        return items, total or 0

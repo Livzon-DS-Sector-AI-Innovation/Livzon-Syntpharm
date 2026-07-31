@@ -2,115 +2,89 @@
 
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
-import {
+import type {
   CreateInspectionRouteInput, UpdateInspectionRouteInput,
   CreateInspectionTaskInput, EquipmentCheckResult,
-  InspectionRecordItem, InspectionAIItemResult,
+  InspectionAIItemResult,
   RouteCheckSubmitInput, RouteLocationItem,
   CreateInspectionScheduleInput, UpdateInspectionScheduleInput,
 } from '@/types/inspection'
+import {
+  createRouteApi, updateRouteApi, deleteRouteApi,
+  setRouteLocationsApi,
+  createTaskApi, startTaskApi, completeTaskApi, closeTaskApi,
+  submitEquipmentCheckApi,
+  deleteInspectionPhotoApi,
+  submitRouteCheckApi,
+  analyzeInspectionPhotoApi,
+  createScheduleApi, updateScheduleApi, deleteScheduleApi,
+} from '@/lib/api/server/inspection'
 
-const API_BASE_URL = process.env.API_BASE_URL || ''
-const BASE = `${API_BASE_URL}/api/v1/equipment/inspection`
-
-async function actionFetch<T>(url: string, options?: RequestInit): Promise<T | null> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${await getServerToken()}`,
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
-    let errorMessage = `请求失败: ${response.status} ${response.statusText}`
-    try {
-      const errorJson = JSON.parse(errorBody)
-      if (errorJson.message) errorMessage = errorJson.message
-    } catch { /* ignore */ }
-    throw new Error(errorMessage)
-  }
-  const text = await response.text()
-  if (!text) return null
-  const json = JSON.parse(text)
-  return json.data ?? json
+async function authHeaders(): Promise<Record<string, string>> {
+  return { Authorization: `Bearer ${await getServerToken()}` }
 }
 
 function revalidate() {
   revalidatePath('/equipment/inspection')
 }
 
-// ==================== 巡检线路 ====================
 export async function createInspectionRoute(data: CreateInspectionRouteInput) {
-  const result = await actionFetch(`${BASE}/routes`, { method: 'POST', body: JSON.stringify(data) })
+  const result = await createRouteApi(data, await authHeaders())
   revalidate()
   return result
 }
 
 export async function updateInspectionRoute(id: string, data: UpdateInspectionRouteInput) {
-  const result = await actionFetch(`${BASE}/routes/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  const result = await updateRouteApi(id, data, await authHeaders())
   revalidate()
   return result
 }
 
 export async function deleteInspectionRoute(id: string) {
-  const result = await actionFetch(`${BASE}/routes/${id}`, { method: 'DELETE' })
+  const result = await deleteRouteApi(id, await authHeaders())
   revalidate()
   return result
 }
 
 export async function setRouteLocations(routeId: string, locations: RouteLocationItem[]) {
-  const result = await actionFetch(`${BASE}/routes/${routeId}/locations`, {
-    method: 'POST',
-    body: JSON.stringify({ locations }),
-  })
+  const result = await setRouteLocationsApi(routeId, locations, await authHeaders())
   revalidate()
   return result
 }
 
-// ==================== 巡检任务 ====================
 export async function createInspectionTask(data: CreateInspectionTaskInput) {
-  const result = await actionFetch(`${BASE}/tasks`, { method: 'POST', body: JSON.stringify(data) })
+  const result = await createTaskApi(data, await authHeaders())
   revalidate()
   return result
 }
 
 export async function startInspectionTask(id: string) {
-  const result = await actionFetch(`${BASE}/tasks/${id}/start`, { method: 'PUT' })
+  const result = await startTaskApi(id, await authHeaders())
   revalidate()
   return result
 }
 
 export async function completeInspectionTask(id: string) {
-  const result = await actionFetch(`${BASE}/tasks/${id}/complete`, { method: 'PUT' })
+  const result = await completeTaskApi(id, await authHeaders())
   revalidate()
   return result
 }
 
 export async function closeInspectionTask(id: string, closureRemark?: string) {
-  const result = await actionFetch(`${BASE}/tasks/${id}/close`, {
-    method: 'PUT',
-    body: JSON.stringify({ closure_remark: closureRemark }),
-  })
+  const result = await closeTaskApi(id, closureRemark, await authHeaders())
   revalidate()
   return result
 }
 
-// ==================== 巡检执行 ====================
 export async function submitEquipmentCheck(taskId: string, equipmentId: string, data: EquipmentCheckResult) {
-  const result = await actionFetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/check`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+  const result = await submitEquipmentCheckApi(taskId, equipmentId, data, await authHeaders())
   revalidate()
   return result
 }
 
-// ==================== 照片 ====================
 export async function uploadInspectionPhoto(taskId: string, equipmentId: string, formData: FormData) {
   const token = await getServerToken()
-  const response = await fetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/photos`, {
+  const response = await fetch(`${process.env.API_BASE_URL || ''}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -125,25 +99,20 @@ export async function uploadInspectionPhoto(taskId: string, equipmentId: string,
 }
 
 export async function deleteInspectionPhoto(taskId: string, photoId: string) {
-  const result = await actionFetch(`${BASE}/tasks/${taskId}/photos/${photoId}`, { method: 'DELETE' })
+  const result = await deleteInspectionPhotoApi(taskId, photoId, await authHeaders())
   revalidate()
   return result
 }
 
-// ==================== 线路巡检 ====================
 export async function submitRouteCheck(taskId: string, data: RouteCheckSubmitInput) {
-  const result = await actionFetch(`${BASE}/tasks/${taskId}/route-check`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+  const result = await submitRouteCheckApi(taskId, data, await authHeaders())
   revalidate()
   return result
 }
 
-// 任务级照片上传（线路巡检用）
 export async function uploadTaskPhoto(taskId: string, formData: FormData) {
   const token = await getServerToken()
-  const response = await fetch(`${BASE}/tasks/${taskId}/photos`, {
+  const response = await fetch(`${process.env.API_BASE_URL || ''}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -157,29 +126,18 @@ export async function uploadTaskPhoto(taskId: string, formData: FormData) {
   return json.data
 }
 
-// ==================== AI 分析 ====================
 export async function analyzeInspectionPhoto(
   taskId: string,
   equipmentId: string,
   imageBase64: string,
   imageMimeType: string,
 ): Promise<InspectionAIItemResult[]> {
-  const result = await actionFetch<InspectionAIItemResult[]>(
-    `${BASE}/tasks/${taskId}/equipments/${equipmentId}/ai-analyze`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ image_base64: imageBase64, image_mime_type: imageMimeType }),
-    },
-  )
+  const result = await analyzeInspectionPhotoApi(taskId, equipmentId, imageBase64, imageMimeType, await authHeaders())
   return result ?? []
 }
 
-// ==================== 路线定时任务 ====================
 export async function createSchedule(routeId: string, data: CreateInspectionScheduleInput) {
-  const result = await actionFetch(`${BASE}/routes/${routeId}/schedules`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+  const result = await createScheduleApi(routeId, data, await authHeaders())
   revalidate()
   return result
 }
@@ -187,18 +145,13 @@ export async function createSchedule(routeId: string, data: CreateInspectionSche
 export async function updateSchedule(
   routeId: string, scheduleId: string, data: UpdateInspectionScheduleInput,
 ) {
-  const result = await actionFetch(`${BASE}/routes/${routeId}/schedules/${scheduleId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
+  const result = await updateScheduleApi(routeId, scheduleId, data, await authHeaders())
   revalidate()
   return result
 }
 
 export async function deleteSchedule(routeId: string, scheduleId: string) {
-  const result = await actionFetch(`${BASE}/routes/${routeId}/schedules/${scheduleId}`, {
-    method: 'DELETE',
-  })
+  const result = await deleteScheduleApi(routeId, scheduleId, await authHeaders())
   revalidate()
   return result
 }

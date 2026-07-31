@@ -6,7 +6,7 @@ import {
   CalibrationRecordFilters, CalibrationRecordListResponse, CalibrationRecord,
   SparePartFilters, SparePartListResponse, SparePart, StockWarning, SparePartStockResponse,
   MaintenancePlanFilters, MaintenancePlanListResponse, MaintenancePlan,
-  InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate,
+  InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate, InspectionTemplateItem,
   MaterialRecord, ClaimTimeoutConfig, Maintainer, WorkOrderImage,
 } from '@/types/equipment'
 import { apiGet, apiFetchPaginated } from '@/lib/http-client'
@@ -323,6 +323,13 @@ export const fetchSparePartByIdClient = fetchSparePartById
 export const fetchStockWarningsClient = fetchStockWarnings
 export const fetchMaintenancePlansClient = fetchMaintenancePlans
 export const fetchOverdueMaintenancePlansClient = fetchOverdueMaintenancePlans
+export async function fetchInspectionTemplateItemsClient(templateId: string): Promise<InspectionTemplateItem[]> {
+  const response = await fetch(`${API_BASE}/equipment/maintenance/inspection-templates/${templateId}/items`)
+  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
+  const result = await response.json()
+  return result.data || []
+}
+
 export const fetchInspectionTemplatesClient = fetchInspectionTemplates
 export const fetchInspectionTemplateByIdClient = fetchInspectionTemplateById
 export const fetchWorkOrderMaterialsClient = fetchWorkOrderMaterials

@@ -10,7 +10,7 @@ import {
 import { useEquipmentStore } from '@/stores/equipment'
 import { assignWorkOrder, startWorkOrder, completeWorkOrder, verifyWorkOrder, closeWorkOrder, claimWorkOrder } from '@/actions/equipment'
 import { WorkOrderStatus, WorkOrderPriority, Maintainer } from '@/types/equipment'
-import { fetchMaintainersClient, fetchWorkOrderByIdClient } from '@/lib/api/equipment-client'
+import { fetchMaintainersClient, fetchWorkOrderByIdClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 

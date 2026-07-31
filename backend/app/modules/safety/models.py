@@ -1888,3 +1888,72 @@ class ContractorWorkRecord(BaseModel):
     # 关系
     contractor: Mapped[Contractor] = relationship("Contractor", back_populates="work_records")
     permit: Mapped[SpecialOperationPermit | None] = relationship("SpecialOperationPermit", foreign_keys=[permit_id])
+
+
+# ==================== 定时任务 ====================
+
+
+class ScheduledTask(BaseModel):
+    """定时任务表"""
+
+    __tablename__ = "scheduled_tasks"
+    __table_args__ = {"schema": "safety"}
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="任务名称")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="任务描述")
+    cron_expression: Mapped[str] = mapped_column(String(100), nullable=False, comment="Cron 表达式")
+    cron_desc: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="Cron 可读描述")
+    feishu_chat_id: Mapped[str] = mapped_column(String(100), nullable=False, comment="目标飞书群聊 chat_id")
+    feishu_chat_name: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="飞书群聊名称")
+    header_color: Mapped[str] = mapped_column(
+        String(20), default="blue", server_default="blue", nullable=False, comment="卡片头部颜色"
+    )
+    data_sources: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="数据来源配置")
+    card_template: Mapped[str | None] = mapped_column(Text, nullable=True, comment="消息卡片模板")
+    is_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False, comment="是否启用"
+    )
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="上次执行时间")
+    last_run_status: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="上次执行状态")
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="上次错误信息")
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="下次执行时间")
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="创建人",
+    )
+
+    # 关系
+    logs: Mapped[list[ScheduledTaskLog]] = relationship("ScheduledTaskLog", back_populates="task", lazy="selectin")
+
+
+class ScheduledTaskLog(BaseModel):
+    """定时任务执行日志表"""
+
+    __tablename__ = "scheduled_task_logs"
+    __table_args__ = {"schema": "safety"}
+
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.scheduled_tasks.id"),
+        nullable=False,
+        comment="任务ID",
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, comment="开始时间")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成时间")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="running",
+        server_default="running",
+        nullable=False,
+        comment="执行状态: running/success/failure",
+    )
+    data_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="数据快照")
+    card_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="卡片内容")
+    feishu_msg_id: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="飞书消息ID")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="错误信息")
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="执行耗时(毫秒)")
+
+    # 关系
+    task: Mapped[ScheduledTask] = relationship("ScheduledTask", back_populates="logs")

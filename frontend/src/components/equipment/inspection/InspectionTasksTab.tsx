@@ -9,7 +9,7 @@ import { startInspectionTask, closeInspectionTask } from '@/actions/inspection'
 import {
   fetchInspectionTasks, fetchInspectionRouteById,
   fetchInspectionTemplateByIdClient, fetchInspectionTaskById,
-} from '@/lib/api/inspection'
+} from '@/lib/api/client/inspection'
 import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkSuccess, linkWarning, linkMuted } from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionTaskStatus } from '@/types/inspection'
 import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment'

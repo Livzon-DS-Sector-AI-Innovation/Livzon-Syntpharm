@@ -28,8 +28,8 @@ _ping_interval: int = 120
 
 async def _get_ws_url_and_config() -> tuple[str | None, str]:
     """获取 WS URL 并解析 service_id。返回 (url, service_id)。"""
-    app_id = settings.EQUIPMENT_FEISHU_APP_ID  # type: ignore[attr-defined]
-    app_secret = settings.EQUIPMENT_FEISHU_APP_SECRET  # type: ignore[attr-defined]
+    app_id = settings.feishu.equipment.credentials.app_id
+    app_secret = settings.feishu.equipment.credentials.app_secret
 
     if not app_id or not app_secret:
         logger.error("设备机器人 APP_ID/APP_SECRET 未配置")
@@ -125,12 +125,18 @@ async def start_equipment_ws() -> None:
     global _stop
     _stop = asyncio.Event()
 
-    if not settings.EQUIPMENT_FEISHU_WS_ENABLED:  # type: ignore[attr-defined]
+    from app.core.config import get_settings
+
+    if get_settings().APP_ENV == "e2e":
+        logger.info("e2e mode: skipping WebSocket client")
+        return
+
+    if not settings.feishu.equipment.ws_enabled:
         logger.info("设备机器人 WS 已禁用 (EQUIPMENT_FEISHU_WS_ENABLED=false)，跳过")
         return
 
-    app_id = settings.EQUIPMENT_FEISHU_APP_ID  # type: ignore[attr-defined]
-    app_secret = settings.EQUIPMENT_FEISHU_APP_SECRET  # type: ignore[attr-defined]
+    app_id = settings.feishu.equipment.credentials.app_id
+    app_secret = settings.feishu.equipment.credentials.app_secret
 
     if not app_id or not app_secret:
         logger.warning("设备机器人凭证未配置，跳过 WebSocket 启动")
@@ -218,7 +224,7 @@ async def _handle_binary_message(ws: Any, message: bytes) -> None:
                 type_val = _get_by_key(frame.headers, HEADER_TYPE)
                 logger.debug("设备机器人 CONTROL 帧: %s", type_val)
             except Exception:
-                pass
+                logger.debug("Failed to parse CONTROL frame headers")
             return
 
         if ft == FrameType.DATA:
@@ -230,14 +236,16 @@ async def _handle_binary_message(ws: Any, message: bytes) -> None:
 
             if msg_type == MessageType.EVENT:
                 event = json.loads(frame.payload.decode("utf-8"))
+                # Send ACK BEFORE dispatch to prevent Feishu retry timeouts during AI analysis
+                end_ms = int(round(time.time() * 1000))
+                ack_data = _build_ack_frame(frame, end_ms - start_ms)
+                await ws.send(ack_data)
                 await _dispatch_event(event)
             else:
                 logger.info("设备机器人 DATA 帧: type=%s", msg_type)
-
-            # 发送 ACK
-            end_ms = int(round(time.time() * 1000))
-            ack_data = _build_ack_frame(frame, end_ms - start_ms)
-            await ws.send(ack_data)
+                end_ms = int(round(time.time() * 1000))
+                ack_data = _build_ack_frame(frame, end_ms - start_ms)
+                await ws.send(ack_data)
 
     except Exception:
         logger.exception(
@@ -259,6 +267,7 @@ async def _dispatch_event(event: dict[str, Any]) -> None:
         event_data = event.get("event", event)
         await _handle_message_event(event_data)
     else:
+        # Card actions handled via HTTP webhook endpoint, not WS
         logger.info("设备机器人忽略事件: %s", event_type)
 
 

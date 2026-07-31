@@ -17,7 +17,7 @@ import { InspectionScheduleDrawer } from './InspectionScheduleDrawer'
 import { InspectionRouteEquipmentDrawer } from './InspectionRouteEquipmentDrawer'
 import { InspectionDetailDrawer } from './InspectionDetailDrawer'
 import { InspectionTemplateTable, InspectionTemplateDrawer, InspectionItemDrawer } from '@/components/equipment'
-import { fetchInspectionTemplatesClient } from '@/lib/api/equipment-client'
+import { fetchInspectionTemplatesClient } from '@/lib/api/client/equipment'
 import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment'
 
 interface Props {

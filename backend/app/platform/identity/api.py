@@ -167,7 +167,7 @@ async def logout(
 
 @user_router.get("/me", summary="获取当前登录用户信息")
 async def get_me(
-    current_user: CurrentUser,
+    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """Return the currently authenticated user's profile.
 

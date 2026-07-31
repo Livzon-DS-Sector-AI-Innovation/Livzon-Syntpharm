@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Table, Empty } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { MaterialRecord } from '@/types/equipment'
-import { fetchWorkOrderMaterialsClient } from '@/lib/api/equipment-client'
+import { fetchWorkOrderMaterialsClient } from '@/lib/api/client/equipment'
 
 const columns: ColumnsType<MaterialRecord> = [
   {

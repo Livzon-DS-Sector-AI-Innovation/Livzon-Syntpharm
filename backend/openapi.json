@@ -6920,6 +6920,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -6951,12 +6967,40 @@
         ],
         "summary": "\u5e93\u5b58\u9884\u8b66\u5217\u8868",
         "operationId": "get_stock_warnings_api_v1_equipment_spare_parts_stock_warnings_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -6979,6 +7023,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Spare Part Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -7140,6 +7200,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Spare Part Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -8166,6 +8242,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -8206,6 +8298,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Work Order Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -8256,6 +8364,22 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -8287,12 +8411,40 @@
         ],
         "summary": "\u5de5\u5355\u7edf\u8ba1",
         "operationId": "get_work_order_statistics_api_v1_equipment_maintenance_work_orders_statistics_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -8696,6 +8848,22 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -8846,6 +9014,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -8890,6 +9074,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -8930,6 +9130,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Plan Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -9202,6 +9418,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -9242,6 +9474,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -9411,6 +9659,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -9455,6 +9719,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u5929\u6570\uff0c0=\u4ec5\u903e\u671f"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -9495,6 +9775,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Plan Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -9784,6 +10080,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -9824,6 +10136,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -10570,14 +10898,41 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u8bbe\u5907\u6a21\u5757\u7ef4\u4fee\u4eba\u5458\u5217\u8868",
-        "description": "\u4ece\u4eba\u5458\u914d\u7f6e\u4e2d\u83b7\u53d6\u6240\u6709\u5728\u5c97\u4eba\u5458\uff0c\u4f9b\u5de5\u5355\u6307\u6d3e\u7ef4\u4fee\u4eba\u65f6\u9009\u62e9\u3002",
         "operationId": "list_maintainers_api_v1_equipment_maintenance_staff_maintainers_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -10590,14 +10945,41 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u5168\u4f53\u5458\u5de5\u5217\u8868",
-        "description": "\u8fd4\u56de\u6240\u6709\u672c\u5730\u7528\u6237\uff0c\u4f9b\u5de5\u5355\u8d23\u4efb\u4eba\u9009\u62e9\u3002",
         "operationId": "list_all_users_api_v1_equipment_maintenance_staff_all_users_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -10611,6 +10993,24 @@
         ],
         "summary": "\u521b\u5efa\u89d2\u8272",
         "operationId": "create_role_api_v1_equipment_personnel_roles_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -10707,6 +11107,22 @@
               "default": 100,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -10748,6 +11164,22 @@
               "format": "uuid",
               "title": "Role Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -10786,6 +11218,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Role Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -10836,6 +11284,22 @@
               "format": "uuid",
               "title": "Role Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -10867,6 +11331,24 @@
         ],
         "summary": "\u4ece\u8eab\u4efd\u7cfb\u7edf\u6dfb\u52a0\u4eba\u5458",
         "operationId": "add_personnel_api_v1_equipment_personnel_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -10985,6 +11467,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11049,6 +11547,22 @@
               "title": "Category Id"
             },
             "description": "\u8bbe\u5907\u5206\u7c7bID\uff08\u53ef\u9009\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11090,6 +11604,22 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11128,6 +11658,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -11178,6 +11724,22 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11218,6 +11780,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -11267,6 +11845,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Personnel Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -11319,6 +11913,22 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "requestBody": {
@@ -11368,6 +11978,22 @@
               "format": "uuid",
               "title": "Personnel Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "requestBody": {
@@ -11409,12 +12035,40 @@
         ],
         "summary": "\u624b\u52a8\u5237\u65b0\u98de\u4e66\u4fe1\u606f",
         "operationId": "refresh_feishu_api_v1_equipment_personnel_refresh_feishu_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -11565,6 +12219,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11606,6 +12276,22 @@
               "format": "uuid",
               "title": "Route Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11644,6 +12330,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Route Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -11694,6 +12396,22 @@
               "format": "uuid",
               "title": "Route Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -11734,6 +12452,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Route Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -11987,6 +12721,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -12027,6 +12777,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -12543,6 +13309,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -12583,6 +13365,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Photo Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -12703,6 +13501,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Equipment Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -12864,6 +13678,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -12905,6 +13735,22 @@
               "format": "uuid",
               "title": "Task Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -12945,6 +13791,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Route Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -14139,6 +15001,601 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6 AI \u5de5\u4f5c\u6d41\u914d\u7f6e\u5217\u8868",
+        "description": "\u83b7\u53d6 AI \u5de5\u4f5c\u6d41\u914d\u7f6e\u5217\u8868\uff0c\u53ef\u6309\u6a21\u5757\u4ee3\u7801\u8fc7\u6ee4",
+        "operationId": "get_ai_workflow_configs_api_v1_safety_ai_workflow_configs_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 100,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "module_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6a21\u5757\u4ee3\u7801",
+              "title": "Module Code"
+            },
+            "description": "\u6a21\u5757\u4ee3\u7801"
+          },
+          {
+            "name": "is_enabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u662f\u5426\u542f\u7528",
+              "title": "Is Enabled"
+            },
+            "description": "\u662f\u5426\u542f\u7528"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u521b\u5efa AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "description": "\u521b\u5efa\u65b0\u7684 AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "operationId": "create_ai_workflow_config_api_v1_safety_ai_workflow_configs_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIWorkflowConfigCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs/{config_id}": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6 AI \u5de5\u4f5c\u6d41\u914d\u7f6e\u8be6\u60c5",
+        "description": "\u83b7\u53d6\u5355\u4e2a AI \u5de5\u4f5c\u6d41\u914d\u7f6e\u8be6\u60c5",
+        "operationId": "get_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__get",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u66f4\u65b0 AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "description": "\u66f4\u65b0 AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "operationId": "update_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__put",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIWorkflowConfigUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664 AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "description": "\u5220\u9664 AI \u5de5\u4f5c\u6d41\u914d\u7f6e",
+        "operationId": "delete_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__delete",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs/attachments/upload": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u4e0a\u4f20 AI \u5de5\u4f5c\u6d41\u8c03\u7528\u6587\u6863\u9644\u4ef6",
+        "description": "\u4e0a\u4f20\u8c03\u7528\u6587\u6863\u9644\u4ef6\uff08PDF/Word/Excel/TXT/MD\uff09\uff0c\u81ea\u52a8\u8f6c\u6362\u4e3a Markdown \u4f9b AI \u8bfb\u53d6\u3002\n\n\u8fd4\u56de\u9644\u4ef6\u5143\u6570\u636e\uff0c\u524d\u7aef\u5c06\u5176\u5b58\u5165 reference_docs.attachments \u5217\u8868\u3002",
+        "operationId": "upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs/attachments/{attachment_id}/preview": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u9884\u89c8 AI \u5de5\u4f5c\u6d41\u8c03\u7528\u6587\u6863\u9644\u4ef6",
+        "description": "\u9884\u89c8\u4e0a\u4f20\u7684\u9644\u4ef6\u539f\u59cb\u6587\u4ef6\uff08\u6d4f\u89c8\u5668\u5185\u5d4c\u9884\u89c8\u6216\u89e6\u53d1\u4e0b\u8f7d\uff09\u3002",
+        "operationId": "preview_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__preview_get",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Preview Workflow Attachment Api V1 Safety Ai Workflow Configs Attachments  Attachment Id  Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs/attachments/{attachment_id}": {
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664 AI \u5de5\u4f5c\u6d41\u8c03\u7528\u6587\u6863\u9644\u4ef6",
+        "description": "\u5220\u9664\u9644\u4ef6\u53ca\u5176\u5173\u8054\u7684\u539f\u59cb\u6587\u4ef6\u548c Markdown \u6587\u4ef6\u3002",
+        "operationId": "delete_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__delete",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/ai-workflow-configs/attachments/from-knowledge": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u4ece\u77e5\u8bc6\u5e93\u521b\u5efa AI \u5de5\u4f5c\u6d41\u8c03\u7528\u6587\u6863\u9644\u4ef6",
+        "description": "\u9009\u62e9\u77e5\u8bc6\u5e93\u6587\u7ae0\u4f5c\u4e3a\u8c03\u7528\u6587\u6863\u9644\u4ef6\uff0c\u81ea\u52a8\u8f6c\u4e3a Markdown \u4f9b AI \u8bfb\u53d6\u3002\n\n\u8fd4\u56de\u9644\u4ef6\u5143\u6570\u636e\u5217\u8868\uff0c\u524d\u7aef\u5c06\u5176\u8ffd\u52a0\u5230 reference_docs.attachments\u3002",
+        "operationId": "create_workflow_attachments_from_knowledge_api_v1_safety_ai_workflow_configs_attachments_from_knowledge_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeAttachmentRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -17475,8 +18932,26 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u67e5\u8be2\u98de\u4e66 WebSocket \u8fde\u63a5\u72b6\u6001",
-        "description": "\u67e5\u8be2\u5b89\u5168\u6a21\u5757\u98de\u4e66\u4e8b\u4ef6\u8ba2\u9605\u7684 WebSocket \u8fde\u63a5\u72b6\u6001\u3002\n\nReturns:\n    connected: WebSocket \u662f\u5426\u5b58\u6d3b\n    subscription_ok: Bitable \u6587\u6863\u4e8b\u4ef6\u8ba2\u9605\u662f\u5426\u6210\u529f\n    registered_events: \u5df2\u6ce8\u518c\u7684\u4e8b\u4ef6\u7c7b\u578b\n    frame_stats: \u5e27\u6d3b\u52a8\u7edf\u8ba1\uff08received/control/data/event/error\uff09\n    last_pong_seconds_ago: \u8ddd\u6700\u540e\u4e00\u6b21 PONG \u7684\u79d2\u6570\n    pong_watchdog_healthy: PONG \u770b\u95e8\u72d7\u662f\u5426\u5065\u5eb7",
-        "operationId": "ws_status_api_v1_safety_feishu_ws_status_get",
+        "description": "\u67e5\u8be2\u5b89\u5168\u6a21\u5757\u98de\u4e66 WebSocket \u5f53\u524d\u72b6\u6001\u3002\n\n\u8fd4\u56de\u662f\u5426\u5df2\u8fde\u63a5\u3001\u5df2\u6ce8\u518c\u4e8b\u4ef6\u7c7b\u578b\u3001\u6700\u5927\u91cd\u8bd5\u6b21\u6570\u3002",
+        "operationId": "get_feishu_ws_status_api_v1_safety_feishu_ws_status_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -17484,6 +18959,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -17497,8 +18982,26 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u624b\u52a8\u6062\u590d\u98de\u4e66 WebSocket \u8fde\u63a5",
-        "description": "\u624b\u52a8\u6062\u590d\u5b89\u5168\u6a21\u5757\u98de\u4e66\u4e8b\u4ef6\u8ba2\u9605\u7684 WebSocket \u8fde\u63a5\u3002\n\n\u5f53 WS \u8fde\u63a5\u56e0\u91cd\u8bd5\u6b21\u6570\u8017\u5c3d\u800c\u81ea\u52a8\u9000\u51fa\u65f6\uff0c\u8c03\u7528\u6b64\u7aef\u70b9\u91cd\u65b0\u542f\u52a8\u3002\n\u6b63\u5e38\u8fd0\u884c\u65f6\u8c03\u7528\u65e0\u5bb3\uff08\u4f1a\u5148\u5173\u95ed\u65e7\u8fde\u63a5\u518d\u5efa\u65b0\u8fde\u63a5\uff09\u3002",
-        "operationId": "ws_restart_api_v1_safety_feishu_ws_restart_post",
+        "description": "WS \u56e0\u91cd\u8bd5\u6b21\u6570\u8017\u5c3d\uff083 \u6b21\uff09\u81ea\u52a8\u505c\u6b62\u540e\uff0c\u624b\u52a8\u91cd\u65b0\u5efa\u7acb\u8fde\u63a5\u3002\n\n\u65e0\u9700\u4f20\u53c2\uff0c\u8c03\u7528\u5373\u91cd\u7f6e\u91cd\u8bd5\u8ba1\u6570\u5e76\u521b\u5efa\u65b0\u7684 WS \u4efb\u52a1\u3002\n\u8fd4\u56de\u5f53\u524d\u5df2\u6ce8\u518c\u7684\u4e8b\u4ef6\u7c7b\u578b\u5217\u8868\u3002",
+        "operationId": "restart_feishu_ws_api_v1_safety_feishu_ws_restart_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -17506,6 +19009,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -24001,6 +25514,729 @@
         }
       }
     },
+    "/api/v1/safety/scheduled-tasks/data-source-options": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u53ef\u7528\u6570\u636e\u6765\u6e90\u9009\u9879",
+        "description": "\u83b7\u53d6\u53ef\u7528\u7684\u6570\u636e\u6765\u6e90\u5217\u8868\uff08\u4f9b\u524d\u7aef\u4e0b\u62c9\u9009\u62e9\uff09",
+        "operationId": "get_data_source_options_api_v1_safety_scheduled_tasks_data_source_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/preview-card": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u9884\u89c8\u6d88\u606f\u5361\u7247",
+        "description": "\u9884\u89c8\u6d88\u606f\u5361\u7247\u6e32\u67d3\u6548\u679c",
+        "operationId": "preview_card_api_v1_safety_scheduled_tasks_preview_card_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardPreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/feishu-chats": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u98de\u4e66\u7fa4\u804a\u5217\u8868",
+        "description": "\u83b7\u53d6\u53ef\u9009\u7684\u98de\u4e66\u7fa4\u804a\u5217\u8868\uff08\u4ece\u7f13\u5b58\u6216\u914d\u7f6e\u4e2d\u8bfb\u53d6\uff09",
+        "operationId": "get_feishu_chats_api_v1_safety_scheduled_tasks_feishu_chats_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u5217\u8868",
+        "description": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u5217\u8868\uff08\u5206\u9875\uff09",
+        "operationId": "get_scheduled_tasks_api_v1_safety_scheduled_tasks_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "is_enabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Enabled"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u521b\u5efa\u65b0\u7684\u5b9a\u65f6\u4efb\u52a1",
+        "operationId": "create_scheduled_task_api_v1_safety_scheduled_tasks_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduledTaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u8be6\u60c5",
+        "description": "\u83b7\u53d6\u5355\u4e2a\u5b9a\u65f6\u4efb\u52a1\u8be6\u60c5",
+        "operationId": "get_scheduled_task_api_v1_safety_scheduled_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u66f4\u65b0\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u66f4\u65b0\u5b9a\u65f6\u4efb\u52a1\u914d\u7f6e",
+        "operationId": "update_scheduled_task_api_v1_safety_scheduled_tasks__task_id__put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduledTaskUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u5220\u9664\u5b9a\u65f6\u4efb\u52a1\uff08\u8f6f\u5220\u9664\uff09",
+        "operationId": "delete_scheduled_task_api_v1_safety_scheduled_tasks__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/{task_id}/toggle": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u542f\u7528/\u7981\u7528\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u5207\u6362\u5b9a\u65f6\u4efb\u52a1\u7684\u542f\u7528/\u7981\u7528\u72b6\u6001",
+        "operationId": "toggle_scheduled_task_api_v1_safety_scheduled_tasks__task_id__toggle_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u542f\u7528",
+              "title": "Enabled"
+            },
+            "description": "\u662f\u5426\u542f\u7528"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/{task_id}/run": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u624b\u52a8\u6267\u884c\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u7acb\u5373\u624b\u52a8\u6267\u884c\u4e00\u6b21\u5b9a\u65f6\u4efb\u52a1",
+        "operationId": "run_scheduled_task_now_api_v1_safety_scheduled_tasks__task_id__run_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/scheduled-tasks/{task_id}/logs": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u6267\u884c\u65e5\u5fd7",
+        "description": "\u83b7\u53d6\u5b9a\u65f6\u4efb\u52a1\u7684\u6267\u884c\u65e5\u5fd7\u5217\u8868",
+        "operationId": "get_scheduled_task_logs_api_v1_safety_scheduled_tasks__task_id__logs_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/safety/special-operation-reports": {
       "get": {
         "tags": [
@@ -27203,40 +29439,12 @@
         ],
         "summary": "\u83b7\u53d6\u5df2\u767b\u8bb0\u7684\u5e73\u53f0\u5217\u8868",
         "operationId": "list_platforms_api_v1_energy_platforms_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -69386,6 +71594,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69419,6 +71643,24 @@
         "summary": "\u521b\u5efa\u62a5\u544a\u5355",
         "description": "\u521b\u5efa\u62a5\u544a\u5355",
         "operationId": "post_api_v1_quality_material_report__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -69462,6 +71704,24 @@
         "summary": "\u83b7\u53d6\u7edf\u8ba1\u6570\u636e",
         "description": "\u83b7\u53d6\u7edf\u8ba1\u6570\u636e",
         "operationId": "get_api_v1_quality_material_report_statistics_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -69469,6 +71729,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Quality Material Report Statistics Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -69521,6 +71791,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69556,15 +71842,33 @@
         "summary": "\u4e0a\u4f20Word\u6a21\u677f",
         "description": "\u4e0a\u4f20Word\u6a21\u677f",
         "operationId": "post_api_v1_quality_material_report_template__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_quality_material_report_template__post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -69609,6 +71913,22 @@
               "format": "uuid",
               "title": "Template Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69651,6 +71971,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69705,6 +72041,22 @@
               "format": "uuid",
               "title": "Template Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69749,6 +72101,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69795,6 +72163,22 @@
               "format": "uuid",
               "title": "Report Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69837,6 +72221,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Report Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69891,6 +72291,22 @@
               "format": "uuid",
               "title": "Report Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69935,6 +72351,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Report Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69991,6 +72423,22 @@
               "format": "uuid",
               "title": "Report Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70036,6 +72484,22 @@
               "format": "uuid",
               "title": "Report Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70080,6 +72544,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Report Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -70133,6 +72613,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Report Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -75804,6 +78300,212 @@
   },
   "components": {
     "schemas": {
+      "AIWorkflowConfigCreate": {
+        "properties": {
+          "module_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Module Code",
+            "description": "\u6a21\u5757\u4ee3\u7801"
+          },
+          "workflow_name": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Workflow Name",
+            "description": "\u5de5\u4f5c\u6d41\u540d\u79f0"
+          },
+          "workflow_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Description",
+            "description": "\u5de5\u4f5c\u6d41\u63cf\u8ff0"
+          },
+          "trigger_event": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Event",
+            "description": "\u89e6\u53d1\u4e8b\u4ef6"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "description": "\u662f\u5426\u542f\u7528",
+            "default": true
+          },
+          "script_configs": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script Configs",
+            "description": "\u811a\u672c\u914d\u7f6e JSON"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "\u6392\u5e8f\u987a\u5e8f",
+            "default": 0
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module_code",
+          "workflow_name"
+        ],
+        "title": "AIWorkflowConfigCreate",
+        "description": "\u521b\u5efa AI \u5de5\u4f5c\u6d41\u914d\u7f6e"
+      },
+      "AIWorkflowConfigUpdate": {
+        "properties": {
+          "module_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Code",
+            "description": "\u6a21\u5757\u4ee3\u7801"
+          },
+          "workflow_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Name",
+            "description": "\u5de5\u4f5c\u6d41\u540d\u79f0"
+          },
+          "workflow_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Description",
+            "description": "\u5de5\u4f5c\u6d41\u63cf\u8ff0"
+          },
+          "trigger_event": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Event",
+            "description": "\u89e6\u53d1\u4e8b\u4ef6"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled",
+            "description": "\u662f\u5426\u542f\u7528"
+          },
+          "script_configs": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script Configs",
+            "description": "\u811a\u672c\u914d\u7f6e JSON"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order",
+            "description": "\u6392\u5e8f\u987a\u5e8f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          }
+        },
+        "type": "object",
+        "title": "AIWorkflowConfigUpdate",
+        "description": "\u66f4\u65b0 AI \u5de5\u4f5c\u6d41\u914d\u7f6e"
+      },
       "AccidentCreate": {
         "properties": {
           "accident_no": {
@@ -79262,6 +81964,20 @@
         ],
         "title": "Body_upload_work_order_images_api_v1_equipment_maintenance_work_orders__work_order_id__images_post"
       },
+      "Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post"
+      },
       "CalibrationCycleUnit": {
         "type": "string",
         "enum": [
@@ -80009,6 +82725,35 @@
           "recommendation_level"
         ],
         "title": "CandidateUpdateRecommendationLevel"
+      },
+      "CardPreviewRequest": {
+        "properties": {
+          "data_sources": {
+            "items": {
+              "$ref": "#/components/schemas/DataSourceItem"
+            },
+            "type": "array",
+            "title": "Data Sources",
+            "description": "\u6570\u636e\u6765\u6e90\u914d\u7f6e"
+          },
+          "card_template": {
+            "type": "string",
+            "title": "Card Template",
+            "description": "\u6d88\u606f\u5361\u7247\u6a21\u677f"
+          },
+          "header_color": {
+            "$ref": "#/components/schemas/HeaderColorEnum",
+            "description": "\u5361\u7247\u5934\u90e8\u989c\u8272",
+            "default": "blue"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data_sources",
+          "card_template"
+        ],
+        "title": "CardPreviewRequest",
+        "description": "\u5361\u7247\u9884\u89c8\u8bf7\u6c42"
       },
       "CertificateCreate": {
         "properties": {
@@ -84108,6 +86853,33 @@
         },
         "type": "object",
         "title": "DataMasterUpdate"
+      },
+      "DataSourceItem": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "\u6570\u636e\u6e90\u6807\u8bc6\uff0c\u5982 hazard_open_count"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "\u6570\u636e\u6e90\u663e\u793a\u540d\uff0c\u5982\u300c\u5f85\u6574\u6539\u9690\u60a3\u6570\u300d"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "\u662f\u5426\u542f\u7528",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "DataSourceItem",
+        "description": "\u6570\u636e\u6765\u6e90\u914d\u7f6e\u9879"
       },
       "DeleteMergedRowRequest": {
         "properties": {
@@ -92745,6 +95517,18 @@
         "title": "HazardType",
         "description": "\u9690\u60a3\u7c7b\u578b\u679a\u4e3e"
       },
+      "HeaderColorEnum": {
+        "type": "string",
+        "enum": [
+          "blue",
+          "orange",
+          "green",
+          "red",
+          "purple"
+        ],
+        "title": "HeaderColorEnum",
+        "description": "\u5361\u7247\u5934\u90e8\u989c\u8272\u679a\u4e3e"
+      },
       "HolidayCreate": {
         "properties": {
           "year": {
@@ -97563,6 +100347,24 @@
         ],
         "title": "ItemResult",
         "description": "\u5355\u9879\u5224\u5b9a"
+      },
+      "KnowledgeAttachmentRequest": {
+        "properties": {
+          "knowledge_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Knowledge Ids",
+            "description": "\u77e5\u8bc6\u5e93\u6587\u7ae0 ID \u5217\u8868"
+          }
+        },
+        "type": "object",
+        "required": [
+          "knowledge_ids"
+        ],
+        "title": "KnowledgeAttachmentRequest",
+        "description": "\u4ece\u77e5\u8bc6\u5e93\u521b\u5efa\u9644\u4ef6\u8bf7\u6c42"
       },
       "KnowledgeCategory": {
         "type": "string",
@@ -112212,6 +115014,245 @@
         ],
         "title": "ScheduledJobCreate",
         "description": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1"
+      },
+      "ScheduledTaskCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u4efb\u52a1\u540d\u79f0"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u4efb\u52a1\u63cf\u8ff0"
+          },
+          "cron_expression": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Cron Expression",
+            "description": "Cron \u8868\u8fbe\u5f0f"
+          },
+          "cron_desc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Desc",
+            "description": "Cron \u53ef\u8bfb\u63cf\u8ff0"
+          },
+          "feishu_chat_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Feishu Chat Id",
+            "description": "\u76ee\u6807\u98de\u4e66\u7fa4\u804a chat_id"
+          },
+          "feishu_chat_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Chat Name",
+            "description": "\u98de\u4e66\u7fa4\u804a\u540d\u79f0"
+          },
+          "header_color": {
+            "$ref": "#/components/schemas/HeaderColorEnum",
+            "description": "\u5361\u7247\u5934\u90e8\u989c\u8272",
+            "default": "blue"
+          },
+          "data_sources": {
+            "items": {
+              "$ref": "#/components/schemas/DataSourceItem"
+            },
+            "type": "array",
+            "title": "Data Sources",
+            "description": "\u6570\u636e\u6765\u6e90\u914d\u7f6e"
+          },
+          "card_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Template",
+            "description": "\u6d88\u606f\u5361\u7247\u6a21\u677f"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "description": "\u662f\u5426\u542f\u7528",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "cron_expression",
+          "feishu_chat_id"
+        ],
+        "title": "ScheduledTaskCreate",
+        "description": "\u521b\u5efa\u5b9a\u65f6\u4efb\u52a1\u8bf7\u6c42"
+      },
+      "ScheduledTaskUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u4efb\u52a1\u540d\u79f0"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u4efb\u52a1\u63cf\u8ff0"
+          },
+          "cron_expression": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Expression",
+            "description": "Cron \u8868\u8fbe\u5f0f"
+          },
+          "cron_desc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cron Desc",
+            "description": "Cron \u53ef\u8bfb\u63cf\u8ff0"
+          },
+          "feishu_chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Chat Id",
+            "description": "\u76ee\u6807\u98de\u4e66\u7fa4\u804a chat_id"
+          },
+          "feishu_chat_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Chat Name",
+            "description": "\u98de\u4e66\u7fa4\u804a\u540d\u79f0"
+          },
+          "header_color": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HeaderColorEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u5361\u7247\u5934\u90e8\u989c\u8272"
+          },
+          "data_sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DataSourceItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sources",
+            "description": "\u6570\u636e\u6765\u6e90\u914d\u7f6e"
+          },
+          "card_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Template",
+            "description": "\u6d88\u606f\u5361\u7247\u6a21\u677f"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled",
+            "description": "\u662f\u5426\u542f\u7528"
+          }
+        },
+        "type": "object",
+        "title": "ScheduledTaskUpdate",
+        "description": "\u66f4\u65b0\u5b9a\u65f6\u4efb\u52a1\u8bf7\u6c42"
       },
       "SetCriticalRequest": {
         "properties": {

@@ -5,6 +5,7 @@ import type {
   UpdateRuleInput,
   ProcessRecordInput,
 } from '@/types/energy'
+import { apiFetchRaw } from './base'
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
 
@@ -96,8 +97,7 @@ export async function fetchAlertRules(params?: any): Promise<{ items: any[]; tot
     })
   }
   const query = searchParams.toString()
-  // 直接使用 fetch 获取完整响应，保留 meta 信息
-  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  const res = await apiFetchRaw(`/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
   const json = await res.json()
   return {
     items: json.data || [],
@@ -123,8 +123,7 @@ export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; t
     })
   }
   const query = searchParams.toString()
-  // 直接使用 fetch 获取完整响应，保留 meta 信息
-  const res = await fetch(`${API_BASE_URL}/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  const res = await apiFetchRaw(`/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
   const json = await res.json()
   return {
     items: json.data || [],

@@ -23,8 +23,10 @@ async def maintenance_plan_loop() -> None:
     选择 00:05 而非 00:00 是为了避开飞书成员同步（00:00）的执行窗口，
     减少并发数据库连接压力。
     """
-    settings = get_settings()
-    if not settings.MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+    from app.shared.config_reader import get_module_setting_bool
+
+    enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
+    if not enabled:
         logger.info("维护计划自动生成功能已关闭（MAINTENANCE_PLAN_AUTO_ENABLED=false），跳过启动")
         return
 
@@ -68,7 +70,10 @@ async def maintenance_plan_loop() -> None:
             break
 
         # 每次 tick 重新读取配置，支持运行时动态开关
-        if not get_settings().MAINTENANCE_PLAN_AUTO_ENABLED:  # type: ignore[attr-defined]
+        from app.shared.config_reader import get_module_setting_bool
+
+        enabled = await get_module_setting_bool("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", True)
+        if not enabled:
             logger.debug("维护计划自动生成已关闭，跳过本轮")
             continue
 
@@ -88,6 +93,7 @@ async def maintenance_plan_loop() -> None:
                 )
         except Exception:
             logger.exception("维护计划自动生成循环异常")
+            raise
 
     logger.info("维护计划自动生成任务已停止")
 
@@ -103,14 +109,13 @@ async def scan_timeout_work_orders() -> None:
 
     from sqlalchemy import select
 
-    from app.core.config import get_settings
     from app.core.database import async_session_factory
     from app.modules.equipment.models.work_order import WorkOrder
     from app.platform.integrations.feishu.contact import get_department_leader
     from app.platform.integrations.feishu.message import send_timeout_notification
 
     settings = get_settings()
-    dept_id = settings.FEISHU_EQUIPMENT_DEPT_ID  # type: ignore[attr-defined]
+    dept_id = settings.feishu.platform.equipment_dept_id
     if not dept_id:
         return
 
@@ -154,8 +159,6 @@ async def scan_timeout_work_orders() -> None:
                         elapsed,
                         timeout_minutes,
                     )
-        except Exception:
-            logger.exception("Timeout scan error")
         finally:
             await db.rollback()
 
@@ -168,6 +171,7 @@ async def timeout_scan_loop() -> None:
             await scan_timeout_work_orders()
         except Exception:
             logger.exception("Timeout scan error")
+            raise
         try:
             await asyncio.wait_for(
                 stop_timeout_flag.wait(),

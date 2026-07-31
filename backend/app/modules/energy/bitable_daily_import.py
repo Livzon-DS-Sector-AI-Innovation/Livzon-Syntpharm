@@ -133,7 +133,7 @@ class EnergyBitableDailyImport:
 
         # 获取所有记录
         records = await self.list_records(table_id)
-        logger.info(f"Found {len(records)} records in table {source_table}")
+        logger.info("Found records in table", extra={"count": len(records), "table": source_table})
 
         created = 0
         updated = 0
@@ -172,7 +172,7 @@ class EnergyBitableDailyImport:
 
             except Exception as e:
                 errors.append(f"Error processing record: {str(e)}")
-                logger.exception(f"Error processing record: {record}")
+                logger.exception("Error processing record", extra={"record_id": record.get("record_id", "unknown")})
 
         await db.commit()
 

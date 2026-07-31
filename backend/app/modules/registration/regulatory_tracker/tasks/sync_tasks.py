@@ -60,6 +60,7 @@ async def daily_sync_job() -> Any:
 
     except Exception:
         logger.exception("❌ 每日同步任务异常")
+        raise
 
 
 async def daily_ai_analysis_job() -> Any:
@@ -77,6 +78,7 @@ async def daily_ai_analysis_job() -> Any:
             )
     except Exception:
         logger.exception("❌ AI 分析任务异常")
+        raise
 
 
 # Task definitions for SchedulerEngine

@@ -2178,10 +2178,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取设备模块维修人员列表
-         * @description 从人员配置中获取所有在岗人员，供工单指派维修人时选择。
-         */
+        /** 获取设备模块维修人员列表 */
         get: operations["list_maintainers_api_v1_equipment_maintenance_staff_maintainers_get"];
         put?: never;
         post?: never;
@@ -2198,10 +2195,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取全体员工列表
-         * @description 返回所有本地用户，供工单责任人选择。
-         */
+        /** 获取全体员工列表 */
         get: operations["list_all_users_api_v1_equipment_maintenance_staff_all_users_get"];
         put?: never;
         post?: never;
@@ -2891,6 +2885,142 @@ export interface paths {
          * @description 直接关闭事故（无CAPA时）
          */
         post: operations["handler_api_v1_safety_accidents__accident_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 AI 工作流配置列表
+         * @description 获取 AI 工作流配置列表，可按模块代码过滤
+         */
+        get: operations["get_ai_workflow_configs_api_v1_safety_ai_workflow_configs_get"];
+        put?: never;
+        /**
+         * 创建 AI 工作流配置
+         * @description 创建新的 AI 工作流配置
+         */
+        post: operations["create_ai_workflow_config_api_v1_safety_ai_workflow_configs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs/{config_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 AI 工作流配置详情
+         * @description 获取单个 AI 工作流配置详情
+         */
+        get: operations["get_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__get"];
+        /**
+         * 更新 AI 工作流配置
+         * @description 更新 AI 工作流配置
+         */
+        put: operations["update_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__put"];
+        post?: never;
+        /**
+         * 删除 AI 工作流配置
+         * @description 删除 AI 工作流配置
+         */
+        delete: operations["delete_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs/attachments/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 上传 AI 工作流调用文档附件
+         * @description 上传调用文档附件（PDF/Word/Excel/TXT/MD），自动转换为 Markdown 供 AI 读取。
+         *
+         *     返回附件元数据，前端将其存入 reference_docs.attachments 列表。
+         */
+        post: operations["upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs/attachments/{attachment_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 预览 AI 工作流调用文档附件
+         * @description 预览上传的附件原始文件（浏览器内嵌预览或触发下载）。
+         */
+        get: operations["preview_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除 AI 工作流调用文档附件
+         * @description 删除附件及其关联的原始文件和 Markdown 文件。
+         */
+        delete: operations["delete_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/ai-workflow-configs/attachments/from-knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 从知识库创建 AI 工作流调用文档附件
+         * @description 选择知识库文章作为调用文档附件，自动转为 Markdown 供 AI 读取。
+         *
+         *     返回附件元数据列表，前端将其追加到 reference_docs.attachments。
+         */
+        post: operations["create_workflow_attachments_from_knowledge_api_v1_safety_ai_workflow_configs_attachments_from_knowledge_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3602,17 +3732,11 @@ export interface paths {
         };
         /**
          * 查询飞书 WebSocket 连接状态
-         * @description 查询安全模块飞书事件订阅的 WebSocket 连接状态。
+         * @description 查询安全模块飞书 WebSocket 当前状态。
          *
-         *     Returns:
-         *         connected: WebSocket 是否存活
-         *         subscription_ok: Bitable 文档事件订阅是否成功
-         *         registered_events: 已注册的事件类型
-         *         frame_stats: 帧活动统计（received/control/data/event/error）
-         *         last_pong_seconds_ago: 距最后一次 PONG 的秒数
-         *         pong_watchdog_healthy: PONG 看门狗是否健康
+         *     返回是否已连接、已注册事件类型、最大重试次数。
          */
-        get: operations["ws_status_api_v1_safety_feishu_ws_status_get"];
+        get: operations["get_feishu_ws_status_api_v1_safety_feishu_ws_status_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3632,12 +3756,12 @@ export interface paths {
         put?: never;
         /**
          * 手动恢复飞书 WebSocket 连接
-         * @description 手动恢复安全模块飞书事件订阅的 WebSocket 连接。
+         * @description WS 因重试次数耗尽（3 次）自动停止后，手动重新建立连接。
          *
-         *     当 WS 连接因重试次数耗尽而自动退出时，调用此端点重新启动。
-         *     正常运行时调用无害（会先关闭旧连接再建新连接）。
+         *     无需传参，调用即重置重试计数并创建新的 WS 任务。
+         *     返回当前已注册的事件类型列表。
          */
-        post: operations["ws_restart_api_v1_safety_feishu_ws_restart_post"];
+        post: operations["restart_feishu_ws_api_v1_safety_feishu_ws_restart_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5126,6 +5250,178 @@ export interface paths {
          * @description 将存储的标准化 Markdown 渲染为 PDF，返回文件下载。
          */
         post: operations["handler_api_v1_safety_regulations__regulation_id__export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/data-source-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取可用数据来源选项
+         * @description 获取可用的数据来源列表（供前端下拉选择）
+         */
+        get: operations["get_data_source_options_api_v1_safety_scheduled_tasks_data_source_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/preview-card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 预览消息卡片
+         * @description 预览消息卡片渲染效果
+         */
+        post: operations["preview_card_api_v1_safety_scheduled_tasks_preview_card_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/feishu-chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取飞书群聊列表
+         * @description 获取可选的飞书群聊列表（从缓存或配置中读取）
+         */
+        get: operations["get_feishu_chats_api_v1_safety_scheduled_tasks_feishu_chats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取定时任务列表
+         * @description 获取定时任务列表（分页）
+         */
+        get: operations["get_scheduled_tasks_api_v1_safety_scheduled_tasks_get"];
+        put?: never;
+        /**
+         * 创建定时任务
+         * @description 创建新的定时任务
+         */
+        post: operations["create_scheduled_task_api_v1_safety_scheduled_tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取定时任务详情
+         * @description 获取单个定时任务详情
+         */
+        get: operations["get_scheduled_task_api_v1_safety_scheduled_tasks__task_id__get"];
+        /**
+         * 更新定时任务
+         * @description 更新定时任务配置
+         */
+        put: operations["update_scheduled_task_api_v1_safety_scheduled_tasks__task_id__put"];
+        post?: never;
+        /**
+         * 删除定时任务
+         * @description 删除定时任务（软删除）
+         */
+        delete: operations["delete_scheduled_task_api_v1_safety_scheduled_tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/{task_id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 启用/禁用定时任务
+         * @description 切换定时任务的启用/禁用状态
+         */
+        post: operations["toggle_scheduled_task_api_v1_safety_scheduled_tasks__task_id__toggle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/{task_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 手动执行定时任务
+         * @description 立即手动执行一次定时任务
+         */
+        post: operations["run_scheduled_task_now_api_v1_safety_scheduled_tasks__task_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/scheduled-tasks/{task_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取定时任务执行日志
+         * @description 获取定时任务的执行日志列表
+         */
+        get: operations["get_scheduled_task_logs_api_v1_safety_scheduled_tasks__task_id__logs_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -16290,6 +16586,108 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AIWorkflowConfigCreate
+         * @description 创建 AI 工作流配置
+         */
+        AIWorkflowConfigCreate: {
+            /**
+             * Module Code
+             * @description 模块代码
+             */
+            module_code: string;
+            /**
+             * Workflow Name
+             * @description 工作流名称
+             */
+            workflow_name: string;
+            /**
+             * Workflow Description
+             * @description 工作流描述
+             */
+            workflow_description?: string | null;
+            /**
+             * Trigger Event
+             * @description 触发事件
+             */
+            trigger_event?: string | null;
+            /**
+             * Is Enabled
+             * @description 是否启用
+             * @default true
+             */
+            is_enabled: boolean;
+            /**
+             * Script Configs
+             * @description 脚本配置 JSON
+             */
+            script_configs?: {
+                [key: string]: unknown;
+            }[] | {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Sort Order
+             * @description 排序顺序
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+        };
+        /**
+         * AIWorkflowConfigUpdate
+         * @description 更新 AI 工作流配置
+         */
+        AIWorkflowConfigUpdate: {
+            /**
+             * Module Code
+             * @description 模块代码
+             */
+            module_code?: string | null;
+            /**
+             * Workflow Name
+             * @description 工作流名称
+             */
+            workflow_name?: string | null;
+            /**
+             * Workflow Description
+             * @description 工作流描述
+             */
+            workflow_description?: string | null;
+            /**
+             * Trigger Event
+             * @description 触发事件
+             */
+            trigger_event?: string | null;
+            /**
+             * Is Enabled
+             * @description 是否启用
+             */
+            is_enabled?: boolean | null;
+            /**
+             * Script Configs
+             * @description 脚本配置 JSON
+             */
+            script_configs?: {
+                [key: string]: unknown;
+            }[] | {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Sort Order
+             * @description 排序顺序
+             */
+            sort_order?: number | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+        };
+        /**
          * AccidentCreate
          * @description 创建事故
          */
@@ -17886,6 +18284,11 @@ export interface components {
              */
             files: string[];
         };
+        /** Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post */
+        Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post: {
+            /** File */
+            file: string;
+        };
         /**
          * CalibrationCycleUnit
          * @description 校准周期单位
@@ -18150,6 +18553,27 @@ export interface components {
              * @description 推荐等级
              */
             recommendation_level: string;
+        };
+        /**
+         * CardPreviewRequest
+         * @description 卡片预览请求
+         */
+        CardPreviewRequest: {
+            /**
+             * Data Sources
+             * @description 数据来源配置
+             */
+            data_sources: components["schemas"]["DataSourceItem"][];
+            /**
+             * Card Template
+             * @description 消息卡片模板
+             */
+            card_template: string;
+            /**
+             * @description 卡片头部颜色
+             * @default blue
+             */
+            header_color: components["schemas"]["HeaderColorEnum"];
         };
         /** CertificateCreate */
         CertificateCreate: {
@@ -19941,6 +20365,28 @@ export interface components {
             supplier?: string | null;
             /** Remark */
             remark?: string | null;
+        };
+        /**
+         * DataSourceItem
+         * @description 数据来源配置项
+         */
+        DataSourceItem: {
+            /**
+             * Key
+             * @description 数据源标识，如 hazard_open_count
+             */
+            key: string;
+            /**
+             * Label
+             * @description 数据源显示名，如「待整改隐患数」
+             */
+            label: string;
+            /**
+             * Enabled
+             * @description 是否启用
+             * @default true
+             */
+            enabled: boolean;
         };
         /** DeleteMergedRowRequest */
         DeleteMergedRowRequest: {
@@ -23001,6 +23447,12 @@ export interface components {
          * @enum {string}
          */
         HazardType: "unsafe_condition" | "unsafe_action" | "management_defect" | "environmental";
+        /**
+         * HeaderColorEnum
+         * @description 卡片头部颜色枚举
+         * @enum {string}
+         */
+        HeaderColorEnum: "blue" | "orange" | "green" | "red" | "purple";
         /** HolidayCreate */
         HolidayCreate: {
             /** Year */
@@ -24778,6 +25230,17 @@ export interface components {
          * @enum {string}
          */
         ItemResult: "pass" | "fail" | "na";
+        /**
+         * KnowledgeAttachmentRequest
+         * @description 从知识库创建附件请求
+         */
+        KnowledgeAttachmentRequest: {
+            /**
+             * Knowledge Ids
+             * @description 知识库文章 ID 列表
+             */
+            knowledge_ids: string[];
+        };
         /**
          * KnowledgeCategory
          * @description 安全知识库分类枚举
@@ -30654,6 +31117,116 @@ export interface components {
              * @description 操作人
              */
             operator?: string | null;
+        };
+        /**
+         * ScheduledTaskCreate
+         * @description 创建定时任务请求
+         */
+        ScheduledTaskCreate: {
+            /**
+             * Name
+             * @description 任务名称
+             */
+            name: string;
+            /**
+             * Description
+             * @description 任务描述
+             */
+            description?: string | null;
+            /**
+             * Cron Expression
+             * @description Cron 表达式
+             */
+            cron_expression: string;
+            /**
+             * Cron Desc
+             * @description Cron 可读描述
+             */
+            cron_desc?: string | null;
+            /**
+             * Feishu Chat Id
+             * @description 目标飞书群聊 chat_id
+             */
+            feishu_chat_id: string;
+            /**
+             * Feishu Chat Name
+             * @description 飞书群聊名称
+             */
+            feishu_chat_name?: string | null;
+            /**
+             * @description 卡片头部颜色
+             * @default blue
+             */
+            header_color: components["schemas"]["HeaderColorEnum"];
+            /**
+             * Data Sources
+             * @description 数据来源配置
+             */
+            data_sources?: components["schemas"]["DataSourceItem"][];
+            /**
+             * Card Template
+             * @description 消息卡片模板
+             */
+            card_template?: string | null;
+            /**
+             * Is Enabled
+             * @description 是否启用
+             * @default true
+             */
+            is_enabled: boolean;
+        };
+        /**
+         * ScheduledTaskUpdate
+         * @description 更新定时任务请求
+         */
+        ScheduledTaskUpdate: {
+            /**
+             * Name
+             * @description 任务名称
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description 任务描述
+             */
+            description?: string | null;
+            /**
+             * Cron Expression
+             * @description Cron 表达式
+             */
+            cron_expression?: string | null;
+            /**
+             * Cron Desc
+             * @description Cron 可读描述
+             */
+            cron_desc?: string | null;
+            /**
+             * Feishu Chat Id
+             * @description 目标飞书群聊 chat_id
+             */
+            feishu_chat_id?: string | null;
+            /**
+             * Feishu Chat Name
+             * @description 飞书群聊名称
+             */
+            feishu_chat_name?: string | null;
+            /** @description 卡片头部颜色 */
+            header_color?: components["schemas"]["HeaderColorEnum"] | null;
+            /**
+             * Data Sources
+             * @description 数据来源配置
+             */
+            data_sources?: components["schemas"]["DataSourceItem"][] | null;
+            /**
+             * Card Template
+             * @description 消息卡片模板
+             */
+            card_template?: string | null;
+            /**
+             * Is Enabled
+             * @description 是否启用
+             */
+            is_enabled?: boolean | null;
         };
         /**
          * SetCriticalRequest
@@ -37937,7 +38510,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38001,7 +38576,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38014,6 +38591,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_spare_part_api_v1_equipment_spare_parts__spare_part_id__get: {
@@ -38023,7 +38609,9 @@ export interface operations {
             path: {
                 spare_part_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38124,7 +38712,9 @@ export interface operations {
             path: {
                 spare_part_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38708,7 +39298,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38774,7 +39366,9 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38805,7 +39399,9 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -38838,7 +39434,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38849,6 +39447,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -39037,7 +39644,9 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39112,7 +39721,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39179,7 +39790,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39210,7 +39823,9 @@ export interface operations {
             path: {
                 plan_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39318,7 +39933,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39384,7 +40001,9 @@ export interface operations {
             path: {
                 record_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39424,7 +40043,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39491,7 +40112,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39522,7 +40145,9 @@ export interface operations {
             path: {
                 plan_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39632,7 +40257,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -39698,7 +40325,9 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40161,7 +40790,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40174,6 +40805,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     list_all_users_api_v1_equipment_maintenance_staff_all_users_get: {
@@ -40181,7 +40821,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40192,6 +40834,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -40208,7 +40859,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40237,7 +40890,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40272,7 +40927,9 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40303,7 +40960,9 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40338,7 +40997,9 @@ export interface operations {
             path: {
                 role_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40376,7 +41037,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40405,7 +41068,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40443,7 +41108,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40474,7 +41141,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40505,7 +41174,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40540,7 +41211,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40571,7 +41244,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40606,7 +41281,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40641,7 +41318,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40676,7 +41355,9 @@ export interface operations {
             path: {
                 personnel_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40709,7 +41390,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40720,6 +41403,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -40740,7 +41432,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40806,7 +41500,9 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40837,7 +41533,9 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40872,7 +41570,9 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -40903,7 +41603,9 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -40955,7 +41657,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41021,7 +41725,9 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41268,7 +41974,9 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41336,7 +42044,9 @@ export interface operations {
             path: {
                 photo_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41402,7 +42112,9 @@ export interface operations {
                 task_id: string;
                 equipment_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -41450,7 +42162,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41481,7 +42195,9 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -41512,7 +42228,9 @@ export interface operations {
             path: {
                 route_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -42067,6 +42785,320 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_workflow_configs_api_v1_safety_ai_workflow_configs_get: {
+        parameters: {
+            query?: {
+                /** @description 页码 */
+                page?: number;
+                /** @description 每页条数 */
+                page_size?: number;
+                /** @description 模块代码 */
+                module_code?: string | null;
+                /** @description 是否启用 */
+                is_enabled?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ai_workflow_config_api_v1_safety_ai_workflow_configs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIWorkflowConfigCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIWorkflowConfigUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_ai_workflow_config_api_v1_safety_ai_workflow_configs__config_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_workflow_attachment_api_v1_safety_ai_workflow_configs_attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_workflow_attachments_from_knowledge_api_v1_safety_ai_workflow_configs_attachments_from_knowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeAttachmentRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -43713,12 +44745,14 @@ export interface operations {
             };
         };
     };
-    ws_status_api_v1_safety_feishu_ws_status_get: {
+    get_feishu_ws_status_api_v1_safety_feishu_ws_status_get: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -43731,14 +44765,25 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    ws_restart_api_v1_safety_feishu_ws_restart_post: {
+    restart_feishu_ws_api_v1_safety_feishu_ws_restart_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -43749,6 +44794,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -46951,6 +48005,382 @@ export interface operations {
             };
         };
     };
+    get_data_source_options_api_v1_safety_scheduled_tasks_data_source_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_card_api_v1_safety_scheduled_tasks_preview_card_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feishu_chats_api_v1_safety_scheduled_tasks_feishu_chats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scheduled_tasks_api_v1_safety_scheduled_tasks_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                is_enabled?: boolean | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_scheduled_task_api_v1_safety_scheduled_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduledTaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scheduled_task_api_v1_safety_scheduled_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_scheduled_task_api_v1_safety_scheduled_tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduledTaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_scheduled_task_api_v1_safety_scheduled_tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_scheduled_task_api_v1_safety_scheduled_tasks__task_id__toggle_post: {
+        parameters: {
+            query: {
+                /** @description 是否启用 */
+                enabled: boolean;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_scheduled_task_now_api_v1_safety_scheduled_tasks__task_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scheduled_task_logs_api_v1_safety_scheduled_tasks__task_id__logs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     handler_api_v1_safety_special_operation_reports_get: {
         parameters: {
             query?: {
@@ -48473,9 +49903,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -48486,15 +49914,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -70791,7 +72210,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -70820,7 +72241,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -70853,7 +72276,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -70864,6 +72289,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -70877,7 +72311,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -70906,7 +72342,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -70941,7 +72379,9 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -70972,7 +72412,9 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -71007,7 +72449,9 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71038,7 +72482,9 @@ export interface operations {
             path: {
                 template_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71069,7 +72515,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71100,7 +72548,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -71135,7 +72585,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71166,7 +72618,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -71201,7 +72655,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71232,7 +72688,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71263,7 +72721,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -71294,7 +72754,9 @@ export interface operations {
             path: {
                 report_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {

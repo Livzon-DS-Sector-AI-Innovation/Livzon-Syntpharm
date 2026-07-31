@@ -37,6 +37,7 @@ __all__ = [
     "ChangeType",
     "CheckType",
     "CloseEhsChangeRequest",
+    "CardPreviewRequest",
     "ClosureDataSchema",
     "CompletionMethod",
     "ConfirmCheckRequest",
@@ -55,6 +56,8 @@ __all__ = [
     "DailyRiskReportCreate",
     "DailyRiskReportResponse",
     "DailyRiskReportUpdate",
+    "DataSourceItem",
+    "DataSourceOption",
     "DepartmentLeaderResponse",
     "DepartmentSafetyOfficerResponse",
     "DetectionResultItem",
@@ -77,6 +80,8 @@ __all__ = [
     "HAZARD_FACTOR_CATEGORY_OPTIONS",
     "HAZARD_LEVEL_OPTIONS",
     "HAZARD_TYPE_OPTIONS",
+    "HEADER_COLOR_OPTIONS",
+    "HeaderColorEnum",
     "HazardCategory",
     "HazardFactorCategoryEnum",
     "HazardIdentificationBase",
@@ -173,6 +178,10 @@ __all__ = [
     "SafetyCheckCreate",
     "SafetyCheckResponse",
     "SafetyCheckUpdate",
+    "ScheduledTaskCreate",
+    "ScheduledTaskLogResponse",
+    "ScheduledTaskResponse",
+    "ScheduledTaskUpdate",
     "SafetyKnowledgeArticleBase",
     "SafetyKnowledgeArticleCreate",
     "SafetyKnowledgeArticleResponse",
@@ -200,6 +209,7 @@ __all__ = [
     "TRAINING_LEVEL_OPTIONS",
     "TRAINING_MODE_OPTIONS",
     "TRAINING_TYPE_OPTIONS",
+    "TaskStatusEnum",
     "TrainingLevel",
     "TrainingMode",
     "TrainingRecordBase",
@@ -220,6 +230,13 @@ from app.modules.safety.schemas.accidents import (
     AccidentCreate,
     AccidentResponse,
     AccidentUpdate,
+)
+from app.modules.safety.schemas.ai_workflow import (
+    AIWorkflowConfigCreate,
+    AIWorkflowConfigResponse,
+    AIWorkflowConfigUpdate,
+    KnowledgeAttachmentRequest,
+    ReferenceAttachmentResponse,
 )
 from app.modules.safety.schemas.checks import (
     SafetyCheckBase,
@@ -432,6 +449,18 @@ from app.modules.safety.schemas.risk_reports import (
     SpecialOperationReportCreate,
     SpecialOperationReportResponse,
     SpecialOperationReportUpdate,
+)
+from app.modules.safety.schemas.scheduled_tasks import (
+    HEADER_COLOR_OPTIONS,
+    CardPreviewRequest,
+    DataSourceItem,
+    DataSourceOption,
+    HeaderColorEnum,
+    ScheduledTaskCreate,
+    ScheduledTaskLogResponse,
+    ScheduledTaskResponse,
+    ScheduledTaskUpdate,
+    TaskStatusEnum,
 )
 from app.modules.safety.schemas.special_ops_permits import (
     SpecialOperationPermitBase,

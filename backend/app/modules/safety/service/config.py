@@ -1,8 +1,12 @@
 """Safety AI 模型工厂."""
 
 import logging
+import uuid
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.safety.repository import SafetyRepository
 from app.shared.config_reader import get_module_setting
 
 logger = logging.getLogger(__name__)
@@ -60,3 +64,34 @@ async def create_ai_service(config_type: str = "text") -> Any:
         model=cfg["model"],
         timeout=cfg["timeout"],
     )
+
+
+class ConfigService:
+    """AI workflow config CRUD service."""
+
+    def __init__(self, session: AsyncSession):
+        self.repo = SafetyRepository(session)
+        self.session = session
+
+    async def get_ai_workflow_configs(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        module_code: str | None = None,
+        is_enabled: bool | None = None,
+    ) -> tuple[list[Any], int]:
+        return await self.repo.get_ai_workflow_configs(skip, limit, module_code, is_enabled)  # type: ignore[attr-defined,no-any-return]
+
+    async def get_ai_workflow_config(self, config_id: uuid.UUID) -> Any:
+        return await self.repo.get_ai_workflow_config_by_id(config_id)  # type: ignore[attr-defined]
+
+    async def create_ai_workflow_config(self, data: Any) -> Any:
+        task_data = data.model_dump() if hasattr(data, "model_dump") else data
+        return await self.repo.create_ai_workflow_config(task_data)  # type: ignore[attr-defined]
+
+    async def update_ai_workflow_config(self, config_id: uuid.UUID, data: Any) -> Any:
+        update_data = data.model_dump(exclude_unset=True) if hasattr(data, "model_dump") else data
+        return await self.repo.update_ai_workflow_config(config_id, update_data)  # type: ignore[attr-defined]
+
+    async def delete_ai_workflow_config(self, config_id: uuid.UUID) -> bool:
+        return await self.repo.delete_ai_workflow_config(config_id)  # type: ignore[attr-defined,no-any-return]

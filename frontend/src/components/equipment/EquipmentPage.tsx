@@ -7,7 +7,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-desig
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
-import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/equipment-client'
+import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
 import { StatsCards } from './StatsCards'
 import { EquipmentTable } from './EquipmentTable'
 import { CategoryTree } from './CategoryTree'
@@ -23,7 +23,7 @@ interface EquipmentPageProps {
   initialEquipments: Equipment[]
   initialTotal: number
   initialStatistics: EquipmentStatistics
-  initialDepartments: import('@/lib/api/equipment').DepartmentOption[]
+  initialDepartments: import('@/lib/api/client/equipment').DepartmentOption[]
 }
 
 const SIDEBAR_WIDTH = 280
