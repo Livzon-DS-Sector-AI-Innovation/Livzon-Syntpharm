@@ -17,93 +17,16 @@
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from playwright.async_api import async_playwright
-
 from app.shared.config_reader import get_module_setting, get_module_setting_bool
+
+from .base_crawler import BaseCrawler
 
 logger = logging.getLogger(__name__)
 
-
-LAUNCH_ARGS = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--disable-blink-features=AutomationControlled",
-    "--disable-infobars",
-]
-
-STEALTH_JS = """
-// ── WebDriver 隐藏 ──
-Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-
-// ── Plugins 伪装 ──
-Object.defineProperty(navigator, 'plugins', {
-    get: () => {
-        const arr = [1, 2, 3, 4, 5];
-        arr.item = (i) => arr[i];
-        arr.namedItem = (n) => null;
-        arr.refresh = () => {};
-        Object.setPrototypeOf(arr, PluginArray.prototype);
-        return arr;
-    }
-});
-Object.defineProperty(navigator, 'mimeTypes', {
-    get: () => {
-        const arr = [1, 2, 3];
-        arr.item = (i) => arr[i];
-        arr.namedItem = (n) => null;
-        Object.setPrototypeOf(arr, MimeTypeArray.prototype);
-        return arr;
-    }
-});
-
-// ── 语言伪装 ──
-Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
-Object.defineProperty(navigator, 'language', {get: () => 'zh-CN'});
-
-// ── Chrome 运行时 ──
-window.chrome = {
-    runtime: {},
-    loadTimes: () => {},
-    csi: () => {},
-    app: {}
-};
-
-// ── 权限 ──
-const origQuery = window.navigator.permissions.query;
-window.navigator.permissions.query = (parameters) => (
-    parameters.name === 'notifications' ?
-        Promise.resolve({state: Notification.permission}) :
-        origQuery(parameters)
-);
-
-// ── 硬件信息 ──
-Object.defineProperty(navigator, 'hardwareConcurrency', {get: () => 8});
-Object.defineProperty(navigator, 'deviceMemory', {get: () => 8});
-
-// ── 平台/厂商 ──
-Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
-Object.defineProperty(navigator, 'vendor', {get: () => 'Google Inc.'});
-Object.defineProperty(navigator, 'vendorSub', {get: () => ''});
-Object.defineProperty(navigator, 'productSub', {get: () => '20030107'});
-
-// ── WebGL 伪装 ──
-const getParameter = WebGLRenderingContext.prototype.getParameter;
-WebGLRenderingContext.prototype.getParameter = function(parameter) {
-    if (parameter === 37445) return 'Intel Inc.';
-    if (parameter === 37446) return 'Intel Iris OpenGL Engine';
-    return getParameter.call(this, parameter);
-};
-
-// ── 清除自动化痕迹 ──
-delete navigator.__proto__.webdriver;
-"""
 
 # ── NMPA URL 配置 ──
 # 主入口：数据查询首页（显示所有分类卡片）
@@ -121,7 +44,7 @@ API_MATCH_PATTERNS = [
 ]
 
 
-class NmpaRecordAdapter:
+class NmpaRecordAdapter(BaseCrawler):
     """NMPA 备案信息采集适配器（CDE 模式）。
 
     使用 Playwright 页面驱动模式：
@@ -142,7 +65,7 @@ class NmpaRecordAdapter:
         browsers_path: str | None = None,
         detail_url_template: str | None = None,
     ):
-        self._headless_override = headless
+        super().__init__(headless=headless)
         self._list_url_override = list_url
         self._discovery_mode_override = discovery_mode
         self._browsers_path_override = browsers_path
@@ -153,10 +76,6 @@ class NmpaRecordAdapter:
         self.discovery_mode = True
         self.browsers_path = ""
         self.detail_url_template = ""
-        self._pw = None
-        self._browser = None
-        self._context = None
-        self._page = None
         # 自动发现模式下记录所有捕获的响应
         self._discovered_responses: list[dict] = []
 
@@ -193,54 +112,9 @@ class NmpaRecordAdapter:
                 "https://www.nmpa.gov.cn/datasearch/search-info?recordId={record_id}",
             )
 
-        if self.browsers_path:
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = self.browsers_path
-
-        self._pw = await async_playwright().start()
-        launch_kwargs: dict[str, Any] = {
-            "headless": self.headless,
-            "args": LAUNCH_ARGS,
-            "ignore_default_args": ["--enable-automation"],
-        }
-        self._browser = await self._pw.chromium.launch(**launch_kwargs)
-        self._context = await self._browser.new_context(
-            viewport={"width": 1920, "height": 1080},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            locale="zh-CN",
-            timezone_id="Asia/Shanghai",
-        )
-        await self._context.add_init_script(STEALTH_JS)
-        self._page = await self._context.new_page()
+        await self._launch_browser(headless=self.headless, browsers_path=self.browsers_path)
         self._discovered_responses = []
         logger.info(f"NMPA 浏览器启动 (headless={self.headless}, discovery={self.discovery_mode})")
-
-    async def stop(self):
-        """关闭浏览器"""
-        try:
-            if self._context:
-                await self._context.close()
-            if self._browser:
-                await self._browser.close()
-            if self._pw:
-                await self._pw.stop()
-        except Exception as e:
-            logger.warning(f"关闭浏览器出错: {e}")
-        finally:
-            self._context = None
-            self._browser = None
-            self._pw = None
-            self._page = None
-
-    async def __aenter__(self):
-        await self.start()
-        return self
-
-    async def __aexit__(self, *args):
-        await self.stop()
 
     # ── 响应解析 ──────────────────────────────────────────
 
@@ -385,16 +259,16 @@ class NmpaRecordAdapter:
             except Exception as e:
                 logger.debug(f"处理响应异常: {e}")
 
-        self._page.on("response", on_response)
+        self.page.on("response", on_response)
 
         try:
             logger.info(f"打开 NMPA 页面: {self.list_url}")
-            resp = await self._page.goto(
+            resp = await self.page.goto(
                 self.list_url,
                 wait_until="networkidle",
                 timeout=timeout_ms,
             )
-            logger.info(f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self._page.title()}")
+            logger.info(f"页面初始响应: {resp.status if resp else 'N/A'}, title={await self.page.title()}")
 
             # 等待数据响应
             try:
@@ -408,7 +282,7 @@ class NmpaRecordAdapter:
                 else:
                     logger.warning("等待数据 API 响应超时")
         finally:
-            self._page.remove_listener("response", on_response)
+            self.page.remove_listener("response", on_response)
 
         return captured["result"]
 
@@ -440,7 +314,7 @@ class NmpaRecordAdapter:
             except Exception as e:
                 logger.debug(f"处理响应异常: {e}")
 
-        self._page.on("response", on_response)
+        self.page.on("response", on_response)
 
         try:
             # 多种选择器尝试找翻页按钮
@@ -460,7 +334,7 @@ class NmpaRecordAdapter:
             clicked = False
             for sel in next_selectors:
                 try:
-                    el = self._page.locator(sel).first
+                    el = self.page.locator(sel).first
                     if await el.count() > 0 and await el.is_visible():
                         await el.click()
                         clicked = True
@@ -471,7 +345,7 @@ class NmpaRecordAdapter:
 
             if not clicked:
                 # JS 查找翻页文本
-                clicked_text = await self._page.evaluate("""() => {
+                clicked_text = await self.page.evaluate("""() => {
                     const elements = document.querySelectorAll('a, button, li, span');
                     for (const el of elements) {
                         const text = (el.textContent || '').trim();
@@ -498,7 +372,7 @@ class NmpaRecordAdapter:
             except TimeoutError:
                 logger.warning("翻页响应等待超时")
         finally:
-            self._page.remove_listener("response", on_response)
+            self.page.remove_listener("response", on_response)
 
         return captured["result"]
 
@@ -616,7 +490,7 @@ class NmpaRecordAdapter:
     def normalize_record(self, record: dict) -> dict[str, Any]:
         """将 NMPA 原始记录标准化。
 
-        字段映射会尝试多种可能的字段名，CC 可根据实际 API 返回调整。
+        字段映射会尝试多种可能的字段名，可根据实际 API 返回调整。
         """
         # ID
         doc_id = str(
