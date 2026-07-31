@@ -42,7 +42,7 @@ async function checkRoute(page: Page, route: RouteCase) {
 
   try {
     const response = await page.goto(route.path, {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle',
       timeout: 30_000,
     })
 
