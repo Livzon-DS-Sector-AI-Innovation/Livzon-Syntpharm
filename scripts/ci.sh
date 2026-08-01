@@ -175,6 +175,7 @@ run_e2e() {
 
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" \
         run -d --name e2e-frontend -p 13000:3000 \
+        --build \
         -e API_BASE_URL=http://backend-e2e:8000 \
         ci-build \
         sh -c "
