@@ -71,5 +71,3 @@ export function buildQueryString(params: Record<string, unknown>): string {
   const qs = searchParams.toString()
   return qs ? `?${qs}` : ''
 }
-
-export { getApiBaseUrl }
