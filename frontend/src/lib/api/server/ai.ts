@@ -1,8 +1,8 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import type { ExamGenerateResponse } from '@/types/hr'
 
 export async function generateExamQuestions(formData: FormData): Promise<ExamGenerateResponse> {
-  const url = `${API_BASE_URL}/api/v1/hr/ai-exam/generate`
+  const url = `${getApiBaseUrl()}/api/v1/hr/ai-exam/generate`
   const res = await fetch(url, {
     method: 'POST',
     body: formData,
@@ -16,7 +16,7 @@ export async function generateExamQuestions(formData: FormData): Promise<ExamGen
 }
 
 export async function exportExam(data: unknown): Promise<Response> {
-  const url = `${API_BASE_URL}/api/v1/hr/ai-exam/export`
+  const url = `${getApiBaseUrl()}/api/v1/hr/ai-exam/export`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -31,7 +31,7 @@ export async function exportExam(data: unknown): Promise<Response> {
 }
 
 export async function parseExperimentRecord(formData: FormData): Promise<unknown> {
-  const url = `${API_BASE_URL}/api/v1/ai/parse-experiment`
+  const url = `${getApiBaseUrl()}/api/v1/ai/parse-experiment`
   const response = await fetch(url, {
     method: 'POST',
     body: formData,
@@ -46,7 +46,7 @@ export async function parseExperimentRecord(formData: FormData): Promise<unknown
 }
 
 export async function parseProcessParameters(content: string, type: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
-  return apiFetch(`${API_BASE_URL}/api/v1/ai/parse-parameters`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/ai/parse-parameters`, {
     method: 'POST',
     body: JSON.stringify({ content, parse_type: type }),
   })

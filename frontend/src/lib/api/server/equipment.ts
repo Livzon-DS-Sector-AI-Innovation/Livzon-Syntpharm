@@ -1,7 +1,7 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/categories`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -9,7 +9,7 @@ export async function createCategoryApi(data: any, headers?: Record<string, stri
 }
 
 export async function updateCategoryApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/categories/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -17,14 +17,14 @@ export async function updateCategoryApi(id: string, data: any, headers?: Record<
 }
 
 export async function deleteCategoryApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/categories/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createLocationApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/locations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -32,7 +32,7 @@ export async function createLocationApi(data: any, headers?: Record<string, stri
 }
 
 export async function updateLocationApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/locations/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -40,14 +40,14 @@ export async function updateLocationApi(id: string, data: any, headers?: Record<
 }
 
 export async function deleteLocationApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/locations/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createEquipmentApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/equipments`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -55,7 +55,7 @@ export async function createEquipmentApi(data: any, headers?: Record<string, str
 }
 
 export async function updateEquipmentApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/equipments/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -63,14 +63,14 @@ export async function updateEquipmentApi(id: string, data: any, headers?: Record
 }
 
 export async function deleteEquipmentApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/equipments/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createFailureCodeApi(path: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/failure-codes/${path}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${path}`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -78,7 +78,7 @@ export async function createFailureCodeApi(path: string, data: any, headers?: Re
 }
 
 export async function updateFailureCodeApi(path: string, id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/failure-codes/${path}/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${path}/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -86,14 +86,14 @@ export async function updateFailureCodeApi(path: string, id: string, data: any, 
 }
 
 export async function deleteFailureCodeApi(path: string, id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/failure-codes/${path}/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${path}/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createWorkOrderApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -101,7 +101,7 @@ export async function createWorkOrderApi(data: any, headers?: Record<string, str
 }
 
 export async function updateWorkOrderApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -109,7 +109,7 @@ export async function updateWorkOrderApi(id: string, data: any, headers?: Record
 }
 
 export async function assignWorkOrderApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/assign`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/assign`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -117,14 +117,14 @@ export async function assignWorkOrderApi(id: string, data: any, headers?: Record
 }
 
 export async function startWorkOrderApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/start`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/start`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function completeWorkOrderApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/complete`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/complete`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -132,7 +132,7 @@ export async function completeWorkOrderApi(id: string, data: any, headers?: Reco
 }
 
 export async function verifyWorkOrderApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/verify`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/verify`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -140,14 +140,14 @@ export async function verifyWorkOrderApi(id: string, data: any, headers?: Record
 }
 
 export async function closeWorkOrderApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/close`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/close`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function createCalibrationPlanApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/plans`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -155,7 +155,7 @@ export async function createCalibrationPlanApi(data: any, headers?: Record<strin
 }
 
 export async function updateCalibrationPlanApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -163,14 +163,14 @@ export async function updateCalibrationPlanApi(id: string, data: any, headers?: 
 }
 
 export async function deleteCalibrationPlanApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createCalibrationRecordApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/records`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/records`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -178,7 +178,7 @@ export async function createCalibrationRecordApi(data: any, headers?: Record<str
 }
 
 export async function createSparePartApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -186,7 +186,7 @@ export async function createSparePartApi(data: any, headers?: Record<string, str
 }
 
 export async function updateSparePartApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -194,14 +194,14 @@ export async function updateSparePartApi(id: string, data: any, headers?: Record
 }
 
 export async function deleteSparePartApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function stockInboundApi(sparePartId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${sparePartId}/stock/inbound`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${sparePartId}/stock/inbound`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -209,7 +209,7 @@ export async function stockInboundApi(sparePartId: string, data: any, headers?: 
 }
 
 export async function stockAdjustApi(sparePartId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${sparePartId}/stock/adjust`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${sparePartId}/stock/adjust`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -217,7 +217,7 @@ export async function stockAdjustApi(sparePartId: string, data: any, headers?: R
 }
 
 export async function createMaintenancePlanApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -225,7 +225,7 @@ export async function createMaintenancePlanApi(data: any, headers?: Record<strin
 }
 
 export async function updateMaintenancePlanApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -233,14 +233,14 @@ export async function updateMaintenancePlanApi(id: string, data: any, headers?: 
 }
 
 export async function deleteMaintenancePlanApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionTemplateApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -248,7 +248,7 @@ export async function createInspectionTemplateApi(data: any, headers?: Record<st
 }
 
 export async function updateInspectionTemplateApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -256,14 +256,14 @@ export async function updateInspectionTemplateApi(id: string, data: any, headers
 }
 
 export async function deleteInspectionTemplateApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionTemplateItemApi(templateId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/${templateId}/items`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/${templateId}/items`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -271,7 +271,7 @@ export async function createInspectionTemplateItemApi(templateId: string, data: 
 }
 
 export async function updateInspectionTemplateItemApi(itemId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/items/${itemId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/items/${itemId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -279,14 +279,14 @@ export async function updateInspectionTemplateItemApi(itemId: string, data: any,
 }
 
 export async function deleteInspectionTemplateItemApi(itemId: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/items/${itemId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/items/${itemId}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function completeInspectionApi(workOrderId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-templates/complete/${workOrderId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-templates/complete/${workOrderId}`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -294,7 +294,7 @@ export async function completeInspectionApi(workOrderId: string, data: any, head
 }
 
 export async function consumeMaterialsApi(workOrderId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${workOrderId}/materials`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/materials`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -302,7 +302,7 @@ export async function consumeMaterialsApi(workOrderId: string, data: any, header
 }
 
 export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
     method: 'POST',
     headers,
     body: formData,
@@ -316,21 +316,21 @@ export async function uploadWorkOrderImagesApi(workOrderId: string, formData: Fo
 }
 
 export async function deleteWorkOrderImageApi(workOrderId: string, imageId: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images/${imageId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images/${imageId}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function claimWorkOrderApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function updateClaimTimeoutConfigApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/config/claim-timeout`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/config/claim-timeout`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -338,7 +338,7 @@ export async function updateClaimTimeoutConfigApi(data: any, headers?: Record<st
 }
 
 export async function downloadImportTemplateApi(headers?: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import/template`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/template`, {
     headers: headers || {},
   })
   if (!res.ok) throw new Error('下载模板失败')
@@ -348,7 +348,7 @@ export async function downloadImportTemplateApi(headers?: Record<string, string>
 }
 
 export async function importEquipmentsApi(formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     headers,
     body: formData,
@@ -362,7 +362,7 @@ export async function importEquipmentsApi(formData: FormData, headers: Record<st
 }
 
 export async function createPersonnelRoleApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -370,7 +370,7 @@ export async function createPersonnelRoleApi(data: any, headers?: Record<string,
 }
 
 export async function updatePersonnelRoleApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -378,14 +378,14 @@ export async function updatePersonnelRoleApi(id: string, data: any, headers?: Re
 }
 
 export async function deletePersonnelRoleApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function addPersonnelApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -393,14 +393,14 @@ export async function addPersonnelApi(data: any, headers?: Record<string, string
 }
 
 export async function deletePersonnelApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function assignRolesApi(personnelId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/roles`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/roles`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -408,7 +408,7 @@ export async function assignRolesApi(personnelId: string, data: any, headers?: R
 }
 
 export async function assignCategoriesApi(personnelId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/categories`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/categories`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -416,14 +416,14 @@ export async function assignCategoriesApi(personnelId: string, data: any, header
 }
 
 export async function refreshFeishuApi(headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/refresh-feishu`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/refresh-feishu`, {
     method: 'POST',
     headers,
   })
 }
 
 export async function createInspectionRouteApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -431,7 +431,7 @@ export async function createInspectionRouteApi(data: any, headers?: Record<strin
 }
 
 export async function updateInspectionRouteApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -439,14 +439,14 @@ export async function updateInspectionRouteApi(id: string, data: any, headers?: 
 }
 
 export async function deleteInspectionRouteApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function setRouteLocationsApi(routeId: string, locations: any[], headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
     method: 'POST',
     body: JSON.stringify({ locations }),
     headers,
@@ -454,7 +454,7 @@ export async function setRouteLocationsApi(routeId: string, locations: any[], he
 }
 
 export async function createInspectionTaskApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -462,21 +462,21 @@ export async function createInspectionTaskApi(data: any, headers?: Record<string
 }
 
 export async function startInspectionTaskApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/start`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/start`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function completeInspectionTaskApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/complete`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/complete`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function closeInspectionTaskApi(id: string, closureRemark?: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/close`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/close`, {
     method: 'PUT',
     body: JSON.stringify({ closure_remark: closureRemark }),
     headers,
@@ -484,7 +484,7 @@ export async function closeInspectionTaskApi(id: string, closureRemark?: string,
 }
 
 export async function submitEquipmentCheckApi(taskId: string, equipmentId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/check`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/check`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -492,7 +492,7 @@ export async function submitEquipmentCheckApi(taskId: string, equipmentId: strin
 }
 
 export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
     headers,
     body: formData,
@@ -506,14 +506,14 @@ export async function uploadInspectionPhotoApi(taskId: string, equipmentId: stri
 }
 
 export async function deleteInspectionPhotoApi(taskId: string, photoId: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/photos/${photoId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos/${photoId}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function submitRouteCheckApi(taskId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/route-check`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/route-check`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -521,7 +521,7 @@ export async function submitRouteCheckApi(taskId: string, data: any, headers?: R
 }
 
 export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
     headers,
     body: formData,
@@ -541,7 +541,7 @@ export async function analyzeInspectionPhotoApi(
   imageMimeType: string,
   headers?: Record<string, string>
 ) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/ai-analyze`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/ai-analyze`, {
     method: 'POST',
     body: JSON.stringify({ image_base64: imageBase64, image_mime_type: imageMimeType }),
     headers,
@@ -549,7 +549,7 @@ export async function analyzeInspectionPhotoApi(
 }
 
 export async function createScheduleApi(routeId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${routeId}/schedules`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/schedules`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -557,7 +557,7 @@ export async function createScheduleApi(routeId: string, data: any, headers?: Re
 }
 
 export async function updateScheduleApi(routeId: string, scheduleId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${routeId}/schedules/${scheduleId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/schedules/${scheduleId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -565,14 +565,14 @@ export async function updateScheduleApi(routeId: string, scheduleId: string, dat
 }
 
 export async function deleteScheduleApi(routeId: string, scheduleId: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${routeId}/schedules/${scheduleId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/schedules/${scheduleId}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function stockInboundOldApi(sparePartId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/stock-inbound`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/stock-inbound`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -580,7 +580,7 @@ export async function stockInboundOldApi(sparePartId: string, data: any, headers
 }
 
 export async function consumeMaterialsOldApi(workOrderId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/material-consume`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/material-consume`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -592,7 +592,7 @@ export async function uploadWorkOrderImagesOldApi(workOrderId: string, formData:
 }
 
 export async function claimWorkOrderDataApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -600,7 +600,7 @@ export async function claimWorkOrderDataApi(id: string, data: any, headers?: Rec
 }
 
 export async function updateClaimTimeoutConfigOldApi(config: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/claim-timeout-config`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/claim-timeout-config`, {
     method: 'PUT',
     body: JSON.stringify(config),
     headers,
@@ -608,7 +608,7 @@ export async function updateClaimTimeoutConfigOldApi(config: any, headers?: Reco
 }
 
 export async function completeInspectionOldApi(workOrderId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/inspection-complete`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection-complete`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -616,7 +616,7 @@ export async function completeInspectionOldApi(workOrderId: string, data: any, h
 }
 
 export async function createSparePartOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -624,7 +624,7 @@ export async function createSparePartOldApi(data: any, headers?: Record<string, 
 }
 
 export async function updateSparePartOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -632,14 +632,14 @@ export async function updateSparePartOldApi(id: string, data: any, headers?: Rec
 }
 
 export async function deleteSparePartOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createMaintenancePlanOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -647,7 +647,7 @@ export async function createMaintenancePlanOldApi(data: any, headers?: Record<st
 }
 
 export async function updateMaintenancePlanOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -655,14 +655,14 @@ export async function updateMaintenancePlanOldApi(id: string, data: any, headers
 }
 
 export async function deleteMaintenancePlanOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionTemplateOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/templates`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -670,7 +670,7 @@ export async function createInspectionTemplateOldApi(data: any, headers?: Record
 }
 
 export async function updateInspectionTemplateOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -678,14 +678,14 @@ export async function updateInspectionTemplateOldApi(id: string, data: any, head
 }
 
 export async function deleteInspectionTemplateOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionTemplateItemOldApi(templateId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/template-items`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/template-items`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -693,7 +693,7 @@ export async function createInspectionTemplateItemOldApi(templateId: string, dat
 }
 
 export async function updateInspectionTemplateItemOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/template-items/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/template-items/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -701,14 +701,14 @@ export async function updateInspectionTemplateItemOldApi(id: string, data: any, 
 }
 
 export async function deleteInspectionTemplateItemOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/template-items/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/template-items/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionRouteOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -716,7 +716,7 @@ export async function createInspectionRouteOldApi(data: any, headers?: Record<st
 }
 
 export async function updateInspectionRouteOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -724,14 +724,14 @@ export async function updateInspectionRouteOldApi(id: string, data: any, headers
 }
 
 export async function deleteInspectionRouteOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function setRouteLocationsOldApi(routeId: string, items: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
     method: 'PUT',
     body: JSON.stringify({ items }),
     headers,
@@ -739,7 +739,7 @@ export async function setRouteLocationsOldApi(routeId: string, items: any, heade
 }
 
 export async function createScheduleOldApi(routeId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/schedules`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/schedules`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -747,7 +747,7 @@ export async function createScheduleOldApi(routeId: string, data: any, headers?:
 }
 
 export async function updateScheduleOldApi(routeId: string, id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/schedules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/schedules/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -755,14 +755,14 @@ export async function updateScheduleOldApi(routeId: string, id: string, data: an
 }
 
 export async function deleteScheduleOldApi(routeId: string, id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/schedules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/schedules/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function createInspectionTaskOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -770,21 +770,21 @@ export async function createInspectionTaskOldApi(data: any, headers?: Record<str
 }
 
 export async function startInspectionTaskOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/start`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/start`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function closeInspectionTaskOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/close`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/close`, {
     method: 'PUT',
     headers,
   })
 }
 
 export async function submitEquipmentCheckOldApi(taskId: string, equipmentId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/checks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/checks`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -796,7 +796,7 @@ export async function uploadInspectionPhotoOldApi(taskId: string, equipmentId: s
 }
 
 export async function completeInspectionTaskOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/tasks/${id}/complete`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${id}/complete`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -804,14 +804,14 @@ export async function completeInspectionTaskOldApi(id: string, data: any, header
 }
 
 export async function analyzeInspectionPhotoOldApi(taskId: string, equipmentId: string, base64: string, mimeType: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/photos/${taskId}/analyze`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/photos/${taskId}/analyze`, {
     method: 'POST',
     headers,
   })
 }
 
 export async function addPersonnelOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -819,14 +819,14 @@ export async function addPersonnelOldApi(data: any, headers?: Record<string, str
 }
 
 export async function deletePersonnelOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function assignRolesOldApi(personnelId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/roles`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/roles`, {
     method: 'PUT',
     body: JSON.stringify({ data }),
     headers,
@@ -834,7 +834,7 @@ export async function assignRolesOldApi(personnelId: string, data: any, headers?
 }
 
 export async function assignCategoriesOldApi(personnelId: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/${personnelId}/categories`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/categories`, {
     method: 'PUT',
     body: JSON.stringify({ data }),
     headers,
@@ -842,7 +842,7 @@ export async function assignCategoriesOldApi(personnelId: string, data: any, hea
 }
 
 export async function createRoleOldApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
@@ -850,7 +850,7 @@ export async function createRoleOldApi(data: any, headers?: Record<string, strin
 }
 
 export async function updateRoleOldApi(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
     headers,
@@ -858,28 +858,28 @@ export async function updateRoleOldApi(id: string, data: any, headers?: Record<s
 }
 
 export async function deleteRoleOldApi(id: string, headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/roles/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
     method: 'DELETE',
     headers,
   })
 }
 
 export async function refreshFeishuOldApi(headers?: Record<string, string>) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/personnel/refresh-feishu`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/refresh-feishu`, {
     method: 'POST',
     headers,
   })
 }
 
 export async function downloadImportTemplateOldApi() {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import-template`)
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-template`)
   if (!res.ok) throw new Error('下载导入模板失败')
   const blob = await res.blob()
   return blob
 }
 
 export async function importEquipmentsOldApi(formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     body: formData,
     headers,
@@ -891,19 +891,19 @@ export async function importEquipmentsOldApi(formData: FormData, headers: Record
 // ── Read functions (Server Component GET calls) ──
 
 export async function fetchCategories() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/categories`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`)
 }
 
 export async function fetchCategoryTree() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/categories?tree=true`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories?tree=true`)
 }
 
 export async function fetchLocations() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/locations`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations`)
 }
 
 export async function fetchLocationTree() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/locations?tree=true`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations?tree=true`)
 }
 
 export async function fetchEquipments(filters: any = {}) {
@@ -916,15 +916,15 @@ export async function fetchEquipments(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchEquipmentStatistics() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/equipments/statistics`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/statistics`)
 }
 
 export async function fetchDepartments() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/departments`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/departments`)
 }
 
 export async function fetchInspectionTemplates(filters: any = {}) {
@@ -933,7 +933,7 @@ export async function fetchInspectionTemplates(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/inspection/templates${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrders(filters: any = {}) {
@@ -946,18 +946,18 @@ export async function fetchWorkOrders(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrderStatistics(exclude_status?: string) {
   const params = new URLSearchParams()
   if (exclude_status) params.append('exclude_status', exclude_status)
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchFailureCodes(type: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/failure-codes/${type}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${type}`)
 }
 
 export async function fetchCalibrationPlans(filters: any = {}) {
@@ -967,7 +967,7 @@ export async function fetchCalibrationPlans(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/plans${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchCalibrationRecords(filters: any = {}) {
@@ -977,7 +977,7 @@ export async function fetchCalibrationRecords(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/calibration/records${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/records${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchMaintenancePlans(filters: any = {}) {
@@ -987,14 +987,14 @@ export async function fetchMaintenancePlans(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchOverdueMaintenancePlans(days?: number) {
   const params = new URLSearchParams()
   if (days !== undefined) params.append('days', days.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/maintenance/plans/overdue${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/overdue${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchSpareParts(filters: any = {}) {
@@ -1005,9 +1005,9 @@ export async function fetchSpareParts(filters: any = {}) {
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchStockWarnings() {
-  return apiFetch(`${API_BASE_URL}/api/v1/equipment/spare-parts/stock/warnings`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/stock/warnings`)
 }

@@ -1,9 +1,9 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
-const BASE = `${API_BASE_URL}/api/v1/registration/validation-audit`
+const BASE = `${getApiBaseUrl()}/api/v1/registration/validation-audit`
 
 async function uploadFetch(url: string, formData: FormData) {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+  const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
   const response = await fetch(fullUrl, {
     method: 'POST',
     body: formData,

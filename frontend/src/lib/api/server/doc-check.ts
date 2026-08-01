@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   StartCheckRequest,
   CheckConfig,
@@ -7,7 +7,7 @@ import type {
 } from '@/types/doc-check'
 
 export async function startCheckApi(data: StartCheckRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/check/single`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/check/single`, {
     method: 'POST',
     body: JSON.stringify({
       file_path: data.file_id,
@@ -19,11 +19,11 @@ export async function startCheckApi(data: StartCheckRequest) {
 }
 
 export async function getCheckProgressApi(taskId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/records/${taskId}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/records/${taskId}`)
 }
 
 export async function batchCheckApi(fileIds: string[], checkConfig: CheckConfig, operator?: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/check/batch`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/check/batch`, {
     method: 'POST',
     body: JSON.stringify({
       file_paths: fileIds,
@@ -43,15 +43,15 @@ export async function getCheckRecordsApi(filter?: QueryCheckRecordsRequest) {
   if (filter?.page) searchParams.set('page', String(filter.page))
   if (filter?.page_size) searchParams.set('page_size', String(filter.page_size))
   const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/records${query}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/records${query}`)
 }
 
 export async function getCheckRecordDetailApi(id: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/records/${id}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/records/${id}`)
 }
 
 export async function handleProblemApi(problemId: string, data: HandleProblemRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/problems/${problemId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/problems/${problemId}`, {
     method: 'PUT',
     body: JSON.stringify({
       handle_status: data.handle_status,
@@ -62,15 +62,15 @@ export async function handleProblemApi(problemId: string, data: HandleProblemReq
 }
 
 export async function exportCheckReportApi(id: string, format: 'pdf' | 'excel' = 'pdf') {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/export/${id}?format=${format}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/export/${id}?format=${format}`)
 }
 
 export async function getCheckConfigApi() {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/config`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/config`)
 }
 
 export async function updateCheckConfigApi(key: string, value: string, operator?: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/sop-ai/config/${key}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/config/${key}`, {
     method: 'PUT',
     body: JSON.stringify({
       config_value: value,

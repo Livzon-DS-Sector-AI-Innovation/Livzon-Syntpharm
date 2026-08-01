@@ -2,9 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
-const API_BASE = process.env.API_BASE_URL
-  ? `${process.env.API_BASE_URL}/api/v1`
-  : (() => { throw new Error('环境变量 API_BASE_URL 未配置，无法连接后端服务') })()
+export function getApiBaseUrl(): string {
+  return process.env.getApiBaseUrl()_URL
+    ? `${process.env.getApiBaseUrl()_URL}/api/v1`
+    : (() => { throw new Error('环境变量 getApiBaseUrl()_URL 未配置，无法连接后端服务') })()
+}
 
 export async function fetchApi<T>(
   endpoint: string,
@@ -14,14 +16,14 @@ export async function fetchApi<T>(
   try {
     const authHeaders = await getAuthHeaders()
     const { headers: optHeaders, ...restOptions } = options || {}
-    response = await fetch(`${API_BASE}${endpoint}`, {
+    response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       headers: { ...authHeaders, ...optHeaders },
       ...restOptions,
     })
   } catch {
     return {
       code: -1,
-      message: `网络请求失败，无法连接到后端服务 (${API_BASE}${endpoint})`,
+      message: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})`,
       data: null as unknown as T,
     }
   }
@@ -54,7 +56,7 @@ export async function uploadPhoto(endpoint: string, file: File) {
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
   const { 'Content-Type': _, ...uploadHeaders } = authHeaders
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'POST',
     headers: uploadHeaders,
     body: formData,

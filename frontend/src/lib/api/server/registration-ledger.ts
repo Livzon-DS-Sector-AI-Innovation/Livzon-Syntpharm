@@ -1,6 +1,6 @@
-import { apiFetch, apiFetchRaw, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 
-const API_BASE = `${API_BASE_URL}/api/v1/registration`
+const API_BASE = `${getApiBaseUrl()}/api/v1/registration`
 
 export async function createDomesticApproval(data: unknown) {
   return apiFetch(`${API_BASE}/domestic-approvals`, {

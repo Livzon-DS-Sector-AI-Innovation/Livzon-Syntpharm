@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   Reagent,
   ReagentListResponse,
@@ -7,7 +7,7 @@ import type {
   AiRecognizeResponse,
 } from '@/types/reagent-quality'
 
-const BASE_PATH = `${API_BASE_URL}/api/v1`
+const BASE_PATH = `${getApiBaseUrl()}/api/v1`
 
 export async function recognizeReagentLabel(formData: FormData) {
   return apiFetch<{ code: number; message: string; data: AiRecognizeResponse | null }>(`${BASE_PATH}/quality/reagent/recognize`, {

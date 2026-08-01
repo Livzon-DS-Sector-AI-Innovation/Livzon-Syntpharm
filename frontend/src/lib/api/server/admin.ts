@@ -1,7 +1,7 @@
-import { API_BASE_URL } from '@/lib/api/server/base'
+import { getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function updateSystemSettings(data: Record<string, unknown>) {
-  const url = `${API_BASE_URL}/api/v1/hr/system-settings`
+  const url = `${getApiBaseUrl()}/api/v1/hr/system-settings`
   const res = await fetch(url, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   Instrument,
   InstrumentListItem,
@@ -32,7 +32,7 @@ import type {
 } from '@/types/instrument'
 
 async function apiFetchWithoutContentType<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     cache: 'no-store',
   })

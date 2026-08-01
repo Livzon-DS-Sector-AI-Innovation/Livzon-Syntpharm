@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function fetchOptimizations(filters: any = {}) {
   const params = new URLSearchParams()
@@ -7,5 +7,5 @@ export async function fetchOptimizations(filters: any = {}) {
   if (filters.page) params.set('page', String(filters.page))
   if (filters.page_size) params.set('page_size', String(filters.page_size))
   const qs = params.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/research/process-optimizations${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/process-optimizations${qs ? `?${qs}` : ''}`)
 }
