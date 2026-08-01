@@ -37,10 +37,10 @@ services:
       APP_ENV: e2e
       E2E_AUTH_SECRET: e2e-test-secret
     command: >
-      sh -c "uv run alembic upgrade head &&
-      uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"
+      sh -c "uv run --no-dev alembic upgrade head &&
+      uv run --no-dev uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"
     healthcheck:
-      test: ["CMD", "uv", "run", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"]
+      test: ["CMD", "uv", "run", "--no-dev", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"]
       interval: 5s
       timeout: 10s
       retries: 60

@@ -161,7 +161,7 @@ run_e2e() {
             exit 1
         fi
 
-        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e uv run python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)" > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e uv run --no-dev python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)" > /dev/null 2>&1; then
             backend_ready=true
             break
         fi
