@@ -17,7 +17,7 @@ import type {
 } from '@/types/warehouse'
 
 export function getApiBaseUrl(): string {
-  return process.env.getApiBaseUrl() || 'http://dazah-backend-app-1:8000'
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
 }
 
 async function apiFetch<T>(path: string, fallbackMessage: string): Promise<T> {

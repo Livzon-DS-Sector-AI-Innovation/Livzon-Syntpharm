@@ -397,7 +397,7 @@ export async function deleteRole(id: string) {
 }
 
 function getApiBaseUrl(): string {
-  return process.env.getApiBaseUrl() || 'http://dazah-backend-app-1:8000'
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
 }
 
 export async function previewEquipmentImport(data: any) {

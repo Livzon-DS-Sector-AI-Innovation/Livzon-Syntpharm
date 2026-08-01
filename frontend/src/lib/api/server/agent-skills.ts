@@ -5,7 +5,7 @@ import type {
 } from '@/actions/agent-skills'
 
 export function getApiBaseUrl(): string {
-  return process.env.getApiBaseUrl()_URL || 'http://dazah-backend-app-1:8000'
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {

@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 export function getApiBaseUrl(): string {
-  return process.env.getApiBaseUrl()_URL
-    ? `${process.env.getApiBaseUrl()_URL}/api/v1`
+  return process.env.API_BASE_URL
+    ? `${process.env.API_BASE_URL}/api/v1`
     : (() => { throw new Error('环境变量 getApiBaseUrl()_URL 未配置，无法连接后端服务') })()
 }
 
