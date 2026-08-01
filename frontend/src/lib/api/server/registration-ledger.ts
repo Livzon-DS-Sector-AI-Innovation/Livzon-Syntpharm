@@ -1,72 +1,72 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 
-const API_BASE = `${getApiBaseUrl()}/api/v1/registration`
+function base(): string { return `${getApiBaseUrl()}/api/v1/registration` }
 
 export async function createDomesticApproval(data: unknown) {
-  return apiFetch(`${API_BASE}/domestic-approvals`, {
+  return apiFetch(`${base()}/domestic-approvals`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function importDomesticApprovals(formData: FormData) {
-  return apiFetch(`${API_BASE}/domestic-approvals/import`, {
+  return apiFetch(`${base()}/domestic-approvals/import`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function createOverseasApproval(data: unknown) {
-  return apiFetch(`${API_BASE}/overseas-approvals`, {
+  return apiFetch(`${base()}/overseas-approvals`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function importOverseasApprovals(formData: FormData) {
-  return apiFetch(`${API_BASE}/overseas-approvals/import`, {
+  return apiFetch(`${base()}/overseas-approvals/import`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function createInternationalReview(data: unknown) {
-  return apiFetch(`${API_BASE}/international-reviews`, {
+  return apiFetch(`${base()}/international-reviews`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function importInternationalReviews(formData: FormData) {
-  return apiFetch(`${API_BASE}/international-reviews/import`, {
+  return apiFetch(`${base()}/international-reviews/import`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function createCoppCertificate(data: unknown) {
-  return apiFetch(`${API_BASE}/copp-certificates`, {
+  return apiFetch(`${base()}/copp-certificates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function importCoppCertificates(formData: FormData) {
-  return apiFetch(`${API_BASE}/copp-certificates/import`, {
+  return apiFetch(`${base()}/copp-certificates/import`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function createWcCertificate(data: unknown) {
-  return apiFetch(`${API_BASE}/wc-certificates`, {
+  return apiFetch(`${base()}/wc-certificates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function importWcCertificates(formData: FormData) {
-  return apiFetch(`${API_BASE}/wc-certificates/import`, {
+  return apiFetch(`${base()}/wc-certificates/import`, {
     method: 'POST',
     body: formData,
   })

@@ -1,7 +1,7 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 function getApiBase(): string {
-  const u = process.env.getApiBase()_URL
+  const u = process.env.API_BASE_URL
   return u ? `${u}/api/v1` : 'http://dazah-backend-app-1:8000/api/v1'
 }
 
@@ -1713,4 +1713,4 @@ export async function deleteHazardRevisionArchive(id: string, authHeaders?: Reco
   })
 }
 
-export { buildQueryString, getApiBase() }
+export { buildQueryString, getApiBase }
