@@ -13,6 +13,24 @@ type RouteCase = {
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+function summarizeErrors(errors: string[], label: string): string {
+  if (errors.length <= 3) return errors.join('\n')
+  // Group by URL prefix (domain + first 2 path segments + method + status)
+  const groups = new Map<string, string[]>()
+  for (const e of errors) {
+    const m = e.match(/\[(\d+)\] (\w+) (.+)$/)
+    const key = m ? `[${m[1]}] ${m[2]} ${m[3].replace(/^(https?:\/\/[^/]+)(\/[^/]+\/[^/]+).*/, '$1$2/*')}` : e
+    const list = groups.get(key) ?? []
+    list.push(e)
+    groups.set(key, list)
+  }
+  const lines: string[] = []
+  for (const [key, group] of groups) {
+    lines.push(group.length === 1 ? group[0]! : `${group.length} × ${key}`)
+  }
+  return `${errors.length} ${label} errors:\n${lines.join('\n')}`
+}
+
 async function checkRoute(page: Page, route: RouteCase) {
   const httpErrors: string[] = []
   const networkFailures: string[] = []
@@ -74,8 +92,8 @@ async function checkRoute(page: Page, route: RouteCase) {
     await expect(page.getByText('页面加载出错')).not.toBeVisible()
     await expect(page.getByText('应用加载出错')).not.toBeVisible()
 
-    expect(httpErrors.length, `HTTP errors on ${route.path}:\n${httpErrors.join('\n')}`).toBe(0)
-    expect(networkFailures.length, `Failed requests on ${route.path}:\n${networkFailures.join('\n')}`).toBe(0)
+    expect(httpErrors.length, summarizeErrors(httpErrors, 'HTTP')).toBe(0)
+    expect(networkFailures.length, summarizeErrors(networkFailures, 'network')).toBe(0)
   } finally {
     page.off('response', onResponse)
     page.off('requestfailed', onRequestFailed)
