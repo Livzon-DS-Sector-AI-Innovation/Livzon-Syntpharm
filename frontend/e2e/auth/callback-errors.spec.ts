@@ -2,6 +2,20 @@ import { test, expect } from '@playwright/test'
 
 const LOGIN_URL = /\/login(?:\?.*)?$/
 
+test.beforeAll(async ({ browser }) => {
+  // Warm up connection — Docker port forwarding may be slow after previous project
+  const page = await browser.newPage()
+  for (let i = 0; i < 5; i++) {
+    try {
+      await page.goto('/login', { timeout: 10_000 })
+      break
+    } catch {
+      await new Promise(r => setTimeout(r, 2_000))
+    }
+  }
+  await page.close()
+})
+
 test('missing token redirects to /login?error=callback_failed', async ({ page }) => {
   await page.goto('/auth/callback')
   await expect(page).toHaveURL(/\/login\?error=callback_failed/)
