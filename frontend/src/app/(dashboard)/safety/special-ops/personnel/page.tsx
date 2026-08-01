@@ -3,5 +3,10 @@ import SpecialOpsPersonnelPanelWrapper from '@/components/safety/SpecialOpsPerso
 export const dynamic = 'force-dynamic'
 
 export default function SpecialOpsPersonnelPage() {
-  return <SpecialOpsPersonnelPanelWrapper />
+  return (
+    <>
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">作业人员</h1>
+      <SpecialOpsPersonnelPanelWrapper />
+    </>
+  )
 }

@@ -232,13 +232,11 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: text('报告模板管理') },
   { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
   { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
-  // Disabled: iframe page with no heading
-  // { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
+  { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
   { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
-  // Disabled: no heading element
-  // { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
+  { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
   { path: '/quality/inspection', module: 'quality', kind: 'redirect', expectedPath: '/quality/inspection/standards', expected: text('检验标准维护') },
   { path: '/quality/inspection/standards', module: 'quality', kind: 'normal', expected: text('检验标准维护') },
   { path: '/quality/inspection-table', module: 'quality', kind: 'normal', expected: text('原料检验数据表') },
@@ -246,20 +244,16 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/instrument/list', module: 'quality', kind: 'normal', expected: heading('仪器设备台账') },
   { path: '/quality/instrument/records', module: 'quality', kind: 'normal', expected: heading('校准记录') },
   { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('提醒设置') },
-  // Disabled: no heading element
-  // { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC') },
-  // { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC') },
+  { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC') },
+  { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC') },
   { path: '/quality/material-report', module: 'quality', kind: 'normal', expected: text('原料报告单管理') },
   { path: '/quality/material-report/template', module: 'quality', kind: 'normal', expected: text('Word模板管理') },
-  // Disabled: no heading element
-  // { path: '/quality/reagent', module: 'quality', kind: 'normal', expected: heading('试剂管理') },
+  { path: '/quality/reagent', module: 'quality', kind: 'normal', expected: heading('试剂管理') },
   { path: '/quality/reagent/reminder', module: 'quality', kind: 'normal', expected: heading('试剂库存提醒') },
-  // Disabled: no heading element
-  // { path: '/quality/retention', module: 'quality', kind: 'normal', expected: heading('留样管理') },
-  // { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理') },
+  { path: '/quality/retention', module: 'quality', kind: 'normal', expected: heading('留样管理') },
+  { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理') },
   { path: '/quality/sop-ai/records', module: 'quality', kind: 'normal', expected: heading('校验记录台账') },
-  // Disabled: no heading element
-  // { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性') },
+  { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性') },
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
   { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据') },
@@ -319,17 +313,15 @@ const safetyRoutes: RouteCase[] = [
   { path: '/safety/contractor', module: 'safety', kind: 'normal', expected: text('承包商管理') },
   { path: '/safety/ehs-change', module: 'safety', kind: 'normal', expected: heading('变更管理') },
   { path: '/safety/knowledge-base', module: 'safety', kind: 'normal', expected: heading('文档处理中枢') },
-  // Disabled: no heading element (ReactFlow graph)
-  // { path: '/safety/knowledge-base/graph', module: 'safety', kind: 'normal', expected: heading('知识图谱') },
+  { path: '/safety/knowledge-base/graph', module: 'safety', kind: 'normal', expected: heading('知识图谱') },
   { path: '/safety/occupational-health', module: 'safety', kind: 'normal', expected: heading('职业健康') },
   { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('安全操规管理') },
   { path: '/safety/regulation/generator', module: 'safety', kind: 'normal', expected: heading('操规标准化生成') },
   { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('关键风险作业报备') },
   { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('安全管理配置') },
-  // Disabled: no heading element
-  // { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
-  // { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },
-  // { path: '/safety/training', module: 'safety', kind: 'normal', expected: heading('安全培训') },
+  { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
+  { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },
+  { path: '/safety/training', module: 'safety', kind: 'normal', expected: heading('安全培训') },
   // Excluded: /safety/hazard-identification/new — form page
 ]
 

@@ -548,6 +548,7 @@ export default function StabilityStudyPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">稳定性</h1>
       <Card>
         <div style={{ marginBottom: 16 }}>
           <Row gutter={16}>
