@@ -189,6 +189,7 @@ run_e2e() {
     log_info "Frontend build complete"
 
     # ── Prepare standalone runtime (mimics production Dockerfile) ─────
+    mkdir -p .next-e2e/standalone/.next
     cp -r .next-e2e/static .next-e2e/standalone/.next/static
     cp -r public .next-e2e/standalone/public
 
