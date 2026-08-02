@@ -167,7 +167,7 @@ async def logout(
 
 @user_router.get("/me", summary="获取当前登录用户信息")
 async def get_me(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
 ) -> JSONResponse:
     """Return the currently authenticated user's profile.
 
@@ -205,8 +205,8 @@ def _build_department_tree(
 
 @dept_router.get("", summary="获取部门列表 / 组织架构树")
 async def list_departments(
+    current_user: RequiredUser,
     tree: bool = Query(False, description="是否返回树形结构"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有部门。传 ?tree=true 返回层级组织架构树。"""
@@ -225,7 +225,7 @@ async def list_departments(
 @dept_router.get("/{dept_id}", summary="获取部门详情")
 async def get_department(
     dept_id: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """按 open_department_id 获取单个部门详情。"""
@@ -243,11 +243,11 @@ async def get_department(
 
 @personnel_router.get("", summary="获取人员名单")
 async def list_personnel(
+    current_user: RequiredUser,
     department_id: str | None = Query(None, description="按部门 ID 筛选"),
     keyword: str | None = Query(None, description="按姓名搜索"),
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """分页获取所有人员名单，支持按部门和姓名筛选。"""
@@ -275,7 +275,7 @@ async def list_personnel(
 
 @sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
 async def trigger_sync_departments(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
@@ -297,7 +297,7 @@ async def trigger_sync_departments(
 
 @sync_router.post("/members", summary="触发飞书成员同步（异步）")
 async def trigger_sync_members(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
@@ -324,11 +324,11 @@ login_log_router = APIRouter(prefix="/login-logs", tags=["登录记录"])
 
 @login_log_router.get("", summary="查询登录记录")
 async def list_login_logs(
+    current_user: RequiredUser,
     status: str | None = Query(None, description="筛选状态：success / failed"),
     keyword: str | None = Query(None, description="按用户名搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """分页查询登录记录，支持按状态和用户名筛选。"""

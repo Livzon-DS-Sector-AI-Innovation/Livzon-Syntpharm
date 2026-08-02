@@ -460,8 +460,8 @@ async def delete(
 )
 async def handler(  # noqa: F811
     id: int,
+    current_user: RequiredUser,
     quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
-    current_user: RequiredUser = None,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
@@ -478,12 +478,12 @@ async def handler(  # noqa: F811
 @router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     id: int,
+    current_user: RequiredUser,
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
     usage_person: str | None = Body(None, embed=True, description="领用人"),
     usage_purpose: str | None = Body(None, embed=True, description="领用用途/项目"),
     remark: str | None = Body(None, embed=True, description="备注"),
-    current_user: RequiredUser = None,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """领用对照品，扣减剩余量并记录领用历史"""

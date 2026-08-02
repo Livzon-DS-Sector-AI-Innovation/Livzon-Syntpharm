@@ -22,7 +22,7 @@ router = APIRouter()
 @router.get("/product-sync-config/{product_id}", summary="获取产品同步配置")
 async def get_sync_config(
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -35,7 +35,7 @@ async def get_sync_config(
 @router.post("/product-sync-config", summary="创建产品同步配置")
 async def create_sync_config(
     data: ProductSyncConfigCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -50,7 +50,7 @@ async def create_sync_config(
 async def update_sync_config(
     config_id: uuid.UUID,
     data: ProductSyncConfigUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -63,7 +63,7 @@ async def update_sync_config(
 @router.delete("/product-sync-config/{config_id}", summary="删除产品同步配置")
 async def delete_sync_config(
     config_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -76,7 +76,7 @@ async def delete_sync_config(
 @router.post("/product-sync-config/{product_id}/push", summary="推送到飞书")
 async def push_to_feishu(
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -87,7 +87,7 @@ async def push_to_feishu(
 @router.post("/product-sync-config/{product_id}/pull", summary="从飞书拉取")
 async def pull_from_feishu(
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -98,7 +98,7 @@ async def pull_from_feishu(
 @router.post("/product-sync-config/{product_id}/sync", summary="双向同步")
 async def bidirectional_sync(
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)

@@ -52,8 +52,8 @@ class ModuleSettingCreate(BaseModel):
 
 @router.get("", response_model=ApiResponse)
 async def get(
+    current_user: RequiredUser,
     module: str | None = Query(None, description="Filter by module name"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """List all module settings, optionally filtered by module."""
@@ -88,7 +88,7 @@ async def get(
 async def get(  # noqa: F811
     module: str,
     key: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Get a specific setting by module and key."""
@@ -123,7 +123,7 @@ async def put(  # type: ignore[no-untyped-def]
     module: str,
     key: str,
     data: ModuleSettingUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Update a setting value."""
@@ -162,7 +162,7 @@ async def put(  # type: ignore[no-untyped-def]
 @router.post("", response_model=ApiResponse, status_code=201)
 async def post(  # type: ignore[no-untyped-def]
     data: ModuleSettingCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Create a new module setting."""
@@ -210,7 +210,7 @@ async def post(  # type: ignore[no-untyped-def]
 async def delete(  # type: ignore[no-untyped-def]
     module: str,
     key: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Soft delete a module setting."""

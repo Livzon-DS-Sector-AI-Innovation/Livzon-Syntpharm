@@ -65,8 +65,8 @@ class LLMConfigResponse(BaseModel):
 
 @router.get("", response_model=list[LLMConfigResponse])
 async def list_configs(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     config_type: str | None = Query(None, pattern="^(text|vision)$"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """List all LLM configurations."""
@@ -102,7 +102,7 @@ async def list_configs(  # type: ignore[no-untyped-def]
 @router.post("", response_model=LLMConfigResponse, status_code=201)
 async def post(  # type: ignore[no-untyped-def]
     data: LLMConfigCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Create a new LLM configuration (admin only)."""
@@ -154,7 +154,7 @@ async def post(  # type: ignore[no-untyped-def]
 @router.get("/{config_id}", response_model=LLMConfigResponse)
 async def get(  # type: ignore[no-untyped-def]
     config_id: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Get a specific LLM configuration."""
@@ -189,7 +189,7 @@ async def get(  # type: ignore[no-untyped-def]
 async def put(  # type: ignore[no-untyped-def]
     config_id: str,
     data: LLMConfigUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Update an LLM configuration (admin only)."""
@@ -250,7 +250,7 @@ async def put(  # type: ignore[no-untyped-def]
 @router.delete("/{config_id}", status_code=204)
 async def delete(  # type: ignore[no-untyped-def]
     config_id: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Soft delete an LLM configuration (admin only)."""
@@ -273,7 +273,7 @@ async def delete(  # type: ignore[no-untyped-def]
 
 @router.post("/test", summary="Test LLM connection")  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
 ) -> Any:
     """Test LLM connectivity using active config."""
     from .client import llm_client

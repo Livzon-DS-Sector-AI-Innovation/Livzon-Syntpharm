@@ -91,7 +91,7 @@ async def _enrich_multi_device_names(db: AsyncSession, responses: list[Inspectio
 @router.post("/routes", summary="创建巡检路线")
 async def create_route(
     data: InspectionRouteCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     route = await inspection_svc.create_route(db, data.model_dump())
@@ -100,12 +100,12 @@ async def create_route(
 
 @router.get("/routes", summary="巡检路线列表")
 async def list_routes(
+    current_user: RequiredUser,
     is_active: bool | None = Query(None, description="是否启用"),
     location_id: uuid.UUID | None = Query(None, description="按地点筛选"),
     keyword: str | None = Query(None, description="关键词搜索"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     routes, total = await inspection_svc.get_routes(
@@ -137,7 +137,7 @@ async def list_routes(
 @router.get("/routes/{route_id}", summary="巡检路线详情")
 async def get_route(
     route_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     route = await inspection_svc.get_route_by_id(db, route_id)
@@ -178,7 +178,7 @@ async def get_route(
 async def update_route(
     route_id: uuid.UUID,
     data: InspectionRouteUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     update_data = data.model_dump(exclude_unset=True)
@@ -189,7 +189,7 @@ async def update_route(
 @router.delete("/routes/{route_id}", summary="删除巡检路线")
 async def delete_route(
     route_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     await inspection_svc.delete_route(db, route_id)
@@ -200,7 +200,7 @@ async def delete_route(
 async def set_route_locations(
     route_id: uuid.UUID,
     data: RouteLocationsBatch,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     items = [item.model_dump() for item in data.locations]
@@ -239,7 +239,7 @@ async def set_route_locations(
 @router.post("/tasks", summary="创建巡检任务")
 async def create_task(
     data: InspectionTaskCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.create_task(db, data.model_dump())
@@ -248,6 +248,7 @@ async def create_task(
 
 @router.get("/tasks", summary="巡检任务列表")
 async def list_tasks(
+    current_user: RequiredUser,
     status: str | None = Query(None, description="任务状态"),
     exclude_status: str | None = Query(None, description="排除的任务状态"),
     route_id: uuid.UUID | None = Query(None, description="路线ID"),
@@ -257,7 +258,6 @@ async def list_tasks(
     planned_time_to: str | None = Query(None, description="计划时间截止"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     from datetime import datetime as dt_type
@@ -290,7 +290,7 @@ async def list_tasks(
 @router.get("/tasks/{task_id}", summary="巡检任务详情")
 async def get_task(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.get_task_by_id(db, task_id)
@@ -305,7 +305,7 @@ async def get_task(
 @router.put("/tasks/{task_id}/start", summary="开始巡检")
 async def start_task(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.start_task(db, task_id)
@@ -315,7 +315,7 @@ async def start_task(
 @router.put("/tasks/{task_id}/complete", summary="提交完成")
 async def complete_task(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.complete_task(db, task_id)
@@ -326,7 +326,7 @@ async def complete_task(
 async def submit_route_check(
     task_id: uuid.UUID,
     data: RouteCheckSubmit,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.submit_route_check(db, task_id, data.overall_result, data.route_summary)
@@ -336,8 +336,8 @@ async def submit_route_check(
 @router.put("/tasks/{task_id}/close", summary="关闭任务")
 async def close_task(
     task_id: uuid.UUID,
+    current_user: RequiredUser,
     data: InspectionTaskClose | None = None,
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     task = await inspection_svc.close_task(db, task_id, data.closure_remark if data else None)
@@ -353,7 +353,7 @@ async def submit_equipment_check(
     task_id: uuid.UUID,
     equipment_id: uuid.UUID,
     data: EquipmentCheckResult,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     records = [r.model_dump() for r in data.records]
@@ -368,8 +368,8 @@ async def submit_equipment_check(
 async def upload_equipment_photo(
     task_id: uuid.UUID,
     equipment_id: uuid.UUID,
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="照片文件"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
@@ -382,8 +382,8 @@ async def upload_equipment_photo(
 )
 async def upload_task_photo(
     task_id: uuid.UUID,
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="照片文件"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
@@ -393,7 +393,7 @@ async def upload_task_photo(
 @router.get("/tasks/{task_id}/photos", summary="获取任务所有照片")
 async def get_task_photos(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
@@ -403,7 +403,7 @@ async def get_task_photos(
 @router.get("/photos/{photo_id}/file", summary="查看照片文件")
 async def serve_photo(
     photo_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     from app.core.storage import get_object
@@ -430,7 +430,7 @@ async def serve_photo(
 async def remove_photo(
     task_id: uuid.UUID,
     photo_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     await inspection_svc.delete_photo(db, photo_id)
@@ -446,7 +446,7 @@ async def ai_analyze_photo(
     task_id: uuid.UUID,
     equipment_id: uuid.UUID,
     data: InspectionAIAnalyzeRequest,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     from app.modules.equipment.service.ai import analyze_inspection_photo
@@ -476,6 +476,7 @@ async def ai_analyze_photo(
 # ═══════════ 历史 ═══════════
 @router.get("/history", summary="巡检历史记录")
 async def get_history(
+    current_user: RequiredUser,
     date_from: str | None = Query(None, description="起始日期"),
     date_to: str | None = Query(None, description="截止日期"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
@@ -483,7 +484,6 @@ async def get_history(
     result: str | None = Query(None, description="巡检结果"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     from datetime import date as date_type
@@ -514,7 +514,7 @@ async def get_history(
 @router.get("/history/{task_id}", summary="巡检历史详情")
 async def get_history_detail(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     detail = await inspection_svc.get_task_detail(db, task_id)
@@ -560,7 +560,7 @@ async def get_history_detail(
 )
 async def list_schedules(
     route_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     schedules = await inspection_svc.get_schedules_by_route(db, route_id)
@@ -574,7 +574,7 @@ async def list_schedules(
 async def create_schedule(
     route_id: uuid.UUID,
     body: InspectionScheduleCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     data = body.model_dump(exclude_unset=True)
@@ -590,7 +590,7 @@ async def update_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
     body: InspectionScheduleUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     data = body.model_dump(exclude_unset=True)
@@ -607,7 +607,7 @@ async def update_schedule(
 async def delete_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     schedule = await repo.get_schedule_by_id(db, schedule_id)

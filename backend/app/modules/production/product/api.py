@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("/products", summary="获取所有产品列表")
 async def get(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取所有产品，按车间分组"""
@@ -33,7 +33,7 @@ async def get(
 @router.get("/products/workshop/{workshop}", summary="获取指定车间的产品列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     workshop: str,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取指定车间的所有产品"""
@@ -45,7 +45,7 @@ async def get(  # noqa: F811
 @router.get("/products/{product_id}", summary="获取产品详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取产品详情"""
@@ -59,7 +59,7 @@ async def get(  # noqa: F811
 @router.post("/products", summary="创建产品")
 async def post(
     data: ProductCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建新产品"""
@@ -74,7 +74,7 @@ async def post(
 async def put(
     product_id: uuid.UUID,
     data: ProductUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新产品信息"""
@@ -88,7 +88,7 @@ async def put(
 @router.delete("/products/{product_id}", summary="删除产品")
 async def delete(
     product_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除产品"""

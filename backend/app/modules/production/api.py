@@ -48,13 +48,13 @@ router = APIRouter()
 
 @router.get("/batches", response_model=ApiResponse, summary="获取批次列表")
 async def get(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     product_code: str | None = None,
     batch_no: str | None = None,
     exclude_cancelled: str | None = Query(None, description="是否排除已取消的批次，传入 'true' 或 'false'"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取批次列表"""
@@ -78,7 +78,7 @@ async def get(
 @router.get("/batches/{batch_id}", response_model=ApiResponse, summary="获取批次详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     batch_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取批次详情"""
@@ -96,7 +96,7 @@ async def get(  # noqa: F811
 @router.post("/batches", response_model=ApiResponse, summary="创建批次")
 async def post(
     data: BatchCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建批次"""
@@ -114,7 +114,7 @@ async def post(
 async def put(
     batch_id: uuid.UUID,
     data: BatchUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新批次"""
@@ -135,7 +135,7 @@ async def put(
 async def handler(
     batch_id: uuid.UUID,
     data: BatchStatusUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新批次状态"""
@@ -159,7 +159,7 @@ async def handler(
 @router.delete("/batches/{batch_id}", response_model=ApiResponse, summary="删除批次")
 async def delete(
     batch_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除批次"""
@@ -186,7 +186,7 @@ async def delete(
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取批次物料列表"""
@@ -204,7 +204,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
     data: BatchMaterialCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """添加批次物料"""
@@ -224,7 +224,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     material_id: uuid.UUID,
     data: BatchMaterialUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新批次物料"""
@@ -248,7 +248,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     material_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除批次物料"""
@@ -270,11 +270,11 @@ async def handler(  # noqa: F811
 
 @router.get("/plans", response_model=ApiResponse, summary="获取生产计划列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     plan_month: str | None = None,
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取生产计划列表"""
@@ -294,7 +294,7 @@ async def get(  # noqa: F811
 @router.get("/plans/{plan_id}", response_model=ApiResponse, summary="获取生产计划详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     plan_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取生产计划详情"""
@@ -312,7 +312,7 @@ async def get(  # noqa: F811
 @router.post("/plans", response_model=ApiResponse, summary="创建生产计划")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProductionPlanCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建生产计划"""
@@ -330,7 +330,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     plan_id: uuid.UUID,
     data: ProductionPlanUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新生产计划"""
@@ -350,7 +350,7 @@ async def put(  # noqa: F811
 @router.delete("/plans/{plan_id}", response_model=ApiResponse, summary="删除生产计划")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     plan_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除生产计划"""
@@ -375,7 +375,7 @@ async def delete(  # noqa: F811
 )
 async def handler(  # noqa: F811
     plan_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取计划任务列表"""
@@ -390,7 +390,7 @@ async def handler(  # noqa: F811
 @router.post("/tasks", response_model=ApiResponse, summary="创建计划任务")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: PlanTaskCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建计划任务"""
@@ -408,7 +408,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     task_id: uuid.UUID,
     data: PlanTaskUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新计划任务"""
@@ -428,7 +428,7 @@ async def put(  # noqa: F811
 @router.delete("/tasks/{task_id}", response_model=ApiResponse, summary="删除计划任务")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除计划任务"""
@@ -450,11 +450,11 @@ async def delete(  # noqa: F811
 
 @router.get("/process-specs", response_model=ApiResponse, summary="获取工艺规程列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     product_code: str | None = None,
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取工艺规程列表"""
@@ -476,7 +476,7 @@ async def get(  # noqa: F811
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取工艺规程详情"""
@@ -494,7 +494,7 @@ async def handler(  # noqa: F811
 @router.post("/process-specs", response_model=ApiResponse, summary="创建工艺规程")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessSpecCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建工艺规程"""
@@ -514,7 +514,7 @@ async def post(  # noqa: F811
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
     data: ProcessSpecUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新工艺规程"""
@@ -536,7 +536,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除工艺规程"""
@@ -563,7 +563,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取工艺步骤列表"""
@@ -578,7 +578,7 @@ async def handler(  # noqa: F811
 @router.post("/steps", response_model=ApiResponse, summary="创建工艺步骤")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessStepCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建工艺步骤"""
@@ -596,7 +596,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     step_id: uuid.UUID,
     data: ProcessStepUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新工艺步骤"""
@@ -616,7 +616,7 @@ async def put(  # noqa: F811
 @router.delete("/steps/{step_id}", response_model=ApiResponse, summary="删除工艺步骤")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     step_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除工艺步骤"""
@@ -643,7 +643,7 @@ async def delete(  # noqa: F811
 )
 async def handler(  # noqa: F811
     step_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取工艺参数列表"""
@@ -658,7 +658,7 @@ async def handler(  # noqa: F811
 @router.post("/parameters", response_model=ApiResponse, summary="创建工艺参数")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessParameterCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建工艺参数"""
@@ -677,7 +677,7 @@ async def post(  # noqa: F811
 )
 async def handler(  # noqa: F811
     param_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除工艺参数"""
@@ -704,9 +704,9 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取生产记录列表"""
@@ -723,7 +723,7 @@ async def handler(  # noqa: F811
 @router.post("/records", response_model=ApiResponse, summary="创建生产记录")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProductionRecordCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建生产记录"""
@@ -741,7 +741,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     record_id: uuid.UUID,
     data: ProductionRecordUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新生产记录"""
@@ -765,7 +765,7 @@ async def put(  # noqa: F811
 )
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除生产记录"""
@@ -790,7 +790,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取物料平衡"""
@@ -812,8 +812,8 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
+    current_user: RequiredUser,
     min_balance_rate: float = Query(95.0, ge=0, le=100),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """计算物料平衡"""
@@ -836,7 +836,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
     data: MaterialBalanceUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新物料平衡"""

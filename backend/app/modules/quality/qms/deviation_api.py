@@ -130,13 +130,13 @@ async def get(  # noqa: F811
 
 @router.post("/ai/generate-description", response_model=ApiResponse)
 async def post(
+    current_user: RequiredUser,
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差级别"),
     occurrence_date: str | None = Query(None, description="发生日期"),
     discovering_department: str | None = Query(None, description="发现部门"),
     product_name: str | None = Query(None, description="产品名称"),
     production_batch: str | None = Query(None, description="生产批次"),
-    current_user: RequiredUser = None,
     keywords: str = Query(..., description="关键词，多个用逗号分隔"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -210,13 +210,13 @@ async def post(
 
 @router.post("/ai/analyze-impact", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差级别"),
     occurrence_date: str | None = Query(None, description="发生日期"),
     discovering_department: str | None = Query(None, description="发现部门"),
     product_name: str | None = Query(None, description="产品名称"),
     production_batch: str | None = Query(None, description="生产批次"),
-    current_user: RequiredUser = None,
     description: str | None = Query(None, description="偏差描述"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -276,9 +276,9 @@ async def post(  # noqa: F811
 
 @router.post("/ai/generate-emergency-measures", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差等级"),
-    current_user: RequiredUser = None,
     description: str | None = Query(None, description="偏差描述"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -332,10 +332,10 @@ async def post(  # noqa: F811
 
 @router.post("/ai/analyze-root-cause", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
     description: str | None = Query(None, description="偏差描述"),
     direct_cause: str | None = Query(None, description="直接原因"),
-    current_user: RequiredUser = None,
     investigation_data: str | None = Query(None, description="调查数据"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -391,10 +391,10 @@ async def post(  # noqa: F811
 
 @router.post("/ai/analyze-direct-cause", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
     description: str | None = Query(None, description="偏差描述"),
     product_name: str | None = Query(None, description="产品/物料名称"),
-    current_user: RequiredUser = None,
     production_batch: str | None = Query(None, description="生产批次"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -441,10 +441,10 @@ async def post(  # noqa: F811
 
 @router.post("/ai/generate-capa", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
     root_cause: str | None = Query(None, description="根本原因"),
     deviation_level: str | None = Query(None, description="偏差等级"),
-    current_user: RequiredUser = None,
     department: str | None = Query(None, description="责任部门"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -506,10 +506,10 @@ CAPA结构：
 
 @router.post("/ai/generate-prevention", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
     root_cause: str | None = Query(None, description="根本原因"),
     deviation_level: str | None = Query(None, description="偏差等级"),
-    current_user: RequiredUser = None,
     department: str | None = Query(None, description="责任部门"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -669,7 +669,7 @@ async def get(  # noqa: F811
 @router.post("", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: DeviationCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """创建偏差"""
@@ -691,7 +691,7 @@ async def post(  # noqa: F811
 async def put(
     deviation_id: UUID,
     data: DeviationUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """更新偏差"""
@@ -727,7 +727,7 @@ async def delete(
 @router.post("/{deviation_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """提交偏差"""
@@ -742,10 +742,10 @@ async def post(  # noqa: F811
 @router.post("/{deviation_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     approved: bool = Query(..., description="是否批准"),
     comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型"),
-    current_user: RequiredUser = None,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """审批偏差"""

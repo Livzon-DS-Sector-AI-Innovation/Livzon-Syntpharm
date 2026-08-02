@@ -36,7 +36,7 @@ async def get_data_source_options(current_user: RequiredUser) -> Any:
 @scheduled_tasks_router.post("/scheduled-tasks/preview-card", response_model=ApiResponse, summary="预览消息卡片")
 async def preview_card(
     data: CardPreviewRequest,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """预览消息卡片渲染效果"""
@@ -47,7 +47,7 @@ async def preview_card(
 
 @scheduled_tasks_router.get("/scheduled-tasks/feishu-chats", response_model=ApiResponse, summary="获取飞书群聊列表")
 async def get_feishu_chats(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取可选的飞书群聊列表（从缓存或配置中读取）"""
@@ -75,11 +75,11 @@ async def get_feishu_chats(
 
 @scheduled_tasks_router.get("/scheduled-tasks", response_model=ApiResponse, summary="获取定时任务列表")
 async def get_scheduled_tasks(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     is_enabled: bool | None = None,
     search: str | None = None,
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取定时任务列表（分页）"""
@@ -97,7 +97,7 @@ async def get_scheduled_tasks(
 @scheduled_tasks_router.post("/scheduled-tasks", response_model=ApiResponse, summary="创建定时任务")
 async def create_scheduled_task(
     data: ScheduledTaskCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建新的定时任务"""
@@ -110,7 +110,7 @@ async def create_scheduled_task(
 @scheduled_tasks_router.get("/scheduled-tasks/{task_id}", response_model=ApiResponse, summary="获取定时任务详情")
 async def get_scheduled_task(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取单个定时任务详情"""
@@ -125,7 +125,7 @@ async def get_scheduled_task(
 async def update_scheduled_task(
     task_id: uuid.UUID,
     data: ScheduledTaskUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新定时任务配置"""
@@ -140,7 +140,7 @@ async def update_scheduled_task(
 @scheduled_tasks_router.delete("/scheduled-tasks/{task_id}", response_model=ApiResponse, summary="删除定时任务")
 async def delete_scheduled_task(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除定时任务（软删除）"""
@@ -157,8 +157,8 @@ async def delete_scheduled_task(
 )
 async def toggle_scheduled_task(
     task_id: uuid.UUID,
+    current_user: RequiredUser,
     enabled: bool = Query(..., description="是否启用"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """切换定时任务的启用/禁用状态"""
@@ -173,7 +173,7 @@ async def toggle_scheduled_task(
 @scheduled_tasks_router.post("/scheduled-tasks/{task_id}/run", response_model=ApiResponse, summary="手动执行定时任务")
 async def run_scheduled_task_now(
     task_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """立即手动执行一次定时任务"""
@@ -190,9 +190,9 @@ async def run_scheduled_task_now(
 )
 async def get_scheduled_task_logs(
     task_id: uuid.UUID,
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取定时任务的执行日志列表"""
@@ -212,7 +212,7 @@ async def get_scheduled_task_logs(
 
 @scheduled_tasks_router.post("/feishu/ws/restart", response_model=ApiResponse, summary="手动恢复飞书 WebSocket 连接")
 async def restart_feishu_ws(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
 ) -> Any:
     """WS 因重试次数耗尽（3 次）自动停止后，手动重新建立连接。
 

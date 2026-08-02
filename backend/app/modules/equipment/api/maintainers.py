@@ -20,7 +20,7 @@ router = APIRouter()
 
 @router.get("/maintainers", summary="获取设备模块维修人员列表")
 async def list_maintainers(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """从人员配置中获取所有在岗人员，供工单指派维修人时选择。"""
@@ -50,7 +50,7 @@ async def list_maintainers(
 
 @router.get("/all-users", summary="获取全体员工列表")
 async def list_all_users(
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """返回所有本地用户，供工单责任人选择。"""

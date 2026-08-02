@@ -31,6 +31,7 @@ router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
 @router.get("/", summary="获取报告单列表")
 async def get(
+    current_user: RequiredUser,
     template_id: str | None = None,
     status: str | None = None,
     start_date: str | None = None,
@@ -38,7 +39,6 @@ async def get(
     keyword: str | None = None,
     page: int = 1,
     page_size: int = 20,
-    current_user: RequiredUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单列表"""
@@ -75,7 +75,7 @@ async def get(
 @router.post("/", summary="创建报告单")
 async def post(
     data: ReportCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建报告单"""
@@ -86,7 +86,7 @@ async def post(
 
 @router.get("/statistics", summary="获取统计数据")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取统计数据"""
@@ -97,10 +97,10 @@ async def get(  # noqa: F811
 
 @router.get("/template", summary="获取模板列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     is_active: bool | None = None,
     page: int = 1,
     page_size: int = 20,
-    current_user: RequiredUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取模板列表"""
@@ -123,12 +123,12 @@ async def get(  # noqa: F811
 
 @router.post("/template/", summary="上传Word模板")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="Word模板文件"),
     template_name: str = Form(..., description="模板名称"),
     template_description: str | None = Form(None, description="模板描述"),
     field_mapping: str | None = Form(None, description="静态字段映射JSON"),
     table_fields: str | None = Form(None, description="动态表格字段JSON"),
-    current_user: RequiredUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """上传Word模板"""
@@ -175,7 +175,7 @@ async def post(  # noqa: F811
 @router.get("/template/{template_id}", summary="获取模板详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     template_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取模板详情"""
@@ -192,7 +192,7 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     template_id: UUID,
     data: TemplateUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新模板"""
@@ -208,7 +208,7 @@ async def put(  # noqa: F811
 @router.delete("/template/{template_id}", summary="删除模板")
 async def delete(  # noqa: F811
     template_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除模板"""
@@ -224,7 +224,7 @@ async def delete(  # noqa: F811
 @router.get("/template/{template_id}/preview", summary="预览模板字段")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     template_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """解析模板获取字段配置"""
@@ -243,7 +243,7 @@ async def get(  # noqa: F811
 @router.get("/{report_id}", summary="获取报告单详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     report_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单详情"""
@@ -260,7 +260,7 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     report_id: UUID,
     data: ReportUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新报告单"""
@@ -276,7 +276,7 @@ async def put(  # noqa: F811
 @router.delete("/{report_id}", summary="删除报告单")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     report_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除报告单"""
@@ -293,7 +293,7 @@ async def delete(  # noqa: F811
 async def post(  # noqa: F811
     report_id: UUID,
     data: ReportItemsBatchSave,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量保存明细数据"""
@@ -311,7 +311,7 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/generate", summary="生成报告单文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """生成报告单Word文件并下载"""
@@ -336,7 +336,7 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/submit", summary="提交报告单")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """提交报告单"""
@@ -356,10 +356,10 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/images", summary="上传图片并AI识别")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
+    current_user: RequiredUser,
     field_key: str | None = Form(None, description="对应字段key"),
     row_index: int | None = Form(None, description="对应行序号"),
     file: UploadFile = File(..., description="图片文件"),
-    current_user: RequiredUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """上传图片并进行AI识别"""
@@ -385,7 +385,7 @@ async def post(  # noqa: F811
 @router.get("/{report_id}/images", summary="获取报告单图片列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     report_id: UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单的所有图片记录"""

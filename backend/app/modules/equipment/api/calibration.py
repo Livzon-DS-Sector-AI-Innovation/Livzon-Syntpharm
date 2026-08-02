@@ -25,7 +25,7 @@ router = APIRouter()
 @router.post("/plans", summary="新增校准计划")
 async def create_calibration_plan(
     data: CalibrationPlanCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     plan = await service.create_calibration_plan(db, data)
@@ -34,11 +34,11 @@ async def create_calibration_plan(
 
 @router.get("/plans", summary="校准计划列表")
 async def list_calibration_plans(
+    current_user: RequiredUser,
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     status: str | None = Query(None, description="状态"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     plans, total = await service.get_calibration_plans(
@@ -58,8 +58,8 @@ async def list_calibration_plans(
 
 @router.get("/plans/overdue", summary="查询到期/逾期的校准计划")
 async def get_overdue_plans(
+    current_user: RequiredUser,
     days: int = Query(30, ge=1, description="提前天数"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     plans = await service.get_overdue_calibration_plans(db, days)
@@ -69,7 +69,7 @@ async def get_overdue_plans(
 @router.get("/plans/{plan_id}", summary="校准计划详情")
 async def get_calibration_plan(
     plan_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     plan = await service.get_calibration_plan_by_id(db, plan_id)
@@ -80,7 +80,7 @@ async def get_calibration_plan(
 async def update_calibration_plan(
     plan_id: uuid.UUID,
     data: CalibrationPlanUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     plan = await service.update_calibration_plan(db, plan_id, data)
@@ -90,7 +90,7 @@ async def update_calibration_plan(
 @router.delete("/plans/{plan_id}", summary="删除校准计划")
 async def delete_calibration_plan(
     plan_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     await service.delete_calibration_plan(db, plan_id)
@@ -101,7 +101,7 @@ async def delete_calibration_plan(
 @router.post("/records", summary="新增校准记录")
 async def create_calibration_record(
     data: CalibrationRecordCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     record = await service.create_calibration_record(db, data)
@@ -110,11 +110,11 @@ async def create_calibration_record(
 
 @router.get("/records", summary="校准记录列表")
 async def list_calibration_records(
+    current_user: RequiredUser,
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     plan_id: uuid.UUID | None = Query(None, description="计划ID"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     records, total = await service.get_calibration_records(
@@ -135,7 +135,7 @@ async def list_calibration_records(
 @router.get("/records/{record_id}", summary="校准记录详情")
 async def get_calibration_record(
     record_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     record = await service.get_calibration_record_by_id(db, record_id)

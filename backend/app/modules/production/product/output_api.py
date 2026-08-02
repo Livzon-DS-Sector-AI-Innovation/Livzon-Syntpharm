@@ -35,6 +35,7 @@ async def get_workshops() -> Any:
 
 @router.get("/product-output", summary="获取产量记录列表")
 async def get_product_outputs(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=5000),
     workshop: str | None = None,
@@ -45,7 +46,6 @@ async def get_product_outputs(
     end_date: date | None = None,
     sort_by: str | None = Query(None, description="排序字段: batch_no, production_date, end_date, weight"),
     sort_order: str = Query("desc", description="排序方向: asc 或 desc"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取产量记录列表"""
@@ -71,13 +71,13 @@ async def get_product_outputs(
 
 @router.get("/product-output/summary", summary="获取汇总统计")
 async def get_product_outputs_summary(
+    current_user: RequiredUser,
     target_date: date | None = Query(None, description="查询日期"),
     month: str | None = Query(None, description="查询月份 YYYY-MM"),
     year: int | None = Query(None, description="查询年份"),
     product_id: uuid.UUID | None = Query(None, description="产品ID"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取每日/月/年汇总统计"""
@@ -95,13 +95,13 @@ async def get_product_outputs_summary(
 
 @router.get("/product-output/batch-count", summary="获取批次统计")
 async def get_product_outputs_batch_count(
+    current_user: RequiredUser,
     target_date: date | None = Query(None, description="查询日期"),
     month: str | None = Query(None, description="查询月份 YYYY-MM"),
     year: int | None = Query(None, description="查询年份"),
     product_id: uuid.UUID | None = Query(None, description="产品ID"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取批次统计"""
@@ -119,13 +119,13 @@ async def get_product_outputs_batch_count(
 
 @router.get("/product-output/export", summary="导出产量记录")
 async def export_product_outputs(
+    current_user: RequiredUser,
     workshop: str | None = None,
     product_id: uuid.UUID | None = None,
     product_name: str | None = None,
     batch_no: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """导出产量记录为 XLSX"""
@@ -194,7 +194,7 @@ async def export_product_outputs(
 @router.get("/product-output/{record_id}", summary="获取产量记录详情")
 async def get_product_output(
     record_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取单条产量记录"""
@@ -208,7 +208,7 @@ async def get_product_output(
 @router.post("/product-output", summary="新建产量记录")
 async def create_product_output(
     data: ProductOutputCreate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """新建产量记录"""
@@ -224,7 +224,7 @@ async def create_product_output(
 async def update_product_output(
     record_id: uuid.UUID,
     data: ProductOutputUpdate,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新产量记录"""
@@ -241,8 +241,8 @@ async def update_product_output(
 
 @router.delete("/product-output/batch", summary="批量删除产量记录")
 async def batch_delete_product_outputs(
+    current_user: RequiredUser,
     ids: str = Query(..., description="逗号分隔的记录 ID 列表"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量软删除产量记录"""
@@ -261,7 +261,7 @@ async def batch_delete_product_outputs(
 @router.delete("/product-output/{record_id}", summary="删除产量记录")
 async def delete_product_output(
     record_id: uuid.UUID,
-    current_user: RequiredUser = None,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """软删除产量记录"""
@@ -274,8 +274,8 @@ async def delete_product_output(
 
 @router.post("/product-output/import", summary="导入产量记录")
 async def import_product_outputs(
+    current_user: RequiredUser,
     file: UploadFile = File(...),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """通过 CSV 或 XLSX 文件批量导入产量记录
@@ -418,9 +418,9 @@ async def import_product_outputs(
 
 @router.post("/product-output/import-from-bitable", summary="从飞书多维表格导入产量记录")
 async def import_from_bitable(
+    current_user: RequiredUser,
     app_token: str = Query(..., description="飞书多维表格 app_token"),
     table_id: str = Query("", description="飞书多维表格 table_id（不填则自动获取第一个表）"),
-    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """从飞书多维表格批量导入产量记录"""
