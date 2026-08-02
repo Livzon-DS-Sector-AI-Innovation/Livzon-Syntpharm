@@ -7,6 +7,7 @@ Prefix: /api/v1/quality/static-data/
 import io
 from datetime import date
 from typing import Any
+from uuid import UUID
 
 import openpyxl
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
@@ -27,7 +28,7 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> StaticDataService:
     return StaticDataService(db)
 
 
-def _user_id(current_user: RequiredUser) -> int:
+def _user_id(current_user: RequiredUser) -> UUID:
     """Get current user ID"""
     return current_user.id
 

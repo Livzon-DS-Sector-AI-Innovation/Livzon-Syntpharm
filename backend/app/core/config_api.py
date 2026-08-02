@@ -119,7 +119,7 @@ async def get(  # noqa: F811
 
 
 @router.put("/{module}/{key}", response_model=ApiResponse)
-async def put(  # type: ignore[no-untyped-def]
+async def put(
     module: str,
     key: str,
     data: ModuleSettingUpdate,
@@ -160,7 +160,7 @@ async def put(  # type: ignore[no-untyped-def]
 
 
 @router.post("", response_model=ApiResponse, status_code=201)
-async def post(  # type: ignore[no-untyped-def]
+async def post(
     data: ModuleSettingCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
@@ -207,7 +207,7 @@ async def post(  # type: ignore[no-untyped-def]
 
 
 @router.delete("/{module}/{key}", response_model=ApiResponse)
-async def delete(  # type: ignore[no-untyped-def]
+async def delete(
     module: str,
     key: str,
     current_user: RequiredUser,
