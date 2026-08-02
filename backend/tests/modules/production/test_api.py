@@ -88,11 +88,11 @@ async def test_delete_process_spec_api(auth_client, sample_process_spec_data):
 # ============ Anonymous access tests ============
 
 
-async def test_batches_accessible_in_phase1(anonymous_client):
+async def test_batches_require_auth(anonymous_client):
     resp = await anonymous_client.get(f"{PREFIX}/batches")
-    assert resp.status_code == 200  # Phase 1 auth — endpoints use optional_user
+    assert resp.status_code == 401  # Auth enforced — RequiredUser on all endpoints
 
 
-async def test_plans_accessible_in_phase1(anonymous_client):
+async def test_plans_require_auth(anonymous_client):
     resp = await anonymous_client.get(f"{PREFIX}/plans")
-    assert resp.status_code == 200  # Phase 1 auth — endpoints use optional_user
+    assert resp.status_code == 401  # Auth enforced — RequiredUser on all endpoints
