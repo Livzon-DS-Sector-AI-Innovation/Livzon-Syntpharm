@@ -5,26 +5,11 @@ import type {
   UpdateRuleInput,
   ProcessRecordInput,
 } from '@/types/energy'
-import { apiFetchRaw } from './base'
-
-export function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
+import { apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
-  const response = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data.data ?? data
+  const result = await baseApiFetch<T>(url, options)
+  return (result as any).data ?? (result as T)
 }
 
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
@@ -297,4 +282,10 @@ export async function checkAlerts(checkDate: string): Promise<any> {
 
 export async function fetchAlertDates(): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/dates`)
+}
+
+export async function syncMonthlyFromBitableApi(): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/monthly`, {
+    method: 'POST',
+  })
 }

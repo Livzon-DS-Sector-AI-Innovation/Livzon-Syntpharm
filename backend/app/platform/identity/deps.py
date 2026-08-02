@@ -1,11 +1,12 @@
 from typing import Annotated
 
 import jwt
-from fastapi import Cookie, Depends, HTTPException, Request, status
+from fastapi import Cookie, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
+from app.core.exceptions import UnauthorizedException
 from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
 
@@ -58,11 +59,12 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User | None, Depends(get_current_user)]
+OptionalUser = Annotated[User | None, Depends(get_current_user)]
 
 
 async def require_current_user(current_user: CurrentUser) -> User:
     if current_user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Login required")
+        raise UnauthorizedException()
     return current_user
 
 

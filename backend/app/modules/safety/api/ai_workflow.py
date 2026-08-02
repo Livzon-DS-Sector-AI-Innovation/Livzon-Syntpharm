@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse, paginated_response, success_response
 from app.modules.safety.schemas import (  # type: ignore[attr-defined]
@@ -27,27 +27,20 @@ from app.modules.safety.service import (
 ai_workflow_router = APIRouter()
 
 
-def _require_user(current_user: "CurrentUser") -> "uuid.UUID":
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 @ai_workflow_router.get(
     "/ai-workflow-configs",
     response_model=ApiResponse,
     summary="获取 AI 工作流配置列表",
 )
 async def get_ai_workflow_configs(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(100, ge=1, le=500, description="每页条数"),
     module_code: str | None = Query(None, description="模块代码"),
     is_enabled: bool | None = Query(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """获取 AI 工作流配置列表，可按模块代码过滤"""
-    _require_user(current_user)
     service = ConfigService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_ai_workflow_configs(skip, page_size, module_code, is_enabled)
@@ -66,11 +59,10 @@ async def get_ai_workflow_configs(
 )
 async def get_ai_workflow_config(
     config_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """获取单个 AI 工作流配置详情"""
-    _require_user(current_user)
     service = ConfigService(db)
     item = await service.get_ai_workflow_config(config_id)
     if not item:
@@ -85,11 +77,10 @@ async def get_ai_workflow_config(
 )
 async def create_ai_workflow_config(
     data: AIWorkflowConfigCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """创建新的 AI 工作流配置"""
-    _require_user(current_user)
     service = ConfigService(db)
     item = await service.create_ai_workflow_config(data)
     await db.commit()
@@ -104,11 +95,10 @@ async def create_ai_workflow_config(
 async def update_ai_workflow_config(
     config_id: uuid.UUID,
     data: AIWorkflowConfigUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """更新 AI 工作流配置"""
-    _require_user(current_user)
     service = ConfigService(db)
     item = await service.update_ai_workflow_config(config_id, data)
     if not item:
@@ -124,11 +114,10 @@ async def update_ai_workflow_config(
 )
 async def delete_ai_workflow_config(
     config_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """删除 AI 工作流配置"""
-    _require_user(current_user)
     service = ConfigService(db)
     result = await service.delete_ai_workflow_config(config_id)
     if not result:
@@ -147,14 +136,13 @@ async def delete_ai_workflow_config(
 )
 async def upload_workflow_attachment(
     file: UploadFile,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """上传调用文档附件（PDF/Word/Excel/TXT/MD），自动转换为 Markdown 供 AI 读取。
 
     返回附件元数据，前端将其存入 reference_docs.attachments 列表。
     """
-    _require_user(current_user)
     service = AttachmentService()
     try:
         metadata = await service.upload_attachment(file)
@@ -169,11 +157,10 @@ async def upload_workflow_attachment(
 )
 async def preview_workflow_attachment(
     attachment_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """预览上传的附件原始文件（浏览器内嵌预览或触发下载）。"""
-    _require_user(current_user)
     service = AttachmentService()
     file_path = service.get_preview_path(attachment_id)
 
@@ -210,11 +197,10 @@ async def preview_workflow_attachment(
 )
 async def delete_workflow_attachment(
     attachment_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """删除附件及其关联的原始文件和 Markdown 文件。"""
-    _require_user(current_user)
     service = AttachmentService()
     deleted = await service.delete_attachment(attachment_id)
     if not deleted:
@@ -229,14 +215,13 @@ async def delete_workflow_attachment(
 )
 async def create_workflow_attachments_from_knowledge(
     body: KnowledgeAttachmentRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> Any:
     """选择知识库文章作为调用文档附件，自动转为 Markdown 供 AI 读取。
 
     返回附件元数据列表，前端将其追加到 reference_docs.attachments。
     """
-    _require_user(current_user)
     service = AttachmentService()
     results = await service.create_knowledge_attachments(body.knowledge_ids, db)
     return success_response(

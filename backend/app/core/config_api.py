@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config_model import ModuleSetting
 from app.core.database import get_db
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
-from app.platform.identity.deps import get_current_user
 
 router = APIRouter(prefix="/module-settings", tags=["Module Settings"])
 
@@ -52,9 +52,9 @@ class ModuleSettingCreate(BaseModel):
 
 @router.get("", response_model=ApiResponse)
 async def get(
+    current_user: RequiredUser,
     module: str | None = Query(None, description="Filter by module name"),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """List all module settings, optionally filtered by module."""
     query = select(ModuleSetting).where(~ModuleSetting.is_deleted)
@@ -88,8 +88,8 @@ async def get(
 async def get(  # noqa: F811
     module: str,
     key: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """Get a specific setting by module and key."""
     result = await db.execute(
@@ -119,12 +119,12 @@ async def get(  # noqa: F811
 
 
 @router.put("/{module}/{key}", response_model=ApiResponse)
-async def put(  # type: ignore[no-untyped-def]
+async def put(
     module: str,
     key: str,
     data: ModuleSettingUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """Update a setting value."""
     result = await db.execute(
@@ -140,7 +140,7 @@ async def put(  # type: ignore[no-untyped-def]
         return ApiResponse(code=404, message="Setting not found")
 
     setting.value = data.value
-    setting.updated_by = current_user.id if current_user else None
+    setting.updated_by = current_user.id
 
     await db.commit()
     await db.refresh(setting)
@@ -160,10 +160,10 @@ async def put(  # type: ignore[no-untyped-def]
 
 
 @router.post("", response_model=ApiResponse, status_code=201)
-async def post(  # type: ignore[no-untyped-def]
+async def post(
     data: ModuleSettingCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """Create a new module setting."""
     # Check for duplicate
@@ -184,8 +184,8 @@ async def post(  # type: ignore[no-untyped-def]
         value=data.value,
         value_type=data.value_type,
         description=data.description,
-        created_by=current_user.id if current_user else None,
-        updated_by=current_user.id if current_user else None,
+        created_by=current_user.id,
+        updated_by=current_user.id,
     )
 
     db.add(setting)
@@ -207,11 +207,11 @@ async def post(  # type: ignore[no-untyped-def]
 
 
 @router.delete("/{module}/{key}", response_model=ApiResponse)
-async def delete(  # type: ignore[no-untyped-def]
+async def delete(
     module: str,
     key: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """Soft delete a module setting."""
     result = await db.execute(
@@ -227,7 +227,7 @@ async def delete(  # type: ignore[no-untyped-def]
         return ApiResponse(code=404, message="Setting not found")
 
     setting.is_deleted = True
-    setting.updated_by = current_user.id if current_user else None
+    setting.updated_by = current_user.id
 
     await db.commit()
     return ApiResponse(message="Setting deleted")

@@ -23,6 +23,6 @@ export {
   linkPrimary,
   linkDanger,
   linkPurple,
-} from './shared-styles'
+} from './sharedStyles'
 export { BitableCrossImportModal } from './BitableCrossImportModal'
 export { AlertRecordTable } from './AlertRecordTable'

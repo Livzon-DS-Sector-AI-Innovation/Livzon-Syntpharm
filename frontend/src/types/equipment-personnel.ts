@@ -1,7 +1,10 @@
 import type { components } from '@/types/generated/schema'
 export type CreateRoleInput = components['schemas']['RoleCreate']
 export type UpdateRoleInput = components['schemas']['RoleUpdate']
-export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
+export type AddPersonnelInput = components['schemas']['PersonnelAddRequest']
+export type AssignRolesInput = components['schemas']['PersonnelRoleAssign']
+export type AssignCategoriesInput = components['schemas']['PersonnelCategoryAssign']
+export type CategoryAssignItem = components['schemas']['PersonnelCategoryItem']
 
 // 角色
 export interface EquipmentRole {
@@ -58,19 +61,6 @@ export interface PersonnelListResponse {
   page_size: number
 }
 
-
-export interface AssignRolesInput {
-  role_ids: string[]
-}
-
-export interface CategoryAssignItem {
-  role_id: string
-  category_id: string
-}
-
-export interface AssignCategoriesInput {
-  categories: CategoryAssignItem[]
-}
 
 export interface Candidate {
   personnel_id: string

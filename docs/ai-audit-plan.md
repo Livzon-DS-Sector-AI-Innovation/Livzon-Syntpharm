@@ -260,7 +260,7 @@ Do NOT inspect what `public_api.py` exports to decide publicness. Other modules 
    (Scan every Python file in `backend/app/modules/` for imports from `app.modules.<other_module>.*` where `*` is not `public_api`)
 2. Are there any `from app.modules import <module>` broad package imports that enable boundary bypass?
 3. Are there any circular imports between modules? (A imports from B, B imports from A)
-4. Has any new module directory been created under `backend/app/modules/` without clear approval?
+4. Has any new module directory been created under `backend/app/modules/`? Is new functionality placed in existing modules as required (new modules only created with explicit user approval)?
 5. Is there any business logic (prompts, business rules, domain-specific error handling) in `app/core/` or `app/shared/` that belongs in a module?
 6. Do environment variable names follow the module prefix convention?
 7. Do event names follow the `{module}.{entity}.{action}` format?
@@ -311,12 +311,52 @@ Full audit
 - 删除业务数据默认软删除（`is_deleted`），不做物理删除（除非需求明确要求）
 
 **认证与权限:**
-- 通过 `app.core.deps.CurrentUser` 获取当前用户（FastAPI 依赖注入）
-- 当前为 Phase 1（预留接口），`current_user` 可能为 `None`
-- 所有业务 API 默认需要登录
-- 只有明确标记为 public 的接口可以允许 `current_user` 为 `None`
-- 新增业务接口时必须显式选择 `require_user` / `optional_user` / `public`
-- 未声明的业务接口按 `require_user` 处理
+
+认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
+
+**依赖注入** — 从 `app.core.deps` 导入。新增业务接口必须显式选择以下三者之一：
+
+```python
+from app.core.deps import RequiredUser, OptionalUser
+```
+
+| 选项 | 参数声明 | 类型 | 未登录行为 | 使用场景 |
+|---|---|---|---|---|
+| `RequiredUser` | `current_user: RequiredUser` | `User` | 返回 401 | **默认**。所有业务 API 必须使用 |
+| `OptionalUser` | `current_user: OptionalUser` | `User \| None` | 返回 `None`（端点可判断） | 少数场景：AI 工具、公开参考数据等允许未登录访问的接口 |
+| public（不注入） | 不声明 `current_user` 参数 | — | 不解析用户 | 仅 SSO 认证流程、飞书 webhook 回调、E2E 测试 |
+
+`OptionalUser` 与 public 的区别：`OptionalUser` 仍然会解析 JWT/cookie，端点可以拿到用户信息做条件逻辑。public 完全不解析，适合无需用户上下文的端点。
+
+**默认规则：**
+- 所有业务 API 默认需要登录，使用 `RequiredUser`
+- 新增业务接口时必须从 `RequiredUser` / `OptionalUser` / public（不声明参数）中显式选择
+- 未声明的业务接口按 `RequiredUser` 处理
+
+**公开接口（无需登录）：**
+
+| 端点 | 原因 | 认证方式 |
+|---|---|---|
+| `GET /api/v1/identity/auth/login` | 飞书 SSO 登录入口 | 无 |
+| `GET /api/v1/identity/auth/callback` | 飞书 SSO 回调 | 无 |
+| `GET /api/v1/identity/auth/logout` | 登出 | 无 |
+| `POST /api/v1/identity/auth/test-login` | E2E 测试专用 | `APP_ENV` 环境变量守卫 |
+| `POST /api/v1/hr/webhook/feishu-approval` | 飞书审批回调 | 飞书验证 token + 签名 |
+
+**Feishu Webhook 处理：**
+
+飞书 HTTP 回调（webhook）**禁止**使用 `RequiredUser` —— 这是服务器到服务器的回调，没有用户会话。
+
+**必须**按 Feishu 标准协议验证请求来源：
+1. **验证 Token 检查**：飞书事件 payload 包含 `token` 字段，必须与 Feishu 应用配置的 Verification Token 比对
+2. **签名验证**（如配置了 encrypt_key）：`SHA256(timestamp + nonce + encrypt_key + raw_body)`，通过 `hmac.compare_digest` 比对
+
+验证函数复用 `app/platform/identity/service.py` 中的 `_verify_feishu_callback_signature()`。
+
+**禁止**在 webhook 端点中：
+- 使用 `RequiredUser` 或 `get_current_user`
+- 不验证 token 直接处理 payload
+- 在 `_verify_feishu_callback_signature` 缺少字段时放行
 
 ### Directories to inspect
 - `backend/app/modules/**/api.py`
@@ -324,6 +364,7 @@ Full audit
 - `backend/app/core/response.py`
 - `backend/app/core/exceptions.py`
 - `backend/app/core/deps.py`
+- `backend/app/platform/identity/service.py`
 
 ### Questions
 
@@ -332,8 +373,11 @@ Full audit
 3. Are all responses using the standard response format from `app/core/response.py`?
 4. Are business logic errors using `app/core/exceptions.py` (not generic HTTPException)?
 5. Do DELETE operations use soft delete (`is_deleted` flag) instead of physical deletion?
-6. Does each endpoint explicitly declare its auth requirement (`require_user`, `optional_user`, `public`)?
-7. Are any business API endpoints missing authentication when they should require it?
+6. Does each endpoint explicitly declare its auth requirement (`RequiredUser`, `OptionalUser`, or public)?
+7. Are any business API endpoints using `OptionalUser` or public when they should use `RequiredUser`?
+8. Do Feishu webhook endpoints verify the request using `_verify_feishu_callback_signature()` from `app/platform/identity/service.py`?
+9. Are Feishu webhook endpoints free of `RequiredUser`, `get_current_user`, and missing token verification?
+10. Do webhook handlers return the challenge response for Feishu URL verification?
 
 ### Output format
 
@@ -1009,6 +1053,8 @@ These AGENTS.md sections are architectural guidance, procedural documentation, o
 | 模块结构 (see backend/examples/) | Referenced documentation |
 | 开发指南 (see backend/docs/) | Referenced documentation |
 | 错误处理/降级策略 (LLM unavailable -> default) | Design guidance, implementation patterns vary |
+| 前端/表单与数据校验 (Zod usage) | Procedural guidance, not a pass/fail rule |
+| 后端/认证与权限 (Feishu Webhook 处理) | Architectural patterns, implementation varies by webhook endpoint |
 
 ---
 
@@ -1025,7 +1071,6 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | `os.getenv()` allowed for setting subprocess environment variables. | 配置管理 — 禁止 os.getenv() | 6 |
 | `asyncio.create_task()` allowed in long-running background worker processes for heartbeats, event dispatch, and infrastructure tasks. | 异步任务 — 禁止 asyncio.create_task() | 7 |
 | Soft delete default; physical delete allowed "除非需求明确要求" (when requirements explicitly require). | API 规范 — 强制软删除 | 4 |
-| `current_user` may be `None` in Phase 1. | 认证与权限 — 默认需要登录 | 4 |
 | SSE/ReadableStream streaming responses and upload progress tracking allowed to use direct fetch in `lib/api/client/`. | 写操作必须用 Server Actions | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |

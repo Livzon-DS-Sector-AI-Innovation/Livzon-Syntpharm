@@ -1,6 +1,5 @@
 """原料报告单 API"""
 
-import uuid
 from typing import Any
 from uuid import UUID
 
@@ -8,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import ApiResponse
 from app.core.storage import save_upload_file
@@ -27,17 +26,12 @@ from app.modules.quality.qms.material_report_service import (
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 # ============ 报告单 API ============
 
 
 @router.get("/", summary="获取报告单列表")
 async def get(
+    current_user: RequiredUser,
     template_id: str | None = None,
     status: str | None = None,
     start_date: str | None = None,
@@ -45,11 +39,9 @@ async def get(
     keyword: str | None = None,
     page: int = 1,
     page_size: int = 20,
-    current_user: CurrentUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单列表"""
-    _require_user(current_user)
     service = MaterialReportService(session)
 
     # 解析UUID
@@ -83,11 +75,10 @@ async def get(
 @router.post("/", summary="创建报告单")
 async def post(
     data: ReportCreate,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建报告单"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     report = await service.create_report(data)
     return ApiResponse(data={"id": str(report.id), "report_no": report.report_no})  # type: ignore[attr-defined]
@@ -95,11 +86,10 @@ async def post(
 
 @router.get("/statistics", summary="获取统计数据")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取统计数据"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     stats = await service.get_statistics()
     return ApiResponse(data=stats)
@@ -107,14 +97,13 @@ async def get(  # noqa: F811
 
 @router.get("/template", summary="获取模板列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     is_active: bool | None = None,
     page: int = 1,
     page_size: int = 20,
-    current_user: CurrentUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取模板列表"""
-    _require_user(current_user)
     service = ReportTemplateService(session)
     templates, total = await service.list_templates(
         is_active=is_active,
@@ -134,16 +123,15 @@ async def get(  # noqa: F811
 
 @router.post("/template/", summary="上传Word模板")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="Word模板文件"),
     template_name: str = Form(..., description="模板名称"),
     template_description: str | None = Form(None, description="模板描述"),
     field_mapping: str | None = Form(None, description="静态字段映射JSON"),
     table_fields: str | None = Form(None, description="动态表格字段JSON"),
-    current_user: CurrentUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """上传Word模板"""
-    _require_user(current_user)
     # 验证文件类型
     if not file.filename.endswith((".docx", ".doc")):  # type: ignore[union-attr]
         raise AppException(status_code=400, message="仅支持Word文档(.docx, .doc)")
@@ -187,11 +175,10 @@ async def post(  # noqa: F811
 @router.get("/template/{template_id}", summary="获取模板详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     template_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取模板详情"""
-    _require_user(current_user)
     service = ReportTemplateService(session)
     template = await service.get_template(template_id)
 
@@ -205,11 +192,10 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     template_id: UUID,
     data: TemplateUpdate,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新模板"""
-    _require_user(current_user)
     service = ReportTemplateService(session)
     template = await service.update_template(template_id, data)
 
@@ -222,11 +208,10 @@ async def put(  # noqa: F811
 @router.delete("/template/{template_id}", summary="删除模板")
 async def delete(  # noqa: F811
     template_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除模板"""
-    _require_user(current_user)
     service = ReportTemplateService(session)
     success = await service.delete_template(template_id)
 
@@ -239,11 +224,10 @@ async def delete(  # noqa: F811
 @router.get("/template/{template_id}/preview", summary="预览模板字段")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     template_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """解析模板获取字段配置"""
-    _require_user(current_user)
     service = ReportTemplateService(session)
     result = await service.parse_template(template_id)
 
@@ -259,11 +243,10 @@ async def get(  # noqa: F811
 @router.get("/{report_id}", summary="获取报告单详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     report_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单详情"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     report = await service.get_report(report_id)
 
@@ -277,11 +260,10 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     report_id: UUID,
     data: ReportUpdate,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新报告单"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     report = await service.update_report(report_id, data)
 
@@ -294,11 +276,10 @@ async def put(  # noqa: F811
 @router.delete("/{report_id}", summary="删除报告单")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     report_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除报告单"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     success = await service.delete_report(report_id)
 
@@ -312,11 +293,10 @@ async def delete(  # noqa: F811
 async def post(  # noqa: F811
     report_id: UUID,
     data: ReportItemsBatchSave,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量保存明细数据"""
-    _require_user(current_user)
     service = MaterialReportService(session)
 
     # 检查报告单是否存在
@@ -331,11 +311,10 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/generate", summary="生成报告单文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """生成报告单Word文件并下载"""
-    _require_user(current_user)
     service = MaterialReportService(session)
 
     try:
@@ -357,11 +336,10 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/submit", summary="提交报告单")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """提交报告单"""
-    _require_user(current_user)
     service = MaterialReportService(session)
 
     try:
@@ -378,14 +356,13 @@ async def post(  # noqa: F811
 @router.post("/{report_id}/images", summary="上传图片并AI识别")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     report_id: UUID,
+    current_user: RequiredUser,
     field_key: str | None = Form(None, description="对应字段key"),
     row_index: int | None = Form(None, description="对应行序号"),
     file: UploadFile = File(..., description="图片文件"),
-    current_user: CurrentUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """上传图片并进行AI识别"""
-    _require_user(current_user)
     service = MaterialReportService(session)
 
     # 检查报告单是否存在
@@ -408,11 +385,10 @@ async def post(  # noqa: F811
 @router.get("/{report_id}/images", summary="获取报告单图片列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     report_id: UUID,
-    current_user: CurrentUser = None,
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单的所有图片记录"""
-    _require_user(current_user)
     service = MaterialReportService(session)
     images = await service.get_report_images(report_id)
     return ApiResponse(data=images)

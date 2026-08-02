@@ -27,7 +27,7 @@ services:
       WATCHPACK_POLLING: "true"
       WATCHPACK_POLLING_INTERVAL: "1000"
       CHOKIDAR_USEPOLLING: "true"
-      ALLOWED_DEV_ORIGINS: "8.138.238.190"
+      ALLOWED_DEV_ORIGINS: "${ALLOWED_DEV_ORIGINS:-}"
     command: pnpm dev
 
 volumes:

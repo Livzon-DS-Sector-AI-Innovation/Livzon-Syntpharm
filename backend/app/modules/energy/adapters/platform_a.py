@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -98,7 +99,7 @@ class ZhihengWaterAdapter(BasePlatformAdapter):
                         client, meter_id, beg_date, end_date, target_hour
                     )
                 except Exception:
-                    logger.exception("获取水表 %s 数据失败，默认值 0", meter_id)
+                    logger.exception("获取水表数据失败，默认值 0", extra={"meter_id": meter_id})
                     meter_values[meter_id] = 0.0
 
         # 4. 按公式求值，生成采集结果
@@ -122,6 +123,10 @@ class ZhihengWaterAdapter(BasePlatformAdapter):
         return results
 
 
+_MAX_RETRIES = 3
+_RETRY_BACKOFF = (1, 2, 4)
+
+
 async def _fetch_meter_hourly(
     client: httpx.AsyncClient,
     emtrnum: str,
@@ -130,43 +135,73 @@ async def _fetch_meter_hourly(
     target_hour: datetime,
 ) -> float:
     """分页获取指定水表数据，筛选目标小时记录并求和 AANALOGFLOW。"""
-    total_value = 0.0
-    page = 1
-    fetched = 0
+    for attempt in range(_MAX_RETRIES):
+        try:
+            total_value = 0.0
+            page = 1
+            fetched = 0
 
-    while True:
-        response = await client.post(
-            API_URL,
-            data={
-                "unitCode": UNIT_CODE,
-                "nRow": str(PAGE_SIZE),
-                "nPage": str(page),
-                "begDate": beg_date,
-                "endDate": end_date,
-                "whereEmtrm": emtrnum,
-            },
-        )
-        response.raise_for_status()
+            while True:
+                response = await client.post(
+                    API_URL,
+                    data={
+                        "unitCode": UNIT_CODE,
+                        "nRow": str(PAGE_SIZE),
+                        "nPage": str(page),
+                        "begDate": beg_date,
+                        "endDate": end_date,
+                        "whereEmtrm": emtrnum,
+                    },
+                )
+                response.raise_for_status()
 
-        payload = _extract_json(response.text)
-        records = payload.get("syncData", [])
-        total_count = int(payload.get("nCount", 0))
+                payload = _extract_json(response.text)
+                records = payload.get("syncData", [])
+                total_count = int(payload.get("nCount", 0))
 
-        # 筛选目标小时的数据
-        for record in records:
-            if _record_matches_hour(record, target_hour):
-                total_value += float(record.get("AANALOGFLOW", 0))
+                for record in records:
+                    if _record_matches_hour(record, target_hour):
+                        total_value += float(record.get("AANALOGFLOW", 0))
 
-        fetched += len(records)
-        if fetched >= total_count:
-            break
-        page += 1
-        if page > MAX_PAGES:
-            logger.warning("水表 %s 分页超过 %d 页，强制停止", emtrnum, MAX_PAGES)
-            break
+                fetched += len(records)
+                if fetched >= total_count:
+                    break
+                page += 1
+                if page > MAX_PAGES:
+                    logger.warning("水表 %s 分页超过 %d 页，强制停止", emtrnum, MAX_PAGES)
+                    break
 
-    logger.debug("水表 %s: %d 条记录, 目标小时合计=%.4f", emtrnum, fetched, total_value)
-    return total_value
+            logger.debug("水表 %s: %d 条记录, 目标小时合计=%.4f", emtrnum, fetched, total_value)
+            return total_value
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as e:
+            if attempt < _MAX_RETRIES - 1:
+                logger.warning(
+                    "Meter data fetch retry",
+                    extra={
+                        "meter_id": emtrnum,
+                        "attempt": attempt + 1,
+                        "delay_s": _RETRY_BACKOFF[attempt],
+                        "error": str(e),
+                    },
+                )
+                await asyncio.sleep(_RETRY_BACKOFF[attempt])
+                continue
+            raise
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code >= 500 and attempt < _MAX_RETRIES - 1:
+                logger.warning(
+                    "Meter data fetch retry",
+                    extra={
+                        "meter_id": emtrnum,
+                        "attempt": attempt + 1,
+                        "delay_s": _RETRY_BACKOFF[attempt],
+                        "status": e.response.status_code,
+                    },
+                )
+                await asyncio.sleep(_RETRY_BACKOFF[attempt])
+                continue
+            raise
+    raise RuntimeError("Unreachable: retry loop exhausted")
 
 
 def _extract_json(text: str) -> dict[str, Any]:

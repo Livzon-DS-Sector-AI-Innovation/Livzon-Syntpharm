@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.response import error_response, paginated_response, success_response
 from app.modules.research import service
 from app.modules.research.schemas import (
@@ -69,8 +69,8 @@ router = create_module_router(MODULES_BY_CODE["research"])
 
 @router.post("/projects", summary="创建研发项目")
 async def create_project(
-    current_user: CurrentUser,
     data: ResearchProjectCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -81,7 +81,7 @@ async def create_project(
 
 @router.get("/projects", summary="获取研发项目列表")
 async def get_projects(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     stage: str | None = Query(None, description="项目阶段"),
     status: str | None = Query(None, description="项目状态"),
     keyword: str | None = Query(None, description="搜索项目编号或名称"),
@@ -111,8 +111,8 @@ async def get_projects(
 
 @router.get("/projects/{project_id}", summary="获取研发项目详情")
 async def get_project(
-    current_user: CurrentUser,
     project_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -125,6 +125,7 @@ async def get_project(
 async def update_project(
     project_id: uuid.UUID,
     data: ResearchProjectUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -136,6 +137,7 @@ async def update_project(
 @router.delete("/projects/{project_id}", summary="删除研发项目")
 async def delete_project(
     project_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -146,6 +148,7 @@ async def delete_project(
 
 @router.post("/ich/q3c/analyze", summary="ICH Q3C 溶剂残留分析")
 async def analyze_ich_q3c(
+    current_user: RequiredUser,
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     db: AsyncSession = Depends(get_db),
@@ -162,6 +165,7 @@ async def analyze_ich_q3c(
 
 @router.post("/ich/analyze", summary="ICH Q3C/Q3D 联合分析")
 async def analyze_ich_combined(
+    current_user: RequiredUser,
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     use_llm: bool = Query(False, description="是否使用 LLM 增强"),
@@ -179,6 +183,7 @@ async def analyze_ich_combined(
 
 @router.get("/ich/records", summary="获取 ICH Q3C/Q3D 杂质识别记录列表")
 async def get_ich_records(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -209,6 +214,7 @@ async def get_ich_records(
 @router.get("/ich/records/{record_id}", summary="获取 ICH Q3C/Q3D 杂质识别记录详情")
 async def get_ich_record(
     record_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -231,6 +237,7 @@ async def get_ich_record(
 @router.delete("/ich/records/{record_id}", summary="删除 ICH Q3C/Q3D 杂质识别记录")
 async def delete_ich_record(
     record_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -241,6 +248,7 @@ async def delete_ich_record(
 
 @router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化")
 async def edbo_optimize(
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="反应范围 CSV 文件"),
     objectives: str = Body(..., description="目标列名，逗号分隔"),
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
@@ -307,7 +315,7 @@ async def edbo_optimize(
 
 @router.post("/edbo/generate-scope", summary="生成反应范围")
 async def edbo_generate_scope(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     components: dict = Body(  # type: ignore[type-arg]
         ...,
         description="组件定义，支持两种格式：1) 直接值列表 {name: [v1,v2,...]} 2) 范围定义 {name: {type: 'numeric', lower: x, upper: y, data_points: n}} 或 {name: {type: 'categorical', values: [...]}}",
@@ -671,6 +679,7 @@ from app.modules.research.schemas import (  # noqa: E402
 @router.post("/pilot/workflow", summary="创建中试研究")
 async def create_pilot_workflow(
     data: PilotWorkflowCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -691,7 +700,7 @@ async def create_pilot_workflow(
 
 @router.get("/pilot/workflow", summary="获取中试研究列表")
 async def get_pilot_workflows(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     status: str | None = Query(None, description="状态筛选"),
     keyword: str | None = Query(None, description="搜索产品名称"),
     page: int = Query(1, ge=1),
@@ -730,8 +739,8 @@ async def get_pilot_workflows(
 
 @router.get("/pilot/workflow/{workflow_id}", summary="获取工作流详情")
 async def get_pilot_workflow_detail(
-    current_user: CurrentUser,
     workflow_id: uuid_module.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -752,6 +761,7 @@ async def get_pilot_workflow_detail(
 @router.post("/pilot/workflow/{workflow_id}/start", summary="启动工作流执行")
 async def start_pilot_workflow(
     workflow_id: uuid_module.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -773,7 +783,7 @@ async def start_pilot_workflow(
 @router.post("/pilot/workflow/{workflow_id}/approve", summary="确认当前步骤并执行下一步")
 async def approve_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
-    current_user: CurrentUser,
+    current_user: RequiredUser,
 ) -> JSONResponse:
 
     result = await approve_step_engine(workflow_id)
@@ -786,9 +796,9 @@ async def approve_pilot_workflow_step(
 
 @router.get("/pilot/workflow/{workflow_id}/steps/{step_id}", summary="获取步骤详情")
 async def get_pilot_workflow_step(
-    current_user: CurrentUser,
     workflow_id: uuid_module.UUID,
     step_id: uuid_module.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -803,6 +813,7 @@ async def get_pilot_workflow_step(
 @router.post("/pilot/workflow/{workflow_id}/upload", summary="上传工艺文档")
 async def upload_pilot_document(
     workflow_id: uuid_module.UUID,
+    current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -845,8 +856,8 @@ async def upload_pilot_document(
 
 @router.delete("/pilot/workflow/{workflow_id}", summary="删除工作流")
 async def delete_pilot_workflow(
-    current_user: CurrentUser,
     workflow_id: uuid_module.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -859,7 +870,7 @@ async def delete_pilot_workflow(
 
     workflow.is_deleted = True
 
-    workflow.updated_by = current_user.id if current_user else None
+    workflow.updated_by = current_user.id
 
     await db.flush()
 
@@ -868,6 +879,7 @@ async def delete_pilot_workflow(
 
 @router.post("/literature/analyze", summary="AI 文献解析（流式）")
 async def analyze_literature(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     file: UploadFile = File(...),
 ):
     """解析上传的文献文件（PDF/TXT），提取合成路线 - SSE 流式响应"""
@@ -999,7 +1011,7 @@ async def analyze_literature(  # type: ignore[no-untyped-def]
 
 @router.get("/routes", summary="获取打通路线列表")
 async def get_routes(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: str | None = Query(None),
     status: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1080,8 +1092,8 @@ async def get_routes(
 
 @router.get("/routes/{route_id}", summary="获取路线详情")
 async def get_route(
-    current_user: CurrentUser,
     route_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1163,7 +1175,7 @@ async def get_route(
 
 @router.post("/routes", summary="创建路线")
 async def create_route(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1186,7 +1198,7 @@ async def create_route(
         description=data.get("description"),
         status="planning",
         current_module="research",
-        created_by=current_user.id if current_user else None,
+        created_by=current_user.id,
     )
 
     db.add(route)
@@ -1198,8 +1210,8 @@ async def create_route(
 
 @router.put("/routes/{route_id}", summary="更新路线（保存工作流状态）")
 async def update_route(
-    current_user: CurrentUser,
     route_id: str,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1242,8 +1254,7 @@ async def update_route(
         if field in data:
             setattr(route, field, data[field])
 
-    if current_user:
-        route.updated_by = current_user.id
+    route.updated_by = current_user.id
 
     await db.flush()
 
@@ -1253,6 +1264,7 @@ async def update_route(
 @router.delete("/routes/{route_id}", summary="删除路线")
 async def delete_route(
     route_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1290,8 +1302,8 @@ async def delete_route(
 
 @router.post("/routes/{route_id}/experiments", summary="添加实验记录")
 async def create_experiment(
-    current_user: CurrentUser,
     route_id: str,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1330,7 +1342,7 @@ async def create_experiment(
         purity=data.get("purity"),
         impurities=data.get("impurities"),
         result_summary=data.get("result_summary"),
-        created_by=current_user.id if current_user else None,
+        created_by=current_user.id,
     )
 
     db.add(exp)
@@ -1342,8 +1354,8 @@ async def create_experiment(
 
 @router.put("/experiments/{exp_id}", summary="更新实验记录")
 async def update_experiment(
-    current_user: CurrentUser,
     exp_id: str,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1390,8 +1402,7 @@ async def update_experiment(
     if "purity" in data:
         exp.purity = data["purity"]
 
-    if current_user:
-        exp.updated_by = current_user.id
+    exp.updated_by = current_user.id
 
     await db.flush()
 
@@ -1401,6 +1412,7 @@ async def update_experiment(
 @router.delete("/experiments/{exp_id}", summary="删除实验记录")
 async def delete_experiment(
     exp_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1432,7 +1444,7 @@ async def delete_experiment(
 
 @router.get("/optimizations", summary="获取工艺优化列表")
 async def get_optimizations(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: str | None = Query(None),
     status: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1506,8 +1518,8 @@ async def get_optimizations(
 
 @router.get("/optimizations/{optimization_id}", summary="获取工艺优化详情")
 async def get_optimization(
-    current_user: CurrentUser,
     optimization_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1546,6 +1558,7 @@ async def get_optimization(
 
 @router.post("/optimizations", summary="创建工艺优化")
 async def create_optimization(
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1588,6 +1601,7 @@ async def create_optimization(
 @router.put("/optimizations/{optimization_id}", summary="更新工艺优化")
 async def update_optimization(
     optimization_id: str,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -1627,6 +1641,7 @@ async def update_optimization(
 @router.delete("/optimizations/{optimization_id}", summary="删除工艺优化")
 async def delete_optimization(
     optimization_id: str,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1671,11 +1686,11 @@ from app.modules.research.schemas import (  # noqa: E402
 async def create_milestone(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdMilestoneCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.create_milestone(db, project_id, data, user_id)
 
@@ -1686,7 +1701,7 @@ async def create_milestone(  # type: ignore[no-untyped-def]
     summary="获取里程碑列表",
 )
 async def get_milestones(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
 
     return await service.get_milestones(db, project_id)
@@ -1700,11 +1715,11 @@ async def get_milestones(  # type: ignore[no-untyped-def]
 async def update_milestone(  # type: ignore[no-untyped-def]
     milestone_id: UUID,
     data: RdMilestoneUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.update_milestone(db, milestone_id, data, user_id)
 
@@ -1720,11 +1735,11 @@ async def update_milestone(  # type: ignore[no-untyped-def]
 async def create_stage_record(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdStageRecordCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.create_stage_record(db, project_id, data, user_id)
 
@@ -1735,7 +1750,7 @@ async def create_stage_record(  # type: ignore[no-untyped-def]
     summary="获取阶段记录列表",
 )
 async def get_stage_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
 
     return await service.get_stage_records(db, project_id)
@@ -1749,11 +1764,11 @@ async def get_stage_records(  # type: ignore[no-untyped-def]
 async def update_stage_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
     data: RdStageRecordUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.update_stage_record(db, record_id, data, user_id)
 
@@ -1769,18 +1784,18 @@ async def update_stage_record(  # type: ignore[no-untyped-def]
 async def create_research_track(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdResearchTrackCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.create_research_track(db, project_id, data, user_id)
 
 
 @router.get("/tracks", summary="获取所有研究项列表")
 async def get_all_research_tracks(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: str | None = Query(None, description="按项目ID筛选"),
     track_type: str | None = Query(None, description="按研究项类型筛选"),
     db: AsyncSession = Depends(get_db),
@@ -1844,7 +1859,7 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
     summary="获取研究项列表",
 )
 async def get_research_tracks(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
 
     return await service.get_research_tracks(db, project_id)
@@ -1858,11 +1873,11 @@ async def get_research_tracks(  # type: ignore[no-untyped-def]
 async def update_research_track(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: RdResearchTrackUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.update_research_track(db, track_id, data, user_id)
 
@@ -1878,11 +1893,11 @@ async def update_research_track(  # type: ignore[no-untyped-def]
 async def create_research_finding(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: RdResearchFindingCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.create_research_finding(db, track_id, data, user_id)
 
@@ -1893,7 +1908,7 @@ async def create_research_finding(  # type: ignore[no-untyped-def]
     summary="获取研究发现列表",
 )
 async def get_research_findings(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser, track_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, track_id: UUID, db: AsyncSession = Depends(get_db)
 ):
 
     return await service.get_research_findings(db, track_id)
@@ -1907,11 +1922,11 @@ async def get_research_findings(  # type: ignore[no-untyped-def]
 async def update_research_finding(  # type: ignore[no-untyped-def]
     finding_id: UUID,
     data: RdResearchFindingUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     return await service.update_research_finding(db, finding_id, data, user_id)
 
@@ -1923,12 +1938,12 @@ async def update_research_finding(  # type: ignore[no-untyped-def]
 async def publish_conclusion_version(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: dict,  # type: ignore[type-arg]
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ):
     """发布新的结论版本，更新研究项的当前结论"""
 
-    user_id = current_user.id  # type: ignore[union-attr]
+    user_id = current_user.id
 
     conclusion = data.get("conclusion", "")
 
@@ -1939,7 +1954,7 @@ async def publish_conclusion_version(  # type: ignore[no-untyped-def]
 
 @router.get("/tracks/{track_id}/conclusions", summary="获取结论历史")
 async def get_conclusion_history(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser, track_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, track_id: UUID, db: AsyncSession = Depends(get_db)
 ):
     """获取研究项的结论版本历史"""
 
@@ -1951,7 +1966,7 @@ async def get_conclusion_history(  # type: ignore[no-untyped-def]
 
 @router.get("/rd-projects", summary="获取研发项目列表(RdProject)")
 async def get_rd_projects(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     stage: str | None = Query(None, description="当前阶段"),
     status: str | None = Query(None, description="状态"),
     keyword: str | None = Query(None, description="搜索关键词"),
@@ -1981,8 +1996,8 @@ async def get_rd_projects(
 
 @router.get("/rd-projects/{project_id}", summary="获取研发项目详情(RdProject)")
 async def get_rd_project(
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
@@ -1993,12 +2008,12 @@ async def get_rd_project(
 
 @router.post("/rd-projects", summary="创建研发项目(RdProject)")
 async def create_rd_project(
-    current_user: CurrentUser,
     data: RdProjectCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     project = await service.create_rd_project(db, data, user_id)
 
@@ -2010,13 +2025,13 @@ async def create_rd_project(
 
 @router.put("/rd-projects/{project_id}", summary="更新研发项目(RdProject)")
 async def update_rd_project(
-    current_user: CurrentUser,
     project_id: UUID,
     data: RdProjectUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     project = await service.update_rd_project(db, project_id, data, user_id)
 
@@ -2028,12 +2043,12 @@ async def update_rd_project(
 
 @router.delete("/rd-projects/{project_id}", summary="删除研发项目(RdProject)")
 async def delete_rd_project(
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_rd_project(db, project_id, user_id)
 
@@ -2045,8 +2060,8 @@ async def delete_rd_project(
 
 @router.post("/rd-projects/{project_id}/transition", summary="阶段流转")
 async def transition_stage(
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2058,7 +2073,7 @@ async def transition_stage(
     if not target_stage:
         return error_response(message="缺少 target_stage 参数")
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     result = await service.transition_stage(db, project_id, target_stage, review_notes, user_id)
 
@@ -2071,8 +2086,8 @@ async def transition_stage(
 
 @router.get("/rd-projects/{project_id}/transition-check", summary="检查阶段流转条件")
 async def check_stage_transition(
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     target_stage: str = Query(..., description="目标阶段"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2087,7 +2102,7 @@ async def check_stage_transition(
 
 @router.get("/pilot-studies", summary="获取中试研究记录列表")
 async def get_pilot_studies(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2099,12 +2114,12 @@ async def get_pilot_studies(
 
 @router.post("/pilot-studies", summary="创建中试研究记录")
 async def create_pilot_study(
-    current_user: CurrentUser,
     data: RdPilotStudyCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     study = await service.create_pilot_study(db, data, user_id)
 
@@ -2116,13 +2131,13 @@ async def create_pilot_study(
 
 @router.put("/pilot-studies/{study_id}", summary="更新中试研究记录")
 async def update_pilot_study(
-    current_user: CurrentUser,
     study_id: UUID,
     data: RdPilotStudyUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     study = await service.update_pilot_study(db, study_id, data, user_id)
 
@@ -2137,7 +2152,7 @@ async def update_pilot_study(
 
 @router.get("/process-validations", summary="获取工艺验证记录列表")
 async def get_validations(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2149,12 +2164,12 @@ async def get_validations(
 
 @router.post("/process-validations", summary="创建工艺验证记录")
 async def create_validation(
-    current_user: CurrentUser,
     data: RdProcessValidationCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     validation = await service.create_validation(db, data, user_id)
 
@@ -2166,13 +2181,13 @@ async def create_validation(
 
 @router.put("/process-validations/{validation_id}", summary="更新工艺验证记录")
 async def update_validation(
-    current_user: CurrentUser,
     validation_id: UUID,
     data: RdProcessValidationUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     validation = await service.update_validation(db, validation_id, data, user_id)
 
@@ -2187,7 +2202,7 @@ async def update_validation(
 
 @router.get("/registration-filings", summary="获取申报资料记录列表")
 async def get_filings(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2199,12 +2214,12 @@ async def get_filings(
 
 @router.post("/registration-filings", summary="创建申报资料记录")
 async def create_filing(
-    current_user: CurrentUser,
     data: RdRegistrationFilingCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     filing = await service.create_filing(db, data, user_id)
 
@@ -2216,13 +2231,13 @@ async def create_filing(
 
 @router.put("/registration-filings/{filing_id}", summary="更新申报资料记录")
 async def update_filing(
-    current_user: CurrentUser,
     filing_id: UUID,
     data: RdRegistrationFilingUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     filing = await service.update_filing(db, filing_id, data, user_id)
 
@@ -2241,12 +2256,12 @@ async def update_filing(
     summary="创建阶段交付物",
 )
 async def create_rd_stage_deliverable_api(
-    current_user: CurrentUser,
     data: RdStageDeliverableCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     deliverable = await service.create_rd_stage_deliverable(db, data, user_id)
 
@@ -2259,8 +2274,8 @@ async def create_rd_stage_deliverable_api(
     summary="获取阶段交付物",
 )
 async def get_rd_stage_deliverable_api(
-    current_user: CurrentUser,
     deliverable_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
@@ -2274,7 +2289,7 @@ async def get_rd_stage_deliverable_api(
     summary="获取阶段交付物列表",
 )
 async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID | None = None,
     stage: str | None = None,
     deliverable_type: str | None = None,
@@ -2302,13 +2317,13 @@ async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
     summary="更新阶段交付物",
 )
 async def update_rd_stage_deliverable_api(
-    current_user: CurrentUser,
     deliverable_id: UUID,
     data: RdStageDeliverableUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     deliverable = await service.update_rd_stage_deliverable(db, deliverable_id, data, user_id)
 
@@ -2320,12 +2335,12 @@ async def update_rd_stage_deliverable_api(
     summary="删除阶段交付物",
 )
 async def delete_rd_stage_deliverable_api(
-    current_user: CurrentUser,
     deliverable_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_rd_stage_deliverable(db, deliverable_id, user_id)
 
@@ -2338,6 +2353,7 @@ async def delete_rd_stage_deliverable_api(
 )
 async def upload_deliverable_file(
     deliverable_id: UUID,
+    current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
@@ -2370,7 +2386,7 @@ async def upload_deliverable_file(
         db,
         deliverable_id,
         RdStageDeliverableUpdate(file_url=file_url, file_name=filename, file_size=file_size),
-        None,
+        current_user.id,
     )
 
     return success_response(  # type: ignore[return-value]
@@ -2387,8 +2403,8 @@ async def upload_deliverable_file(
     summary="下载交付物附件",
 )
 async def download_deliverable_file(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
     deliverable_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
     """下载交付物附件文件（本地存储）"""
@@ -2417,8 +2433,8 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
 
 @router.get("/rd-pilot-studies", summary="获取中试研究列表")  # type: ignore[no-redef]
 async def get_pilot_studies(  # noqa: F811
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2429,12 +2445,12 @@ async def get_pilot_studies(  # noqa: F811
 
 @router.post("/rd-pilot-studies", summary="创建中试研究")
 async def create_pilot_study_api(
-    current_user: CurrentUser,
     data: RdPilotStudyCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.create_pilot_study(db, data, user_id)
 
@@ -2443,13 +2459,13 @@ async def create_pilot_study_api(
 
 @router.put("/rd-pilot-studies/{study_id}", summary="更新中试研究")
 async def update_pilot_study_api(
-    current_user: CurrentUser,
     study_id: UUID,
     data: RdPilotStudyUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.update_pilot_study(db, study_id, data, user_id)
 
@@ -2458,12 +2474,12 @@ async def update_pilot_study_api(
 
 @router.delete("/rd-pilot-studies/{study_id}", summary="删除中试研究")
 async def delete_pilot_study_api(
-    current_user: CurrentUser,
     study_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_pilot_study(db, study_id, user_id)
 
@@ -2475,8 +2491,8 @@ async def delete_pilot_study_api(
 
 @router.get("/rd-process-validations", summary="获取工艺验证列表")  # type: ignore[no-redef]
 async def get_validations(  # noqa: F811
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2487,12 +2503,12 @@ async def get_validations(  # noqa: F811
 
 @router.post("/rd-process-validations", summary="创建工艺验证")
 async def create_validation_api(
-    current_user: CurrentUser,
     data: RdProcessValidationCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.create_validation(db, data, user_id)
 
@@ -2501,13 +2517,13 @@ async def create_validation_api(
 
 @router.put("/rd-process-validations/{validation_id}", summary="更新工艺验证")
 async def update_validation_api(
-    current_user: CurrentUser,
     validation_id: UUID,
     data: RdProcessValidationUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.update_validation(db, validation_id, data, user_id)
 
@@ -2516,12 +2532,12 @@ async def update_validation_api(
 
 @router.delete("/rd-process-validations/{validation_id}", summary="删除工艺验证")
 async def delete_validation_api(
-    current_user: CurrentUser,
     validation_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_validation(db, validation_id, user_id)
 
@@ -2533,8 +2549,8 @@ async def delete_validation_api(
 
 @router.get("/rd-registration-filings", summary="获取申报资料列表")  # type: ignore[no-redef]
 async def get_filings(  # noqa: F811
-    current_user: CurrentUser,
     project_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2545,12 +2561,12 @@ async def get_filings(  # noqa: F811
 
 @router.post("/rd-registration-filings", summary="创建申报资料")
 async def create_filing_api(
-    current_user: CurrentUser,
     data: RdRegistrationFilingCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.create_filing(db, data, user_id)
 
@@ -2559,13 +2575,13 @@ async def create_filing_api(
 
 @router.put("/rd-registration-filings/{filing_id}", summary="更新申报资料")
 async def update_filing_api(
-    current_user: CurrentUser,
     filing_id: UUID,
     data: RdRegistrationFilingUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.update_filing(db, filing_id, data, user_id)
 
@@ -2574,12 +2590,12 @@ async def update_filing_api(
 
 @router.delete("/rd-registration-filings/{filing_id}", summary="删除申报资料")
 async def delete_filing_api(
-    current_user: CurrentUser,
     filing_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_filing(db, filing_id, user_id)
 
@@ -2591,7 +2607,7 @@ async def delete_filing_api(
 
 @router.get("/experiment-logs", summary="获取实验记录列表")
 async def get_experiment_logs(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2603,12 +2619,12 @@ async def get_experiment_logs(
 
 @router.post("/experiment-logs", summary="创建实验记录")
 async def create_experiment_log(
-    current_user: CurrentUser,
     data: RdExperimentLogCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     log = await service.create_experiment_log(db, data, user_id)
 
@@ -2622,13 +2638,13 @@ async def create_experiment_log(
 
 @router.put("/experiment-logs/{log_id}", summary="更新实验记录")
 async def update_experiment_log(
-    current_user: CurrentUser,
     log_id: UUID,
     data: RdExperimentLogUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     log = await service.update_experiment_log(db, log_id, data, user_id)
 
@@ -2642,12 +2658,12 @@ async def update_experiment_log(
 
 @router.delete("/experiment-logs/{log_id}", summary="删除实验记录")
 async def delete_experiment_log(
-    current_user: CurrentUser,
     log_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_experiment_log(db, log_id, user_id)
 
@@ -2659,7 +2675,7 @@ async def delete_experiment_log(
 
 @router.get("/reports", summary="获取研发报告列表")
 async def get_reports(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2671,12 +2687,12 @@ async def get_reports(
 
 @router.post("/reports", summary="创建研发报告")
 async def create_report(
-    current_user: CurrentUser,
     data: RdReportCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     report = await service.create_report(db, data, user_id)
 
@@ -2690,13 +2706,13 @@ async def create_report(
 
 @router.put("/reports/{report_id}", summary="更新研发报告")
 async def update_report(
-    current_user: CurrentUser,
     report_id: UUID,
     data: RdReportUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     report = await service.update_report(db, report_id, data, user_id)
 
@@ -2710,12 +2726,12 @@ async def update_report(
 
 @router.delete("/reports/{report_id}", summary="删除研发报告")
 async def delete_report(
-    current_user: CurrentUser,
     report_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_report(db, report_id, user_id)
 
@@ -2727,7 +2743,7 @@ async def delete_report(
 
 @router.get("/initiations", summary="获取立项申请列表")
 async def get_initiations(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -2739,12 +2755,12 @@ async def get_initiations(
 
 @router.post("/initiations", summary="创建立项申请")
 async def create_initiation(
-    current_user: CurrentUser,
     data: RdInitiationCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.create_initiation(db, data, user_id)
 
@@ -2758,13 +2774,13 @@ async def create_initiation(
 
 @router.put("/initiations/{initiation_id}", summary="更新立项申请")
 async def update_initiation(
-    current_user: CurrentUser,
     initiation_id: UUID,
     data: RdInitiationUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     item = await service.update_initiation(db, initiation_id, data, user_id)
 
@@ -2778,12 +2794,12 @@ async def update_initiation(
 
 @router.delete("/initiations/{initiation_id}", summary="删除立项申请")
 async def delete_initiation(
-    current_user: CurrentUser,
     initiation_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_initiation(db, initiation_id, user_id)
 
@@ -2795,8 +2811,8 @@ async def delete_initiation(
 
 @router.delete("/projects/tracks/{track_id}", summary="删除研究项")
 async def delete_research_track(
-    current_user: CurrentUser,
     track_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
     """软删除研究项"""
@@ -2817,7 +2833,7 @@ async def delete_research_track(
 
     track.is_deleted = True
 
-    track.updated_by = current_user.id  # type: ignore[union-attr]
+    track.updated_by = current_user.id
 
     await db.commit()
 
@@ -2826,8 +2842,8 @@ async def delete_research_track(
 
 @router.delete("/findings/{finding_id}", summary="删除研究发现")
 async def delete_research_finding(
-    current_user: CurrentUser,
     finding_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
     """软删除研究发现"""
@@ -2848,7 +2864,7 @@ async def delete_research_finding(
 
     finding.is_deleted = True
 
-    finding.updated_by = current_user.id  # type: ignore[union-attr]
+    finding.updated_by = current_user.id
 
     await db.commit()
 
@@ -2860,8 +2876,8 @@ async def delete_research_finding(
 
 @router.get("/tracks/{track_id}", summary="获取研究项详情")
 async def get_track_detail(
-    current_user: CurrentUser,
     track_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取研究项详情，包含研究发现和结论历史"""
@@ -2904,9 +2920,9 @@ async def get_track_detail(
 
 @router.post("/tracks/{track_id}/conclusion-versions", summary="发布新结论版本")
 async def create_conclusion_version_api(
-    current_user: CurrentUser,
     track_id: UUID,
     data: RdTrackConclusionVersionCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """发布新的结论版本"""
@@ -2915,7 +2931,7 @@ async def create_conclusion_version_api(
 
     version_data["track_id"] = track_id
 
-    version_data["author_id"] = current_user.id  # type: ignore[union-attr]
+    version_data["author_id"] = current_user.id
 
     # Also update the track's current conclusion
 
@@ -2924,7 +2940,7 @@ async def create_conclusion_version_api(
         track_id,
         data.conclusion or "",
         data.confidence,
-        current_user.id,  # type: ignore[union-attr]
+        current_user.id,
         data.change_summary,
         data.evidence_refs,
     )
@@ -2936,8 +2952,8 @@ async def create_conclusion_version_api(
 
 @router.get("/tracks/{track_id}/conclusion-versions", summary="获取结论版本历史")
 async def get_conclusion_versions_api(
-    current_user: CurrentUser,
     track_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取研究项的结论版本历史"""
@@ -2956,7 +2972,7 @@ import io  # noqa: E402
 
 @router.get("/export/projects", summary="导出项目列表 CSV")
 async def export_projects_csv(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
     """导出所有研发项目为 CSV 文件"""
@@ -3035,7 +3051,7 @@ async def export_projects_csv(  # type: ignore[no-untyped-def]
 
 @router.get("/export/tracks", summary="导出研究项 CSV")
 async def export_tracks_csv(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -3106,7 +3122,7 @@ async def export_tracks_csv(  # type: ignore[no-untyped-def]
 
 @router.get("/export/experiment-logs", summary="导出实验记录 CSV")
 async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -3182,7 +3198,7 @@ async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
 
 @router.get("/stats/overview", summary="研发概览统计")
 async def get_stats_overview(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取研发模块概览统计数据"""
@@ -3291,7 +3307,7 @@ async def get_stats_overview(
 
 @router.get("/stats/project-progress", summary="项目进度统计")
 async def get_project_progress(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取各项目进度统计"""
@@ -3356,7 +3372,7 @@ async def get_project_progress(
 
 @router.get("/deliverable-templates", summary="获取交付物模板列表")
 async def get_deliverable_templates(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     stage: str | None = Query(None, description="阶段"),
     deliverable_type: str | None = Query(None, description="交付物类型"),
     is_active: bool | None = Query(None, description="是否启用"),
@@ -3370,12 +3386,12 @@ async def get_deliverable_templates(
 
 @router.post("/deliverable-templates", summary="创建交付物模板")
 async def create_deliverable_template(
-    current_user: CurrentUser,
     data: RdDeliverableTemplateCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     template = await service.create_deliverable_template(db, data, user_id)
 
@@ -3389,13 +3405,13 @@ async def create_deliverable_template(
 
 @router.put("/deliverable-templates/{template_id}", summary="更新交付物模板")
 async def update_deliverable_template(
-    current_user: CurrentUser,
     template_id: UUID,
     data: RdDeliverableTemplateUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     template = await service.update_deliverable_template(db, template_id, data, user_id)
 
@@ -3409,12 +3425,12 @@ async def update_deliverable_template(
 
 @router.delete("/deliverable-templates/{template_id}", summary="删除交付物模板")
 async def delete_deliverable_template(
-    current_user: CurrentUser,
     template_id: UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
-    user_id = current_user.id if current_user else None
+    user_id = current_user.id
 
     await service.delete_deliverable_template(db, template_id, user_id)
 
@@ -3427,6 +3443,7 @@ async def delete_deliverable_template(
 @router.post("/generate-report", summary="使用 AI 生成报告")
 async def generate_report(
     data: RdReportGenerateRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
 

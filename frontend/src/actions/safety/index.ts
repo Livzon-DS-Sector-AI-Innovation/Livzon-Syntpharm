@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import * as safetyApi from '@/lib/api/server/safety'
+import type { components } from '@/types/generated/schema'
 import type {
   Accident,
   AccidentFormData,
@@ -1552,14 +1553,14 @@ export async function getAIWorkflowConfigs(params?: { page_size?: number; page?:
   return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders)
 }
 
-export async function createAIWorkflowConfig(data: Record<string, unknown>) {
+export async function createAIWorkflowConfig(data: components['schemas']['AIWorkflowConfigCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAIWorkflowConfig(data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
   return response
 }
 
-export async function updateAIWorkflowConfig(id: string, data: Record<string, unknown>) {
+export async function updateAIWorkflowConfig(id: string, data: components['schemas']['AIWorkflowConfigUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAIWorkflowConfig(id, data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
@@ -1585,14 +1586,14 @@ export async function getScheduledTask(id: string) {
   return safetyApi.getScheduledTask(id, authHeaders)
 }
 
-export async function createScheduledTask(data: Record<string, unknown>) {
+export async function createScheduledTask(data: components['schemas']['ScheduledTaskCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createScheduledTask(data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
   return response
 }
 
-export async function updateScheduledTask(id: string, data: Record<string, unknown>) {
+export async function updateScheduledTask(id: string, data: components['schemas']['ScheduledTaskUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateScheduledTask(id, data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
@@ -1631,7 +1632,7 @@ export async function getFeishuChats() {
   return safetyApi.getFeishuChats(authHeaders)
 }
 
-export async function previewCard(data: Record<string, unknown>) {
+export async function previewCard(data: components['schemas']['CardPreviewRequest']) {
   const authHeaders = await getAuthHeaders()
   return safetyApi.previewCard(data, authHeaders)
 }

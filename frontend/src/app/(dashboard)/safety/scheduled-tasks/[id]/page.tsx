@@ -18,7 +18,7 @@ export default async function EditScheduledTaskPage({ params }: EditTaskPageProp
 
   return (
     <div style={{ padding: '0 0 24px' }}>
-      <h2 style={{ marginBottom: 16 }}>编辑定时任务 — {res.data.name}</h2>
+      <h1 style={{ marginBottom: 16 }}>编辑定时任务 — {res.data.name}</h1>
       <ScheduledTaskForm editData={res.data} />
     </div>
   )

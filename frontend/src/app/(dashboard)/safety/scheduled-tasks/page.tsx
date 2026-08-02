@@ -8,7 +8,7 @@ export default async function ScheduledTasksPage() {
 
   return (
     <div style={{ padding: '0 0 24px' }}>
-      <h2 style={{ marginBottom: 16 }}>定时任务</h2>
+      <h1 style={{ marginBottom: 16 }}>定时任务</h1>
       <ScheduledTaskList
         initialData={res.data || []}
         initialTotal={res.meta?.total || 0}

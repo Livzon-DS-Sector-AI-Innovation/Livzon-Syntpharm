@@ -2107,3 +2107,21 @@ class SafetyRepository:
         result = await self.session.execute(query)
         items = list(result.scalars().all())
         return items, total or 0
+
+    async def create_task_log(self, data: dict[str, Any]) -> ScheduledTaskLog:
+        item = ScheduledTaskLog(**data)
+        self.session.add(item)
+        await self.session.flush()
+        stmt = select(ScheduledTaskLog).where(ScheduledTaskLog.id == item.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    async def update_task_log(self, log_id: uuid.UUID, data: dict[str, Any]) -> ScheduledTaskLog | None:
+        query = (
+            update(ScheduledTaskLog)
+            .where(ScheduledTaskLog.id == log_id, ~ScheduledTaskLog.is_deleted)
+            .values(**data, updated_at=func.now())
+            .returning(ScheduledTaskLog)
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()

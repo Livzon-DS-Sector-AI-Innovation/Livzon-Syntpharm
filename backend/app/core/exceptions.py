@@ -41,3 +41,11 @@ class ForbiddenException(AppException):
             status_code=status.HTTP_403_FORBIDDEN,
             message=message,
         )
+
+
+class UnauthorizedException(AppException):
+    def __init__(self, message: str = "需要登录才能执行此操作") -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message=message,
+        )

@@ -7,6 +7,7 @@ Prefix: /api/v1/quality/static-data/
 import io
 from datetime import date
 from typing import Any
+from uuid import UUID
 
 import openpyxl
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
@@ -15,7 +16,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.service import StaticDataService
@@ -27,9 +28,9 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> StaticDataService:
     return StaticDataService(db)
 
 
-def _user_id(current_user: CurrentUser | None = Depends(get_current_user)) -> int:
+def _user_id(current_user: RequiredUser) -> UUID:
     """Get current user ID"""
-    return current_user.id if current_user else 0  # type: ignore[return-value]
+    return current_user.id
 
 
 # ========== 字典接口（固定选项） ==========
@@ -460,12 +461,12 @@ async def delete(
 )
 async def handler(  # noqa: F811
     id: int,
+    current_user: RequiredUser,
     quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
     service: StaticDataService = Depends(_get_service),
-    current_user: dict[str, Any] = Depends(get_current_user),
 ) -> Any:
     try:
-        user_id = current_user.get("id", 0) if current_user else 0
+        user_id = current_user.id
         obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)  # type: ignore[attr-defined]
         return ApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
@@ -478,17 +479,17 @@ async def handler(  # noqa: F811
 @router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     id: int,
+    current_user: RequiredUser,
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
     usage_person: str | None = Body(None, embed=True, description="领用人"),
     usage_purpose: str | None = Body(None, embed=True, description="领用用途/项目"),
     remark: str | None = Body(None, embed=True, description="备注"),
     service: StaticDataService = Depends(_get_service),
-    current_user: dict[str, Any] = Depends(get_current_user),
 ) -> Any:
     """领用对照品，扣减剩余量并记录领用历史"""
     try:
-        user_id = current_user.get("id", 0) if current_user else 0
+        user_id = current_user.id
         obj, usage_log = await service.use_hplc_reference(  # type: ignore[attr-defined]
             id,
             usage_amount,

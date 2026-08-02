@@ -1,5 +1,6 @@
 """Feishu HTTP client with auth and retry."""
 
+import asyncio
 import logging
 from typing import Any
 from uuid import uuid4
@@ -10,6 +11,9 @@ from app.platform.integrations.base import IntegrationClient
 from app.platform.integrations.feishu.auth import FeishuAuth
 
 logger = logging.getLogger(__name__)
+
+_MAX_RETRIES = 3
+_RETRY_BACKOFF = (1, 2, 4)
 
 
 class FeishuClient(IntegrationClient):
@@ -137,6 +141,51 @@ class FeishuClient(IntegrationClient):
 
         if get_settings().APP_ENV == "e2e":
             return self._e2e_response(method, path)
+
+        last_exc: Exception | None = None
+        for attempt in range(_MAX_RETRIES):
+            try:
+                return await self._do_request(method, path, json=json, params=params, headers=headers, timeout=timeout)
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
+                last_exc = exc
+                if attempt < _MAX_RETRIES - 1:
+                    logger.warning(
+                        "Feishu request retry",
+                        extra={"attempt": attempt + 1, "method": method, "path": path, "error": str(exc)},
+                    )
+                    await asyncio.sleep(_RETRY_BACKOFF[attempt])
+                else:
+                    raise
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code >= 500:
+                    last_exc = exc
+                    if attempt < _MAX_RETRIES - 1:
+                        logger.warning(
+                            "Feishu request retry on 5xx",
+                            extra={
+                                "attempt": attempt + 1,
+                                "method": method,
+                                "path": path,
+                                "status_code": exc.response.status_code,
+                            },
+                        )
+                        await asyncio.sleep(_RETRY_BACKOFF[attempt])
+                    else:
+                        raise
+                else:
+                    raise
+        raise last_exc  # type: ignore[misc]
+
+    async def _do_request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        timeout: float = 15.0,
+    ) -> dict[str, Any]:
         token = await self._auth.get_token()
         default_headers = {
             "Authorization": f"Bearer {token}",

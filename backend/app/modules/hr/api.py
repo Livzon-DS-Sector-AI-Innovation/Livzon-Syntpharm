@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
 from app.modules.hr.schemas import (
@@ -203,6 +203,7 @@ def get_candidate_service(
 
 @router.get("/employees", summary="员工列表")
 async def list_employees(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None, description="部门筛选"),
     status: str | None = Query(None, description="状态筛选"),
     keyword: str | None = Query(None, description="姓名或工号关键词"),
@@ -228,6 +229,7 @@ async def list_employees(  # type: ignore[no-untyped-def]
 @router.post("/employees", summary="创建员工")
 async def create_employee(  # type: ignore[no-untyped-def]
     payload: EmployeeCreate,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.create_employee(payload)
@@ -240,6 +242,7 @@ async def create_employee(  # type: ignore[no-untyped-def]
 
 @router.post("/employees/sync-from-feishu", summary="从飞书多维表格同步员工数据")
 async def sync_employees_from_feishu(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     """手动触发：从飞书多维表格拉取全部员工数据并 upsert 到本地 PG。"""
@@ -253,6 +256,7 @@ async def sync_employees_from_feishu(  # type: ignore[no-untyped-def]
 
 @router.get("/employees/sync-status", summary="飞书同步状态")
 async def get_employee_sync_status(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     """查看本地与飞书的数据同步统计。"""
@@ -265,6 +269,7 @@ async def get_employee_sync_status(  # type: ignore[no-untyped-def]
 @router.get("/employees/by-number/{employee_number}", summary="根据工号查询员工")
 async def get_employee_by_number(  # type: ignore[no-untyped-def]
     employee_number: str,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.get_employee_by_number(employee_number)
@@ -276,6 +281,7 @@ async def get_employee_by_number(  # type: ignore[no-untyped-def]
 @router.get("/employees/{employee_id}", summary="员工详情")
 async def get_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.get_employee(employee_id)
@@ -288,6 +294,7 @@ async def get_employee(  # type: ignore[no-untyped-def]
 async def update_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
     payload: EmployeeUpdate,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.update_employee(employee_id, payload)
@@ -300,7 +307,7 @@ async def update_employee(  # type: ignore[no-untyped-def]
 @router.delete("/employees/{employee_id}", summary="删除员工")
 async def delete_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     await service.delete_employee(employee_id)
@@ -310,6 +317,7 @@ async def delete_employee(  # type: ignore[no-untyped-def]
 @router.post("/employees/{employee_id}/sync-to-feishu", summary="同步单个员工到飞书")
 async def sync_employee_to_feishu(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     """将本地单个员工强制同步到飞书多维表格。"""
@@ -346,6 +354,7 @@ async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
 )
 async def export_onboarding_training_record(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
     service: EmployeeService = Depends(get_employee_service),
     session: AsyncSession = Depends(get_db),
@@ -377,6 +386,7 @@ async def export_onboarding_training_record(  # type: ignore[no-untyped-def]
 )
 async def export_prejob_training_plan(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
     service: EmployeeService = Depends(get_employee_service),
     session: AsyncSession = Depends(get_db),
@@ -414,6 +424,7 @@ async def export_prejob_training_plan(  # type: ignore[no-untyped-def]
 )
 async def export_prejob_training_plan_with_items(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
     items: list[PrejobTemplateItem] | None = Body(
         None, description="编辑后的培训计划内容（10行），不传则使用部门默认内容"
@@ -455,6 +466,7 @@ async def export_prejob_training_plan_with_items(  # type: ignore[no-untyped-def
 )
 async def export_onboarding_evaluation_by_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
     service: EmployeeService = Depends(get_employee_service),
     session: AsyncSession = Depends(get_db),
@@ -499,6 +511,7 @@ import zipfile  # noqa: E402
 @router.post("/training-sign-in-sheet", summary="生成培训签到表")
 async def export_training_sign_in_sheet(  # type: ignore[no-untyped-def]
     payload: TrainingSignInSheetInput,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
 ):
     """根据填写的培训信息自动生成培训签到表文档。
@@ -559,6 +572,7 @@ async def export_training_sign_in_sheet(  # type: ignore[no-untyped-def]
 @router.post("/training-notifications/send", summary="发送培训通知到飞书")
 async def send_training_notification(  # type: ignore[no-untyped-def]
     payload: TrainingNotifyInput,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     """根据填写的培训信息，向受训人员发送飞书单聊消息。"""
@@ -579,6 +593,7 @@ from app.platform.integrations.feishu.im import FeishuIM  # noqa: E402
 @router.post("/training-select-tasks/send", summary="发送飞书选择受训人员任务")
 async def send_training_select_task(  # type: ignore[no-untyped-def]
     payload: TrainingSelectTaskCreate,
+    current_user: RequiredUser,
     service: EmployeeService = Depends(get_employee_service),
 ):
     """创建临时选择任务，发送飞书消息给李文兆。"""
@@ -663,7 +678,10 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
 
 
 @router.get("/training-select-tasks/{token}", summary="获取选择任务")
-async def get_training_select_task(token: str):  # type: ignore[no-untyped-def]
+async def get_training_select_task(
+    token: str,
+    current_user: RequiredUser,
+):  # type: ignore[no-untyped-def]
     """根据 token 获取临时选择任务详情。"""
     cache_key = f"training_select:{token}"
     data = await cache_get(cache_key)
@@ -676,6 +694,7 @@ async def get_training_select_task(token: str):  # type: ignore[no-untyped-def]
 async def submit_training_select_task(  # type: ignore[no-untyped-def]
     token: str,
     payload: TrainingSelectTaskSubmit,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     """提交选择的受训人员，返回培训信息 + 选择的人员。"""
@@ -712,7 +731,9 @@ async def submit_training_select_task(  # type: ignore[no-untyped-def]
 
 
 @router.get("/training-select-tasks", summary="获取培训选择任务列表")
-async def list_training_select_tasks():  # type: ignore[no-untyped-def]
+async def list_training_select_tasks(
+    current_user: RequiredUser,
+):  # type: ignore[no-untyped-def]
     """获取所有已发送的培训选择任务列表。"""
     list_key = "training_select_list"
     existing = await cache_get(list_key)
@@ -748,7 +769,10 @@ async def list_training_select_tasks():  # type: ignore[no-untyped-def]
 
 
 @router.get("/training-select-tasks/{token}/result", summary="获取选择结果")
-async def get_training_select_task_result(token: str):  # type: ignore[no-untyped-def]
+async def get_training_select_task_result(
+    token: str,
+    current_user: RequiredUser,
+):  # type: ignore[no-untyped-def]
     """根据 token 获取已提交的选择结果。"""
     cache_key = f"training_select:{token}"
     data = await cache_get(cache_key)
@@ -763,6 +787,7 @@ async def get_training_select_task_result(token: str):  # type: ignore[no-untype
 @router.post("/training-notification", summary="生成培训通知")
 async def export_training_notification(  # type: ignore[no-untyped-def]
     payload: TrainingNotificationInput,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂区: old=旧厂, new=新厂"),
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
@@ -810,6 +835,7 @@ async def export_training_notification(  # type: ignore[no-untyped-def]
 @router.post("/training-evaluation", summary="生成培训效果评估表")
 async def export_training_evaluation(  # type: ignore[no-untyped-def]
     payload: TrainingEvaluationInput,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
 ):
     """根据填写的培训信息自动生成培训效果评估表文档。"""
@@ -837,6 +863,7 @@ async def export_training_evaluation(  # type: ignore[no-untyped-def]
 @router.post("/onboarding-evaluation", summary="生成员工上岗评估表")
 async def export_onboarding_evaluation(  # type: ignore[no-untyped-def]
     payload: OnboardingEvaluationInput,
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
 ):
     """根据填写的评估信息自动生成员工上岗评估表文档。"""
@@ -866,6 +893,7 @@ async def export_onboarding_evaluation(  # type: ignore[no-untyped-def]
 
 @router.get("/departments", summary="部门列表")
 async def list_departments(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     keyword: str | None = Query(None, description="部门名称或编码关键词"),
     page_params: PageParams = Depends(),
     service: DepartmentService = Depends(get_department_service),
@@ -887,6 +915,7 @@ async def list_departments(  # type: ignore[no-untyped-def]
 @router.post("/departments", summary="创建部门")
 async def create_department(  # type: ignore[no-untyped-def]
     payload: DepartmentCreate,
+    current_user: RequiredUser,
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.create_department(payload)
@@ -900,6 +929,7 @@ async def create_department(  # type: ignore[no-untyped-def]
 @router.get("/departments/{department_id}", summary="部门详情")
 async def get_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
+    current_user: RequiredUser,
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.get_department(department_id)
@@ -912,6 +942,7 @@ async def get_department(  # type: ignore[no-untyped-def]
 async def update_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
     payload: DepartmentUpdate,
+    current_user: RequiredUser,
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.update_department(department_id, payload)
@@ -924,6 +955,7 @@ async def update_department(  # type: ignore[no-untyped-def]
 @router.delete("/departments/{department_id}", summary="删除部门")
 async def delete_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
+    current_user: RequiredUser,
     service: DepartmentService = Depends(get_department_service),
 ):
     await service.delete_department(department_id)
@@ -936,6 +968,7 @@ if DepartmentProductionSettings is not None:
     async def set_department_production(  # type: ignore[no-untyped-def]
         department_id: UUID,
         payload: DepartmentProductionSettings,
+        current_user: RequiredUser,
         service: DepartmentService = Depends(get_department_service),
     ):
         """设置部门是否为生产部门及生产班次时间。"""
@@ -955,6 +988,7 @@ if DepartmentProductionSettings is not None:
 
 @router.get("/teams", summary="班组列表")
 async def list_teams(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department_id: UUID | None = Query(None, description="部门筛选"),
     keyword: str | None = Query(None, description="班组名称或编码关键词"),
     page_params: PageParams = Depends(),
@@ -978,6 +1012,7 @@ async def list_teams(  # type: ignore[no-untyped-def]
 @router.post("/teams", summary="创建班组")
 async def create_team(  # type: ignore[no-untyped-def]
     payload: TeamCreate,
+    current_user: RequiredUser,
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.create_team(payload)
@@ -991,6 +1026,7 @@ async def create_team(  # type: ignore[no-untyped-def]
 @router.get("/teams/{team_id}", summary="班组详情")
 async def get_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
+    current_user: RequiredUser,
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.get_team(team_id)
@@ -1003,6 +1039,7 @@ async def get_team(  # type: ignore[no-untyped-def]
 async def update_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
     payload: TeamUpdate,
+    current_user: RequiredUser,
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.update_team(team_id, payload)
@@ -1015,6 +1052,7 @@ async def update_team(  # type: ignore[no-untyped-def]
 @router.delete("/teams/{team_id}", summary="删除班组")
 async def delete_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
+    current_user: RequiredUser,
     service: TeamService = Depends(get_team_service),
 ):
     await service.delete_team(team_id)
@@ -1026,6 +1064,7 @@ async def delete_team(  # type: ignore[no-untyped-def]
 
 @router.get("/offboarding-records", summary="离职记录列表")
 async def list_offboarding_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     employee_id: UUID | None = Query(None, description="员工ID筛选"),
     keyword: str | None = Query(None, description="姓名或工号关键词"),
     page_params: PageParams = Depends(),
@@ -1049,6 +1088,7 @@ async def list_offboarding_records(  # type: ignore[no-untyped-def]
 @router.post("/offboarding-records", summary="创建离职记录")
 async def create_offboarding_record(  # type: ignore[no-untyped-def]
     payload: OffboardingRecordCreate,
+    current_user: RequiredUser,
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     record = await service.create_record(payload)
@@ -1074,6 +1114,7 @@ async def create_offboarding_record(  # type: ignore[no-untyped-def]
 @router.get("/offboarding-records/{record_id}", summary="离职记录详情")
 async def get_offboarding_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     record = await service.get_record(record_id)
@@ -1086,6 +1127,7 @@ async def get_offboarding_record(  # type: ignore[no-untyped-def]
 async def update_offboarding_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
     payload: OffboardingRecordUpdate,
+    current_user: RequiredUser,
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     record = await service.update_record(record_id, payload)
@@ -1098,6 +1140,7 @@ async def update_offboarding_record(  # type: ignore[no-untyped-def]
 @router.delete("/offboarding-records/{record_id}", summary="删除离职记录")
 async def delete_offboarding_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     await service.delete_record(record_id)
@@ -1109,6 +1152,7 @@ async def delete_offboarding_record(  # type: ignore[no-untyped-def]
 
 @router.get("/onboarding-records", summary="老厂入职台账列表")
 async def list_onboarding_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None, description="部门筛选"),
     position: str | None = Query(None, description="岗位筛选"),
     is_employed: str | None = Query(None, description="是否在职筛选"),
@@ -1139,6 +1183,7 @@ async def list_onboarding_records(  # type: ignore[no-untyped-def]
 
 @router.post("/onboarding-records/sync-from-feishu", summary="从飞书同步老厂入职台账")
 async def sync_onboarding_from_feishu(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: OnboardingRecordService = Depends(get_onboarding_service),
 ):
     """手动触发：从飞书多维表格拉取全部老厂入职数据并 upsert 到本地 PG。"""
@@ -1152,6 +1197,7 @@ async def sync_onboarding_from_feishu(  # type: ignore[no-untyped-def]
 
 @router.get("/onboarding-records/sync-status", summary="老厂入职台账同步状态")
 async def get_onboarding_sync_status(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: OnboardingRecordService = Depends(get_onboarding_service),
 ):
     """查看本地与飞书的数据同步统计。"""
@@ -1164,6 +1210,7 @@ async def get_onboarding_sync_status(  # type: ignore[no-untyped-def]
 @router.get("/onboarding-records/{record_id}", summary="入职记录详情")
 async def get_onboarding_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: OnboardingRecordService = Depends(get_onboarding_service),
 ):
     record = await service.get_record(record_id)
@@ -1177,6 +1224,7 @@ async def get_onboarding_record(  # type: ignore[no-untyped-def]
 
 @router.get("/departure-records", summary="老厂离职台账列表")
 async def list_departure_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None, description="部门筛选"),
     offboarding_type: str | None = Query(None, description="离职类型筛选"),
     keyword: str | None = Query(None, description="姓名/部门/职位关键词"),
@@ -1206,6 +1254,7 @@ async def list_departure_records(  # type: ignore[no-untyped-def]
 @router.post("/departure-records", summary="创建离职台账记录")
 async def create_departure_record(  # type: ignore[no-untyped-def]
     payload: DepartureRecordCreate,
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.create_record(payload)
@@ -1219,6 +1268,7 @@ async def create_departure_record(  # type: ignore[no-untyped-def]
 @router.get("/departure-records/{record_id}", summary="离职台账记录详情")
 async def get_departure_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.get_record(record_id)
@@ -1231,6 +1281,7 @@ async def get_departure_record(  # type: ignore[no-untyped-def]
 async def update_departure_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
     payload: DepartureRecordUpdate,
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.update_record(record_id, payload)
@@ -1243,6 +1294,7 @@ async def update_departure_record(  # type: ignore[no-untyped-def]
 @router.delete("/departure-records/{record_id}", summary="删除离职台账记录")
 async def delete_departure_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     await service.delete_record(record_id)
@@ -1251,6 +1303,7 @@ async def delete_departure_record(  # type: ignore[no-untyped-def]
 
 @router.post("/departure-records/sync-from-feishu", summary="从飞书同步老厂离职台账")
 async def sync_departure_from_feishu(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     """手动触发：从飞书多维表格拉取全部老厂离职数据并 upsert 到本地 PG。"""
@@ -1264,6 +1317,7 @@ async def sync_departure_from_feishu(  # type: ignore[no-untyped-def]
 
 @router.get("/departure-records/sync-status", summary="老厂离职台账同步状态")
 async def get_departure_sync_status(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     """查看本地与飞书的数据同步统计。"""
@@ -1278,6 +1332,7 @@ async def get_departure_sync_status(  # type: ignore[no-untyped-def]
 
 @router.get("/training-ledgers", summary="培训台账列表")
 async def list_training_ledgers(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     employee_number: str | None = Query(None, description="工号筛选"),
     date_from: date | None = Query(None, description="培训日期起"),
     date_to: date | None = Query(None, description="培训日期止"),
@@ -1305,6 +1360,7 @@ async def list_training_ledgers(  # type: ignore[no-untyped-def]
 @router.post("/training-ledgers", summary="创建培训台账记录")
 async def create_training_ledger(  # type: ignore[no-untyped-def]
     payload: TrainingLedgerCreate,
+    current_user: RequiredUser,
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.create_record(payload)
@@ -1320,6 +1376,7 @@ async def create_training_ledger(  # type: ignore[no-untyped-def]
 
 @router.get("/training-ledgers/pages", summary="已创建的培训台账页面列表")
 async def list_training_ledger_pages(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: TrainingLedgerPageService = Depends(get_training_ledger_page_service),
 ):
     pages_with_dept = await service.list_pages_with_department()
@@ -1342,6 +1399,7 @@ async def list_training_ledger_pages(  # type: ignore[no-untyped-def]
 @router.post("/training-ledgers/pages", summary="创建培训台账页面")
 async def create_training_ledger_page(  # type: ignore[no-untyped-def]
     payload: TrainingLedgerPageCreate,
+    current_user: RequiredUser,
     service: TrainingLedgerPageService = Depends(get_training_ledger_page_service),
 ):
     page = await service.create_page(payload)
@@ -1515,6 +1573,7 @@ def _generate_training_ledger_excel(employee: dict, records: list[dict]) -> Byte
 
 @router.get("/training-ledgers/export", summary="导出培训台账")
 async def export_training_ledger(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     employee_number: str = Query(..., description="员工工号"),
     ledger_type: str = Query("event", description="台账类型: event=事件台账, sop=SOP培训台账"),
     factory: str = Query("old", description="厂区: old=旧厂, new=新厂"),
@@ -1561,6 +1620,7 @@ async def export_training_ledger(  # type: ignore[no-untyped-def]
 @router.get("/training-ledgers/{record_id}", summary="培训台账记录详情")
 async def get_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.get_record(record_id)
@@ -1573,6 +1633,7 @@ async def get_training_ledger(  # type: ignore[no-untyped-def]
 async def update_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
     payload: TrainingLedgerUpdate,
+    current_user: RequiredUser,
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.update_record(record_id, payload)
@@ -1585,6 +1646,7 @@ async def update_training_ledger(  # type: ignore[no-untyped-def]
 @router.delete("/training-ledgers/{record_id}", summary="删除培训台账记录")
 async def delete_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
+    current_user: RequiredUser,
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     await service.delete_record(record_id)
@@ -1596,6 +1658,7 @@ async def delete_training_ledger(  # type: ignore[no-untyped-def]
 
 @router.get("/annual-training-plans", summary="年度培训计划列表")
 async def list_annual_training_plans(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     year: int | None = Query(None, description="年度筛选"),
     department: str | None = Query(None, description="部门筛选"),
     page_params: PageParams = Depends(),
@@ -1619,6 +1682,7 @@ async def list_annual_training_plans(  # type: ignore[no-untyped-def]
 @router.post("/annual-training-plans", summary="创建年度培训计划")
 async def create_annual_training_plan(  # type: ignore[no-untyped-def]
     payload: AnnualTrainingPlanCreate,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.create_plan(payload)
@@ -1632,6 +1696,7 @@ async def create_annual_training_plan(  # type: ignore[no-untyped-def]
 @router.get("/annual-training-plans/{plan_id}", summary="年度培训计划详情")
 async def get_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.get_plan(plan_id)
@@ -1644,6 +1709,7 @@ async def get_annual_training_plan(  # type: ignore[no-untyped-def]
 async def update_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     payload: AnnualTrainingPlanUpdate,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.update_plan(plan_id, payload)
@@ -1656,6 +1722,7 @@ async def update_annual_training_plan(  # type: ignore[no-untyped-def]
 @router.delete("/annual-training-plans/{plan_id}", summary="删除年度培训计划")
 async def delete_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     await service.delete_plan(plan_id)
@@ -1665,6 +1732,7 @@ async def delete_annual_training_plan(  # type: ignore[no-untyped-def]
 @router.get("/annual-training-plans/{plan_id}/items", summary="年度计划明细列表")
 async def list_annual_training_plan_items(  # type: ignore[no-untyped-def]
     plan_id: UUID,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
 ):
     items = await service.list_items(plan_id)
@@ -1676,6 +1744,7 @@ async def list_annual_training_plan_items(  # type: ignore[no-untyped-def]
 async def batch_update_annual_training_plan_items(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     payload: AnnualTrainingPlanItemBatchUpdate,
+    current_user: RequiredUser,
     service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
 ):
     items = await service.batch_update_items(plan_id, payload)
@@ -1808,6 +1877,7 @@ def _generate_annual_plan_excel(plan: dict, items: list[dict]) -> BytesIO:  # ty
 @router.get("/annual-training-plans/{plan_id}/export", summary="导出年度培训计划Excel")
 async def export_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
+    current_user: RequiredUser,
     plan_service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
     item_service: AnnualTrainingPlanItemService = Depends(get_annual_training_plan_item_service),
 ):
@@ -1891,6 +1961,7 @@ async def _query_clone_table(
 
 @router.get("/new/employees", summary="新厂员工列表")
 async def list_new_employees(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None),
     status: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1934,6 +2005,7 @@ async def list_new_employees(  # type: ignore[no-untyped-def]
 
 @router.get("/new/onboarding-records", summary="新厂入职台账列表")
 async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None),
     position: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1967,6 +2039,7 @@ async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
 
 @router.get("/new/departure-records", summary="新厂离职台账列表")
 async def list_new_departure_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None),
     offboarding_type: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -2000,6 +2073,7 @@ async def list_new_departure_records(  # type: ignore[no-untyped-def]
 
 @router.get("/new/offboarding-records", summary="新厂离职管理列表")
 async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None),
     offboarding_type: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -2034,6 +2108,7 @@ async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
 
 @router.get("/new/departments", summary="新厂部门列表")
 async def list_new_departments(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     keyword: str | None = Query(None),
     page_params: PageParams = Depends(),
     session: AsyncSession = Depends(get_db),
@@ -2117,6 +2192,7 @@ if attendance_router is not None:
 
 @router.get("/candidates", summary="候选人列表")
 async def list_candidates(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     position: str | None = Query(None, description="职位筛选"),
     education: str | None = Query(None, description="学历筛选"),
     recommendation_level: str | None = Query(None, description="推荐等级筛选（支持逗号分隔多个值）"),
@@ -2146,6 +2222,7 @@ async def list_candidates(  # type: ignore[no-untyped-def]
 
 @router.post("/candidates/parse-preview", summary="预览简历AI解析结果")
 async def preview_resume_parse(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     resume: UploadFile = File(..., description="简历 PDF 附件"),
     position: str = Form(..., max_length=64, description="应聘职位名称"),
     service: CandidateService = Depends(get_candidate_service),
@@ -2158,6 +2235,7 @@ async def preview_resume_parse(  # type: ignore[no-untyped-def]
 
 @router.post("/candidates", summary="新建候选人")
 async def create_candidate(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     name: str = Form(..., max_length=64, description="候选人姓名"),
     position: str = Form(..., max_length=64, description="应聘职位名称"),
     resume: UploadFile = File(..., description="简历 PDF 附件"),
@@ -2191,6 +2269,7 @@ async def create_candidate(  # type: ignore[no-untyped-def]
 
 @router.post("/candidates/sync-from-feishu", summary="从飞书同步候选人数据")
 async def sync_candidates_from_feishu(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     """手动触发：从飞书多维表格拉取全部候选人数据并 upsert 到本地 PG。"""
@@ -2204,6 +2283,7 @@ async def sync_candidates_from_feishu(  # type: ignore[no-untyped-def]
 
 @router.get("/candidates/sync-status", summary="候选人同步状态")
 async def get_candidates_sync_status(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     """查看本地与飞书的候选人数据同步统计。"""
@@ -2216,6 +2296,7 @@ async def get_candidates_sync_status(  # type: ignore[no-untyped-def]
 @router.post("/candidates/{candidate_id}/sync-to-feishu", summary="同步候选人到飞书")
 async def sync_candidate_to_feishu(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     """手动触发：将单个候选人（含简历）同步到飞书多维表格。"""
@@ -2229,6 +2310,7 @@ async def sync_candidate_to_feishu(  # type: ignore[no-untyped-def]
 @router.get("/candidates/{candidate_id}", summary="候选人详情")
 async def get_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.get_candidate(candidate_id)
@@ -2241,6 +2323,7 @@ async def get_candidate(  # type: ignore[no-untyped-def]
 async def update_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     payload: CandidateUpdate,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.update_candidate(candidate_id, payload)
@@ -2253,6 +2336,7 @@ async def update_candidate(  # type: ignore[no-untyped-def]
 @router.delete("/candidates/{candidate_id}", summary="删除候选人")
 async def delete_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     await service.delete_candidate(candidate_id)
@@ -2263,6 +2347,7 @@ async def delete_candidate(  # type: ignore[no-untyped-def]
 async def update_candidate_recommendation_level(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     payload: CandidateUpdateRecommendationLevel,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.update_recommendation_level(candidate_id, payload.recommendation_level)
@@ -2275,6 +2360,7 @@ async def update_candidate_recommendation_level(  # type: ignore[no-untyped-def]
 @router.get("/candidates/{candidate_id}/resume-preview", summary="简历预览")
 async def preview_candidate_resume(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
+    current_user: RequiredUser,
     service: CandidateService = Depends(get_candidate_service),
 ):
     """获取候选人简历 PDF。优先读取本地存储，若不存在则从飞书下载。"""
@@ -2331,6 +2417,7 @@ async def preview_candidate_resume(  # type: ignore[no-untyped-def]
 
 @router.get("/training-sessions", summary="培训记录列表")
 async def list_training_sessions(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str | None = Query(None, description="部门筛选"),
     keyword: str | None = Query(None, description="主题或培训师关键词"),
     date_from: date | None = Query(None, description="日期起始"),
@@ -2358,6 +2445,7 @@ async def list_training_sessions(  # type: ignore[no-untyped-def]
 @router.post("/training-sessions", summary="创建培训记录")
 async def create_training_session(  # type: ignore[no-untyped-def]
     payload: TrainingSessionCreate,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.create_session(payload)
@@ -2372,6 +2460,7 @@ async def create_training_session(  # type: ignore[no-untyped-def]
 async def update_training_session_status(  # type: ignore[no-untyped-def]
     session_id: UUID,
     payload: TrainingSessionStatusUpdate,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.update_status(session_id, payload.status)
@@ -2384,6 +2473,7 @@ async def update_training_session_status(  # type: ignore[no-untyped-def]
 @router.get("/training-sessions/{session_id}", summary="培训记录详情")
 async def get_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.get_session(session_id)
@@ -2396,6 +2486,7 @@ async def get_training_session(  # type: ignore[no-untyped-def]
 async def update_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
     payload: TrainingSessionUpdate,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.update_session(session_id, payload)
@@ -2408,6 +2499,7 @@ async def update_training_session(  # type: ignore[no-untyped-def]
 @router.delete("/training-sessions/{session_id}", summary="删除培训记录")
 async def delete_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     await service.delete_session(session_id)
@@ -2420,6 +2512,7 @@ async def delete_training_session(  # type: ignore[no-untyped-def]
 )
 async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
     session_id: UUID,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
     employee_service: EmployeeService = Depends(get_employee_service),
 ):
@@ -2571,6 +2664,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
 @router.get("/training-sessions/{session_id}/select-tasks", summary="获取培训记录的选择任务列表")
 async def get_training_session_select_tasks(  # type: ignore[no-untyped-def]
     session_id: UUID,
+    current_user: RequiredUser,
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     """获取培训记录的多部门选择任务列表。"""
@@ -2589,6 +2683,7 @@ def get_specialist_repo(
 
 @router.get("/training-specialists", summary="培训专员列表")
 async def list_training_specialists(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
 ):
     specialists = await repo.list_all()
@@ -2609,6 +2704,7 @@ async def list_training_specialists(  # type: ignore[no-untyped-def]
 @router.post("/training-specialists", summary="新增或更新培训专员")
 async def upsert_training_specialist(  # type: ignore[no-untyped-def]
     payload: TrainingSpecialistCreate,
+    current_user: RequiredUser,
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
 ):
     s = await repo.upsert(  # type: ignore[attr-defined]
@@ -2632,6 +2728,7 @@ async def upsert_training_specialist(  # type: ignore[no-untyped-def]
 @router.delete("/training-specialists/{specialist_id}", summary="删除培训专员")
 async def delete_training_specialist(  # type: ignore[no-untyped-def]
     specialist_id: UUID,
+    current_user: RequiredUser,
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
 ):
     await repo.delete(specialist_id)
@@ -2640,6 +2737,7 @@ async def delete_training_specialist(  # type: ignore[no-untyped-def]
 
 @router.post("/training-specialists/sync-feishu-openids", summary="同步培训专员飞书 open_id")
 async def sync_specialist_feishu_openids(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
     employee_service: EmployeeService = Depends(get_employee_service),
 ):
@@ -2731,6 +2829,7 @@ def get_team_repo(session: AsyncSession = Depends(get_db)) -> TrainingTeamReposi
 
 @router.get("/training-teams", summary="自定义受训班组列表")
 async def list_training_teams(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     factory: str = Query("old", description="厂区: old=旧厂, new=新厂"),
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
@@ -2754,6 +2853,7 @@ async def list_training_teams(  # type: ignore[no-untyped-def]
 @router.post("/training-teams", summary="新增自定义受训班组")
 async def create_training_team(  # type: ignore[no-untyped-def]
     payload: TrainingTeamCreate,
+    current_user: RequiredUser,
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     t = await repo.create(payload)
@@ -2767,6 +2867,7 @@ async def create_training_team(  # type: ignore[no-untyped-def]
 async def update_training_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
     payload: TrainingTeamUpdate,
+    current_user: RequiredUser,
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     t = await repo.update(team_id, payload)
@@ -2779,6 +2880,7 @@ async def update_training_team(  # type: ignore[no-untyped-def]
 @router.delete("/training-teams/{team_id}", summary="删除自定义受训班组")
 async def delete_training_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
+    current_user: RequiredUser,
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     await repo.delete(team_id)
@@ -2799,6 +2901,7 @@ def get_prejob_template_repo(
     summary="获取部门岗前培训计划模板",
 )
 async def get_prejob_template(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     department: str = Query(..., description="部门名称"),
     factory: str = Query("old", description="厂区: old=旧厂, new=新厂"),
     repo: PrejobTemplateRepository = Depends(get_prejob_template_repo),
@@ -2816,6 +2919,7 @@ async def get_prejob_template(  # type: ignore[no-untyped-def]
 )
 async def save_prejob_template(  # type: ignore[no-untyped-def]
     payload: PrejobTemplateCreate,
+    current_user: RequiredUser,
     repo: PrejobTemplateRepository = Depends(get_prejob_template_repo),
 ):
     """保存（新增或覆盖）指定部门+厂区的岗前培训计划模板。"""
@@ -2855,6 +2959,7 @@ def _get_setting_value(settings, key: str) -> str:
 
 @router.get("/system-settings", summary="获取系统设置")
 async def get_system_settings(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     session: AsyncSession = Depends(get_db),
 ):
     """获取所有系统配置。secret 类字段仅返回尾部 4 位。"""
@@ -2874,6 +2979,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
 
 @router.put("/system-settings", summary="保存系统设置")
 async def save_system_settings(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     payload: dict = Body(...),  # type: ignore[type-arg]
     session: AsyncSession = Depends(get_db),
 ):
