@@ -623,7 +623,7 @@ CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并�
 ## Docker 开发环境
 
 两种 docker-compose 配置：
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新，位于仓库根目录）
+- `docker-compose.yml` — 生产构建（`next build` → `node .next/standalone/server.js`，无热更新，位于仓库根目录）
 - `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新，位于仓库根目录）
 
 开发时**必须**使用：
