@@ -43,7 +43,6 @@ from app.modules.equipment.service import inspection as inspection_svc
 router = APIRouter()
 
 
-
 def _task_to_response(task: InspectionTask) -> InspectionTaskResponse:
     """将 ORM InspectionTask 转为响应对象，填充关联名称。
     要求调用方已通过 selectinload 预加载 route/equipment/template 关系。"""

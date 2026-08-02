@@ -24,7 +24,6 @@ from app.modules.safety.service import (
 scheduled_tasks_router = APIRouter()
 
 
-
 @scheduled_tasks_router.get(
     "/scheduled-tasks/data-source-options", response_model=ApiResponse, summary="获取可用数据来源选项"
 )

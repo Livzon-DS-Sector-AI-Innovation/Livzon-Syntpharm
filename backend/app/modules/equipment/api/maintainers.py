@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-
 @router.get("/maintainers", summary="获取设备模块维修人员列表")
 async def list_maintainers(
     current_user: RequiredUser = None,

@@ -26,7 +26,6 @@ from app.modules.quality.qms.material_report_service import (
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
 
-
 # ============ 报告单 API ============
 
 

@@ -21,7 +21,6 @@ from app.modules.equipment.schemas import (
 router = APIRouter()
 
 
-
 # ---------- 校准计划 ----------
 @router.post("/plans", summary="新增校准计划")
 async def create_calibration_plan(

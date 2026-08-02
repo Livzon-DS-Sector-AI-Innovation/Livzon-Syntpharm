@@ -27,7 +27,6 @@ from app.modules.safety.service import (
 ai_workflow_router = APIRouter()
 
 
-
 @ai_workflow_router.get(
     "/ai-workflow-configs",
     response_model=ApiResponse,
