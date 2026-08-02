@@ -1,8 +1,9 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
-const API_BASE = process.env.API_BASE_URL
-  ? `${process.env.API_BASE_URL}/api/v1`
-  : 'http://dazah-backend-app-1:8000/api/v1'
+function getApiBase(): string {
+  const u = process.env.API_BASE_URL
+  return u ? `${u}/api/v1` : 'http://dazah-backend-app-1:8000/api/v1'
+}
 
 function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams()
@@ -23,14 +24,14 @@ async function safeApiFetch<T>(
   let response: Response
   try {
     const headers = { ...authHeaders, ...(options?.headers || {}) }
-    response = await fetch(`${API_BASE}${endpoint}`, {
+    response = await fetch(`${getApiBase()}${endpoint}`, {
       ...options,
       headers,
     })
   } catch {
     return {
       code: -1,
-      message: `网络请求失败，无法连接到后端服务 (${API_BASE}${endpoint})`,
+      message: `网络请求失败，无法连接到后端服务 (${getApiBase()}${endpoint})`,
       data: null as unknown as T,
     }
   }
@@ -64,7 +65,7 @@ async function uploadFetch(
   authHeaders?: Record<string, string>
 ): Promise<any> {
   const { 'Content-Type': _, ...uploadHeaders } = authHeaders || {}
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${getApiBase()}${endpoint}`, {
     method: 'POST',
     headers: uploadHeaders,
     body: formData,
@@ -582,7 +583,7 @@ export async function parseHazardExportQuery(naturalQuery: string, authHeaders?:
 }
 
 export async function exportHazardLedgerPdf(data: any, authHeaders?: Record<string, string>) {
-  const response = await fetch(`${API_BASE}/safety/hazard-identifications/export-pdf`, {
+  const response = await fetch(`${getApiBase()}/safety/hazard-identifications/export-pdf`, {
     method: 'POST',
     headers: authHeaders || {},
     body: JSON.stringify(data),
@@ -652,7 +653,7 @@ export async function updateSopContent(regulationId: string, data: any, authHead
 
 export async function exportSopPdf(regulationId: string, authHeaders?: Record<string, string>) {
   const { 'Content-Type': _, ...headers } = authHeaders || {}
-  const response = await fetch(`${API_BASE}/safety/regulations/${regulationId}/export`, {
+  const response = await fetch(`${getApiBase()}/safety/regulations/${regulationId}/export`, {
     method: 'POST',
     headers,
     cache: 'no-store',
@@ -667,7 +668,7 @@ export async function exportSopPdf(regulationId: string, authHeaders?: Record<st
 
 export async function exportRegulationPdfBase64(regulationId: string, authHeaders?: Record<string, string>) {
   const { 'Content-Type': _, ...headers } = authHeaders || {}
-  const response = await fetch(`${API_BASE}/safety/regulations/${regulationId}/export`, {
+  const response = await fetch(`${getApiBase()}/safety/regulations/${regulationId}/export`, {
     method: 'POST',
     headers,
     cache: 'no-store',
@@ -1434,7 +1435,7 @@ export async function parseSpecialOpsExportQuery(query: string, authHeaders?: Re
 }
 
 export async function exportSpecialOpsLedger(data: any) {
-  const response = await fetch(`${API_BASE}/safety/special-ops/export`, {
+  const response = await fetch(`${getApiBase()}/safety/special-ops/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1712,4 +1713,4 @@ export async function deleteHazardRevisionArchive(id: string, authHeaders?: Reco
   })
 }
 
-export { buildQueryString, API_BASE }
+export { buildQueryString, getApiBase }

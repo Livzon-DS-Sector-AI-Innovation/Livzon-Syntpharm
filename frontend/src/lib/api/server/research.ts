@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import type { OptimizationCreate, OptimizationUpdate, ProcessOptimization, RouteCreate, RouteUpdate, RouteDevelopment } from '@/types/research'
 import type { components } from '@/types/generated/schema'
 
@@ -14,7 +14,7 @@ type RdRegistrationFilingCreate = Omit<components['schemas']['RdRegistrationFili
 type RdRegistrationFilingUpdate = components['schemas']['RdRegistrationFilingUpdate']
 
 async function uploadFetch<T>(url: string, formData: FormData): Promise<T> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+  const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
   const response = await fetch(fullUrl, {
     method: 'POST',
     body: formData,
@@ -44,7 +44,7 @@ export async function createDeliverable(data: {
   version?: string
   content?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-stage-deliverables`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -56,14 +56,14 @@ export async function updateDeliverable(id: string, data: {
   version?: string
   content?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-stage-deliverables/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDeliverable(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/rd-stage-deliverables/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -75,7 +75,7 @@ export async function deleteDeliverable(id: string) {
 }
 
 export async function uploadDeliverableFile(deliverableId: string, formData: FormData) {
-  return uploadFetch(`${API_BASE_URL}/api/v1/research/rd-stage-deliverables/${deliverableId}/upload`, formData)
+  return uploadFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${deliverableId}/upload`, formData)
 }
 
 // ===== modules.ts - Pilot Studies =====
@@ -92,7 +92,7 @@ export async function createPilotStudyDirect(data: {
   scale_up_effect?: Record<string, any>
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-pilot-studies`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -109,14 +109,14 @@ export async function updatePilotStudyDirect(id: string, data: {
   scale_up_effect?: Record<string, any>
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-pilot-studies/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deletePilotStudyDirect(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/rd-pilot-studies/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -138,7 +138,7 @@ export async function createValidationDirect(data: {
   validation_conclusion?: string
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-process-validations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-process-validations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -152,14 +152,14 @@ export async function updateValidationDirect(id: string, data: {
   validation_conclusion?: string
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-process-validations/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-process-validations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteValidationDirect(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/rd-process-validations/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-process-validations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -179,7 +179,7 @@ export async function createFilingDirect(data: {
   supplementary_docs?: Record<string, any>
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-registration-filings`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -192,14 +192,14 @@ export async function updateFilingDirect(id: string, data: {
   supplementary_docs?: Record<string, any>
   notes?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-registration-filings/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteFilingDirect(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/rd-registration-filings/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -212,7 +212,7 @@ export async function deleteFilingDirect(id: string) {
 // ===== modules.ts - Deletes =====
 
 export async function deleteExperimentLog(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/experiment-logs/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/experiment-logs/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -223,7 +223,7 @@ export async function deleteExperimentLog(id: string) {
 }
 
 export async function deleteReport(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/reports/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/reports/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -234,7 +234,7 @@ export async function deleteReport(id: string) {
 }
 
 export async function deleteInitiation(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/initiations/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/initiations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -245,7 +245,7 @@ export async function deleteInitiation(id: string) {
 }
 
 export async function deleteTrack(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/projects/tracks/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/projects/tracks/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -256,7 +256,7 @@ export async function deleteTrack(id: string) {
 }
 
 export async function deleteFinding(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/findings/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/findings/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -269,21 +269,21 @@ export async function deleteFinding(id: string) {
 // ===== process-optimization.ts =====
 
 export async function createOptimization(data: OptimizationCreate) {
-  return apiFetch<ProcessOptimization>(`${API_BASE_URL}/api/v1/research/optimizations`, {
+  return apiFetch<ProcessOptimization>(`${getApiBaseUrl()}/api/v1/research/optimizations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateOptimization(id: string, data: OptimizationUpdate) {
-  return apiFetch<ProcessOptimization>(`${API_BASE_URL}/api/v1/research/optimizations/${id}`, {
+  return apiFetch<ProcessOptimization>(`${getApiBaseUrl()}/api/v1/research/optimizations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteOptimization(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/optimizations/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/optimizations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -296,21 +296,21 @@ export async function deleteOptimization(id: string) {
 // ===== route-development.ts =====
 
 export async function createRoute(data: RouteCreate) {
-  return apiFetch<RouteDevelopment>(`${API_BASE_URL}/api/v1/research/routes`, {
+  return apiFetch<RouteDevelopment>(`${getApiBaseUrl()}/api/v1/research/routes`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateRoute(id: string, data: RouteUpdate) {
-  return apiFetch<RouteDevelopment>(`${API_BASE_URL}/api/v1/research/routes/${id}`, {
+  return apiFetch<RouteDevelopment>(`${getApiBaseUrl()}/api/v1/research/routes/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteRoute(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/routes/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/routes/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -323,21 +323,21 @@ export async function deleteRoute(id: string) {
 // ===== rd-project.ts - Projects =====
 
 export async function createRdProject(data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-projects`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateRdProject(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/rd-projects/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-projects/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteRdProject(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/rd-projects/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-projects/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -350,14 +350,14 @@ export async function deleteRdProject(id: string) {
 // ===== rd-project.ts - Milestones =====
 
 export async function createMilestone(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/milestones`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/milestones`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateMilestone(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/milestones/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/milestones/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -366,14 +366,14 @@ export async function updateMilestone(id: string, data: any) {
 // ===== rd-project.ts - Stages =====
 
 export async function createStage(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/stages`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/stages`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateStage(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/stages/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/stages/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -382,14 +382,14 @@ export async function updateStage(id: string, data: any) {
 // ===== rd-project.ts - Tracks =====
 
 export async function createTrack(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/tracks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/tracks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateTrack(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/tracks/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/tracks/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -398,14 +398,14 @@ export async function updateTrack(id: string, data: any) {
 // ===== rd-project.ts - Findings =====
 
 export async function createFinding(trackId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/tracks/${trackId}/findings`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/tracks/${trackId}/findings`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateFinding(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/findings/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/findings/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -414,7 +414,7 @@ export async function updateFinding(id: string, data: any) {
 // ===== rd-project.ts - Stage Transitions =====
 
 export async function doTransition(projectId: string, targetStage: string, reviewNotes?: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/stage-transitions`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/stage-transitions`, {
     method: 'POST',
     body: JSON.stringify({ target_stage: targetStage, review_notes: reviewNotes }),
   })
@@ -423,14 +423,14 @@ export async function doTransition(projectId: string, targetStage: string, revie
 // ===== rd-project.ts - Pilot Studies (nested) =====
 
 export async function createProjectPilotStudy(projectId: string, data: RdPilotStudyCreate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/pilot-studies`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/pilot-studies`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateProjectPilotStudy(id: string, data: RdPilotStudyUpdate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot-studies/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot-studies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -439,14 +439,14 @@ export async function updateProjectPilotStudy(id: string, data: RdPilotStudyUpda
 // ===== rd-project.ts - Process Validations (nested) =====
 
 export async function createProjectValidation(projectId: string, data: RdProcessValidationCreate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/process-validations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/process-validations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateProjectValidation(id: string, data: RdProcessValidationUpdate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/process-validations/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/process-validations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -455,14 +455,14 @@ export async function updateProjectValidation(id: string, data: RdProcessValidat
 // ===== rd-project.ts - Registration Filings (nested) =====
 
 export async function createProjectFiling(projectId: string, data: RdRegistrationFilingCreate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/registration-filings`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/registration-filings`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateProjectFiling(id: string, data: RdRegistrationFilingUpdate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/registration-filings/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/registration-filings/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -471,14 +471,14 @@ export async function updateProjectFiling(id: string, data: RdRegistrationFiling
 // ===== rd-project.ts - Experiment Logs =====
 
 export async function createExperimentLog(projectId: string, data: RdExperimentLogCreate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/experiment-logs`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/experiment-logs`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateExperimentLog(id: string, data: RdExperimentLogUpdate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/experiment-logs/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/experiment-logs/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -487,14 +487,14 @@ export async function updateExperimentLog(id: string, data: RdExperimentLogUpdat
 // ===== rd-project.ts - Reports =====
 
 export async function createReport(projectId: string, data: RdReportCreate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/reports`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/reports`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateReport(id: string, data: RdReportUpdate) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/reports/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/reports/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -503,14 +503,14 @@ export async function updateReport(id: string, data: RdReportUpdate) {
 // ===== rd-project.ts - Initiations =====
 
 export async function createInitiation(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/initiations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/initiations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateInitiation(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/initiations/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/initiations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -519,21 +519,21 @@ export async function updateInitiation(id: string, data: any) {
 // ===== rd-project.ts - Deliverable Templates =====
 
 export async function createDeliverableTemplate(data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/deliverable-templates`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDeliverableTemplate(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/deliverable-templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDeliverableTemplate(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/deliverable-templates/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -546,21 +546,21 @@ export async function deleteDeliverableTemplate(id: string) {
 // ===== rd-project.ts - Stage Deliverables =====
 
 export async function createStageDeliverable(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}/stage-deliverables`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/stage-deliverables`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateStageDeliverable(id: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/stage-deliverables/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/stage-deliverables/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteStageDeliverable(id: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/stage-deliverables/${id}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/stage-deliverables/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -578,7 +578,7 @@ export async function publishConclusionVersion(trackId: string, data: {
   change_summary?: string
   evidence_refs?: Record<string, unknown>
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/tracks/${trackId}/conclusion-versions`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/tracks/${trackId}/conclusion-versions`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -592,7 +592,7 @@ export async function generateReport(data: {
   template_id?: string
   additional_context?: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/generate-report`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/generate-report`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -601,21 +601,21 @@ export async function generateReport(data: {
 // ===== research.ts - Projects =====
 
 export async function createResearchProject(data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateResearchProject(projectId: string, data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteResearchProject(projectId: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -628,30 +628,30 @@ export async function deleteResearchProject(projectId: string) {
 // ===== research.ts - Pilot Workflow =====
 
 export async function createPilotWorkflow(data: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function startPilotWorkflow(workflowId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow/${workflowId}/start`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}/start`, {
     method: 'POST',
   })
 }
 
 export async function approvePilotWorkflowStep(workflowId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow/${workflowId}/approve`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}/approve`, {
     method: 'POST',
   })
 }
 
 export async function uploadPilotWorkflowDocument(workflowId: string, formData: FormData) {
-  return uploadFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow/${workflowId}/upload`, formData)
+  return uploadFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}/upload`, formData)
 }
 
 export async function deletePilotWorkflow(workflowId: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/pilot/workflow/${workflowId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -669,7 +669,7 @@ export async function fetchResearchProjects(params: any = {}) {
   if (params.status) searchParams.set('status', params.status)
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects?${searchParams.toString()}`)
 }
 
 export async function fetchRoutes(params: any = {}) {
@@ -679,7 +679,7 @@ export async function fetchRoutes(params: any = {}) {
   if (params.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
-  return apiFetch(`${API_BASE_URL}/api/v1/research/routes?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/routes?${searchParams.toString()}`)
 }
 
 export async function fetchPilotWorkflows(params: any = {}) {
@@ -688,25 +688,25 @@ export async function fetchPilotWorkflows(params: any = {}) {
   if (params.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow?${searchParams.toString()}`)
 }
 
 export async function fetchPilotWorkflow(workflowId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/pilot/workflow/${workflowId}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}`)
 }
 
 export async function fetchResearchProject(projectId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/projects/${projectId}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`)
 }
 
 // ===== research.ts - ICH =====
 
 export async function analyzeICHFile(formData: FormData) {
-  return uploadFetch(`${API_BASE_URL}/api/v1/research/ich/analyze?use_llm=true`, formData)
+  return uploadFetch(`${getApiBaseUrl()}/api/v1/research/ich/analyze?use_llm=true`, formData)
 }
 
 export async function deleteICHRecord(recordId: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/research/ich/records/${recordId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/ich/records/${recordId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -720,7 +720,7 @@ export async function deleteICHRecord(recordId: string) {
 // ===== research.ts - EDBO =====
 
 export async function runEDBOOptimize(formData: FormData) {
-  return uploadFetch(`${API_BASE_URL}/api/v1/research/edbo/optimize`, formData)
+  return uploadFetch(`${getApiBaseUrl()}/api/v1/research/edbo/optimize`, formData)
 }
 
 export async function generateReactionScope(data: {
@@ -728,7 +728,7 @@ export async function generateReactionScope(data: {
   objectives: string[]
   batch_size: number
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/research/edbo/generate-scope`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/edbo/generate-scope`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -737,5 +737,5 @@ export async function generateReactionScope(data: {
 // ===== research.ts - Literature =====
 
 export async function analyzeLiterature(formData: FormData) {
-  return uploadFetch(`${API_BASE_URL}/api/v1/research/literature/analyze`, formData)
+  return uploadFetch(`${getApiBaseUrl()}/api/v1/research/literature/analyze`, formData)
 }

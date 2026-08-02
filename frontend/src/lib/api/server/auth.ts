@@ -1,12 +1,14 @@
 import type { User, ImpersonationStatusExtended } from '@/types/user'
 import type { LoginResponse } from '@/types/auth'
 
-const API_BASE = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+export function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 function getApiBaseCandidates() {
   return Array.from(
     new Set([
-      API_BASE,
+      getApiBaseUrl(),
       'http://app:8000',
       'http://backend:8000',
       'http://dazah-backend:8000',
@@ -45,7 +47,7 @@ export async function loginApi(body: { username: string; password: string }): Pr
 
 export async function getCurrentUserApi(authToken: string): Promise<User | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/identity/me`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/identity/me`, {
       headers: { Authorization: `Bearer ${authToken}` },
       cache: 'no-store',
     })
@@ -58,7 +60,7 @@ export async function getCurrentUserApi(authToken: string): Promise<User | null>
 }
 
 export async function startImpersonateApi(authToken: string, targetUserId: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/v1/identity/impersonate/start`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/identity/impersonate/start`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -95,7 +97,7 @@ export async function getImpersonationStatusApi(
     if (impersonateToken) {
       headers['Cookie'] = `impersonate_token=${impersonateToken}`
     }
-    const res = await fetch(`${API_BASE}/api/v1/identity/impersonate/status`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/identity/impersonate/status`, {
       headers,
       cache: 'no-store',
     })

@@ -197,6 +197,7 @@ export default function VehiclePage() {
 
   return (
     <div className="p-6">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">车辆信息</h1>
       <div className="flex gap-2 mb-6">
         <Input
           placeholder="搜索车牌号或品牌"

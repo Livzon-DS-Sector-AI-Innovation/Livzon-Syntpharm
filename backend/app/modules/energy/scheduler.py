@@ -224,7 +224,7 @@ async def bitable_monthly_sync_loop() -> None:
     每天只执行一次，通过 last_sync_date 防止重复。
     """
     settings = get_settings()
-    if not settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED:
+    if not await get_module_setting_bool("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED", default=False):
         logger.info("飞书多维表格月度同步已关闭（ENERGY_BITABLE_AUTO_SYNC_ENABLED=false）")
         return
 

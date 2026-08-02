@@ -6,6 +6,7 @@ import {
   extractRegulationTextApi,
   createGiftInventoryApi, updateGiftInventoryApi, deleteGiftInventoryApi,
   createVehicleApi, updateVehicleApi, deleteVehicleApi,
+  batchImportVehiclesApi,
 } from '@/lib/api/server/administration'
 
 export async function createGiftRequisition(data: any) {
@@ -61,16 +62,7 @@ export async function deleteVehicle(id: string) {
 }
 
 export async function batchImportVehicles(file: any): Promise<any> {
-  const API_BASE = process.env.API_BASE_URL || ''
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch(`${API_BASE}/api/v1/administration/vehicles/batch-import`, {
-    method: 'POST',
-    body: formData,
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`批量导入失败 (HTTP ${res.status}): ${text}`)
-  }
-  return res.json()
+  return batchImportVehiclesApi(formData)
 }

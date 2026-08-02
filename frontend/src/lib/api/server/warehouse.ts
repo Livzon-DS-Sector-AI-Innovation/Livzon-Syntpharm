@@ -16,10 +16,12 @@ import type {
   WarehouseFeishuWsStatus,
 } from '@/types/warehouse'
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+export function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 async function apiFetch<T>(path: string, fallbackMessage: string): Promise<T> {
-  const url = path.startsWith('http') ? path : `${API_BASE_URL.replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
+  const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
   
   const response = await fetch(url, {
     cache: 'no-store',
@@ -43,13 +45,13 @@ export async function fetchModuleInfo(): Promise<{
 }> {
   const body = await apiFetch<{
     data: { code: string; name: string; description: string }
-  }>(`${API_BASE_URL}/api/v1/warehouse`, '获取仓储模块信息失败')
+  }>(`${getApiBaseUrl()}/api/v1/warehouse`, '获取仓储模块信息失败')
   return body.data
 }
 
 export async function fetchRawMaterials(): Promise<RawMaterial[]> {
   const body = await apiFetch<RawMaterialListResponse>(
-    `${API_BASE_URL}/api/v1/warehouse/raw-materials`,
+    `${getApiBaseUrl()}/api/v1/warehouse/raw-materials`,
     '获取原辅料库存失败',
   )
   return body.data || []
@@ -57,7 +59,7 @@ export async function fetchRawMaterials(): Promise<RawMaterial[]> {
 
 export async function fetchPackagingMaterials(): Promise<PackagingMaterial[]> {
   const body = await apiFetch<PackagingMaterialListResponse>(
-    `${API_BASE_URL}/api/v1/warehouse/packaging-materials`,
+    `${getApiBaseUrl()}/api/v1/warehouse/packaging-materials`,
     '获取包材库存失败',
   )
   return body.data || []
@@ -65,7 +67,7 @@ export async function fetchPackagingMaterials(): Promise<PackagingMaterial[]> {
 
 export async function fetchProducts(): Promise<ProductInventory[]> {
   const body = await apiFetch<ProductInventoryListResponse>(
-    `${API_BASE_URL}/api/v1/warehouse/products`,
+    `${getApiBaseUrl()}/api/v1/warehouse/products`,
     '获取成品库存失败',
   )
   return body.data || []
@@ -73,7 +75,7 @@ export async function fetchProducts(): Promise<ProductInventory[]> {
 
 export async function fetchWarehouseFeishuConfig(): Promise<WarehouseFeishuConfig> {
   const body = await apiFetch<{ data: WarehouseFeishuConfig }>(
-    `${API_BASE_URL}/api/v1/warehouse/feishu-config`,
+    `${getApiBaseUrl()}/api/v1/warehouse/feishu-config`,
     '获取仓储飞书配置失败',
   )
   return body.data
@@ -100,7 +102,7 @@ export async function fetchWarehouseFeishuTablesByParams(params?: {
   }
   const suffix = search.toString() ? `?${search.toString()}` : ''
   const body = await apiFetch<{ data: WarehouseFeishuTable[] }>(
-    `${API_BASE_URL}/api/v1/warehouse/feishu/tables${suffix}`,
+    `${getApiBaseUrl()}/api/v1/warehouse/feishu/tables${suffix}`,
     '获取仓储飞书表目录失败',
   )
   return body.data || []
@@ -128,7 +130,7 @@ export async function fetchWarehouseFeishuDomainRecords(
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
   const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `${API_BASE_URL}/api/v1/warehouse/feishu/domains/${businessDomain}/records${suffix}`,
+    `${getApiBaseUrl()}/api/v1/warehouse/feishu/domains/${businessDomain}/records${suffix}`,
     '获取仓储飞书原始记录失败',
   )
   return body.data
@@ -154,7 +156,7 @@ export async function fetchWarehouseFeishuTableRecords(
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
   const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `${API_BASE_URL}/api/v1/warehouse/feishu/tables/${tableId}/records${suffix}`,
+    `${getApiBaseUrl()}/api/v1/warehouse/feishu/tables/${tableId}/records${suffix}`,
     '获取仓储飞书原始记录失败',
   )
   return body.data
@@ -162,7 +164,7 @@ export async function fetchWarehouseFeishuTableRecords(
 
 export async function fetchWarehouseFeishuWsStatus(): Promise<WarehouseFeishuWsStatus> {
   const body = await apiFetch<{ data: WarehouseFeishuWsStatus }>(
-    `${API_BASE_URL}/api/v1/warehouse/feishu/ws/status`,
+    `${getApiBaseUrl()}/api/v1/warehouse/feishu/ws/status`,
     '获取仓储飞书长连接状态失败',
   )
   return body.data
@@ -176,7 +178,7 @@ async function apiFetchWithAuth<T>(
   authToken: string | undefined,
   fallbackMessage: string,
 ): Promise<T> {
-  const url = path.startsWith('http') ? path : `${API_BASE_URL.replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
+  const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
 
   const response = await fetch(url, {
     ...options,

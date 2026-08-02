@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+export function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://backend:8000'
+}
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
@@ -17,7 +19,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders()
 
-  const response = await fetch(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -43,7 +45,7 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {
   const authHeaders = await getAuthHeaders()
 
-  const response = await fetch(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -69,5 +71,3 @@ export function buildQueryString(params: Record<string, unknown>): string {
   const qs = searchParams.toString()
   return qs ? `?${qs}` : ''
 }
-
-export { API_BASE_URL }

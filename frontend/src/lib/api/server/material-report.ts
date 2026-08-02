@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import {
   ReportCreate,
   ReportUpdate,
@@ -8,7 +8,7 @@ import {
 } from '@/types/material-report'
 
 async function apiFetchFormData<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, {
+  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     cache: 'no-store',
   })
@@ -78,7 +78,7 @@ export async function saveReportItems(id: string, data: ReportItemsBatchSave) {
 }
 
 export async function generateReport(id: string): Promise<Blob> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/quality/material-report/${id}/generate`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/quality/material-report/${id}/generate`, {
     method: 'POST',
     cache: 'no-store',
   })

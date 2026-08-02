@@ -1,6 +1,6 @@
-import { apiFetch, API_BASE_URL } from './base'
+import { apiFetch, getApiBaseUrl } from './base'
 
-const BASE = `${API_BASE_URL}/api/v1/equipment/personnel`
+const BASE = `${getApiBaseUrl()}/api/v1/equipment/personnel`
 
 export async function createRoleApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/roles`, { method: 'POST', body: JSON.stringify(data), headers })

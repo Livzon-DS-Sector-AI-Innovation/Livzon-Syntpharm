@@ -19,7 +19,9 @@ import type {
   FieldFillResult,
 } from '@/types/dossier-writer'
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 async function actionFetch<T>(url: string, options?: RequestInit): Promise<T> {
   // AI 相关接口需要更长的超时时间（OCR + LLM 处理可能需要 10 分钟）
@@ -64,7 +66,7 @@ async function actionFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ====== Product Dossier ======
 export async function createProductDossier(data: ProductDossierCreate): Promise<ProductDossier> {
-  const result = await actionFetch<ProductDossier>(`${API_BASE_URL}/api/v1/registration/dossier-writer/products`, {
+  const result = await actionFetch<ProductDossier>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -73,7 +75,7 @@ export async function createProductDossier(data: ProductDossierCreate): Promise<
 }
 
 export async function updateProductDossier(id: string, data: ProductDossierUpdate): Promise<ProductDossier> {
-  const result = await actionFetch<ProductDossier>(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${id}`, {
+  const result = await actionFetch<ProductDossier>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -82,7 +84,7 @@ export async function updateProductDossier(id: string, data: ProductDossierUpdat
 }
 
 export async function deleteProductDossier(id: string): Promise<void> {
-  await actionFetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${id}`, {
+  await actionFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${id}`, {
     method: 'DELETE',
   })
   revalidatePath('/registration/dossier-writer')
@@ -93,7 +95,7 @@ export async function uploadTemplates(dossierId: string, files: any): Promise<Up
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
     method: 'POST',
     body: formData,
   })
@@ -104,7 +106,7 @@ export async function uploadTemplates(dossierId: string, files: any): Promise<Up
 }
 
 export async function parseTemplates(dossierId: string): Promise<ParseResult> {
-  const result = await actionFetch<ParseResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${dossierId}/parse`, {
+  const result = await actionFetch<ParseResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/parse`, {
     method: 'POST',
   })
   revalidatePath('/registration/dossier-writer')
@@ -119,7 +121,7 @@ export async function uploadChapterAsset(
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`, {
     method: 'POST',
     body: formData,
   })
@@ -130,7 +132,7 @@ export async function uploadChapterAsset(
 }
 
 export async function deleteChapterAsset(assetId: string): Promise<void> {
-  await actionFetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/assets/${assetId}`, {
+  await actionFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
     method: 'DELETE',
   })
   revalidatePath('/registration/dossier-writer')
@@ -138,7 +140,7 @@ export async function deleteChapterAsset(assetId: string): Promise<void> {
 
 // ====== Export ======
 export async function exportDossier(dossierId: string, chapterIds?: string[]): Promise<ExportResult> {
-  const result = await actionFetch<ExportResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${dossierId}/export`, {
+  const result = await actionFetch<ExportResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/export`, {
     method: 'POST',
     body: JSON.stringify({ chapter_ids: chapterIds || null, format: 'docx' }),
   })
@@ -148,7 +150,7 @@ export async function exportDossier(dossierId: string, chapterIds?: string[]): P
 
 // ====== Asset Matching ======
 export async function matchAssetsToChapters(dossierId: string): Promise<MatchResult> {
-  const result = await actionFetch<MatchResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/products/${dossierId}/match-assets`, {
+  const result = await actionFetch<MatchResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/match-assets`, {
     method: 'POST',
   })
   revalidatePath('/registration/dossier-writer')
@@ -157,7 +159,7 @@ export async function matchAssetsToChapters(dossierId: string): Promise<MatchRes
 
 // ====== Field Filling ======
 export async function fillChapterFields(chapterId: string): Promise<FieldFillResult> {
-  const result = await actionFetch<FieldFillResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/fill-fields`, {
+  const result = await actionFetch<FieldFillResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/fill-fields`, {
     method: 'POST',
   })
   revalidatePath('/registration/dossier-writer')
@@ -166,7 +168,7 @@ export async function fillChapterFields(chapterId: string): Promise<FieldFillRes
 
 // ====== AI Fill ======
 export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewResult> {
-  const result = await actionFetch<AIPreviewResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
+  const result = await actionFetch<AIPreviewResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
     method: 'POST',
   })
   revalidatePath('/registration/dossier-writer')
@@ -174,7 +176,7 @@ export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewR
 }
 
 export async function aiConfirmAndFill(chapterId: string, data: AIConfirmRequest): Promise<AIFillResult> {
-  const result = await actionFetch<AIFillResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-confirm`, {
+  const result = await actionFetch<AIFillResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-confirm`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -186,7 +188,7 @@ export async function splitPreview(
   assetId: string,
   availableAppendixSlots: string[]
 ): Promise<PageSplitPreviewResult> {
-  const result = await actionFetch<PageSplitPreviewResult>(`${API_BASE_URL}/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
+  const result = await actionFetch<PageSplitPreviewResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
     method: 'POST',
     body: JSON.stringify({ available_appendix_slots: availableAppendixSlots }),
   })
@@ -203,7 +205,7 @@ export async function splitConfirmAndInsert(
   }>
 ): Promise<{ success: boolean; message: string; inserted_count: number }> {
   const result = await actionFetch<{ success: boolean; message: string; inserted_count: number }>(
-    `${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
+    `${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
     {
       method: 'POST',
       body: JSON.stringify({ splits }),
@@ -218,7 +220,7 @@ export async function updateAssetCategory(
   assetId: string,
   categoryId: string | null
 ): Promise<{ id: string; category_id: string | null }> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/registration/dossier-writer/assets/${assetId}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ category_id: categoryId }),
@@ -236,7 +238,7 @@ export async function toggleAssetUsage(
   isSelected: boolean
 ): Promise<{ usage_id?: string; is_selected: boolean }> {
   const result = await actionFetch<{ usage_id?: string; is_selected: boolean }>(
-    `${API_BASE_URL}/api/v1/registration/dossier-writer/chapters/${chapterId}/asset-usages/${assetId}`,
+    `${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/asset-usages/${assetId}`,
     {
       method: 'PATCH',
       body: JSON.stringify({ is_selected: isSelected }),

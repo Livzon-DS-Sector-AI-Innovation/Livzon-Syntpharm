@@ -707,6 +707,7 @@ export default function QualityReagentPage() {
 
   return (
     <div className="reagent-page">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4 px-6 pt-4">试剂管理</h1>
       {/* 工具栏 */}
       <div className="reagent-toolbar">
         <div className="reagent-search-area">

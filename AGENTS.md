@@ -13,7 +13,7 @@
 - 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
 - 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
 - 禁止在日志或异常中输出 API key、token、密码等敏感信息
-- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
+- 禁止提交 `.env` 文件
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
 ## 仓库组织
@@ -433,17 +433,15 @@ Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数�
 
 详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
 
-**Barrel 文件（index.ts）规则**：当 Server Component 从 `components/<模块>/index.ts` 导入 Client 组件时，如果导出的组件使用了 **Zustand store**、**React Context** 或其他 Context-based 状态管理，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。示例：
+**Barrel 文件（index.ts）规则**：导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
 
 ```typescript
 // frontend/src/components/energy/index.ts
-'use client'  // ← 必须加，因为导出的组件使用 useEnergyStore
+'use client'
 
 export { AlertsPageClient } from './AlertsPageClient'
 export { DevicesPageClient } from './DevicesPageClient'
 ```
-
-如果 barrel 文件导出的组件只使用基本 hooks（`useState`、`useEffect`），理论上不需要 `'use client'`，但**最佳实践**是所有 `components/<模块>/index.ts` 统一加 `'use client'`，避免未来添加 zustand 导入时构建失败。
 
 ### 动态渲染
 
@@ -485,11 +483,22 @@ export const dynamic = 'force-dynamic'
 ## 新增页面的步骤
 
 1. 在 `app/(dashboard)/<模块>/` 下新建目录和 `page.tsx`
+   - **每个页面必须包含一个语义化 `<h1>` 标题**（符合 WCAG 2.4.2/2.4.6 无障碍标准）。
+   - 使用 `<h1>标题文本</h1>` 或 antd 的 `<Title level={1}>标题文本</Title>`。
+   - 标题文本必须与 E2E 测试期望的 heading 文本一致。
 2. `page.tsx` 里 fetch 数据，传给 `components/<模块>/` 里的组件
 3. 组件写在 `components/<模块>/` 里，需要交互的加 `'use client'`
 4. 如果有写操作，写在 `actions/<模块>.ts` 里
 5. 类型定义更新到 `types/<模块>.ts`
 6. 新增的对外组件记得在 `components/<模块>/index.ts` 里导出
+
+### 页面标题规范
+
+每个页面必须有一个 `<h1>` 标题：
+- 使用 `<h1>标题文本</h1>` 或 `<Title level={1}>标题文本</Title>`
+- 标题描述页面核心功能（如"批次管理"、"采购管理工作台"）
+- 禁止使用 `<Card title="...">` 替代页面标题（Card title 不生成语义化 heading 元素）
+- 禁止页面没有标题（影响无障碍访问和 E2E 测试可断言性）
 
 ## API 调用架构
 
@@ -612,7 +621,7 @@ CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并�
 ## Docker 开发环境
 
 两种 docker-compose 配置：
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新，位于仓库根目录）
+- `docker-compose.yml` — 生产构建（`next build` → `node .next/standalone/server.js`，无热更新，位于仓库根目录）
 - `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新，位于仓库根目录）
 
 开发时**必须**使用：

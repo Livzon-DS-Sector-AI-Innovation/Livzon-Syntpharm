@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
+from app.core.exceptions import AppException
 from app.core.response import error_response, paginated_response, success_response
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
@@ -47,6 +49,12 @@ workshop_router = APIRouter()
 monthly_router = APIRouter()
 
 
+def _require_user(current_user: CurrentUser) -> uuid.UUID:
+    if not current_user:
+        raise AppException(message="需要登录才能执行此操作", status_code=401)
+    return current_user.id
+
+
 # ── 平台信息 ──
 
 
@@ -65,6 +73,7 @@ async def create_device_config(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.create_device_config(db, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
@@ -81,6 +90,7 @@ async def list_device_configs(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_device_configs(
         db,
         platform_code=platform_code,
@@ -101,6 +111,7 @@ async def get_device_config(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.get_device_config(db, config_id)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
@@ -112,6 +123,7 @@ async def update_device_config(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.update_device_config(db, config_id, data)
     return success_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
@@ -122,6 +134,7 @@ async def delete_device_config(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     await service.delete_device_config(db, config_id)
     return success_response(None, message="删除成功")
 
@@ -141,6 +154,7 @@ async def list_energy_data(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_energy_data(
         db,
         device_config_id=device_config_id,
@@ -164,6 +178,7 @@ async def get_energy_statistics(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     result = await service.get_energy_statistics(
         db,
         group_by=group_by,
@@ -183,6 +198,7 @@ async def trigger_collection(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     result = await service.trigger_collection(db, request)
     return success_response(result, message="采集任务已执行")
 
@@ -196,6 +212,7 @@ async def list_collect_logs(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_collect_logs(
         db,
         platform_code=platform_code,
@@ -213,6 +230,7 @@ async def get_collect_log_detail(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     result = await service.get_collect_log_detail(db, log_id)
     return success_response(result)
 
@@ -228,6 +246,7 @@ async def get_energy_overview(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     result = await service.get_overview(
         db,
         start_time=datetime.fromisoformat(start_time),
@@ -246,6 +265,7 @@ async def create_alert_rule(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.create_alert_rule(db, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
@@ -260,6 +280,7 @@ async def list_alert_rules(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_alert_rules(
         db,
         energy_type=energy_type,
@@ -278,6 +299,7 @@ async def get_alert_rule(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.get_alert_rule(db, rule_id)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
@@ -289,6 +311,7 @@ async def update_alert_rule(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.update_alert_rule(db, rule_id, data)
     return success_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
@@ -299,6 +322,7 @@ async def delete_alert_rule(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     await service.delete_alert_rule(db, rule_id)
     return success_response(None, message="删除成功")
 
@@ -318,6 +342,7 @@ async def list_alert_records(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_alert_records(
         db,
         energy_type=energy_type,
@@ -339,6 +364,7 @@ async def process_alert_record(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.process_alert_record(db, record_id, request)
     return success_response(
         EnergyAlertRecordResponse.model_validate(obj).model_dump(),
@@ -361,6 +387,7 @@ async def create_workshop(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.create_workshop(db, data)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
 
@@ -374,6 +401,7 @@ async def list_workshops(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     items, total = await service.list_workshops(
         db,
         category=category,
@@ -391,6 +419,7 @@ async def get_workshop(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.get_workshop(db, workshop_id)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
 
@@ -402,6 +431,7 @@ async def update_workshop(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.update_workshop(db, workshop_id, data)
     return success_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
 
@@ -412,6 +442,7 @@ async def delete_workshop(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     await service.delete_workshop(db, workshop_id)
     return success_response(None, message="删除成功")
 
@@ -425,6 +456,7 @@ async def create_monthly_record(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.create_monthly_record(db, data)
     return success_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
 
@@ -435,6 +467,7 @@ async def batch_create_monthly_records(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     objs = await service.batch_create_monthly_records(db, data.records)
     result = [EnergyMonthlyRecordResponse.model_validate(o).model_dump() for o in objs]
     return success_response(result)
@@ -451,6 +484,7 @@ async def list_monthly_records(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     from datetime import date as date_type
 
     start = date_type.fromisoformat(start_date) if start_date else None
@@ -478,6 +512,7 @@ async def get_monthly_summary(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     from datetime import date as date_type
 
     start = date_type.fromisoformat(start_date) if start_date else None
@@ -499,6 +534,7 @@ async def get_monthly_record(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     obj = await service.get_monthly_record(db, record_id)
     return success_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
 
@@ -509,6 +545,7 @@ async def delete_monthly_record(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     await service.delete_monthly_record(db, record_id)
     return success_response(None, message="删除成功")
 
@@ -526,6 +563,7 @@ async def import_from_feishu(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     from app.modules.energy.feishu_import import FeishuEnergyImporter
 
     importer = FeishuEnergyImporter()
@@ -558,6 +596,7 @@ async def sync_from_bitable(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     """从飞书多维表格同步车间和月度记录数据。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
 
@@ -571,6 +610,7 @@ async def sync_workshops_from_bitable(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     """从飞书多维表格同步车间数据。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
 
@@ -584,6 +624,7 @@ async def sync_monthly_from_bitable(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     """从飞书多维表格同步月度能耗记录。"""
     from app.modules.energy.bitable_sync import EnergyBitableSync
 
@@ -598,6 +639,7 @@ async def cross_import_from_bitable(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     """从飞书多维表格交叉表导入能源数据。
 
     请求体:
@@ -623,6 +665,7 @@ async def daily_import_from_bitable(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
 ) -> JSONResponse:
+    _require_user(current_user)
     """手动触发从飞书表格导入每日数据，导入后自动检查预警"""
     from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
 

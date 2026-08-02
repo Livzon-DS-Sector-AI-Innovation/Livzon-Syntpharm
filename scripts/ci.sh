@@ -84,32 +84,29 @@ run_e2e() {
     cd "$REPO_ROOT"
 
     # ── Cleanup trap (preserves exit code) ──────────────────────────────
-    local E2E_FRONTEND_PID=""
     local E2E_BACKEND_PID=""
 
     cleanup_e2e() {
         local exit_code=$?
         trap - EXIT INT TERM
 
-        if [[ -n "${E2E_FRONTEND_PID:-}" ]]; then
-            kill "$E2E_FRONTEND_PID" 2>/dev/null || true
-            wait "$E2E_FRONTEND_PID" 2>/dev/null || true
-        fi
+        docker stop e2e-frontend 2>/dev/null || true
+        docker rm e2e-frontend 2>/dev/null || true
 
         if [[ -n "${E2E_BACKEND_PID:-}" ]]; then
             kill "$E2E_BACKEND_PID" 2>/dev/null || true
             wait "$E2E_BACKEND_PID" 2>/dev/null || true
         fi
 
-        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true
+        rm -rf "$REPO_ROOT/frontend/.next-e2e" 2>/dev/null || true
 
-        rm -rf "$REPO_ROOT/frontend/.next-e2e"
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true
 
         exit "$exit_code"
     }
     trap cleanup_e2e EXIT INT TERM
 
-    # ── Remove stale .next-e2e ──────────────────────────────────────────
+    # ── Remove stale .next-e2e from previous CI configs ─────────────────
     rm -rf "$REPO_ROOT/frontend/.next-e2e"
 
     # ── Clean stale E2E Compose resources ───────────────────────────────
@@ -151,7 +148,7 @@ run_e2e() {
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
     local start_time=$SECONDS
-    local timeout=600
+    local timeout=120
     local backend_ready=false
 
     while (( SECONDS - start_time < timeout )); do
@@ -161,7 +158,7 @@ run_e2e() {
             exit 1
         fi
 
-        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+        if docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" exec -T backend-e2e uv run --no-dev python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)" > /dev/null 2>&1; then
             backend_ready=true
             break
         fi
@@ -177,28 +174,26 @@ run_e2e() {
 
     log_info "Backend ready ($(( SECONDS - start_time ))s)"
 
-    # ── Build frontend into .next-e2e ───────────────────────────────────
-    log_info "Building E2E frontend (dist: .next-e2e)..."
-    cd "$REPO_ROOT/frontend"
-    check_command pnpm || exit 1
+    # ── Build and serve frontend via Docker (reuses ci-build) ──────────
+    log_info "Building and starting E2E frontend (port 13000)..."
+    cd "$REPO_ROOT"
 
-    if ! NEXT_DIST_DIR=".next-e2e" pnpm build; then
-        log_error "Frontend build failed"
-        exit 1
-    fi
-    log_info "Frontend build complete"
+    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" \
+        run -d --name e2e-frontend -p 13000:3000 \
+        --build \
+        -e API_BASE_URL=http://backend-e2e:8000 \
+        ci-build \
+        sh -c "
+            API_BASE_URL=http://backend-e2e:8000 pnpm build &&
+            rm -rf .next/standalone/.next/static &&
+            cp -r .next/static .next/standalone/.next/static &&
+            rm -rf .next/standalone/public &&
+            cp -r public .next/standalone/public &&
+            cd .next/standalone &&
+            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 node server.js
+        "
 
-    # ── Start frontend on host ──────────────────────────────────────────
-    log_info "Starting E2E frontend on port 13000..."
-    cd "$REPO_ROOT/frontend"
-
-    NODE_OPTIONS="--no-deprecation" \
-    NEXT_DIST_DIR=".next-e2e" \
-    API_BASE_URL="http://127.0.0.1:18000" \
-        pnpm exec next start -H 127.0.0.1 -p 13000 \
-        > "$REPO_ROOT/e2e-frontend.log" 2>&1 &
-    E2E_FRONTEND_PID=$!
-
+    log_info "Waiting for frontend..."
     local frontend_ready=false
     for i in $(seq 1 30); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
@@ -209,12 +204,10 @@ run_e2e() {
     done
     if [[ "$frontend_ready" != true ]]; then
         log_error "Frontend did not become ready"
-        tail -30 "$REPO_ROOT/e2e-frontend.log" 2>/dev/null || true
+        docker logs e2e-frontend 2>/dev/null | tail -20
         exit 1
     fi
     log_info "Frontend ready"
-
-    cd "$REPO_ROOT"
 
     # ── Run Playwright ──────────────────────────────────────────────────
     export E2E_BACKEND_URL="http://127.0.0.1:18000"
@@ -224,13 +217,12 @@ run_e2e() {
     cd "$REPO_ROOT/frontend"
 
     local e2e_exit_code=0
-    if ! pnpm exec playwright test; then
-        e2e_exit_code=$?
-    fi
+    pnpm exec playwright test || e2e_exit_code=$?
 
     # ── Collect E2E frontend log ────────────────────────────────────────
-    if [[ -f "$REPO_ROOT/e2e-frontend.log" ]]; then
-        cp "$REPO_ROOT/e2e-frontend.log" "$REPO_ROOT/e2e-frontend.log" 2>/dev/null || true
+    if [[ $e2e_exit_code -ne 0 ]]; then
+        echo "=== Frontend container logs ==="
+        docker logs e2e-frontend 2>/dev/null | tail -30 || true
     fi
 
     cd "$REPO_ROOT"

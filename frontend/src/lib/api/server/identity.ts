@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function getLoginLogsApi(
   authToken: string,
@@ -15,7 +15,7 @@ export async function getLoginLogsApi(
   if (params.status) searchParams.set('status', params.status)
   if (params.keyword) searchParams.set('keyword', params.keyword)
 
-  return apiFetch(`${API_BASE_URL}/api/v1/identity/login-logs?${searchParams.toString()}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/login-logs?${searchParams.toString()}`, {
     headers: { Authorization: `Bearer ${authToken}` },
   })
 }

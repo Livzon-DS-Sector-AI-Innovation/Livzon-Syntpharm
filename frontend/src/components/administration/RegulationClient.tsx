@@ -335,6 +335,7 @@ export default function RegulationClient() {
 
   return (
     <div className="space-y-4">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">公告通知</h1>
       <div className="flex justify-between items-center">
         <div className="flex gap-3 items-center">
           <Input

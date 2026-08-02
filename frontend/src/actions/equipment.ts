@@ -396,11 +396,13 @@ export async function deleteRole(id: string) {
   return result
 }
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 export async function previewEquipmentImport(data: any) {
   const token = await getServerToken()
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import/preview`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -415,7 +417,7 @@ export async function previewEquipmentImport(data: any) {
 
 export async function batchImportEquipment(data: any) {
   const token = await getServerToken()
-  const res = await fetch(`${API_BASE_URL}/api/v1/equipment/equipments/import`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),

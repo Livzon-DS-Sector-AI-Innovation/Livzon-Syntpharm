@@ -3,7 +3,7 @@
  * 
  * 架构说明：
  * - Client Component → 本地 Route Handler（/api/research/literature/analyze）
- * - Route Handler → 后端 API（${BACKEND_URL}/api/v1/research/literature/analyze）
+ * - Route Handler → 后端 API（${getBackendUrl()}/api/v1/research/literature/analyze）
  * - 后端返回 SSE 流 → Route Handler 透传 → Client 读取流
  * 
  * 为什么不用 Server Actions：
@@ -13,14 +13,16 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+function getBackendUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     
     // Forward to backend
-    const response = await fetch(`${BACKEND_URL}/api/v1/research/literature/analyze`, {
+    const response = await fetch(`${getBackendUrl()}/api/v1/research/literature/analyze`, {
       method: 'POST',
       body: formData,
     })

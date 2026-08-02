@@ -4,10 +4,12 @@ import type {
   AgentSkillUpdatePayload,
 } from '@/actions/agent-skills'
 
-const API_BASE = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+export function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${path}`
+  const url = `${getApiBaseUrl()}${path}`
   const response = await fetch(url, {
     ...options,
     headers: {

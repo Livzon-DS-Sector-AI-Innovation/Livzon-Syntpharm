@@ -31899,7 +31899,6 @@
           "\u80fd\u6e90\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6570\u636e",
-        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u548c\u6708\u5ea6\u8bb0\u5f55\u6570\u636e\u3002",
         "operationId": "sync_from_bitable_api_v1_energy_sync_bitable_post",
         "parameters": [
           {
@@ -31947,7 +31946,6 @@
           "\u80fd\u6e90\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e",
-        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u8f66\u95f4\u6570\u636e\u3002",
         "operationId": "sync_workshops_from_bitable_api_v1_energy_sync_bitable_workshops_post",
         "parameters": [
           {
@@ -31995,7 +31993,6 @@
           "\u80fd\u6e90\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u8bb0\u5f55",
-        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u6708\u5ea6\u80fd\u8017\u8bb0\u5f55\u3002",
         "operationId": "sync_monthly_from_bitable_api_v1_energy_sync_bitable_monthly_post",
         "parameters": [
           {
@@ -32043,7 +32040,6 @@
           "\u80fd\u6e90\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u6570\u636e",
-        "description": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u4ea4\u53c9\u8868\u5bfc\u5165\u80fd\u6e90\u6570\u636e\u3002\n\n\u8bf7\u6c42\u4f53:\n- year: \u5e74\u4efd\uff08\u5982 2026\uff09\n- \u6216 month: \u6708\u4efd\u8868\u540d\uff08\u5982 \"2026-06\"\uff09",
         "operationId": "cross_import_from_bitable_api_v1_energy_sync_bitable_cross_import_post",
         "parameters": [
           {
@@ -32101,7 +32097,6 @@
           "\u80fd\u6e90\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\u5e76\u68c0\u67e5\u9884\u8b66",
-        "description": "\u624b\u52a8\u89e6\u53d1\u4ece\u98de\u4e66\u8868\u683c\u5bfc\u5165\u6bcf\u65e5\u6570\u636e\uff0c\u5bfc\u5165\u540e\u81ea\u52a8\u68c0\u67e5\u9884\u8b66",
         "operationId": "daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post",
         "parameters": [
           {
@@ -78290,6 +78285,50 @@
                   },
                   "type": "object",
                   "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "summary": "Health Live",
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Live Health Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "Health Ready",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Ready Health Ready Get"
                 }
               }
             }

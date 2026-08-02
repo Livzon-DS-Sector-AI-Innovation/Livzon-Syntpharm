@@ -1,9 +1,11 @@
 import type { DeviationCreate, DeviationUpdate, InvestigationCreate, CorrectionCreate, ClosingCreate } from '@/types/deviation'
 
-const API_BASE = (process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000') + '/api/v1'
+function getApiBase(): string {
+  return (process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000') + '/api/v1'
+}
 
 async function deviationFetch(endpoint: string, options?: RequestInit) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${getApiBase()}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -21,7 +23,7 @@ async function deviationFetch(endpoint: string, options?: RequestInit) {
 }
 
 async function deviationFetchUpload(endpoint: string, body: FormData) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${getApiBase()}${endpoint}`, {
     method: 'POST',
     body,
     cache: 'no-store',

@@ -6438,10 +6438,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 从飞书多维表格同步数据
-         * @description 从飞书多维表格同步车间和月度记录数据。
-         */
+        /** 从飞书多维表格同步数据 */
         post: operations["sync_from_bitable_api_v1_energy_sync_bitable_post"];
         delete?: never;
         options?: never;
@@ -6458,10 +6455,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 从飞书多维表格同步车间数据
-         * @description 从飞书多维表格同步车间数据。
-         */
+        /** 从飞书多维表格同步车间数据 */
         post: operations["sync_workshops_from_bitable_api_v1_energy_sync_bitable_workshops_post"];
         delete?: never;
         options?: never;
@@ -6478,10 +6472,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 从飞书多维表格同步月度记录
-         * @description 从飞书多维表格同步月度能耗记录。
-         */
+        /** 从飞书多维表格同步月度记录 */
         post: operations["sync_monthly_from_bitable_api_v1_energy_sync_bitable_monthly_post"];
         delete?: never;
         options?: never;
@@ -6498,14 +6489,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 从飞书多维表格交叉表导入数据
-         * @description 从飞书多维表格交叉表导入能源数据。
-         *
-         *     请求体:
-         *     - year: 年份（如 2026）
-         *     - 或 month: 月份表名（如 "2026-06"）
-         */
+        /** 从飞书多维表格交叉表导入数据 */
         post: operations["cross_import_from_bitable_api_v1_energy_sync_bitable_cross_import_post"];
         delete?: never;
         options?: never;
@@ -6522,10 +6506,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 从飞书表格导入每日数据并检查预警
-         * @description 手动触发从飞书表格导入每日数据，导入后自动检查预警
-         */
+        /** 从飞书表格导入每日数据并检查预警 */
         post: operations["daily_import_from_bitable_api_v1_energy_sync_bitable_daily_import_post"];
         delete?: never;
         options?: never;
@@ -16573,6 +16554,40 @@ export interface paths {
         };
         /** Health */
         get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health Live */
+        get: operations["health_live_health_live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health Ready */
+        get: operations["health_ready_health_ready_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -75537,6 +75552,50 @@ export interface operations {
         };
     };
     health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    health_live_health_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    health_ready_health_ready_get: {
         parameters: {
             query?: never;
             header?: never;

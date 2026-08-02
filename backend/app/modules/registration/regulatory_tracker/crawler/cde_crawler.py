@@ -13,41 +13,15 @@
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from playwright.async_api import async_playwright
-
-from app.core.config import get_settings
 from app.shared.config_reader import get_module_setting, get_module_setting_bool
 
+from .base_crawler import BaseCrawler
+
 logger = logging.getLogger(__name__)
-
-# 浏览器配置（通过环境变量覆盖，默认使用 Playwright 标准安装路径）
-CRAWLER_HEADLESS = get_settings().CRAWLER_HEADLESS.lower() == "true"
-CRAWLER_BROWSERS_PATH = get_settings().CRAWLER_BROWSERS_PATH  # 空字符串 = Playwright 默认路径
-
-LAUNCH_ARGS = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--disable-blink-features=AutomationControlled",
-    "--disable-infobars",
-]
-
-STEALTH_JS = """
-Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
-window.chrome = {runtime: {}};
-const origQuery = window.navigator.permissions.query;
-window.navigator.permissions.query = (p) => (
-    p.name === 'notifications' ? Promise.resolve({state: Notification.permission}) : origQuery(p)
-);
-"""
 
 # CDE 国内药品技术指导原则列表页 URL
 CDE_GUIDELINE_LIST_URL = "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7"
@@ -56,7 +30,7 @@ CDE_GUIDELINE_LIST_URL = "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0
 CDE_DETAIL_URL_TEMPLATE = "https://www.cde.org.cn/zdyz/domesticinfopage?zdyzIdCODE={zdyzIdCODE}"
 
 
-class CdeDomesticGuidelineAdapter:
+class CdeDomesticGuidelineAdapter(BaseCrawler):
     """CDE 国内药品技术指导原则采集适配器。
 
     使用 Playwright 页面驱动模式：
@@ -66,26 +40,17 @@ class CdeDomesticGuidelineAdapter:
     """
 
     def __init__(self, headless: bool | None = None):
-        self._headless_override = headless
-        self._list_url_override = None
-        self._pw = None
-        self._browser = None
-        self._context = None
-        self._page = None
+        super().__init__(headless=headless)
+        self._list_url_override: str | None = None
 
     async def start(self):
         """启动浏览器"""
-        browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
-        if browsers_path:
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browsers_path
-
-        self._pw = await async_playwright().start()
-        # Read headless mode from database if not overridden
         headless = self._headless_override
         if headless is None:
             headless = await get_module_setting_bool("regulatory_tracker", "CRAWLER_HEADLESS", True)
 
-        # Read list URL from database if not overridden
+        browsers_path = await get_module_setting("regulatory_tracker", "CRAWLER_BROWSERS_PATH", "")
+
         self.list_url = self._list_url_override
         if self.list_url is None:
             self.list_url = await get_module_setting(
@@ -94,49 +59,8 @@ class CdeDomesticGuidelineAdapter:
                 "https://www.cde.org.cn/zdyz/listpage/9cd8db3b7530c6fa0c86485e563f93c7",
             )
 
-        launch_kwargs: dict[str, Any] = {
-            "headless": headless,
-            "args": LAUNCH_ARGS,
-            "ignore_default_args": ["--enable-automation"],
-        }
-        self._browser = await self._pw.chromium.launch(**launch_kwargs)
-        self._context = await self._browser.new_context(
-            viewport={"width": 1920, "height": 1080},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            locale="zh-CN",
-            timezone_id="Asia/Shanghai",
-        )
-        await self._context.add_init_script(STEALTH_JS)
-        self._page = await self._context.new_page()
-        logger.info("浏览器启动成功")
-
-    async def stop(self):
-        """关闭浏览器"""
-        try:
-            if self._context:
-                await self._context.close()
-            if self._browser:
-                await self._browser.close()
-            if self._pw:
-                await self._pw.stop()
-        except Exception as e:
-            logger.warning(f"关闭浏览器时出错: {e}")
-        finally:
-            self._context = None
-            self._browser = None
-            self._pw = None
-            self._page = None
-
-    async def __aenter__(self):
-        await self.start()
-        return self
-
-    async def __aexit__(self, *args):
-        await self.stop()
+        await self._launch_browser(headless=headless, browsers_path=browsers_path)
+        logger.info("CDE 浏览器启动成功")
 
     def _parse_guide_list_response(self, url: str, body: str) -> dict | None:
         """解析 getDomesticGuideList 响应，返回解析后的数据或 None"""
@@ -198,17 +122,17 @@ class CdeDomesticGuidelineAdapter:
             except Exception as e:
                 logger.warning(f"处理响应失败: {e}")
 
-        self._page.on("response", on_response)
+        self.page.on("response", on_response)
 
         try:
-            await self._page.goto(self.list_url, wait_until="networkidle", timeout=timeout_ms)
+            await self.page.goto(self.list_url, wait_until="networkidle", timeout=timeout_ms)
             # 等待响应被捕获
             try:
                 await asyncio.wait_for(event.wait(), timeout=timeout_ms / 1000)
             except TimeoutError:
                 logger.warning("等待 getDomesticGuideList 响应超时")
         finally:
-            self._page.remove_listener("response", on_response)
+            self.page.remove_listener("response", on_response)
 
         return captured["result"]
 
@@ -232,7 +156,7 @@ class CdeDomesticGuidelineAdapter:
             except Exception as e:
                 logger.warning(f"处理响应失败: {e}")
 
-        self._page.on("response", on_response)
+        self.page.on("response", on_response)
 
         try:
             # 尝试多种选择器点击下一页
@@ -251,7 +175,7 @@ class CdeDomesticGuidelineAdapter:
             clicked = False
             for sel in next_btn_selectors:
                 try:
-                    el = self._page.locator(sel)
+                    el = self.page.locator(sel)
                     if await el.count() > 0 and await el.first.is_visible():
                         await el.first.click()
                         clicked = True
@@ -262,7 +186,7 @@ class CdeDomesticGuidelineAdapter:
 
             if not clicked:
                 # 尝试通过 JS 点击
-                clicked_text = await self._page.evaluate("""() => {
+                clicked_text = await self.page.evaluate("""() => {
                     const btns = document.querySelectorAll('a, button, li');
                     for (const b of btns) {
                         const text = b.textContent.trim();
@@ -287,7 +211,7 @@ class CdeDomesticGuidelineAdapter:
             except TimeoutError:
                 logger.warning("翻页等待响应超时")
         finally:
-            self._page.remove_listener("response", on_response)
+            self.page.remove_listener("response", on_response)
 
         return captured["result"]
 

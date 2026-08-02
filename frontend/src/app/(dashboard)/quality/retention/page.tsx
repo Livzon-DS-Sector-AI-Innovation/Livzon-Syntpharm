@@ -182,6 +182,7 @@ export default function RetentionLedgerPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">留样管理</h1>
       <Card>
         {/* 筛选区域 */}
         <div style={{ marginBottom: 16 }}>

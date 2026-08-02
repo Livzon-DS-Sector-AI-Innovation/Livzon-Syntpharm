@@ -7,10 +7,12 @@ import type {
 } from '@/types/energy'
 import { apiFetchRaw } from './base'
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+export function getApiBaseUrl(): string {
+  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
+}
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+  const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
   const response = await fetch(fullUrl, {
     ...options,
     headers: {
@@ -26,7 +28,7 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy`)
 }
 
 // ── 设备配置 ──
@@ -41,11 +43,11 @@ export async function fetchEnergyDevices(params?: any): Promise<{ items: any[]; 
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/devices${query ? `?${query}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices${query ? `?${query}` : ''}`)
 }
 
 export async function fetchEnergyDeviceById(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/devices/${id}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`)
 }
 
 // ── 能耗数据 ──
@@ -57,7 +59,7 @@ export async function fetchEnergyData(params: any): Promise<{ items: any[]; tota
       searchParams.set(key, String(value))
     }
   })
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/data?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/data?${searchParams.toString()}`)
 }
 
 export async function fetchEnergyOverview(params: any): Promise<any> {
@@ -67,7 +69,7 @@ export async function fetchEnergyOverview(params: any): Promise<any> {
       searchParams.set(key, String(value))
     }
   })
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/overview?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/overview?${searchParams.toString()}`)
 }
 
 // ── 采集管理 ──
@@ -82,7 +84,7 @@ export async function fetchCollectLogs(params?: any): Promise<{ items: any[]; to
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/collect/logs${query ? `?${query}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/logs${query ? `?${query}` : ''}`)
 }
 
 // ── 预警规则 ──
@@ -108,7 +110,7 @@ export async function fetchAlertRules(params?: any): Promise<{ items: any[]; tot
 }
 
 export async function fetchAlertRuleById(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules/${id}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`)
 }
 
 // ── 预警记录 ──
@@ -136,21 +138,21 @@ export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; t
 // ── 设备写操作 ──
 
 export async function createEnergyDevice(data: CreateDeviceInput) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/devices`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateEnergyDevice(id: string, data: UpdateDeviceInput) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/devices/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteEnergyDevice(id: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/devices/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`, {
     method: 'DELETE',
   })
 }
@@ -158,7 +160,7 @@ export async function deleteEnergyDevice(id: string) {
 // ── 采集写操作 ──
 
 export async function triggerCollect(platformCode?: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/collect/trigger`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/trigger`, {
     method: 'POST',
     body: JSON.stringify({ platform_code: platformCode || 'all' }),
   })
@@ -167,21 +169,21 @@ export async function triggerCollect(platformCode?: string) {
 // ── 预警规则写操作 ──
 
 export async function createAlertRule(data: CreateRuleInput) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteAlertRule(id: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/rules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`, {
     method: 'DELETE',
   })
 }
@@ -189,7 +191,7 @@ export async function deleteAlertRule(id: string) {
 // ── 预警记录写操作 ──
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/records/${id}/process`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/records/${id}/process`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -205,29 +207,29 @@ export async function fetchWorkshops(params?: Record<string, unknown>): Promise<
     })
   }
   const qs = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkshopById(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`)
 }
 
 export async function createWorkshop(data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateWorkshop(id: string, data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteWorkshop(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/workshops/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'DELETE',
   })
 }
@@ -242,22 +244,22 @@ export async function fetchMonthlyRecords(params?: Record<string, unknown>): Pro
     })
   }
   const qs = searchParams.toString()
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
 }
 
 export async function fetchMonthlyRecordById(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly/${id}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`)
 }
 
 export async function createMonthlyRecord(data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteMonthlyRecord(id: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/monthly/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`, {
     method: 'DELETE',
   })
 }
@@ -265,21 +267,21 @@ export async function deleteMonthlyRecord(id: string): Promise<any> {
 // ─── Feishu Import ───
 
 export async function importFromFeishu(data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/import/feishu`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/import/feishu`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function crossImportFromBitable(data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/cross-import`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/cross-import`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function syncBitableDailyData(): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/sync/bitable/daily-import`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/daily-import`, {
     method: 'POST',
   })
 }
@@ -287,12 +289,12 @@ export async function syncBitableDailyData(): Promise<any> {
 // ─── Alerts ───
 
 export async function checkAlerts(checkDate: string): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/check`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/check`, {
     method: 'POST',
     body: JSON.stringify({ check_date: checkDate }),
   })
 }
 
 export async function fetchAlertDates(): Promise<any> {
-  return apiFetch(`${API_BASE_URL}/api/v1/energy/alerts/dates`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/dates`)
 }

@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, API_BASE_URL } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 
 async function apiFetchNullable<T>(url: string, options?: RequestInit): Promise<T | null> {
   const response = await fetch(url, {
@@ -107,7 +107,7 @@ import type {
   TrendData,
 } from '@/types/stability'
 
-const BASE = `${API_BASE_URL}/api/v1`
+const BASE = `${getApiBaseUrl()}/api/v1`
 
 // ============ InspectionStandard Actions ============
 
@@ -639,21 +639,21 @@ export async function getAiLogById(id: string) {
 // ============ Deviation Actions ============
 
 export async function createDeviation(data: CreateDeviationRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDeviation(deviationId: string) {
-  return apiFetchNullable(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}`, {
+  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
     method: 'DELETE',
   })
 }
@@ -661,21 +661,21 @@ export async function deleteDeviation(deviationId: string) {
 // ============ CAPA Actions ============
 
 export async function createCapa(data: CreateCapaRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteCapa(capaId: string) {
-  return apiFetchNullable(`${API_BASE_URL}/api/v1/quality/capas/${capaId}`, {
+  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
     method: 'DELETE',
   })
 }
@@ -683,21 +683,21 @@ export async function deleteCapa(capaId: string) {
 // ============ Department Contact Actions ============
 
 export async function createDepartmentContact(data: CreateDepartmentContactRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/department-contacts`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/department-contacts`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDepartmentContact(contactId: string, data: UpdateDepartmentContactRequest) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/department-contacts/${contactId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/department-contacts/${contactId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDepartmentContact(contactId: string) {
-  return apiFetchNullable(`${API_BASE_URL}/api/v1/quality/department-contacts/${contactId}`, {
+  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/department-contacts/${contactId}`, {
     method: 'DELETE',
   })
 }
@@ -709,7 +709,7 @@ export async function fetchLabelVerifications(params: { page: number; page_size:
     page: params.page.toString(),
     page_size: params.page_size.toString(),
   })
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/label-verifications?${searchParams.toString()}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/label-verifications?${searchParams.toString()}`)
 }
 
 // ============ Attachment Review Actions ============
@@ -720,14 +720,14 @@ export async function submitAttachmentReview(data: {
   attachment_url: string
   content: string
 }) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/attachment-reviews`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteAttachmentReview(reviewId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/attachment-reviews/${reviewId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews/${reviewId}`, {
     method: 'DELETE',
   })
 }
@@ -735,60 +735,60 @@ export async function deleteAttachmentReview(reviewId: string) {
 // ============ Additional CAPA Actions ============
 
 export async function submitCapa(capaId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/submit`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveCapa(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/approve`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function resubmitCapa(capaId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/resubmit`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/resubmit`, {
     method: 'POST',
   })
 }
 
 export async function addExecutionTrack(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/execution-tracks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteExecutionTrack(capaId: string, trackId: string) {
-  return apiFetchNullable(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`, {
+  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`, {
     method: 'DELETE',
   })
 }
 
 export async function confirmExecution(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/confirm-execution`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-execution`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function submitEvaluation(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/evaluate`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/evaluate`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function completeCapaPart(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/complete-part`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/complete-part`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function confirmDeptHead(capaId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -797,34 +797,34 @@ export async function confirmDeptHead(capaId: string, data: unknown) {
 // ============ Additional Deviation Actions ============
 
 export async function submitDeviation(deviationId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}/submit`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/submit`, {
     method: 'POST',
   })
 }
 
 export async function submitInvestigation(deviationId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}/investigation`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/investigation`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function submitReview(deviationId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}/review`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/review`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function submitFinalCode(deviationId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}/final-code`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/final-code`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function resubmitDeviation(deviationId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviations/${deviationId}/resubmit`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/resubmit`, {
     method: 'POST',
   })
 }
@@ -832,21 +832,21 @@ export async function resubmitDeviation(deviationId: string) {
 // ============ AI Config Actions ============
 
 export async function saveAIConfig(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/ai/config`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function resetAIConfig(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/ai/config`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function testAIConnection(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/ai/config/test`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config/test`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -855,182 +855,182 @@ export async function testAIConnection(data: unknown) {
 // ============ Deviation Automation Actions ============
 
 export async function createDeviationTask(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function generateDeviationReport(taskId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/generate`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/generate`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function submitDeviationApproval(taskId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/submit`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/submit`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDeviationTask(taskId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDeviationTaskFields(taskId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/fields`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/fields`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDeviationTask(taskId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
     method: 'DELETE',
   })
 }
 
 export async function createDeviationTemplate(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/templates`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateDeviationTemplate(templateId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/templates/${templateId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${templateId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteDeviationTemplate(templateId: string | number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/templates/${templateId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${templateId}`, {
     method: 'DELETE',
   })
 }
 
 export async function createSopTemplate(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop/templates`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function createSopFromTemplate(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop/from-template`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/from-template`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateSopTemplate(templateId: string, data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteSopTemplate(templateId: string) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
     method: 'DELETE',
   })
 }
 
 export async function generateSop(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop/generate`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/generate`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function uploadDeviationFile(formData: FormData) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/upload`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/upload`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function triggerAIProcess(taskId: number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/ai-process`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/ai-process`, {
     method: 'POST',
   })
 }
 
 export async function updateAIResult(taskId: number, aiResult: any) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
     method: 'PUT',
     body: JSON.stringify({ ai_result: aiResult }),
   })
 }
 
 export async function generateStandard(taskId: number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/tasks/${taskId}/generate-standard`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/generate-standard`, {
     method: 'POST',
   })
 }
 
 export async function updateDeviationTemplateStatus(id: number, isActive: boolean) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/templates/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify({ is_active: isActive }),
   })
 }
 
 export async function uploadDeviationTemplate(formData: FormData) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/templates/upload`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/upload`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function deleteSopRule(id: number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop-rules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function updateSopRuleStatus(id: number | string, status: string | number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop-rules/${id}/status`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${id}/status`, {
     method: 'PUT',
     body: JSON.stringify({ status }),
   })
 }
 
 export async function createSopRule(data: unknown) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop-rules`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function uploadSopRule(formData: FormData, ruleId: number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/upload`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/upload`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function aiParseSopRule(ruleId: number) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/ai-parse`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/ai-parse`, {
     method: 'POST',
   })
 }
 
 export async function uploadDeviationFileWithTask(formData: FormData) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/deviation-automation/upload`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/upload`, {
     method: 'POST',
     body: formData,
   })
 }
 
 export async function uploadLcExcel(formData: FormData) {
-  return apiFetch(`${API_BASE_URL}/api/v1/quality/lc-report/upload`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/lc-report/upload`, {
     method: 'POST',
     body: formData,
   })

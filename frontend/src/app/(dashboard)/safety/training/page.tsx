@@ -604,6 +604,7 @@ export default function TrainingPage() {
 
   return (
     <div className="p-6">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">安全培训</h1>
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
         {
           key: 'training',
