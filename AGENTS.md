@@ -145,7 +145,7 @@ from app.core.deps import RequiredUser, OptionalUser
 | 选项 | 参数声明 | 类型 | 未登录行为 | 使用场景 |
 |---|---|---|---|---|
 | `RequiredUser` | `current_user: RequiredUser` | `User` | 返回 401 | **默认**。所有业务 API 必须使用 |
-| `OptionalUser` | `current_user: OptionalUser` | `User \| None` | 返回 `None`（端点可判断） | 少数场景：AI 工具、公开参考数据等允许未登录访问的接口（当前暂未使用） |
+| `OptionalUser` | `current_user: OptionalUser` | `User \| None` | 返回 `None`（端点可判断） | 少数场景：AI 工具、公开参考数据等允许未登录访问的接口 |
 | public（不注入） | 不声明 `current_user` 参数 | — | 不解析用户 | 仅 SSO 认证流程、飞书 webhook 回调、E2E 测试 |
 
 `OptionalUser` 与 public 的区别：`OptionalUser` 仍然会解析 JWT/cookie，端点可以拿到用户信息做条件逻辑（如登录用户显示个性化内容，未登录显示默认内容）。public 完全不解析，适合无需用户上下文的端点（登录页、webhook）。
@@ -180,7 +180,7 @@ from app.core.deps import RequiredUser, OptionalUser
 **禁止**在 webhook 端点中：
 - 使用 `RequiredUser` 或 `get_current_user`
 - 不验证 token 直接处理 payload
-- 在 `_verify_feishu_callback_signature` 缺少字段时放行（当前 bug：返回 `True`）
+- 在 `_verify_feishu_callback_signature` 缺少字段时放行
 
 ## 数据库规范
 
