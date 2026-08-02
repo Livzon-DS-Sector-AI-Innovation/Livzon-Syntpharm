@@ -81,11 +81,13 @@ async def execute_single_task(task: Any, repo: Any) -> None:
     tz = ZoneInfo("Asia/Shanghai")
     now_str = started_at.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    log = await repo.create_task_log({
-        "task_id": task.id,
-        "started_at": started_at,
-        "status": "running",
-    })
+    log = await repo.create_task_log(
+        {
+            "task_id": task.id,
+            "started_at": started_at,
+            "status": "running",
+        }
+    )
     await repo.session.flush()
 
     try:
@@ -113,14 +115,17 @@ async def execute_single_task(task: Any, repo: Any) -> None:
 
         data_snapshot: dict[str, str] = {k: v for k, v in variables.items() if k != "runtime.timestamp"}
 
-        await repo.update_task_log(log.id, {
-            "status": "success",
-            "completed_at": completed_at,
-            "duration_ms": duration_ms,
-            "data_snapshot": data_snapshot,
-            "card_content": card_json,
-            "feishu_msg_id": msg_id,
-        })
+        await repo.update_task_log(
+            log.id,
+            {
+                "status": "success",
+                "completed_at": completed_at,
+                "duration_ms": duration_ms,
+                "data_snapshot": data_snapshot,
+                "card_content": card_json,
+                "feishu_msg_id": msg_id,
+            },
+        )
 
         task.last_run_status = "success"
         task.last_error = None
@@ -141,12 +146,15 @@ async def execute_single_task(task: Any, repo: Any) -> None:
         duration_ms = int(time.monotonic() * 1000 - start_ms)
         error_msg = str(exc)
 
-        await repo.update_task_log(log.id, {
-            "status": "failure",
-            "completed_at": completed_at,
-            "duration_ms": duration_ms,
-            "error_message": error_msg,
-        })
+        await repo.update_task_log(
+            log.id,
+            {
+                "status": "failure",
+                "completed_at": completed_at,
+                "duration_ms": duration_ms,
+                "error_message": error_msg,
+            },
+        )
 
         task.last_run_status = "failure"
         task.last_error = error_msg
