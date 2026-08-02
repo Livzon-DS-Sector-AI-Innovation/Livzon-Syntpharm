@@ -168,7 +168,7 @@ async def timeout_scan_loop() -> None:
     while not stop_timeout_flag.is_set():
         try:
             await scan_timeout_work_orders()
-                except Exception:
+        except Exception:
             logger.exception("Timeout scan error")
 
 

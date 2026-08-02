@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import date, datetime
 import uuid
+from datetime import date, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -49,11 +49,11 @@ workshop_router = APIRouter()
 monthly_router = APIRouter()
 
 
-
 def _require_user(current_user: CurrentUser) -> uuid.UUID:
     if not current_user:
         raise AppException(message="需要登录才能执行此操作", status_code=401)
     return current_user.id
+
 
 # ── 平台信息 ──
 
