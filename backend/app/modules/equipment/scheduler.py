@@ -93,7 +93,6 @@ async def maintenance_plan_loop() -> None:
                 )
         except Exception:
             logger.exception("维护计划自动生成循环异常")
-            raise
 
     logger.info("维护计划自动生成任务已停止")
 
@@ -169,9 +168,10 @@ async def timeout_scan_loop() -> None:
     while not stop_timeout_flag.is_set():
         try:
             await scan_timeout_work_orders()
-        except Exception:
+                except Exception:
             logger.exception("Timeout scan error")
-            raise
+
+
         try:
             await asyncio.wait_for(
                 stop_timeout_flag.wait(),

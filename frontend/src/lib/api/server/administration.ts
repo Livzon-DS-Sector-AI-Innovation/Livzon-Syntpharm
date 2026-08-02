@@ -69,3 +69,13 @@ export async function updateVehicleApi(id: string, data: any, headers?: Record<s
 export async function deleteVehicleApi(id: string, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/administration/vehicles/${id}`, { method: 'DELETE', headers })
 }
+
+export async function batchImportVehiclesApi(data: FormData) {
+  const url = `${getApiBaseUrl()}/api/v1/administration/vehicles/batch-import`
+  const res = await fetch(url, { method: 'POST', body: data })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`批量导入失败 (HTTP ${res.status}): ${text}`)
+  }
+  return res.json()
+}

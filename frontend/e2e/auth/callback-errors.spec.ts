@@ -25,6 +25,7 @@ test('missing token redirects to /login?error=callback_failed', async ({ page })
 test('empty token redirects to /login?error=callback_failed', async ({ page }) => {
   await page.goto('/auth/callback?token=')
   await expect(page).toHaveURL(/\/login\?error=callback_failed/)
+  await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
 
 test('garbage token set as cookie → dashboard rejects → redirects to /login', async ({ page }) => {

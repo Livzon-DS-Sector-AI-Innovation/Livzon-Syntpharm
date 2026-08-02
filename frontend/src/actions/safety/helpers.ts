@@ -5,7 +5,7 @@ import { getAuthHeaders } from '@/lib/auth'
 export function getApiBaseUrl(): string {
   return process.env.API_BASE_URL
     ? `${process.env.API_BASE_URL}/api/v1`
-    : (() => { throw new Error('环境变量 getApiBaseUrl()_URL 未配置，无法连接后端服务') })()
+    : (() => { throw new Error('环境变量 API_BASE_URL 未配置，无法连接后端服务') })()
 }
 
 export async function fetchApi<T>(

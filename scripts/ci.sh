@@ -98,11 +98,16 @@ run_e2e() {
             wait "$E2E_BACKEND_PID" 2>/dev/null || true
         fi
 
+        rm -rf "$REPO_ROOT/frontend/.next-e2e" 2>/dev/null || true
+
         docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true
 
         exit "$exit_code"
     }
     trap cleanup_e2e EXIT INT TERM
+
+    # ── Remove stale .next-e2e from previous CI configs ─────────────────
+    rm -rf "$REPO_ROOT/frontend/.next-e2e"
 
     # ── Clean stale E2E Compose resources ───────────────────────────────
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" down -v --remove-orphans || true

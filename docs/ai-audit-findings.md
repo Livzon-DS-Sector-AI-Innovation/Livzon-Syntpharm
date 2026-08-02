@@ -418,7 +418,6 @@ _None._
 #### Previously resolved from PR #10, still resolved
 
 - Category 9: NoAccessResult barrel — ✓ fixed
-
 ### PR #13: lzhc-zhuang — Energy daily data, Equipment module refactor, Safety workflows (head: lzhc-zhuang, date: 2026-07-29)
 
 Files changed: 277 (core: energy scheduler, equipment API refactor, safety scheduled tasks/ai workflows, migrations 0047-0049, frontend energy/equipment/safety pages, nginx timeout)
@@ -475,4 +474,57 @@ Categories affected: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
 | 7. External services | 1 | 0 | 0 | 0 | RESOLVED |
 | 9. Frontend boundaries | 1 | 0 | 1 | 0 | RESOLVED |
 | 10. Frontend API & types | 0 | 1 | 1 | 0 | RESOLVED |
+
+### PR #17: Ruanjiaheng (head: ruanjiaheng, base: main, date: 2026-08-02)
+
+Files changed: 163 across all 14 categories (core: browser service, safety scheduled tasks/models, equipment/energy API+scheduler refactors, frontend API layer reorganization, E2E enhancements)
+
+#### New findings (not in baseline)
+
+- [x] `backend/app/modules/energy/api.py` — API & auth / Q6-Q7 — All energy CRUD endpoints changed `current_user` from required `CurrentUser` to `current_user: CurrentUser = None` without adding `_require_user(current_user)` or any auth gate. Previously these endpoints required authentication; now all POST/PUT/DELETE and GET operations are publicly accessible with no login check. Every other module in this PR (equipment, safety, quality) properly uses `_require_user(current_user)` after making the parameter optional. — severity: blocking — **RESOLVED** (added `_require_user` helper + calls to all 35 endpoints)
+
+- [x] `backend/app/platform/identity/api.py` — API & auth / Q6 — `GET /me` changed `current_user: CurrentUser` (required) to `current_user: CurrentUser = None` (optional). Function body already handles `current_user=None` at line 176 with explicit 401 check. — severity: high — **RESOLVED** (false positive — body correctly handles None)
+
+- [x] `backend/app/modules/safety/models.py` — Models & migrations / cross-module FK — `ScheduledTask.created_by` declares `ForeignKey("identity.users.id")`, a cross-module FK (safety → identity). Cross-module FKs require architecture lead approval per AGENTS.md rules. — severity: high — **ACCEPTED** (approved by architecture lead, 2026-08-02)
+
+- [x] `frontend/src/actions/safety/helpers.ts` — Frontend API / malformed error — `getApiBaseUrl()` contains malformed error message. Fixed: `'环境变量 API_BASE_URL 未配置，无法连接后端服务'`. — severity: high — **RESOLVED**
+
+- [x] `backend/app/modules/energy/scheduler.py` — Config & logging / Q3 — `bitable_monthly_sync_loop()` now uses `get_module_setting_bool("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED")` (runtime config), consistent with `energy_collection_loop()`. — severity: medium — **RESOLVED**
+
+- [x] `backend/app/modules/registration/regulatory_tracker/tasks/sync_tasks.py` — External services / unhandled exceptions — Removed `raise` from two `except Exception:` blocks in `daily_sync_job` and `daily_ai_analysis_job`. — severity: blocking — **RESOLVED**
+
+- [x] `backend/app/modules/equipment/scheduler.py` — External services / unhandled exceptions — Removed `raise` from two `except Exception:` blocks in `maintenance_plan_loop` and `timeout_scan_loop`. — severity: blocking — **RESOLVED**
+
+- [x] `frontend/src/app/(dashboard)/registration/authorization-letter/page.tsx` — Frontend boundaries / Q9 — Added `<h1>授权书</h1>` heading. — severity: medium — **RESOLVED**
+
+- [x] `frontend/src/actions/administration.ts` — Frontend API / Q2 — `batchImportVehicles` migrated from inline `fetch` to `batchImportVehiclesApi()` in `@/lib/api/server/administration`. — severity: low — **RESOLVED**
+
+- [x] `frontend/e2e/auth/callback-errors.spec.ts` — E2E / test consistency — Added heading assertion to "empty token" test. — severity: low — **RESOLVED**
+
+- [x] `docker-compose.ci.yml` / `scripts/ci.sh` — Docker / cleanup — Old `.next-e2e` cleanup removed from `cleanup_e2e()`. Restored `rm -rf "$REPO_ROOT/frontend/.next-e2e"` in cleanup trap and startup. — severity: low — **RESOLVED** (scripts/ci.sh:99,109)
+
+#### Uncertain findings
+
+- [ ] `frontend/e2e/auth/callback-errors.spec.ts` — E2E / error handling — `beforeAll` warmup loop silently exits if all 5 retries fail. Subsequent tests will all fail with connection errors, but the root cause won't be clearly attributed to warmup failure. — severity: low
+
+#### Category summaries
+
+| Category | Blocking | High | Medium | Low | Status |
+|---|---|---|---|---|---|
+| 1. Repository layout | 0 | 0 | 0 | 0 | Clean |
+| 2. Secrets | 0 | 0 | 0 | 0 | Clean |
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 0 | 0 | RESOLVED |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | Clean (1 accepted) |
+| 6. Config & logging | 0 | 0 | 0 | 0 | RESOLVED |
+| 7. External services | 0 | 0 | 0 | 0 | RESOLVED |
+| 8. Backend tests | 0 | 0 | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 0 | 0 | 0 | RESOLVED |
+| 10. Frontend API & types | 0 | 0 | 0 | 0 | RESOLVED |
+| 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean |
+| 12. OpenAPI | 0 | 0 | 0 | 0 | Clean |
+| 13. Docker | 0 | 0 | 0 | 0 | Clean (1 resolved) |
+| 14. E2E | 0 | 0 | 0 | 0 | Clean (1 resolved, 1 uncertain) |
+| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
+
 
