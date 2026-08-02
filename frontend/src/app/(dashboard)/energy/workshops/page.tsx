@@ -5,6 +5,7 @@ import { WorkshopTable } from '@/components/energy'
 export default function WorkshopsPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1280, minHeight: '100%', background: '#fafaf9' }}>
+      <h1>车间管理</h1>
       {/* ════ 数据表格 ════ */}
       <div
         style={{

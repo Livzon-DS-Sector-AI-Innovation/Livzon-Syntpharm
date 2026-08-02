@@ -14,9 +14,12 @@ export default async function AIWorkflowConfigPage() {
   }
 
   return (
-    <AIWorkflowConfigClient
+    <>
+      <h1>定时任务配置</h1>
+      <AIWorkflowConfigClient
       initialWorkflows={workflows || []}
       apiConnected={true}
     />
+    </>
   )
 }

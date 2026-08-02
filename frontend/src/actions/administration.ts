@@ -9,6 +9,7 @@ import {
   batchImportVehiclesApi,
 } from '@/lib/api/server/administration'
 
+// TODO: add type to OpenAPI schema - administration endpoints not yet in generated schema
 export async function createGiftRequisition(data: any) {
   return createGiftRequisitionApi(data)
 }
@@ -21,10 +22,12 @@ export async function deleteGiftRequisition(id: string) {
   return deleteGiftRequisitionApi(id)
 }
 
+// TODO: add type to OpenAPI schema
 export async function createRegulation(data: Record<string, unknown>): Promise<unknown> {
   return createRegulationApi(data as Record<string, unknown>)
 }
 
+// TODO: add type to OpenAPI schema
 export async function updateRegulation(id: string, data: Record<string, unknown>): Promise<unknown> {
   return updateRegulationApi(id, data as Record<string, unknown>)
 }
@@ -37,10 +40,12 @@ export async function extractRegulationText(data: { file_name?: string; file_typ
   return extractRegulationTextApi(data) as Promise<{ code: number; message: string; data: { text: string; source: string } }>
 }
 
+// TODO: add type to OpenAPI schema
 export async function createGiftInventory(data: any) {
   return createGiftInventoryApi(data)
 }
 
+// TODO: add type to OpenAPI schema
 export async function updateGiftInventory(id: string, data: any) {
   return updateGiftInventoryApi(id, data)
 }
@@ -49,10 +54,12 @@ export async function deleteGiftInventory(id: string) {
   return deleteGiftInventoryApi(id)
 }
 
+// TODO: add type to OpenAPI schema
 export async function createVehicle(data: any) {
   return createVehicleApi(data)
 }
 
+// TODO: add type to OpenAPI schema
 export async function updateVehicle(id: string, data: any) {
   return updateVehicleApi(id, data)
 }
@@ -61,6 +68,7 @@ export async function deleteVehicle(id: string) {
   return deleteVehicleApi(id)
 }
 
+// TODO: add type to OpenAPI schema
 export async function batchImportVehicles(file: any): Promise<any> {
   const formData = new FormData()
   formData.append('file', file)

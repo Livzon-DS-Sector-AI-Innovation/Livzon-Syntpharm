@@ -50,7 +50,9 @@ class ScheduledTaskService:
         # Compute initial next_run_at
         if task_data.get("is_enabled", True):
             task_data["next_run_at"] = compute_next_run(task_data["cron_expression"])
-        return await self.repo.create_scheduled_task(task_data)
+        task = await self.repo.create_scheduled_task(task_data)
+        logger.info("Scheduled task created", extra={"task_id": str(task.id), "task_name": task.name})
+        return task
 
     async def update_task(self, task_id: uuid.UUID, data: ScheduledTaskUpdate) -> ScheduledTask | None:
         from app.modules.safety.scheduler import compute_next_run
@@ -62,10 +64,14 @@ class ScheduledTaskService:
             if task and task.is_enabled:
                 cron = update_data.get("cron_expression", task.cron_expression)
                 update_data["next_run_at"] = compute_next_run(cron)
-        return await self.repo.update_scheduled_task(task_id, update_data)
+        result = await self.repo.update_scheduled_task(task_id, update_data)
+        logger.info("Scheduled task updated", extra={"task_id": str(task_id)})
+        return result
 
     async def delete_task(self, task_id: uuid.UUID) -> bool:
-        return await self.repo.delete_scheduled_task(task_id)
+        result = await self.repo.delete_scheduled_task(task_id)
+        logger.info("Scheduled task deleted", extra={"task_id": str(task_id)})
+        return result
 
     async def toggle_task(self, task_id: uuid.UUID, enabled: bool) -> ScheduledTask | None:
         from app.modules.safety.scheduler import compute_next_run
@@ -78,11 +84,13 @@ class ScheduledTaskService:
             update_data["next_run_at"] = compute_next_run(task.cron_expression)
         else:
             update_data["next_run_at"] = None
-        return await self.repo.update_scheduled_task(task_id, update_data)
+        result = await self.repo.update_scheduled_task(task_id, update_data)
+        logger.info("Scheduled task toggled", extra={"task_id": str(task_id), "enabled": enabled})
+        return result
 
     async def run_task_now(self, task_id: uuid.UUID) -> ScheduledTaskLog | None:
         """Manually trigger a task execution."""
-        from app.modules.safety.scheduler import execute_single_task  # type: ignore[attr-defined]
+        from app.modules.safety.scheduler import execute_single_task
 
         task = await self.repo.get_scheduled_task_by_id(task_id)
         if not task:
@@ -91,7 +99,10 @@ class ScheduledTaskService:
         await self.session.flush()
         # Return the most recent log
         logs, _ = await self.repo.get_task_logs(task_id, skip=0, limit=1)
-        return logs[0] if logs else None
+        result = logs[0] if logs else None
+        log_id_str = str(logs[0].id) if logs else "none"
+        logger.info("Scheduled task executed", extra={"task_id": str(task_id), "log_id": log_id_str})
+        return result
 
     async def get_logs(self, task_id: uuid.UUID, skip: int = 0, limit: int = 20) -> tuple[list[ScheduledTaskLog], int]:
         return await self.repo.get_task_logs(task_id, skip, limit)

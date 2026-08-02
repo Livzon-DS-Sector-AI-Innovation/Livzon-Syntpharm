@@ -361,6 +361,22 @@ export async function importEquipmentsApi(formData: FormData, headers: Record<st
   return json.data ?? json
 }
 
+export async function previewEquipmentImportApi(data: any, headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function batchImportEquipmentApi(data: any, headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
 export async function createPersonnelRoleApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles`, {
     method: 'POST',

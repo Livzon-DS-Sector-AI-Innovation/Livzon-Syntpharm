@@ -32,6 +32,7 @@ import {
   syncBitableDailyData as apiSyncBitableDailyData,
   checkAlerts as apiCheckAlerts,
   fetchAlertDates as apiFetchAlertDates,
+  syncMonthlyFromBitableApi,
 } from '@/lib/api/server/energy'
 import type { components } from '@/types/generated/schema'
 type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
@@ -82,8 +83,9 @@ export async function getEnergyData(params: DeviceQueryParams) {
   return fetchEnergyData(params)
 }
 
-export async function getEnergyOverview(params: any = {}) {
-  return fetchEnergyOverview(params)
+export async function getEnergyOverview(params?: Record<string, unknown>): Promise<any> {
+  // TODO: add type to OpenAPI schema - energy overview query params not yet typed
+  return fetchEnergyOverview(params || {})
 }
 
 export async function triggerCollect(platformCode?: string) {
@@ -148,13 +150,13 @@ export async function getWorkshopById(id: string) {
 }
 
 export async function createWorkshopAction(data: CreateWorkshopInput) {
-  const result = await apiCreateWorkshop(data as unknown as Record<string, unknown>)
+  const result = await apiCreateWorkshop(data)
   revalidatePath('/energy/workshops')
   return result
 }
 
 export async function updateWorkshopAction(id: string, data: UpdateWorkshopInput) {
-  const result = await apiUpdateWorkshop(id, data as Record<string, unknown>)
+  const result = await apiUpdateWorkshop(id, data)
   revalidatePath('/energy/workshops')
   return result
 }
@@ -182,7 +184,7 @@ export async function getMonthlyRecordById(id: string) {
 }
 
 export async function createMonthlyRecordAction(data: CreateMonthlyRecordInput) {
-  const result = await apiCreateMonthlyRecord(data as unknown as Record<string, unknown>)
+  const result = await apiCreateMonthlyRecord(data)
   revalidatePath('/energy/monthly')
   return result
 }
@@ -195,7 +197,7 @@ export async function deleteMonthlyRecordAction(id: string) {
 // ── 飞书导入 Server Action ──
 
 export async function importFromFeishuAction(data: FeishuImportRequest) {
-  const result = await apiImportFromFeishu(data as unknown as Record<string, unknown>)
+  const result = await apiImportFromFeishu(data)
   if (!data.dry_run) {
     revalidatePath('/energy/monthly')
   }
@@ -204,10 +206,7 @@ export async function importFromFeishuAction(data: FeishuImportRequest) {
 
 // ── 飞书多维表格交叉表导入 Server Action ──
 
-export async function crossImportFromBitableAction(data: {
-  year?: number
-  month?: string
-}) {
+export async function crossImportFromBitableAction(data: components['schemas']['BitableCrossImportRequest']) {
   const result = await apiCrossImportFromBitable(data as Record<string, unknown>)
   revalidatePath('/energy/monthly')
   return result
@@ -232,12 +231,8 @@ export async function fetchAlertDatesAction() {
 }
 
 
-export async function syncMonthlyFromBitable(data?: any): Promise<any> {
-  const res = await fetch((process.env.API_BASE_URL || '') + '/api/v1/energy/sync/monthly', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data || {}),
-  })
-  const json = await res.json()
-  return json.data
+export async function syncMonthlyFromBitable(): Promise<any> {
+  const res = await syncMonthlyFromBitableApi()
+  revalidatePath('/energy/monthly')
+  return res
 }

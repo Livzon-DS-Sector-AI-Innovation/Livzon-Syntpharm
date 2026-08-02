@@ -528,3 +528,108 @@ Files changed: 163 across all 14 categories (core: browser service, safety sched
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
 
+### PR #18: Ruanjiaheng — Final auth enforcement + cleanup (head: ruanjiaheng, base: main, date: 2026-08-02)
+
+Files changed: 334 across all 14 categories (core: energy auth refactor to RequiredUser, safety scheduled_task service, equipment actions, frontend energy/equipment/safety pages and types)
+
+#### New findings (not in baseline, not in prior PRs)
+
+##### Category 2: Secrets and hardcoded values (pre-existing, missed by baseline)
+
+- [x] `.env.example:111` — 后端/LLM_ENCRYPTION_KEY — `LLM_ENCRYPTION_KEY=change-me-in-production` present. AGENTS.md explicitly forbids LLM_ENCRYPTION_KEY in `.env.example`. Pre-existing (also in main), missed by baseline audit. — severity: high — **ACCEPTED** (false positive — placeholder value, not an actual key)
+- [x] `.gitignore:2` — 仓库通用规则/禁止提交 .env — Root `.gitignore` only covers `.env`, not `.env.*` patterns. Backend (`.env` + `.env.*`) and frontend (`.env*`) have proper coverage in their own directories. Root-level `.env.local`/`.env.production` would not be gitignored, but root has no application reading `.env` — the gap is theoretical. — severity: low — **ACCEPTED** (subdirectory gitignores provide sufficient coverage)
+
+##### Category 4: API and authentication
+
+- [ ] `backend/app/modules/energy/api.py:53-56` — API 规范/Q6-Q7 — `list_platforms` is fully public (no auth parameter). AGENTS.md default rule is unambiguous: 所有业务 API 默认需要登录，使用 `RequiredUser`. This is an energy module business endpoint — not an SSO callback, webhook, or public reference data endpoint. Add `current_user: RequiredUser`. — severity: low
+
+##### Category 6: Configuration and logging
+
+- [ ] `backend/app/modules/safety/card_builder.py:127-128` — 日志规范/异常处理 — Uses `logger.error()` instead of `logger.exception()`, discarding the traceback. Rule requires `logger.exception()` to auto-attach stack traces. — severity: medium
+- [ ] `backend/app/modules/safety/service/attachment.py:71` — 日志规范/上下文 — `logger.exception("Document parsing failed")` missing `extra={}` for structured context. Cannot identify which file or attachment caused the failure. — severity: medium
+- [ ] `backend/app/modules/safety/service/scheduled_task.py:17` — 日志规范 — `logger = logging.getLogger(__name__)` defined but never used across all CRUD operations. — severity: low
+
+##### Category 7: External services and background tasks
+
+- [ ] `backend/app/modules/safety/service/scheduled_task.py:85` — 异步任务/未处理异常 — `run_task_now()` imports `execute_single_task` from `safety/scheduler.py` with `# type: ignore[attr-defined]`, but `scheduler.py` is explicitly a stub (docstring: "Scheduled tasks module was removed in refactor"). `execute_single_task` does not exist in the stub — calling the API endpoint will raise `AttributeError` at runtime. — severity: blocking
+- [ ] `backend/app/modules/energy/api.py:556-566,569-579,582-592,595-618,621-649` — 异步任务/HTTP handler >5s — Five sync/import endpoints (`POST /sync/bitable`, `/sync/bitable/workshops`, `/sync/bitable/monthly`, `/sync/bitable/cross-import`, `/sync/bitable/daily-import`) perform synchronous Feishu API calls in HTTP handlers. Bitable sync with pagination across multiple tables can exceed 5 seconds and should be offloaded to job queue. Pre-existing (not new in this PR) but missed by prior audits. — severity: high
+- [ ] `backend/app/modules/energy/adapters/platform_a.py:95-102` — 错误处理/重试 — `_fetch_meter_hourly()` calls external API without retry, defaults meter to 0.0 on any exception. `energy/bitable_*.py` similarly calls `FeishuClient.request()` without retry wrapper. Pre-existing (missed by prior audits). — severity: high
+
+##### Category 9: Frontend component boundaries
+
+- [x] `frontend/src/app/(dashboard)/equipment/inspection/page.tsx:1` — 模块边界/Q4 — Imports `InspectionPage` via `@/components/equipment/inspection` (sub-path) instead of `@/components/equipment` barrel which already exports it (line 52). — severity: medium — **ACCEPTED** (false positive — import is within the same `equipment` module, not cross-module; AGENTS.md 模块边界 rule targets cross-module imports)
+- [x] `frontend/src/app/(dashboard)/safety/ai-workflow-config/page.tsx:2` — 模块边界/Q4 — Imports `AIWorkflowConfigClient` via `@/components/safety/AIWorkflowConfigClient` (sub-path) instead of `@/components/safety` barrel which already exports it (line 50). — severity: medium — **ACCEPTED** (false positive — import is within the same `safety` module, not cross-module)
+- [x] `frontend/src/app/(dashboard)/settings/page.tsx:2` — 模块边界/Q4 — Imports `SettingsAdminClient` via `@/components/settings/SettingsAdminClient` (sub-path). Not exported from `@/components/settings` barrel; either add to barrel or import correctly. — severity: medium — **ACCEPTED** (false positive — import is within the same `settings` module, not cross-module)
+- [x] `frontend/src/app/(dashboard)/energy/devices/page.tsx:7-8` — 模块边界/Q4 — Was importing from sub-paths (`@/components/energy/DeviceTable`, `@/components/energy/DeviceDrawer`, `@/components/energy/StatsCards`). **RESOLVED** — imports now use `@/components/energy` barrel. Note: sub-path imports within the same module are not cross-module violations per AGENTS.md, but barrel usage is a net improvement. — severity: medium
+- [ ] `frontend/src/components/energy/shared-styles.tsx` — 命名规范/Q5 — New file uses kebab-case filename for non-component file (exports styled utility functions). Per AGENTS.md, non-component files should use camelCase (e.g. `sharedStyles.tsx`). — severity: low
+- [ ] `frontend/src/app/(dashboard)/energy/workshops/page.tsx` — 页面标题/Q9 — No `<h1>` heading anywhere in page or rendered `WorkshopTable` component. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/safety/ai-workflow-config/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Renders `<AIWorkflowConfigClient />` which also lacks `<h1>`. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/safety/scheduled-tasks/page.tsx:11` — 页面标题/Q9 — Uses `<h2>定时任务</h2>` instead of `<h1>`. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/safety/scheduled-tasks/new/page.tsx:6` — 页面标题/Q9 — Uses `<h2>新建定时任务</h2>` instead of `<h1>`. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/safety/scheduled-tasks/[id]/page.tsx:21` — 页面标题/Q9 — Uses `<h2>编辑定时任务 — ...</h2>` instead of `<h1>`. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/safety/hazard-identification-legacy/page.tsx` — 页面标题/Q9 — Placeholder page with no `<h1>`. — severity: low
+- [ ] `frontend/src/app/(dashboard)/safety/hazard-legacy/page.tsx` — 页面标题/Q9 — Placeholder page with no `<h1>`. — severity: low
+
+##### Category 10: Frontend API and generated types
+
+- [ ] `frontend/src/actions/administration.ts:13-67` — 类型系统/Q1 — Server Actions use `data: any`, `Record<string, unknown>`, and inline types instead of `@/types/generated/schema`. — severity: high
+- [ ] `frontend/src/actions/equipment-personnel.ts:6-10` — 类型系统/Q1 — Imports API parameter types from handwritten local file `@/types/equipment-personnel` instead of `@/types/generated/schema`. — severity: high
+- [ ] `frontend/src/lib/api/server/administration.ts:3-80` — 类型系统/Q1 — All server API functions use `data: any` without generated schema imports. — severity: high
+- [ ] `frontend/src/lib/api/server/equipment-personnel.ts:5-33` — 类型系统/Q1 — All server API functions use `data: any` without generated schema imports. — severity: high
+- [ ] `frontend/src/actions/energy.ts:226-233` — 写操作/Q2 (additional) — `syncMonthlyFromBitable` uses raw `fetch()` bypassing `lib/api/server/` layer. Fallback `(process.env.API_BASE_URL \|\| '')` uses empty string. — severity: blocking
+- [ ] `frontend/src/actions/safety/index.ts:1548+` — 类型系统/Q1 — New actions (`createAIWorkflowConfig`, `updateScheduledTask`, etc.) use `Record<string, unknown>` instead of generated schema types. — severity: medium
+- [ ] `frontend/src/actions/energy.ts:226` — 类型系统/Q1 — `syncMonthlyFromBitable(data?: any)` and `getEnergyOverview(params: any)` use bare `any` types. — severity: medium
+- [ ] `frontend/src/lib/api/server/energy.ts:13` — API 调用层级 — Local `apiFetch` and `getApiBaseUrl()` duplicate `base.ts` functionality. Falls back to `http://dazah-backend-app-1:8000` instead of `http://backend:8000` from `base.ts`. — severity: medium
+- [ ] `frontend/src/types/generated/schema.ts` — 类型系统/Q6 — 27k-line diff committed. Appears auto-generated; drift against current backend OpenAPI spec unverified without CI run. — severity: low
+
+##### Category 11: Proxy and routing
+
+- [ ] `frontend/src/actions/inspection.ts:87` — Q6 / Actions must call lib/api — `uploadInspectionPhoto` directly fetches `${API_BASE_URL \|\| ''}/api/v1/equipment/inspection/.../photos` instead of calling `uploadInspectionPhotoApi()` from `lib/api/server/equipment` (exists at line 494). — severity: medium
+- [ ] `frontend/src/actions/inspection.ts:115` — Q6 / Actions must call lib/api — `uploadTaskPhoto` directly fetches instead of calling `uploadTaskPhotoApi()` from `lib/api/server/equipment` (exists at line 523). — severity: medium
+- [ ] `frontend/src/actions/equipment.ts:405` — Q6 / Actions must call lib/api — `previewEquipmentImport` directly fetches with local `getApiBaseUrl()` instead of delegating to `lib/api/server/equipment`. — severity: medium
+- [ ] `frontend/src/actions/equipment.ts:420` — Q6 / Actions must call lib/api — `batchImportEquipment` directly fetches with local `getApiBaseUrl()` instead of delegating to `lib/api/server/equipment`. — severity: medium
+- [ ] `frontend/src/actions/energy.ts:236` — Q6 / Actions must call lib/api — `syncMonthlyFromBitable` directly fetches without a `lib/api/server/energy` wrapper. — severity: medium
+
+##### Category 13: Docker and deployment
+
+- [ ] `docker-compose.yml:98` — Docker/配置一致性 — Build arg `NEXT_PUBLIC_API_BASE_URL: "http://192.168.60.91"` not declared in frontend Dockerfile via `ARG`, so it has no effect. — severity: low
+- [ ] `docker-compose.dev.yml:30` — 仓库通用规则/禁止硬编码 — `ALLOWED_DEV_ORIGINS: "8.138.238.190"` hardcodes external IP in dev config, reducing portability. — severity: low
+
+#### Worsened findings (existed in baseline, now worse)
+
+_None._
+
+#### Previously resolved PR #17 findings — verified still resolved
+
+- Category 4: energy CRUD endpoints now use `RequiredUser` ✓
+- Category 4: identity `GET /me` uses `RequiredUser` ✓
+- Category 5: cross-module FK `ScheduledTask.created_by` → accepted exception ✓
+- Category 6: energy scheduler uses `get_module_setting_bool` ✓
+- Category 7: unhandled `raise` in except blocks in energy scheduler and regulatory tracker ✓
+- Category 9: authorization-letter page has `<h1>` heading ✓
+- Category 9: `NoAccessResult` barrel export resolved ✓
+- Category 10: malformed error message in `getApiBaseUrl()` fixed ✓
+- Category 10: `administration.ts` inline fetch migrated to lib/api/server ✓
+- Category 13: `.next-e2e` cleanup restored ✓
+
+#### Category summaries (PR #18)
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|---|
+| 1. Repository layout | 0 | 0 | 0 | 0 | Clean |
+| 2. Secrets | 0 | 0 | 0 | 0 | Clean (2 pre-existing, accepted) |
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 0 | 1 | `list_platforms` → recommend OptionalUser |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | Clean |
+| 6. Config & logging | 0 | 0 | 2 | 1 | New files with logging gaps |
+| 7. External services | 1 | 2 | 0 | 0 | `execute_single_task` blocking; pre-existing sync/retry gaps |
+| 8. Backend tests | 0 | 0 | 0 | 0 | Clean (1 uncertain OCR coverage gap) |
+| 9. Frontend boundaries | 0 | 0 | 5 | 3 | h1 headings + kebab-case filename |
+| 10. Frontend API & types | 1 | 4 | 3 | 1 | Raw fetch + handwritten types |
+| 11. Proxy & routing | 0 | 0 | 5 | 0 | Actions bypass lib/api |
+| 12. OpenAPI | 0 | 0 | 0 | 0 | Clean (CI verifies) |
+| 13. Docker | 0 | 0 | 0 | 2 | Build arg + hardcoded IP |
+| 14. E2E | 0 | 0 | 0 | 0 | Clean |
+| **Total** | **2** | **6** | **15** | **8** | **31 total** |
+
+

@@ -75,6 +75,7 @@ export default function HazardIdentificationLegacyPage() {
   const { message } = App.useApp()
   return (
     <div style={{ padding: 24 }}>
+      <h1>隐患识别（旧版）</h1>
       <Text> hazard-identification-legacy 页面正在开发中...</Text>
     </div>
   )

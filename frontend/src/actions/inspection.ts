@@ -19,6 +19,10 @@ import {
   analyzeInspectionPhotoApi,
   createScheduleApi, updateScheduleApi, deleteScheduleApi,
 } from '@/lib/api/server/inspection'
+import {
+  uploadInspectionPhotoApi,
+  uploadTaskPhotoApi,
+} from '@/lib/api/server/equipment'
 
 async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await getServerToken()}` }
@@ -83,19 +87,9 @@ export async function submitEquipmentCheck(taskId: string, equipmentId: string, 
 }
 
 export async function uploadInspectionPhoto(taskId: string, equipmentId: string, formData: FormData) {
-  const token = await getServerToken()
-  const response = await fetch(`${process.env.API_BASE_URL || ''}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message as string || '上传失败')
-  }
+  const result = await uploadInspectionPhotoApi(taskId, equipmentId, formData, await authHeaders())
   revalidate()
-  const json = await response.json()
-  return json.data
+  return result
 }
 
 export async function deleteInspectionPhoto(taskId: string, photoId: string) {
@@ -111,19 +105,9 @@ export async function submitRouteCheck(taskId: string, data: RouteCheckSubmitInp
 }
 
 export async function uploadTaskPhoto(taskId: string, formData: FormData) {
-  const token = await getServerToken()
-  const response = await fetch(`${process.env.API_BASE_URL || ''}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message as string || '上传失败')
-  }
+  const result = await uploadTaskPhotoApi(taskId, formData, await authHeaders())
   revalidate()
-  const json = await response.json()
-  return json.data
+  return result
 }
 
 export async function analyzeInspectionPhoto(

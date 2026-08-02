@@ -51,7 +51,7 @@ monthly_router = APIRouter()
 
 
 @router.get("/platforms", summary="获取已登记的平台列表")
-async def list_platforms() -> JSONResponse:
+async def list_platforms(current_user: RequiredUser) -> JSONResponse:
     data = [{"code": code, "name": adapter.platform_name} for code, adapter in ADAPTERS.items()]
     return success_response(data)
 

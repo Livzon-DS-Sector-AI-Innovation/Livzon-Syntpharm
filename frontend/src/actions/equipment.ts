@@ -55,6 +55,7 @@ import {
   uploadWorkOrderImagesApi, deleteWorkOrderImageApi,
   claimWorkOrderApi, updateClaimTimeoutConfigApi,
   downloadImportTemplateApi, importEquipmentsApi,
+  previewEquipmentImportApi, batchImportEquipmentApi,
   createPersonnelRoleApi, updatePersonnelRoleApi, deletePersonnelRoleApi,
   addPersonnelApi, deletePersonnelApi, assignRolesApi, assignCategoriesApi, refreshFeishuApi,
   fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics,
@@ -396,37 +397,13 @@ export async function deleteRole(id: string) {
   return result
 }
 
-function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
-
 export async function previewEquipmentImport(data: any) {
-  const token = await getServerToken()
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '预览失败')
-  }
-  const json = await res.json()
-  return json.data
+  const result = await previewEquipmentImportApi(data, await authHeaders())
+  return result
 }
 
 export async function batchImportEquipment(data: any) {
-  const token = await getServerToken()
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '导入失败')
-  }
+  const result = await batchImportEquipmentApi(data, await authHeaders())
   revalidatePath('/equipment')
-  const json = await res.json()
-  return json.data
+  return result
 }

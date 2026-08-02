@@ -24,6 +24,7 @@ import type {
   HeaderColor,
   CardPreviewRequest
 } from '@/types/safety'
+import type { components } from '@/types/generated/schema'
 import { HEADER_COLOR_OPTIONS } from '@/types/safety'
 import {
   createScheduledTask,
@@ -157,9 +158,9 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
 
       let res
       if (isEdit && editData) {
-        res = await updateScheduledTask(editData.id, payload as unknown as Record<string, unknown>)
+        res = await updateScheduledTask(editData.id, payload as unknown as components['schemas']['ScheduledTaskUpdate'])
       } else {
-        res = await createScheduledTask(payload as unknown as Record<string, unknown>)
+        res = await createScheduledTask(payload as unknown as components['schemas']['ScheduledTaskCreate'])
       }
 
       if (res.code === 200) {
