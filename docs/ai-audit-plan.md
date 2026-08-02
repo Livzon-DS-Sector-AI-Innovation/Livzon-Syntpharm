@@ -140,7 +140,7 @@ Full audit
 - 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
 - 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
 - 禁止在日志或异常中输出 API key、token、密码等敏感信息
-- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
+- 禁止提交 `.env` 文件
 
 **后端 / LLM_ENCRYPTION_KEY:**
 - `LLM_ENCRYPTION_KEY` 必须存放在部署环境变量中，不进入数据库，不进入 Git，不进入 `.env.example`
@@ -673,8 +673,8 @@ Full audit
 - 判断标准：如果页面 JSX 使用了 antd 组件 → 需要 `'use client'`；如果页面只是 `<ClientComponent />` → 不需要
 
 **Barrel 文件规则:**
-- 当 Server Component 从 `components/<模块>/index.ts` 导入 Client 组件时，如果导出的组件使用了 Zustand store、React Context 或其他 Context-based 状态管理，barrel 文件必须加 `'use client'`
-- 最佳实践：所有 `components/<模块>/index.ts` 统一加 `'use client'`
+- 导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错）
+- 其他 barrel 建议统一加 `'use client'`（最佳实践，防止未来引入 store 导入时构建失败）
 
 **动态渲染:**
 - Server Component 页面如果调用后端 API，必须在页面顶部添加 `export const dynamic = 'force-dynamic'`
@@ -708,13 +708,15 @@ Full audit
 
 1. Are there page.tsx files using antd components (Card, Row, Col, Button, etc.) without `'use client'`?
 2. Are there page.tsx files that call backend APIs (via `actions/`) without `export const dynamic = 'force-dynamic'`?
-3. Are there barrel `index.ts` files that export Zustand-based or Context-based components but are missing `'use client'`?
+3a. Are there barrel `index.ts` files that export Zustand/Context components but are missing `'use client'`?
+3b. Are there other barrel `index.ts` files missing `'use client'` (violates best practice, not a build error)?
 4. Are there cross-module component imports that bypass the target module's `index.ts` barrel?
    (Importing `@/components/moduleB/SomeComponent` instead of `@/components/moduleB`)
 5. Do component file names follow PascalCase? Do non-component file names follow camelCase?
 6. Do Server Action function names start with a verb (`create`, `update`, `delete`, `submit`, etc.)?
 7. Do API request function names start with `fetch`?
 8. Has `proxy.ts`, `components/shared/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
+9. Does every `page.tsx` have a semantic `<h1>` heading (using `<h1>` or `<Title level={1}>`) that is NOT provided via `<Card title="...">`?
 
 ### Output format
 

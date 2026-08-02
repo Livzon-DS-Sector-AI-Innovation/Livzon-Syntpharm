@@ -13,7 +13,7 @@
 - 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
 - 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
 - 禁止在日志或异常中输出 API key、token、密码等敏感信息
-- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
+- 禁止提交 `.env` 文件
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
 ## 仓库组织
@@ -433,17 +433,15 @@ Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数�
 
 详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
 
-**Barrel 文件（index.ts）规则**：当 Server Component 从 `components/<模块>/index.ts` 导入 Client 组件时，如果导出的组件使用了 **Zustand store**、**React Context** 或其他 Context-based 状态管理，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。示例：
+**Barrel 文件（index.ts）规则**：导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
 
 ```typescript
 // frontend/src/components/energy/index.ts
-'use client'  // ← 必须加，因为导出的组件使用 useEnergyStore
+'use client'
 
 export { AlertsPageClient } from './AlertsPageClient'
 export { DevicesPageClient } from './DevicesPageClient'
 ```
-
-如果 barrel 文件导出的组件只使用基本 hooks（`useState`、`useEffect`），理论上不需要 `'use client'`，但**最佳实践**是所有 `components/<模块>/index.ts` 统一加 `'use client'`，避免未来添加 zustand 导入时构建失败。
 
 ### 动态渲染
 
