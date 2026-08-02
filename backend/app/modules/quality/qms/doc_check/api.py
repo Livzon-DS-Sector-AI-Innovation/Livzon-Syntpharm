@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
 from app.modules.quality.qms.doc_check.schemas import (
     DocCheckConfigCreate,
@@ -41,8 +41,8 @@ _upload_store: dict[str, dict[str, Any]] = {}
 
 @router.get("/config", response_model=ApiResponse, summary="获取配置列表")
 async def get(
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取配置列表"""
     try:
@@ -60,8 +60,8 @@ async def get(
 @router.get("/config/{config_id}", response_model=ApiResponse, summary="获取配置详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     config_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取配置详情"""
     service = DocCheckService(db)
@@ -74,8 +74,8 @@ async def get(  # noqa: F811
 @router.post("/config", response_model=ApiResponse, summary="创建配置")
 async def post(
     data: DocCheckConfigCreate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """创建配置"""
     service = DocCheckService(db)
@@ -88,8 +88,8 @@ async def post(
 async def put(
     config_id: uuid.UUID,
     data: DocCheckConfigUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新配置"""
     service = DocCheckService(db)
@@ -106,13 +106,13 @@ async def put(
 @router.post("/check", response_model=ApiResponse, summary="创建校验任务")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: DocCheckCreate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """创建校验任务"""
     try:
         service = DocCheckService(db)
-        operator = current_user.username if current_user else None
+        operator = current_user.username
         check = await service.create_check(data, operator=operator)
         await db.commit()
         # 返回前端需要的格式
@@ -135,12 +135,12 @@ async def post(  # noqa: F811
 @router.post("/check/{check_id}/execute", response_model=ApiResponse, summary="执行校验")
 async def handler(
     check_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """执行校验（调用 AI）"""
     service = DocCheckService(db)
-    operator = current_user.username if current_user else None
+    operator = current_user.username
     try:
         check = await service.execute_check(check_id, operator=operator)
         if not check:
@@ -159,8 +159,8 @@ async def get(  # noqa: F811
     status: str | None = Query(None, description="校验状态"),
     doc_type: str | None = Query(None, description="文档类型"),
     operator: str | None = Query(None, description="操作人"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取校验列表"""
     service = DocCheckService(db)
@@ -181,8 +181,8 @@ async def get(  # noqa: F811
 @router.get("/check/{check_id}", response_model=ApiResponse, summary="获取校验详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     check_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取校验详情"""
     service = DocCheckService(db)
@@ -196,8 +196,8 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     check_id: uuid.UUID,
     data: DocCheckUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新校验任务"""
     service = DocCheckService(db)
@@ -214,8 +214,8 @@ async def put(  # noqa: F811
 @router.delete("/check/{check_id}", response_model=ApiResponse, summary="删除校验任务")
 async def delete(
     check_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """删除校验任务"""
     service = DocCheckService(db)
@@ -235,8 +235,8 @@ async def delete(
 @router.get("/problems", response_model=ApiResponse, summary="获取问题列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     check_main_id: uuid.UUID = Query(..., description="校验主表ID"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取问题列表"""
     service = DocCheckService(db)
@@ -251,8 +251,8 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     doc_type: str | None = Query(None, description="文档类型"),
     doc_hash: str | None = Query(None, description="文档哈希"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取向量缓存列表"""
     service = DocCheckService(db)
@@ -272,8 +272,8 @@ async def post(  # noqa: F811
     file_type: str | None = Form(None, description="文件类型"),
     preparer: str | None = Form(None, description="编制人"),
     prepare_date: str | None = Form(None, description="编制日期"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """上传文件到服务器"""
     # 读取文件内容
@@ -334,8 +334,8 @@ async def post(  # noqa: F811
 )
 async def handler(  # noqa: F811
     upload_id: str,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取上传进度"""
     if upload_id not in _upload_store:
@@ -360,8 +360,8 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     check_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取校验进度"""
     service = DocCheckService(db)
@@ -404,12 +404,12 @@ async def handler(  # noqa: F811
 async def post(  # noqa: F811
     check_id: uuid.UUID,
     operator: str | None = None,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """取消校验任务"""
     service = DocCheckService(db)
-    operator = operator or (current_user.username if current_user else None)
+    operator = operator or (current_user.username)
 
     check = await service.get_check(check_id)
     if not check:
@@ -432,12 +432,12 @@ async def post(  # noqa: F811
     file_ids: list[str],
     check_config: dict[str, Any] | None = None,
     operator: str | None = None,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """批量创建校验任务"""
     service = DocCheckService(db)
-    operator = operator or (current_user.username if current_user else None)
+    operator = operator or (current_user.username)
 
     results = []
     for file_id in file_ids:
@@ -485,8 +485,8 @@ async def get(  # noqa: F811
     file_type: str | None = Query(None, description="文件类型"),
     start_date: str | None = Query(None, description="开始日期"),
     end_date: str | None = Query(None, description="结束日期"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取校验记录列表"""
     service = DocCheckService(db)
@@ -537,8 +537,8 @@ async def get(  # noqa: F811
 )
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取校验记录详情"""
     service = DocCheckService(db)
@@ -594,12 +594,12 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
     operator: str | None = None,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """确认校验通过"""
     service = DocCheckService(db)
-    operator = operator or (current_user.username if current_user else None)
+    operator = operator or (current_user.username)
 
     check = await service.get_check(record_id)
     if not check:
@@ -621,8 +621,8 @@ async def handler(  # noqa: F811
 async def put(  # noqa: F811
     problem_id: uuid.UUID,
     data: ProblemUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新问题"""
     DocCheckService(db)
@@ -674,11 +674,11 @@ async def put(  # noqa: F811
     handle_status: str,
     ignore_reason: str | None = None,
     operator: str | None = None,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """批量更新问题"""
-    operator = operator or (current_user.username if current_user else None)
+    operator = operator or (current_user.username)
 
     from sqlalchemy import update
 
@@ -713,8 +713,8 @@ async def put(  # noqa: F811
 async def get(  # noqa: F811
     record_id: uuid.UUID,
     format: str = Query("pdf", description="导出格式"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """导出校验报告"""
     service = DocCheckService(db)

@@ -1,7 +1,6 @@
 """维修人员 API 路由."""
 
 import logging
-import uuid
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -9,8 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
-from app.core.exceptions import AppException
+from app.core.deps import RequiredUser
 from app.core.response import success_response
 from app.modules.equipment.models.personnel import EquipmentPersonnel
 from app.platform.identity.models import User
@@ -20,18 +18,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
 
 @router.get("/maintainers", summary="获取设备模块维修人员列表")
 async def list_maintainers(
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    _require_user(current_user)
     """从人员配置中获取所有在岗人员，供工单指派维修人时选择。"""
     result = await db.execute(
         select(EquipmentPersonnel)
@@ -59,10 +51,9 @@ async def list_maintainers(
 
 @router.get("/all-users", summary="获取全体员工列表")
 async def list_all_users(
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
-    _require_user(current_user)
     """返回所有本地用户，供工单责任人选择。"""
     result = await db.execute(
         select(User.id, User.name, User.employee_no)

@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
+from app.core.deps import RequiredUser
 from app.core.jobs import spawn_task
 from app.core.response import success_response
-from app.platform.identity.deps import CurrentUser
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
     DepartmentResponse,
@@ -167,16 +167,12 @@ async def logout(
 
 @user_router.get("/me", summary="获取当前登录用户信息")
 async def get_me(
-    current_user: CurrentUser = None,
+    current_user: RequiredUser = None,
 ) -> JSONResponse:
     """Return the currently authenticated user's profile.
 
     Authentication via Bearer header or auth_token cookie.
     """
-    if current_user is None:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=401, detail="未登录或登录已过期")
     return success_response(data=UserResponse.model_validate(current_user).model_dump())
 
 
@@ -210,6 +206,7 @@ def _build_department_tree(
 @dept_router.get("", summary="获取部门列表 / 组织架构树")
 async def list_departments(
     tree: bool = Query(False, description="是否返回树形结构"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有部门。传 ?tree=true 返回层级组织架构树。"""
@@ -228,6 +225,7 @@ async def list_departments(
 @dept_router.get("/{dept_id}", summary="获取部门详情")
 async def get_department(
     dept_id: str,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """按 open_department_id 获取单个部门详情。"""
@@ -249,6 +247,7 @@ async def list_personnel(
     keyword: str | None = Query(None, description="按姓名搜索"),
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """分页获取所有人员名单，支持按部门和姓名筛选。"""
@@ -276,6 +275,7 @@ async def list_personnel(
 
 @sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
 async def trigger_sync_departments(
+    current_user: RequiredUser = None,
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
@@ -297,6 +297,7 @@ async def trigger_sync_departments(
 
 @sync_router.post("/members", summary="触发飞书成员同步（异步）")
 async def trigger_sync_members(
+    current_user: RequiredUser = None,
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
@@ -327,8 +328,8 @@ async def list_login_logs(
     keyword: str | None = Query(None, description="按用户名搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     """分页查询登录记录，支持按状态和用户名筛选。"""
     from app.platform.identity.repository import LoginLogRepository

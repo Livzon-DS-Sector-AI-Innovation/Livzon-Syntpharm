@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
 from app.modules.production.product.schemas import (
     ProductCreate,
@@ -21,8 +21,8 @@ router = APIRouter()
 
 @router.get("/products", summary="获取所有产品列表")
 async def get(
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取所有产品，按车间分组"""
     service = ProductService(db)
@@ -33,8 +33,8 @@ async def get(
 @router.get("/products/workshop/{workshop}", summary="获取指定车间的产品列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     workshop: str,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取指定车间的所有产品"""
     service = ProductService(db)
@@ -45,8 +45,8 @@ async def get(  # noqa: F811
 @router.get("/products/{product_id}", summary="获取产品详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取产品详情"""
     service = ProductService(db)
@@ -59,8 +59,8 @@ async def get(  # noqa: F811
 @router.post("/products", summary="创建产品")
 async def post(
     data: ProductCreate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """创建新产品"""
     service = ProductService(db)
@@ -74,8 +74,8 @@ async def post(
 async def put(
     product_id: uuid.UUID,
     data: ProductUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新产品信息"""
     service = ProductService(db)
@@ -88,8 +88,8 @@ async def put(
 @router.delete("/products/{product_id}", summary="删除产品")
 async def delete(
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """删除产品"""
     service = ProductService(db)

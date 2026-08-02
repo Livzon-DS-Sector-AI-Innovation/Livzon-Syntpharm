@@ -132,15 +132,55 @@ DELETE /api/v1/{module}/{resource}/{id}
 
 ## 认证与权限
 
-通过 `app.core.deps.CurrentUser` 获取当前用户（FastAPI 依赖注入）。认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
+认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
 
-**注意**：当前为 Phase 1（预留接口），`current_user` 可能为 `None`。
+### 依赖注入
 
-**默认规则**：
-- 所有业务 API 默认需要登录
-- 只有明确标记为 public 的接口可以允许 `current_user` 为 `None`
-- 新增业务接口时必须显式选择 `require_user` / `optional_user` / `public`
-- 未声明的业务接口按 `require_user` 处理
+从 `app.core.deps` 导入。新增业务接口必须显式选择以下三者之一：
+
+```python
+from app.core.deps import RequiredUser, OptionalUser
+```
+
+| 选项 | 参数声明 | 类型 | 未登录行为 | 使用场景 |
+|---|---|---|---|---|
+| `RequiredUser` | `current_user: RequiredUser` | `User` | 返回 401 | **默认**。所有业务 API 必须使用 |
+| `OptionalUser` | `current_user: OptionalUser` | `User \| None` | 返回 `None`（端点可判断） | 少数场景：AI 工具、公开参考数据等允许未登录访问的接口（当前暂未使用） |
+| public（不注入） | 不声明 `current_user` 参数 | — | 不解析用户 | 仅 SSO 认证流程、飞书 webhook 回调、E2E 测试 |
+
+`OptionalUser` 与 public 的区别：`OptionalUser` 仍然会解析 JWT/cookie，端点可以拿到用户信息做条件逻辑（如登录用户显示个性化内容，未登录显示默认内容）。public 完全不解析，适合无需用户上下文的端点（登录页、webhook）。
+
+### 默认规则
+
+- **所有业务 API 默认需要登录**，使用 `RequiredUser`
+- 新增业务接口时必须从 `RequiredUser` / `OptionalUser` / public（不声明参数）中显式选择
+- 未声明的业务接口按 `RequiredUser` 处理
+
+### 公开接口（无需登录）
+
+| 端点 | 原因 | 认证方式 |
+|---|---|---|
+| `GET /api/v1/identity/auth/login` | 飞书 SSO 登录入口 | 无 |
+| `GET /api/v1/identity/auth/callback` | 飞书 SSO 回调 | 无 |
+| `GET /api/v1/identity/auth/logout` | 登出 | 无 |
+| `POST /api/v1/identity/auth/test-login` | E2E 测试专用 | `APP_ENV` 环境变量守卫 |
+| `POST /api/v1/hr/webhook/feishu-approval` | 飞书审批回调 | 飞书验证 token + 签名 |
+
+### Feishu Webhook 处理
+
+飞书 HTTP 回调（webhook）**禁止**使用 `RequiredUser` —— 这是服务器到服务器的回调，没有用户会话。
+
+**必须**按 Feishu 标准协议验证请求来源：
+
+1. **验证 Token 检查**：飞书事件 payload 包含 `token` 字段，必须与 Feishu 应用配置的 Verification Token 比对
+2. **签名验证**（如配置了 encrypt_key）：`SHA256(timestamp + nonce + encrypt_key + raw_body)`，通过 `hmac.compare_digest` 比对
+
+验证函数复用 `app/platform/identity/service.py` 中的 `_verify_feishu_callback_signature()`。
+
+**禁止**在 webhook 端点中：
+- 使用 `RequiredUser` 或 `get_current_user`
+- 不验证 token 直接处理 payload
+- 在 `_verify_feishu_callback_signature` 缺少字段时放行（当前 bug：返回 `True`）
 
 ## 数据库规范
 

@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
@@ -45,8 +45,8 @@ async def get_product_outputs(
     end_date: date | None = None,
     sort_by: str | None = Query(None, description="排序字段: batch_no, production_date, end_date, weight"),
     sort_order: str = Query("desc", description="排序方向: asc 或 desc"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取产量记录列表"""
     service = ProductOutputService(db)
@@ -77,8 +77,8 @@ async def get_product_outputs_summary(
     product_id: uuid.UUID | None = Query(None, description="产品ID"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取每日/月/年汇总统计"""
     service = ProductOutputService(db)
@@ -101,8 +101,8 @@ async def get_product_outputs_batch_count(
     product_id: uuid.UUID | None = Query(None, description="产品ID"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取批次统计"""
     service = ProductOutputService(db)
@@ -125,8 +125,8 @@ async def export_product_outputs(
     batch_no: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """导出产量记录为 XLSX"""
     from openpyxl import Workbook
@@ -194,8 +194,8 @@ async def export_product_outputs(
 @router.get("/product-output/{record_id}", summary="获取产量记录详情")
 async def get_product_output(
     record_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取单条产量记录"""
     service = ProductOutputService(db)
@@ -208,8 +208,8 @@ async def get_product_output(
 @router.post("/product-output", summary="新建产量记录")
 async def create_product_output(
     data: ProductOutputCreate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """新建产量记录"""
     service = ProductOutputService(db)
@@ -224,8 +224,8 @@ async def create_product_output(
 async def update_product_output(
     record_id: uuid.UUID,
     data: ProductOutputUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新产量记录"""
     service = ProductOutputService(db)
@@ -242,8 +242,8 @@ async def update_product_output(
 @router.delete("/product-output/batch", summary="批量删除产量记录")
 async def batch_delete_product_outputs(
     ids: str = Query(..., description="逗号分隔的记录 ID 列表"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """批量软删除产量记录"""
     id_list = [uuid.UUID(id_str.strip()) for id_str in ids.split(",") if id_str.strip()]
@@ -261,8 +261,8 @@ async def batch_delete_product_outputs(
 @router.delete("/product-output/{record_id}", summary="删除产量记录")
 async def delete_product_output(
     record_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """软删除产量记录"""
     service = ProductOutputService(db)
@@ -275,8 +275,8 @@ async def delete_product_output(
 @router.post("/product-output/import", summary="导入产量记录")
 async def import_product_outputs(
     file: UploadFile = File(...),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """通过 CSV 或 XLSX 文件批量导入产量记录
 
@@ -420,8 +420,8 @@ async def import_product_outputs(
 async def import_from_bitable(
     app_token: str = Query(..., description="飞书多维表格 app_token"),
     table_id: str = Query("", description="飞书多维表格 table_id（不填则自动获取第一个表）"),
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """从飞书多维表格批量导入产量记录"""
     from app.modules.production.product.feishu.bitable import ProductBitableClient

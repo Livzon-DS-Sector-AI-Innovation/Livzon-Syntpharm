@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
 from app.modules.production.product.sync_config_schemas import (
     ProductSyncConfigCreate,
@@ -22,8 +22,8 @@ router = APIRouter()
 @router.get("/product-sync-config/{product_id}", summary="获取产品同步配置")
 async def get_sync_config(
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
@@ -35,8 +35,8 @@ async def get_sync_config(
 @router.post("/product-sync-config", summary="创建产品同步配置")
 async def create_sync_config(
     data: ProductSyncConfigCreate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     existing = await service.get_config(data.product_id)
@@ -50,8 +50,8 @@ async def create_sync_config(
 async def update_sync_config(
     config_id: uuid.UUID,
     data: ProductSyncConfigUpdate,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     config = await service.update_config(config_id, data)
@@ -63,8 +63,8 @@ async def update_sync_config(
 @router.delete("/product-sync-config/{config_id}", summary="删除产品同步配置")
 async def delete_sync_config(
     config_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     success = await service.delete_config(config_id)
@@ -76,8 +76,8 @@ async def delete_sync_config(
 @router.post("/product-sync-config/{product_id}/push", summary="推送到飞书")
 async def push_to_feishu(
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     result = await service.sync_push(product_id)
@@ -87,8 +87,8 @@ async def push_to_feishu(
 @router.post("/product-sync-config/{product_id}/pull", summary="从飞书拉取")
 async def pull_from_feishu(
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     result = await service.sync_pull(product_id)
@@ -98,8 +98,8 @@ async def pull_from_feishu(
 @router.post("/product-sync-config/{product_id}/sync", summary="双向同步")
 async def bidirectional_sync(
     product_id: uuid.UUID,
+    current_user: RequiredUser = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     service = ProductSyncConfigService(db)
     result = await service.sync_bidirectional(product_id)

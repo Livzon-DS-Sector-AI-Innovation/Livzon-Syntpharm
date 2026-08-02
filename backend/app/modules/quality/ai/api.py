@@ -15,6 +15,7 @@ from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import RequiredUser
 from app.core.llm import llm_client
 from app.core.response import success_response
 from app.modules.administration.public_api import (  # type: ignore[attr-defined]
@@ -356,6 +357,7 @@ def _convert_message_with_attachments(msg: dict[str, Any]) -> dict[str, Any]:
 @router.post("/chat/stream", summary="AI 流式对话")
 async def chat_stream(
     request: ChatRequest,
+    current_user: RequiredUser = None,
     session: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """Receive a chat request and stream the AI response via SSE."""
@@ -550,6 +552,7 @@ async def _call_moonshot_for_exam(
 
 @router.post("/exam/generate", summary="AI 出题：上传文件生成试卷题目")
 async def post(
+    current_user: RequiredUser = None,
     file: UploadFile = File(..., description="上传的文件（支持 .docx, .txt）"),
 ) -> Any:
     """上传培训文件，AI 自动识别内容并生成选择题和判断题."""
@@ -590,6 +593,7 @@ async def post(
 @router.post("/exam/export", summary="导出试卷 Word 文档")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: ExamExportRequest,
+    current_user: RequiredUser = None,
 ) -> Any:
     """根据试卷数据生成并下载 Word 文档."""
     try:
