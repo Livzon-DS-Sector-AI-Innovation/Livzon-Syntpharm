@@ -171,7 +171,6 @@ async def timeout_scan_loop() -> None:
         except Exception:
             logger.exception("Timeout scan error")
 
-
         try:
             await asyncio.wait_for(
                 stop_timeout_flag.wait(),
