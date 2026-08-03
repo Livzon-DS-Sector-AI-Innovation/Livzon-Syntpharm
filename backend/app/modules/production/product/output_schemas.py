@@ -84,3 +84,53 @@ class SummaryResponse(BaseModel):
     year: int | None = Field(None, description="查询年份")
     workshops: list[WorkshopSummary] = Field(default_factory=list)
     grand_total: float = Field(0, description="所有车间合计")
+
+
+class MonthlyTrend(BaseModel):
+    """月度趋势数据"""
+
+    month: int = Field(..., description="月份 1-12")
+    current_year_weight: float = Field(0, description="当年产量(kg)")
+    previous_year_weight: float = Field(0, description="去年产量(kg)")
+
+
+class WorkshopRanking(BaseModel):
+    """车间排名"""
+
+    workshop: str = Field(..., description="车间名称")
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    batch_count: int = Field(0, description="批次数")
+
+
+class TopProduct(BaseModel):
+    """TOP产品"""
+
+    rank: int = Field(..., description="排名")
+    product_name: str = Field(..., description="产品名称")
+    workshop: str = Field(..., description="车间")
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    batch_count: int = Field(0, description="批次数")
+    avg_weight: float = Field(0, description="平均批次重量(kg)")
+
+
+class AnnualOverview(BaseModel):
+    """年度概览"""
+
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    previous_year_weight: float = Field(0, description="去年总产量(kg)")
+    weight_yoy: float = Field(0, description="产量同比(%)")
+    total_batches: int = Field(0, description="年度总批次")
+    previous_year_batches: int = Field(0, description="去年总批次")
+    batch_yoy: float = Field(0, description="批次同比(%)")
+    active_workshops: int = Field(0, description="活跃车间数")
+    active_products: int = Field(0, description="活跃产品数")
+
+
+class AnnualReviewResponse(BaseModel):
+    """年度回顾响应"""
+
+    year: int = Field(..., description="年份")
+    overview: AnnualOverview = Field(default_factory=AnnualOverview)
+    monthly_trend: list[MonthlyTrend] = Field(default_factory=list)
+    workshop_ranking: list[WorkshopRanking] = Field(default_factory=list)
+    top_products: list[TopProduct] = Field(default_factory=list)

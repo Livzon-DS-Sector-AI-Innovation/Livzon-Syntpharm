@@ -19,10 +19,13 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders()
 
+  // 当 body 是 FormData 时，不设置 Content-Type，让浏览器自动设置 multipart/form-data
+  const isFormData = options?.body instanceof FormData || 
+    (options?.body && typeof FormData !== 'undefined' && options?.body.constructor?.name === 'FormData')
   const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...authHeaders,
       ...options?.headers,
     },
@@ -45,10 +48,13 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {
   const authHeaders = await getAuthHeaders()
 
+  // 当 body 是 FormData 时，不设置 Content-Type，让浏览器自动设置 multipart/form-data
+  const isFormData = options?.body instanceof FormData || 
+    (options?.body && typeof FormData !== 'undefined' && options?.body.constructor?.name === 'FormData')
   const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...authHeaders,
       ...options?.headers,
     },

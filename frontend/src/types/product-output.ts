@@ -79,3 +79,44 @@ export interface SummaryData {
   workshops: WorkshopSummary[]
   grand_total: number
 }
+
+// Annual Review types
+export interface MonthlyTrend {
+  month: number
+  current_year_weight: number
+  previous_year_weight: number
+}
+
+export interface WorkshopRanking {
+  workshop: string
+  total_weight: number
+  batch_count: number
+}
+
+export interface TopProduct {
+  rank: number
+  product_name: string
+  workshop: string
+  total_weight: number
+  batch_count: number
+  avg_weight: number
+}
+
+export interface AnnualOverview {
+  total_weight: number
+  previous_year_weight: number
+  weight_yoy: number
+  total_batches: number
+  previous_year_batches: number
+  batch_yoy: number
+  active_workshops: number
+  active_products: number
+}
+
+export interface AnnualReviewData {
+  year: number
+  overview: AnnualOverview
+  monthly_trend: MonthlyTrend[]
+  workshop_ranking: WorkshopRanking[]
+  top_products: TopProduct[]
+}

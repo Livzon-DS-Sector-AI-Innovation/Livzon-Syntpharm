@@ -223,3 +223,149 @@ class ProductOutputRepository:
             }
             for row in rows
         ]
+
+    async def get_monthly_trend(self, year: int) -> list[dict[str, Any]]:
+        """获取月度趋势 - 当年和去年对比"""
+        output_date = case(
+            (ProductOutput.end_date.isnot(None), ProductOutput.end_date),
+            else_=ProductOutput.production_date,
+        )
+
+        query = (
+            select(
+                func.extract("year", output_date).label("year"),
+                func.extract("month", output_date).label("month"),
+                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+            )
+            .where(
+                ProductOutput.is_deleted == False,  # noqa: E712
+                func.extract("year", output_date).in_([year, year - 1]),
+            )
+            .group_by("year", "month")
+            .order_by("year", "month")
+        )
+
+        result = await self.session.execute(query)
+        rows = result.all()
+        return [
+            {
+                "year": int(row.year),
+                "month": int(row.month),
+                "total_weight": float(row.total_weight),
+            }
+            for row in rows
+        ]
+
+    async def get_workshop_ranking(self, year: int) -> list[dict[str, Any]]:
+        """获取车间年度排名"""
+        output_date = case(
+            (ProductOutput.end_date.isnot(None), ProductOutput.end_date),
+            else_=ProductOutput.production_date,
+        )
+
+        query = (
+            select(
+                ProductOutput.workshop,
+                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+            )
+            .where(
+                ProductOutput.is_deleted == False,  # noqa: E712
+                func.extract("year", output_date) == year,
+            )
+            .group_by(ProductOutput.workshop)
+            .order_by(func.sum(ProductOutput.weight).desc())
+        )
+
+        result = await self.session.execute(query)
+        rows = result.all()
+        return [
+            {
+                "workshop": row.workshop,
+                "total_weight": float(row.total_weight),
+                "batch_count": int(row.batch_count),
+            }
+            for row in rows
+        ]
+
+    async def get_top_products(self, year: int, limit: int = 10) -> list[dict[str, Any]]:
+        """获取年度TOP产品"""
+        output_date = case(
+            (ProductOutput.end_date.isnot(None), ProductOutput.end_date),
+            else_=ProductOutput.production_date,
+        )
+
+        query = (
+            select(
+                ProductOutput.product_name,
+                ProductOutput.workshop,
+                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+            )
+            .where(
+                ProductOutput.is_deleted == False,  # noqa: E712
+                func.extract("year", output_date) == year,
+            )
+            .group_by(ProductOutput.product_name, ProductOutput.workshop)
+            .order_by(func.sum(ProductOutput.weight).desc())
+            .limit(limit)
+        )
+
+        result = await self.session.execute(query)
+        rows = result.all()
+        return [
+            {
+                "product_name": row.product_name,
+                "workshop": row.workshop,
+                "total_weight": float(row.total_weight),
+                "batch_count": int(row.batch_count),
+                "avg_weight": float(row.total_weight) / row.batch_count if row.batch_count > 0 else 0,
+            }
+            for row in rows
+        ]
+
+    async def get_annual_stats(self, year: int) -> dict[str, Any]:
+        """获取年度统计数据"""
+        output_date = case(
+            (ProductOutput.end_date.isnot(None), ProductOutput.end_date),
+            else_=ProductOutput.production_date,
+        )
+
+        # 当年统计
+        current_query = (
+            select(
+                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+                func.count(func.distinct(ProductOutput.workshop)).label("workshop_count"),
+                func.count(func.distinct(ProductOutput.product_name)).label("product_count"),
+            )
+            .where(
+                ProductOutput.is_deleted == False,  # noqa: E712
+                func.extract("year", output_date) == year,
+            )
+        )
+        current_result = await self.session.execute(current_query)
+        current_row = current_result.one()
+
+        # 去年统计
+        previous_query = (
+            select(
+                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+            )
+            .where(
+                ProductOutput.is_deleted == False,  # noqa: E712
+                func.extract("year", output_date) == year - 1,
+            )
+        )
+        previous_result = await self.session.execute(previous_query)
+        previous_row = previous_result.one()
+
+        return {
+            "total_weight": float(current_row.total_weight),
+            "batch_count": int(current_row.batch_count),
+            "workshop_count": int(current_row.workshop_count),
+            "product_count": int(current_row.product_count),
+            "previous_weight": float(previous_row.total_weight),
+            "previous_batch_count": int(previous_row.batch_count),
+        }

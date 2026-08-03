@@ -31,6 +31,7 @@ import {
   DownloadOutlined,
   FileExcelOutlined,
   HomeOutlined,
+  UndoOutlined,
 } from '@ant-design/icons'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -40,6 +41,8 @@ import {
   updateProductOutput,
   deleteProductOutput,
   importProductOutputs,
+  previewImport,
+  undoImport,
   importFromBitable,
   batchDeleteProductOutputs,
   getSummary,
@@ -74,6 +77,9 @@ export default function ProductOutputRecordsPage() {
   const [form] = Form.useForm()
 
   const [importModalVisible, setImportModalVisible] = useState(false)
+  const [previewData, setPreviewData] = useState<any>(null)
+  const [lastBatchId, setLastBatchId] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
   const [bitableModalVisible, setBitableModalVisible] = useState(false)
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
@@ -248,19 +254,74 @@ export default function ProductOutputRecordsPage() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const response = await importProductOutputs(formData)
+      const response = await previewImport(formData)
       if (response.code === 200) {
-        message.success(response.message || '导入成功')
-        setImportModalVisible(false)
-        loadRecords()
-        loadSummary()
+        setPreviewData(response.data)
+        message.info(`预览完成：共 ${response.data.total_rows} 行，可导入 ${response.data.new_records} 行`)
       } else {
-        message.error(response.message || '导入失败')
+        message.error(response.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+    return false
+  }
+
+  const handleConfirmImport = async () => {
+    if (!previewData) return
+    setImporting(true)
+    try {
+      // 重新获取文件并导入
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      if (fileInput?.files?.[0]) {
+        const formData = new FormData()
+        formData.append('file', fileInput.files[0])
+        const response = await importProductOutputs(formData)
+        if (response.code === 200) {
+          message.success(response.message || '导入成功')
+          setLastBatchId(response.data?.batch_id)
+          setImportModalVisible(false)
+          setPreviewData(null)
+          loadRecords()
+          loadSummary()
+        } else {
+          message.error(response.message || '导入失败')
+        }
       }
     } catch {
       message.error('导入失败')
+    } finally {
+      setImporting(false)
     }
-    return false
+  }
+
+  const handleUndoImport = async () => {
+    if (!lastBatchId) {
+      message.warning('没有可撤销的导入记录')
+      return
+    }
+    Modal.confirm({
+      title: '确认撤销',
+      content: `确定要撤销批次 ${lastBatchId} 的导入记录吗？`,
+      okText: '撤销',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const response = await undoImport(lastBatchId)
+          if (response.code === 200) {
+            message.success(response.message || '撤销成功')
+            setLastBatchId(null)
+            loadRecords()
+            loadSummary()
+          } else {
+            message.error(response.message || '撤销失败')
+          }
+        } catch {
+          message.error('撤销失败')
+        }
+      },
+    })
   }
 
   const handleBatchDelete = async () => {
@@ -576,6 +637,13 @@ export default function ProductOutputRecordsPage() {
               <Button icon={<DownloadOutlined />} onClick={handleExport}>
                 导出
               </Button>
+              <Button 
+                icon={<UndoOutlined />} 
+                onClick={handleUndoImport}
+                disabled={!lastBatchId}
+              >
+                撤销导入
+              </Button>
               <ProductSyncConfig productId={productId} onSynced={loadRecords} />
               {selectedRowKeys.length > 0 && (
                 <Button danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>
@@ -662,8 +730,22 @@ export default function ProductOutputRecordsPage() {
       <Modal
         title="导入产量记录"
         open={importModalVisible}
-        onCancel={() => setImportModalVisible(false)}
-        footer={null}
+        onCancel={() => {
+          setImportModalVisible(false)
+          setPreviewData(null)
+        }}
+        footer={
+          previewData ? (
+            <div className="flex justify-between">
+              <Button onClick={() => setPreviewData(null)}>重新选择文件</Button>
+              <div>
+                <Button onClick={handleConfirmImport} type="primary" loading={importing}>
+                  确认导入 {previewData.new_records} 条
+                </Button>
+              </div>
+            </div>
+          ) : null
+        }
       >
         <div className="space-y-4">
           <div className="p-4 bg-gray-50 rounded">
@@ -684,6 +766,67 @@ export default function ProductOutputRecordsPage() {
               选择文件导入（CSV 或 XLSX）
             </Button>
           </Upload>
+          {previewData && (
+            <div className="border rounded p-4">
+              <div className="flex justify-between items-center mb-3">
+                <Text strong>预览结果</Text>
+                <Space>
+                  <Tag color="green">可导入 {previewData.new_records} 条</Tag>
+                  {previewData.duplicate_records > 0 && (
+                    <Tag color="orange">重复 {previewData.duplicate_records} 条</Tag>
+                  )}
+                  {previewData.not_found_product > 0 && (
+                    <Tag color="red">未匹配产品 {previewData.not_found_product} 条</Tag>
+                  )}
+                </Space>
+              </div>
+              <Table
+                size="small"
+                dataSource={previewData.records}
+                rowKey="row_num"
+                pagination={false}
+                scroll={{ y: 350 }}
+                columns={[
+                  { title: '行号', dataIndex: 'row_num', width: 60, align: 'center' },
+                  { title: '车间', dataIndex: 'workshop', width: 90 },
+                  { title: '产品名称', dataIndex: 'product_name', width: 140, ellipsis: true },
+                  { title: '批号', dataIndex: 'batch_no', width: 160, ellipsis: true },
+                  { title: '生产日期', dataIndex: 'production_date', width: 110 },
+                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: any) => `${val} ${r.unit || 'kg'}` },
+                  { 
+                    title: '产品匹配', 
+                    width: 90, 
+                    align: 'center',
+                    render: (_: any, r: any) => r.product_found ? (
+                      <span className="text-green-600 font-bold">✓</span>
+                    ) : (
+                      <span className="text-red-600 font-bold">✗</span>
+                    )
+                  },
+                  { 
+                    title: '状态', 
+                    width: 80, 
+                    align: 'center',
+                    render: (_: any, r: any) => {
+                      if (r.is_duplicate) return <Tag color="orange">重复</Tag>;
+                      if (!r.product_found) return <Tag color="red">未匹配</Tag>;
+                      return <Tag color="green">可导入</Tag>;
+                    }
+                  },
+                ]}
+              />
+              {previewData.invalid_details && previewData.invalid_details.length > 0 && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                  <Text strong type="danger">无效记录 ({previewData.invalid_details.length} 条):</Text>
+                  <ul className="mt-2 text-sm text-red-600 list-disc list-inside max-h-32 overflow-y-auto">
+                    {previewData.invalid_details.map((item: any, idx: number) => (
+                      <li key={idx}>第 {item.row} 行: {item.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 
