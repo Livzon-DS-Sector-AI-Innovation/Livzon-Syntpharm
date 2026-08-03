@@ -31,10 +31,13 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders()
 
+  // 当 body 是 FormData 时，不设置 Content-Type，让浏览器自动设置 multipart/form-data
+  const isFormData = options?.body instanceof FormData || 
+    (options?.body && typeof FormData !== 'undefined' && options?.body.constructor?.name === 'FormData')
   const response = await fetchWithRetry(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...authHeaders,
       ...options?.headers,
     },
@@ -44,7 +47,7 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
     const errorBody = await response.text().catch(() => '')
     let errorMessage = `请求失败: ${response.status} ${response.statusText}`
     try {
-      const errorJson = JSON.parse(errorBody)
+      const errorJson = await response.json()
       if (errorJson.message) errorMessage = errorJson.message
       else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
     } catch {}
@@ -57,10 +60,13 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {
   const authHeaders = await getAuthHeaders()
 
+  // 当 body 是 FormData 时，不设置 Content-Type，让浏览器自动设置 multipart/form-data
+  const isFormData = options?.body instanceof FormData || 
+    (options?.body && typeof FormData !== 'undefined' && options?.body.constructor?.name === 'FormData')
   const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...authHeaders,
       ...options?.headers,
     },

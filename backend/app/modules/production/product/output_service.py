@@ -168,3 +168,89 @@ class ProductOutputService:
             start_date=start_date,
             end_date=end_date,
         )
+
+    async def get_annual_review(self, year: int) -> Any:
+        """获取年度回顾数据"""
+        from app.modules.production.product.output_schemas import (
+            AnnualOverview,
+            AnnualReviewResponse,
+            MonthlyTrend,
+            TopProduct,
+            WorkshopRanking,
+        )
+
+        # 获取年度统计
+        stats = await self.repo.get_annual_stats(year)
+
+        # 计算同比
+        weight_yoy = 0.0
+        if stats["previous_weight"] > 0:
+            weight_yoy = ((stats["total_weight"] - stats["previous_weight"]) / stats["previous_weight"]) * 100
+
+        batch_yoy = 0.0
+        if stats["previous_batch_count"] > 0:
+            batch_yoy = ((stats["batch_count"] - stats["previous_batch_count"]) / stats["previous_batch_count"]) * 100
+
+        overview = AnnualOverview(
+            total_weight=stats["total_weight"],
+            previous_year_weight=stats["previous_weight"],
+            weight_yoy=round(weight_yoy, 2),
+            total_batches=stats["batch_count"],
+            previous_year_batches=stats["previous_batch_count"],
+            batch_yoy=round(batch_yoy, 2),
+            active_workshops=stats["workshop_count"],
+            active_products=stats["product_count"],
+        )
+
+        # 获取月度趋势
+        monthly_data = await self.repo.get_monthly_trend(year)
+        monthly_trend = []
+        for month in range(1, 13):
+            current_weight = 0.0
+            previous_weight = 0.0
+            for row in monthly_data:
+                if row["month"] == month:
+                    if row["year"] == year:
+                        current_weight = row["total_weight"]
+                    elif row["year"] == year - 1:
+                        previous_weight = row["total_weight"]
+            monthly_trend.append(
+                MonthlyTrend(
+                    month=month,
+                    current_year_weight=current_weight,
+                    previous_year_weight=previous_weight,
+                )
+            )
+
+        # 获取车间排名
+        workshop_data = await self.repo.get_workshop_ranking(year)
+        workshop_ranking = [
+            WorkshopRanking(
+                workshop=row["workshop"],
+                total_weight=row["total_weight"],
+                batch_count=row["batch_count"],
+            )
+            for row in workshop_data
+        ]
+
+        # 获取TOP产品
+        top_products_data = await self.repo.get_top_products(year, limit=10)
+        top_products = [
+            TopProduct(
+                rank=i + 1,
+                product_name=row["product_name"],
+                workshop=row["workshop"],
+                total_weight=row["total_weight"],
+                batch_count=row["batch_count"],
+                avg_weight=round(row["avg_weight"], 2),
+            )
+            for i, row in enumerate(top_products_data)
+        ]
+
+        return AnnualReviewResponse(
+            year=year,
+            overview=overview,
+            monthly_trend=monthly_trend,
+            workshop_ranking=workshop_ranking,
+            top_products=top_products,
+        )

@@ -61,10 +61,12 @@ export async function getSummary(
 }
 
 export async function importProductOutputs(formData: FormData, headers: Record<string, string>) {
+  // 删除 Content-Type，让浏览器自动设置 multipart/form-data
+  const { 'Content-Type': _, ...restHeaders } = headers
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import`, {
     method: 'POST',
     body: formData,
-    headers,
+    headers: restHeaders,
   })
 }
 
@@ -143,6 +145,31 @@ export async function importFromBitable(appToken: string, tableId: string, heade
 
 export async function batchDeleteProductOutputs(ids: string[], headers: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/batch?ids=${ids.join(',')}`, {
+    method: 'DELETE',
+    headers,
+  })
+}
+
+export async function getAnnualReview(year: number, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/annual-review?year=${year}`, { headers })
+}
+
+export async function exportAnnualReview(year: number, headers: Record<string, string>) {
+  return apiFetchRaw(`${getApiBaseUrl()}/api/v1/production/product-output/annual-review/export?year=${year}`, { headers })
+}
+
+export async function previewImport(formData: FormData, headers: Record<string, string>) {
+  // 删除 Content-Type，让浏览器自动设置 multipart/form-data
+  const { 'Content-Type': _, ...restHeaders } = headers
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import/preview`, {
+    method: 'POST',
+    body: formData,
+    headers: restHeaders,
+  })
+}
+
+export async function undoImport(batchId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import/${batchId}`, {
     method: 'DELETE',
     headers,
   })
