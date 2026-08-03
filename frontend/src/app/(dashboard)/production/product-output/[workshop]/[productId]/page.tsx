@@ -80,6 +80,7 @@ export default function ProductOutputRecordsPage() {
   const [previewData, setPreviewData] = useState<any>(null)
   const [lastBatchId, setLastBatchId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
   const [bitableModalVisible, setBitableModalVisible] = useState(false)
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
@@ -251,6 +252,7 @@ export default function ProductOutputRecordsPage() {
   }
 
   const handleImport = async (file: File) => {
+    setImportFile(file)
     const formData = new FormData()
     formData.append('file', file)
     try {
@@ -268,25 +270,22 @@ export default function ProductOutputRecordsPage() {
   }
 
   const handleConfirmImport = async () => {
-    if (!previewData) return
+    if (!previewData || !importFile) return
     setImporting(true)
     try {
-      // 重新获取文件并导入
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-      if (fileInput?.files?.[0]) {
-        const formData = new FormData()
-        formData.append('file', fileInput.files[0])
-        const response = await importProductOutputs(formData)
-        if (response.code === 200) {
-          message.success(response.message || '导入成功')
-          setLastBatchId(response.data?.batch_id)
-          setImportModalVisible(false)
-          setPreviewData(null)
-          loadRecords()
-          loadSummary()
-        } else {
-          message.error(response.message || '导入失败')
-        }
+      const formData = new FormData()
+      formData.append('file', importFile)
+      const response = await importProductOutputs(formData)
+      if (response.code === 200) {
+        message.success(response.message || '导入成功')
+        setLastBatchId(response.data?.batch_id)
+        setImportModalVisible(false)
+        setPreviewData(null)
+        setImportFile(null)
+        loadRecords()
+        loadSummary()
+      } else {
+        message.error(response.message || '导入失败')
       }
     } catch {
       message.error('导入失败')
