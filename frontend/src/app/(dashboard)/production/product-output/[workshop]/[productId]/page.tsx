@@ -19,6 +19,7 @@ import {
   Statistic,
   Tag,
   Breadcrumb,
+  Dropdown,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -46,6 +47,8 @@ import {
   importFromBitable,
   batchDeleteProductOutputs,
   getSummary,
+  pushToFeishu,
+  pullFromFeishu,
 } from '@/actions/product-output'
 import { getProduct } from '@/actions/product'
 import type { ProductOutput, ProductOutputFormData } from '@/types/product-output'
@@ -84,6 +87,8 @@ export default function ProductOutputRecordsPage() {
   const [bitableModalVisible, setBitableModalVisible] = useState(false)
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 
@@ -350,6 +355,40 @@ export default function ProductOutputRecordsPage() {
         }
       },
     })
+  }
+
+  const handlePushToFeishu = async () => {
+    setSyncing(true)
+    try {
+      const res = await pushToFeishu(productId)
+      if (res.code === 200) {
+        message.success(res.data?.message || '推送成功')
+        loadRecords()
+      } else {
+        message.error(res.message || '推送失败')
+      }
+    } catch {
+      message.error('推送失败')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handlePullFromFeishu = async () => {
+    setSyncing(true)
+    try {
+      const res = await pullFromFeishu(productId)
+      if (res.code === 200) {
+        message.success(res.data?.message || '拉取成功')
+        loadRecords()
+      } else {
+        message.error(res.message || '拉取失败')
+      }
+    } catch {
+      message.error('拉取失败')
+    } finally {
+      setSyncing(false)
+    }
   }
 
   const handleImportFromBitable = async () => {
@@ -630,9 +669,26 @@ export default function ProductOutputRecordsPage() {
               <Button icon={<UploadOutlined />} onClick={() => setImportModalVisible(true)}>
                 导入
               </Button>
-              <Button icon={<CloudSyncOutlined />} onClick={() => setBitableModalVisible(true)}>
-                从飞书导入
-              </Button>
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'push',
+                      label: '仅推送（平台 → 飞书）',
+                      onClick: handlePushToFeishu,
+                    },
+                    {
+                      key: 'pull',
+                      label: '仅拉取（飞书 → 平台）',
+                      onClick: handlePullFromFeishu,
+                    },
+                  ],
+                }}
+              >
+                <Button icon={<CloudSyncOutlined />} loading={syncing}>
+                  飞书同步
+                </Button>
+              </Dropdown>
               <Button icon={<DownloadOutlined />} onClick={handleExport}>
                 导出
               </Button>
