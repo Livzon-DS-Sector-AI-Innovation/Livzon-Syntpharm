@@ -41,6 +41,21 @@ class ProductSyncService:
 
     async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
         logger.info("开始推送到飞书")
+        
+        # 一次性获取飞书所有记录，建立批号→record_id 映射
+        logger.info("获取飞书所有记录...")
+        all_feishu_records = await self.bitable.list_records(page_size=500)
+        feishu_record_map = {}  # (batch_no, product_name, workshop) -> record_id
+        for record in all_feishu_records:
+            fields = record.get("fields", {})
+            batch_no = str(fields.get("批号（批次编号）", ""))
+            product_name = str(fields.get("产品名称（产品）", ""))
+            workshop = str(fields.get("车间（生产车间）", ""))
+            if batch_no and product_name and workshop:
+                key = (batch_no, product_name, workshop)
+                feishu_record_map[key] = record.get("record_id")
+        logger.info(f"飞书现有 {len(feishu_record_map)} 条记录")
+        
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
             FROM production.product_outputs
@@ -72,7 +87,9 @@ class ProductSyncService:
                 }
             )
 
-            feishu_record_id = await self._find_feishu_record(batch_no, product_name, workshop, production_date)
+            # 直接从映射表查找，不再调用 API
+            key = (batch_no, product_name, workshop)
+            feishu_record_id = feishu_record_map.get(key)
             logger.info(f"批号 {batch_no} 飞书记录 ID: {feishu_record_id}")
 
             try:
