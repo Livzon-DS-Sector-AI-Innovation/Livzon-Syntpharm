@@ -847,7 +847,6 @@ class SafetyService:
         """获取危险源辨识工作流统计"""
         return await self.repo.get_hazard_identification_stats()
 
-
     async def get_hazard_risk_options(
         self,
         department: str | None = None,
@@ -856,8 +855,9 @@ class SafetyService:
         limit: int = 100,
     ) -> tuple[list[Any], int]:
         """获取危险源辨识选项（供常规作业报备选择关联危险源）"""
+        from sqlalchemy import func, or_, select
+
         from app.modules.safety.models import HazardIdentification
-        from sqlalchemy import select, func, or_
 
         query = select(HazardIdentification).where(
             ~HazardIdentification.is_deleted,

@@ -1495,7 +1495,7 @@ class SafetyRepository:
             select(
                 SpecialOperationReport.operation_type,
                 func.count(SpecialOperationReport.id).label("count"),
-                func.sum(case((SpecialOperationReport.is_critical == True, 1), else_=0)).label("critical_count"),
+                func.sum(case((SpecialOperationReport.is_critical, 1), else_=0)).label("critical_count"),
             )
             .where(
                 ~SpecialOperationReport.is_deleted,

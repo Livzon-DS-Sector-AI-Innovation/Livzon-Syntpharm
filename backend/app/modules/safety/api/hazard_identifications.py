@@ -25,7 +25,6 @@ from app.modules.safety.schemas import (
     HazardRiskOption,
 )
 from app.modules.safety.service import (
-    DailyRiskReportService,
     SafetyService,
 )
 
