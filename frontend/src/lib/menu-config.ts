@@ -370,8 +370,8 @@ export const moduleMenus: ModuleMenu[] = [
     children: [
       { key: "registration-overview", label: "注册概览", path: "/registration" },
       { key: "projects", label: "注册项目", path: "/registration/projects" },
-      { key: "regulation", label: "法规跟踪", path: "/registration/regulation" },
-      { key: "regulation-list", label: "法规工作台", path: "/registration/regulation/list" },
+      { key: "regulation", label: "法规看板", path: "/registration/regulation" },
+      { key: "regulation-list", label: "法规列表", path: "/registration/regulation/list" },
       { key: "authorization-letter", label: "授权书管理", path: "/registration/authorization-letter" },
       { key: "dossier-writer", label: "申报资料撰写", path: "/registration/dossier-writer" },
       { key: "reference-standard", label: "参考标准", path: "/registration/reference-standard" },

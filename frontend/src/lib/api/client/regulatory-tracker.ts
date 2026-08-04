@@ -1,4 +1,4 @@
-export type { SummaryStats, RegulatoryDocument, SyncJob, DocumentListParams, PaginatedResponse, ApiResponse, SourceStatus, TrendItem, PriorityDocument, DashboardData, DocumentDetail } from '@/types/regulatory-tracker'
+export type { SummaryStats, RegulatoryDocument, SyncJob, DocumentListParams, PaginatedResponse, ApiResponse, SourceStatus, TrendItem, ClassificationStat, PriorityDocument, DashboardData, DocumentDetail } from '@/types/regulatory-tracker'
 
 import type {
   SummaryStats,
@@ -9,9 +9,6 @@ import type {
   ApiResponse,
   AIAnalysisResult,
   AIBatchAnalysisResult,
-  SourceStatus,
-  TrendItem,
-  PriorityDocument,
   DashboardData,
   DocumentDetail,
 } from '@/types/regulatory-tracker'

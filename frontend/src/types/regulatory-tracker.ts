@@ -132,12 +132,10 @@ export interface AIBatchAnalysisResult {
 // ====== Dashboard Types ======
 
 export interface SourceStatus {
-  sourceId: string
-  sourceName: string
-  enabled: boolean
-  lastSyncAt: string | null
+  code: string
+  name: string
+  lastSyncTime: string | null
   lastSyncStatus: string | null
-  documentCount: number
 }
 
 export interface TrendItem {
@@ -145,19 +143,37 @@ export interface TrendItem {
   count: number
 }
 
+export interface ClassificationStat {
+  name: string
+  count: number
+}
+
 export interface PriorityDocument {
   id: string
   title: string
+  sourceName: string | null
+  regulationType: string | null
   publishDate: string | null
+  aiSummary: string | null
+  aiRelevanceScore: number | null
+  aiKeyPoints: Record<string, unknown> | null
+  documentCategory: string | null
+  documentCategoryName: string | null
+  originalUrl: string | null
   impactLevel: 'high' | 'medium' | 'low' | 'none'
-  impactScore: number
 }
 
 export interface DashboardData {
-  summary: SummaryStats
-  sourceStatuses: SourceStatus[]
-  recentTrend: TrendItem[]
+  todayNewCount: number
+  todayNewHighImpact: number
+  todayNewGeneralCount: number
+  attentionCount: number
+  weekTotal: number
+  weekHighImpact: number
+  sourceStatus: SourceStatus[]
   priorityDocuments: PriorityDocument[]
+  trend7Days: TrendItem[]
+  byClassification: Record<string, number>
 }
 
 export interface DocumentDetail extends RegulatoryDocument {
