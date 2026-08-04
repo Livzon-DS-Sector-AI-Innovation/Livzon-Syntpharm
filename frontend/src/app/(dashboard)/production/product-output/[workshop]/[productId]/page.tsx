@@ -20,6 +20,7 @@ import {
   Tag,
   Breadcrumb,
   Dropdown,
+  Alert,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -33,6 +34,7 @@ import {
   FileExcelOutlined,
   HomeOutlined,
   UndoOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -806,6 +808,41 @@ export default function ProductOutputRecordsPage() {
           </Col>
         </Row>
       </Card>
+
+      {lastBatchId && (
+        <Alert
+          message={
+            <div className="flex items-center justify-between">
+              <div>
+                <CheckCircleOutlined className="text-green-500 mr-2" />
+                <span className="font-medium">导入成功</span>
+                <span className="ml-4 text-gray-600">批次 ID: {lastBatchId}</span>
+              </div>
+              <Space>
+                <Button 
+                  size="small" 
+                  danger 
+                  icon={<UndoOutlined />}
+                  onClick={handleUndoImport}
+                >
+                  撤销本次导入
+                </Button>
+                <Button 
+                  size="small" 
+                  type="text" 
+                  onClick={() => setLastBatchId(null)}
+                >
+                  关闭
+                </Button>
+              </Space>
+            </div>
+          }
+          type="success"
+          closable
+          onClose={() => setLastBatchId(null)}
+          className="mb-4"
+        />
+      )}
 
       <Card>
         <Table
