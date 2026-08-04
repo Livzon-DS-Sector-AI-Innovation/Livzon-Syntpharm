@@ -391,6 +391,81 @@ export default function ProductOutputRecordsPage() {
     }
   }
 
+
+  const handlePreviewPush = async () => {
+    try {
+      const res = await fetch(`/api/v1/production/product-sync-config/${productId}/preview-push`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data.code === 200) {
+        Modal.info({
+          title: '推送预览',
+          content: (
+            <div>
+              <p>新增：{data.data.to_create} 条</p>
+              <p>更新：{data.data.to_update} 条</p>
+              <p>跳过：{data.data.to_skip} 条</p>
+            </div>
+          ),
+          onOk: () => handlePushToFeishu(),
+        })
+      } else {
+        message.error(data.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+  }
+
+  const handlePreviewPull = async () => {
+    try {
+      const res = await fetch(`/api/v1/production/product-sync-config/${productId}/preview-pull`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data.code === 200) {
+        Modal.info({
+          title: '拉取预览',
+          content: (
+            <div>
+              <p>新增：{data.data.to_create} 条</p>
+              <p>更新：{data.data.to_update} 条</p>
+            </div>
+          ),
+          onOk: () => handlePullFromFeishu(),
+        })
+      } else {
+        message.error(data.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+  }
+
+  const handleUndoLastSync = async () => {
+    Modal.confirm({
+      title: '确认撤销',
+      content: '确定要撤销上次同步操作吗？此操作不可恢复。',
+      onOk: async () => {
+        try {
+          const res = await fetch(`/api/v1/production/product-sync-config/${productId}/undo-last-sync`, {
+            method: 'POST',
+          })
+          const data = await res.json()
+          if (data.code === 200) {
+            message.success(data.message || '撤销成功')
+            loadRecords()
+          } else {
+            message.error(data.message || '撤销失败')
+          }
+        } catch {
+          message.error('撤销失败')
+        }
+      },
+    })
+  }
+
   const handleImportFromBitable = async () => {
     // 解析飞书多维表格链接
     let appToken = ''
@@ -673,14 +748,36 @@ export default function ProductOutputRecordsPage() {
                 menu={{
                   items: [
                     {
+                      key: 'preview_push',
+                      label: '预览推送',
+                      onClick: handlePreviewPush,
+                    },
+                    {
                       key: 'push',
                       label: '仅推送（平台 → 飞书）',
                       onClick: handlePushToFeishu,
                     },
                     {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'preview_pull',
+                      label: '预览拉取',
+                      onClick: handlePreviewPull,
+                    },
+                    {
                       key: 'pull',
                       label: '仅拉取（飞书 → 平台）',
                       onClick: handlePullFromFeishu,
+                    },
+                    {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'undo',
+                      label: '撤销上次同步',
+                      onClick: handleUndoLastSync,
+                      danger: true,
                     },
                   ],
                 }}
