@@ -7,7 +7,6 @@ import type { TableColumnsType } from 'antd'
 import type { EnergyMonthlyRecord, EnergyType } from '@/types/energy'
 import { deleteMonthlyRecordAction } from '@/actions/energy'
 import { fetchMonthlyRecordsClient, fetchWorkshopsClient, fetchMonthlySummaryClient } from '@/lib/api/client/energy'
-import { syncMonthlyFromBitable } from '@/actions/energy'
 import { FeishuImportModal } from './FeishuImportModal'
 import { BitableCrossImportModal } from './BitableCrossImportModal'
 import dayjs from 'dayjs'
@@ -92,7 +91,6 @@ export function MonthlyRecordTable() {
   const [records, setRecords] = useState<EnergyMonthlyRecord[]>([])
   const [workshops, setWorkshops] = useState<WorkshopOption[]>([])
   const [loading, setLoading] = useState(false)
-  const [syncing, setSyncing] = useState(false)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -175,23 +173,6 @@ export function MonthlyRecordTable() {
         }
       },
     })
-  }
-
-  const handleSyncBitable = async () => {
-    setSyncing(true)
-    try {
-      const result = await syncMonthlyFromBitable()
-      if (result.status === 'disabled') {
-        message.warning(result.message || '未配置飞书多维表格')
-      } else {
-        message.success(`同步完成：新增 ${result.created} 条，更新 ${result.updated} 条`)
-        loadData()
-      }
-    } catch (error: any) {
-      message.error('同步失败：' + (error?.message || '未知错误'))
-    } finally {
-      setSyncing(false)
-    }
   }
 
   const columns: TableColumnsType<EnergyMonthlyRecord> = [
@@ -294,9 +275,6 @@ export function MonthlyRecordTable() {
           />
         </Space>
         <Space>
-          <Button icon={<SyncOutlined spin={syncing} />} onClick={handleSyncBitable} loading={syncing}>
-            飞书同步
-          </Button>
           <Button icon={<ImportOutlined />} onClick={() => setBitableImportModalOpen(true)}>
             多维表格导入
           </Button>

@@ -5,240 +5,282 @@ import type {
   UpdateRuleInput,
   ProcessRecordInput,
 } from '@/types/energy'
-import { apiFetch, apiFetchPaginated, unwrapResponse } from './base'
+import { apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
 
-export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
-  return unwrapResponse(await apiFetch<{ code: number; data: { code: string; name: string; description: string }; message?: string; meta?: unknown }>('/api/v1/energy'))
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const result = await baseApiFetch<T>(url, options)
+  return (result as any).data ?? (result as T)
 }
 
+export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy`)
+}
+
+// ── 设备配置 ──
+
 export async function fetchEnergyDevices(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        qs.set(key, String(value))
+        searchParams.set(key, String(value))
       }
     })
   }
-  return apiFetchPaginated(`/api/v1/energy/devices${qs.size ? `?${qs}` : ''}`)
+  const query = searchParams.toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices${query ? `?${query}` : ''}`)
 }
 
 export async function fetchEnergyDeviceById(id: string): Promise<any> {
-  return unwrapResponse(await apiFetch(`/api/v1/energy/devices/${id}`))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`)
 }
 
+// ── 能耗数据 ──
+
 export async function fetchEnergyData(params: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      qs.set(key, String(value))
+      searchParams.set(key, String(value))
     }
   })
-  return apiFetchPaginated(`/api/v1/energy/data?${qs}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/data?${searchParams.toString()}`)
 }
 
 export async function fetchEnergyOverview(params: any): Promise<any> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
-      qs.set(key, String(value))
+      searchParams.set(key, String(value))
     }
   })
-  return unwrapResponse(await apiFetch(`/api/v1/energy/overview?${qs}`))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/overview?${searchParams.toString()}`)
 }
+
+// ── 采集管理 ──
 
 export async function fetchCollectLogs(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        qs.set(key, String(value))
+        searchParams.set(key, String(value))
       }
     })
   }
-  return apiFetchPaginated(`/api/v1/energy/collect/logs${qs.size ? `?${qs}` : ''}`)
+  const query = searchParams.toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/logs${query ? `?${query}` : ''}`)
 }
 
+// ── 预警规则 ──
+
 export async function fetchAlertRules(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        qs.set(key, String(value))
+        searchParams.set(key, String(value))
       }
     })
   }
-  return apiFetchPaginated(`/api/v1/energy/alerts/rules${qs.size ? `?${qs}` : ''}`)
+  const query = searchParams.toString()
+  const res = await apiFetchRaw(`/api/v1/energy/alerts/rules${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
 export async function fetchAlertRuleById(id: string): Promise<any> {
-  return unwrapResponse(await apiFetch(`/api/v1/energy/alerts/rules/${id}`))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`)
 }
 
+// ── 预警记录 ──
+
 export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        qs.set(key, String(value))
+        searchParams.set(key, String(value))
       }
     })
   }
-  return apiFetchPaginated(`/api/v1/energy/alerts/records${qs.size ? `?${qs}` : ''}`)
+  const query = searchParams.toString()
+  const res = await apiFetchRaw(`/api/v1/energy/alerts/records${query ? `?${query}` : ''}`)
+  const json = await res.json()
+  return {
+    items: json.data || [],
+    total: json.meta?.total || 0,
+    page: json.meta?.page || 1,
+    page_size: json.meta?.page_size || 20,
+  }
 }
 
+// ── 设备写操作 ──
+
 export async function createEnergyDevice(data: CreateDeviceInput) {
-  return apiFetch('/api/v1/energy/devices', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateEnergyDevice(id: string, data: UpdateDeviceInput) {
-  return apiFetch(`/api/v1/energy/devices/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteEnergyDevice(id: string) {
-  return apiFetch(`/api/v1/energy/devices/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`, {
     method: 'DELETE',
   })
 }
 
+// ── 采集写操作 ──
+
 export async function triggerCollect(platformCode?: string) {
-  return apiFetch('/api/v1/energy/collect/trigger', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/trigger`, {
     method: 'POST',
     body: JSON.stringify({ platform_code: platformCode || 'all' }),
   })
 }
 
+// ── 预警规则写操作 ──
+
 export async function createAlertRule(data: CreateRuleInput) {
-  return apiFetch('/api/v1/energy/alerts/rules', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
-  return apiFetch(`/api/v1/energy/alerts/rules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteAlertRule(id: string) {
-  return apiFetch(`/api/v1/energy/alerts/rules/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`, {
     method: 'DELETE',
   })
 }
 
+// ── 预警记录写操作 ──
+
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
-  return apiFetch(`/api/v1/energy/alerts/records/${id}/process`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/records/${id}/process`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
+// ─── Workshop ───
+
 export async function fetchWorkshops(params?: Record<string, unknown>): Promise<any> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) qs.set(k, String(v))
+      if (v !== undefined && v !== null) searchParams.set(k, String(v))
     })
   }
-  return unwrapResponse(await apiFetch(`/api/v1/energy/workshops${qs.size ? `?${qs}` : ''}`))
+  const qs = searchParams.toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkshopById(id: string): Promise<any> {
-  return unwrapResponse(await apiFetch(`/api/v1/energy/workshops/${id}`))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`)
 }
 
 export async function createWorkshop(data: Record<string, unknown>): Promise<any> {
-  return apiFetch('/api/v1/energy/workshops', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateWorkshop(id: string, data: Record<string, unknown>): Promise<any> {
-  return apiFetch(`/api/v1/energy/workshops/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteWorkshop(id: string): Promise<any> {
-  return apiFetch(`/api/v1/energy/workshops/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'DELETE',
   })
 }
 
+// ─── Monthly Records ───
+
 export async function fetchMonthlyRecords(params?: Record<string, unknown>): Promise<any> {
-  const qs = new URLSearchParams()
+  const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) qs.set(k, String(v))
+      if (v !== undefined && v !== null) searchParams.set(k, String(v))
     })
   }
-  return unwrapResponse(await apiFetch(`/api/v1/energy/monthly${qs.size ? `?${qs}` : ''}`))
+  const qs = searchParams.toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
 }
 
 export async function fetchMonthlyRecordById(id: string): Promise<any> {
-  return unwrapResponse(await apiFetch(`/api/v1/energy/monthly/${id}`))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`)
 }
 
 export async function createMonthlyRecord(data: Record<string, unknown>): Promise<any> {
-  return apiFetch('/api/v1/energy/monthly', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteMonthlyRecord(id: string): Promise<any> {
-  return apiFetch(`/api/v1/energy/monthly/${id}`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`, {
     method: 'DELETE',
   })
 }
 
+// ─── Feishu Import ───
+
 export async function importFromFeishu(data: Record<string, unknown>): Promise<any> {
-  return apiFetch('/api/v1/energy/import/feishu', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/import/feishu`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function crossImportFromBitable(data: Record<string, unknown>): Promise<any> {
-  return apiFetch('/api/v1/energy/sync/bitable/cross-import', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/cross-import`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function syncBitableDailyData(): Promise<any> {
-  return apiFetch('/api/v1/energy/sync/bitable/daily-import', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/daily-import`, {
     method: 'POST',
   })
 }
 
+// ─── Alerts ───
+
 export async function checkAlerts(checkDate: string): Promise<any> {
-  return apiFetch('/api/v1/energy/alerts/check', {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/check`, {
     method: 'POST',
     body: JSON.stringify({ check_date: checkDate }),
   })
 }
 
 export async function fetchAlertDates(): Promise<any> {
-  return unwrapResponse(await apiFetch('/api/v1/energy/alerts/dates'))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/dates`)
 }
 
-export async function syncMonthlyFromBitableApi(): Promise<any> {
-  return apiFetch('/api/v1/energy/sync/monthly', {
-    method: 'POST',
-  })
-}
-
-export async function getJobStatus(jobId: string): Promise<any> {
-  return unwrapResponse(await apiFetch(`/api/v1/energy/jobs/${jobId}`))
-}
