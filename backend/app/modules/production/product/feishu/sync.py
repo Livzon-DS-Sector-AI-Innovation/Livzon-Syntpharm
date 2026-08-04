@@ -284,11 +284,13 @@ class ProductSyncService:
     async def _find_feishu_record(
         self, batch_no: str, product_name: str, workshop: str, production_date: date
     ) -> str | None:
-        # 使用飞书多维表格的实际字段名（带括号）
-        filter_str = (
-            f'CurrentValue.[批号（批次编号）] = "{batch_no}" AND '
-            f'CurrentValue.[产品名称（产品）] = "{product_name}" AND '
-            f'CurrentValue.[车间（生产车间）] = "{workshop}"'
-        )
-        items = await self.bitable.search_records(filter_str=filter_str)
-        return items[0].get("record_id") if items else None
+        # 飞书 filter API 不支持带括号的字段名，改用获取所有记录后在代码中匹配
+        all_records = await self.bitable.list_records(page_size=500)
+        for record in all_records:
+            fields = record.get("fields", {})
+            record_batch = str(fields.get("批号（批次编号）", ""))
+            record_product = str(fields.get("产品名称（产品）", ""))
+            record_workshop = str(fields.get("车间（生产车间）", ""))
+            if record_batch == batch_no and record_product == product_name and record_workshop == workshop:
+                return record.get("record_id")
+        return None
