@@ -40,15 +40,16 @@ class ProductSyncService:
         self.reverse_mapping = {v: k for k, v in self.field_mapping.items()}
 
     async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
+        logger.info("开始推送到飞书")
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
             FROM production.product_outputs
             WHERE is_deleted = false
-            AND sync_status = 'local_only'
             AND (product_id = :product_id OR :product_id IS NULL)
         """)
         result = await self.db.execute(query, {"product_id": product_id})
         rows = result.fetchall()
+        logger.info(f"查询到 {len(rows)} 条待推送记录")
 
         imported = 0
         updated = 0
@@ -72,6 +73,7 @@ class ProductSyncService:
             )
 
             feishu_record_id = await self._find_feishu_record(batch_no, product_name, workshop, production_date)
+            logger.info(f"批号 {batch_no} 飞书记录 ID: {feishu_record_id}")
 
             try:
                 if feishu_record_id:
@@ -282,10 +284,11 @@ class ProductSyncService:
     async def _find_feishu_record(
         self, batch_no: str, product_name: str, workshop: str, production_date: date
     ) -> str | None:
+        # 使用飞书多维表格的实际字段名（带括号）
         filter_str = (
-            f'CurrentValue.[批号] = "{batch_no}" AND '
-            f'CurrentValue.[产品名称] = "{product_name}" AND '
-            f'CurrentValue.[车间] = "{workshop}"'
+            f'CurrentValue.[批号（批次编号）] = "{batch_no}" AND '
+            f'CurrentValue.[产品名称（产品）] = "{product_name}" AND '
+            f'CurrentValue.[车间（生产车间）] = "{workshop}"'
         )
         items = await self.bitable.search_records(filter_str=filter_str)
         return items[0].get("record_id") if items else None
