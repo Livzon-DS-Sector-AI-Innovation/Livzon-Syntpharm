@@ -1,6 +1,7 @@
 """Bidirectional sync service for product outputs and Feishu Bitable."""
 
 import logging
+import json
 import uuid
 from datetime import date
 from typing import Any
@@ -199,6 +200,8 @@ class ProductSyncService:
         updated = 0
         skipped = 0
         errors: list[str] = []
+        to_create = []
+        to_update = []
 
         for row in rows:
             record_id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes = row
@@ -225,6 +228,7 @@ class ProductSyncService:
                 if feishu_record_id:
                     await self.bitable.update_record(feishu_record_id, fields)
                     updated += 1
+                    to_update.append({"batch_no": batch_no, "action": "update"})
                     await self.db.execute(
                         text("""
                         UPDATE production.product_outputs
@@ -237,6 +241,7 @@ class ProductSyncService:
                     create_result = await self.bitable.create_record(fields)
                     feishu_record_id = create_result.get("record_id")
                     imported += 1
+                    to_create.append({"batch_no": batch_no, "action": "create"})
                     await self.db.execute(
                         text("""
                         UPDATE production.product_outputs
@@ -277,6 +282,8 @@ class ProductSyncService:
         updated = 0
         skipped = 0
         errors: list[str] = []
+        to_create = []
+        to_update = []
 
         for feishu_record in feishu_records:
             record_id = feishu_record.get("record_id", "")
@@ -342,6 +349,7 @@ class ProductSyncService:
                         },
                     )
                     updated += 1
+                    to_update.append({"batch_no": batch_no, "action": "update"})
                 else:
                     product_result = await self.db.execute(
                         text("""
@@ -378,6 +386,7 @@ class ProductSyncService:
                         },
                     )
                     imported += 1
+                    to_create.append({"batch_no": batch_no, "action": "create"})
             except Exception as e:
                 errors.append(f"批号 {batch_no}: {str(e)}")
                 logger.error("Failed to pull record %s from Feishu: %s", batch_no, e)
