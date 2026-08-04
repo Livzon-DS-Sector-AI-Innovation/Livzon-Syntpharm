@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -174,7 +174,6 @@ class SafetyRepository:
 
     async def get_hazard_stats(self) -> dict[str, int]:
         """获取隐患状态统计数据（全局，不受分页/筛选影响）。"""
-        from sqlalchemy import case
 
         base = select(
             func.count(HazardReport.id).label("total"),
@@ -682,7 +681,6 @@ class SafetyRepository:
             results[key] = await self.session.scalar(select(func.count()).select_from(q.subquery())) or 0
 
         # 待审核：in_progress 且有未审批的脚本
-        from sqlalchemy import or_
 
         pending_q = select(func.count(HazardIdentification.id)).where(
             ~HazardIdentification.is_deleted,
@@ -1497,7 +1495,7 @@ class SafetyRepository:
             select(
                 SpecialOperationReport.operation_type,
                 func.count(SpecialOperationReport.id).label("count"),
-                func.sum(func.cast(SpecialOperationReport.is_critical, type_=func.integer())).label("critical_count"),
+                func.sum(case((SpecialOperationReport.is_critical == True, 1), else_=0)).label("critical_count"),
             )
             .where(
                 ~SpecialOperationReport.is_deleted,

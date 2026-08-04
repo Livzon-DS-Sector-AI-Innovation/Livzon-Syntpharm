@@ -847,6 +847,56 @@ class SafetyService:
         """获取危险源辨识工作流统计"""
         return await self.repo.get_hazard_identification_stats()
 
+
+    async def get_hazard_risk_options(
+        self,
+        department: str | None = None,
+        keyword: str | None = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[Any], int]:
+        """获取危险源辨识选项（供常规作业报备选择关联危险源）"""
+        from app.modules.safety.models import HazardIdentification
+        from sqlalchemy import select, func, or_
+
+        query = select(HazardIdentification).where(
+            ~HazardIdentification.is_deleted,
+            HazardIdentification.overall_status == "completed",
+            HazardIdentification.inherent_risk_level.in_(["level_1", "level_2"]),
+        )
+        if department:
+            query = query.where(HazardIdentification.department == department)
+        if keyword:
+            like = f"%{keyword}%"
+            query = query.where(
+                or_(
+                    HazardIdentification.hazard_id_no.ilike(like),
+                    HazardIdentification.department.ilike(like),
+                    HazardIdentification.position.ilike(like),
+                )
+            )
+
+        count_query = select(func.count(HazardIdentification.id)).where(
+            ~HazardIdentification.is_deleted,
+            HazardIdentification.overall_status == "completed",
+            HazardIdentification.inherent_risk_level.in_(["level_1", "level_2"]),
+        )
+        if department:
+            count_query = count_query.where(HazardIdentification.department == department)
+        if keyword:
+            like = f"%{keyword}%"
+            count_query = count_query.where(
+                or_(
+                    HazardIdentification.hazard_id_no.ilike(like),
+                    HazardIdentification.department.ilike(like),
+                    HazardIdentification.position.ilike(like),
+                )
+            )
+
+        items_result = await self.session.execute(query.offset(skip).limit(limit))
+        count_result = await self.session.execute(count_query)
+        return list(items_result.scalars().all()), count_result.scalar() or 0
+
     async def get_hazard_identification_ledger_stats(
         self,
         department: str | None = None,

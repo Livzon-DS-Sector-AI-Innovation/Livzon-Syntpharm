@@ -46,7 +46,7 @@ async def handler(
         from datetime import datetime as dt
 
         parsed_date = dt.fromisoformat(report_date)
-    items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword, report_type)
+    items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword)
     return ApiResponse(
         data=[DailyRiskReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},

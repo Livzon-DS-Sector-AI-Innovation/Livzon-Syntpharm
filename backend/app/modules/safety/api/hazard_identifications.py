@@ -129,7 +129,7 @@ async def handler(  # noqa: F811
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """返回风险等级为 level_1/level_2 且 overall_status=completed 的危险源辨识项"""
-    service = DailyRiskReportService(db)
+    service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_hazard_risk_options(department, keyword, skip, page_size)
     return ApiResponse(
