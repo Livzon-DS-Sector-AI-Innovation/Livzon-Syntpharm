@@ -1,6 +1,7 @@
 """Bidirectional sync service for product outputs and Feishu Bitable."""
 
 import logging
+import uuid
 from datetime import date
 from typing import Any
 
@@ -111,7 +112,9 @@ class ProductSyncService:
         }
 
     async def pull_from_feishu(self, product_id: str | None = None) -> dict[str, Any]:
+        logger.info("开始从飞书拉取数据")
         feishu_records = await self.bitable.list_records()
+        logger.info(f"获取到 {len(feishu_records)} 条飞书记录")
 
         imported = 0
         updated = 0
@@ -123,6 +126,7 @@ class ProductSyncService:
             fields = feishu_record.get("fields", {})
 
             data = self._extract_record_data(fields)
+            logger.info(f"记录 {record_id} 提取数据: {data}")
 
             workshop = str(data.get("workshop", "")).strip()
             product_name = str(data.get("product_name", "")).strip()
@@ -196,10 +200,10 @@ class ProductSyncService:
                     await self.db.execute(
                         text("""
                         INSERT INTO production.product_outputs
-                        (product_id, workshop, product_name, batch_no,
+                        (id, product_id, workshop, product_name, batch_no,
                          production_date, end_date, weight, unit, notes,
                          feishu_record_id, sync_status)
-                        VALUES (:product_id, :workshop, :product_name, :batch_no,
+                        VALUES (gen_random_uuid(), :product_id, :workshop, :product_name, :batch_no,
                                 :production_date, :end_date, :weight, :unit, :notes,
                                 :feishu_record_id, 'synced')
                     """),
