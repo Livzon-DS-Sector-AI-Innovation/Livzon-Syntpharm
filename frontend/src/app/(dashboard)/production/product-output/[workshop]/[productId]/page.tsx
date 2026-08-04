@@ -938,7 +938,22 @@ export default function ProductOutputRecordsPage() {
                 rowKey="row_num"
                 pagination={false}
                 scroll={{ y: 350 }}
+                rowClassName={(record: any) => {
+                  if (record.is_duplicate) return 'bg-orange-50';
+                  if (!record.product_found) return 'bg-red-50';
+                  return '';
+                }}
                 columns={[
+                  { 
+                    title: '状态', 
+                    width: 80, 
+                    align: 'center',
+                    render: (_: any, r: any) => {
+                      if (r.is_duplicate) return <Tag color="orange">⚠️ 重复</Tag>;
+                      if (!r.product_found) return <Tag color="red">❌ 未匹配</Tag>;
+                      return <Tag color="green">✅ 可导入</Tag>;
+                    }
+                  },
                   { title: '行号', dataIndex: 'row_num', width: 60, align: 'center' },
                   { title: '车间', dataIndex: 'workshop', width: 90 },
                   { title: '产品名称', dataIndex: 'product_name', width: 140, ellipsis: true },
@@ -954,16 +969,6 @@ export default function ProductOutputRecordsPage() {
                     ) : (
                       <span className="text-red-600 font-bold">✗</span>
                     )
-                  },
-                  { 
-                    title: '状态', 
-                    width: 80, 
-                    align: 'center',
-                    render: (_: any, r: any) => {
-                      if (r.is_duplicate) return <Tag color="orange">重复</Tag>;
-                      if (!r.product_found) return <Tag color="red">未匹配</Tag>;
-                      return <Tag color="green">可导入</Tag>;
-                    }
                   },
                 ]}
               />
