@@ -501,7 +501,7 @@ export const dynamic = 'force-dynamic'
 
 原因：Server Actions 自动处理 CSRF、revalidation 和错误边界，客户端 fetch 写操作会绕过这些安全机制。
 
-详见 [frontend/examples/server-actions.md](frontend/examples/server-actions.md)。
+**`'use server'` 文件禁止 `export type` 和 `export interface`**，否则 Turbopack 的 Server Actions loader 会导致运行时 `ReferenceError: X is not defined`。类型定义必须放在 `types/` 中，客户端分别从 `actions/` 和 `types/` 导入。详见 [frontend/examples/server-actions.md](frontend/examples/server-actions.md)。
 
 ## 模块边界
 
