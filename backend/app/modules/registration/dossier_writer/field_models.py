@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,7 +14,16 @@ class FieldMapping(BaseModel):
     """字段映射配置表 - 定义每个章节需要填充哪些字段"""
 
     __tablename__ = "field_mappings"
-    __table_args__ = {"schema": "dossier_writer"}
+    __table_args__ = (
+        Index(
+            "uq_field_mappings_chapter_field",
+            "chapter_code",
+            "field_name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "dossier_writer"},
+    )
 
     chapter_code: Mapped[str] = mapped_column(String(100), nullable=False, comment="章节编号，如 3.2.S.6")
     field_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="字段名，如 包材类型")
@@ -114,7 +123,16 @@ class AssetCategory(BaseModel):
     """素材分类定义表 - 每个章节需要哪些类型的素材"""
 
     __tablename__ = "asset_categories"
-    __table_args__ = {"schema": "dossier_writer"}
+    __table_args__ = (
+        Index(
+            "uq_asset_categories_chapter_category",
+            "chapter_code",
+            "category_name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "dossier_writer"},
+    )
 
     chapter_code: Mapped[str] = mapped_column(String(100), nullable=False, comment="章节编号，如 3.2.S.6")
     category_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="分类名称，如 授权书")
