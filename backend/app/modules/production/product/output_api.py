@@ -351,7 +351,7 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
     - 有效记录：包含所有字段 + product_found (bool) + is_duplicate (bool)
     - 无效记录：包含错误信息
     """
-    products_result = await db.execute(select(Product).where(Product.is_deleted == False))
+    products_result = await db.execute(select(Product).where(~Product.is_deleted))
     all_products = products_result.scalars().all()
     product_map: dict[tuple[str, str], uuid.UUID] = {}
     for p in all_products:
