@@ -1,9 +1,8 @@
 """Bidirectional sync service for product outputs and Feishu Bitable."""
 
-import logging
 import json
-import uuid
-from datetime import date
+import logging
+from datetime import UTC, date
 from typing import Any
 
 from sqlalchemy import text
@@ -40,11 +39,10 @@ class ProductSyncService:
         self.field_mapping = field_mapping or DEFAULT_FIELD_MAPPING
         self.reverse_mapping = {v: k for k, v in self.field_mapping.items()}
 
-
     async def preview_push(self, product_id: str | None = None) -> dict[str, Any]:
         """预览推送操作，不实际执行"""
         logger.info("预览推送到飞书")
-        
+
         # 获取飞书所有记录
         all_feishu_records = await self.bitable.list_records(page_size=500)
         feishu_record_map = {}
@@ -56,7 +54,7 @@ class ProductSyncService:
             if batch_no and product_name and workshop:
                 key = (batch_no, product_name, workshop)
                 feishu_record_map[key] = record.get("record_id")
-        
+
         # 查询平台记录
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
@@ -66,49 +64,53 @@ class ProductSyncService:
         """)
         result = await self.db.execute(query, {"product_id": product_id})
         rows = result.fetchall()
-        
+
         # 分析变更
         to_create = []
         to_update = []
         to_skip = []
-        
+
         for row in rows:
             record_id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes = row
             key = (batch_no, product_name, workshop)
-            
+
             if key in feishu_record_map:
-                to_update.append({
-                    "batch_no": batch_no,
-                    "product_name": product_name,
-                    "workshop": workshop,
-                    "production_date": str(production_date),
-                    "weight": weight,
-                    "action": "更新"
-                })
+                to_update.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": str(production_date),
+                        "weight": weight,
+                        "action": "更新",
+                    }
+                )
             else:
-                to_create.append({
-                    "batch_no": batch_no,
-                    "product_name": product_name,
-                    "workshop": workshop,
-                    "production_date": str(production_date),
-                    "weight": weight,
-                    "action": "新增"
-                })
-        
+                to_create.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": str(production_date),
+                        "weight": weight,
+                        "action": "新增",
+                    }
+                )
+
         return {
             "to_create": len(to_create),
             "to_update": len(to_update),
             "to_skip": len(to_skip),
-            "details": to_create + to_update
+            "details": to_create + to_update,
         }
 
     async def preview_pull(self, product_id: str | None = None) -> dict[str, Any]:
         """预览拉取操作，不实际执行"""
         logger.info("预览从飞书拉取")
-        
+
         # 获取飞书所有记录
         all_feishu_records = await self.bitable.list_records(page_size=500)
-        
+
         # 查询平台现有记录
         query = text("""
             SELECT batch_no, product_name, workshop, production_date
@@ -118,60 +120,61 @@ class ProductSyncService:
         """)
         result = await self.db.execute(query, {"product_id": product_id})
         existing_records = {(row[0], row[1], row[2], str(row[3])) for row in result.fetchall()}
-        
+
         # 分析变更
         to_create = []
         to_update = []
-        
+
         for record in all_feishu_records:
             fields = record.get("fields", {})
             batch_no = str(fields.get("批号（批次编号）", ""))
             product_name = str(fields.get("产品名称（产品）", ""))
             workshop = str(fields.get("车间（生产车间）", ""))
             production_date_raw = fields.get("生产日期（生产开始日）")
-            
+
             if not batch_no or not product_name or not workshop:
                 continue
-            
+
             # 解析日期
             if isinstance(production_date_raw, int):
-                from datetime import datetime, timezone
-                dt = datetime.fromtimestamp(production_date_raw / 1000, tz=timezone.utc)
+                from datetime import datetime
+
+                dt = datetime.fromtimestamp(production_date_raw / 1000, tz=UTC)
                 production_date = dt.strftime("%Y-%m-%d")
             else:
                 production_date = str(production_date_raw) if production_date_raw else ""
-            
+
             key = (batch_no, product_name, workshop, production_date)
             weight = fields.get("重量（产出量）", 0)
-            
+
             if key in existing_records:
-                to_update.append({
-                    "batch_no": batch_no,
-                    "product_name": product_name,
-                    "workshop": workshop,
-                    "production_date": production_date,
-                    "weight": weight,
-                    "action": "更新"
-                })
+                to_update.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": production_date,
+                        "weight": weight,
+                        "action": "更新",
+                    }
+                )
             else:
-                to_create.append({
-                    "batch_no": batch_no,
-                    "product_name": product_name,
-                    "workshop": workshop,
-                    "production_date": production_date,
-                    "weight": weight,
-                    "action": "新增"
-                })
-        
-        return {
-            "to_create": len(to_create),
-            "to_update": len(to_update),
-            "details": to_create + to_update
-        }
+                to_create.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": production_date,
+                        "weight": weight,
+                        "action": "新增",
+                    }
+                )
+
+        return {"to_create": len(to_create), "to_update": len(to_update), "details": to_create + to_update}
 
     async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
         logger.info("开始推送到飞书")
-        
+
         # 一次性获取飞书所有记录，建立批号→record_id 映射
         logger.info("获取飞书所有记录...")
         all_feishu_records = await self.bitable.list_records(page_size=500)
@@ -185,7 +188,7 @@ class ProductSyncService:
                 key = (batch_no, product_name, workshop)
                 feishu_record_map[key] = record.get("record_id")
         logger.info(f"飞书现有 {len(feishu_record_map)} 条记录")
-        
+
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
             FROM production.product_outputs
@@ -257,13 +260,8 @@ class ProductSyncService:
         await self.db.commit()
 
         # 记录操作日志
-        operation_records = [
-            {"batch_no": r["batch_no"], "action": r["action"]}
-            for r in (to_create + to_update)
-        ]
-        await SyncOperationLog.log_operation(
-            self.db, product_id or "", "push", operation_records
-        )
+        operation_records = [{"batch_no": r["batch_no"], "action": r["action"]} for r in (to_create + to_update)]
+        await SyncOperationLog.log_operation(self.db, product_id or "", "push", operation_records)
 
         return {
             "imported": imported,
@@ -394,13 +392,8 @@ class ProductSyncService:
         await self.db.commit()
 
         # 记录操作日志
-        operation_records = [
-            {"batch_no": r["batch_no"], "action": r["action"]}
-            for r in (to_create + to_update)
-        ]
-        await SyncOperationLog.log_operation(
-            self.db, product_id or "", "pull", operation_records
-        )
+        operation_records = [{"batch_no": r["batch_no"], "action": r["action"]} for r in (to_create + to_update)]
+        await SyncOperationLog.log_operation(self.db, product_id or "", "pull", operation_records)
 
         return {
             "imported": imported,
@@ -471,7 +464,7 @@ class ProductSyncService:
 
 class SyncOperationLog:
     """同步操作日志"""
-    
+
     @staticmethod
     async def log_operation(
         db: AsyncSession,
@@ -481,8 +474,9 @@ class SyncOperationLog:
     ) -> str:
         """记录同步操作日志"""
         import uuid as uuid_module
+
         log_id = str(uuid_module.uuid4())
-        
+
         await db.execute(
             text("""
             INSERT INTO production.sync_operation_logs
@@ -494,11 +488,11 @@ class SyncOperationLog:
                 "product_id": product_id,
                 "operation_type": operation_type,
                 "records": json.dumps(records),
-            }
+            },
         )
         await db.commit()
         return log_id
-    
+
     @staticmethod
     async def get_operation_log(db: AsyncSession, log_id: str) -> dict[str, Any] | None:
         """获取操作日志"""
@@ -508,7 +502,7 @@ class SyncOperationLog:
             FROM production.sync_operation_logs
             WHERE id = :log_id
             """),
-            {"log_id": log_id}
+            {"log_id": log_id},
         )
         row = result.first()
         if row:
@@ -520,7 +514,7 @@ class SyncOperationLog:
                 "created_at": row[4],
             }
         return None
-    
+
     @staticmethod
     async def get_latest_operation(db: AsyncSession, product_id: str) -> dict[str, Any] | None:
         """获取最新操作日志"""
@@ -532,7 +526,7 @@ class SyncOperationLog:
             ORDER BY created_at DESC
             LIMIT 1
             """),
-            {"product_id": product_id}
+            {"product_id": product_id},
         )
         row = result.first()
         if row:

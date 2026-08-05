@@ -332,31 +332,25 @@ class ProductOutputRepository:
         )
 
         # 当年统计
-        current_query = (
-            select(
-                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
-                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
-                func.count(func.distinct(ProductOutput.workshop)).label("workshop_count"),
-                func.count(func.distinct(ProductOutput.product_name)).label("product_count"),
-            )
-            .where(
-                ProductOutput.is_deleted == False,  # noqa: E712
-                func.extract("year", output_date) == year,
-            )
+        current_query = select(
+            func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+            func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+            func.count(func.distinct(ProductOutput.workshop)).label("workshop_count"),
+            func.count(func.distinct(ProductOutput.product_name)).label("product_count"),
+        ).where(
+            ProductOutput.is_deleted == False,  # noqa: E712
+            func.extract("year", output_date) == year,
         )
         current_result = await self.session.execute(current_query)
         current_row = current_result.one()
 
         # 去年统计
-        previous_query = (
-            select(
-                func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
-                func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
-            )
-            .where(
-                ProductOutput.is_deleted == False,  # noqa: E712
-                func.extract("year", output_date) == year - 1,
-            )
+        previous_query = select(
+            func.coalesce(func.sum(ProductOutput.weight), 0).label("total_weight"),
+            func.count(func.distinct(ProductOutput.batch_no)).label("batch_count"),
+        ).where(
+            ProductOutput.is_deleted == False,  # noqa: E712
+            func.extract("year", output_date) == year - 1,
         )
         previous_result = await self.session.execute(previous_query)
         previous_row = previous_result.one()

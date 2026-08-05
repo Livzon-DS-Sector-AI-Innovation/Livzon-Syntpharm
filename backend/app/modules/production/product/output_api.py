@@ -193,9 +193,9 @@ async def export_product_outputs(
 
 @router.get("/product-output/annual-review", summary="获取年度回顾数据")
 async def get_annual_review(
+    current_user: RequiredUser,
     year: int = Query(..., description="年份"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取年度回顾数据"""
     service = ProductOutputService(db)
@@ -205,15 +205,15 @@ async def get_annual_review(
 
 @router.get("/product-output/annual-review/export", summary="导出年度回顾Excel")
 async def export_annual_review(
+    current_user: RequiredUser,
     year: int = Query(..., description="年份"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """导出年度回顾Excel"""
     from io import BytesIO
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, PatternFill
+
     from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
 
     service = ProductOutputService(db)
     data = await service.get_annual_review(year)
@@ -259,7 +259,7 @@ async def export_annual_review(
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''%E5%B9%B4%E5%BA%A6%E5%9B%9E%E9%A1%BE_{year}%E5%B9%B4.xlsx"},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''annual_review_{year}.xlsx"},
     )
 
 
@@ -344,17 +344,14 @@ async def delete_product_output(
     return ApiResponse(message="删除成功")
 
 
-
 async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """解析导入文件，返回 (有效记录，无效记录)
-    
+
     返回格式:
     - 有效记录：包含所有字段 + product_found (bool) + is_duplicate (bool)
     - 无效记录：包含错误信息
     """
-    products_result = await db.execute(
-        select(Product).where(Product.is_deleted == False)
-    )
+    products_result = await db.execute(select(Product).where(not Product.is_deleted))
     all_products = products_result.scalars().all()
     product_map: dict[tuple[str, str], uuid.UUID] = {}
     for p in all_products:
@@ -413,22 +410,25 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
             invalid_records.append({"row": row_num, "error": f"日期格式错误：{e}", "data": row_dict})
             return
 
-        records_data.append({
-            "workshop": workshop,
-            "product_name": product_name,
-            "product_id": product_id,
-            "batch_no": batch_no,
-            "production_date": prod_date,
-            "end_date": end_date,
-            "weight": weight,
-            "unit": unit,
-            "notes": notes,
-            "product_found": product_found,
-            "row_num": row_num,
-        })
+        records_data.append(
+            {
+                "workshop": workshop,
+                "product_name": product_name,
+                "product_id": product_id,
+                "batch_no": batch_no,
+                "production_date": prod_date,
+                "end_date": end_date,
+                "weight": weight,
+                "unit": unit,
+                "notes": notes,
+                "product_found": product_found,
+                "row_num": row_num,
+            }
+        )
 
     if file_ext == "xlsx":
         from openpyxl import load_workbook
+
         wb = load_workbook(filename=io.BytesIO(content))
         ws = wb.active
         headers_row = [cell.value for cell in ws[1]]
@@ -448,9 +448,9 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
 
 @router.post("/product-output/import/preview", summary="预览导入文件")
 async def preview_import(
+    current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """预览导入文件，返回解析结果（不写入数据库）"""
     records_data, invalid_records = await parse_import_file(file, db)
@@ -458,7 +458,7 @@ async def preview_import(
     # 检查重复
     existing_result = await db.execute(
         select(ProductOutput.batch_no, ProductOutput.product_id).where(
-            ProductOutput.is_deleted == False,
+            not ProductOutput.is_deleted,
         )
     )
     existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
@@ -493,8 +493,9 @@ async def import_product_outputs(
 ) -> Any:
     """通过 CSV 或 XLSX 文件批量导入产量记录"""
     import time
+
     batch_id = f"batch_{int(time.time())}"
-    
+
     records_data, invalid_records = await parse_import_file(file, db)
 
     if not records_data:
@@ -503,7 +504,7 @@ async def import_product_outputs(
     # 按 (批号 + 产品ID) 组合检查重复
     existing_result = await db.execute(
         select(ProductOutput.batch_no, ProductOutput.product_id).where(
-            ProductOutput.is_deleted == False,
+            not ProductOutput.is_deleted,
         )
     )
     existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
@@ -536,15 +537,15 @@ async def import_product_outputs(
 
 @router.delete("/product-output/import/{batch_id}", summary="撤销导入批次")
 async def undo_import(
+    current_user: RequiredUser,
     batch_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """撤销指定批次的导入记录"""
     result = await db.execute(
         select(ProductOutput).where(
             ProductOutput.import_batch_id == batch_id,
-            ProductOutput.is_deleted == False,
+            not ProductOutput.is_deleted,
         )
     )
     records = result.scalars().all()
@@ -782,5 +783,3 @@ async def import_from_bitable(
         )
     except Exception as e:
         return ApiResponse(code=500, message=f"导入失败：{str(e)}")
-
-
