@@ -28,6 +28,10 @@ check_command() {
 run_openapi() {
     log_section "OpenAPI Drift Check"
 
+    # Configure git identity for CI auto-commits
+    git config --global user.name "CI Bot" 2>/dev/null || true
+    git config --global user.email "ci@livzon-syntpharm.com" 2>/dev/null || true
+
     # Step 1: Backend — export spec and validate it matches committed openapi.json
     log_info "Exporting backend OpenAPI spec..."
     cd "$REPO_ROOT/backend"
@@ -63,7 +67,7 @@ run_openapi() {
     fi
     if ! git diff --exit-code src/types/generated/schema.ts > /dev/null 2>&1; then
         log_warn "Generated types were out of date, auto-updating..."
-        git add src/types/generated/schema.ts src/types/generated/openapi.json
+        git add -f src/types/generated/schema.ts
         git commit -m "chore: auto-update frontend API types [ci skip]" --no-verify || true
     else
         log_info "Generated types are up to date"
