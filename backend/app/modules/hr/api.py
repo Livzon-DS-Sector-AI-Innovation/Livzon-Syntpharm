@@ -672,7 +672,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=500, detail=f"发送飞书消息失败: {str(e)}")
 
     return success_response(
-        data={"token": token, "url": select_url},
+        data={"token": token, "url": f"/hr/training/select?token={token}"},
         message="已发送飞书选择任务给李文兆",
     )
 

@@ -57,9 +57,7 @@ async def test_login(
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
-async def login(
-    settings: Settings = Depends(get_settings),
-) -> RedirectResponse:
+async def login() -> RedirectResponse:
     """Generate state token and redirect user to Feishu authorization page."""
     from app.platform.identity.service import generate_state_token
     from app.platform.integrations.feishu.oauth import FeishuOAuthClient
@@ -76,7 +74,6 @@ async def auth_callback(
     code: str = Query(...),
     state: str = Query(""),
     db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
 
@@ -105,7 +102,7 @@ async def auth_callback(
         )
         await db.commit()
         return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/login?error=invalid_state",
+            url="/login?error=invalid_state",
             status_code=302,
         )
 
@@ -128,7 +125,7 @@ async def auth_callback(
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/login?error=callback_failed",
+            url="/login?error=callback_failed",
             status_code=302,
         )
 
@@ -146,18 +143,16 @@ async def auth_callback(
 
     # Redirect to frontend with token
     return RedirectResponse(
-        url=f"{settings.FRONTEND_URL}/auth/callback?token={token}",
+        url=f"/auth/callback?token={token}",
         status_code=302,
     )
 
 
 @auth_router.get("/logout", summary="登出")
-async def logout(
-    settings: Settings = Depends(get_settings),
-) -> RedirectResponse:
+async def logout() -> RedirectResponse:
     """Redirect to frontend login page (frontend handles cookie clearing)."""
     return RedirectResponse(
-        url=f"{settings.FRONTEND_URL}/login",
+        url="/login",
         status_code=302,
     )
 

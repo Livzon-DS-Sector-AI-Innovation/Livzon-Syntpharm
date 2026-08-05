@@ -45,7 +45,6 @@ jobs:
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -59,7 +58,6 @@ jobs:
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -126,7 +124,6 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -156,7 +153,6 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
