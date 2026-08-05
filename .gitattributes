@@ -1,0 +1,4 @@
+* text=auto
+frontend/src/types/generated/schema.ts text eol=lf
+frontend/src/types/generated/openapi.json text eol=lf
+backend/openapi.json text eol=lf
