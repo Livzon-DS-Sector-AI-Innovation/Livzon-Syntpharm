@@ -351,7 +351,7 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
     - 有效记录：包含所有字段 + product_found (bool) + is_duplicate (bool)
     - 无效记录：包含错误信息
     """
-    products_result = await db.execute(select(Product).where(not Product.is_deleted))
+    products_result = await db.execute(select(Product).where(Product.is_deleted == False))
     all_products = products_result.scalars().all()
     product_map: dict[tuple[str, str], uuid.UUID] = {}
     for p in all_products:
@@ -365,7 +365,7 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
     records_data = []
     invalid_records = []
 
-    def parse_row(row_dict: dict, row_num: int):
+    def parse_row(row_dict: dict[str, Any], row_num: int) -> None:
         workshop = str(row_dict.get("车间", "") or "").strip().replace(" ", "")
         product_name = str(row_dict.get("产品名称", "") or "").strip()
         batch_no = str(row_dict.get("批号", "") or "").strip()

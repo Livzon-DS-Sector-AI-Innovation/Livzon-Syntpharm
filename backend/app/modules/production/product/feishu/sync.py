@@ -68,7 +68,7 @@ class ProductSyncService:
         # 分析变更
         to_create = []
         to_update = []
-        to_skip = []
+        to_skip: list[dict[str, Any]] = []
 
         for row in rows:
             record_id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes = row
