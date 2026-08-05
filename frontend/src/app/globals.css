@@ -113,6 +113,35 @@ body {
   display: none;
 }
 
+.sidebar-menu.ant-menu .ant-menu-submenu-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.50;
+  color: var(--color-charcoal);
+  border-radius: 8px;
+  margin-inline: 8px;
+  margin-block: 2px;
+  padding-inline: 12px;
+  height: 36px;
+}
+
+.sidebar-menu.ant-menu .ant-menu-submenu-title:hover {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.sidebar-menu.ant-menu .ant-menu-submenu .ant-menu-item {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.50;
+  color: var(--color-charcoal);
+  border-radius: 8px;
+  margin-inline: 8px;
+  margin-block: 2px;
+  padding-inline: 12px;
+  height: 36px;
+}
+
 /* Ant Design 全局样式覆盖 - 符合 DESIGN.md */
 
 /* 表格样式 */
