@@ -804,6 +804,7 @@ Full audit
 - 所有 POST/PUT/DELETE 操作写在 `actions/` 目录
 - 禁止在 Client 组件里直接 fetch 写接口
 - 例外：流式响应（SSE/ReadableStream）或上传进度追踪，允许在 `lib/api/client/` 中直接 fetch
+- **禁止 `'use server'` 文件使用 `export type` 或 `export interface`**（Turbopack Server Actions loader 会导致运行时 `ReferenceError`）。类型定义必须放在 `types/` 中
 
 **类型系统 / API 类型来源:**
 - 所有 API 相关的类型（请求参数、响应数据）必须从 `@/types/generated/schema` 导入
@@ -838,6 +839,7 @@ Full audit
 5. Is Zod being used for simple form validation (where Ant Design Form `rules` would be appropriate)?
 6. Are generated types (`@/types/generated/schema.ts`) committed and up to date with the backend?
 7. Is the `types/generated/` directory free of manual edits?
+8. Do any `'use server'` files in `actions/` contain `export type` or `export interface` statements?
 
 ### Output format
 
@@ -1072,6 +1074,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | `asyncio.create_task()` allowed in long-running background worker processes for heartbeats, event dispatch, and infrastructure tasks. | 异步任务 — 禁止 asyncio.create_task() | 7 |
 | Soft delete default; physical delete allowed "除非需求明确要求" (when requirements explicitly require). | API 规范 — 强制软删除 | 4 |
 | SSE/ReadableStream streaming responses and upload progress tracking allowed to use direct fetch in `lib/api/client/`. | 写操作必须用 Server Actions | 10 |
+| `'use server'` files may re-export types from `types/` via `export type { ... } from '@/types/...'` (not defining types directly). | `'use server'` 文件禁止 export type/interface | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
 
