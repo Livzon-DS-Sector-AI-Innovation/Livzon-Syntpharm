@@ -20,11 +20,12 @@ interface AiFillPanelProps {
   chapterId: string
   chapterCode?: string
   assets: ChapterAsset[]
+  refreshKey?: number
   onAssetsChange: () => void
   onFillComplete?: () => void
 }
 
-export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, onFillComplete }: AiFillPanelProps) {
+export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
   const { message } = App.useApp()
 
   // Categories (for display labels)
@@ -68,7 +69,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
   // Load selected assets (including inherited)
   useEffect(() => {
     loadSelectedAssets()
-  }, [chapterId])
+  }, [chapterId, refreshKey])
 
   // Load categories for label display
   useEffect(() => {
