@@ -16,14 +16,6 @@ import type {
   PasswordResetRequest,
 } from '@/types/users'
 
-export type {
-  UserManagementItem,
-  UserManagementListResponse,
-  LocalUserCreate,
-  UserManagementUpdate,
-  PasswordResetRequest,
-}
-
 async function getAuthToken(): Promise<string | undefined> {
   const cookieStore = await cookies()
   return cookieStore.get('auth_token')?.value

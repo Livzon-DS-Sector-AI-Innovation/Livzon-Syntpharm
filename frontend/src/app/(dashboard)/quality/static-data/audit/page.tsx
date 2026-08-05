@@ -19,7 +19,8 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined, EyeOutlined, SyncOutlined, ExportOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { listAuditLogs, getAuditModules, AuditLogItem } from '@/actions/static-data'
+import { listAuditLogs, getAuditModules } from '@/actions/static-data'
+import type { AuditLogItem } from '@/types/static-data'
 
 const { RangePicker } = DatePicker
 const { Text, Paragraph } = Typography

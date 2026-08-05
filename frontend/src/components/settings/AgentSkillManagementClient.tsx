@@ -27,8 +27,8 @@ import {
   enableAgentSkill,
   getAgentSkills,
   updateAgentSkill,
-  type AgentSkill,
 } from '@/actions/agent-skills'
+import type { AgentSkill } from '@/types/agent-skills'
 
 const { Text } = Typography
 const { TextArea } = Input

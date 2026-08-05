@@ -4,8 +4,6 @@ import { cookies } from 'next/headers'
 import { getLoginLogsApi } from '@/lib/api/server/identity'
 import type { LoginLog, LoginLogListResponse } from '@/types/identity'
 
-export type { LoginLog, LoginLogListResponse }
-
 export async function getLoginLogs(params: {
   page?: number
   page_size?: number

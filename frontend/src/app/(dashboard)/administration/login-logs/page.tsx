@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Table, Tag, Input, Select, Space, Button } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
-import { getLoginLogs, type LoginLog } from '@/actions/identity'
+import { getLoginLogs } from '@/actions/identity'
+import type { LoginLog } from '@/types/identity'
 
 export default function LoginLogsPage() {
   const [loading, setLoading] = useState(false)

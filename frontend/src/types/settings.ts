@@ -20,6 +20,14 @@ export interface LLMConfig {
 
 export type LLMConfigFormData = components['schemas']['LLMConfigCreate']
 
+export type LLMConfigUpdate = components['schemas']['LLMConfigUpdate']
+
+export type FeishuConfig = any
+
+export type FeishuConfigUpsert = any
+
+export type FeishuDiagnosticResult = any
+
 export interface ApiResponse<T> {
   code: number
   data: T

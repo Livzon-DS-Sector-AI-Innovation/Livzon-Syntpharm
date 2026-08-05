@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
 import type {
+  ContractGenerateActionResult,
   ContractGenerateRequest,
   InvoiceRecognitionRecordDeleteResponse,
   InvoiceRecognitionResponse,
@@ -32,10 +33,6 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   }
   return headers
 }
-
-export type ContractGenerateActionResult =
-  | { ok: true; filename: string; contentType: string; base64: string }
-  | { ok: false; message: string }
 
 export async function recognizeInvoicePdf(
   formData: FormData

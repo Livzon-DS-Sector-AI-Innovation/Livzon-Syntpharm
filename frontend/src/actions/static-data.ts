@@ -8,7 +8,6 @@ import type {
   AuditLogItem,
   UploadResponse,
 } from '@/types/static-data'
-export type { AuditLogItem, UploadResponse }
 import {
   getDictEquipmentCategory as getDictEquipmentCategoryServer,
   getDictEquipmentStatus as getDictEquipmentStatusServer,

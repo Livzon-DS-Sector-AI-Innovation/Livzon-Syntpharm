@@ -73,21 +73,6 @@ import {
   getFeishuContactDepartments as apiGetFeishuContactDepartments,
 } from '@/lib/api/server/instrument'
 
-export type {
-  AIRecognizedInstrumentInfo,
-  UpcomingCalibrationRecord,
-  UpcomingCalibrationResponse,
-  ReminderResponse,
-  RecordsForReminderResponse,
-  ReminderConfig,
-  ReminderConfigListResponse,
-  ReminderConfigCreate,
-  ReminderConfigUpdate,
-  AutoTriggerResponse,
-  FeishuUser,
-  FeishuDepartment,
-} from '@/types/instrument'
-
 export async function getInstruments(params: InstrumentFilter = {}) {
   return fetchInstruments(params)
 }

@@ -10,12 +10,6 @@ import {
 } from '@/lib/api/server/module-settings'
 import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
 
-export type {
-  ModuleSetting,
-  ModuleSettingUpdate,
-  ModuleSettingCreate,
-}
-
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')

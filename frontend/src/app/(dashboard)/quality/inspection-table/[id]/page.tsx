@@ -47,9 +47,8 @@ import {
   recognizeMultipleImagesV3,
   uploadInspectionTemplate,
   deleteInspectionTemplate,
-  RecognizeResult,
 } from '@/actions/inspection-table'
-import type { InspectionTableDetail, InspectionTableRow, ColumnConfig } from '@/types/inspection-table'
+import type { InspectionTableDetail, InspectionTableRow, ColumnConfig, RecognizeResult } from '@/types/inspection-table'
 
 const API_BASE = '/api/v1'
 

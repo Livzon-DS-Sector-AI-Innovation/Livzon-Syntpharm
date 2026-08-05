@@ -19,8 +19,8 @@ import { EditOutlined, SaveOutlined } from '@ant-design/icons'
 import {
   getModuleSettings,
   updateModuleSetting,
-  type ModuleSetting,
 } from '@/actions/module-settings'
+import type { ModuleSetting } from '@/types/module-settings'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
