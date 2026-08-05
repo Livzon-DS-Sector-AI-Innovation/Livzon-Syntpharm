@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import not_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -351,7 +351,7 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
     - 有效记录：包含所有字段 + product_found (bool) + is_duplicate (bool)
     - 无效记录：包含错误信息
     """
-    products_result = await db.execute(select(Product).where(~Product.is_deleted))
+    products_result = await db.execute(select(Product).where(not_(Product.is_deleted)))
     all_products = products_result.scalars().all()
     product_map: dict[tuple[str, str], uuid.UUID] = {}
     for p in all_products:
