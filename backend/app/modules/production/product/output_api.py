@@ -458,7 +458,7 @@ async def preview_import(
     # 检查重复
     existing_result = await db.execute(
         select(ProductOutput.batch_no, ProductOutput.product_id).where(
-            not ProductOutput.is_deleted,
+            not_(ProductOutput.is_deleted),
         )
     )
     existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
@@ -504,7 +504,7 @@ async def import_product_outputs(
     # 按 (批号 + 产品ID) 组合检查重复
     existing_result = await db.execute(
         select(ProductOutput.batch_no, ProductOutput.product_id).where(
-            not ProductOutput.is_deleted,
+            not_(ProductOutput.is_deleted),
         )
     )
     existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
@@ -545,7 +545,7 @@ async def undo_import(
     result = await db.execute(
         select(ProductOutput).where(
             ProductOutput.import_batch_id == batch_id,
-            not ProductOutput.is_deleted,
+            not_(ProductOutput.is_deleted),
         )
     )
     records = result.scalars().all()
