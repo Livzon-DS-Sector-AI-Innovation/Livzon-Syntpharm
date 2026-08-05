@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -224,11 +225,21 @@ async def bitable_monthly_sync_loop() -> None:
     每天只执行一次，通过 last_sync_date 防止重复。
     """
     settings = get_settings()
-    if not await get_module_setting_bool("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED", default=False):
+    
+    # 优先从环境变量读取，其次从数据库读取
+    auto_sync_env = os.getenv("ENERGY_BITABLE_AUTO_SYNC_ENABLED")
+    if auto_sync_env is not None:
+        auto_sync_enabled = auto_sync_env.lower() in ("true", "1", "yes")
+    else:
+        auto_sync_enabled = await get_module_setting_bool("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED", default=False)
+
+    if not auto_sync_enabled:
         logger.info("飞书多维表格月度同步已关闭（ENERGY_BITABLE_AUTO_SYNC_ENABLED=false）")
         return
 
-    sync_hour = settings.ENERGY_BITABLE_SYNC_HOUR
+    # 优先从环境变量读取同步时间
+    sync_hour_env = os.getenv("ENERGY_BITABLE_SYNC_HOUR")
+    sync_hour = int(sync_hour_env) if sync_hour_env else settings.ENERGY_BITABLE_SYNC_HOUR
     logger.info("飞书多维表格月度同步任务已启动", extra={"sync_hour": sync_hour})
 
     last_sync_date: str | None = None
@@ -244,30 +255,43 @@ async def bitable_monthly_sync_loop() -> None:
                 month_table = now.strftime("%Y-%m")
                 logger.info("开始同步飞书多维表格月度数据", extra={"month_table": month_table})
 
-                try:
-                    async with async_session_factory() as db:
-                        from app.modules.energy.bitable_cross_import import (
-                            EnergyBitableCrossImport,
+                # 重试机制：最多尝试 3 次
+                max_retries = 3
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        async with async_session_factory() as db:
+                            from app.modules.energy.bitable_cross_import import (
+                                EnergyBitableCrossImport,
+                            )
+
+                            importer = EnergyBitableCrossImport()
+                            result = await importer.import_month(db, month_table)
+
+                            logger.info(
+                                "月度数据同步完成 (尝试 %d/%d)",
+                                attempt, max_retries,
+                                extra={
+                                    "month_table": month_table,
+                                    "created": result.get("total_created", 0),
+                                    "updated": result.get("total_updated", 0),
+                                    "errors": len(result.get("errors", [])),
+                                },
+                            )
+
+                            # 标记今天已同步
+                            last_sync_date = today_str
+                            break # 成功则跳出重试循环
+
+                    except Exception as e:
+                        logger.warning(
+                            "月度数据同步失败 (尝试 %d/%d): %s", 
+                            attempt, max_retries, str(e),
+                            extra={"month_table": month_table}
                         )
-
-                        importer = EnergyBitableCrossImport()
-                        result = await importer.import_month(db, month_table)
-
-                        logger.info(
-                            "月度数据同步完成",
-                            extra={
-                                "month_table": month_table,
-                                "created": result.get("total_created", 0),
-                                "updated": result.get("total_updated", 0),
-                                "errors": len(result.get("errors", [])),
-                            },
-                        )
-
-                        # 标记今天已同步
-                        last_sync_date = today_str
-
-                except Exception:
-                    logger.exception("月度数据同步异常", extra={"month_table": month_table})
+                        if attempt < max_retries:
+                            await asyncio.sleep(60) # 等待 60 秒后重试
+                        else:
+                            logger.exception("月度数据同步最终失败", extra={"month_table": month_table})
 
         except Exception:
             logger.exception("飞书多维表格同步循环异常")
