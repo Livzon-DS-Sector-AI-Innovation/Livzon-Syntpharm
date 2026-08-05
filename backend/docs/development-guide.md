@@ -6,6 +6,7 @@
 
 - [认证与权限使用](#认证与权限使用)
 - [LLM 调用](#llm-调用)
+- [配置管理](#配置管理)
 - [文件存储](#文件存储)
 - [OCR 服务](#ocr-服务)
 - [数据库迁移操作](#数据库迁移操作)
@@ -73,6 +74,57 @@ except LLMRateLimitError:
 ```
 
 **参考实现**：`app/modules/safety/service/hazard.py`
+
+---
+
+## 配置管理
+
+配置分两层——
+
+**1. 部署配置（Deployment Settings）**：`.env` + `core/config.py`，存放 API keys、数据库连接、飞书凭证。
+
+**2. 运行时配置（Runtime Settings）**：数据库 `core.module_settings` 表，存放模型名称、功能开关、调度参数。
+
+### 读取配置
+
+```python
+# 运行时配置（从数据库）
+from app.shared.config_reader import get_module_setting, get_module_setting_bool
+model = await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash")
+
+# 部署配置（从环境变量）
+from app.core.config import get_settings
+settings = get_settings()
+api_key = settings.SAFETY_AI_TEXT_API_KEY
+```
+
+### 读取飞书配置
+
+```python
+from app.core.config import get_settings
+settings = get_settings()
+app_id = settings.feishu.platform.app_id
+safety_app_id = settings.feishu.safety.credentials.app_id
+```
+
+环境变量命名：`FEISHU__{MODULE}__{FIELD}` 或 `FEISHU__{MODULE}__CREDENTIALS__{FIELD}`。
+
+### 新增配置
+
+- LLM API keys → 通过管理界面配置，加密存储在 `core.llm_configs` 表
+- 其他 API key / 凭证 → 加到 `core/config.py` 的 `Settings` 类
+- 模型名称 / 功能开关 / 运营参数 → 加到 `scripts/seed/seed_module_settings.py` 并通过 Web UI 管理
+
+**新增飞书应用**：
+1. 在 `FeishuSettings` 中添加新的子模型
+2. 如果新模块需要独立应用，包含 `credentials: FeishuAppCredentials` 字段
+3. 如果使用平台应用凭证，只需添加表格配置字段
+4. 在 `.env`、`.env.local`、`.env.example` 中添加对应的环境变量
+
+**禁止**：
+- 在模块代码中使用 `os.getenv()` 读取运行时配置
+- 将 API key 等凭证明文存入数据库
+- 在 `core/config.py` 中存放模型名称等频繁变更的配置
 
 ---
 

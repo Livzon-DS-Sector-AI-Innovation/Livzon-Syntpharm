@@ -262,17 +262,7 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 
 - 内容：模型名称、功能开关、调度参数等运营配置
 - 管理：模块负责人通过 Web UI 管理，变更频率高
 
-**读取配置**：
-```python
-# 运行时配置（从数据库）
-from app.shared.config_reader import get_module_setting, get_module_setting_bool
-model = await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash")
-
-# 部署配置（从环境变量）
-from app.core.config import get_settings
-settings = get_settings()
-api_key = settings.SAFETY_AI_TEXT_API_KEY
-```
+**读取配置**：详见 [backend/docs/development-guide.md](backend/docs/development-guide.md)。
 
 **新增配置**：
 - LLM API keys → 通过管理界面配置，加密存储在 `core.llm_configs` 表
@@ -294,13 +284,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 
 **环境变量命名规则**：使用双下划线 `__` 分隔层级，格式 `FEISHU__{MODULE}__{FIELD}` 或 `FEISHU__{MODULE}__CREDENTIALS__{FIELD}`。
 
-**代码中读取**：
-```python
-from app.core.config import get_settings
-settings = get_settings()
-app_id = settings.feishu.platform.app_id
-safety_app_id = settings.feishu.safety.credentials.app_id
-```
+**代码中读取**：详见 [backend/docs/development-guide.md](backend/docs/development-guide.md)。
 
 **新增飞书应用**：
 1. 在 `FeishuSettings` 中添加新的子模型
@@ -374,12 +358,7 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 
 **外部服务**：LLM、飞书、MinIO 等外部依赖必须 mock，不要在测试中调用真实服务。
 
-**运行**：
-```bash
-uv run pytest                                    # 全量
-uv run pytest tests/modules/<module>/            # 单模块
-uv run pytest tests/modules/<module>/ -k "test_name"  # 单个用例
-```
+**运行**：详见 [backend/examples/commands.md](backend/examples/commands.md)。
 
 ## 模块结构
 
@@ -473,15 +452,10 @@ Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数�
 
 详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
 
-**Barrel 文件（index.ts）规则**：导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
-
-```typescript
-// frontend/src/components/energy/index.ts
-'use client'
-
-export { AlertsPageClient } from './AlertsPageClient'
-export { DevicesPageClient } from './DevicesPageClient'
-```
+**Barrel 文件（index.ts）规则**：导出使用 Zustand store 或 React Context 的组件时，
+barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。
+其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
+详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
 
 ### 动态渲染
 
@@ -546,14 +520,7 @@ export const dynamic = 'force-dynamic'
 
 客户端代码使用相对路径 `/api/v1/...`，由 `src/proxy.ts` 转发到后端。服务器端代码使用 `API_BASE_URL` 环境变量。
 
-```typescript
-// 客户端：相对路径（自动代理到后端）
-const response = await fetch('/api/v1/quality/cpv/products')
-
-// 服务器端：环境变量（Docker 内部网络）
-const API_BASE = process.env.API_BASE_URL || 'http://backend:8000'
-const response = await fetch(`${API_BASE}/api/v1/production/batches`)
-```
+详见 [frontend/examples/server-actions.md](frontend/examples/server-actions.md)。
 
 **禁止**：
 - 硬编码后端地址或暴露后端端口
@@ -631,17 +598,7 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 如果后端 API 发生变化，前端必须重新生成类型：
 
-```bash
-# 使用根目录 CI 脚本（推荐，一次性完成导出 + 生成 + 漂移检查）
-bash scripts/ci.sh openapi
-
-# 或分步执行：
-# 1. 在 backend 目录导出最新 spec
-cd ../backend && uv run python scripts/ci/export_openapi.py
-
-# 2. 在 frontend 目录重新生成类型
-cd ../frontend && pnpm generate:api
-```
+详见 [backend/examples/commands.md](backend/examples/commands.md)。
 
 CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并。
 

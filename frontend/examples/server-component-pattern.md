@@ -22,3 +22,15 @@ export default async function Page() {
 - 用了 Zustand store
 
 Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责拿数据然后传给 Client 组件。
+
+## Barrel 文件 (index.ts)
+
+导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
+
+```typescript
+// frontend/src/components/energy/index.ts
+'use client'
+
+export { AlertsPageClient } from './AlertsPageClient'
+export { DevicesPageClient } from './DevicesPageClient'
+```

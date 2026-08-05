@@ -80,3 +80,21 @@ export async function createUser(data: UserManagementItem) {
 import { createUser } from '@/actions/users'
 import type { UserManagementItem } from '@/types/users'
 ```
+
+## API 调用
+
+客户端使用相对路径（由 `src/proxy.ts` 转发到后端），服务器端使用 `API_BASE_URL` 环境变量：
+
+```typescript
+// 客户端：相对路径（自动代理到后端）
+const response = await fetch('/api/v1/quality/cpv/products')
+
+// 服务器端：环境变量（Docker 内部网络）
+const API_BASE = process.env.API_BASE_URL || 'http://backend:8000'
+const response = await fetch(`${API_BASE}/api/v1/production/batches`)
+```
+
+**禁止**：
+- 硬编码后端地址或暴露后端端口
+- 使用 `NEXT_PUBLIC_API_BASE_URL`
+- 硬编码 `localhost:3000` 或其他固定地址生成跳转/分享链接
