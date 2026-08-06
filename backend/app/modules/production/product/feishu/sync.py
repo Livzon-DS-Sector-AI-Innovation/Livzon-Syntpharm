@@ -1,14 +1,11 @@
 """Bidirectional sync service for product outputs and Feishu Bitable."""
 
-import json
 import logging
 from datetime import UTC, date
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.modules.production.product.sync_operation_log_model import SyncOperationLog
 
 from app.modules.production.product.feishu.bitable import (
     ProductBitableClient,
@@ -17,6 +14,7 @@ from app.modules.production.product.feishu.bitable import (
     _extract_text,
     _to_ms_timestamp,
 )
+from app.modules.production.product.sync_operation_log_model import SyncOperationLog
 
 logger = logging.getLogger(__name__)
 
@@ -461,68 +459,4 @@ class ProductSyncService:
             record_workshop = str(fields.get("车间（生产车间）", ""))
             if record_batch == batch_no and record_product == product_name and record_workshop == workshop:
                 return record.get("record_id")
-        return None
-
-
-class SyncOperationLog:
-    """同步操作日志"""
-
-    @staticmethod
-    async def log_operation(
-        db: AsyncSession,
-        product_id: str,
-        operation_type: str,  # 'push' or 'pull'
-        records: list[dict[str, Any]],
-    ) -> str:
-        """记录同步操作日志"""
-        import uuid as uuid_module
-        from datetime import datetime
-
-        log_id = str(uuid_module.uuid4())
-        log = SyncOperationLog(
-            id=log_id,
-            product_id=product_id,
-            operation_type=operation_type,
-            records=records,
-            created_at=datetime.now(),
-        )
-        db.add(log)
-        await db.commit()
-        return log_id
-
-    @staticmethod
-    async def get_operation_log(db: AsyncSession, log_id: str) -> dict[str, Any] | None:
-        """获取操作日志"""
-        result = await db.execute(
-            select(SyncOperationLog).where(SyncOperationLog.id == log_id)
-        )
-        log = result.scalar_one_or_none()
-        if log:
-            return {
-                "id": log.id,
-                "product_id": log.product_id,
-                "operation_type": log.operation_type,
-                "records": log.records,
-                "created_at": log.created_at,
-            }
-        return None
-
-    @staticmethod
-    async def get_latest_operation(db: AsyncSession, product_id: str) -> dict[str, Any] | None:
-        """获取最新操作日志"""
-        result = await db.execute(
-            select(SyncOperationLog)
-            .where(SyncOperationLog.product_id == product_id)
-            .order_by(SyncOperationLog.created_at.desc())
-            .limit(1)
-        )
-        log = result.scalar_one_or_none()
-        if log:
-            return {
-                "id": log.id,
-                "product_id": log.product_id,
-                "operation_type": log.operation_type,
-                "records": log.records,
-                "created_at": log.created_at,
-            }
         return None
