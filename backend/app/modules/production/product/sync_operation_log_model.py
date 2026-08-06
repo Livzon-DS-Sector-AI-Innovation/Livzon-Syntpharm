@@ -1,9 +1,8 @@
 """SyncOperationLog ORM 模型"""
-from datetime import datetime
-from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from datetime import datetime
+
+from sqlalchemy import JSON, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
