@@ -23,7 +23,7 @@ def upgrade() -> None:
         schema="production",
     )
     op.create_index(
-        "ix_product_outputs_import_batch_id",
+        "ix_production_product_outputs_import_batch_id",
         "product_outputs",
         ["import_batch_id"],
         schema="production",
@@ -32,7 +32,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index(
-        "ix_product_outputs_import_batch_id",
+        "ix_production_product_outputs_import_batch_id",
         table_name="product_outputs",
         schema="production",
     )
