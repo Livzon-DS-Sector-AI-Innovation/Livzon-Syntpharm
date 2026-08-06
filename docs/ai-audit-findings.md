@@ -642,20 +642,20 @@ Categories affected: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13
 
 ##### Category 2: Secrets and hardcoded values
 
-- [ ] `backend/scripts/test/run_t9_regression.py:8` — 仓库通用规则/禁止硬编码绝对路径 — `sys.path.insert(0, "/app")` hardcodes Docker internal path instead of using relative path (`os.path.join(os.path.dirname(__file__), "..", "..")` as used by sibling test scripts). — severity: **low**
-- [ ] `backend/scripts/test/run_t9_regression.py:33` — 仓库通用规则/禁止硬编码绝对路径 — `Path("/app/tests/fixtures/dossier_splits/s6_template.docx")` hardcodes `/app` prefix instead of resolving relative to the fixture directory. — severity: **low**
+- [x] `backend/scripts/test/run_t9_regression.py:8` — 仓库通用规则/禁止硬编码绝对路径 — `sys.path.insert(0, "/app")` hardcodes Docker internal path instead of using relative path (`os.path.join(os.path.dirname(__file__), "..", "..")` as used by sibling test scripts). — severity: **low** — **RESOLVED** (now uses `Path(__file__).resolve().parents[2]`)
+- [x] `backend/scripts/test/run_t9_regression.py:33` — 仓库通用规则/禁止硬编码绝对路径 — `Path("/app/tests/fixtures/dossier_splits/s6_template.docx")` hardcodes `/app` prefix instead of resolving relative to the fixture directory. — severity: **low** — **RESOLVED** (now uses `Path(__file__).resolve().parents[2] / "tests" / "fixtures" / ...`)
 
 ##### Category 5: Models and migrations
 
-- [ ] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:9` — 迁移规范/命名 — Revision ID `c4a8f2d19043` uses hash-based format. AGENTS.md requires NNNN pattern (e.g. `0043_add_dossier_unique_indexes`). Hash-based IDs are explicitly forbidden. — severity: **medium**
-- [ ] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:10` — 迁移规范/命名 — `down_revision = '0051_add_scheduled_task_tables'` branches off migration 0051, but the file is named `0043`. The NNNN prefix is misleading — this migration is NOT the 43rd in the chain, it is the tip after 0051. — severity: **low**
-- [ ] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:1-5` — 迁移规范/文档 — Module docstring claims `Revision ID: 0043` and `Revises: 0042`, but the actual `revision` is `c4a8f2d19043` and `down_revision` is `0051_add_scheduled_task_tables`. Docstring metadata does not match code. — severity: **low**
+- [x] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:9` — 迁移规范/命名 — Revision ID `c4a8f2d19043` uses hash-based format. AGENTS.md requires NNNN pattern (e.g. `0043_add_dossier_unique_indexes`). Hash-based IDs are explicitly forbidden. — severity: **medium** — **RESOLVED** (file renamed to `0052_add_dossier_unique_indexes_and_cleanup.py`, revision `0052_add_dossier_unique_indexes_and_cleanup`)
+- [x] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:10` — 迁移规范/命名 — `down_revision = '0051_add_scheduled_task_tables'` branches off migration 0051, but the file is named `0043`. The NNNN prefix is misleading — this migration is NOT the 43rd in the chain, it is the tip after 0051. — severity: **low** — **RESOLVED** (file renamed to 0052, `down_revision` properly set to `0051_add_scheduled_task_tables`)
+- [x] `backend/alembic/versions/0043_add_dossier_unique_indexes_and_cleanup.py:1-5` — 迁移规范/文档 — Module docstring claims `Revision ID: 0043` and `Revises: 0042`, but the actual `revision` is `c4a8f2d19043` and `down_revision` is `0051_add_scheduled_task_tables`. Docstring metadata does not match code. — severity: **low** — **RESOLVED** (docstring updated: `Revision ID: 0052_add_dossier_unique_indexes_and_cleanup`, `Revises: 0051_add_scheduled_task_tables`)
 
 ##### Category 6: Configuration and logging
 
-- [ ] `backend/app/modules/registration/dossier_writer/service.py:945` — 日志规范/异常处理 — `logger.error(f"Failed to process template {filename}: {e}")` uses `logger.error()` instead of `logger.exception()`, discarding the traceback. AGENTS.md requires `logger.exception()` for exception handling to auto-attach stack traces. — severity: **medium**
-- [ ] `backend/app/modules/registration/dossier_writer/docx_split_service.py:102` — 日志规范/结构化上下文 — `logger.info(f"[Split] Completed: {len(result_paths)} chapters in {elapsed:.2f}s")` uses f-string instead of `extra={"chapter_count": len(result_paths), "elapsed_seconds": elapsed}`. — severity: **low**
-- [ ] `backend/app/modules/registration/dossier_writer/service.py:795` — 日志规范/结构化上下文 — `logger.info(f"[Backup] Backed up {chapter.working_file} to {backup}")` uses f-string instead of `extra={"working_file": chapter.working_file, "backup_path": str(backup)}`. — severity: **low**
+- [x] `backend/app/modules/registration/dossier_writer/service.py:945` — 日志规范/异常处理 — `logger.error(f"Failed to process template {filename}: {e}")` uses `logger.error()` instead of `logger.exception()`, discarding the traceback. AGENTS.md requires `logger.exception()` for exception handling to auto-attach stack traces. — severity: **medium** — **RESOLVED** (now uses `logger.exception()`)
+- [x] `backend/app/modules/registration/dossier_writer/docx_split_service.py:102` — 日志规范/结构化上下文 — `logger.info(f"[Split] Completed: {len(result_paths)} chapters in {elapsed:.2f}s")` uses f-string instead of `extra={"chapter_count": len(result_paths), "elapsed_seconds": elapsed}`. — severity: **low** — **RESOLVED** (now uses `extra={}`)
+- [x] `backend/app/modules/registration/dossier_writer/service.py:795` — 日志规范/结构化上下文 — `logger.info(f"[Backup] Backed up {chapter.working_file} to {backup}")` uses f-string instead of `extra={"working_file": chapter.working_file, "backup_path": str(backup)}`. — severity: **low** — **RESOLVED** (now uses `extra={}`)
 
 #### Category clean sheets
 
@@ -675,17 +675,17 @@ Categories affected: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13
 | Category | Blocking | High | Medium | Low | Note |
 |---|---|---|---|---|---|
 | 1. Repository layout | 0 | 0 | 0 | 0 | Clean |
-| 2. Secrets | 0 | 0 | 0 | 2 | Hardcoded `/app` paths in test script |
+| 2. Secrets | 0 | 0 | 0 | 0 | RESOLVED |
 | 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
 | 4. API & auth | 0 | 0 | 0 | 0 | Clean |
-| 5. Models & migrations | 0 | 0 | 1 | 2 | Hash revision ID + misleading numbering + docstring mismatch |
-| 6. Config & logging | 0 | 0 | 1 | 2 | logger.exception() missing + f-string in logger |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | RESOLVED |
+| 6. Config & logging | 0 | 0 | 0 | 0 | RESOLVED |
 | 7. External services | 0 | 0 | 0 | 0 | Clean |
 | 8. Backend tests | 0 | 0 | 0 | 0 | Clean |
 | 9. Frontend boundaries | 0 | 0 | 0 | 0 | Clean |
 | 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean |
 | 13. Docker | 0 | 0 | 0 | 0 | Clean |
-| **Total** | **0** | **0** | **2** | **6** | **8 findings**
+| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
 
 
