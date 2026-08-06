@@ -792,7 +792,10 @@ class DossierService:
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                 backup = versions_dir / f"{(chapter.chapter_code or 'chapter').replace('.', '_')}_{ts}.docx"
                 shutil.copy2(old_path, backup)
-                logger.info(f"[Backup] Backed up {chapter.working_file} to {backup}")
+                logger.info(
+                    "[Backup] Chapter working file backed up",
+                    extra={"working_file": chapter.working_file, "backup_path": str(backup)},
+                )
 
     async def _create_working_copy_for_chapter(
         self,
@@ -941,8 +944,8 @@ class DossierService:
                         unmatched_files.append(filename)
 
                 details.append(file_details)
-            except Exception as e:
-                logger.error(f"Failed to process template {filename}: {e}")
+            except Exception:
+                logger.exception(f"Failed to process template {filename}")
                 unmatched_files.append(filename)
 
         await self.db.commit()

@@ -99,5 +99,5 @@ def split_template(
         result_paths[code] = target_path
 
     elapsed = time.time() - start_time
-    logger.info(f"[Split] Completed: {len(result_paths)} chapters in {elapsed:.2f}s")
+    logger.info("[Split] Completed", extra={"chapter_count": len(result_paths), "elapsed_seconds": round(elapsed, 2)})
     return result_paths

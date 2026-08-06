@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from zipfile import ZipFile
 
-sys.path.insert(0, "/app")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from docx import Document
 from PIL import Image
@@ -30,7 +30,9 @@ async def run_t9():
         dossier = await service.create_product_dossier(create_data)
 
         # Upload template
-        fixture_path = Path("/app/tests/fixtures/dossier_splits/s6_template.docx")
+        fixture_path = (
+            Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "dossier_splits" / "s6_template.docx"
+        )
         content = fixture_path.read_bytes()
         await service.save_template_file(dossier.id, "s6_template.docx", content)
 
