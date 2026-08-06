@@ -7,11 +7,14 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
+from app.core.jobs import spawn_task
 from app.core.response import error_response, paginated_response, success_response
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
+from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.schemas import (
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
@@ -45,6 +48,7 @@ alert_router = APIRouter()
 alert_record_router = APIRouter()
 workshop_router = APIRouter()
 monthly_router = APIRouter()
+sync_router = APIRouter()
 
 
 # ── 平台信息 ──
@@ -554,99 +558,127 @@ router.include_router(monthly_router, prefix="/monthly", tags=["月度记录"])
 
 
 @router.post("/sync/bitable", summary="从飞书多维表格同步数据")
-async def sync_from_bitable(
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """从飞书多维表格同步车间和月度记录数据。"""
-    from app.modules.energy.bitable_sync import EnergyBitableSync
+async def sync_from_bitable(current_user: RequiredUser) -> JSONResponse:
+    job_id = sync_job_store.create()
 
-    sync_service = EnergyBitableSync()
-    result = await sync_service.sync_all(db)
-    return success_response(result)
+    async def _run() -> None:
+        from app.modules.energy.bitable_sync import EnergyBitableSync
+
+        async with async_session_factory() as db:
+            try:
+                sync_service = EnergyBitableSync()
+                result = await sync_service.sync_all(db)
+                sync_job_store.complete(job_id, result)
+            except Exception as e:
+                sync_job_store.fail(job_id, str(e))
+
+    spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
+    return success_response({"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
-async def sync_workshops_from_bitable(
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """从飞书多维表格同步车间数据。"""
-    from app.modules.energy.bitable_sync import EnergyBitableSync
+async def sync_workshops_from_bitable(current_user: RequiredUser) -> JSONResponse:
+    job_id = sync_job_store.create()
 
-    sync_service = EnergyBitableSync()
-    result = await sync_service.sync_workshops(db)
-    return success_response(result)
+    async def _run() -> None:
+        from app.modules.energy.bitable_sync import EnergyBitableSync
+
+        async with async_session_factory() as db:
+            try:
+                sync_service = EnergyBitableSync()
+                result = await sync_service.sync_workshops(db)
+                sync_job_store.complete(job_id, result)
+            except Exception as e:
+                sync_job_store.fail(job_id, str(e))
+
+    spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
+    return success_response({"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
-async def sync_monthly_from_bitable(
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """从飞书多维表格同步月度能耗记录。"""
-    from app.modules.energy.bitable_sync import EnergyBitableSync
+async def sync_monthly_from_bitable(current_user: RequiredUser) -> JSONResponse:
+    job_id = sync_job_store.create()
 
-    sync_service = EnergyBitableSync()
-    result = await sync_service.sync_monthly_records(db)
-    return success_response(result)
+    async def _run() -> None:
+        from app.modules.energy.bitable_sync import EnergyBitableSync
+
+        async with async_session_factory() as db:
+            try:
+                sync_service = EnergyBitableSync()
+                result = await sync_service.sync_monthly_records(db)
+                sync_job_store.complete(job_id, result)
+            except Exception as e:
+                sync_job_store.fail(job_id, str(e))
+
+    spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
+    return success_response({"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
-async def cross_import_from_bitable(
-    body: BitableCrossImportRequest,
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """从飞书多维表格交叉表导入能源数据。
+async def cross_import_from_bitable(body: BitableCrossImportRequest, current_user: RequiredUser) -> JSONResponse:
+    job_id = sync_job_store.create()
 
-    请求体:
-    - year: 年份（如 2026）
-    - 或 month: 月份表名（如 "2026-06"）
-    """
-    from app.modules.energy.bitable_cross_import import EnergyBitableCrossImport
+    async def _run() -> None:
+        from app.modules.energy.bitable_cross_import import EnergyBitableCrossImport
 
-    importer = EnergyBitableCrossImport()
+        async with async_session_factory() as db:
+            try:
+                importer = EnergyBitableCrossImport()
+                if body.year:
+                    result = await importer.import_year(db, body.year)
+                elif body.month:
+                    result = await importer.import_month(db, body.month)
+                else:
+                    sync_job_store.fail(job_id, "请提供 year 或 month 参数")
+                    return
+                sync_job_store.complete(job_id, result)
+            except Exception as e:
+                sync_job_store.fail(job_id, str(e))
 
-    if body.year:
-        result = await importer.import_year(db, body.year)
-    elif body.month:
-        result = await importer.import_month(db, body.month)
-    else:
-        return error_response("请提供 year 或 month 参数", 400)
-
-    return success_response(result)
+    spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
+    return success_response({"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
-async def daily_import_from_bitable(
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """手动触发从飞书表格导入每日数据，导入后自动检查预警"""
-    from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
+async def daily_import_from_bitable(current_user: RequiredUser) -> JSONResponse:
+    job_id = sync_job_store.create()
 
-    importer = EnergyBitableDailyImport()
-    result = await importer.import_all_tables(db)
+    async def _run() -> None:
+        from sqlalchemy import distinct, select
 
-    # 导入后自动检查所有有预警数据的日期
-    from sqlalchemy import distinct, select
+        from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
+        from app.modules.energy.models import EnergyDailyData
 
-    from app.modules.energy.models import EnergyDailyData
+        async with async_session_factory() as db:
+            try:
+                importer = EnergyBitableDailyImport()
+                result = await importer.import_all_tables(db)
 
-    dates_result = await db.execute(
-        select(distinct(EnergyDailyData.date))
-        .where(EnergyDailyData.is_alert, EnergyDailyData.alert_record_id.is_(None))
-        .order_by(EnergyDailyData.date.desc())
-    )
-    dates_to_check = [str(d) for d in dates_result.scalars().all()]
+                dates_result = await db.execute(
+                    select(distinct(EnergyDailyData.date))
+                    .where(EnergyDailyData.is_alert, EnergyDailyData.alert_record_id.is_(None))
+                    .order_by(EnergyDailyData.date.desc())
+                )
+                dates_to_check = [str(d) for d in dates_result.scalars().all()]
 
-    total_alerts = 0
-    for date_str in dates_to_check:
-        check_date = date.fromisoformat(date_str)
-        alert_records = await importer.check_alerts(db, check_date)
-        total_alerts += len(alert_records)
+                total_alerts = 0
+                for date_str in dates_to_check:
+                    check_date = date.fromisoformat(date_str)
+                    alert_records = await importer.check_alerts(db, check_date)
+                    total_alerts += len(alert_records)
 
-    result["auto_check_alerts"] = total_alerts
+                result["auto_check_alerts"] = total_alerts
+                sync_job_store.complete(job_id, result)
+            except Exception as e:
+                sync_job_store.fail(job_id, str(e))
 
-    return success_response(result)
+    spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
+    return success_response({"job_id": job_id, "status": "running"})
+
+
+@router.get("/jobs/{job_id}", summary="查询异步任务状态")
+async def get_job_status(job_id: str, current_user: RequiredUser) -> JSONResponse:
+    job = sync_job_store.get(job_id)
+    if not job:
+        raise NotFoundException("job", job_id)
+    return success_response(job)

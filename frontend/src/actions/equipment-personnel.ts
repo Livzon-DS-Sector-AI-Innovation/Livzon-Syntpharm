@@ -2,10 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
-import type {
-  CreateRoleInput, UpdateRoleInput, AddPersonnelInput,
-  AssignRolesInput, AssignCategoriesInput,
-} from '@/types/equipment-personnel'
+import type { components } from '@/types/generated/schema'
 import {
   createRoleApi, updateRoleApi, deleteRoleApi,
   addPersonnelApi, deletePersonnelApi, assignRolesApi,
@@ -16,13 +13,13 @@ async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await getServerToken()}` }
 }
 
-export async function createRole(data: CreateRoleInput) {
+export async function createRole(data: components['schemas']['RoleCreate']) {
   const result = await createRoleApi(data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
 }
 
-export async function updateRole(id: string, data: UpdateRoleInput) {
+export async function updateRole(id: string, data: components['schemas']['RoleUpdate']) {
   const result = await updateRoleApi(id, data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
@@ -34,7 +31,7 @@ export async function deleteRole(id: string) {
   return result
 }
 
-export async function addPersonnel(data: AddPersonnelInput) {
+export async function addPersonnel(data: components['schemas']['PersonnelAddRequest']) {
   const result = await addPersonnelApi(data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
@@ -46,13 +43,13 @@ export async function deletePersonnel(id: string) {
   return result
 }
 
-export async function assignRoles(personnelId: string, data: AssignRolesInput) {
+export async function assignRoles(personnelId: string, data: components['schemas']['PersonnelRoleAssign']) {
   const result = await assignRolesApi(personnelId, data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
 }
 
-export async function assignCategories(personnelId: string, data: AssignCategoriesInput) {
+export async function assignCategories(personnelId: string, data: components['schemas']['PersonnelCategoryAssign']) {
   const result = await assignCategoriesApi(personnelId, data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
