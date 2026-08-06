@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager
-RUN pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv==0.12.2
 
 ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
