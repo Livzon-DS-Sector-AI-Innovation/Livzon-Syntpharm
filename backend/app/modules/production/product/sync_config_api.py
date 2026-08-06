@@ -182,10 +182,11 @@ async def undo_last_sync(
         deleted = 0
         for record in records:
             if record.get("action") == "新增":
-                # 删除新增的记录
+                # 软删除新增的记录
                 await db.execute(
                     text("""
-                    DELETE FROM production.product_outputs
+                    UPDATE production.product_outputs
+                    SET is_deleted = true
                     WHERE product_id = :product_id
                     AND batch_no = :batch_no
                     AND is_deleted = false

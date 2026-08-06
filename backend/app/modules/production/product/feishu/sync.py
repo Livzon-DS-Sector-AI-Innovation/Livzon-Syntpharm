@@ -5,8 +5,10 @@ import logging
 from datetime import UTC, date
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.production.product.sync_operation_log_model import SyncOperationLog
 
 from app.modules.production.product.feishu.bitable import (
     ProductBitableClient,
@@ -255,7 +257,7 @@ class ProductSyncService:
                     )
             except Exception as e:
                 errors.append(f"批号 {batch_no}: {str(e)}")
-                logger.error("Failed to push record %s to Feishu: %s", batch_no, e)
+                logger.exception("Failed to push record %s to Feishu", batch_no)
 
         await self.db.commit()
 
@@ -387,7 +389,7 @@ class ProductSyncService:
                     to_create.append({"batch_no": batch_no, "action": "create"})
             except Exception as e:
                 errors.append(f"批号 {batch_no}: {str(e)}")
-                logger.error("Failed to pull record %s from Feishu: %s", batch_no, e)
+                logger.exception("Failed to pull record %s from Feishu", batch_no)
 
         await self.db.commit()
 
@@ -474,22 +476,17 @@ class SyncOperationLog:
     ) -> str:
         """记录同步操作日志"""
         import uuid as uuid_module
+        from datetime import datetime
 
         log_id = str(uuid_module.uuid4())
-
-        await db.execute(
-            text("""
-            INSERT INTO production.sync_operation_logs
-            (id, product_id, operation_type, records, created_at)
-            VALUES (:id, :product_id, :operation_type, :records, NOW())
-            """),
-            {
-                "id": log_id,
-                "product_id": product_id,
-                "operation_type": operation_type,
-                "records": json.dumps(records),
-            },
+        log = SyncOperationLog(
+            id=log_id,
+            product_id=product_id,
+            operation_type=operation_type,
+            records=records,
+            created_at=datetime.now(),
         )
+        db.add(log)
         await db.commit()
         return log_id
 
@@ -497,21 +494,16 @@ class SyncOperationLog:
     async def get_operation_log(db: AsyncSession, log_id: str) -> dict[str, Any] | None:
         """获取操作日志"""
         result = await db.execute(
-            text("""
-            SELECT id, product_id, operation_type, records, created_at
-            FROM production.sync_operation_logs
-            WHERE id = :log_id
-            """),
-            {"log_id": log_id},
+            select(SyncOperationLog).where(SyncOperationLog.id == log_id)
         )
-        row = result.first()
-        if row:
+        log = result.scalar_one_or_none()
+        if log:
             return {
-                "id": row[0],
-                "product_id": str(row[1]),
-                "operation_type": row[2],
-                "records": json.loads(row[3]) if row[3] else [],
-                "created_at": row[4],
+                "id": log.id,
+                "product_id": log.product_id,
+                "operation_type": log.operation_type,
+                "records": log.records,
+                "created_at": log.created_at,
             }
         return None
 
@@ -519,22 +511,18 @@ class SyncOperationLog:
     async def get_latest_operation(db: AsyncSession, product_id: str) -> dict[str, Any] | None:
         """获取最新操作日志"""
         result = await db.execute(
-            text("""
-            SELECT id, product_id, operation_type, records, created_at
-            FROM production.sync_operation_logs
-            WHERE product_id = :product_id
-            ORDER BY created_at DESC
-            LIMIT 1
-            """),
-            {"product_id": product_id},
+            select(SyncOperationLog)
+            .where(SyncOperationLog.product_id == product_id)
+            .order_by(SyncOperationLog.created_at.desc())
+            .limit(1)
         )
-        row = result.first()
-        if row:
+        log = result.scalar_one_or_none()
+        if log:
             return {
-                "id": row[0],
-                "product_id": str(row[1]),
-                "operation_type": row[2],
-                "records": json.loads(row[3]) if row[3] else [],
-                "created_at": row[4],
+                "id": log.id,
+                "product_id": log.product_id,
+                "operation_type": log.operation_type,
+                "records": log.records,
+                "created_at": log.created_at,
             }
         return None
