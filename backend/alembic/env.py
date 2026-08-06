@@ -16,8 +16,8 @@ import_module("app.core.llm.config")
 import_module("app.modules.registration.dossier_writer.models")
 import_module("app.modules.quality.ai.models")
 import_module("app.modules.quality.ai.config_model")
-for module in BUSINESS_MODULES:
 import_module("app.modules.production.product.sync_operation_log_model")
+for module in BUSINESS_MODULES:
     import_module(f"app.modules.{module.code}.models")
 
 config = context.config
