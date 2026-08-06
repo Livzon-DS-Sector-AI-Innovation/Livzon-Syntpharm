@@ -396,10 +396,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPush = async () => {
     try {
-      const res = await fetch(`/api/v1/production/product-sync-config/${productId}/preview-push`, {
-        method: 'POST',
-      })
-      const data = await res.json()
+      const data = await previewPush(productId)
       if (data.code === 200) {
         Modal.info({
           title: '推送预览',
@@ -422,10 +419,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPull = async () => {
     try {
-      const res = await fetch(`/api/v1/production/product-sync-config/${productId}/preview-pull`, {
-        method: 'POST',
-      })
-      const data = await res.json()
+      const data = await previewPull(productId)
       if (data.code === 200) {
         Modal.info({
           title: '拉取预览',
@@ -451,10 +445,7 @@ export default function ProductOutputRecordsPage() {
       content: '确定要撤销上次同步操作吗？此操作不可恢复。',
       onOk: async () => {
         try {
-          const res = await fetch(`/api/v1/production/product-sync-config/${productId}/undo-last-sync`, {
-            method: 'POST',
-          })
-          const data = await res.json()
+          const data = await undoLastSync(productId)
           if (data.code === 200) {
             message.success(data.message || '撤销成功')
             loadRecords()
