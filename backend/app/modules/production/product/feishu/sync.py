@@ -18,6 +18,8 @@ from app.modules.production.product.sync_operation_log_model import SyncOperatio
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["ProductSyncService", "SyncOperationLog"]
+
 DEFAULT_FIELD_MAPPING = {
     "workshop": "车间",
     "product_name": "产品名称",
