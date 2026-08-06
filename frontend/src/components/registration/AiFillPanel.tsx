@@ -13,6 +13,7 @@ import type { ChapterAsset, AssetCategory } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
 import { fetchAssetCategories, fetchSelectedAssets } from '@/lib/api/client/dossier-writer'
 import { aiConfirmAndFill, aiPreviewExtraction, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
+import { testLLMConnection } from '@/actions/settings'
 
 const { Text, Paragraph } = Typography
 
@@ -53,6 +54,22 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const [filling, setFilling] = useState(false)
   const [fillDone, setFillDone] = useState(false)
   const [fillResults, setFillResults] = useState<Array<{field_name: string; status: string; message: string}>>([])
+
+  // LLM availability
+  const [llmAvailable, setLlmAvailable] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    testLLMConnection()
+      .then(res => {
+        const ok = res && typeof res === 'object' && 'data' in res
+          ? (res.data as { status: string }).status === 'ok'
+          : false
+        setLlmAvailable(ok)
+      })
+      .catch(() => {
+        setLlmAvailable(false)
+      })
+  }, [])
 
 
   // Selected assets (loaded from API)
@@ -129,7 +146,11 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         
         // 检查是否部分成功
         if (result.partial_success) {
-          message.warning(`部分提取成功: ${result.fields.length - (result.failed_count ?? 0)}/${result.fields.length} 个字段，其余字段提取失败`)
+          if (result.llm_error) {
+            message.error(`LLM 服务未配置，文本字段提取失败。${result.fields.length - (result.failed_count ?? 0)}/${result.fields.length} 个非文本字段已完成。`)
+          } else {
+            message.warning(`部分提取成功: ${result.fields.length - (result.failed_count ?? 0)}/${result.fields.length} 个字段，其余字段提取失败`)
+          }
         } else {
           message.success(`提取完成: ${result.fields.length} 个字段`)
         }
@@ -353,6 +374,16 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         />
       )}
 
+      {llmAvailable === false && (
+        <Alert
+          type="error"
+          showIcon
+          message="LLM 服务未配置"
+          description="文本字段的 AI 提取将不可用。请在系统设置中配置 LLM 或设置 LLM_API_KEY 环境变量。"
+          className="text-xs"
+        />
+      )}
+
       {/* AI Preview button */}
       <Button
         type="primary"
@@ -367,7 +398,17 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
 
       {/* Preview results */}
       {previewResult && !fillDone && (
-        <Card
+        <>
+          {previewResult.llm_error && (
+            <Alert
+              type="error"
+              showIcon
+              message="LLM 提取失败"
+              description="AI 文本字段提取失败。请检查系统设置中的 LLM 配置是否正确。"
+              className="text-xs"
+            />
+          )}
+          <Card
           size="small"
           title={
             <span className="text-xs">
@@ -438,6 +479,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
             ))}
           </div>
         </Card>
+        </>
       )}
 
       {fillDone && (

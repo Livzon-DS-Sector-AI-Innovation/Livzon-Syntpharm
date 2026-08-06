@@ -120,6 +120,7 @@ export interface AIPreviewResult {
   // 新增字段：部分成功和错误详情
   partial_success?: boolean
   failed_count?: number
+  llm_error?: boolean
   error_details?: {
     total_fields: number
     failed_fields: number
