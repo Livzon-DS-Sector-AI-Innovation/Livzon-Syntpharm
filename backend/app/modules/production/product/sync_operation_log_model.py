@@ -1,4 +1,5 @@
 """SyncOperationLog ORM 模型"""
+
 from datetime import datetime
 from typing import Any
 
@@ -43,6 +44,7 @@ class SyncOperationLog(BaseModel):
     async def get_operation_log(db: AsyncSession, log_id: str) -> dict[str, Any] | None:
         """获取操作日志"""
         from uuid import UUID
+
         result = await db.execute(select(SyncOperationLog).where(SyncOperationLog.id == UUID(log_id)))
         log = result.scalar_one_or_none()
         if log:
