@@ -134,21 +134,28 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
         }
       } else {
         // 提取失败，显示详细错误信息
-        let errorMsg = result.message || '素材解析失败'
+        const resultKeys = Object.keys(result || {})
+        let errorMsg = result?.message || '素材解析失败'
         
-        // 如果有详细错误信息，构建更详细的提示
-        if (result.error_details && Array.isArray(result.error_details)) {
-          const details = result.error_details.slice(0, 3).map((err: any) => {
-            if (err.filename && err.reason) {
-              return `${err.filename}: ${err.reason}`
-            }
-            return typeof err === 'string' ? err : JSON.stringify(err)
-          }).join('; ')
-          errorMsg = `${errorMsg}\n${details}`
+        // 如果返回结果为空或结构异常，记录完整信息
+        if (resultKeys.length === 0) {
+          errorMsg = 'AI 服务返回为空，请检查后端日志或稍后重试'
+          console.error('[AI Preview] 返回结果为空，完整响应:', JSON.stringify(result))
+        } else {
+          // 如果有详细错误信息，构建更详细的提示
+          if (result.error_details && Array.isArray(result.error_details)) {
+            const details = result.error_details.slice(0, 3).map((err: any) => {
+              if (err.filename && err.reason) {
+                return `${err.filename}: ${err.reason}`
+              }
+              return typeof err === 'string' ? err : JSON.stringify(err)
+            }).join('; ')
+            errorMsg = `${errorMsg}\n${details}`
+          }
+          console.error('[AI Preview] 详细错误:', JSON.stringify(result, null, 2))
         }
         
         message.error(errorMsg, 10)  // 显示10秒
-        console.error('[AI Preview] 详细错误:', result)
       }
     } catch (err: any) {
       let errorMsg = err.message || 'AI 提取失败'
@@ -339,7 +346,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
         <Alert
           type="warning"
           showIcon
-          message="有素材未分类"
+          title="有素材未分类"
           description="请在素材 Tab 中为每个素材指定分类，否则 AI 提取可能不准确。"
           className="text-xs"
         />
@@ -435,7 +442,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, onAssetsChange, on
       {fillDone && (
         <Alert
           type="success"
-          message="填充完成"
+          title="填充完成"
           description={(() => {
             const textFilled = fillResults.filter(r => r.status === 'filled').filter(r => !r.message.includes('图片')).length
             const imgFilled = fillResults.filter(r => r.status === 'filled' && r.message.includes('图片')).length

@@ -154,16 +154,26 @@ class DossierRepository:
         await self.db.flush()
         return count
 
-    async def get_chapter_tree(self, dossier_id: UUID) -> list[DossierChapter]:
-        """获取章节树（扁平列表，前端组装树）"""
+    async def get_chapter_tree(self, dossier_id: UUID) -> list[tuple[DossierChapter, int]]:
+        """获取章节树及其实时素材计数"""
         stmt = (
-            select(DossierChapter)
+            select(
+                DossierChapter,
+                func.count(ChapterAsset.id).filter(~ChapterAsset.is_deleted).label("asset_count"),
+            )
             .where(DossierChapter.product_dossier_id == dossier_id)
+            .outerjoin(
+                ChapterAsset,
+                and_(
+                    DossierChapter.id == ChapterAsset.chapter_id,
+                    ~ChapterAsset.is_deleted,
+                ),
+            )
+            .group_by(DossierChapter.id)
             .order_by(DossierChapter.sort_order)
-            .options(selectinload(DossierChapter.assets))
         )
         result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        return [(row[0], row[1]) for row in result]
 
     async def get_chapter(self, chapter_id: UUID) -> DossierChapter | None:
         """获取章节详情"""
@@ -200,13 +210,27 @@ class DossierRepository:
 
     async def list_assets(self, chapter_id: UUID) -> list[ChapterAsset]:
         """获取章节素材列表"""
-        stmt = select(ChapterAsset).where(ChapterAsset.chapter_id == chapter_id).order_by(ChapterAsset.uploaded_at)
+        stmt = (
+            select(ChapterAsset)
+            .where(
+                and_(
+                    ChapterAsset.chapter_id == chapter_id,
+                    ~ChapterAsset.is_deleted,
+                )
+            )
+            .order_by(ChapterAsset.uploaded_at)
+        )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def get_asset(self, asset_id: UUID) -> ChapterAsset | None:
         """获取素材详情"""
-        stmt = select(ChapterAsset).where(ChapterAsset.id == asset_id)
+        stmt = select(ChapterAsset).where(
+            and_(
+                ChapterAsset.id == asset_id,
+                ~ChapterAsset.is_deleted,
+            )
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -221,7 +245,16 @@ class DossierRepository:
 
     async def count_assets(self, chapter_id: UUID) -> int:
         """统计章节素材数量"""
-        stmt = select(func.count()).select_from(ChapterAsset).where(ChapterAsset.chapter_id == chapter_id)
+        stmt = (
+            select(func.count())
+            .select_from(ChapterAsset)
+            .where(
+                and_(
+                    ChapterAsset.chapter_id == chapter_id,
+                    ~ChapterAsset.is_deleted,
+                )
+            )
+        )
         result = await self.db.execute(stmt)
         return result.scalar() or 0
 

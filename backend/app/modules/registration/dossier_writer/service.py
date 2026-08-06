@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 
+from .docx_split_service import split_template
 from .m3_structure import M3_CHAPTERS, match_file_to_chapter
 from .models import ChapterAsset, DossierChapter, DossierTemplate, ProductDossier
 from .repository import DossierRepository
@@ -189,12 +190,14 @@ class DossierService:
                 raise ValueError("没有上传模板文件")
 
             # 获取现有 M3 章节
-            chapters = await self.repo.get_chapter_tree(dossier_id)
+            chapter_rows = await self.repo.get_chapter_tree(dossier_id)
+            chapters = [row[0] for row in chapter_rows]
             if not chapters:
                 # 如果没有章节，创建 M3 标准目录
                 await self._create_m3_chapters(dossier_id)
                 await self.db.commit()
-                chapters = await self.repo.get_chapter_tree(dossier_id)
+                chapter_rows = await self.repo.get_chapter_tree(dossier_id)
+                chapters = [row[0] for row in chapter_rows]
 
             # 匹配模板到章节
             matched_count = 0
@@ -308,7 +311,7 @@ class DossierService:
 
     def _extract_chapter_code(self, text: str) -> str | None:
         """提取章节编号"""
-        match = re.match(r"^(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)", text)
+        match = re.match(r"^(\d+(?:\.[\dA-Z]+)*)", text)
         if match:
             return match.group(1)
         return None
@@ -401,14 +404,15 @@ class DossierService:
 
     async def get_chapter_tree(self, dossier_id: UUID) -> list[ChapterResponse]:
         """获取章节树"""
-        chapters = await self.repo.get_chapter_tree(dossier_id)
-        return self._build_chapter_tree(chapters)
+        chapter_rows = await self.repo.get_chapter_tree(dossier_id)
+        return self._build_chapter_tree(chapter_rows)
 
-    def _build_chapter_tree(self, chapters: list[DossierChapter]) -> list[ChapterResponse]:
+    def _build_chapter_tree(self, chapter_rows: list[tuple[DossierChapter, int]]) -> list[ChapterResponse]:
         """构建章节树结构"""
         chapter_map: dict[UUID | None, list[DossierChapter]] = {}
 
-        for chapter in chapters:
+        for chapter, count in chapter_rows:
+            setattr(chapter, "_asset_count", count)
             parent_id = chapter.parent_id
             if parent_id not in chapter_map:
                 chapter_map[parent_id] = []
@@ -427,7 +431,7 @@ class DossierService:
                 sort_order=chapter.sort_order,
                 has_content=chapter.has_content,
                 has_assets=chapter.has_assets,
-                asset_count=len(chapter.assets) if chapter.assets else 0,
+                asset_count=getattr(chapter, "_asset_count", 0),
                 source_file=chapter.source_file,
                 working_file=chapter.working_file,
                 children=[build_node(c) for c in children],
@@ -513,6 +517,12 @@ class DossierService:
         dossier = await self.repo.get_product_dossier(chapter.product_dossier_id)
         if not dossier:
             raise ValueError("品种资料不存在")
+
+        # 查重：检查同章节下是否已存在同名未删除素材
+        existing_assets = await self.repo.list_assets(chapter_id)
+        for existing in existing_assets:
+            if existing.original_filename == filename:
+                raise ValueError(f"文件 '{filename}' 已存在，请勿重复上传")
 
         # 保存文件
         assets_dir = Path(dossier.assets_path) / str(chapter_id)  # type: ignore[arg-type]
@@ -648,69 +658,84 @@ class DossierService:
     # ====== Export ======
 
     async def export_dossier(self, dossier_id: UUID, chapter_ids: list[UUID] | None = None) -> dict[str, Any]:
-        """导出品种资料"""
+        """导出品种资料（支持多章节合并）"""
+        from docxcompose.composer import Composer  # type: ignore[import-untyped]
+
         dossier = await self.repo.get_product_dossier(dossier_id)
+        if not dossier or not dossier.working_path:
+            return {"success": False, "message": "品种资料不存在或工作目录未初始化"}
         if not dossier:
             return {"success": False, "message": "品种资料不存在"}
 
-        working_dir = Path(dossier.working_path)  # type: ignore[arg-type]
+        working_dir = Path(dossier.working_path)
         outputs_dir = Path(dossier.outputs_path)  # type: ignore[arg-type]
         outputs_dir.mkdir(parents=True, exist_ok=True)
 
-        export_path = None
-        export_filename = None
-
-        # 获取章节信息用于命名
-        all_chapters = await self.repo.get_chapter_tree(dossier_id)
+        # 获取章节信息
+        all_chapter_rows = await self.repo.get_chapter_tree(dossier_id)
+        all_chapters = [row[0] for row in all_chapter_rows]
         chapter_map = {ch.id: ch for ch in all_chapters}
 
-        if chapter_ids and len(chapter_ids) == 1:
-            # 单章节导出：用 章节编号_章节标题.docx
-            target_chapter = chapter_map.get(chapter_ids[0])
-            if target_chapter and target_chapter.working_file:
-                safe_title = re.sub(r'[\/:*?"<>|]', "_", target_chapter.chapter_title)
-                code_part = target_chapter.chapter_code or "unknown"
-                export_filename = f"{code_part}_{safe_title}.docx"
-                export_path = outputs_dir / export_filename
-                source_file = working_dir / str(target_chapter.working_file or "")
-                if source_file.exists():
-                    shutil.copy2(source_file, export_path)
-                else:
-                    export_path = None
-        elif chapter_ids:
-            # 多章节导出：用 品种名_章节编号范围_申报资料.docx
-            matched_chapters = [
+        target_chapters = []
+        if chapter_ids:
+            target_chapters = [
                 chapter_map[cid] for cid in chapter_ids if cid in chapter_map and chapter_map[cid].working_file
             ]
-            if matched_chapters:
-                codes = sorted(set(ch.chapter_code for ch in matched_chapters if ch.chapter_code))
-                code_range = f"{codes[0]}-{codes[-1]}" if len(codes) > 1 else (codes[0] if codes else "export")
-                export_filename = f"{dossier.product_name}_{code_range}_申报资料.docx"
-                export_path = outputs_dir / export_filename
-                source_file = working_dir / str(matched_chapters[0].working_file or "")
-                if source_file.exists():
-                    shutil.copy2(source_file, export_path)
-                else:
-                    export_path = None
+        else:
+            # 全量导出：按 sort_order 排序
+            target_chapters = sorted([ch for ch in all_chapters if ch.working_file], key=lambda c: c.sort_order)
 
-        # fallback：品种名_申报资料_时间戳
-        if not export_path or not export_path.exists():
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            export_filename = f"{dossier.product_name}_申报资料_{timestamp}.docx"
-            export_path = outputs_dir / export_filename
-            working_files = list(working_dir.glob("*.docx"))
-            if working_files:
-                shutil.copy2(working_files[0], export_path)
+        if not target_chapters:
+            return {"success": False, "message": "无可导出的章节"}
 
-        if export_path and export_path.exists():
-            return {
+        # 准备文件路径
+        file_paths = []
+        skipped_chapters = []
+        for ch in target_chapters:
+            fp = working_dir / str(ch.working_file or "")
+            if fp.exists():
+                file_paths.append(str(fp))
+            else:
+                skipped_chapters.append(ch.chapter_code)
+
+        if not file_paths:
+            return {"success": False, "message": "工作副本文件不存在", "skipped_chapters": skipped_chapters}
+
+        # 生成文件名
+        if len(target_chapters) == 1:
+            ch = target_chapters[0]
+            safe_title = re.sub(r'[\/:*?"<>|]', "_", ch.chapter_title)
+            code_part = ch.chapter_code or "unknown"
+            export_filename = f"{code_part}_{safe_title}.docx"
+        else:
+            codes = sorted(set(ch.chapter_code for ch in target_chapters if ch.chapter_code))
+            code_range = f"{codes[0]}-{codes[-1]}" if len(codes) > 1 else codes[0]
+            export_filename = f"{dossier.product_name}_{code_range}_申报资料.docx"
+
+        export_path = outputs_dir / export_filename
+
+        # 合并文档
+        if len(file_paths) == 1:
+            shutil.copy2(file_paths[0], export_path)
+        else:
+            base_doc = Document(file_paths[0])
+            composer = Composer(base_doc)
+            for extra_fp in file_paths[1:]:
+                composer.append(Document(extra_fp))
+            composer.save(str(export_path))
+
+        if export_path.exists():
+            result = {
                 "success": True,
                 "message": "导出成功",
                 "file_path": str(export_path),
                 "filename": export_filename,
             }
+            if skipped_chapters:
+                result["skipped_chapters"] = skipped_chapters
+            return result
         else:
-            return {"success": False, "message": "导出失败：无可用文件"}
+            return {"success": False, "message": "导出失败"}
 
     # ====== Storage Helpers ======
 
@@ -755,13 +780,30 @@ class DossierService:
             chapter = await self.repo.create_chapter(chapter)
             code_to_id[ch["code"]] = chapter.id
 
+    async def _backup_working_file(self, dossier: ProductDossier, chapter: DossierChapter) -> None:
+        if not dossier.working_path:
+            raise ValueError("品种工作目录未初始化")
+        """Backup old working file if it exists."""
+        if chapter.working_file:
+            old_path = Path(dossier.working_path) / chapter.working_file
+            if old_path.exists():
+                versions_dir = Path(dossier.working_path) / "_versions"
+                versions_dir.mkdir(parents=True, exist_ok=True)
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup = versions_dir / f"{(chapter.chapter_code or 'chapter').replace('.', '_')}_{ts}.docx"
+                shutil.copy2(old_path, backup)
+                logger.info(
+                    "[Backup] Chapter working file backed up",
+                    extra={"working_file": chapter.working_file, "backup_path": str(backup)},
+                )
+
     async def _create_working_copy_for_chapter(
         self,
         dossier: ProductDossier,
         template: DossierTemplate,
         chapter: DossierChapter,
     ) -> None:
-        """为章节创建 working copy"""
+        """为章节创建 working copy（含覆盖备份）"""
         source_path = Path(template.file_path)
         working_dir = Path(dossier.working_path)  # type: ignore[arg-type]
         working_dir.mkdir(parents=True, exist_ok=True)
@@ -769,6 +811,9 @@ class DossierService:
         # 生成 working copy 文件名
         working_filename = f"{(chapter.chapter_code or '').replace('.', '_')}_{source_path.name}"
         working_path = working_dir / working_filename
+
+        # 1) Backup old working file if exists
+        await self._backup_working_file(dossier, chapter)
 
         # 复制文件
         shutil.copy2(source_path, working_path)
@@ -798,6 +843,8 @@ class DossierService:
             return {"success": False, "message": "品种不存在"}
 
         working_path = Path(dossier.working_path) / (chapter.working_file or "")  # type: ignore[arg-type]
+        if not dossier.working_path:
+            raise ValueError("品种资料工作路径不存在")
         if not working_path.exists():
             return {"success": False, "message": "工作副本文件不存在"}
 
@@ -835,60 +882,80 @@ class DossierService:
             return {"success": False, "message": f"预览失败: {str(e)}"}
 
     async def match_assets_to_chapters(self, dossier_id: UUID) -> dict[str, Any]:
-        """智能匹配素材到章节"""
+        """智能匹配素材到章节（内容驱动优先 + 文件名兜底）"""
         dossier = await self.repo.get_product_dossier(dossier_id)
-        if not dossier:
-            return {
-                "success": False,
-                "message": "品种不存在",
-                "matched_count": 0,
-                "unmatched_files": [],
-            }
+        if not dossier or not dossier.working_path:
+            return {"success": False, "message": "品种不存在", "matched_count": 0, "unmatched_files": [], "details": []}
 
-        # 获取所有模板文件
         templates = await self.repo.list_templates(dossier_id)
         if not templates:
-            return {
-                "success": False,
-                "message": "无模板文件",
-                "matched_count": 0,
-                "unmatched_files": [],
-            }
+            return {"success": False, "message": "无模板文件", "matched_count": 0, "unmatched_files": [], "details": []}
 
-        # 获取所有章节（扁平列表）
-        chapters = await self.repo.get_chapter_tree(dossier_id)
+        chapter_rows = await self.repo.get_chapter_tree(dossier_id)
+        chapters = [row[0] for row in chapter_rows]
+        chapter_map = {ch.chapter_code: ch for ch in chapters if ch.chapter_code}
 
         matched_count = 0
-        unmatched_files = []
+        unmatched_files: list[str] = []
+        details = []
+
+        # Style map for splitting (supporting common Word heading styles)
+        style_map = {"Heading1": 1, "Heading 1": 1, "Heading2": 2, "Heading 2": 2, "Heading3": 3, "Heading 3": 3}
 
         for template in templates:
             filename = template.original_filename
+            template_path = Path(template.file_path)
+            file_details: dict[str, Any] = {"filename": filename, "chapters_generated": []}
 
-            # 尝试匹配章节
-            matched_code = match_file_to_chapter(filename)
+            try:
+                # 1. Content-driven scan
+                doc = Document(str(template_path))
+                found_codes = set()
+                for para in doc.paragraphs:
+                    code = self._extract_chapter_code(para.text.strip())
+                    if code and code in chapter_map:
+                        found_codes.add(code)
 
-            if matched_code:
-                # 找到对应章节
-                matched_chapter = None
-                for ch in chapters:
-                    if ch.chapter_code == matched_code:
-                        matched_chapter = ch
-                        break
+                if found_codes:
+                    # Execute split
+                    output_dir = Path(dossier.working_path)
+                    split_paths = split_template(template_path, output_dir, list(found_codes), style_map)
 
-                if matched_chapter:
-                    # 创建 working copy
-                    await self._create_working_copy_for_chapter(dossier, template, matched_chapter)
-                    matched_count += 1
-            else:
+                    for code, path in split_paths.items():
+                        if code in chapter_map:
+                            ch = chapter_map[code]
+                            await self._backup_working_file(dossier, ch)
+
+                            new_filename = path.name
+                            await self.repo.update_chapter(
+                                ch.id, working_file=new_filename, source_file=filename, has_content=True
+                            )
+                            file_details["chapters_generated"].append(code)
+                            matched_count += 1
+                else:
+                    # 2. Filename fallback
+                    matched_code = match_file_to_chapter(filename)
+                    if matched_code and matched_code in chapter_map:
+                        ch = chapter_map[matched_code]
+                        await self._create_working_copy_for_chapter(dossier, template, ch)
+                        file_details["chapters_generated"].append(matched_code)
+                        matched_count += 1
+                    else:
+                        unmatched_files.append(filename)
+
+                details.append(file_details)
+            except Exception:
+                logger.exception(f"Failed to process template {filename}")
                 unmatched_files.append(filename)
 
         await self.db.commit()
 
         return {
             "success": True,
-            "message": f"匹配完成：{matched_count} 个文件已匹配，{len(unmatched_files)} 个未匹配",
+            "message": f"匹配完成：共生成 {matched_count} 个章节工作副本",
             "matched_count": matched_count,
             "unmatched_files": unmatched_files,
+            "details": details,
         }
 
     async def init_chapter_ai_config(self, chapter_code: str) -> dict[str, Any]:

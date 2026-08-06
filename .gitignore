@@ -28,3 +28,5 @@ Thumbs.db
 e2e-backend.log
 e2e-frontend.log
 /.next/
+backend/tests/fixtures/dossier_splits/
+backend/storage/**/_versions/

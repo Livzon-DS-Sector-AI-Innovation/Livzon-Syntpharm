@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -93,7 +93,16 @@ class DossierChapter(BaseModel):
     """章节树"""
 
     __tablename__ = "dossier_chapters"
-    __table_args__ = {"schema": "dossier_writer"}
+    __table_args__ = (
+        Index(
+            "uq_chapters_dossier_code",
+            "product_dossier_id",
+            "chapter_code",
+            unique=True,
+            postgresql_where=text("chapter_code IS NOT NULL"),
+        ),
+        {"schema": "dossier_writer"},
+    )
 
     product_dossier_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -134,7 +143,16 @@ class ChapterAsset(BaseModel):
     """章节素材"""
 
     __tablename__ = "chapter_assets"
-    __table_args__ = {"schema": "dossier_writer"}
+    __table_args__ = (
+        Index(
+            "idx_chapter_assets_unique_active",
+            "chapter_id",
+            "original_filename",
+            unique=True,
+            postgresql_where=text("NOT is_deleted"),
+        ),
+        {"schema": "dossier_writer"},
+    )
 
     chapter_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

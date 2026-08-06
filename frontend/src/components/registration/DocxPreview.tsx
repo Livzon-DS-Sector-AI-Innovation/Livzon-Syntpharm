@@ -33,6 +33,11 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
         return
       }
       
+      // Always clear container before returning or rendering
+      if (containerRef.current) {
+        containerRef.current.innerHTML = ''
+      }
+
       if (!buffer) {
         setHasContent(false)
         setError(null)
@@ -68,6 +73,9 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
       console.error('DocxPreview render error:', err)
       setError(err.message || '预览加载失败')
       setHasContent(false)
+      if (containerRef.current) {
+        containerRef.current.innerHTML = ''
+      }
     } finally {
       setLoading(false)
     }

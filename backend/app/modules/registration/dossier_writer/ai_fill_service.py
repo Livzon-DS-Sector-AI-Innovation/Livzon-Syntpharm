@@ -479,6 +479,13 @@ class AIFillService:
         # 保存文档
         doc.save(str(working_path))
 
+        # 更新章节状态
+        from sqlalchemy import update
+
+        from app.modules.registration.dossier_writer.models import DossierChapter
+
+        await self.db.execute(update(DossierChapter).where(DossierChapter.id == chapter.id).values(has_content=True))
+
         # 保存填充结果到数据库
         mappings = await self.get_field_mappings(chapter.chapter_code)  # type: ignore[arg-type]
         mapping_map = {str(m.id): m for m in mappings}
@@ -572,9 +579,14 @@ class AIFillService:
         splits: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """用户确认页拆分后，将各页转为图片插入模板"""
-        working_path = Path(dossier.working_path) / chapter.working_file  # type: ignore[arg-type, operator]
+        if not dossier.working_path:
+            raise ValueError("品种工作目录未初始化")
+        if not chapter.working_file:
+            return {"success": False, "message": "该章节尚无工作副本文件，请先上传模板并解析"}
+
+        working_path = Path(dossier.working_path) / chapter.working_file
         if not working_path.exists():
-            return {"success": False, "message": "工作副本不存在"}
+            return {"success": False, "message": "工作副本文件不存在"}
 
         doc = Document(str(working_path))
         inserted = 0
@@ -618,6 +630,14 @@ class AIFillService:
                     pass  # split_id 不是有效 UUID，跳过记录更新
 
         doc.save(str(working_path))
+
+        # 更新章节状态
+        from sqlalchemy import update
+
+        from app.modules.registration.dossier_writer.models import DossierChapter
+
+        await self.db.execute(update(DossierChapter).where(DossierChapter.id == chapter.id).values(has_content=True))
+
         await self.db.commit()
 
         return {
