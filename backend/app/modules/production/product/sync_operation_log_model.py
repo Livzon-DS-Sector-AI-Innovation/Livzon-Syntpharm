@@ -1,8 +1,6 @@
 """SyncOperationLog ORM 模型"""
-
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from sqlalchemy import JSON, DateTime, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +15,6 @@ class SyncOperationLog(BaseModel):
     __tablename__ = "sync_operation_logs"
     __table_args__ = {"schema": "production"}
 
-    id: Mapped[UUID] = mapped_column(primary_key=False, comment="日志 ID")
     product_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True, comment="产品 ID")
     operation_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="操作类型：push/pull")
     records: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, comment="操作记录")
@@ -31,23 +28,21 @@ class SyncOperationLog(BaseModel):
         records: list[dict[str, Any]],
     ) -> str:
         """记录同步操作日志"""
-        import uuid as uuid_module
-
-        log_id = str(uuid_module.uuid4())
         log = SyncOperationLog(
-            id=UUID(log_id),
             product_id=product_id,
             operation_type=operation_type,
             records=records,
             created_at=datetime.now(),
         )
         db.add(log)
+        await db.flush()
         await db.commit()
-        return log_id
+        return str(log.id)
 
     @staticmethod
     async def get_operation_log(db: AsyncSession, log_id: str) -> dict[str, Any] | None:
         """获取操作日志"""
+        from uuid import UUID
         result = await db.execute(select(SyncOperationLog).where(SyncOperationLog.id == UUID(log_id)))
         log = result.scalar_one_or_none()
         if log:

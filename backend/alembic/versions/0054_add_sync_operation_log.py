@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = '0054_add_sync_operation_log'
@@ -19,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "sync_operation_logs",
-        sa.Column("id", sa.String(36), primary_key=True, comment="日志 ID"),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, comment="日志 ID"),
         sa.Column("product_id", sa.String(36), nullable=False, comment="产品 ID"),
         sa.Column("operation_type", sa.String(20), nullable=False, comment="操作类型：push/pull"),
         sa.Column("records", sa.JSON, nullable=False, comment="操作记录"),
