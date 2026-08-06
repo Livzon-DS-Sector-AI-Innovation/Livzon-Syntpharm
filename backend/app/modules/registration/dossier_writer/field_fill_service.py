@@ -86,12 +86,10 @@ class FieldFillService:
 
         # 更新章节状态
         from sqlalchemy import update
+
         from app.modules.registration.dossier_writer.models import DossierChapter
-        await self.db.execute(
-            update(DossierChapter)
-            .where(DossierChapter.id == chapter.id)
-            .values(has_content=True)
-        )
+
+        await self.db.execute(update(DossierChapter).where(DossierChapter.id == chapter.id).values(has_content=True))
 
         # 批量保存填充结果
         self.db.add_all([r for r in results if r])

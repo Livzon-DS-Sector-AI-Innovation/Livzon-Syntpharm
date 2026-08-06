@@ -154,14 +154,12 @@ class DossierRepository:
         await self.db.flush()
         return count
 
-    async def get_chapter_tree(self, dossier_id: UUID):
+    async def get_chapter_tree(self, dossier_id: UUID) -> list[tuple[DossierChapter, int]]:
         """获取章节树及其实时素材计数"""
         stmt = (
             select(
                 DossierChapter,
-                func.count(ChapterAsset.id)
-                    .filter(~ChapterAsset.is_deleted)
-                    .label("asset_count"),
+                func.count(ChapterAsset.id).filter(~ChapterAsset.is_deleted).label("asset_count"),
             )
             .where(DossierChapter.product_dossier_id == dossier_id)
             .outerjoin(
@@ -175,7 +173,7 @@ class DossierRepository:
             .order_by(DossierChapter.sort_order)
         )
         result = await self.db.execute(stmt)
-        return result.all()  # Returns list of tuples: (DossierChapter, asset_count)
+        return [(row[0], row[1]) for row in result]
 
     async def get_chapter(self, chapter_id: UUID) -> DossierChapter | None:
         """获取章节详情"""
@@ -227,13 +225,10 @@ class DossierRepository:
 
     async def get_asset(self, asset_id: UUID) -> ChapterAsset | None:
         """获取素材详情"""
-        stmt = (
-            select(ChapterAsset)
-            .where(
-                and_(
-                    ChapterAsset.id == asset_id,
-                    ~ChapterAsset.is_deleted,
-                )
+        stmt = select(ChapterAsset).where(
+            and_(
+                ChapterAsset.id == asset_id,
+                ~ChapterAsset.is_deleted,
             )
         )
         result = await self.db.execute(stmt)
