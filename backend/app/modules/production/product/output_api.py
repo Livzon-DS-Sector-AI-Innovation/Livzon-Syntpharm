@@ -242,14 +242,14 @@ async def export_annual_review(
     # Sheet 3: 车间排名
     ws3 = wb.create_sheet("车间排名")
     ws3.append(["排名", "车间", "总产量(kg)", "批次数"])
-    for i, item in enumerate(data.workshop_ranking, 1):
-        ws3.append([i, item.workshop, item.total_weight, item.batch_count])
+    for i, wr in enumerate(data.workshop_ranking, 1):
+        ws3.append([i, wr.workshop, wr.total_weight, wr.batch_count])
 
     # Sheet 4: TOP产品
     ws4 = wb.create_sheet("TOP产品")
     ws4.append(["排名", "产品名称", "车间", "总产量(kg)", "批次数", "平均批次重量(kg)"])
-    for item in data.top_products:
-        ws4.append([item.rank, item.product_name, item.workshop, item.total_weight, item.batch_count, item.avg_weight])
+    for tp in data.top_products:
+        ws4.append([tp.rank, tp.product_name, tp.workshop, tp.total_weight, tp.batch_count, tp.avg_weight])
 
     # 输出Excel
     output = BytesIO()
