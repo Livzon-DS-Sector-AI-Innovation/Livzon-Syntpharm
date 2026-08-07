@@ -44,7 +44,7 @@ class ProductSyncService:
 
     async def preview_push(self, product_id: str | None = None) -> PreviewPushResponse:
         """预览推送操作，不实际执行"""
-        logger.info("预览推送到飞书")
+        logger.info("预览推送到飞书", extra={"product_id": product_id})
 
         # 获取飞书所有记录
         all_feishu_records = await self.bitable.list_records(page_size=500)
@@ -108,7 +108,7 @@ class ProductSyncService:
 
     async def preview_pull(self, product_id: str | None = None) -> PreviewPullResponse:
         """预览拉取操作，不实际执行"""
-        logger.info("预览从飞书拉取")
+        logger.info("预览从飞书拉取", extra={"product_id": product_id})
 
         # 获取飞书所有记录
         all_feishu_records = await self.bitable.list_records(page_size=500)
@@ -293,7 +293,7 @@ class ProductSyncService:
             fields = feishu_record.get("fields", {})
 
             data = self._extract_record_data(fields)
-            logger.info(f"记录 {record_id} 提取数据: {data}")
+            logger.info("飞书记录数据提取完成", extra={"record_id": record_id, "fields_count": len(data)})
 
             workshop = str(data.get("workshop", "")).strip()
             product_name = str(data.get("product_name", "")).strip()

@@ -18,9 +18,11 @@ from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
     AnnualReviewResponse,
+    PreviewImportResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
+    UndoImportResponse,
 )
 from app.modules.production.product.output_service import ProductOutputService
 from app.platform.integrations.feishu.bitable import BitableClient
@@ -451,7 +453,7 @@ async def preview_import(
     current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> PreviewImportResponse:
     """预览导入文件，返回解析结果（不写入数据库）"""
     records_data, invalid_records = await parse_import_file(file, db)
 
@@ -559,10 +561,7 @@ async def undo_import(
 
     await db.commit()
 
-    return ApiResponse(
-        data={"deleted": count, "batch_id": batch_id},
-        message=f"已撤销 {count} 条记录",
-    )
+    return UndoImportResponse(deleted=count, batch_id=batch_id)
 
 
 @router.post("/product-output/import-from-bitable", summary="从飞书多维表格导入产量记录")

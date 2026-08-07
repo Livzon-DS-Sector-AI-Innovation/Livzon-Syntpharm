@@ -156,3 +156,23 @@ class UndoSyncResponse(BaseModel):
     """撤销同步响应"""
 
     deleted: int = Field(..., description="删除的记录数")
+
+
+class PreviewImportResponse(BaseModel):
+    """预览导入响应"""
+
+    total_rows: int = Field(..., description="总行数")
+    valid_records: int = Field(..., description="有效记录数")
+    invalid_records: int = Field(..., description="无效记录数")
+    new_records: int = Field(..., description="新增记录数")
+    duplicate_records: int = Field(..., description="重复记录数")
+    not_found_product: int = Field(..., description="未找到产品的记录数")
+    records: list[dict[str, Any]] = Field(default_factory=list, description="记录详情")
+    invalid_details: list[dict[str, Any]] = Field(default_factory=list, description="无效记录详情")
+
+
+class UndoImportResponse(BaseModel):
+    """撤销导入响应"""
+
+    deleted: int = Field(..., description="删除的记录数")
+    batch_id: str = Field(..., description="批次 ID")
