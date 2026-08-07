@@ -1,5 +1,5 @@
 """SyncOperationLog ORM 模型"""
-from datetime import datetime
+
 from typing import Any
 
 from sqlalchemy import JSON, String, select
