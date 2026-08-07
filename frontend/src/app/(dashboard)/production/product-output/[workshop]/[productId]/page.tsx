@@ -1,6 +1,6 @@
 'use client'
 
-import { previewPush, previewPull, undoLastSync } from '@/actions/product-sync'
+import { fetchPreviewPush, fetchPreviewPull, fetchUndoLastSync } from '@/actions/product-sync'
 import { useEffect, useState, useRef } from 'react'
 import {
   Table,
@@ -45,8 +45,8 @@ import {
   updateProductOutput,
   deleteProductOutput,
   importProductOutputs,
-  previewImport,
-  undoImport,
+  fetchPreviewImport,
+  fetchUndoImport,
   importFromBitable,
   batchDeleteProductOutputs,
   getSummary,
@@ -264,7 +264,7 @@ export default function ProductOutputRecordsPage() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const response = await previewImport(formData)
+      const response = await fetchPreviewImport(formData)
       if (response.code === 200) {
         setPreviewData(response.data)
         message.info(`预览完成：共 ${response.data.total_rows} 行，可导入 ${response.data.new_records} 行`)
@@ -315,7 +315,7 @@ export default function ProductOutputRecordsPage() {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const response = await undoImport(lastBatchId)
+          const response = await fetchUndoImport(lastBatchId)
           if (response.code === 200) {
             message.success(response.message || '撤销成功')
             setLastBatchId(null)
@@ -397,7 +397,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPush = async () => {
     try {
-      const data = await previewPush(productId)
+      const data = await fetchPreviewPush(productId)
       if (data.code === 200) {
         Modal.info({
           title: '推送预览',
@@ -420,7 +420,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPull = async () => {
     try {
-      const data = await previewPull(productId)
+      const data = await fetchPreviewPull(productId)
       if (data.code === 200) {
         Modal.info({
           title: '拉取预览',
@@ -446,7 +446,7 @@ export default function ProductOutputRecordsPage() {
       content: '确定要撤销上次同步操作吗？此操作不可恢复。',
       onOk: async () => {
         try {
-          const data = await undoLastSync(productId)
+          const data = await fetchUndoLastSync(productId)
           if (data.code === 200) {
             message.success(data.message || '撤销成功')
             loadRecords()

@@ -17,8 +17,8 @@ import {
   getWorkshops as getWorkshopsApi,
   getSummary as getSummaryApi,
   importProductOutputs as importProductOutputsApi,
-  previewImport as previewImportApi,
-  undoImport as undoImportApi,
+  fetchPreviewImport as fetchPreviewImportApi,
+  fetchUndoImport as fetchUndoImportApi,
   getBatchCount as getBatchCountApi,
 } from '@/lib/api/server/product-output'
 
@@ -151,29 +151,29 @@ export async function batchDeleteProductOutputs(ids: string[]) {
 // ─── Annual Review Actions ───
 
 import {
-  getAnnualReview as getAnnualReviewApi,
-  exportAnnualReview as exportAnnualReviewApi,
+  fetchAnnualReview as fetchAnnualReviewApi,
+  fetchExportAnnualReview as fetchExportAnnualReviewApi,
 } from '@/lib/api/server/product-output'
 import type { AnnualReviewData } from '@/types/product-output'
 
-export async function getAnnualReview(year: number) {
+export async function fetchAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
-  return getAnnualReviewApi(year, authHeaders)
+  return fetchAnnualReviewApi(year, authHeaders)
 }
 
-export async function exportAnnualReview(year: number) {
+export async function fetchExportAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
-  return exportAnnualReviewApi(year, authHeaders)
+  return fetchExportAnnualReviewApi(year, authHeaders)
 }
 
-export async function previewImport(formData: FormData) {
+export async function fetchPreviewImport(formData: FormData) {
   const authHeaders = await getAuthHeaders()
-  return previewImportApi(formData, authHeaders)
+  return fetchPreviewImportApi(formData, authHeaders)
 }
 
-export async function undoImport(batchId: string) {
+export async function fetchUndoImport(batchId: string) {
   const authHeaders = await getAuthHeaders()
-  const response = await undoImportApi(batchId, authHeaders)
+  const response = await fetchUndoImportApi(batchId, authHeaders)
   revalidatePath('/production/product-output')
   return response
 }
