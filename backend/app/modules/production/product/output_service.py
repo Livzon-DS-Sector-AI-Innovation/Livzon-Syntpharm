@@ -2,23 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.production.product.output_models import WORKSHOP_CHOICES
 from app.modules.production.product.output_repository import ProductOutputRepository
-
-if TYPE_CHECKING:
-    from app.modules.production.product.output_schemas import AnnualReviewResponse
 from app.modules.production.product.output_schemas import (
+    AnnualReviewResponse,
     ProductOutputCreate,
     ProductOutputUpdate,
     SummaryResponse,
     WorkshopSummary,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProductOutputService:
@@ -176,6 +177,7 @@ class ProductOutputService:
 
     async def get_annual_review(self, year: int) -> AnnualReviewResponse:
         """获取年度回顾数据"""
+        logger.info("开始获取年度回顾数据", extra={"year": year})
         from app.modules.production.product.output_schemas import (
             AnnualOverview,
             AnnualReviewResponse,
@@ -252,10 +254,15 @@ class ProductOutputService:
             for i, row in enumerate(top_products_data)
         ]
 
-        return AnnualReviewResponse(
+        response = AnnualReviewResponse(
             year=year,
             overview=overview,
             monthly_trend=monthly_trend,
             workshop_ranking=workshop_ranking,
             top_products=top_products,
         )
+        logger.info(
+            "年度回顾数据获取完成",
+            extra={"year": year, "workshops": len(workshop_ranking), "top_products": len(top_products)},
+        )
+        return response

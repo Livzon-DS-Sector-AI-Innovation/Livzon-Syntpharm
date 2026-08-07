@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -134,3 +135,24 @@ class AnnualReviewResponse(BaseModel):
     monthly_trend: list[MonthlyTrend] = Field(default_factory=list)
     workshop_ranking: list[WorkshopRanking] = Field(default_factory=list)
     top_products: list[TopProduct] = Field(default_factory=list)
+
+
+class PreviewPushResponse(BaseModel):
+    """预览推送响应"""
+
+    to_create: list[dict[str, Any]] = Field(default_factory=list, description="待新增记录")
+    to_update: list[dict[str, Any]] = Field(default_factory=list, description="待更新记录")
+    to_skip: list[dict[str, Any]] = Field(default_factory=list, description="待跳过记录")
+
+
+class PreviewPullResponse(BaseModel):
+    """预览拉取响应"""
+
+    to_create: list[dict[str, Any]] = Field(default_factory=list, description="待新增记录")
+    to_update: list[dict[str, Any]] = Field(default_factory=list, description="待更新记录")
+
+
+class UndoSyncResponse(BaseModel):
+    """撤销同步响应"""
+
+    deleted: int = Field(..., description="删除的记录数")
