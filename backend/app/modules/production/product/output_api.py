@@ -453,7 +453,7 @@ async def preview_import(
     current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> PreviewImportResponse:
+) -> Any:
     """预览导入文件，返回解析结果（不写入数据库）"""
     records_data, invalid_records = await parse_import_file(file, db)
 
