@@ -100,12 +100,11 @@ class ProductSyncService:
                     }
                 )
 
-        return {
-            "to_create": len(to_create),
-            "to_update": len(to_update),
-            "to_skip": len(to_skip),
-            "details": to_create + to_update,
-        }
+        return PreviewPushResponse(
+            to_create=to_create,
+            to_update=to_update,
+            to_skip=to_skip,
+        )
 
     async def preview_pull(self, product_id: str | None = None) -> PreviewPullResponse:
         """预览拉取操作，不实际执行"""
@@ -173,7 +172,10 @@ class ProductSyncService:
                     }
                 )
 
-        return {"to_create": len(to_create), "to_update": len(to_update), "details": to_create + to_update}
+        return PreviewPullResponse(
+            to_create=to_create,
+            to_update=to_update,
+        )
 
     async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
         logger.info("开始推送到飞书")

@@ -159,7 +159,7 @@ async def undo_last_sync(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> UndoSyncResponse:
+) -> Any:
     """撤销上次同步操作"""
 
     from app.modules.production.product.feishu.sync import SyncOperationLog
