@@ -9,7 +9,6 @@ from typing import Any
 from uuid import UUID as UUIDType
 
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -335,7 +334,7 @@ class EnergyUnitConsumptionTarget(BaseModel):
     )
 
     # BaseModel 已提供: id (UUID), created_at, updated_at, created_by, updated_by, is_deleted
-    
+
     workshop_id: Mapped[UUIDType] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("energy.energy_workshops.id", ondelete="CASCADE"),

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -225,7 +225,7 @@ async def bitable_monthly_sync_loop() -> None:
     每天只执行一次，通过 last_sync_date 防止重复。
     """
     settings = get_settings()
-    
+
     # 优先从环境变量读取，其次从数据库读取
     auto_sync_env = os.getenv("ENERGY_BITABLE_AUTO_SYNC_ENABLED")
     if auto_sync_env is not None:
@@ -284,7 +284,7 @@ async def bitable_monthly_sync_loop() -> None:
 
                     except Exception as e:
                         logger.warning(
-                            "月度数据同步失败 (尝试 %d/%d): %s", 
+                            "月度数据同步失败 (尝试 %d/%d): %s",
                             attempt, max_retries, str(e),
                             extra={"month_table": month_table}
                         )

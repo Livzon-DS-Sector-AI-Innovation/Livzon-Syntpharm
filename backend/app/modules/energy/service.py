@@ -1,5 +1,4 @@
 """Energy business workflows live here."""
-
 from __future__ import annotations
 
 import json
@@ -42,17 +41,6 @@ logger = logging.getLogger(__name__)
 # 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
 
-"""Energy business workflows live here."""
-
-from __future__ import annotations
-
-import logging
-from datetime import timedelta, timezone
-
-logger = logging.getLogger(__name__)
-
-# 中国标准时间 timezone.utc+8
-CST = timezone(timedelta(hours=8))
 
 
 async def create_device_config(db: AsyncSession, data: EnergyDeviceConfigCreate) -> EnergyDeviceConfig:

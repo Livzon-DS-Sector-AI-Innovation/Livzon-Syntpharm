@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -248,7 +249,7 @@ async def get_energy_statistics(
             .where(
                 EnergyMonthlyRecord.record_date >= start_date,
                 EnergyMonthlyRecord.record_date <= end_date,
-                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+                not EnergyMonthlyRecord.is_deleted,  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712
             )
             .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
@@ -269,7 +270,7 @@ async def get_energy_statistics(
             .where(
                 EnergyMonthlyRecord.record_date >= start_date,
                 EnergyMonthlyRecord.record_date <= end_date,
-                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+                not EnergyMonthlyRecord.is_deleted,  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712
             )
             .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
@@ -316,7 +317,7 @@ async def get_overview_summary(
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            not EnergyMonthlyRecord.is_deleted,  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
     )
@@ -351,7 +352,7 @@ async def get_overview_trend(
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            not EnergyMonthlyRecord.is_deleted,  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.record_date, EnergyMonthlyRecord.energy_type)
         .order_by(EnergyMonthlyRecord.record_date.asc())
@@ -773,7 +774,7 @@ async def list_monthly_records(
     from app.modules.energy.models import EnergyMonthlyRecord
 
     query = select(EnergyMonthlyRecord).where(
-        EnergyMonthlyRecord.is_deleted == False  # noqa: E712
+        not EnergyMonthlyRecord.is_deleted  # noqa: E712
     )
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
@@ -799,7 +800,7 @@ async def get_monthly_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyM
     result = await db.execute(
         select(EnergyMonthlyRecord).where(
             EnergyMonthlyRecord.id == record_id,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            not EnergyMonthlyRecord.is_deleted,  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -862,17 +863,20 @@ async def get_monthly_energy_total(
     end_date: date,
 ) -> Decimal | None:
     """获取指定车间在指定时间范围内的总能耗"""
-    from sqlalchemy import select, func
     from decimal import Decimal
-    
+
+    from sqlalchemy import func, select
+
     query = select(func.sum(EnergyMonthlyRecord.value)).where(
         EnergyMonthlyRecord.workshop_id == workshop_id,
         EnergyMonthlyRecord.record_date >= start_date,
         EnergyMonthlyRecord.record_date < end_date,  # 不包含结束日期
-        EnergyMonthlyRecord.is_deleted == False,
+        not EnergyMonthlyRecord.is_deleted,
     )
-    
+
     result = await db.execute(query)
     total = result.scalar()
-    
+
     return Decimal(str(total)) if total else None
+
+
