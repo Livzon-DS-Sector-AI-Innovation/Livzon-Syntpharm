@@ -176,3 +176,11 @@ class UndoImportResponse(BaseModel):
 
     deleted: int = Field(..., description="删除的记录数")
     batch_id: str = Field(..., description="批次 ID")
+
+
+class ImportResponse(BaseModel):
+    """导入响应"""
+
+    imported: int = Field(..., description="导入记录数")
+    skipped: int = Field(..., description="跳过记录数")
+    batch_id: str = Field(..., description="批次 ID")
