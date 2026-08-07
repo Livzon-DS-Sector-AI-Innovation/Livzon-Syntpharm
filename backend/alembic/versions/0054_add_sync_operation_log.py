@@ -24,7 +24,11 @@ def upgrade() -> None:
         sa.Column("product_id", sa.String(36), nullable=False, comment="产品 ID"),
         sa.Column("operation_type", sa.String(20), nullable=False, comment="操作类型：push/pull"),
         sa.Column("records", sa.JSON, nullable=False, comment="操作记录"),
-        sa.Column("created_at", sa.DateTime, nullable=False, comment="创建时间"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="创建时间"),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False, comment="更新时间"),
+        sa.Column("created_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="创建人"),
+        sa.Column("updated_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="更新人"),
+        sa.Column("is_deleted", sa.Boolean, nullable=False, server_default="false", comment="是否删除"),
         schema="production",
     )
     op.create_index(
