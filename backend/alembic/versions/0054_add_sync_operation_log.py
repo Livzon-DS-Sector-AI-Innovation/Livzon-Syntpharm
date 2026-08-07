@@ -28,7 +28,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False, comment="更新时间"),
         sa.Column("created_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="创建人"),
         sa.Column("updated_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="更新人"),
-        sa.Column("is_deleted", sa.Boolean, nullable=False, server_default="false", comment="是否删除"),
+        sa.Column("is_deleted", sa.Boolean, nullable=False, server_default=sa.text("false"), comment="是否删除"),
         schema="production",
     )
     op.create_index(
