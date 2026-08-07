@@ -113,7 +113,7 @@ async def preview_push(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> PreviewPushResponse:
+) -> Any:
     """预览推送到飞书的操作，不实际执行"""
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
@@ -136,7 +136,7 @@ async def preview_pull(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> PreviewPullResponse:
+) -> Any:
     """预览从飞书拉取的操作，不实际执行"""
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
