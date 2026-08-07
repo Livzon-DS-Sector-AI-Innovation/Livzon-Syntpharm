@@ -174,3 +174,24 @@ export async function undoImport(batchId: string, headers: Record<string, string
     headers,
   })
 }
+
+export async function previewPush(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-push`, {
+    method: 'POST',
+    headers,
+  })
+}
+
+export async function previewPull(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-pull`, {
+    method: 'POST',
+    headers,
+  })
+}
+
+export async function undoLastSync(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/undo-last-sync`, {
+    method: 'POST',
+    headers,
+  })
+}
