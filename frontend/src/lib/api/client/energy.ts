@@ -101,3 +101,100 @@ export async function fetchMonthlySummaryClient(params?: any): Promise<any> {
 }
 
 
+
+// ── 单耗目标管理 ──
+
+export interface UnitConsumptionTarget {
+  id: string
+  workshop_id: string
+  workshop_name?: string
+  target_month: string
+  target_unit_consumption: number
+  created_at: string
+}
+
+export async function createTarget(data: {
+  workshop_id: string
+  target_month: string
+  target_unit_consumption: number
+}): Promise<UnitConsumptionTarget> {
+  const res = await fetch('/api/v1/energy/targets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const json = await res.json()
+  if (json.code !== 200) {
+    throw new Error(json.message || '创建目标失败')
+  }
+  return json.data
+}
+
+export async function updateTarget(
+  targetId: number,
+  data: { target_unit_consumption: number }
+): Promise<UnitConsumptionTarget> {
+  const res = await fetch(`/api/v1/energy/targets/${targetId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const json = await res.json()
+  if (json.code !== 200) {
+    throw new Error(json.message || '更新目标失败')
+  }
+  return json.data
+}
+
+export async function getTarget(
+  workshopId: number,
+  targetMonth: string
+): Promise<UnitConsumptionTarget | null> {
+  const res = await fetch(`/api/v1/energy/targets/${workshopId}/${targetMonth}`)
+  const json = await res.json()
+  if (json.code !== 200) {
+    throw new Error(json.message || '查询目标失败')
+  }
+  return json.data
+}
+
+// ── AI 分析（V2 - 支持单耗） ──
+
+export interface AISuggestion {
+  status: string
+  summary: string
+  detailed_analysis: string
+  recommendations: string[]
+  confidence_level: 'high' | 'medium' | 'low'
+}
+
+export interface AIAnalysisResult {
+  workshop_id: string
+  workshop_name: string
+  analysis_month: string
+  total_energy_kwh: number
+  manual_production: number
+  actual_unit_consumption: number
+  target_unit_consumption: number | null
+  deviation_rate: number | null
+  deviation_status: 'normal' | 'warning' | 'critical' | 'unknown'
+  ai_suggestion: AISuggestion | null
+}
+
+export async function analyzeEnergyV2(data: {
+  workshop_id: string
+  analysis_month: string
+  manual_production: number
+  include_ai_suggestion?: boolean
+}): Promise<AIAnalysisResult> {
+  const res = await fetch('/api/v1/energy/ai-analysis-v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const json = await res.json()
+  if (json.code !== 200) {
+    throw new Error(json.message || '分析失败')
+  }
+  return json.data
+}

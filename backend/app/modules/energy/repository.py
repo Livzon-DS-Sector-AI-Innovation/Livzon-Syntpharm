@@ -853,3 +853,26 @@ async def get_monthly_summary(
         }
 
     return summary
+
+
+async def get_monthly_energy_total(
+    db: AsyncSession,
+    workshop_id: int,
+    start_date: date,
+    end_date: date,
+) -> Decimal | None:
+    """获取指定车间在指定时间范围内的总能耗"""
+    from sqlalchemy import select, func
+    from decimal import Decimal
+    
+    query = select(func.sum(EnergyMonthlyRecord.value)).where(
+        EnergyMonthlyRecord.workshop_id == workshop_id,
+        EnergyMonthlyRecord.record_date >= start_date,
+        EnergyMonthlyRecord.record_date < end_date,  # 不包含结束日期
+        EnergyMonthlyRecord.is_deleted == False,
+    )
+    
+    result = await db.execute(query)
+    total = result.scalar()
+    
+    return Decimal(str(total)) if total else None

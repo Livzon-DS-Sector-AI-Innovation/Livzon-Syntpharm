@@ -9,6 +9,7 @@ from typing import Any
 from uuid import UUID as UUIDType
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -321,4 +322,27 @@ class EnergyDailyData(BaseModel):
         UUID(as_uuid=True),
         nullable=True,
         comment="关联预警记录ID",
+    )
+
+
+class EnergyUnitConsumptionTarget(BaseModel):
+    """车间单耗目标表"""
+
+    __tablename__ = "energy_unit_consumption_targets"
+    __table_args__ = (
+        UniqueConstraint("workshop_id", "target_month", name="uk_workshop_month"),
+        {"schema": "energy"},
+    )
+
+    # BaseModel 已提供: id (UUID), created_at, updated_at, created_by, updated_by, is_deleted
+    
+    workshop_id: Mapped[UUIDType] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("energy.energy_workshops.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="关联车间ID",
+    )
+    target_month: Mapped[date] = mapped_column(Date, nullable=False, comment="目标月份")
+    target_unit_consumption: Mapped[Decimal] = mapped_column(
+        Numeric(10, 4), nullable=False, comment="目标单耗(kWh/件)"
     )
