@@ -2,12 +2,15 @@
 
 import uuid
 from datetime import date
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.production.product.output_models import WORKSHOP_CHOICES
 from app.modules.production.product.output_repository import ProductOutputRepository
+
+if TYPE_CHECKING:
+    from app.modules.production.product.output_schemas import AnnualReviewResponse
 from app.modules.production.product.output_schemas import (
     ProductOutputCreate,
     ProductOutputUpdate,
@@ -169,7 +172,7 @@ class ProductOutputService:
             end_date=end_date,
         )
 
-    async def get_annual_review(self, year: int) -> Any:
+    async def get_annual_review(self, year: int) -> AnnualReviewResponse:
         """获取年度回顾数据"""
         from app.modules.production.product.output_schemas import (
             AnnualOverview,
