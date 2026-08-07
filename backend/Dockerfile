@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
     libreoffice \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv package manager
-RUN pip install --no-cache-dir uv==0.12.2
+# Install uv package manager (use Alibaba PyPI mirror for speed)
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ uv==0.12.2
 
 ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
