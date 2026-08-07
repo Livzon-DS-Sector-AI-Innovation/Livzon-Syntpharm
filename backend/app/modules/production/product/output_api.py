@@ -18,7 +18,6 @@ from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
     AnnualReviewResponse,
-    PreviewImportResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
