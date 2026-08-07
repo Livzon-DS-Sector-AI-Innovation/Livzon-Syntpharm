@@ -1,27 +1,23 @@
 'use server'
 
-import { getApiBaseUrl } from '@/lib/api/server/base'
+import { getAuthHeaders } from '@/lib/auth'
+import {
+  previewPush as previewPushApi,
+  previewPull as previewPullApi,
+  undoLastSync as undoLastSyncApi,
+} from '@/lib/api/server/product-output'
 
 export async function previewPush(productId: string) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-push`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
-  return res.json()
+  const authHeaders = await getAuthHeaders()
+  return previewPushApi(productId, authHeaders)
 }
 
 export async function previewPull(productId: string) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-pull`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
-  return res.json()
+  const authHeaders = await getAuthHeaders()
+  return previewPullApi(productId, authHeaders)
 }
 
 export async function undoLastSync(productId: string) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/undo-last-sync`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
-  return res.json()
+  const authHeaders = await getAuthHeaders()
+  return undoLastSyncApi(productId, authHeaders)
 }
