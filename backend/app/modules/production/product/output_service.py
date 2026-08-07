@@ -1,5 +1,5 @@
-from __future__ import annotations
 """Product output business logic."""
+from __future__ import annotations
 
 import uuid
 from datetime import date
