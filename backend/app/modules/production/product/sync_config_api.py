@@ -128,7 +128,7 @@ async def preview_push(
     sync_service = ProductSyncService(db, config.app_token, config.table_id, field_mapping)
     result = await sync_service.preview_push(str(product_id))
 
-    return result
+    return ApiResponse(data=result)
 
 
 @router.post("/product-sync-config/{product_id}/preview-pull", summary="预览拉取操作")
@@ -151,7 +151,7 @@ async def preview_pull(
     sync_service = ProductSyncService(db, config.app_token, config.table_id, field_mapping)
     result = await sync_service.preview_pull(str(product_id))
 
-    return result
+    return ApiResponse(data=result)
 
 
 @router.post("/product-sync-config/{product_id}/undo-last-sync", summary="撤销上次同步")
@@ -176,7 +176,8 @@ async def undo_last_sync(
         # 撤销推送：删除新增的飞书记录，恢复更新的记录
         # 这里简化处理，只记录日志，实际删除需要飞书删除权限
         return ApiResponse(
-            data={"message": f"已记录撤销操作，共 {len(records)} 条记录需要处理"}, message="撤销推送操作已记录"
+            data=UndoSyncResponse(deleted=0),
+            message=f"撤销推送操作已记录，共 {len(records)} 条记录需要处理",
         )
     else:
         # 撤销拉取：删除新增的平台记录，恢复更新的记录
@@ -200,4 +201,4 @@ async def undo_last_sync(
                 deleted += 1
 
         await db.commit()
-        return UndoSyncResponse(deleted=deleted)
+        return ApiResponse(data=UndoSyncResponse(deleted=deleted))
