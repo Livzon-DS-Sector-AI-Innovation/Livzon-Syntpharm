@@ -18,6 +18,7 @@ from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
     AnnualReviewResponse,
+    PreviewImportResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
@@ -471,18 +472,15 @@ async def preview_import(
     duplicate_count = sum(1 for r in records_data if r["is_duplicate"])
     not_found_count = sum(1 for r in records_data if not r["product_found"])
 
-    return ApiResponse(
-        data={
-            "total_rows": len(records_data) + len(invalid_records),
-            "valid_records": len(records_data),
-            "invalid_records": len(invalid_records),
-            "new_records": new_count,
-            "duplicate_records": duplicate_count,
-            "not_found_product": not_found_count,
-            "records": records_data,
-            "invalid_details": invalid_records,
-        },
-        message=f"共 {len(records_data) + len(invalid_records)} 行，有效 {len(records_data)} 行，可导入 {new_count} 行",
+    return PreviewImportResponse(
+        total_rows=len(records_data) + len(invalid_records),
+        valid_records=len(records_data),
+        invalid_records=len(invalid_records),
+        new_records=new_count,
+        duplicate_records=duplicate_count,
+        not_found_product=not_found_count,
+        records=records_data,
+        invalid_details=invalid_records,
     )
 
 
