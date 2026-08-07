@@ -1,9 +1,8 @@
 """SyncOperationLog ORM 模型"""
-
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, String, select
+from sqlalchemy import JSON, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,7 +18,6 @@ class SyncOperationLog(BaseModel):
     product_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True, comment="产品 ID")
     operation_type: Mapped[str] = mapped_column(String(20), nullable=False, comment="操作类型：push/pull")
     records: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, comment="操作记录")
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="创建时间")
 
     @staticmethod
     async def log_operation(
@@ -33,7 +31,6 @@ class SyncOperationLog(BaseModel):
             product_id=product_id,
             operation_type=operation_type,
             records=records,
-            created_at=datetime.now(),
         )
         db.add(log)
         await db.flush()

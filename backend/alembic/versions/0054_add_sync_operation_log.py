@@ -20,15 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "sync_operation_logs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, comment="日志 ID"),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("product_id", sa.String(36), nullable=False, comment="产品 ID"),
         sa.Column("operation_type", sa.String(20), nullable=False, comment="操作类型：push/pull"),
         sa.Column("records", sa.JSON, nullable=False, comment="操作记录"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="创建时间"),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False, comment="更新时间"),
-        sa.Column("created_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="创建人"),
-        sa.Column("updated_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True, comment="更新人"),
-        sa.Column("is_deleted", sa.Boolean, nullable=False, server_default=sa.text("false"), comment="是否删除"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), onupdate=sa.text("now()"), nullable=False),
+        sa.Column("created_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True),
+        sa.Column("updated_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("identity.users.id"), nullable=True),
+        sa.Column("is_deleted", sa.Boolean, nullable=False, server_default=sa.text("false")),
         schema="production",
     )
     op.create_index(
