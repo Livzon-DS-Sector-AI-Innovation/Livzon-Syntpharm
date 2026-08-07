@@ -178,10 +178,10 @@ class ProductSyncService:
         )
 
     async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
-        logger.info("开始推送到飞书")
+        logger.info("开始推送到飞书", extra={"product_id": product_id})
 
         # 一次性获取飞书所有记录，建立批号→record_id 映射
-        logger.info("获取飞书所有记录...")
+        logger.info("获取飞书所有记录", extra={"page_size": 500})
         all_feishu_records = await self.bitable.list_records(page_size=500)
         feishu_record_map = {}  # (batch_no, product_name, workshop) -> record_id
         for record in all_feishu_records:
@@ -277,7 +277,7 @@ class ProductSyncService:
         }
 
     async def pull_from_feishu(self, product_id: str | None = None) -> dict[str, Any]:
-        logger.info("开始从飞书拉取数据")
+        logger.info("开始从飞书拉取数据", extra={"product_id": product_id})
         feishu_records = await self.bitable.list_records()
         logger.info("飞书记录获取完成", extra={"count": len(feishu_records)})
 
