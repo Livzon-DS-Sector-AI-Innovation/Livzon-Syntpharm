@@ -189,7 +189,7 @@ class ProductSyncService:
             if batch_no and product_name and workshop:
                 key = (batch_no, product_name, workshop)
                 feishu_record_map[key] = record.get("record_id")
-        logger.info(f"飞书现有 {len(feishu_record_map)} 条记录")
+        logger.info("飞书记录统计", extra={"count": len(feishu_record_map)})
 
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes

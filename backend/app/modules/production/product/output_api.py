@@ -17,6 +17,7 @@ from app.core.response import ApiResponse
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
+    AnnualReviewResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
@@ -196,11 +197,10 @@ async def get_annual_review(
     current_user: RequiredUser,
     year: int = Query(..., description="年份"),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> AnnualReviewResponse:
     """获取年度回顾数据"""
     service = ProductOutputService(db)
-    data = await service.get_annual_review(year)
-    return ApiResponse(data=data)
+    return await service.get_annual_review(year)
 
 
 @router.get("/product-output/annual-review/export", summary="导出年度回顾Excel")
