@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
-from app.modules.production.product.output_schemas import PreviewPullResponse, PreviewPushResponse, UndoSyncResponse
+from app.modules.production.product.output_schemas import UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
     ProductSyncConfigCreate,
     ProductSyncConfigResponse,
