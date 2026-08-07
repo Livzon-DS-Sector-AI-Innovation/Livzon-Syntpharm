@@ -5,7 +5,7 @@ import { Card, Row, Col, Statistic, Table, Spin, Empty, Alert, Button, Tag } fro
 import { ArrowUpOutlined, ArrowDownOutlined, DownloadOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
-import { getAnnualReview, exportAnnualReview } from '@/actions/product-output'
+import { fetchAnnualReview, fetchExportAnnualReview } from '@/actions/product-output'
 import type { AnnualReviewData, TopProduct } from '@/types/product-output'
 
 interface Props {
@@ -25,7 +25,7 @@ export default function AnnualReviewTab({ year }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await getAnnualReview(year)
+      const res = await fetchAnnualReview(year)
       if (res.code !== 200) {
         setError(res.message || '加载数据失败')
         return
@@ -41,7 +41,7 @@ export default function AnnualReviewTab({ year }: Props) {
 
   const handleExport = async () => {
     try {
-      const response = await exportAnnualReview(year)
+      const response = await fetchExportAnnualReview(year)
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')

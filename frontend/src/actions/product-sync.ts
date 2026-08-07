@@ -2,22 +2,22 @@
 
 import { getAuthHeaders } from '@/lib/auth'
 import {
-  previewPush as previewPushApi,
-  previewPull as previewPullApi,
-  undoLastSync as undoLastSyncApi,
+  fetchPreviewPush as fetchPreviewPushApi,
+  fetchPreviewPull as fetchPreviewPullApi,
+  fetchUndoLastSync as fetchUndoLastSyncApi,
 } from '@/lib/api/server/product-output'
 
-export async function previewPush(productId: string) {
+export async function fetchPreviewPush(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return previewPushApi(productId, authHeaders)
+  return fetchPreviewPushApi(productId, authHeaders)
 }
 
-export async function previewPull(productId: string) {
+export async function fetchPreviewPull(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return previewPullApi(productId, authHeaders)
+  return fetchPreviewPullApi(productId, authHeaders)
 }
 
-export async function undoLastSync(productId: string) {
+export async function fetchUndoLastSync(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return undoLastSyncApi(productId, authHeaders)
+  return fetchUndoLastSyncApi(productId, authHeaders)
 }
