@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse
+from app.modules.production.product.output_schemas import PreviewPullResponse, PreviewPushResponse, UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
     ProductSyncConfigCreate,
     ProductSyncConfigResponse,
@@ -112,7 +113,7 @@ async def preview_push(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> PreviewPushResponse:
     """预览推送到飞书的操作，不实际执行"""
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
@@ -127,7 +128,7 @@ async def preview_push(
     sync_service = ProductSyncService(db, config.app_token, config.table_id, field_mapping)
     result = await sync_service.preview_push(str(product_id))
 
-    return ApiResponse(data=result)
+    return result
 
 
 @router.post("/product-sync-config/{product_id}/preview-pull", summary="预览拉取操作")
@@ -135,7 +136,7 @@ async def preview_pull(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> PreviewPullResponse:
     """预览从飞书拉取的操作，不实际执行"""
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
@@ -150,7 +151,7 @@ async def preview_pull(
     sync_service = ProductSyncService(db, config.app_token, config.table_id, field_mapping)
     result = await sync_service.preview_pull(str(product_id))
 
-    return ApiResponse(data=result)
+    return result
 
 
 @router.post("/product-sync-config/{product_id}/undo-last-sync", summary="撤销上次同步")
@@ -158,7 +159,7 @@ async def undo_last_sync(
     current_user: RequiredUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> UndoSyncResponse:
     """撤销上次同步操作"""
 
     from app.modules.production.product.feishu.sync import SyncOperationLog
@@ -199,4 +200,4 @@ async def undo_last_sync(
                 deleted += 1
 
         await db.commit()
-        return ApiResponse(data={"deleted": deleted}, message=f"撤销拉取完成，删除 {deleted} 条记录")
+        return UndoSyncResponse(deleted=deleted)

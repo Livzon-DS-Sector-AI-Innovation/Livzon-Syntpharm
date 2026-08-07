@@ -14,6 +14,7 @@ from app.modules.production.product.feishu.bitable import (
     _extract_text,
     _to_ms_timestamp,
 )
+from app.modules.production.product.output_schemas import PreviewPullResponse, PreviewPushResponse
 from app.modules.production.product.sync_operation_log_model import SyncOperationLog
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class ProductSyncService:
         self.field_mapping = field_mapping or DEFAULT_FIELD_MAPPING
         self.reverse_mapping = {v: k for k, v in self.field_mapping.items()}
 
-    async def preview_push(self, product_id: str | None = None) -> dict[str, Any]:
+    async def preview_push(self, product_id: str | None = None) -> PreviewPushResponse:
         """预览推送操作，不实际执行"""
         logger.info("预览推送到飞书")
 
@@ -106,7 +107,7 @@ class ProductSyncService:
             "details": to_create + to_update,
         }
 
-    async def preview_pull(self, product_id: str | None = None) -> dict[str, Any]:
+    async def preview_pull(self, product_id: str | None = None) -> PreviewPullResponse:
         """预览拉取操作，不实际执行"""
         logger.info("预览从飞书拉取")
 
@@ -199,7 +200,7 @@ class ProductSyncService:
         """)
         result = await self.db.execute(query, {"product_id": product_id})
         rows = result.fetchall()
-        logger.info(f"查询到 {len(rows)} 条待推送记录")
+        logger.info("待推送记录统计", extra={"count": len(rows)})
 
         imported = 0
         updated = 0
@@ -227,7 +228,7 @@ class ProductSyncService:
             # 直接从映射表查找，不再调用 API
             key = (batch_no, product_name, workshop)
             feishu_record_id = feishu_record_map.get(key)
-            logger.info(f"批号 {batch_no} 飞书记录 ID: {feishu_record_id}")
+            logger.info("批号匹配飞书记录", extra={"batch_no": batch_no, "feishu_record_id": feishu_record_id})
 
             try:
                 if feishu_record_id:
@@ -276,7 +277,7 @@ class ProductSyncService:
     async def pull_from_feishu(self, product_id: str | None = None) -> dict[str, Any]:
         logger.info("开始从飞书拉取数据")
         feishu_records = await self.bitable.list_records()
-        logger.info(f"获取到 {len(feishu_records)} 条飞书记录")
+        logger.info("飞书记录获取完成", extra={"count": len(feishu_records)})
 
         imported = 0
         updated = 0
