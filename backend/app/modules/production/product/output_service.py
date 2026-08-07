@@ -1,8 +1,9 @@
+from __future__ import annotations
 """Product output business logic."""
 
 import uuid
 from datetime import date
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
