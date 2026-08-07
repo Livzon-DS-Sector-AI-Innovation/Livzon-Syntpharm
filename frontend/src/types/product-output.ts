@@ -1,3 +1,5 @@
+import type { components } from '@/types/generated/schema'
+
 /**
  * Domain model types (ViewModels) — not in OpenAPI spec.
  * API input types (Create/Update) use @/types/generated/schema.
@@ -6,6 +8,12 @@
 // product-output module TypeScript types
 
 import type { ApiResponse } from '@/types/production'
+// Annual Review types (from generated schema)
+export type MonthlyTrend = components["schemas"]["app__modules__production__product__output_schemas__MonthlyTrend"]
+export type WorkshopRanking = components["schemas"]["app__modules__production__product__output_schemas__WorkshopRanking"]
+export type TopProduct = components["schemas"]["app__modules__production__product__output_schemas__TopProduct"]
+export type AnnualOverview = components["schemas"]["app__modules__production__product__output_schemas__AnnualOverview"]
+export type AnnualReviewData = components["schemas"]["app__modules__production__product__output_schemas__AnnualReviewResponse"]
 
 export type { ApiResponse }
 
@@ -80,43 +88,4 @@ export interface SummaryData {
   grand_total: number
 }
 
-// Annual Review types
-export interface MonthlyTrend {
-  month: number
-  current_year_weight: number
-  previous_year_weight: number
-}
 
-export interface WorkshopRanking {
-  workshop: string
-  total_weight: number
-  batch_count: number
-}
-
-export interface TopProduct {
-  rank: number
-  product_name: string
-  workshop: string
-  total_weight: number
-  batch_count: number
-  avg_weight: number
-}
-
-export interface AnnualOverview {
-  total_weight: number
-  previous_year_weight: number
-  weight_yoy: number
-  total_batches: number
-  previous_year_batches: number
-  batch_yoy: number
-  active_workshops: number
-  active_products: number
-}
-
-export interface AnnualReviewData {
-  year: number
-  overview: AnnualOverview
-  monthly_trend: MonthlyTrend[]
-  workshop_ranking: WorkshopRanking[]
-  top_products: TopProduct[]
-}
