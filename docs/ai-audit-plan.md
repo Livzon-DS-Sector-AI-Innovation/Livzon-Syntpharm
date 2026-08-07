@@ -1108,7 +1108,7 @@ After all 14 categories:
    - The applicable AGENTS.md rules text (including exception clauses)
    - The [Explicit exceptions](#explicit-exceptions-from-agentsmd) table
    - The baseline findings for that category from `docs/ai-audit-findings.md`
-4. Ask: "Report only violations introduced or worsened by this diff. Do not report candidates that match a listed AGENTS.md exception."
+4. Ask: "Report only violations introduced or worsened by this diff. A violation is reportable if the violating line appears in a changed file. Do not skip a finding because the same pattern exists elsewhere in unchanged files — existing violations in other files are not exceptions. Only the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table provides valid exceptions."
 5. Append findings to `docs/ai-audit-findings.md` under a new PR section
 
 ### Second review (important PRs only)

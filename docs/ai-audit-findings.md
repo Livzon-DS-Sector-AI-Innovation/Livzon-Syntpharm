@@ -689,3 +689,139 @@ Categories affected: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13
 
 
 
+
+### PR #23: liangxuechao-ProductManagement-v2 — Product management enhancements (head: liangxuechao-ProductManagement-v2, base: origin/main, date: 2026-08-07)
+
+Files changed: 22 (12 backend, 9 frontend, 1 ci-script)
+
+Categories affected: 3, 4, 5, 6, 7, 9, 10, 11
+
+#### Category 3: Backend module boundaries
+
+| Files inspected | 8 (all prod/product Python files) |
+| Rules evaluated | 8 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+_None._ All imports are within `production/product` module or from approved global layers (`core/`, `platform/`, `shared/`). No cross-module imports bypassing `public_api.py`. No new module directories created.
+
+#### Category 4: API and authentication
+
+| Files inspected | 3 (output_api.py, sync_config_api.py, output_schemas.py) |
+| Rules evaluated | 7 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `output_api.py`, `sync_config_api.py` — API 规范/必须: 入参和出参使用本模块 schemas.py — New endpoints `preview_import`, `undo_import`, `preview_pull`, `preview_push`, `undo_last_sync` return plain dicts via `ApiResponse(data={...})` instead of Pydantic schema objects from `output_schemas.py` or `sync_config_schemas.py`. AGENTS.md 必须 section explicitly requires using the module's `schemas.py` for both input and output. — severity: medium
+
+##### Accepted exceptions
+_None._
+
+#### Category 5: Models and migrations
+
+| Files inspected | 4 (2 migrations, 2 models, env.py) |
+| Rules evaluated | 11 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+_None._ Migrations `0053_add_import_batch_id` and `0054_add_sync_operation_log` follow NNNN naming, single-module principle (both production schema only), and proper model-migration binding. `SyncOperationLog` inherits `BaseModel` with correct `__tablename__` and `__table_args__`. No CASCADE DELETE, no create_all(), no DROP operations.
+
+#### Category 6: Configuration and logging
+
+| Files inspected | 8 (all changed backend files) |
+| Rules evaluated | 9 |
+| Confirmed findings | 1 |
+| Uncertain findings | 1 |
+
+##### Confirmed
+- [ ] `backend/app/modules/production/product/feishu/sync.py` — 日志规范/上下文 — Multiple `logger.info()` calls (lines in `preview_push`, `preview_pull`, `push_to_feishu`, `pull_from_feishu`) use positional/f-string formatting instead of structured `extra={}` dict. AGENTS.md requires `logger.info("message", extra={"key": value})` for structured context. Examples: `logger.info("获取飞书所有记录...")`, `logger.info(f"飞书现有 {len(feishu_record_map)} 条记录")`, `logger.info(f"查询到 {len(rows)} 条待推送记录")`, `logger.info(f"记录 {record_id} 提取数据: {data}")`. Also, `logger.info(f"记录 {record_id} 提取数据: {data}")` logs `data` dict directly which may contain sensitive user data. — severity: medium
+
+##### Uncertain
+- [ ] `backend/app/modules/production/product/output_service.py` — 日志规范/模块日志 — New `get_annual_review` method has no logging calls. Service-level operations with data aggregation typically benefit from logging for observability. Whether every service method needs logging is debatable. — severity: low
+
+##### Accepted exceptions
+_None._
+
+#### Category 7: External services and background tasks
+
+| Files inspected | 3 (sync.py, output_api.py, output_service.py) |
+| Rules evaluated | 9 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+_None._ No `asyncio.create_task()` in business logic, no direct LLM/APScheduler/paddleocr imports, no bare `except: pass`, no HTTP handlers exceeding 5s in new code. `feishu/sync.py` correctly uses `logger.exception()` for exception handling (improved from previous `logger.error()`). `output_api.py` handles individual record import failures by collecting errors rather than silently swallowing.
+
+#### Category 9: Frontend component boundaries
+
+| Files inspected | 6 (2 page.tsx, 2 components, 2 actions) |
+| Rules evaluated | 9 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `frontend/src/lib/api/server/product-output.ts` — 命名规范: API 请求函数以 fetch 开头 — New functions `getAnnualReview`, `exportAnnualReview`, `previewImport`, `undoImport` do not use the required `fetch` prefix. AGENTS.md specifies: "API 请求函数：以 fetch 开头（fetchBatches、fetchBatchById）". Should be `fetchAnnualReview`, `fetchExportAnnualReview`, `fetchPreviewImport`, `fetchUndoImport`. Additionally, all other naming rules pass: file names use PascalCase/camelCase, both `page.tsx` files correctly use `'use client'`, no cross-module barrel bypass, no modifications to protected files, and both pages have `<h1>` headings. — severity: low
+
+##### Accepted exceptions
+_None._
+
+#### Category 10: Frontend API and generated types
+
+| Files inspected | 7 (actions, lib/api/server, types, components) |
+| Rules evaluated | 8 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `frontend/src/types/product-output.ts` — 类型系统/API 类型来源 — Annual review types (`MonthlyTrend`, `WorkshopRanking`, `TopProduct`, `AnnualOverview`, `AnnualReviewData`) are handwritten TypeScript interfaces instead of imported from `@/types/generated/schema`. AGENTS.md requires all API types come from the generated schema. The backend defines corresponding Pydantic schemas (`output_schemas.py`), so these types should be available after regenerating the OpenAPI spec. — severity: high
+
+##### Accepted exceptions
+_None._
+
+#### Category 11: Proxy and routing
+
+| Files inspected | 4 (actions/product-output.ts, actions/product-sync.ts, lib/api/server/base.ts, lib/api/server/product-output.ts) |
+| Rules evaluated | 6 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `frontend/src/actions/product-sync.ts:5-24` — 写操作必须用 Server Actions + API 调用层级 — Three server actions (`previewPush`, `previewPull`, `undoLastSync`) call `fetch()` directly with `getApiBaseUrl()` instead of going through `lib/api/server/` functions. AGENTS.md requires: "写操作在 actions/ 中调用 lib/api/server/ 的函数，不要直接 fetch". Additionally, these direct `fetch` calls do not pass authentication headers (`getAuthHeaders()`), causing all three endpoints (`RequiredUser`-protected) to return 401. — severity: blocking
+
+##### Accepted exceptions
+_None._
+
+#### Category 12: Cross-project OpenAPI
+
+| Checks verified | 1 (CI runs `scripts/ci.sh openapi`) |
+| Checks failing | 0 |
+
+CI modified to auto-commit out-of-date OpenAPI spec and generated types. No manual violations.
+
+#### Category 14: E2E
+
+| Checks verified | 1 (CI runs `scripts/ci.sh e2e`) |
+| Checks failing | 0 |
+
+No E2E test changes in this PR.
+
+#### Categories not affected
+
+Categories 1 (Repository layout), 2 (Secrets), 8 (Backend tests), 13 (Docker) — no relevant file changes.
+
+#### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 1 | 0 | Plain dict responses instead of schemas |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | Clean |
+| 6. Config & logging | 0 | 0 | 1 | 1 | logger.info() missing structured extra= |
+| 7. External services | 0 | 0 | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 0 | 0 | 1 | Naming convention (fetch prefix) |
+| 10. Frontend API & types | 0 | 1 | 0 | 0 | Handwritten types instead of generated schema |
+| 11. Proxy & routing | 1 | 0 | 0 | 0 | Direct fetch() without auth headers in product-sync.ts |
+| **Total** | **1** | **1** | **2** | **2** | |
