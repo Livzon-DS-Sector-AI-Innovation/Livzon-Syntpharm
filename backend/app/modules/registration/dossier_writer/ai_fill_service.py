@@ -253,6 +253,7 @@ class AIFillService:
                 llm_config = await get_active_config("text")
                 if not llm_config:
                     from app.core.llm.config import get_env_config
+
                     llm_config = get_env_config()
                 if not llm_config:
                     raise LLMConfigError("LLM 服务未配置，请在系统设置中配置 LLM 或设置 LLM_API_KEY 环境变量。")
