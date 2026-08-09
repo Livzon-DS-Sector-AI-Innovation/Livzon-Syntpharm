@@ -751,7 +751,7 @@ Energy sync endpoints converted from synchronous HTTP handlers to `spawn_task()`
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [x] `backend/app/modules/energy/api.py:572,591,610,635,672` — 日志规范/异常处理+异步任务 — All five `_run()` background task functions have `except Exception as e:` blocks that call `sync_job_store.fail(job_id, str(e))` without `logger.exception()`. AGENTS.md requires background tasks to use `try/except` + `logger.exception()` to auto-attach stack traces. Additionally, the module has no `logger = logging.getLogger(__name__)` defined. — severity: medium — **RESOLVED** (added `logging` import, `logger = logging.getLogger(__name__)`, and `logger.exception()` to all five `_run()` functions)
+- [ ] `backend/app/modules/energy/api.py:572,591,610,635,672` — 日志规范/异常处理+异步任务 — All five `_run()` background task functions have `except Exception as e:` blocks that call `sync_job_store.fail(job_id, str(e))` without `logger.exception()`. AGENTS.md requires background tasks to use `try/except` + `logger.exception()` to auto-attach stack traces. Additionally, the module has no `logger = logging.getLogger(__name__)` defined. — severity: medium
 
 ##### Accepted exceptions
 _None._
@@ -764,7 +764,7 @@ _None._
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [x] `backend/app/modules/energy/api.py:572,591,610,635,672` — 异步任务/未处理异常 — Same finding as Category 6: background task `_run()` functions don't log exceptions. The `try/except` pattern is correct (no unhandled exceptions will crash the worker), but tracebacks are discarded. — severity: medium — **RESOLVED** (added `logger.exception()` to all five `_run()` functions)
+- [ ] `backend/app/modules/energy/api.py:572,591,610,635,672` — 异步任务/未处理异常 — Same finding as Category 6: background task `_run()` functions don't log exceptions. The `try/except` pattern is correct (no unhandled exceptions will crash the worker), but tracebacks are discarded. — severity: medium
 
 ##### Accepted exceptions
 _None._
@@ -862,8 +862,8 @@ Category 8 (Backend tests) — no test file changes.
 | 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
 | 4. API & auth | 0 | 0 | 0 | 0 | Clean |
 | 5. Models & migrations | 0 | 0 | 0 | 0 | Clean |
-| 6. Config & logging | 0 | 0 | 0 | 0 | RESOLVED (logger.exception() added) |
-| 7. External services | 0 | 0 | 0 | 0 | RESOLVED (same fix) |
+| 6. Config & logging | 0 | 0 | 1 | 0 | Background tasks missing logger.exception() |
+| 7. External services | 0 | 0 | 1 | 0 | Same — exception tracebacks discarded |
 | 8. Backend tests | 0 | 0 | 0 | 0 | N/A (no test changes) |
 | 9. Frontend boundaries | 0 | 0 | 0 | 0 | Clean (same-module barrel bypass not a violation) |
 | 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean (FeishuConfig/AgentSkill `any` accepted — blocked on backend) |
@@ -871,4 +871,4 @@ Category 8 (Backend tests) — no test file changes.
 | 12. OpenAPI | 0 | 0 | 0 | 0 | Clean (CI verifies) |
 | 13. Docker | 0 | 0 | 0 | 0 | Clean |
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (no E2E changes) |
-| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
+| **Total** | **0** | **0** | **2** | **0** | **2 accepted exceptions** |

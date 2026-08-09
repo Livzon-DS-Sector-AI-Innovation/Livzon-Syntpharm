@@ -754,8 +754,7 @@ Full audit
 2. Are there page.tsx files that call backend APIs (via `actions/`) without `export const dynamic = 'force-dynamic'`?
 3a. Are there barrel `index.ts` files that export Zustand/Context components but are missing `'use client'`?
 3b. Are there other barrel `index.ts` files missing `'use client'` (violates best practice, not a build error)?
-4. Are there cross-module component imports that bypass the target module's `index.ts` barrel?
-   (Importing `@/components/moduleB/SomeComponent` instead of `@/components/moduleB`)
+4. Are there imports from a different module's component directory that bypass the target module's `index.ts` barrel? (Same-module sub-path imports are not violations — the rule only applies across module boundaries.)
 5. Do component file names follow PascalCase? Do non-component file names follow camelCase?
 6. Do Server Action function names start with a verb (`create`, `update`, `delete`, `submit`, etc.)?
 7. Do API request function names start with `fetch`?
