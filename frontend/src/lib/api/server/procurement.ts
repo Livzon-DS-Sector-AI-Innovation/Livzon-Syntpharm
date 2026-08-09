@@ -14,7 +14,7 @@ import type {
   ContractRecordResponse,
   SupplierListResponse,
 } from '@/types/procurement'
-import type { ContractGenerateActionResult } from '@/actions/procurement'
+import type { ContractGenerateActionResult } from '@/types/procurement'
 
 type InvoiceRecognitionRecordQuery =
   operations['list_invoice_records_api_v1_procurement_invoices_recognition_records_get']['parameters']['query']

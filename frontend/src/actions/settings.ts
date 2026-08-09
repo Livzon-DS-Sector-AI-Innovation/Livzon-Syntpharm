@@ -1,7 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import type { components } from '@/types/generated/schema'
+import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfig, FeishuConfigUpsert, FeishuDiagnosticResult } from '@/types/settings'
 import {
   getLLMConfigs as getLLMConfigsServer,
   getLLMConfig as getLLMConfigServer,
@@ -19,13 +19,6 @@ async function getAuthToken(): Promise<string | undefined> {
   const cookieStore = await cookies()
   return cookieStore.get('auth_token')?.value
 }
-
-export type LLMConfig = components['schemas']['LLMConfigResponse']
-export type LLMConfigFormData = components['schemas']['LLMConfigCreate']
-export type LLMConfigUpdate = components['schemas']['LLMConfigUpdate']
-export type FeishuConfig = any
-export type FeishuConfigUpsert = any
-export type FeishuDiagnosticResult = any
 
 interface ApiResponse<T> {
   code: number

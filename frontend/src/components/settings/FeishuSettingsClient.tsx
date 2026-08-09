@@ -31,7 +31,7 @@ import type {
   FeishuConfig,
   FeishuConfigUpsert,
   FeishuDiagnosticResult,
-} from '@/actions/settings'
+} from '@/types/settings'
 
 const { Text, Title } = Typography
 type DiagnosticStep = NonNullable<FeishuDiagnosticResult['steps']>[number]

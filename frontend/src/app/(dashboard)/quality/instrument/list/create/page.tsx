@@ -28,8 +28,8 @@ import {
   createInstrument,
   createCalibrationRule,
   recognizeInstrumentLabel,
-  type AIRecognizedInstrumentInfo,
 } from '@/actions/instrument'
+import type { AIRecognizedInstrumentInfo } from '@/types/instrument'
 import type {
   InstrumentCreate,
   CalibrationRuleCreate,

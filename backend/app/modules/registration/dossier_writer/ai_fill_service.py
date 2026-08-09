@@ -9,7 +9,7 @@ from docx import Document
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.llm import LLMError, llm_client
+from app.core.llm import LLMConfigError, LLMError, get_active_config, llm_client
 
 from .ai_prompts import (
     build_extract_fields_prompt,
@@ -109,9 +109,6 @@ class AIFillService:
         chapter: DossierChapter,
     ) -> dict[str, Any]:
         """预览 AI 提取结果（不写入文档，只返回提取值供用户确认）"""
-        if False:  # Config check handled by core.llm
-            return {"success": False, "message": "LLM 服务未配置"}
-
         mappings = await self.get_field_mappings(chapter.chapter_code)  # type: ignore[arg-type]
         if not mappings:
             return {
@@ -150,6 +147,7 @@ class AIFillService:
             category_groups.setdefault(cat, []).append(m)
 
         # 对每个分类组调用 AI 提取
+        llm_error_occurred = False
 
         for category_name, group_mappings in category_groups.items():
             # 找到该分类下的素材文件
@@ -252,8 +250,19 @@ class AIFillService:
             )
 
             try:
+                llm_config = await get_active_config("text")
+                if not llm_config:
+                    from app.core.llm.config import get_env_config
+
+                    llm_config = get_env_config()
+                if not llm_config:
+                    raise LLMConfigError("LLM 服务未配置，请在系统设置中配置 LLM 或设置 LLM_API_KEY 环境变量。")
                 parsed_result = await self.llm.chat_json(messages)
             except LLMError as e:
+                llm_error_occurred = True
+                error_msg = str(e)
+                if isinstance(e, LLMConfigError):
+                    error_msg = f"LLM 服务未配置，文本字段的 AI 提取将不可用。（{e}）"
                 for m in non_table_fields:
                     results.append(
                         {
@@ -261,7 +270,7 @@ class AIFillService:
                             "field_type": m.field_type,
                             "value": None,
                             "confidence": 0.0,
-                            "source": f"AI 提取失败: {e}",
+                            "source": f"AI 提取失败: {error_msg}",
                             "field_mapping_id": str(m.id),
                             "source_category": m.source_category,
                         }
@@ -324,6 +333,7 @@ class AIFillService:
                 "success": False,
                 "message": error_message,
                 "fields": results,
+                "llm_error": llm_error_occurred,
                 "error_details": {
                     "total_fields": len(results),
                     "failed_fields": len(failed_fields),
@@ -338,6 +348,7 @@ class AIFillService:
             "fields": results,
             "partial_success": len(failed_fields) > 0,
             "failed_count": len(failed_fields),
+            "llm_error": llm_error_occurred,
         }
 
     async def confirm_and_fill(
@@ -522,9 +533,6 @@ class AIFillService:
         available_appendix_slots: list[str],
     ) -> dict[str, Any]:
         """预览多页 PDF 的拆分结果"""
-        if False:  # Config check handled by core.llm
-            return {"success": False, "message": "LLM 服务未配置"}
-
         file_path = Path(asset.file_path)
         if file_path.suffix.lower() != ".pdf":
             return {"success": False, "message": "仅支持 PDF 文件的页拆分"}

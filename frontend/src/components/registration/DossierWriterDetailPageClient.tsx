@@ -84,6 +84,7 @@ export function DossierWriterDetailPageClient() {
   const [matching, setMatching] = useState(false)
   const [filling, setFilling] = useState(false)
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0)
+  const [assetRefreshKey, setAssetRefreshKey] = useState(0)
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>([])
   const [availableAssets, setAvailableAssets] = useState<AvailableAsset[]>([])
   const [availableAssetsLoading, setAvailableAssetsLoading] = useState(false)
@@ -271,7 +272,6 @@ export function DossierWriterDetailPageClient() {
   const handleCategoryChange = async (assetId: string, categoryId: string | null) => {
     try {
       await updateAssetCategory(assetId, categoryId)
-      // 更新本地状态
       setSelectedChapter(prev => {
         if (!prev) return prev
         return {
@@ -281,6 +281,8 @@ export function DossierWriterDetailPageClient() {
           ),
         }
       })
+      loadAvailableAssets(selectedChapterId!)
+      setAssetRefreshKey(prev => prev + 1)
       message.success('分类已更新')
     } catch (err: any) {
       message.error(err.message || '更新分类失败')
@@ -643,6 +645,7 @@ export function DossierWriterDetailPageClient() {
                         chapterId={selectedChapter.id}
                         chapterCode={selectedChapter.chapter_code || undefined}
                         assets={selectedChapter.assets || []}
+                        refreshKey={assetRefreshKey}
                         onAssetsChange={handleAssetsChange}
                         onFillComplete={handleFillComplete}
                       />

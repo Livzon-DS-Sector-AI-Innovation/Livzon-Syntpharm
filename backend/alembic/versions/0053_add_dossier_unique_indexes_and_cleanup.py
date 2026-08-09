@@ -1,7 +1,7 @@
 """add dossier unique indexes and cleanup
 
-Revision ID: 0052_add_dossier_unique_indexes_and_cleanup
-Revises: 0051_add_scheduled_task_tables
+Revision ID: 0053_add_dossier_unique_indexes_and_cleanup
+Revises: 0052_add_unique_constraints_dossier_writer
 Create Date: 2026-08-05 10:00:00.000000
 
 """
@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = '0052_add_dossier_unique_indexes_and_cleanup'
-down_revision = '0051_add_scheduled_task_tables'
+revision = '0053_add_dossier_unique_indexes_and_cleanup'
+down_revision = '0052_add_unique_constraints_dossier_writer'
 branch_labels = None
 depends_on = None
 

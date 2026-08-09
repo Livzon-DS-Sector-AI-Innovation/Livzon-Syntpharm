@@ -14,7 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 # Uses nested delimiter format (FEISHU__PLATFORM__*) to match pydantic-settings config
 os.environ.setdefault("FEISHU__PLATFORM__APP_ID", "dummy")
 os.environ.setdefault("FEISHU__PLATFORM__APP_SECRET", "dummy")
-os.environ.setdefault("FEISHU__PLATFORM__REDIRECT_URI", "http://localhost/callback")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:3000")
 
 from app.main import app

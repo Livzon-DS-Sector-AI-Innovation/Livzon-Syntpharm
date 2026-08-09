@@ -289,3 +289,7 @@ export async function syncMonthlyFromBitableApi(): Promise<any> {
     method: 'POST',
   })
 }
+
+export async function getJobStatus(jobId: string): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/jobs/${jobId}`)
+}

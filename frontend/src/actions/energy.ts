@@ -33,6 +33,7 @@ import {
   checkAlerts as apiCheckAlerts,
   fetchAlertDates as apiFetchAlertDates,
   syncMonthlyFromBitableApi,
+  getJobStatus,
 } from '@/lib/api/server/energy'
 import type { components } from '@/types/generated/schema'
 type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
@@ -204,10 +205,28 @@ export async function importFromFeishuAction(data: FeishuImportRequest) {
   return result
 }
 
+// ── Job polling helper for sync endpoints ──
+
+async function pollJob(jobId: string, maxAttempts = 60): Promise<any> {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const response = await getJobStatus(jobId)
+    const job = response.data ?? response
+    if (job.status === 'done') {
+      return job.result ?? job
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error || '任务执行失败')
+    }
+  }
+  throw new Error('任务超时')
+}
+
 // ── 飞书多维表格交叉表导入 Server Action ──
 
 export async function crossImportFromBitableAction(data: components['schemas']['BitableCrossImportRequest']) {
-  const result = await apiCrossImportFromBitable(data as Record<string, unknown>)
+  const { job_id } = await apiCrossImportFromBitable(data as Record<string, unknown>)
+  const result = await pollJob(job_id)
   revalidatePath('/energy/monthly')
   return result
 }
@@ -215,7 +234,8 @@ export async function crossImportFromBitableAction(data: components['schemas']['
 // ── 数据导入和预警检查 ──
 
 export async function syncBitableDailyDataAction() {
-  const result = await apiSyncBitableDailyData()
+  const { job_id } = await apiSyncBitableDailyData()
+  const result = await pollJob(job_id)
   revalidatePath('/energy/alerts')
   return result
 }
@@ -232,7 +252,8 @@ export async function fetchAlertDatesAction() {
 
 
 export async function syncMonthlyFromBitable(): Promise<any> {
-  const res = await syncMonthlyFromBitableApi()
+  const { job_id } = await syncMonthlyFromBitableApi()
+  const result = await pollJob(job_id)
   revalidatePath('/energy/monthly')
-  return res
+  return result
 }

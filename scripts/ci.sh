@@ -35,7 +35,6 @@ run_openapi() {
 
     export FEISHU__PLATFORM__APP_ID="${FEISHU__PLATFORM__APP_ID:-ci_dummy}"
     export FEISHU__PLATFORM__APP_SECRET="${FEISHU__PLATFORM__APP_SECRET:-ci_dummy}"
-    export FEISHU__PLATFORM__REDIRECT_URI="${FEISHU__PLATFORM__REDIRECT_URI:-http://localhost:3000/callback}"
     export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
 
     uv run python scripts/ci/export_openapi.py

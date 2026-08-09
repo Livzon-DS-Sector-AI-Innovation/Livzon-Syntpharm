@@ -2,7 +2,7 @@ import type {
   AgentSkill,
   AgentSkillPayload,
   AgentSkillUpdatePayload,
-} from '@/actions/agent-skills'
+} from '@/types/agent-skills'
 
 export function getApiBaseUrl(): string {
   return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'

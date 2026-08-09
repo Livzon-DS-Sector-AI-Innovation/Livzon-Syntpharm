@@ -46,3 +46,7 @@ export type SupplierImportResponse = components['schemas']['SupplierImportRespon
 export type SupplierImportResult = components['schemas']['SupplierImportResult']
 export type SupplierListResponse = components['schemas']['SupplierListResponse']
 export type SupplierResponse = components['schemas']['SupplierResponse']
+
+export type ContractGenerateActionResult =
+  | { ok: true; filename: string; contentType: string; base64: string }
+  | { ok: false; message: string }

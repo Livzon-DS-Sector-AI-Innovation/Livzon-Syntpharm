@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -19,6 +20,10 @@ def _get_env_file() -> str:
     env_file = str(env_path)
     logging.getLogger(__name__).debug("Loading environment variables from: %s", env_file)
     return env_file
+
+
+_ENV_FILE = _get_env_file()
+load_dotenv(_ENV_FILE, override=False)
 
 
 # ============================================================================
@@ -38,7 +43,6 @@ class FeishuPlatformConfig(BaseModel):
 
     app_id: str = ""
     app_secret: str = ""
-    redirect_uri: str = ""
     scopes: str = "contact:contact.base:readonly contact:user.base:readonly"
     ws_enabled: bool = True
     bot_name: str = ""
@@ -49,6 +53,11 @@ class FeishuPlatformConfig(BaseModel):
     equipment_dept_id: str = ""
     equipment_chat_id: str = "oc_ba1a54a70a0d611315f29581621c50b5"
     safety_chat_id: str = ""
+
+    @property
+    def redirect_uri(self) -> str:
+        frontend_url = os.environ.get("FRONTEND_URL", "")
+        return f"{frontend_url.rstrip('/')}/api/v1/identity/auth/callback"
 
 
 class FeishuHRBitableConfig(BaseModel):
@@ -146,7 +155,7 @@ class FeishuSettings(BaseModel):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=_get_env_file(),
+        env_file=_ENV_FILE,
         env_file_encoding="utf-8",
         case_sensitive=False,
         env_nested_delimiter="__",  # Enables nested model env var mapping
@@ -284,8 +293,6 @@ class Settings(BaseSettings):
             missing.append("FEISHU__PLATFORM__APP_ID")
         if not self.feishu.platform.app_secret:
             missing.append("FEISHU__PLATFORM__APP_SECRET")
-        if not self.feishu.platform.redirect_uri:
-            missing.append("FEISHU__PLATFORM__REDIRECT_URI")
         if not self.FRONTEND_URL:
             missing.append("FRONTEND_URL")
         if missing:

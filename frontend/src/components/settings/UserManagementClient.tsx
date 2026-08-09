@@ -30,7 +30,7 @@ import type {
   LocalUserCreate,
   UserManagementItem,
   UserManagementUpdate,
-} from '@/actions/users'
+} from '@/types/users'
 
 const { Text } = Typography
 

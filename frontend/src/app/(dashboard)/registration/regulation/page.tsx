@@ -1,5 +1,5 @@
-import { RegulationPageClient } from '@/components/registration'
+import RegulationDashboardClient from '@/components/registration/RegulationDashboardClient'
 
-export default function RegulatoryTrackerPage() {
-  return <RegulationPageClient />
+export default function RegulationPage() {
+  return <RegulationDashboardClient />
 }

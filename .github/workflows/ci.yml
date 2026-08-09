@@ -29,6 +29,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pr-rebase:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check PR is rebased onto latest main
+        run: |
+          git fetch origin main
+          MAIN_SHA=$(git rev-parse origin/main)
+          MERGE_BASE=$(git merge-base HEAD origin/main)
+          if [ "$MERGE_BASE" != "$MAIN_SHA" ]; then
+            echo "::error::PR branch is not rebased onto the latest main."
+            echo "Merge-base is $MERGE_BASE, but main tip is $MAIN_SHA."
+            echo "Please rebase your branch onto origin/main and force-push."
+            exit 1
+          fi
+          echo "PR is rebased onto the latest main ($MAIN_SHA)."
+
   backend-lint:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: backend } }
@@ -45,7 +65,6 @@ jobs:
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -59,7 +78,6 @@ jobs:
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -126,7 +144,6 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
@@ -156,7 +173,6 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
-      FEISHU__PLATFORM__REDIRECT_URI: http://localhost:3000/callback
       FRONTEND_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5

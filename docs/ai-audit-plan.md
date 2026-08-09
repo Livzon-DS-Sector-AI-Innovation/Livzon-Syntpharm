@@ -754,8 +754,7 @@ Full audit
 2. Are there page.tsx files that call backend APIs (via `actions/`) without `export const dynamic = 'force-dynamic'`?
 3a. Are there barrel `index.ts` files that export Zustand/Context components but are missing `'use client'`?
 3b. Are there other barrel `index.ts` files missing `'use client'` (violates best practice, not a build error)?
-4. Are there cross-module component imports that bypass the target module's `index.ts` barrel?
-   (Importing `@/components/moduleB/SomeComponent` instead of `@/components/moduleB`)
+4. Are there imports from a different module's component directory that bypass the target module's `index.ts` barrel? (Same-module sub-path imports are not violations — the rule only applies across module boundaries.)
 5. Do component file names follow PascalCase? Do non-component file names follow camelCase?
 6. Do Server Action function names start with a verb (`create`, `update`, `delete`, `submit`, etc.)?
 7. Do API request function names start with `fetch`?
@@ -804,6 +803,7 @@ Full audit
 - 所有 POST/PUT/DELETE 操作写在 `actions/` 目录
 - 禁止在 Client 组件里直接 fetch 写接口
 - 例外：流式响应（SSE/ReadableStream）或上传进度追踪，允许在 `lib/api/client/` 中直接 fetch
+- **禁止 `'use server'` 文件使用 `export type` 或 `export interface`**（Turbopack Server Actions loader 会导致运行时 `ReferenceError`）。类型定义必须放在 `types/` 中
 
 **类型系统 / API 类型来源:**
 - 所有 API 相关的类型（请求参数、响应数据）必须从 `@/types/generated/schema` 导入
@@ -838,6 +838,7 @@ Full audit
 5. Is Zod being used for simple form validation (where Ant Design Form `rules` would be appropriate)?
 6. Are generated types (`@/types/generated/schema.ts`) committed and up to date with the backend?
 7. Is the `types/generated/` directory free of manual edits?
+8. Do any `'use server'` files in `actions/` contain `export type` or `export interface` statements?
 
 ### Output format
 
@@ -1072,6 +1073,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | `asyncio.create_task()` allowed in long-running background worker processes for heartbeats, event dispatch, and infrastructure tasks. | 异步任务 — 禁止 asyncio.create_task() | 7 |
 | Soft delete default; physical delete allowed "除非需求明确要求" (when requirements explicitly require). | API 规范 — 强制软删除 | 4 |
 | SSE/ReadableStream streaming responses and upload progress tracking allowed to use direct fetch in `lib/api/client/`. | 写操作必须用 Server Actions | 10 |
+| `'use server'` files may re-export types from `types/` via `export type { ... } from '@/types/...'` (not defining types directly). | `'use server'` 文件禁止 export type/interface | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
 
@@ -1097,7 +1099,7 @@ After all 14 categories:
 
 ### PR audit (run per pull request)
 
-1. Get changed files: `git diff <base>...<head> --name-only`
+1. Get changed files: `git diff origin/main...origin/<pr-branch> --name-only`
 2. Map changed files to affected categories (one file may map to multiple)
 3. For each affected category, feed AI:
    - The PR diff (files in that category's scope)
@@ -1105,7 +1107,7 @@ After all 14 categories:
    - The applicable AGENTS.md rules text (including exception clauses)
    - The [Explicit exceptions](#explicit-exceptions-from-agentsmd) table
    - The baseline findings for that category from `docs/ai-audit-findings.md`
-4. Ask: "Report only violations introduced or worsened by this diff. Do not report candidates that match a listed AGENTS.md exception."
+4. Ask: "Report only violations where the violating line appears in a changed file. Do not skip a finding because the same pattern exists elsewhere in unchanged files — existing violations in other files are not exceptions. Only the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table provides valid exceptions."
 5. Append findings to `docs/ai-audit-findings.md` under a new PR section
 
 ### Second review (important PRs only)
