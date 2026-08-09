@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime
 from uuid import UUID
 
@@ -39,6 +40,8 @@ from app.modules.energy.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+
+logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["energy"])
 device_router = APIRouter()
@@ -570,6 +573,7 @@ async def sync_from_bitable(current_user: RequiredUser) -> JSONResponse:
                 result = await sync_service.sync_all(db)
                 sync_job_store.complete(job_id, result)
             except Exception as e:
+                logger.exception("sync_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
@@ -589,6 +593,7 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> JSONRespons
                 result = await sync_service.sync_workshops(db)
                 sync_job_store.complete(job_id, result)
             except Exception as e:
+                logger.exception("sync_workshops_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
@@ -608,6 +613,7 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> JSONResponse:
                 result = await sync_service.sync_monthly_records(db)
                 sync_job_store.complete(job_id, result)
             except Exception as e:
+                logger.exception("sync_monthly_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
@@ -633,6 +639,7 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
                     return
                 sync_job_store.complete(job_id, result)
             except Exception as e:
+                logger.exception("cross_import_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
@@ -670,6 +677,7 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> JSONResponse:
                 result["auto_check_alerts"] = total_alerts
                 sync_job_store.complete(job_id, result)
             except Exception as e:
+                logger.exception("daily_import_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
