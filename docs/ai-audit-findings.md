@@ -687,188 +687,141 @@ Categories affected: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13
 | 13. Docker | 0 | 0 | 0 | 0 | Clean |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
-### PR #24: Ruanjiaheng (head: ruanjiaheng, base: main, date: 2026-08-09)
 
-Files changed: 70 across 14 categories (core: energy sync offload to spawn_task + JobStore, Feishu redirect_uri dynamic from FRONTEND_URL, dossier_writer migrations 0052-0053 + model index declarations, frontend type reorg — move `export type` out of `'use server'` files to `types/`, new RegulationDashboard page, clean up hardcoded URLs)
 
-#### Category 1: Repository layout
 
-| Files inspected | 70 (all changed files) |
-| Rules evaluated | 9 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
+### PR #23: liangxuechao-ProductManagement-v2 — Product management enhancements (head: liangxuechao-ProductManagement-v2, base: origin/main, date: 2026-08-07)
 
-`RegistrationBreadcrumb.tsx.orig` (72 lines deleted) is a merge artifact cleanup — not a new violation. `docker-compose.dev.yml` volume mount changed from `./backend/storage` to `./storage` — root-level storage directory is acceptable.
+Files changed: 22 (12 backend, 9 frontend, 1 ci-script)
 
-#### Category 2: Secrets and hardcoded values
-
-| Files inspected | 12 (.env.example, backend/.env.ci.example, config.py, identity/api.py, hr/api.py, docker-compose files, scripts/ci.sh) |
-| Rules evaluated | 9 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-All changes remove hardcoded values:
-- `.env.example`: Removed `FEISHU__PLATFORM__REDIRECT_URI` and `AGENT_INTERNAL_API_BASE_URL=http://127.0.0.1:8000/api/v1`
-- `config.py`: `redirect_uri` is now a dynamic property derived from `FRONTEND_URL` env var — eliminates hardcoded redirect URI
-- `identity/api.py`: Redirect URLs changed from absolute (`f"{settings.FRONTEND_URL}/login"`) to relative (`"/login"`) — browser resolves against current origin
-- `docker-compose.ci.yml`: Removed `FEISHU__PLATFORM__REDIRECT_URI: http://127.0.0.1:13000/auth/callback`
-- `scripts/ci.sh`: Removed `FEISHU__PLATFORM__REDIRECT_URI=http://localhost:3000/callback`
+Categories affected: 3, 4, 5, 6, 7, 9, 10, 11
 
 #### Category 3: Backend module boundaries
 
-| Files inspected | 9 (energy/api.py, energy/job_store.py, hr/api.py, identity/api.py, reg dossier_writer files, config.py) |
+| Files inspected | 8 (all prod/product Python files) |
 | Rules evaluated | 8 |
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-`energy/job_store.py` (new file) imports only stdlib (`time`, `uuid`). `energy/api.py` imports from `app.core.*` (allowed global layer) and `app.modules.energy.*` (same module). No cross-module imports bypassing `public_api.py`. No new module directories created.
+##### Confirmed
+_None._ All imports are within `production/product` module or from approved global layers (`core/`, `platform/`, `shared/`). No cross-module imports bypassing `public_api.py`. No new module directories created.
 
 #### Category 4: API and authentication
 
-| Files inspected | 3 (energy/api.py, hr/api.py, identity/api.py) |
+| Files inspected | 3 (output_api.py, sync_config_api.py, output_schemas.py) |
 | Rules evaluated | 7 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-Energy sync endpoints converted from synchronous HTTP handlers to `spawn_task()` + job polling pattern. All endpoints use `current_user: RequiredUser`. New `GET /jobs/{job_id}` endpoint also uses `RequiredUser`. Identity auth endpoints (`/login`, `/callback`, `/logout`) are correctly public (no auth dependency). `hr/api.py` URL change to relative path is correct.
-
-#### Category 5: Models and migrations
-
-| Files inspected | 3 (migrations 0052, 0053, field_models.py) |
-| Rules evaluated | 11 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-- Migration `0052_add_unique_constraints_dossier_writer.py`: NNNN naming ✓, revision ID NNNN pattern ✓, down_revision `0051_add_scheduled_task_tables` ✓, dossier_writer schema only ✓. Creates partial unique indexes with duplicate cleanup.
-- Migration `0053_add_dossier_unique_indexes_and_cleanup.py`: NNNN naming ✓, revision ID NNNN pattern ✓, down_revision `0052_add_unique_constraints_dossier_writer` ✓, dossier_writer schema only ✓. Creates partial unique indexes with duplicate cleanup. DELETE operations are data cleanup to enable unique constraints — standard migration practice, not arbitrary DROP.
-- `field_models.py`: Added `Index(...)` declarations in `__table_args__` matching the unique indexes created in migration 0052. Model-migration binding observed. ✓
-
-#### Category 6: Configuration and logging
-
-| Files inspected | 5 (config.py, energy/api.py, energy/job_store.py, .env.example, backend/.env.ci.example) |
-| Rules evaluated | 9 |
 | Confirmed findings | 1 |
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [x] `backend/app/modules/energy/api.py:572,591,610,635,672` — 日志规范/异常处理+异步任务 — All five `_run()` background task functions have `except Exception as e:` blocks that call `sync_job_store.fail(job_id, str(e))` without `logger.exception()`. AGENTS.md requires background tasks to use `try/except` + `logger.exception()` to auto-attach stack traces. Additionally, the module has no `logger = logging.getLogger(__name__)` defined. — severity: medium — **RESOLVED** (added `logging` import, `logger = logging.getLogger(__name__)`, and `logger.exception()` to all five `_run()` functions)
+- [ ] `output_api.py`, `sync_config_api.py` — API 规范/必须: 入参和出参使用本模块 schemas.py — New endpoints `preview_import`, `undo_import`, `preview_pull`, `preview_push`, `undo_last_sync` return plain dicts via `ApiResponse(data={...})` instead of Pydantic schema objects from `output_schemas.py` or `sync_config_schemas.py`. AGENTS.md 必须 section explicitly requires using the module's `schemas.py` for both input and output. — severity: medium
+
+##### Accepted exceptions
+_None._
+
+#### Category 5: Models and migrations
+
+| Files inspected | 4 (2 migrations, 2 models, env.py) |
+| Rules evaluated | 11 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+_None._ Migrations `0053_add_import_batch_id` and `0054_add_sync_operation_log` follow NNNN naming, single-module principle (both production schema only), and proper model-migration binding. `SyncOperationLog` inherits `BaseModel` with correct `__tablename__` and `__table_args__`. No CASCADE DELETE, no create_all(), no DROP operations.
+
+#### Category 6: Configuration and logging
+
+| Files inspected | 8 (all changed backend files) |
+| Rules evaluated | 9 |
+| Confirmed findings | 1 |
+| Uncertain findings | 1 |
+
+##### Confirmed
+- [ ] `backend/app/modules/production/product/feishu/sync.py` — 日志规范/上下文 — Multiple `logger.info()` calls (lines in `preview_push`, `preview_pull`, `push_to_feishu`, `pull_from_feishu`) use positional/f-string formatting instead of structured `extra={}` dict. AGENTS.md requires `logger.info("message", extra={"key": value})` for structured context. Examples: `logger.info("获取飞书所有记录...")`, `logger.info(f"飞书现有 {len(feishu_record_map)} 条记录")`, `logger.info(f"查询到 {len(rows)} 条待推送记录")`, `logger.info(f"记录 {record_id} 提取数据: {data}")`. Also, `logger.info(f"记录 {record_id} 提取数据: {data}")` logs `data` dict directly which may contain sensitive user data. — severity: medium
+
+##### Uncertain
+- [ ] `backend/app/modules/production/product/output_service.py` — 日志规范/模块日志 — New `get_annual_review` method has no logging calls. Service-level operations with data aggregation typically benefit from logging for observability. Whether every service method needs logging is debatable. — severity: low
 
 ##### Accepted exceptions
 _None._
 
 #### Category 7: External services and background tasks
 
-| Files inspected | 2 (energy/api.py, energy/job_store.py) |
+| Files inspected | 3 (sync.py, output_api.py, output_service.py) |
+| Rules evaluated | 9 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+_None._ No `asyncio.create_task()` in business logic, no direct LLM/APScheduler/paddleocr imports, no bare `except: pass`, no HTTP handlers exceeding 5s in new code. `feishu/sync.py` correctly uses `logger.exception()` for exception handling (improved from previous `logger.error()`). `output_api.py` handles individual record import failures by collecting errors rather than silently swallowing.
+
+#### Category 9: Frontend component boundaries
+
+| Files inspected | 6 (2 page.tsx, 2 components, 2 actions) |
 | Rules evaluated | 9 |
 | Confirmed findings | 1 |
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [x] `backend/app/modules/energy/api.py:572,591,610,635,672` — 异步任务/未处理异常 — Same finding as Category 6: background task `_run()` functions don't log exceptions. The `try/except` pattern is correct (no unhandled exceptions will crash the worker), but tracebacks are discarded. — severity: medium — **RESOLVED** (added `logger.exception()` to all five `_run()` functions)
-
-##### Accepted exceptions
-_None._
-
-Positive changes: Energy sync endpoints now use `spawn_task()` (correct infrastructure API) instead of performing >5s operations in HTTP handlers. No `asyncio.create_task()`, no APScheduler, no bare `except: pass`. `sync_job_store` is a simple in-memory dict — appropriate for its scope.
-
-#### Category 8: Backend tests
-
-| Files inspected | 0 (no test file changes) |
-| Rules evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-No test files changed. Category not applicable.
-
-#### Category 9: Frontend component boundaries
-
-| Files inspected | 17 (pages, components, barrel files) |
-| Rules evaluated | 9 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-##### Confirmed
-_None._
-
-`regulation/page.tsx:1` imports `RegulationDashboardClient` via direct path `@/components/registration/RegulationDashboardClient` instead of the barrel. This is a same-module import (both under `registration`), not a cross-module violation per PR #18 precedent (equipment, safety, settings same-module sub-path imports were accepted as false positives). Barrel usage within the same module is a net improvement but not a requirement.
-
-##### Positive findings
-- `RegulationDashboardClient.tsx` (new 350-line component): correctly uses `'use client'` ✓, has semantic `<h1>法规看板</h1>` ✓, file name PascalCase ✓, no `any` types in function signatures ✓
-- `registration/index.ts` barrel: has `'use client'` at line 1 ✓
-- All `page.tsx` changes (login-logs, inspection-table, instrument, static-data) are type-import-only changes (moving `type` imports from `actions/` to `types/`) — no structural violations
+- [ ] `frontend/src/lib/api/server/product-output.ts` — 命名规范: API 请求函数以 fetch 开头 — New functions `getAnnualReview`, `exportAnnualReview`, `previewImport`, `undoImport` do not use the required `fetch` prefix. AGENTS.md specifies: "API 请求函数：以 fetch 开头（fetchBatches、fetchBatchById）". Should be `fetchAnnualReview`, `fetchExportAnnualReview`, `fetchPreviewImport`, `fetchUndoImport`. Additionally, all other naming rules pass: file names use PascalCase/camelCase, both `page.tsx` files correctly use `'use client'`, no cross-module barrel bypass, no modifications to protected files, and both pages have `<h1>` headings. — severity: low
 
 ##### Accepted exceptions
 _None._
 
 #### Category 10: Frontend API and generated types
 
-| Files inspected | 24 (actions, lib/api, types, components with type imports) |
+| Files inspected | 7 (actions, lib/api/server, types, components) |
 | Rules evaluated | 8 |
-| Confirmed findings | 0 |
+| Confirmed findings | 1 |
 | Uncertain findings | 0 |
 
 ##### Confirmed
-_None._
-
-##### Accepted exceptions
-- [x] `frontend/src/types/settings.ts:25-27` — 类型系统/API类型来源 — `FeishuConfig = any`, `FeishuConfigUpsert = any`, `FeishuDiagnosticResult = any` are API types typed as `any`. Generated schema has no Feishu config component schemas. Same situation as PR #18 `administration.ts` — **ACCEPTED** (deferred — blocked on backend OpenAPI schema export). Types were correctly moved out of `'use server'` file. — severity: low
-- [x] `frontend/src/types/agent-skills.ts` — 类型系统/API类型来源 — `AgentSkill`, `AgentSkillPayload`, `AgentSkillUpdatePayload` are handwritten interfaces. Generated schema has no AgentSkill component schemas. **ACCEPTED** (deferred — blocked on backend OpenAPI schema export). Types were correctly moved out of `'use server'` file. — severity: low
-
-##### Positive changes
-- All `'use server'` action files had `export type` / `export interface` statements removed: `agent-skills.ts`, `identity.ts`, `inspection-table.ts`, `instrument.ts`, `module-settings.ts`, `settings.ts`, `static-data.ts`, `users.ts`. Types moved to corresponding `types/` files. This fixes the Turbopack `ReferenceError` issue. ✓
-- `lib/api/server/agent-skills.ts` and `lib/api/server/procurement.ts`: type imports updated from `@/actions/*` to `@/types/*` ✓
+- [ ] `frontend/src/types/product-output.ts` — 类型系统/API 类型来源 — Annual review types (`MonthlyTrend`, `WorkshopRanking`, `TopProduct`, `AnnualOverview`, `AnnualReviewData`) are handwritten TypeScript interfaces instead of imported from `@/types/generated/schema`. AGENTS.md requires all API types come from the generated schema. The backend defines corresponding Pydantic schemas (`output_schemas.py`), so these types should be available after regenerating the OpenAPI spec. — severity: high
 
 ##### Accepted exceptions
 _None._
 
 #### Category 11: Proxy and routing
 
-| Files inspected | 5 (lib/api/server, lib/api/client, actions with routing-relevant changes) |
+| Files inspected | 4 (actions/product-output.ts, actions/product-sync.ts, lib/api/server/base.ts, lib/api/server/product-output.ts) |
 | Rules evaluated | 6 |
-| Confirmed findings | 0 |
+| Confirmed findings | 1 |
 | Uncertain findings | 0 |
 
-No changes to `proxy.ts`. Server-side API calls use `getApiBaseUrl()` (reads `API_BASE_URL`). Client-side API calls use relative paths. Actions call through `lib/api/server/` functions. No violations.
+##### Confirmed
+- [ ] `frontend/src/actions/product-sync.ts:5-24` — 写操作必须用 Server Actions + API 调用层级 — Three server actions (`previewPush`, `previewPull`, `undoLastSync`) call `fetch()` directly with `getApiBaseUrl()` instead of going through `lib/api/server/` functions. AGENTS.md requires: "写操作在 actions/ 中调用 lib/api/server/ 的函数，不要直接 fetch". Additionally, these direct `fetch` calls do not pass authentication headers (`getAuthHeaders()`), causing all three endpoints (`RequiredUser`-protected) to return 401. — severity: blocking
+
+##### Accepted exceptions
+_None._
 
 #### Category 12: Cross-project OpenAPI
 
-CI-only. `scripts/ci.sh openapi` runs in CI. `frontend/src/types/generated/schema.ts` updated in this PR with new `GET /api/v1/energy/jobs/{job_id}` endpoint and simplified endpoint docstrings.
+| Checks verified | 1 (CI runs `scripts/ci.sh openapi`) |
+| Checks failing | 0 |
 
-#### Category 13: Docker and deployment
-
-| Files inspected | 4 (Dockerfiles, compose files) |
-| Rules evaluated | 5 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-- `docker-compose.dev.yml`: Storage volume changed from `./backend/storage:/app/storage` to `./storage:/app/storage` — moves shared storage to repo root. Acceptable.
-- `docker-compose.ci.yml`: Removed `FEISHU__PLATFORM__REDIRECT_URI` line — consistent with config.py change.
-- `backend/Dockerfile`: 4-line change — minor.
+CI modified to auto-commit out-of-date OpenAPI spec and generated types. No manual violations.
 
 #### Category 14: E2E
 
-CI-only. No E2E test changes.
+| Checks verified | 1 (CI runs `scripts/ci.sh e2e`) |
+| Checks failing | 0 |
+
+No E2E test changes in this PR.
 
 #### Categories not affected
 
-Category 8 (Backend tests) — no test file changes.
+Categories 1 (Repository layout), 2 (Secrets), 8 (Backend tests), 13 (Docker) — no relevant file changes.
 
 #### Category summary
 
 | Category | Blocking | High | Medium | Low | Note |
 |---|---|---|---|---|---|
-| 1. Repository layout | 0 | 0 | 0 | 0 | Clean |
-| 2. Secrets | 0 | 0 | 0 | 0 | Clean (all changes remove hardcoded values) |
 | 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
-| 4. API & auth | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 1 | 0 | Plain dict responses instead of schemas |
 | 5. Models & migrations | 0 | 0 | 0 | 0 | Clean |
-| 6. Config & logging | 0 | 0 | 0 | 0 | RESOLVED (logger.exception() added) |
-| 7. External services | 0 | 0 | 0 | 0 | RESOLVED (same fix) |
-| 8. Backend tests | 0 | 0 | 0 | 0 | N/A (no test changes) |
-| 9. Frontend boundaries | 0 | 0 | 0 | 0 | Clean (same-module barrel bypass not a violation) |
-| 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean (FeishuConfig/AgentSkill `any` accepted — blocked on backend) |
-| 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean |
-| 12. OpenAPI | 0 | 0 | 0 | 0 | Clean (CI verifies) |
-| 13. Docker | 0 | 0 | 0 | 0 | Clean |
-| 14. E2E | 0 | 0 | 0 | 0 | Clean (no E2E changes) |
-| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
+| 6. Config & logging | 0 | 0 | 1 | 1 | logger.info() missing structured extra= |
+| 7. External services | 0 | 0 | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 0 | 0 | 1 | Naming convention (fetch prefix) |
+| 10. Frontend API & types | 0 | 1 | 0 | 0 | Handwritten types instead of generated schema |
+| 11. Proxy & routing | 1 | 0 | 0 | 0 | Direct fetch() without auth headers in product-sync.ts |
+| **Total** | **1** | **1** | **2** | **2** | |
