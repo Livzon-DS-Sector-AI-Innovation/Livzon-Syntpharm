@@ -11,7 +11,7 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
-from app.core.response import error_response, paginated_response, success_response
+from app.core.response import paginated_response, success_response
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
