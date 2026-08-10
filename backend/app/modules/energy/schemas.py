@@ -333,13 +333,13 @@ class UnitConsumptionTargetCreate(BaseModel):
 
     workshop_id: str = Field(..., description="车间ID (UUID)")
     target_month: str = Field(..., pattern=r"^\d{4}-\d{2}$", description="目标月份，格式 YYYY-MM")
-    target_unit_consumption: float = Field(..., gt=0, description="目标单耗（kWh/件）")
+    target_unit_consumption: float = Field(..., gt=0, le=100, description="目标单耗（kWh/件）")
 
 
 class UnitConsumptionTargetUpdate(BaseModel):
     """更新单耗目标请求"""
 
-    target_unit_consumption: float = Field(..., gt=0, description="目标单耗（kWh/件）")
+    target_unit_consumption: float = Field(..., gt=0, le=100, description="目标单耗（kWh/件）")
 
 
 class UnitConsumptionTargetResponse(BaseModel):

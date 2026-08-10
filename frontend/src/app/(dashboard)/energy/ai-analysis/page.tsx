@@ -23,6 +23,7 @@ export default function AIAnalysisPage() {
   const [production, setProduction] = useState<number | null>(null)
   const [workshops, setWorkshops] = useState<any[]>([])
   const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
+  const [targetLoading, setTargetLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
   // 获取车间列表
@@ -39,6 +40,7 @@ export default function AIAnalysisPage() {
   // 当车间或月份变化时，查询目标
   useEffect(() => {
     if (workshopId && analysisMonth) {
+      setTargetLoading(true)
       getTarget(workshopId, analysisMonth)
         .then(target => {
           setCurrentTarget(target)
@@ -47,12 +49,21 @@ export default function AIAnalysisPage() {
           console.error('查询目标失败:', err)
           setCurrentTarget(null)
         })
+        .finally(() => {
+          setTargetLoading(false)
+        })
     } else {
       setCurrentTarget(null)
     }
   }, [workshopId, analysisMonth])
 
   const handleAnalyze = async () => {
+    // 验证月份格式
+    if (!analysisMonth || !/^\d{4}-\d{2}$/.test(analysisMonth)) {
+      message.error('月份格式不正确，应为 YYYY-MM 格式')
+      return
+    }
+
     if (!workshopId || !analysisMonth || !production || production <= 0) {
       message.warning('请选择车间、月份并输入有效的产量')
       return
@@ -142,7 +153,9 @@ export default function AIAnalysisPage() {
         {workshopId && analysisMonth && (
           <div style={{ marginTop: 16, padding: 12, background: '#fafafa', borderRadius: 4 }}>
             <Text strong>单耗目标：</Text>
-            {currentTarget ? (
+            {targetLoading ? (
+              <Spin size="small" />
+            ) : currentTarget ? (
               <>
                 <Text>{currentTarget.target_unit_consumption.toFixed(4)} kWh/件</Text>
                 <Button 

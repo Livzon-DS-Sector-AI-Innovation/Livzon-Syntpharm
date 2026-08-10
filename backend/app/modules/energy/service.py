@@ -742,7 +742,7 @@ async def get_target(
 
 async def update_target(
     db: AsyncSession,
-    target_id: int,
+    target_id: UUID,
     new_value: float
 ) -> EnergyUnitConsumptionTarget:
     """更新单耗目标"""

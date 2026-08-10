@@ -51,7 +51,7 @@ export default function TargetModal({
       if (existingTarget) {
         // 更新已有目标
         result = await updateTarget(existingTarget.id, {
-          target_unit_consumption: targetValue,
+          target_unit_consumption: Number(targetValue),
         })
         message.success('目标修改成功')
       } else {
@@ -59,7 +59,7 @@ export default function TargetModal({
         result = await createTarget({
           workshop_id: workshopId,
           target_month: targetMonth,
-          target_unit_consumption: targetValue,
+          target_unit_consumption: Number(targetValue),
         })
         message.success('目标设定成功')
       }
@@ -118,6 +118,7 @@ export default function TargetModal({
         </div>
 
         {/* 参考数据区域 - 可以从后端获取或硬编码 */}
+{/*
         <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 4 }}>
           <Text strong>💡 参考数据：</Text>
           <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
@@ -126,6 +127,7 @@ export default function TargetModal({
             <li>行业标杆：2.20 kWh/件</li>
           </ul>
         </div>
+*/}
       </Space>
     </Modal>
   )

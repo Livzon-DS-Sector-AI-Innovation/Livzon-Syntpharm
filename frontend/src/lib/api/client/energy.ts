@@ -131,7 +131,8 @@ export async function createTarget(data: {
 }
 
 export async function updateTarget(
-  targetId: number,
+
+  targetId: string,
   data: { target_unit_consumption: number }
 ): Promise<UnitConsumptionTarget> {
   const res = await fetch(`/api/v1/energy/targets/${targetId}`, {
@@ -147,7 +148,7 @@ export async function updateTarget(
 }
 
 export async function getTarget(
-  workshopId: number,
+  workshopId: string,
   targetMonth: string
 ): Promise<UnitConsumptionTarget | null> {
   const res = await fetch(`/api/v1/energy/targets/${workshopId}/${targetMonth}`)
