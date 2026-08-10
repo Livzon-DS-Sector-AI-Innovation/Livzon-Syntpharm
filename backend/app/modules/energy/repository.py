@@ -35,7 +35,7 @@ async def get_device_config_by_id(db: AsyncSession, config_id: UUID) -> EnergyDe
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.id == config_id,
-            EnergyDeviceConfig.is_deleted == False,  # noqa: E712
+            EnergyDeviceConfig.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -85,7 +85,7 @@ async def update_device_config(db: AsyncSession, config_id: UUID, data: dict[str
     result = await db.execute(
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.id == config_id,
-            EnergyDeviceConfig.is_deleted == False,  # noqa: E712
+            EnergyDeviceConfig.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -109,7 +109,7 @@ async def exists_device_config(
     query = select(func.count()).where(
         EnergyDeviceConfig.platform_code == platform_code,
         EnergyDeviceConfig.platform_device_code == platform_device_code,
-        EnergyDeviceConfig.is_deleted == False,  # noqa: E712
+        EnergyDeviceConfig.is_deleted == False,  # noqa: E712  # noqa: E712
     )
     if exclude_id:
         query = query.where(EnergyDeviceConfig.id != exclude_id)
@@ -122,7 +122,7 @@ async def get_enabled_devices_by_platform(db: AsyncSession, platform_code: str) 
         select(EnergyDeviceConfig).where(
             EnergyDeviceConfig.platform_code == platform_code,
             EnergyDeviceConfig.is_enabled == True,  # noqa: E712
-            EnergyDeviceConfig.is_deleted == False,  # noqa: E712
+            EnergyDeviceConfig.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return list(result.scalars().all())
@@ -134,7 +134,7 @@ async def get_latest_energy_data(db: AsyncSession, device_config_id: UUID) -> En
         select(EnergyData)
         .where(
             EnergyData.device_config_id == device_config_id,
-            EnergyData.is_deleted == False,  # noqa: E712
+            EnergyData.is_deleted == False,  # noqa: E712  # noqa: E712
         )
         .order_by(EnergyData.timestamp.desc())
         .limit(1)
@@ -148,7 +148,7 @@ async def get_distinct_enabled_platforms(db: AsyncSession) -> list[str]:
         select(EnergyDeviceConfig.platform_code)
         .where(
             EnergyDeviceConfig.is_enabled == True,  # noqa: E712
-            EnergyDeviceConfig.is_deleted == False,  # noqa: E712
+            EnergyDeviceConfig.is_deleted == False,  # noqa: E712  # noqa: E712
         )
         .distinct()
     )
@@ -250,8 +250,8 @@ async def get_energy_statistics(
             .where(
                 EnergyMonthlyRecord.record_date >= start_date,
                 EnergyMonthlyRecord.record_date <= end_date,
-                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
-                EnergyWorkshop.is_deleted == False,  # noqa: E712
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+                EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
             .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
         )
@@ -271,8 +271,8 @@ async def get_energy_statistics(
             .where(
                 EnergyMonthlyRecord.record_date >= start_date,
                 EnergyMonthlyRecord.record_date <= end_date,
-                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
-                EnergyWorkshop.is_deleted == False,  # noqa: E712
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+                EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
             .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
         )
@@ -318,7 +318,7 @@ async def get_overview_summary(
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
     )
@@ -353,7 +353,7 @@ async def get_overview_trend(
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.record_date, EnergyMonthlyRecord.energy_type)
         .order_by(EnergyMonthlyRecord.record_date.asc())
@@ -416,7 +416,7 @@ async def get_collect_log_detail(
     log = await db.scalar(
         select(EnergyCollectLog).where(
             EnergyCollectLog.id == log_id,
-            EnergyCollectLog.is_deleted == False,  # noqa: E712
+            EnergyCollectLog.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     if log is None:
@@ -437,7 +437,7 @@ async def get_collect_log_detail(
             EnergyDeviceConfig.platform_code == log.platform_code,
             EnergyData.collected_at >= window_start,
             EnergyData.collected_at <= window_end,
-            EnergyData.is_deleted == False,  # noqa: E712
+            EnergyData.is_deleted == False,  # noqa: E712  # noqa: E712
         )
         .order_by(EnergyData.timestamp.desc())
     )
@@ -457,7 +457,7 @@ async def create_alert_rule(db: AsyncSession, data: dict[str, Any]) -> EnergyAle
     result = await db.execute(
         select(EnergyAlertRule).where(
             EnergyAlertRule.id == obj.id,
-            EnergyAlertRule.is_deleted == False,  # noqa: E712
+            EnergyAlertRule.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one()
@@ -467,7 +467,7 @@ async def get_alert_rule_by_id(db: AsyncSession, rule_id: UUID) -> EnergyAlertRu
     result = await db.execute(
         select(EnergyAlertRule).where(
             EnergyAlertRule.id == rule_id,
-            EnergyAlertRule.is_deleted == False,  # noqa: E712
+            EnergyAlertRule.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -511,7 +511,7 @@ async def update_alert_rule(db: AsyncSession, rule_id: UUID, data: dict[str, Any
     result = await db.execute(
         select(EnergyAlertRule).where(
             EnergyAlertRule.id == rule_id,
-            EnergyAlertRule.is_deleted == False,  # noqa: E712
+            EnergyAlertRule.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -536,7 +536,7 @@ async def create_alert_record(db: AsyncSession, data: dict[str, Any]) -> EnergyA
     result = await db.execute(
         select(EnergyAlertRecord).where(
             EnergyAlertRecord.id == obj.id,
-            EnergyAlertRecord.is_deleted == False,  # noqa: E712
+            EnergyAlertRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one()
@@ -546,7 +546,7 @@ async def get_alert_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyAle
     result = await db.execute(
         select(EnergyAlertRecord).where(
             EnergyAlertRecord.id == record_id,
-            EnergyAlertRecord.is_deleted == False,  # noqa: E712
+            EnergyAlertRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -596,7 +596,7 @@ async def update_alert_record(db: AsyncSession, record_id: UUID, data: dict[str,
     result = await db.execute(
         select(EnergyAlertRecord).where(
             EnergyAlertRecord.id == record_id,
-            EnergyAlertRecord.is_deleted == False,  # noqa: E712
+            EnergyAlertRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -620,7 +620,7 @@ async def get_workshop_by_id(db: AsyncSession, workshop_id: UUID) -> EnergyWorks
     result = await db.execute(
         select(EnergyWorkshop).where(
             EnergyWorkshop.id == workshop_id,
-            EnergyWorkshop.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -632,7 +632,7 @@ async def get_workshop_by_code(db: AsyncSession, code: str) -> EnergyWorkshop | 
     result = await db.execute(
         select(EnergyWorkshop).where(
             EnergyWorkshop.code == code,
-            EnergyWorkshop.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -644,7 +644,7 @@ async def get_workshop_by_name(db: AsyncSession, name: str) -> EnergyWorkshop | 
     result = await db.execute(
         select(EnergyWorkshop).where(
             EnergyWorkshop.name == name,
-            EnergyWorkshop.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -689,7 +689,7 @@ async def update_workshop(db: AsyncSession, workshop_id: UUID, data: dict[str, A
     result = await db.execute(
         select(EnergyWorkshop).where(
             EnergyWorkshop.id == workshop_id,
-            EnergyWorkshop.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -801,7 +801,7 @@ async def get_monthly_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyM
     result = await db.execute(
         select(EnergyMonthlyRecord).where(
             EnergyMonthlyRecord.id == record_id,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -872,7 +872,7 @@ async def get_monthly_energy_total(
         EnergyMonthlyRecord.workshop_id == workshop_id,
         EnergyMonthlyRecord.record_date >= start_date,
         EnergyMonthlyRecord.record_date < end_date,  # 不包含结束日期
-        EnergyMonthlyRecord.is_deleted == False,
+        EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
     )
 
     result = await db.execute(query)
@@ -912,7 +912,7 @@ async def get_unit_consumption_target_by_id(
     result = await db.execute(
         select(EnergyUnitConsumptionTarget).where(
             EnergyUnitConsumptionTarget.id == target_id,
-            EnergyUnitConsumptionTarget.is_deleted == False,
+            EnergyUnitConsumptionTarget.is_deleted == False,  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -928,7 +928,7 @@ async def get_unit_consumption_target_by_workshop_and_month(
         select(EnergyUnitConsumptionTarget).where(
             EnergyUnitConsumptionTarget.workshop_id == workshop_id,
             EnergyUnitConsumptionTarget.target_month == target_month,
-            EnergyUnitConsumptionTarget.is_deleted == False,
+            EnergyUnitConsumptionTarget.is_deleted == False,  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
