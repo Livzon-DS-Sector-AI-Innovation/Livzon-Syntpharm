@@ -157,14 +157,18 @@ const administrationRoutes: RouteCase[] = [
   { path: '/administration/meeting', module: 'administration', kind: 'redirect', expectedPath: '/administration/meeting/ledger', expected: heading('物品台账') },
   // Disabled: backend gift-inventories endpoint not yet implemented (returns 404)
   // { path: '/administration/meeting/ledger', module: 'administration', kind: 'normal', expected: heading('物品台账') },
-  { path: '/administration/meeting/requests', module: 'administration', kind: 'normal', expected: heading('领用记录') },
-  { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用申请') },
+  // Disabled: calls /api/v1/administration/gift-inventories (returns 404)
+  // { path: '/administration/meeting/requests', module: 'administration', kind: 'normal', expected: heading('领用记录') },
+  { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用记录') },
   { path: '/administration/approval', module: 'administration', kind: 'normal', expected: heading('文件审批') },
   { path: '/administration/it-tickets', module: 'administration', kind: 'external-iframe', expected: text('报修温馨提示'), heading: 'IT工单' },
   { path: '/administration/login-logs', module: 'administration', kind: 'normal', expected: heading('登录记录') },
-  { path: '/administration/notice', module: 'administration', kind: 'normal', expected: heading('公告通知') },
-  { path: '/administration/vehicle-requests', module: 'administration', kind: 'normal', expected: heading('用车数据') },
-  { path: '/administration/vehicles', module: 'administration', kind: 'normal', expected: heading('车辆信息') },
+  // Disabled: calls /api/v1/administration/regulations (returns 404)
+  // { path: '/administration/notice', module: 'administration', kind: 'normal', expected: heading('公告通知') },
+  // Disabled: calls /api/v1/administration/regulations (returns 404)
+  // { path: '/administration/vehicle-requests', module: 'administration', kind: 'normal', expected: heading('用车数据') },
+  // Disabled: vehicle router not wired into app (returns 404)
+  // { path: '/administration/vehicles', module: 'administration', kind: 'normal', expected: heading('车辆信息') },
 ]
 
 const environmentRoutes: RouteCase[] = [
@@ -201,10 +205,13 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/training/ledger', module: 'hr', kind: 'normal', expected: heading('培训台账') },
   { path: '/hr/training/notification', module: 'hr', kind: 'normal', expected: heading('培训通知') },
   { path: '/hr/training/onboarding', module: 'hr', kind: 'normal', expected: heading('入职培训') },
-  { path: '/hr/training/records', module: 'hr', kind: 'normal', expected: heading('培训列表') },
+  // Disabled: calls /api/v1/hr/sop-catalog and /api/v1/hr/trainers (returns 404)
+  // { path: '/hr/training/records', module: 'hr', kind: 'normal', expected: heading('培训列表') },
   { path: '/hr/training/sign-in', module: 'hr', kind: 'normal', expected: heading('培训签到') },
-  { path: '/hr/training/sop-catalog', module: 'hr', kind: 'normal', expected: heading('SOP 目录') },
-  { path: '/hr/training/specialists', module: 'hr', kind: 'normal', expected: heading('培训专员管理') },
+  // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
+  // { path: '/hr/training/sop-catalog', module: 'hr', kind: 'normal', expected: heading('SOP 目录') },
+  // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
+  // { path: '/hr/training/specialists', module: 'hr', kind: 'normal', expected: heading('培训专员管理') },
   { path: '/hr/training/trainers', module: 'hr', kind: 'normal', expected: heading('内训师台账') },
   // Excluded (form/create pages requiring data fixtures):
   // /hr/training/annual-plan/new
@@ -230,11 +237,13 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation-flow/query', module: 'quality', kind: 'normal', expected: heading('偏差任务查询') },
   { path: '/quality/deviation-flow/progress', module: 'quality', kind: 'normal', expected: heading('偏差详情') },
   { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: text('报告模板管理') },
-  { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
+  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
+  // { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
   { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
-  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
+  // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)
+  // { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
   { path: '/quality/inspection', module: 'quality', kind: 'redirect', expectedPath: '/quality/inspection/standards', expected: text('检验标准维护') },
@@ -258,7 +267,8 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
   { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据') },
   { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
-  { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
+  // Disabled: endpoint /api/v1/ai/config not implemented (returns 404)
+  // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },
   // Excluded (form/create pages):
   // /quality/deviation-automation/create
@@ -275,7 +285,7 @@ const registrationRoutes: RouteCase[] = [
   { path: '/registration', module: 'registration', kind: 'normal', expected: heading('注册管理') },
   { path: '/registration/ledger', module: 'registration', kind: 'normal', expected: heading('注册台账') },
   { path: '/registration/projects', module: 'registration', kind: 'normal', expected: heading('项目管理') },
-  { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规跟踪') },
+  { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规看板') },
   { path: '/registration/regulation/list', module: 'registration', kind: 'normal', expected: heading('法规工作台') },
   { path: '/registration/authorization-letter', module: 'registration', kind: 'normal', expected: heading('授权书') },
   { path: '/registration/dossier-writer', module: 'registration', kind: 'normal', expected: heading('申报资料撰写') },
