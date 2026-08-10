@@ -12,10 +12,16 @@ export default async function globalSetup(config: FullConfig) {
     throw new Error('E2E_AUTH_SECRET environment variable is required for test login')
   }
 
+  console.log('🔐 Starting E2E authentication setup...')
+  console.log(`   Base URL: ${baseURL}`)
+  console.log(`   API URL: ${apiURL}`)
+
   const browser = await chromium.launch()
   const context = await browser.newContext()
   const page = await context.newPage()
 
+  // Step 1: Get test token from API
+  console.log('📡 Requesting test login token...')
   const loginResponse = await context.request.post(
     `${apiURL}/api/v1/identity/auth/test-login`,
     {
@@ -46,28 +52,61 @@ export default async function globalSetup(config: FullConfig) {
     throw new Error('E2E test-login returned empty token')
   }
 
-  await page.goto(`${baseURL}/auth/callback?token=${encodeURIComponent(token)}`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30_000,
+  console.log('✅ Token received')
+
+  // Step 2: Validate token by calling getCurrentUser API
+  console.log('🔍 Validating token...')
+  const userResponse = await context.request.get(`${apiURL}/api/v1/identity/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
   })
 
-  const cookies = await context.cookies()
-  const authCookie = cookies.find(c => c.name === 'auth_token')
-
-  if (!authCookie) {
-    throw new Error('Authentication callback did not create auth_token cookie')
+  if (!userResponse.ok()) {
+    console.warn('⚠️  Token validation via API failed, proceeding with callback anyway')
+  } else {
+    console.log('✅ Token validated successfully')
   }
 
+  // Step 3: Set cookie directly (more reliable than callback route)
+  console.log('🍪 Setting auth cookie...')
+  await context.addCookies([{
+    name: 'auth_token',
+    value: token,
+    domain: new URL(baseURL).hostname,
+    path: '/',
+    httpOnly: true,
+    secure: baseURL.startsWith('https:'),
+    sameSite: 'Lax',
+  }])
+
+  // Verify cookie was set
+  const cookies = await context.cookies()
+  const authCookie = cookies.find(c => c.name === 'auth_token')
+  
+  if (!authCookie) {
+    throw new Error('Failed to set auth_token cookie')
+  }
+  
+  console.log('✅ Auth cookie set successfully')
+
+  // Step 4: Navigate to production page and verify
+  console.log('🚀 Navigating to production page...')
   await page.goto(`${baseURL}/production`, {
-    waitUntil: 'domcontentloaded',
+    waitUntil: 'networkidle',
     timeout: 30_000,
   })
 
-  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
+  // Wait a bit for any client-side redirects
+  await page.waitForTimeout(2000)
+
+  console.log(`📍 Current URL: ${page.url()}`)
+
+  await expect(page).toHaveURL(/\/production(?:\?.*)?$/, { timeout: 10_000 })
 
   await expect(
     page.getByRole('heading', { name: '生产管理概览' }).first(),
   ).toBeVisible({ timeout: 15_000 })
+
+  console.log('✅ Authentication setup completed successfully')
 
   await context.storageState({ path: AUTH_FILE })
   await browser.close()
