@@ -17,6 +17,7 @@ from app.modules.energy.models import (
     EnergyData,
     EnergyDeviceConfig,
     EnergyMonthlyRecord,
+    EnergyUnitConsumptionTarget,
     EnergyWorkshop,
 )
 
@@ -858,7 +859,7 @@ async def get_monthly_summary(
 
 async def get_monthly_energy_total(
     db: AsyncSession,
-    workshop_id: str,
+    workshop_id: UUID,
     start_date: date,
     end_date: date,
 ) -> Decimal | None:
@@ -880,3 +881,73 @@ async def get_monthly_energy_total(
     return Decimal(str(total)) if total else None
 
 
+
+
+# ── Unit Consumption Target Repository Functions ──
+
+async def create_unit_consumption_target(
+    db: AsyncSession,
+    workshop_id: UUID,
+    target_month: date,
+    target_unit_consumption: float,
+) -> EnergyUnitConsumptionTarget:
+    """创建单耗目标"""
+    from decimal import Decimal
+
+    target = EnergyUnitConsumptionTarget(
+        workshop_id=workshop_id,
+        target_month=target_month,
+        target_unit_consumption=Decimal(str(target_unit_consumption)),
+    )
+    db.add(target)
+    await db.flush()
+    return target
+
+
+async def get_unit_consumption_target_by_id(
+    db: AsyncSession,
+    target_id: UUID,
+) -> EnergyUnitConsumptionTarget | None:
+    """根据 ID 查询单耗目标"""
+    result = await db.execute(
+        select(EnergyUnitConsumptionTarget).where(
+            EnergyUnitConsumptionTarget.id == target_id,
+            not EnergyUnitConsumptionTarget.is_deleted,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_unit_consumption_target_by_workshop_and_month(
+    db: AsyncSession,
+    workshop_id: UUID,
+    target_month: date,
+) -> EnergyUnitConsumptionTarget | None:
+    """根据车间和月份查询单耗目标"""
+    result = await db.execute(
+        select(EnergyUnitConsumptionTarget).where(
+            EnergyUnitConsumptionTarget.workshop_id == workshop_id,
+            EnergyUnitConsumptionTarget.target_month == target_month,
+            not EnergyUnitConsumptionTarget.is_deleted,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def update_unit_consumption_target(
+    db: AsyncSession,
+    target_id: UUID,
+    target_unit_consumption: float,
+) -> EnergyUnitConsumptionTarget | None:
+    """更新单耗目标"""
+    from decimal import Decimal
+
+    target = await get_unit_consumption_target_by_id(db, target_id)
+    if target is None:
+        return None
+
+    target.target_unit_consumption = Decimal(str(target_unit_consumption))
+    await db.flush()
+
+    # Re-fetch to ensure consistency
+    return await get_unit_consumption_target_by_id(db, target_id)

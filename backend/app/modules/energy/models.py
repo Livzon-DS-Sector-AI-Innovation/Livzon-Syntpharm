@@ -343,5 +343,5 @@ class EnergyUnitConsumptionTarget(BaseModel):
     )
     target_month: Mapped[date] = mapped_column(Date, nullable=False, comment="目标月份")
     target_unit_consumption: Mapped[Decimal] = mapped_column(
-        Numeric(10, 4), nullable=False, comment="目标单耗(kWh/件)"
+        Numeric(10, 4), nullable=False, comment="目标单耗(kWh/kg)"
     )

@@ -689,7 +689,7 @@ async def analyze_energy_with_vision(image_base64: str, prompt: str) -> dict:
 
 async def create_target(
     db: AsyncSession,
-    workshop_id: str,
+    workshop_id: UUID,
     target_month: str,
     target_unit_consumption: float
 ) -> EnergyUnitConsumptionTarget:
@@ -709,22 +709,21 @@ async def create_target(
     year, month = map(int, target_month.split("-"))
     target_date = date(year, month, 1)
 
-    target = EnergyUnitConsumptionTarget(
-        workshop_id=workshop_id,
-        target_month=target_date,
-        target_unit_consumption=target_unit_consumption,
+    target = await repo.create_unit_consumption_target(
+        db, workshop_id, target_date, target_unit_consumption
     )
-
-    db.add(target)
     await db.commit()
-    await db.refresh(target)
+
+    # Re-fetch after commit
+    target = await repo.get_unit_consumption_target_by_id(db, target.id)
+    assert target is not None
 
     return target
 
 
 async def get_target(
     db: AsyncSession,
-    workshop_id: str,
+    workshop_id: UUID,
     target_month: str
 ) -> EnergyUnitConsumptionTarget | None:
     """查询单耗目标"""
@@ -756,14 +755,16 @@ async def update_target(
     if not target:
         raise NotFoundException("单耗目标", str(target_id))
 
-    target.target_unit_consumption = new_value
+    target = await repo.update_unit_consumption_target(db, target_id, new_value)
     await db.commit()
-    await db.refresh(target)
+
+    if target is None:
+        raise NotFoundException("单耗目标", str(target_id))
 
     return target
 
 
-async def get_workshop_by_id(db: AsyncSession, workshop_id: str) -> EnergyWorkshop | None:
+async def get_workshop_by_id(db: AsyncSession, workshop_id: UUID) -> EnergyWorkshop | None:
     """根据 ID 查询车间"""
     query = select(EnergyWorkshop).where(EnergyWorkshop.id == workshop_id)
     result = await db.execute(query)
@@ -815,7 +816,7 @@ def determine_deviation_status(deviation_rate: float | None) -> str:
 
 async def prepare_ai_analysis_data(
     db: AsyncSession,
-    workshop_id: str,
+    workshop_id: UUID,
     analysis_month: str,
     manual_production: int
 ) -> dict:
