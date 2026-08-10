@@ -137,7 +137,7 @@ export default function AIAnalysisPage() {
             min={1}
             precision={0}
             style={{ width: 200 }}
-            addonAfter="件"
+            addonAfter="kg"
           />
           
           <Button 
