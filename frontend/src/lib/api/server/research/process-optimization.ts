@@ -7,5 +7,5 @@ export async function fetchOptimizations(filters: any = {}) {
   if (filters.page) params.set('page', String(filters.page))
   if (filters.page_size) params.set('page_size', String(filters.page_size))
   const qs = params.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/process-optimizations${qs ? `?${qs}` : ''}`)
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/optimizations${qs ? `?${qs}` : ''}`)
 }
