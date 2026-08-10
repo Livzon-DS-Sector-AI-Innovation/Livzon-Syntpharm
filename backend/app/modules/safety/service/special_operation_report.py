@@ -430,10 +430,15 @@ class SpecialOperationReportService:
             return {k: v for k, v in result.items() if v is not None}
         except Exception as e:
             logger.warning("AI 自然语言解析失败: %s", e)
-            return {
-                "explanation": f"AI 解析失败，将使用原始查询: {natural_query}",
-                "keyword": natural_query,
-            }
+            # 回退：尝试从自然语言中提取作业类型
+            result = {"explanation": f"AI 解析失败，将使用原始查询: {natural_query}"}
+            for cn_name, en_name in op_type_labels.items():
+                if cn_name in natural_query:
+                    result["operation_type"] = en_name
+                    break
+            if "operation_type" not in result:
+                result["keyword"] = natural_query
+            return result
 
     async def export_ledger_excel(
         self,

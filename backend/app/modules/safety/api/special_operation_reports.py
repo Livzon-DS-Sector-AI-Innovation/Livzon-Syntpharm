@@ -304,6 +304,8 @@ async def handler(  # noqa: F811
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选"""
+    from urllib.parse import quote
+
     from fastapi.responses import Response
 
     service = SpecialOperationReportService(db)
@@ -332,8 +334,11 @@ async def handler(  # noqa: F811
     excel_bytes = await service.export_ledger_excel(**filters)
 
     filename = f"特殊作业台账_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    ascii_filename = f"special_operation_ledger_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return Response(
         content=excel_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{quote(filename)}",
+        },
     )
