@@ -61,37 +61,41 @@ export default async function StatsPage() {
     const [eqResult, woResult, swResult, overdueResult, calResult, ordersResult] = results
 
     if (eqResult.status === 'fulfilled') {
-      equipmentStats = eqResult.value
+      equipmentStats = eqResult.value?.data ?? defaultEquipmentStats
     } else {
       console.warn('设备统计加载失败:', eqResult.reason)
     }
 
     if (woResult.status === 'fulfilled') {
-      workOrderStats = woResult.value
+      workOrderStats = woResult.value?.data ?? defaultWorkOrderStats
     } else {
       console.warn('工单统计加载失败:', woResult.reason)
     }
 
     if (swResult.status === 'fulfilled') {
-      stockWarnings = Array.isArray(swResult.value) ? swResult.value : []
+      const swData = swResult.value?.data ?? swResult.value
+      stockWarnings = Array.isArray(swData) ? swData : []
     } else {
       console.warn('库存预警加载失败:', swResult.reason)
     }
 
     if (overdueResult.status === 'fulfilled') {
-      overduePlans = Array.isArray(overdueResult.value) ? overdueResult.value : []
+      const overdueData = overdueResult.value?.data ?? overdueResult.value
+      overduePlans = Array.isArray(overdueData) ? overdueData : []
     } else {
       console.warn('逾期维护计划加载失败:', overdueResult.reason)
     }
 
     if (calResult.status === 'fulfilled') {
-      calibrationPlans = Array.isArray(calResult.value?.items) ? calResult.value.items : []
+      const calData = calResult.value?.data ?? calResult.value
+      calibrationPlans = Array.isArray(calData?.items) ? calData.items : (Array.isArray(calData) ? calData : [])
     } else {
       console.warn('校准计划加载失败:', calResult.reason)
     }
 
     if (ordersResult.status === 'fulfilled') {
-      recentWorkOrders = Array.isArray(ordersResult.value?.items) ? ordersResult.value.items : []
+      const ordersData = ordersResult.value?.data ?? ordersResult.value
+      recentWorkOrders = Array.isArray(ordersData?.items) ? ordersData.items : (Array.isArray(ordersData) ? ordersData : [])
     } else {
       console.warn('近期工单加载失败:', ordersResult.reason)
     }

@@ -37,7 +37,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`请求失败: ${response.status} ${response.statusText}`)
   }
   const data = await response.json()
-  return data.data ?? data
+  return data
 }
 
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {

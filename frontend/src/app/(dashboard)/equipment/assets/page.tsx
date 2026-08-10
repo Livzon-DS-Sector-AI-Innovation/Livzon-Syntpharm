@@ -41,13 +41,14 @@ export default async function EquipmentPageWrapper() {
   }
   try {
     const result = await fetchEquipments({ page: 1, page_size: 20 })
-    equipments = result.items
-    total = result.total
+    equipments = result.items ?? (Array.isArray(result?.data) ? result.data : [])
+    total = result.total ?? equipments.length
   } catch (error) {
     console.warn('加载设备列表失败:', error)
   }
   try {
-    statistics = await fetchEquipmentStatistics()
+    const statsResult = await fetchEquipmentStatistics()
+    statistics = (statsResult as any)?.data ?? statsResult
   } catch (error) {
     console.warn('加载设备统计失败:', error)
   }

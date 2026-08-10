@@ -88,7 +88,8 @@ export async function fetchCpvProducts(params?: { page?: number; page_size?: num
   if (params?.page_size) searchParams.set('page_size', params.page_size.toString())
   const query = searchParams.toString()
   const url = `${getApiBaseUrl()}/api/v1/quality/cpv/products${query ? `?${query}` : ''}`
-  return apiFetch<{ items: CpvProductWithStats[]; total: number }>(url)
+  const data = await apiFetch<CpvProductWithStats[]>(url)
+  return { items: Array.isArray(data) ? data : [], total: Array.isArray(data) ? data.length : 0 }
 }
 
 export async function fetchCpvProduct(productId: string) {
