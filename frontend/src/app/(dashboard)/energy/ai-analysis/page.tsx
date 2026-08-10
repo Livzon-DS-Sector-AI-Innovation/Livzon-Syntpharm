@@ -131,7 +131,7 @@ export default function AIAnalysisPage() {
           />
           
           <InputNumber
-            placeholder="当月产量（件）"
+            placeholder="当月产量（kg）"
             value={production}
             onChange={(val) => setProduction(val)}
             min={1}
@@ -157,7 +157,7 @@ export default function AIAnalysisPage() {
               <Spin size="small" />
             ) : currentTarget ? (
               <>
-                <Text>{currentTarget.target_unit_consumption.toFixed(4)} kWh/件</Text>
+                <Text>{currentTarget.target_unit_consumption.toFixed(4)} kWh/kg</Text>
                 <Button 
                   type="link" 
                   size="small" 
@@ -193,14 +193,14 @@ export default function AIAnalysisPage() {
               <div style={{ flex: 1, padding: 16, background: '#f0f5ff', borderRadius: 8, textAlign: 'center' }}>
                 <Text type="secondary">实际单耗</Text>
                 <div style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>
-                  {result.actual_unit_consumption.toFixed(4)} kWh/件
+                  {result.actual_unit_consumption.toFixed(4)} kWh/kg
                 </div>
               </div>
               
               <div style={{ flex: 1, padding: 16, background: '#f6ffed', borderRadius: 8, textAlign: 'center' }}>
                 <Text type="secondary">目标单耗</Text>
                 <div style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>
-                  {result.target_unit_consumption?.toFixed(4) ?? '—'} kWh/件
+                  {result.target_unit_consumption?.toFixed(4) ?? '—'} kWh/kg
                 </div>
               </div>
               

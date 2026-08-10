@@ -100,7 +100,7 @@ export default function TargetModal({
         </div>
 
         <div>
-          <Text strong>目标单耗（kWh/件）：</Text>
+          <Text strong>目标单耗（kWh/kg）：</Text>
           <InputNumber
             value={targetValue}
             onChange={(val) => setTargetValue(val)}
@@ -110,7 +110,7 @@ export default function TargetModal({
             step={0.1}
             placeholder="请输入目标单耗"
             style={{ width: '100%', marginTop: 8 }}
-            addonAfter="kWh/件"
+            addonAfter="kWh/kg"
           />
           <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
             💡 建议参考过去 3 个月平均值
@@ -124,7 +124,7 @@ export default function TargetModal({
           <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
             <li>上月实际单耗：待加载</li>
             <li>近 3 月平均：待加载</li>
-            <li>行业标杆：2.20 kWh/件</li>
+            <li>行业标杆：2.20 kWh/kg</li>
           </ul>
         </div>
 */}

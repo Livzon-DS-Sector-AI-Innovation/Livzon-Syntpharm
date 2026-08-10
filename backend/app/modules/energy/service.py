@@ -883,13 +883,13 @@ def construct_ai_prompt(analysis_data: dict) -> str:
 【能耗数据】
 - 当月总能耗：{analysis_data['total_energy_kwh']:.2f} kWh
 - 当月产量：{analysis_data['manual_production']} 件
-- 实际单耗：{analysis_data['actual_unit_consumption']:.4f} kWh/件
+- 实际单耗：{analysis_data['actual_unit_consumption']:.4f} kWh/kg
 
 【目标对比】
 """
 
     if has_target:
-        prompt += f"""- 目标单耗：{analysis_data['target_unit_consumption']:.4f} kWh/件
+        prompt += f"""- 目标单耗：{analysis_data['target_unit_consumption']:.4f} kWh/kg
 - 偏差率：{analysis_data['deviation_rate']:+.2f}%
 - 偏差状态：{analysis_data['deviation_status']}
 
