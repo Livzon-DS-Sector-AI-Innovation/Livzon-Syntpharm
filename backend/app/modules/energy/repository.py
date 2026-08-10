@@ -912,7 +912,7 @@ async def get_unit_consumption_target_by_id(
     result = await db.execute(
         select(EnergyUnitConsumptionTarget).where(
             EnergyUnitConsumptionTarget.id == target_id,
-            not EnergyUnitConsumptionTarget.is_deleted,
+            EnergyUnitConsumptionTarget.is_deleted == False,
         )
     )
     return result.scalar_one_or_none()
@@ -928,7 +928,7 @@ async def get_unit_consumption_target_by_workshop_and_month(
         select(EnergyUnitConsumptionTarget).where(
             EnergyUnitConsumptionTarget.workshop_id == workshop_id,
             EnergyUnitConsumptionTarget.target_month == target_month,
-            not EnergyUnitConsumptionTarget.is_deleted,
+            EnergyUnitConsumptionTarget.is_deleted == False,
         )
     )
     return result.scalar_one_or_none()
