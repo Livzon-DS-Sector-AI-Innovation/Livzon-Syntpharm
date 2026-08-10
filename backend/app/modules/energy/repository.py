@@ -858,7 +858,7 @@ async def get_monthly_summary(
 
 async def get_monthly_energy_total(
     db: AsyncSession,
-    workshop_id: int,
+    workshop_id: str,
     start_date: date,
     end_date: date,
 ) -> Decimal | None:
