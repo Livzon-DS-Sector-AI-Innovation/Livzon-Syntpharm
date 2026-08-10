@@ -23,10 +23,10 @@ test.describe('能源单耗智能分析功能', () => {
     await page.getByRole('button', { name: '确认设定' }).click()
 
     // 4. 验证目标显示
-    await expect(page.getByText('2.3000 kWh/件')).toBeVisible()
+    await expect(page.getByText('2.3000 kWh/kg')).toBeVisible()
 
     // 5. 输入产量
-    await page.getByPlaceholder('当月产量（件）').fill('12000')
+    await page.getByPlaceholder('当月产量（kg）').fill('12000')
 
     // 6. 开始分析
     await page.getByRole('button', { name: '🤖 开始智能分析' }).click()
@@ -53,7 +53,7 @@ test.describe('能源单耗智能分析功能', () => {
     await expect(page.getByRole('button', { name: '➕ 设定目标' })).toBeVisible()
 
     // 输入产量并分析
-    await page.getByPlaceholder('当月产量（件）').fill('12000')
+    await page.getByPlaceholder('当月产量（kg）').fill('12000')
     await page.getByRole('button', { name: '🤖 开始智能分析' }).click()
 
     // 等待结果
@@ -77,7 +77,7 @@ test.describe('能源单耗智能分析功能', () => {
     await page.getByRole('button', { name: '确认设定' }).click()
 
     // 输入产量
-    await page.getByPlaceholder('当月产量（件）').fill('12000')
+    await page.getByPlaceholder('当月产量（kg）').fill('12000')
 
     // 分析
     await page.getByRole('button', { name: '🤖 开始智能分析' }).click()
@@ -107,15 +107,15 @@ test.describe('能源单耗智能分析功能', () => {
     await expect(analyzeButton).toBeDisabled()
 
     // 测试负数
-    await page.getByPlaceholder('当月产量（件）').fill('-100')
+    await page.getByPlaceholder('当月产量（kg）').fill('-100')
     // InputNumber 组件通常会自动阻止负数输入，或者显示错误
 
     // 测试零值
-    await page.getByPlaceholder('当月产量（件）').fill('0')
+    await page.getByPlaceholder('当月产量（kg）').fill('0')
     await expect(analyzeButton).toBeDisabled()
 
     // 测试有效值
-    await page.getByPlaceholder('当月产量（件）').fill('12000')
+    await page.getByPlaceholder('当月产量（kg）').fill('12000')
     await expect(analyzeButton).toBeEnabled()
   })
 
@@ -132,7 +132,7 @@ test.describe('能源单耗智能分析功能', () => {
     await page.getByRole('button', { name: '确认设定' }).click()
 
     // 验证目标已显示
-    await expect(page.getByText('2.3000 kWh/件')).toBeVisible()
+    await expect(page.getByText('2.3000 kWh/kg')).toBeVisible()
 
     // 点击修改按钮
     await page.getByRole('button', { name: '✏️ 修改目标' }).click()
@@ -142,6 +142,6 @@ test.describe('能源单耗智能分析功能', () => {
     await page.getByRole('button', { name: '确认设定' }).click()
 
     // 验证目标已更新
-    await expect(page.getByText('2.5000 kWh/件')).toBeVisible()
+    await expect(page.getByText('2.5000 kWh/kg')).toBeVisible()
   })
 })
