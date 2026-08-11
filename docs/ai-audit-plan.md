@@ -1106,6 +1106,10 @@ After all 14 categories:
 
 ### PR audit (run per pull request)
 
+**Changed file** = any file listed by `git diff origin/main...origin/<pr-branch> --name-only`.
+Audit ALL lines in that file. Do NOT filter findings against line-level diffs.
+If the file is in the changed-file list, every line in it is in scope.
+
 1. Get changed files: `git diff origin/main...origin/<pr-branch> --name-only`
 2. Map changed files to affected categories (one file may map to multiple)
 3. For each affected category, feed AI:
@@ -1114,7 +1118,7 @@ After all 14 categories:
    - The applicable AGENTS.md rules text (including exception clauses)
    - The [Explicit exceptions](#explicit-exceptions-from-agentsmd) table
    - The baseline findings for that category from `docs/ai-audit-findings.md`
-4. Ask: "Report only violations where the violating line appears in a changed file. Do not skip a finding because the same pattern exists elsewhere in unchanged files — existing violations in other files are not exceptions. Only the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table provides valid exceptions."
+4. Ask: "Do not skip a finding because the same pattern exists elsewhere in unchanged files — existing violations in other files are not exceptions. Only the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table provides valid exceptions."
 5. Append findings to `docs/ai-audit-findings.md` under a new PR section
 
 ### Second review (important PRs only)
