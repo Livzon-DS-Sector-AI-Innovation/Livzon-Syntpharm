@@ -1108,7 +1108,7 @@ After all 14 categories:
 1. Get changed files: `git diff origin/main...origin/<pr-branch> --name-only`
 2. Map changed files to affected categories (one file may map to multiple)
 3. For each affected category, feed AI:
-   - The PR diff (files in that category's scope)
+   - The **full content** of each changed file that falls in this category's scope (do NOT feed line-level diffs — audit the entire file)
    - This category's section from this document (rules + questions)
    - The applicable AGENTS.md rules text (including exception clauses)
    - The [Explicit exceptions](#explicit-exceptions-from-agentsmd) table
