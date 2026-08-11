@@ -122,15 +122,6 @@ export async function apiGet<T>(url: string, options?: RequestInit): Promise<T> 
   return json.data
 }
 
-export async function apiPost<T>(url: string, body?: unknown, options?: RequestInit): Promise<T> {
-  const json = await fetchApi<{ code: number; data: T; message?: string; meta?: unknown }>(url, {
-    ...options,
-    method: 'POST',
-    body: body ? JSON.stringify(body) : undefined,
-  })
-  return json.data
-}
-
 export async function apiFetchPaginated<T>(
   url: string,
   options?: RequestInit,
