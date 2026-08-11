@@ -70755,7 +70755,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/CpvProductListApiResponse"
+                }
               }
             }
           },
@@ -88270,6 +88272,191 @@
         ],
         "title": "CpvProductCreate",
         "description": "\u521b\u5efa\u4ea7\u54c1\u8bf7\u6c42"
+      },
+      "CpvProductListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CpvProductListResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CpvProductListApiResponse",
+        "description": "CPV\u4ea7\u54c1\u5217\u8868API\u54cd\u5e94\uff08\u5b8c\u6574envelope\uff09"
+      },
+      "CpvProductListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "specification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specification"
+          },
+          "process_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "cpp_parameter_count": {
+            "type": "integer",
+            "title": "Cpp Parameter Count",
+            "default": 0
+          },
+          "cqa_parameter_count": {
+            "type": "integer",
+            "title": "Cqa Parameter Count",
+            "default": 0
+          },
+          "cpp_batch_count": {
+            "type": "integer",
+            "title": "Cpp Batch Count",
+            "default": 0
+          },
+          "cqa_batch_count": {
+            "type": "integer",
+            "title": "Cqa Batch Count",
+            "default": 0
+          },
+          "avg_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Value"
+          },
+          "cpk_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpk Value"
+          },
+          "abnormal_batch_count": {
+            "type": "integer",
+            "title": "Abnormal Batch Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "specification",
+          "process_version",
+          "status",
+          "description",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "CpvProductListResponse",
+        "description": "\u4ea7\u54c1\u5217\u8868\u54cd\u5e94\uff08\u5e26\u7edf\u8ba1\uff09"
       },
       "CpvProductUpdate": {
         "properties": {

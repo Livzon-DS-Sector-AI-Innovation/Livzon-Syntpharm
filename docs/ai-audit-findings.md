@@ -872,3 +872,89 @@ Category 8 (Backend tests) — no test file changes.
 | 13. Docker | 0 | 0 | 0 | 0 | Clean |
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (no E2E changes) |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
+
+### PR #25: Ruanjiaheng — h1 headings + API data unwrapping (head: ruanjiaheng, base: main, date: 2026-08-11)
+
+Files changed: 13 (8 page.tsx, 3 lib/api/server, 1 component, 2 e2e)
+
+Categories affected: 9 (Frontend boundaries), 10 (Frontend API/types), 11 (Proxy/routing), 14 (E2E)
+
+---
+
+#### Category 9: Frontend component boundaries
+
+| Files inspected | 8 |
+| Rules evaluated | 6 (Q1, Q2, Q3a, Q3b, Q4, Q5, Q9) |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | clean |
+
+All 4 pages that received `<h1>` additions (equipment/stats, procurement/invoice-recognition, quality/doc-check, research/process-optimization) now have semantic headings. `InvoiceRecognitionClient.tsx` correctly moved `<h1>` from Client Component to page.tsx. No `'use client'`/`force-dynamic`/barrel violations in changed lines.
+
+---
+
+#### Category 10: Frontend API and generated types
+
+| Files inspected | 7 |
+| Rules evaluated | 8 (all Q1-Q8) |
+| Confirmed findings | 3 |
+| Uncertain findings | 5 |
+| Status | review required |
+
+##### Confirmed
+
+- [ ] `frontend/src/lib/api/server/quality-cpv.ts:91` — 类型系统/API类型来源 — `apiFetch<CpvProductWithStats[]>(url)` uses `CpvProductWithStats[]`, a handwritten domain type from `@/types/quality-cpv`, not from `@/types/generated/schema`. AGENTS.md: "所有 API 类型必须从 @/types/generated/schema 导入". — severity: medium
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/page.tsx:51` — 类型安全 — `(statsResult as any)?.data` uses `as any` to bypass TypeScript type checking. `fetchEquipmentStatistics()` returns raw JSON (via `base.ts` `apiFetch`), and `as any` further erases safety. — severity: high
+- [ ] `frontend/src/app/(dashboard)/equipment/maintenance/page.tsx` — 类型安全 — Default value objects use `as any` casts on statistics fields (`by_status`, `by_type`, `by_priority`). These fields are assigned from API responses but the defaults lack type information. — severity: high
+
+##### Uncertain
+
+- [ ] `frontend/src/lib/api/server/procurement.ts:40` — Breaking apiFetch contract — `return data.data ?? data` changed to `return data`. This removes auto-unwrapping. Callers in the same file (`fetchInvoiceRecognitionRecords`, `fetchPurchaseRequests`, `fetchPurchaseOrders`, `fetchContractRecords`, `fetchSuppliers`, `fetchModuleInfo`) all return `Promise<T>` where `T` expects unwrapped data (e.g. `.items`, `.total`). After this change, callers receive the raw backend envelope `{code, message, data: T, meta}` instead of `T`. Consumers that destructure `.items` will get `undefined`. These callers were NOT updated in this PR. — severity: blocking
+- [ ] `frontend/src/lib/api/server/quality-cpv.ts:92` — Response unwrapping mismatch — `Array.isArray(data)` assumes `apiFetch` returns an array directly. `base.ts` `apiFetch` returns `response.json()` — the raw backend JSON. If the backend responds with standard envelope `{code, message, data: [...]}`, then `data` is the envelope object, `Array.isArray(data)` is `false`, and the function silently returns `{items: [], total: 0}` — dropping all real data. — severity: high
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/page.tsx:44-45` — Fragile data unwrapping — `result.items ?? (Array.isArray(result?.data) ? result.data : [])`. `fetchEquipments()` returns raw backend JSON. If standard envelope is `{code, message, data: {items, total}}`, then `result.items` is undefined, `result.data` is an object (not array), and fallback yields `[]` with `total=0`. — severity: high
+- [ ] `frontend/src/app/(dashboard)/equipment/maintenance/page.tsx:53-67` — Fragile data unwrapping — Same multi-level `?.data?.items ?? ?.items ?? Array.isArray(?.data)` pattern across 11 API results. No standardized envelope handling. — severity: high
+- [ ] `frontend/src/app/(dashboard)/equipment/stats/page.tsx:64,70,76-78,83-84,90-91,97-98` — Fragile data unwrapping — Same `?.data` pattern across 6 API results. — severity: high
+
+**Root cause:** The codebase has two competing `apiFetch` patterns: `procurement.ts` had auto-unwrapping (`data.data ?? data`), while `base.ts` returns raw JSON. Pages must guess which pattern applies, leading to defensive multi-level unwrapping and `as any` casts.
+
+**Recommended fix:**
+1. Revert the `apiFetch` change in `procurement.ts:40` back to `return data.data ?? data`, OR add `data.data` unwrapping to all callers within the same file.
+2. Establish a consistent unwrapping layer in `base.ts` `apiFetch` or standardize across all `lib/api/server/*.ts` files.
+
+---
+
+#### Category 11: Proxy and routing
+
+| Files inspected | 3 |
+| Rules evaluated | 6 (Q1-Q6) |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | clean |
+
+All server-side calls use `getApiBaseUrl()`. `process-optimization.ts` path change from `/process-optimizations` → `/optimizations` is correct — matches backend route `GET /api/v1/research/optimizations` at `backend/app/modules/research/api.py:1445`. No proxy.ts changes.
+
+---
+
+#### Category 14: E2E
+
+| Checks verified | 3 |
+| Checks failing | 0 |
+| Status | clean |
+
+`callback-errors.spec.ts`: Warmup `beforeAll` removed (resolves prior PR #17 uncertain finding). New tests use Playwright `request.get()` API for 307 redirect verification. `routes.spec.ts`: ~20 routes disabled with clear 404 reason comments. Heading `法规跟踪` → `法规看板` matches PR #24 change.
+
+#### Prior baseline finding resolved
+- Category 14 (PR #17): *"beforeAll warmup loop silently exits if all 5 retries fail"* — resolved (warmup removed entirely).
+
+---
+
+#### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 9. Frontend boundaries | 0 | 0 | 0 | 0 | Clean |
+| 10. Frontend API & types | 1 | 6 | 1 | 0 | 8 findings (blocking: apiFetch breaking change) |
+| 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean |
+| 14. E2E | 0 | 0 | 0 | 0 | Clean |
+| **Total** | **1** | **6** | **1** | **0** | **8 findings** |
+

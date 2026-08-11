@@ -16,6 +16,7 @@ from app.modules.quality.cpv.schemas import (
     CpvParameterResponse,
     CpvParameterUpdate,
     CpvProductCreate,
+    CpvProductListApiResponse,
     CpvProductListResponse,
     CpvProductResponse,
     CpvProductUpdate,
@@ -40,7 +41,7 @@ async def create_product(
     return success_response(data=CpvProductResponse.model_validate(product))
 
 
-@router.get("/products", summary="获取产品列表")
+@router.get("/products", summary="获取产品列表", response_model=CpvProductListApiResponse)
 async def get_products(
     current_user: CurrentUser,
     keyword: str | None = Query(None, description="关键词搜索"),

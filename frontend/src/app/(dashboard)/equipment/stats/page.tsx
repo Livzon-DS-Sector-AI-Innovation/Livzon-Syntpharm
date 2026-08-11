@@ -21,6 +21,7 @@ import type {
   CalibrationPlan,
   WorkOrder,
 } from '@/types/equipment'
+import { unwrapResponse } from '@/lib/api/server/base'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,41 +62,41 @@ export default async function StatsPage() {
     const [eqResult, woResult, swResult, overdueResult, calResult, ordersResult] = results
 
     if (eqResult.status === 'fulfilled') {
-      equipmentStats = eqResult.value?.data ?? defaultEquipmentStats
+      equipmentStats = unwrapResponse<EquipmentStatistics>(eqResult.value) ?? defaultEquipmentStats
     } else {
       console.warn('设备统计加载失败:', eqResult.reason)
     }
 
     if (woResult.status === 'fulfilled') {
-      workOrderStats = woResult.value?.data ?? defaultWorkOrderStats
+      workOrderStats = unwrapResponse<WorkOrderStatistics>(woResult.value) ?? defaultWorkOrderStats
     } else {
       console.warn('工单统计加载失败:', woResult.reason)
     }
 
     if (swResult.status === 'fulfilled') {
-      const swData = swResult.value?.data ?? swResult.value
-      stockWarnings = Array.isArray(swData) ? swData : []
+      const data = unwrapResponse(swResult.value)
+      stockWarnings = Array.isArray(data) ? data : []
     } else {
       console.warn('库存预警加载失败:', swResult.reason)
     }
 
     if (overdueResult.status === 'fulfilled') {
-      const overdueData = overdueResult.value?.data ?? overdueResult.value
-      overduePlans = Array.isArray(overdueData) ? overdueData : []
+      const data = unwrapResponse(overdueResult.value)
+      overduePlans = Array.isArray(data) ? data : []
     } else {
       console.warn('逾期维护计划加载失败:', overdueResult.reason)
     }
 
     if (calResult.status === 'fulfilled') {
-      const calData = calResult.value?.data ?? calResult.value
-      calibrationPlans = Array.isArray(calData?.items) ? calData.items : (Array.isArray(calData) ? calData : [])
+      const data = unwrapResponse(calResult.value) as Record<string, unknown>
+      calibrationPlans = Array.isArray(data?.items) ? data.items as CalibrationPlan[] : (Array.isArray(data) ? data as CalibrationPlan[] : [])
     } else {
       console.warn('校准计划加载失败:', calResult.reason)
     }
 
     if (ordersResult.status === 'fulfilled') {
-      const ordersData = ordersResult.value?.data ?? ordersResult.value
-      recentWorkOrders = Array.isArray(ordersData?.items) ? ordersData.items : (Array.isArray(ordersData) ? ordersData : [])
+      const data = unwrapResponse(ordersResult.value) as Record<string, unknown>
+      recentWorkOrders = Array.isArray(data?.items) ? data.items as WorkOrder[] : (Array.isArray(data) ? data as WorkOrder[] : [])
     } else {
       console.warn('近期工单加载失败:', ordersResult.reason)
     }

@@ -56,3 +56,14 @@ class CpvProductListResponse(CpvProductResponse):
     avg_value: float | None = None
     cpk_value: float | None = None
     abnormal_batch_count: int = 0
+
+
+class CpvProductListApiResponse(BaseModel):
+    """CPV产品列表API响应（完整envelope）"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[CpvProductListResponse]
+    meta: dict | None = None
+
+    model_config = {"from_attributes": True}

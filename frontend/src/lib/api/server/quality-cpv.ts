@@ -1,14 +1,16 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type {
   CreateCpvProductInput,
   UpdateCpvProductInput,
   CreateCpvParameterInput,
   CpvProduct,
-  CpvProductWithStats,
   CpvParameter,
   CpvImportPreview,
   CpvImportTask,
 } from '@/types/quality-cpv'
+import type { components } from '@/types/generated/schema'
+
+type CpvProductListApiResponse = components['schemas']['CpvProductListApiResponse']
 
 export async function createCpvProduct(data: CreateCpvProductInput) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/cpv/products`, {
@@ -88,7 +90,8 @@ export async function fetchCpvProducts(params?: { page?: number; page_size?: num
   if (params?.page_size) searchParams.set('page_size', params.page_size.toString())
   const query = searchParams.toString()
   const url = `${getApiBaseUrl()}/api/v1/quality/cpv/products${query ? `?${query}` : ''}`
-  const data = await apiFetch<CpvProductWithStats[]>(url)
+  const raw = await apiFetch<CpvProductListApiResponse>(url)
+  const data = unwrapResponse(raw)
   return { items: Array.isArray(data) ? data : [], total: Array.isArray(data) ? data.length : 0 }
 }
 
