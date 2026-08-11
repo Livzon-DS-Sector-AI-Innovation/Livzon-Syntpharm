@@ -1,8 +1,7 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 function getApiBase(): string {
-  const u = process.env.API_BASE_URL
-  return u ? `${u}/api/v1` : 'http://dazah-backend-app-1:8000/api/v1'
+  return `${getApiBaseUrl()}/api/v1`
 }
 
 function buildQueryString(params: Record<string, unknown>): string {

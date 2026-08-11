@@ -1,11 +1,10 @@
 import type { DeviationCreate, DeviationUpdate, InvestigationCreate, CorrectionCreate, ClosingCreate } from '@/types/deviation'
+import { getApiBaseUrl } from '@/lib/api/server/base'
 
-function getApiBase(): string {
-  return (process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000') + '/api/v1'
-}
+const API_BASE = `${getApiBaseUrl()}/api/v1`
 
 async function deviationFetch(endpoint: string, options?: RequestInit) {
-  const response = await fetch(`${getApiBase()}${endpoint}`, {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -23,7 +22,7 @@ async function deviationFetch(endpoint: string, options?: RequestInit) {
 }
 
 async function deviationFetchUpload(endpoint: string, body: FormData) {
-  const response = await fetch(`${getApiBase()}${endpoint}`, {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
     body,
     cache: 'no-store',

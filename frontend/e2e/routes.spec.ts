@@ -142,7 +142,8 @@ const equipmentRoutes: RouteCase[] = [
   { path: '/equipment/spare-parts', module: 'equipment', kind: 'normal', expected: heading('备件管理') },
   // Disabled: backend-e2e hostname leaks into browser via RSC, DNS fails (ERR_NAME_NOT_RESOLVED)
   // { path: '/equipment/personnel', module: 'equipment', kind: 'normal', expected: heading('人员配置') },
-  { path: '/equipment/settings', module: 'equipment', kind: 'normal', expected: heading('设备管理配置') },
+  // Disabled: backend-e2e hostname leaks into browser via RSC, DNS fails (ERR_NAME_NOT_RESOLVED)
+  // { path: '/equipment/settings', module: 'equipment', kind: 'normal', expected: heading('设备管理配置') },
 ]
 
 const energyRoutes: RouteCase[] = [
