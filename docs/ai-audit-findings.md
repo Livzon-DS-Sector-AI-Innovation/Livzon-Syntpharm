@@ -979,9 +979,9 @@ Clean. `dossier_writer/api.py` and `dossier_writer/schemas.py` imports only from
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [ ] `backend/app/modules/registration/dossier_writer/api.py:313, 650, 699, 728, 829` — API规范/必须: 返回格式使用 app/core/response.py — 5 endpoints (`update_asset_category`, `ai_confirm_and_fill`, `split_preview`, `split_confirm_and_insert`, `toggle_asset_usage`) now return raw `{"code": 0, "data": ..., "message": "..."}` dicts instead of `success_response()`. The PR changed these endpoints from `success_response(data=...)` to raw dict return. The `response_model` decorator types (e.g. `AssetCategoryUpdateResponse`) and `code: 0` pattern is inconsistent with `app/core/response.py` which uses HTTP status codes. — severity: high
+- [x] `backend/app/modules/registration/dossier_writer/api.py:313, 650, 699, 728, 829` — API规范/必须: 返回格式使用 app/core/response.py — 5 endpoints now return `build_response(data=..., message=...)` from `app/core/response` instead of raw `{code: 0}` dicts. Also upgraded to proper Pydantic request/response schemas (AssetCategoryUpdateRequest/Response, AIConfirmRequest/Response, SplitPreviewRequest/Response, SplitConfirmRequest/Response, AssetUsageToggleRequest/Response) and typed `ApiResponse` return annotations. — severity: high — **RESOLVED** (commit 8e6a313, "resolve all remaining audit findings")
 
-Note: The PR also added proper Pydantic request/response schemas for these same 5 endpoints (positive change). The pre-existing patterns in this file (raw `HTTPException` everywhere, `CurrentUser` instead of `RequiredUser`) are not regressions from this PR.
+Note: The PR also upgraded the 5 endpoints to proper Pydantic request/response schemas and typed `ApiResponse` return annotations. The pre-existing patterns in this file (raw `HTTPException` everywhere, `CurrentUser` instead of `RequiredUser`) are not regressions from this PR.
 
 #### Category 9: Frontend component boundaries
 
@@ -992,7 +992,7 @@ Note: The PR also added proper Pydantic request/response schemas for these same 
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [ ] `frontend/src/app/(dashboard)/registration/projects/page.tsx:179` — 页面标题规范 — Uses `<Title level={4}>注册项目管理</Title>` which renders an `<h4>`, not a semantic `<h1>`. AGENTS.md requires `<h1>` or `<Title level={1}>` for page headings (WCAG 2.4.2/2.4.6). — severity: medium
+- [x] `frontend/src/app/(dashboard)/registration/projects/page.tsx:179` — 页面标题规范 — Uses `<Title level={4}>` instead of `<h1>`. — severity: medium — **RESOLVED** (commit 72e5977, `<Title level={1}>`)
 
 ##### Positive changes
 - `evaluation-form/page.tsx`, `sop-catalog/page.tsx`, `trainers/page.tsx`: Changed from raw `fetch()` to `apiGet()` from `@/lib/api/client` ✓
@@ -1006,14 +1006,14 @@ Note: The PR also added proper Pydantic request/response schemas for these same 
 | Uncertain findings | 1 |
 
 ##### Confirmed
-- [ ] `frontend/src/lib/api/server/safety.ts:1-end (~380+ call sites)` — apiFetch一致性/Q9+Q10 — All `safeApiFetch()` calls use paths WITHOUT `/api/v1` prefix (e.g. `/safety/checks`, `/safety/hazards`, `/safety/accidents`, etc.). The old code had a local `getApiBase()` function that prepended `/api/v1` and a local `safeApiFetch` that used it. The PR removed these local helpers and switched to the canonical `safeApiFetch` from `base.ts`, but `safeApiFetch` uses `getApiBaseUrl()` directly (returns `http://backend:8000`) without prepending `/api/v1`. All calls now resolve to `http://backend:8000/safety/...` instead of `http://backend:8000/api/v1/safety/...`. — severity: blocking
+- [x] `frontend/src/lib/api/server/safety.ts:1-end (~380+ call sites)` — apiFetch一致性/Q9+Q10 — All `safeApiFetch()` calls now use `/api/v1` prefix on every endpoint path (e.g. `/api/v1/safety/checks`). Local `safeApiFetch` + `getApiBase()` helpers removed, now imports canonical `safeApiFetch` + `buildQueryString` from `@/lib/api/server/base`. — severity: blocking — **RESOLVED** (commit 72e5977, "resolve 3 confirmed audit findings")
 
-- [ ] `frontend/src/app/(dashboard)/registration/projects/page.tsx:122-126` — 写操作必须用Server Actions/Q2 — Direct `fetch(url, {method: 'PUT'/'POST', ...})` in a `'use client'` component for create/update project. Write operations must use Server Actions in `actions/`. — severity: blocking
+- [x] `frontend/src/app/(dashboard)/registration/projects/page.tsx:122-126` — 写操作必须用Server Actions/Q2 — Direct `fetch()` replaced with `createRegistrationProject(payload)` / `updateRegistrationProject(id, payload)` Server Actions from `@/actions/registration`. — severity: blocking — **RESOLVED** (commit 72e5977)
 
-- [ ] `frontend/src/lib/api/client/equipment.ts:251-283` — apiFetch一致性/Q4+Q11 — `fetchMaintainersClient`, `fetchAllUsersClient`, `fetchWorkOrderImagesClient`, `fetchClaimTimeoutConfigClient`, `fetchPersonnelList` use raw `fetch()` with `${API_BASE}/...` and ad-hoc `result.data || []` access instead of `apiGet()`. Pre-existing but file is in changed scope. — severity: medium
+- [x] `frontend/src/lib/api/client/equipment.ts:251-283` — apiFetch一致性/Q4+Q11 — 5 raw `fetch()` functions (`fetchMaintainersClient`, `fetchAllUsersClient`, `fetchWorkOrderImagesClient`, `fetchClaimTimeoutConfigClient`, `fetchPersonnelList`) replaced with `apiGet()` from `@/lib/api/client`. — severity: medium — **RESOLVED** (commit 72e5977)
 
 ##### Uncertain
-- [ ] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:65-67` — 写操作必须用Server Actions/Q2 — Direct `POST` fetch to `/api/hr/generate-evaluation` in a `'use client'` component calls a local Next.js Route Handler (not backend directly) for blob download (file generation). May qualify as a stream/download exception (like SSE/upload exceptions), but pattern deviates from standard Server Action usage. — severity: low
+- [x] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:65-67` — 写操作必须用Server Actions/Q2 — Direct `POST` fetch to local Route Handler `/api/hr/generate-evaluation` for blob download. Route Handler forwards auth cookies and returns file blobs with Content-Disposition headers — cannot be done via Server Actions (no file/blob return support). Proxy.ts now uses `startsWith('/api/v1')` so Route Handler is reachable. ACCEPTED as blob-download exception (analogous to SSE/upload exceptions). — severity: low — **ACCEPTED**
 
 ##### Positive changes
 - `http-client.ts` and `http-server.ts` deleted; all client modules now import from `@/lib/api/client` ✓
@@ -1031,9 +1031,9 @@ Note: The PR also added proper Pydantic request/response schemas for these same 
 | Uncertain findings | 0 |
 
 ##### Confirmed
-- [ ] `frontend/src/proxy.ts:10` — proxy.ts规则/路由转发 — `pathname.startsWith('/api')` matches ALL `/api/*` requests, including Next.js local Route Handlers at `app/api/hr/generate-evaluation/route.ts` and `app/api/research/literature/analyze/route.ts`. The proxy rewrites these to the backend (where those paths don't exist), making the Route Handlers unreachable. Route Handler at `generate-evaluation/route.ts` forwards auth cookies and returns file blobs with Content-Disposition headers — bypassing this breaks blob download functionality. Should use `startsWith('/api/v1')` or `startsWith('/api/v1/')`. Pre-existing, but proxy.ts is in changed scope. — severity: high
+- [x] `frontend/src/proxy.ts:10` — proxy.ts规则/路由转发 — `pathname.startsWith('/api')` changed to `pathname.startsWith('/api/v1')`. Local Route Handlers at `/api/hr/` and `/api/research/` are no longer intercepted. — severity: high — **RESOLVED** (commit 8e6a313)
 
-- [ ] `frontend/src/lib/api/server/quality.ts:93` — 路由转发/Q5 — Uses `const BASE = `${getApiBaseUrl()}/api/v1`` evaluated at module import time. While functionally correct, this is inconsistent with other server modules that pass relative paths to `apiFetch()` (which calls `getApiBaseUrl()` internally). The `BASE` constant is only used for upload exceptions — acceptable but introduces unnecessary module-level side effect. — severity: low
+- [x] `frontend/src/lib/api/server/quality.ts:93` — 路由转发/Q5 — `const BASE` removed; all paths now inline `/api/v1` prefix directly. Local `apiFetchNullable` helper removed, replaced with `fetchDeleteOrNull` using canonical `unwrapResponse()`. — severity: low — **RESOLVED** (commit 8e6a313)
 
 ##### Positive changes
 - `proxy.ts:3-5`: Added comment documenting why middleware cannot import `getApiBaseUrl` (next/headers unavailable in middleware context) — improves maintainability ✓
@@ -1054,10 +1054,10 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 6 (Co
 |---|---|---|---|---|---|
 | 2. Secrets | 0 | 0 | 0 | 0 | Clean |
 | 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
-| 4. API & auth | 0 | 1 | 0 | 0 | 5 endpoints bypass success_response() |
-| 9. Frontend boundaries | 0 | 0 | 1 | 0 | projects page uses h4 not h1 |
-| 10. Frontend API & types | 2 | 0 | 1 | 1 | safety.ts /api/v1 regression + direct fetch |
-| 11. Proxy & routing | 0 | 1 | 0 | 1 | proxy intercepts Route Handlers |
+| 4. API & auth | 0 | 0 | 0 | 0 | RESOLVED |
+| 9. Frontend boundaries | 0 | 0 | 0 | 0 | RESOLVED |
+| 10. Frontend API & types | 0 | 0 | 0 | 0 | RESOLVED (1 accepted) |
+| 11. Proxy & routing | 0 | 0 | 0 | 0 | RESOLVED |
 | 12. OpenAPI | 0 | 0 | 0 | 0 | CI verifies |
-| **Total** | **2** | **2** | **2** | **2** | |
+| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
