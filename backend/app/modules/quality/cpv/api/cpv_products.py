@@ -11,8 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import paginated_response, success_response
-
-logger = logging.getLogger(__name__)
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvParameterCreate,
@@ -24,6 +22,8 @@ from app.modules.quality.cpv.schemas import (
     CpvProductResponse,
     CpvProductUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
