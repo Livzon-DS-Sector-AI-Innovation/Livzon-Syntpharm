@@ -7,7 +7,7 @@ test('missing token redirects to /login?error=callback_failed', async ({ page, r
   expect(res.status()).toBe(307)
   expect(res.headers()['location']).toContain('/login?error=callback_failed')
 
-  await page.goto(res.headers()['location'] || '/login?error=callback_failed')
+  await page.goto('/login?error=callback_failed')
   await expect(page).toHaveURL(LOGIN_URL)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
@@ -17,7 +17,7 @@ test('empty token redirects to /login?error=callback_failed', async ({ page, req
   expect(res.status()).toBe(307)
   expect(res.headers()['location']).toContain('/login?error=callback_failed')
 
-  await page.goto(res.headers()['location'] || '/login?error=callback_failed')
+  await page.goto('/login?error=callback_failed')
   await expect(page).toHaveURL(LOGIN_URL)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
