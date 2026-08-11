@@ -879,19 +879,19 @@ Files changed: 30 across categories 2, 3, 4, 6, 7, 9, 10, 11, 12, 14 (core: remo
 
 ##### Category 4: API and authentication
 
-- [ ] `backend/app/modules/quality/cpv/api/cpv_products.py:179-189` — API规范/软删除 — `delete_parameter()` docstring says "删除参数" without mentioning soft-delete. `delete_product()` (line 127) correctly notes "软删除" in its docstring. The parameter endpoint is inconsistent. Implementation delegates to service layer (not inspected here), so this may only be a docstring issue. — severity: low
+- [x] `backend/app/modules/quality/cpv/api/cpv_products.py:179-189` — API规范/软删除 — `delete_parameter()` docstring says "删除参数" without mentioning soft-delete. `delete_product()` (line 127) correctly notes "软删除" in its docstring. The parameter endpoint is inconsistent. Implementation delegates to service layer (not inspected here), so this may only be a docstring issue. — severity: low — **RESOLVED** (docstring now reads "删除参数（软删除）")
 
 ##### Category 6: Configuration and logging
 
-- [ ] `backend/app/modules/quality/cpv/api/cpv_products.py` — 日志规范 — No logger defined (`logger = logging.getLogger(__name__)` missing). AGENTS.md requires every module to use a module-scoped logger. The entire file has no logging infrastructure imported or configured. — severity: medium
+- [x] `backend/app/modules/quality/cpv/api/cpv_products.py` — 日志规范 — No logger defined (`logger = logging.getLogger(__name__)` missing). AGENTS.md requires every module to use a module-scoped logger. The entire file has no logging infrastructure imported or configured. — severity: medium — **RESOLVED** (`import logging` added at line 3, `logger = logging.getLogger(__name__)` at line 26)
 
 ##### Category 9: Frontend component boundaries
 
-- [ ] `frontend/src/app/(dashboard)/quality/cpv/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Page renders `<CpvProductListClient>` without a semantic heading element. AGENTS.md requires every `page.tsx` to have an `<h1>` or `<Title level={1}>`. Every other page changed in this PR received an `<h1>` — this page was missed. — severity: medium
+- [x] `frontend/src/app/(dashboard)/quality/cpv/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Page renders `<CpvProductListClient>` without a semantic heading element. AGENTS.md requires every `page.tsx` to have an `<h1>` or `<Title level={1}>`. Every other page changed in this PR received an `<h1>` — this page was missed. — severity: medium — **RESOLVED** (added `<h1>CPV产品管理</h1>` at line 12)
 
 ##### Category 10: Frontend API and generated types
 
-- [ ] `frontend/src/actions/safety/helpers.ts:8` — apiFetch一致性/Q9 addendum — `getApiV1Url()` reads `process.env.API_BASE_URL` directly instead of relying solely on `getApiBaseUrl()` from `base.ts`. The function imports `getApiBaseUrl` from `base.ts` but also performs a direct `process.env.API_BASE_URL` null-check (line 8) before calling it. Since `getApiBaseUrl()` already provides a fallback (`http://backend:8000`), the direct `process.env` read bypasses this fallback and is redundant. Q9: "Are there `process.env.API_BASE_URL` reads outside of `lib/api/server/base.ts`?" — severity: high
+- [x] `frontend/src/actions/safety/helpers.ts:8` — apiFetch一致性/Q9 addendum — `getApiV1Url()` reads `process.env.API_BASE_URL` directly instead of relying solely on `getApiBaseUrl()` from `base.ts`. The function imports `getApiBaseUrl` from `base.ts` but also performs a direct `process.env.API_BASE_URL` null-check (line 8) before calling it. Since `getApiBaseUrl()` already provides a fallback (`http://backend:8000`), the direct `process.env` read bypasses this fallback and is redundant. Q9: "Are there `process.env.API_BASE_URL` reads outside of `lib/api/server/base.ts`?" — severity: high — **RESOLVED** (removed `process.env.API_BASE_URL` check; `getApiV1Url()` now simply returns `${getApiBaseUrl()}/api/v1`)
 
 #### Positive changes (not violations)
 
@@ -939,13 +939,13 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 8 (Ba
 |---|---|---|---|---|---|
 | 2. Secrets | 0 | 0 | 0 | 0 | Clean (7 hardcoded URLs removed) |
 | 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
-| 4. API & auth | 0 | 0 | 0 | 1 | Missing soft-delete docstring |
-| 6. Config & logging | 0 | 0 | 1 | 0 | Logger missing in new CPV module |
+| 4. API & auth | 0 | 0 | 0 | 0 | RESOLVED |
+| 6. Config & logging | 0 | 0 | 0 | 0 | RESOLVED |
 | 7. External services | 0 | 0 | 0 | 0 | Clean |
-| 9. Frontend boundaries | 0 | 0 | 1 | 0 | CPV page missing `<h1>`, 5 pages fixed |
-| 10. Frontend API & types | 0 | 1 | 0 | 0 | Direct `process.env.API_BASE_URL` read |
+| 9. Frontend boundaries | 0 | 0 | 0 | 0 | RESOLVED |
+| 10. Frontend API & types | 0 | 0 | 0 | 0 | RESOLVED |
 | 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean (7 getApiBaseUrl dups removed) |
 | 12. OpenAPI | 0 | 0 | 0 | 0 | Clean (CI verifies) |
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (tests improved) |
-| **Total** | **0** | **1** | **2** | **1** | **4 items** |
+| **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
