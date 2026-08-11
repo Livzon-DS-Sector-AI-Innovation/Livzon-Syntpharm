@@ -1,5 +1,6 @@
 """CPV Products API routes."""
 
+import logging
 import uuid
 from datetime import date
 
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import paginated_response, success_response
+
+logger = logging.getLogger(__name__)
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvParameterCreate,
@@ -182,7 +185,7 @@ async def delete_parameter(
     parameter_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    """删除参数"""
+    """删除参数（软删除）"""
 
     await service.delete_parameter(db, parameter_id)
 

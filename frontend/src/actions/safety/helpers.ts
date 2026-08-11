@@ -5,9 +5,6 @@ import { getAuthHeaders } from '@/lib/auth'
 import { getApiBaseUrl } from '@/lib/api/server/base'
 
 function getApiV1Url(): string {
-  if (!process.env.API_BASE_URL) {
-    throw new Error('环境变量 API_BASE_URL 未配置，无法连接后端服务')
-  }
   return `${getApiBaseUrl()}/api/v1`
 }
 

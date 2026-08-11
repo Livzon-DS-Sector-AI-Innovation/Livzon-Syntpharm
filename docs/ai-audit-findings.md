@@ -871,3 +871,81 @@ Category 8 (Backend tests) — no test file changes.
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (no E2E changes) |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
+### PR #25: Ruanjiaheng (head: ruanjiaheng, base: main, date: 2026-08-11)
+
+Files changed: 30 across categories 2, 3, 4, 6, 7, 9, 10, 11, 12, 14 (core: remove duplicate `getApiBaseUrl()` definitions from 7 files, add `<h1>` headings to 5 pages, new CPV backend API module, E2E route cleanup + callback test rewrite, `unwrapResponse()` usage in equipment pages)
+
+#### New findings (not in baseline)
+
+##### Category 4: API and authentication
+
+- [ ] `backend/app/modules/quality/cpv/api/cpv_products.py:179-189` — API规范/软删除 — `delete_parameter()` docstring says "删除参数" without mentioning soft-delete. `delete_product()` (line 127) correctly notes "软删除" in its docstring. The parameter endpoint is inconsistent. Implementation delegates to service layer (not inspected here), so this may only be a docstring issue. — severity: low
+
+##### Category 6: Configuration and logging
+
+- [ ] `backend/app/modules/quality/cpv/api/cpv_products.py` — 日志规范 — No logger defined (`logger = logging.getLogger(__name__)` missing). AGENTS.md requires every module to use a module-scoped logger. The entire file has no logging infrastructure imported or configured. — severity: medium
+
+##### Category 9: Frontend component boundaries
+
+- [ ] `frontend/src/app/(dashboard)/quality/cpv/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Page renders `<CpvProductListClient>` without a semantic heading element. AGENTS.md requires every `page.tsx` to have an `<h1>` or `<Title level={1}>`. Every other page changed in this PR received an `<h1>` — this page was missed. — severity: medium
+
+##### Category 10: Frontend API and generated types
+
+- [ ] `frontend/src/actions/safety/helpers.ts:8` — apiFetch一致性/Q9 addendum — `getApiV1Url()` reads `process.env.API_BASE_URL` directly instead of relying solely on `getApiBaseUrl()` from `base.ts`. The function imports `getApiBaseUrl` from `base.ts` but also performs a direct `process.env.API_BASE_URL` null-check (line 8) before calling it. Since `getApiBaseUrl()` already provides a fallback (`http://backend:8000`), the direct `process.env` read bypasses this fallback and is redundant. Q9: "Are there `process.env.API_BASE_URL` reads outside of `lib/api/server/base.ts`?" — severity: high
+
+#### Positive changes (not violations)
+
+- **`getApiBaseUrl()` consolidation**: 7 files (`dossier-writer.ts`, `safety/helpers.ts`, `agent-skills.ts`, `auth.ts`, `deviation.ts`, `procurement.ts`, `warehouse.ts`) had their duplicate `getApiBaseUrl()` definitions (all hardcoding `http://dazah-backend-app-1:8000` as fallback) removed and replaced with `import { getApiBaseUrl } from '@/lib/api/server/base'`. This eliminates 7 hardcoded URLs from the codebase.
+
+- **`<h1>` headings added** to 5 pages: `equipment/stats/page.tsx` ("设备仪表盘"), `procurement/invoice-recognition/page.tsx` ("发票识别"), `quality/deviation-flow/progress/page.tsx` ("偏差详情"), `quality/doc-check/page.tsx` ("审核管理"), `research/process-optimization/page.tsx` ("工艺优化"). The `<h1>` was also removed from `InvoiceRecognitionClient.tsx` (component layer → correct page layer).
+
+- **`unwrapResponse()` adoption**: `equipment/assets/page.tsx`, `equipment/maintenance/page.tsx`, `equipment/stats/page.tsx` now use `unwrapResponse()` from `base.ts` instead of ad-hoc `.items`/`.data` access patterns.
+
+- **Type safety improvements**: `maintenance/page.tsx` replaced `by_status: {} as any` with proper `Record<string, number>` types. `quality/cpv/page.tsx` added explicit `CpvProductWithStats` type annotation.
+
+- **E2E improvements**:
+  - `callback-errors.spec.ts`: Rewrote tests to use `request` API (no browser rendering for redirect checks), added heading assertions for login page, removed fragile `beforeAll` warmup loop
+  - `routes.spec.ts`: Disabled 11 broken routes with documented reasons (404 endpoints), renamed `法规跟踪` → `法规看板` for registration/regulation heading, added CPV route (`/quality/cpv`)
+
+- **`procurement.ts` data access fix**: Line 37 changed from `return data.data ?? data` (double-unwrapping when `data` is null) to `return data` (return full envelope — callers unwrap).
+
+#### Category 3: Backend module boundaries — Clean
+
+All imports in `backend/app/modules/quality/cpv/` are from `app.core.*` (allowed global layer) or `app.modules.quality.cpv.*` (same module). No cross-module imports bypassing `public_api.py`. No new module directory created (cpv is a sub-path of existing `quality` module).
+
+#### Category 7: External services — Clean
+
+`cpv_products.py` is a thin API layer that delegates to service layer. No external service calls, no `asyncio.create_task()`, no bare `except: pass`, no APScheduler usage.
+
+#### Category 12: OpenAPI — CI-verified
+
+`backend/openapi.json` and `frontend/src/types/generated/schema.ts` both updated in sync. CI (`scripts/ci.sh openapi`) verifies drift.
+
+#### Previously resolved from PR #24 — verified still resolved
+
+- Category 6: `energy/api.py` logger/exception — verified still resolved ✓
+- Category 7: `energy/api.py` background task exceptions — verified still resolved ✓
+- Category 10: `'use server'` files `export type` removal — verified still resolved ✓
+- Category 10: `FeishuConfig`/`AgentSkill` types — still accepted (backend blocked) ✓
+- Category 2: `FEISHU__PLATFORM__REDIRECT_URI` removal — verified still in place ✓
+
+#### Categories not affected
+
+Category 1 (Repository layout), Category 5 (Models & migrations), Category 8 (Backend tests), Category 13 (Docker) — no changed files in scope.
+
+#### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 2. Secrets | 0 | 0 | 0 | 0 | Clean (7 hardcoded URLs removed) |
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 0 | 1 | Missing soft-delete docstring |
+| 6. Config & logging | 0 | 0 | 1 | 0 | Logger missing in new CPV module |
+| 7. External services | 0 | 0 | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 0 | 1 | 0 | CPV page missing `<h1>`, 5 pages fixed |
+| 10. Frontend API & types | 0 | 1 | 0 | 0 | Direct `process.env.API_BASE_URL` read |
+| 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean (7 getApiBaseUrl dups removed) |
+| 12. OpenAPI | 0 | 0 | 0 | 0 | Clean (CI verifies) |
+| 14. E2E | 0 | 0 | 0 | 0 | Clean (tests improved) |
+| **Total** | **0** | **1** | **2** | **1** | **4 items** |
+

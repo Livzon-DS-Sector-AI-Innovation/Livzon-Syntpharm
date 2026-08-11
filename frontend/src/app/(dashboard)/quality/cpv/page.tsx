@@ -7,5 +7,10 @@ export const dynamic = 'force-dynamic'
 export default async function CpvProductListPage() {
   const result = await fetchCpvProductsServer({ page: 1, page_size: 50 })
 
-  return <CpvProductListClient initialProducts={(result.items ?? []) as CpvProductWithStats[]} />
+  return (
+    <>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">CPV产品管理</h1>
+      <CpvProductListClient initialProducts={(result.items ?? []) as CpvProductWithStats[]} />
+    </>
+  )
 }
