@@ -187,102 +187,140 @@ class ExportResponse(BaseModel):
 
 # ====== AI Confirm ======
 
+
 class AIConfirmRequest(BaseModel):
     """AI 填充确认请求"""
+
     fields: list[dict[str, Any]]
+
 
 class AIFillResultItem(BaseModel):
     """AI 填充字段结果"""
+
     field_name: str
     status: str
     message: str
 
+
 class AIConfirmData(BaseModel):
     """AI 填充确认响应数据"""
+
     success: bool
     message: str
     results: list[AIFillResultItem]
 
+
 class AIConfirmResponse(BaseModel):
     """AI 填充确认响应"""
+
     code: int
     data: AIConfirmData
     message: str
 
+
 # ====== Split Preview ======
+
 
 class SplitPreviewRequest(BaseModel):
     """AI 拆分预览请求"""
+
     available_appendix_slots: list[str] = []
+
 
 class PageSplitItem(BaseModel):
     """页拆分项"""
+
     page_number: int
     page_type: str
     content_summary: str
     appendix_slot: str | None = None
 
+
 class SplitPreviewData(BaseModel):
     """AI 拆分预览响应数据"""
+
     success: bool
     message: str
     pages: list[PageSplitItem]
     page_count: int
 
+
 class SplitPreviewResponse(BaseModel):
     """AI 拆分预览响应"""
+
     code: int
     data: SplitPreviewData
     message: str
 
+
 # ====== Split Confirm ======
+
 
 class SplitConfirmRequest(BaseModel):
     """AI 拆分确认请求"""
+
     splits: list[dict[str, Any]]
+
 
 class SplitConfirmData(BaseModel):
     """AI 拆分确认响应数据"""
+
     success: bool
     message: str
     inserted_count: int
 
+
 class SplitConfirmResponse(BaseModel):
     """AI 拆分确认响应"""
+
     code: int
     data: SplitConfirmData
     message: str
 
+
 # ====== Asset Usage Toggle ======
+
 
 class AssetUsageToggleRequest(BaseModel):
     """素材使用状态切换请求"""
+
     is_selected: bool
+
 
 class AssetUsageToggleData(BaseModel):
     """素材使用状态切换响应数据"""
+
     usage_id: str | None = None
     is_selected: bool
 
+
 class AssetUsageToggleResponse(BaseModel):
     """素材使用状态切换响应"""
+
     code: int
     data: AssetUsageToggleData
     message: str
 
+
 # ====== Asset Category Update ======
+
 
 class AssetCategoryUpdateRequest(BaseModel):
     """素材分类更新请求"""
+
     category_id: UUID | None = None
+
 
 class AssetCategoryUpdateData(BaseModel):
     """素材分类更新响应数据"""
+
     id: str
     category_id: str | None
 
+
 class AssetCategoryUpdateResponse(BaseModel):
     """素材分类更新响应"""
+
     code: int
     data: AssetCategoryUpdateData
     message: str
