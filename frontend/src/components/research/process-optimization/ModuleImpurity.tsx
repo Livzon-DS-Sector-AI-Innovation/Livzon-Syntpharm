@@ -5,6 +5,7 @@ import { Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App,
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, BugOutlined, SafetyOutlined, RobotOutlined } from '@ant-design/icons'
 import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment } from '@/types/research'
 import { identifyImpurities, generateIdentificationReport } from '@/components/research/utils/impurity-identifier'
+import { AIParserToolbar } from '../AIParserToolbar'
 import { fetchRouteById } from '@/lib/api/client/research'
 
 interface ModuleImpurityProps {
@@ -284,6 +285,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
   const totalImp = impurities.reduce((s, i) => s + (i.typical_level_pct || 0), 0)
 
   return (
+    <AIParserToolbar parseType="impurity_report" onDataParsed={(data) => console.log("AI Data:", data)} />
     <div>
       <Card>
         <Tabs

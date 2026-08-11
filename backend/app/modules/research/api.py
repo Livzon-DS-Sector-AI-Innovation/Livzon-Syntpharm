@@ -1,3 +1,4 @@
+from app.modules.research.ai_parser.api import router as ai_parser_router
 """研发项目 API 路由."""
 
 import logging
@@ -65,6 +66,7 @@ from app.shared.module_registry import MODULES_BY_CODE
 logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["research"])
+nrouter.include_router(ai_parser_router)
 
 
 @router.post("/projects", summary="创建研发项目")
@@ -3456,3 +3458,12 @@ async def generate_report(
     )
 
     return success_response(data=result, message="生成成功")
+
+
+
+
+# ===== AI Parser API (实验记录解析) =====
+
+from app.modules.research.ai_parser.api import router as ai_parser_sub_router
+
+router.include_router(ai_parser_sub_router)

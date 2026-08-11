@@ -307,7 +307,7 @@ export function ProcessOptimizationWorkflowPage({
   return (
     <div>
       <Card style={{ marginBottom: 16 }}>
-        <Steps onChange={(step) => setCurrentStep(step)}
+        <Steps
           current={currentStep}
           items={stepConfig.map((s) => ({
             title: s.title,

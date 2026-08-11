@@ -1,9 +1,11 @@
 'use client'
 
+import { AIParserToolbar } from '../AIParserToolbar'
 import { useState, useMemo } from 'react'
 import { Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Collapse, Row, Col, Statistic, Descriptions } from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, ExperimentOutlined, BarChartOutlined, TableOutlined, SettingOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
+import { AIParserToolbar } from '../AIParserToolbar'
 import 'echarts-gl'
 import type { DOEExperiment, DOEFactor, DOEResponse, DOERun, DOEDesignType, DOEAnalysisResult, ReactionStep } from '@/types/research'
 
@@ -11,6 +13,8 @@ import type { DOEExperiment, DOEFactor, DOEResponse, DOERun, DOEDesignType, DOEA
 // Helper component to replace deprecated addonBefore
 function LabeledInput({ label, ...props }: { label: string } & React.ComponentProps<typeof Input>) {
   return (
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Data:", data)} />
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Parsed:", data)} />
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
       <Input {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
@@ -20,6 +24,7 @@ function LabeledInput({ label, ...props }: { label: string } & React.ComponentPr
 
 function LabeledInputNumber({ label, ...props }: { label: string } & React.ComponentProps<typeof InputNumber>) {
   return (
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Data:", data)} />
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
       <InputNumber {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
@@ -421,6 +426,9 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
   }, [analysisResult, factors, responses])
 
   return (
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Parsed DOE:", data)} />
+
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Data:", data)} />
     <div>
       {reactionSteps && reactionSteps.length > 0 && (
         <Card style={{ marginBottom: 16 }}>
@@ -454,6 +462,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                 <div>
                   <Alert
                     title="DOE实验设计"
+            <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log('AI Data:', data)} />
                     description="选择实验设计类型，定义因素和水平，生成实验矩阵。DOE方法可以高效地探索多因素影响，找到最优工艺参数组合。"
                     type="info"
                     showIcon
@@ -746,6 +755,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                           {Object.entries(analysisResult.optimal_conditions).map(([symbol, value]) => {
                             const factor = factors.find(f => f.symbol === symbol)
                             return (
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Data:", data)} />
                               <Descriptions.Item key={symbol} label={`${factor?.name || symbol}(${symbol})`}>
                                 <Tag color="blue">{value} {factor?.unit || ''}</Tag>
                               </Descriptions.Item>
@@ -878,6 +888,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                                 {Object.entries(analysisResult.cpp_assessment.control_ranges).map(([symbol, range]) => {
                                   const factor = factors.find(f => f.symbol === symbol)
                                   return (
+    <AIParserToolbar parseType="doe_data" onDataParsed={(data) => console.log("AI Data:", data)} />
                                     <div key={symbol} style={{ marginBottom: 8, padding: '8px', background: '#f5f5f5', borderRadius: '4px' }}>
                                       <div style={{ fontWeight: 500 }}>
                                         {factor?.name || symbol} ({symbol})：{range.min.toFixed(2)} ~ {range.max.toFixed(2)} {range.unit || ''}

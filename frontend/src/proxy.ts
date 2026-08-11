@@ -6,8 +6,13 @@ export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname.startsWith('/api')) {
-    const url = new URL(pathname + request.nextUrl.search, BACKEND_URL)
-    return NextResponse.rewrite(url)
+    try {
+      const url = new URL(pathname + request.nextUrl.search, BACKEND_URL)
+      return NextResponse.rewrite(url)
+    } catch (e) {
+      // 如果后端地址无效，直接返回 503
+      return new NextResponse('Backend service unavailable', { status: 503 })
+    }
   }
 
   const response = NextResponse.next()

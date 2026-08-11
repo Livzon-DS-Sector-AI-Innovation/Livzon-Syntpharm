@@ -31,7 +31,7 @@ export async function exportExam(data: unknown): Promise<Response> {
 }
 
 export async function parseExperimentRecord(formData: FormData): Promise<unknown> {
-  const url = `${getApiBaseUrl()}/api/v1/ai/parse-experiment`
+  const url = `${getApiBaseUrl()}/api/v1/research/ai/parse-experiment`
   const response = await fetch(url, {
     method: 'POST',
     body: formData,
@@ -46,7 +46,7 @@ export async function parseExperimentRecord(formData: FormData): Promise<unknown
 }
 
 export async function parseProcessParameters(content: string, type: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/ai/parse-parameters`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/ai/parse-parameters`, {
     method: 'POST',
     body: JSON.stringify({ content, parse_type: type }),
   })
