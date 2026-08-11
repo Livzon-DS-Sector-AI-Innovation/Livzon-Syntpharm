@@ -2,44 +2,23 @@ import { test, expect } from '@playwright/test'
 
 const LOGIN_URL = /\/login(?:\?.*)?$/
 
-test.beforeAll(async ({ browser }) => {
-  const page = await browser.newPage()
-  // Warm up both regular pages and the auth callback route handler
-  const urls = ['/login', '/auth/callback',]
-  for (const url of urls) {
-    for (let i = 0; i < 5; i++) {
-      try {
-        await page.goto(url, { timeout: 10_000 })
-        break
-      } catch {
-        await new Promise(r => setTimeout(r, 2_000))
-      }
-    }
-  }
-  await page.close()
-})
+test('missing token redirects to /login?error=callback_failed', async ({ page, request }) => {
+  const res = await request.get('/auth/callback', { maxRedirects: 0 })
+  expect(res.status()).toBe(307)
+  expect(res.headers()['location']).toContain('/login?error=callback_failed')
 
-async function gotoWithRetry(page: import('@playwright/test').Page, url: string) {
-  for (let i = 0; i < 3; i++) {
-    try {
-      await page.goto(url)
-      return
-    } catch {
-      await new Promise(r => setTimeout(r, 2_000))
-    }
-  }
-  await page.goto(url)
-}
-
-test('missing token redirects to /login?error=callback_failed', async ({ page }) => {
-  await gotoWithRetry(page, '/auth/callback')
-  await expect(page).toHaveURL(/\/login\?error=callback_failed/)
+  await page.goto(res.headers()['location'] || '/login?error=callback_failed')
+  await expect(page).toHaveURL(LOGIN_URL)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
 
-test('empty token redirects to /login?error=callback_failed', async ({ page }) => {
-  await gotoWithRetry(page, '/auth/callback?token=')
-  await expect(page).toHaveURL(/\/login\?error=callback_failed/)
+test('empty token redirects to /login?error=callback_failed', async ({ page, request }) => {
+  const res = await request.get('/auth/callback', { maxRedirects: 0, params: { token: '' } })
+  expect(res.status()).toBe(307)
+  expect(res.headers()['location']).toContain('/login?error=callback_failed')
+
+  await page.goto(res.headers()['location'] || '/login?error=callback_failed')
+  await expect(page).toHaveURL(LOGIN_URL)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
 
