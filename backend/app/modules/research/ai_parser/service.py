@@ -1,7 +1,6 @@
 """AI Parser service for experiment record parsing."""
 
 import logging
-from typing import Any
 
 from app.core.llm import llm_client
 from app.modules.research.ai_parser.schemas import (
@@ -88,18 +87,16 @@ PARAMETER_PARSE_PROMPT = """你是一个专业的制药工艺参数分析助手�
 """
 
 
-async def parse_experiment_record(
-    content: str, parse_type: str
-) -> ExperimentParseResponse:
+async def parse_experiment_record(content: str, parse_type: str) -> ExperimentParseResponse:
     """解析实验记录文件内容
-    
+
     Args:
         content: 实验记录文本内容
         parse_type: 解析类型 (lab_confirmation 或 scale_up)
-    
+
     Returns:
         ExperimentParseResponse: 解析结果
-    
+
     Raises:
         ValueError: 解析类型无效
         Exception: LLM调用失败
@@ -108,7 +105,8 @@ async def parse_experiment_record(
         raise ValueError(f"无效的解析类型: {parse_type}")
 
     prompt = EXPERIMENT_PARSE_PROMPT.format(
-        parse_type=parse_type, content=content[:5000]  # 限制长度
+        parse_type=parse_type,
+        content=content[:5000],  # 限制长度
     )
 
     try:
@@ -142,18 +140,16 @@ async def parse_experiment_record(
         raise
 
 
-async def parse_process_parameters(
-    content: str, parse_type: str
-) -> ParameterParseResponse:
+async def parse_process_parameters(content: str, parse_type: str) -> ParameterParseResponse:
     """解析工艺参数文本
-    
+
     Args:
         content: 包含工艺参数的文本
         parse_type: 解析类型 (lab_confirmation 或 scale_up)
-    
+
     Returns:
         ParameterParseResponse: 解析结果
-    
+
     Raises:
         Exception: LLM调用失败
     """

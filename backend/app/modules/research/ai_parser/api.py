@@ -8,9 +8,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from app.core.deps import RequiredUser
 from app.core.response import success_response
 from app.modules.research.ai_parser.schemas import (
-    ExperimentParseResponse,
     ParameterParseRequest,
-    ParameterParseResponse,
 )
 from app.modules.research.ai_parser.service import (
     parse_experiment_record,
@@ -29,11 +27,11 @@ async def parse_experiment_api(
     parse_type: str = Form(..., description="解析类型: lab_confirmation 或 scale_up"),
 ) -> Any:
     """上传实验记录文件(PDF/Word/图片/文本),AI自动提取关键信息
-    
+
     Args:
         file: 上传的实验记录文件
         parse_type: 解析类型
-    
+
     Returns:
         解析结果
     """
@@ -53,9 +51,7 @@ async def parse_experiment_api(
         # 调用AI解析服务
         result = await parse_experiment_record(text_content, parse_type)
 
-        return success_response(
-            data=result.model_dump(), message="实验记录解析完成"
-        )
+        return success_response(data=result.model_dump(), message="实验记录解析完成")
 
     except ValueError as e:
         logger.warning(f"参数错误: {e}")
@@ -71,19 +67,17 @@ async def parse_parameters_api(
     request: ParameterParseRequest,
 ) -> Any:
     """从文本中提取工艺参数
-    
+
     Args:
         request: 包含文本内容和解析类型的请求
-    
+
     Returns:
         解析出的工艺参数
     """
     try:
         result = await parse_process_parameters(request.content, request.parse_type)
 
-        return success_response(
-            data=result.model_dump(), message="工艺参数解析完成"
-        )
+        return success_response(data=result.model_dump(), message="工艺参数解析完成")
 
     except Exception as e:
         logger.error(f"工艺参数解析失败: {e}", exc_info=True)
@@ -92,11 +86,11 @@ async def parse_parameters_api(
 
 async def _extract_text_from_file(content: bytes, filename: str) -> str:
     """从文件中提取文本内容
-    
+
     Args:
         content: 文件二进制内容
         filename: 文件名
-    
+
     Returns:
         提取的文本内容
     """
@@ -179,9 +173,7 @@ async def _extract_text_from_file(content: bytes, filename: str) -> str:
 
         except ImportError:
             logger.warning("PaddleOCR未安装,无法解析图片")
-            raise HTTPException(
-                400, "图片解析需要安装PaddleOCR,请联系管理员"
-            )
+            raise HTTPException(400, "图片解析需要安装PaddleOCR,请联系管理员")
         except Exception as e:
             logger.error(f"图片OCR失败: {e}")
             raise HTTPException(500, f"图片解析失败: {str(e)}")

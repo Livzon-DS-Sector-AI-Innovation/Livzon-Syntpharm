@@ -1,4 +1,5 @@
 from app.modules.research.ai_parser.api import router as ai_parser_router
+
 """研发项目 API 路由."""
 
 import logging
@@ -3458,8 +3459,6 @@ async def generate_report(
     )
 
     return success_response(data=result, message="生成成功")
-
-
 
 
 # ===== AI Parser API (实验记录解析) =====

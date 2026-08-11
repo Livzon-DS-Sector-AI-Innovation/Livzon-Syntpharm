@@ -8,9 +8,7 @@ from pydantic import BaseModel, Field
 class ExperimentParseRequest(BaseModel):
     """实验记录解析请求"""
 
-    parse_type: str = Field(
-        ..., description="解析类型: lab_confirmation 或 scale_up"
-    )
+    parse_type: str = Field(..., description="解析类型: lab_confirmation 或 scale_up")
     content: str | None = Field(None, description="文本内容")
 
 
@@ -21,9 +19,7 @@ class LabConfirmationParsedData(BaseModel):
     scale_kg: float | None = Field(None, description="规模(kg)")
     date: str | None = Field(None, description="日期")
     operator: str | None = Field(None, description="操作人")
-    process_parameters: dict[str, Any] | None = Field(
-        None, description="工艺参数"
-    )
+    process_parameters: dict[str, Any] | None = Field(None, description="工艺参数")
     yield_rate: float | None = Field(None, description="收率(%)")
     purity: float | None = Field(None, description="纯度(%)")
     impurities: list[dict[str, Any]] | None = Field(None, description="杂质数据")
@@ -53,9 +49,7 @@ class ExperimentParseResponse(BaseModel):
 
     parse_type: str = Field(..., description="解析类型")
     confidence: float = Field(..., description="置信度(0-1)")
-    data: LabConfirmationParsedData | ScaleUpParsedData = Field(
-        ..., description="解析数据"
-    )
+    data: LabConfirmationParsedData | ScaleUpParsedData = Field(..., description="解析数据")
     raw_text: str | None = Field(None, description="原始文本")
     warnings: list[str] = Field(default_factory=list, description="警告信息")
 
@@ -64,9 +58,7 @@ class ParameterParseRequest(BaseModel):
     """工艺参数解析请求"""
 
     content: str = Field(..., description="文本内容")
-    parse_type: str = Field(
-        ..., description="解析类型: lab_confirmation 或 scale_up"
-    )
+    parse_type: str = Field(..., description="解析类型: lab_confirmation 或 scale_up")
 
 
 class ParameterParseResponse(BaseModel):
