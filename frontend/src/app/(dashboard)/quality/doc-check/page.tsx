@@ -720,8 +720,9 @@ export default function DocCheckPage() {
 
   // ============ 渲染 ============
 
-  return (
+   return (
     <div style={{ padding: 24 }}>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">审核管理</h1>
       <Row gutter={16}>
         {/* 左侧：文件上传区域 */}
         <Col span={10}>

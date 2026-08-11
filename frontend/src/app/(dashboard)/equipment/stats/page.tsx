@@ -21,6 +21,7 @@ import type {
   CalibrationPlan,
   WorkOrder,
 } from '@/types/equipment'
+import { unwrapResponse } from '@/lib/api/server/base'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,37 +62,41 @@ export default async function StatsPage() {
     const [eqResult, woResult, swResult, overdueResult, calResult, ordersResult] = results
 
     if (eqResult.status === 'fulfilled') {
-      equipmentStats = eqResult.value
+      equipmentStats = unwrapResponse<EquipmentStatistics>(eqResult.value) ?? defaultEquipmentStats
     } else {
       console.warn('设备统计加载失败:', eqResult.reason)
     }
 
     if (woResult.status === 'fulfilled') {
-      workOrderStats = woResult.value
+      workOrderStats = unwrapResponse<WorkOrderStatistics>(woResult.value) ?? defaultWorkOrderStats
     } else {
       console.warn('工单统计加载失败:', woResult.reason)
     }
 
     if (swResult.status === 'fulfilled') {
-      stockWarnings = Array.isArray(swResult.value) ? swResult.value : []
+      const data = unwrapResponse(swResult.value)
+      stockWarnings = Array.isArray(data) ? data : []
     } else {
       console.warn('库存预警加载失败:', swResult.reason)
     }
 
     if (overdueResult.status === 'fulfilled') {
-      overduePlans = Array.isArray(overdueResult.value) ? overdueResult.value : []
+      const data = unwrapResponse(overdueResult.value)
+      overduePlans = Array.isArray(data) ? data : []
     } else {
       console.warn('逾期维护计划加载失败:', overdueResult.reason)
     }
 
     if (calResult.status === 'fulfilled') {
-      calibrationPlans = Array.isArray(calResult.value?.items) ? calResult.value.items : []
+      const data = unwrapResponse(calResult.value) as Record<string, unknown>
+      calibrationPlans = Array.isArray(data?.items) ? data.items as CalibrationPlan[] : (Array.isArray(data) ? data as CalibrationPlan[] : [])
     } else {
       console.warn('校准计划加载失败:', calResult.reason)
     }
 
     if (ordersResult.status === 'fulfilled') {
-      recentWorkOrders = Array.isArray(ordersResult.value?.items) ? ordersResult.value.items : []
+      const data = unwrapResponse(ordersResult.value) as Record<string, unknown>
+      recentWorkOrders = Array.isArray(data?.items) ? data.items as WorkOrder[] : (Array.isArray(data) ? data as WorkOrder[] : [])
     } else {
       console.warn('近期工单加载失败:', ordersResult.reason)
     }
@@ -100,7 +105,9 @@ export default async function StatsPage() {
   }
 
   return (
-    <StatsDashboard
+    <>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">设备仪表盘</h1>
+      <StatsDashboard
       initialData={{
         equipmentStats,
         workOrderStats,
@@ -109,6 +116,7 @@ export default async function StatsPage() {
         calibrationPlans,
         recentWorkOrders,
       }}
-    />
+      />
+    </>
   )
 }

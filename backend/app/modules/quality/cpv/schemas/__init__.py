@@ -21,6 +21,7 @@ from app.modules.quality.cpv.schemas.cpv_parameter import (
 )
 from app.modules.quality.cpv.schemas.cpv_product import (
     CpvProductCreate,
+    CpvProductListApiResponse,
     CpvProductListResponse,
     CpvProductResponse,
     CpvProductUpdate,
@@ -40,6 +41,7 @@ __all__ = [
     "CpvProductUpdate",
     "CpvProductResponse",
     "CpvProductListResponse",
+    "CpvProductListApiResponse",
     # CPV Parameter
     "ParameterType",
     "CpvParameterCreate",

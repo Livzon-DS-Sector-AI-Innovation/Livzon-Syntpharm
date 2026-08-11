@@ -2,6 +2,7 @@ import { EquipmentPage } from '@/components/equipment'
 import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/actions/equipment'
 import type { DepartmentOption } from '@/types/equipment'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment'
+import { unwrapResponse } from '@/lib/api/server/base'
 
 // 强制动态渲染：不在构建时预渲染，每次请求都实时从后端获取数据
 export const dynamic = 'force-dynamic'
@@ -41,13 +42,15 @@ export default async function EquipmentPageWrapper() {
   }
   try {
     const result = await fetchEquipments({ page: 1, page_size: 20 })
-    equipments = result.items
-    total = result.total
+    const data = unwrapResponse(result)
+    equipments = Array.isArray(data) ? data : ((data as Record<string, unknown>)?.items as Equipment[]) ?? []
+    total = (data as Record<string, unknown>)?.total as number ?? equipments.length
   } catch (error) {
     console.warn('加载设备列表失败:', error)
   }
   try {
-    statistics = await fetchEquipmentStatistics()
+    const statsResult = await fetchEquipmentStatistics()
+    statistics = unwrapResponse<EquipmentStatistics>(statsResult) ?? defaultStatistics
   } catch (error) {
     console.warn('加载设备统计失败:', error)
   }

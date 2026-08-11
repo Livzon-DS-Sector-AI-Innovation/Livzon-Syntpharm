@@ -14525,7 +14525,7 @@ export interface paths {
         post?: never;
         /**
          * 删除参数
-         * @description 删除参数
+         * @description 删除参数（软删除）
          */
         delete: operations["delete_parameter_api_v1_quality_cpv_parameters__parameter_id__delete"];
         options?: never;
@@ -19986,6 +19986,92 @@ export interface components {
              * @description 备注描述
              */
             description?: string | null;
+        };
+        /**
+         * CpvProductListApiResponse
+         * @description CPV产品列表API响应（完整envelope）
+         */
+        CpvProductListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["CpvProductListResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * CpvProductListResponse
+         * @description 产品列表响应（带统计）
+         */
+        CpvProductListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Specification */
+            specification: string | null;
+            /** Process Version */
+            process_version: string | null;
+            /** Status */
+            status: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
+            /**
+             * Cpp Parameter Count
+             * @default 0
+             */
+            cpp_parameter_count: number;
+            /**
+             * Cqa Parameter Count
+             * @default 0
+             */
+            cqa_parameter_count: number;
+            /**
+             * Cpp Batch Count
+             * @default 0
+             */
+            cpp_batch_count: number;
+            /**
+             * Cqa Batch Count
+             * @default 0
+             */
+            cqa_batch_count: number;
+            /** Avg Value */
+            avg_value?: number | null;
+            /** Cpk Value */
+            cpk_value?: number | null;
+            /**
+             * Abnormal Batch Count
+             * @default 0
+             */
+            abnormal_batch_count: number;
         };
         /**
          * CpvProductUpdate
@@ -71199,7 +71285,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CpvProductListApiResponse"];
                 };
             };
             /** @description Validation Error */

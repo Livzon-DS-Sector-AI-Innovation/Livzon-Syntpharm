@@ -61,6 +61,15 @@ export async function apiFetchRaw(url: string, options?: RequestInit): Promise<R
   return response
 }
 
+/**
+ * Extract the `data` payload from a wrapped API response envelope.
+ * All server-side API responses follow the shape `{code, data, message, meta}`.
+ * Use this helper instead of ad-hoc `.data` access at call sites.
+ */
+export function unwrapResponse<T>(raw: { code: number; data: T; message?: string; meta?: unknown }): T {
+  return raw.data
+}
+
 export function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {

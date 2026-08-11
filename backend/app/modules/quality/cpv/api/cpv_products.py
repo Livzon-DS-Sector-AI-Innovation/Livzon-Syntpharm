@@ -1,5 +1,6 @@
 """CPV Products API routes."""
 
+import logging
 import uuid
 from datetime import date
 
@@ -16,10 +17,13 @@ from app.modules.quality.cpv.schemas import (
     CpvParameterResponse,
     CpvParameterUpdate,
     CpvProductCreate,
+    CpvProductListApiResponse,
     CpvProductListResponse,
     CpvProductResponse,
     CpvProductUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -40,7 +44,7 @@ async def create_product(
     return success_response(data=CpvProductResponse.model_validate(product))
 
 
-@router.get("/products", summary="获取产品列表")
+@router.get("/products", summary="获取产品列表", response_model=CpvProductListApiResponse)
 async def get_products(
     current_user: CurrentUser,
     keyword: str | None = Query(None, description="关键词搜索"),
@@ -181,7 +185,7 @@ async def delete_parameter(
     parameter_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    """删除参数"""
+    """删除参数（软删除）"""
 
     await service.delete_parameter(db, parameter_id)
 

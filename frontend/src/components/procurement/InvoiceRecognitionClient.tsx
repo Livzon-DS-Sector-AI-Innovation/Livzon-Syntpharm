@@ -628,7 +628,6 @@ export function InvoiceRecognitionClient({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-2">发票识别</h1>
         <p className="text-[14px] text-[var(--color-steel)]">
           批量上传电子发票 PDF，系统会提取发票号码、开票日期、销售方、税额合计和价税合计信息；可按需开启明细识别。
         </p>

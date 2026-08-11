@@ -18,10 +18,7 @@ import type {
   MatchResult,
   FieldFillResult,
 } from '@/types/dossier-writer'
-
-function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
+import { getApiBaseUrl } from '@/lib/api/server/base'
 
 async function actionFetch<T>(url: string, options?: RequestInit): Promise<T> {
   // AI 相关接口需要更长的超时时间（OCR + LLM 处理可能需要 10 分钟）
