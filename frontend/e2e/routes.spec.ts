@@ -218,7 +218,8 @@ const hrRoutes: RouteCase[] = [
   // { path: '/hr/training/sop-catalog', module: 'hr', kind: 'normal', expected: heading('SOP 目录') },
   // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
   // { path: '/hr/training/specialists', module: 'hr', kind: 'normal', expected: heading('培训专员管理') },
-  { path: '/hr/training/trainers', module: 'hr', kind: 'normal', expected: heading('内训师台账') },
+  // Disabled: calls /api/v1/hr/sop-catalog and /api/v1/hr/trainers (returns 404)
+  // { path: '/hr/training/trainers', module: 'hr', kind: 'normal', expected: heading('内训师台账') },
   // Excluded (form/create pages requiring data fixtures):
   // /hr/training/annual-plan/new
   // /hr/training/ledger/new

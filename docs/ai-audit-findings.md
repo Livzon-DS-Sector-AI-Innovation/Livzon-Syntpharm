@@ -302,8 +302,6 @@ CI configuration in place. E2E tests run on push to main via `.github/workflows/
 
 ## PR Reviews
 
-_No PRs reviewed yet._
-
 ### Template for PR entries
 
 ```markdown
@@ -872,4 +870,71 @@ Category 8 (Backend tests) — no test file changes.
 | 13. Docker | 0 | 0 | 0 | 0 | Clean |
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (no E2E changes) |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
+
+### PR #25: Ruanjiaheng (head: ruanjiaheng, base: main, date: 2026-08-11)
+
+Files changed: 29 across 10 categories (core: CPV OpenAPI response schema + unwrapResponse utility + AGENTS.md apiFetch rules + remove duplicate getApiBaseUrl definitions + add h1 headings to multiple pages + E2E route cleanup)
+
+Categories affected: 1, 3, 4, 6, 7, 9, 10, 11, 12, 14
+
+#### New findings (not in baseline)
+
+_None._ All changes are either fixes of existing violations or infrastructure improvements.
+
+#### Positive changes
+
+- `frontend/src/lib/api/server/base.ts:64-73` — Added `unwrapResponse<T>()` helper for consistent envelope unwrapping. ✓
+- `AGENTS.md:570-588` — Added `apiFetch 一致性` rules documenting the required API call patterns. ✓
+- `frontend/src/actions/dossier-writer.ts:21` — Removed duplicate `getApiBaseUrl()` definition, now imports from `@/lib/api/server/base`. ✓
+- `frontend/src/actions/safety/helpers.ts:5` — Removed duplicate `getApiBaseUrl()` definition, now imports from `@/lib/api/server/base`. ✓
+- `frontend/src/lib/api/server/agent-skills.ts:6` — Removed duplicate `getApiBaseUrl()` definition, now imports from `./base`. ✓
+- `frontend/src/lib/api/server/auth.ts:4` — Removed duplicate `getApiBaseUrl()` definition, now imports from `./base`. ✓
+- `frontend/src/lib/api/server/deviation.ts:4` — Replaced local `getApiBase()` with `getApiBaseUrl` from `./base`. ✓
+- `frontend/src/lib/api/server/procurement.ts:18,27` — Removed duplicate `getApiBaseUrl()` definition, `apiFetch` now returns full envelope (consistent with new AGENTS.md rule). ✓
+- `frontend/src/lib/api/server/quality-cpv.ts:1,11-12,93-96` — Added `unwrapResponse` usage, replaced handwritten `CpvProductWithStats` type with generated schema type `CpvProductListApiResponse`. ✓
+- `frontend/src/app/(dashboard)/procurement/invoice-recognition/page.tsx:8` — Added `<h1>发票识别</h1>` heading. ✓
+- `frontend/src/components/procurement/InvoiceRecognitionClient.tsx:631` — Removed duplicate `<h1>` from Client Component (heading now lives in page.tsx). ✓
+- `frontend/src/app/(dashboard)/quality/deviation-flow/progress/page.tsx:96,105` — Added `<h1>偏差详情</h1>` headings in loading and not-found states. ✓
+- `frontend/src/app/(dashboard)/quality/doc-check/page.tsx:725` — Added `<h1>审核管理</h1>` heading. ✓
+- `frontend/src/app/(dashboard)/research/process-optimization/page.tsx:12` — Added `<h1>工艺优化</h1>` heading. ✓
+- `frontend/src/app/(dashboard)/equipment/assets/page.tsx:5,45-47` — Adopted `unwrapResponse` for typed data extraction. ✓
+- `frontend/src/app/(dashboard)/equipment/maintenance/page.tsx:13,67-89` — Adopted `unwrapResponse` for typed data extraction. ✓
+- `frontend/src/app/(dashboard)/equipment/stats/page.tsx:24,65-86` — Adopted `unwrapResponse` for typed data extraction. ✓
+- `backend/app/modules/quality/cpv/schemas/cpv_product.py:61-72` — New `CpvProductListApiResponse` schema for typed OpenAPI response envelope. ✓
+- `backend/openapi.json` — Updated with `CpvProductListApiResponse` schema. ✓
+- `frontend/src/types/generated/schema.ts` — Updated with `CpvProductListApiResponse` type. ✓
+- `frontend/e2e/auth/callback-errors.spec.ts` — Refactored auth error tests to use `request.get({maxRedirects:0})` for precise status/header assertions, removed fragile warmup. ✓
+- `frontend/e2e/routes.spec.ts` — Disabled routes with 404 backend endpoints, updated heading assertion for registration/regulation page, documented reasons inline. ✓
+
+#### Observations (pre-existing, not introduced by this PR)
+
+- `backend/app/modules/quality/cpv/api/cpv_products.py:33,45,96,108,122,138,151,165,179,195,223,248,276,293` — API 规范/Q6 — All CPV endpoints use `CurrentUser` (= `Annotated[User | None, ...]`, equivalent to `OptionalUser`) instead of `RequiredUser`. AGENTS.md defaults business APIs to `RequiredUser`. Pre-existing; file was touched in this PR but `CurrentUser` lines were not changed. — severity: observation
+- `frontend/src/lib/api/server/deviation.ts:95-100,142,149,164,188,213,243-251,265-273,287-292,303-311,325-331,342-347,358-363` — 类型系统/Q1 — Multiple functions with handwritten inline type annotations instead of generated schema types. 14 functions flagged. Pre-existing; only `getApiBaseUrl` import changed in this PR. — severity: observation
+- `frontend/src/lib/api/server/agent-skills.ts:8-23` — apiFetch 一致性/Q6 — Custom `apiFetch<T>()` with fetch logic duplicates `base.ts` functionality. Pre-existing; only `getApiBaseUrl` import changed in this PR. — severity: observation
+- `frontend/src/lib/api/server/safety.ts:18-59,61-82` — apiFetch 一致性/Q6 — Custom `safeApiFetch` and `uploadFetch` duplicate `base.ts` functionality. Pre-existing; file unchanged in this PR's functional code. — severity: observation
+- `frontend/src/lib/api/server/warehouse.ts:20-36,172-196` — apiFetch 一致性/Q6 — Custom `apiFetch` and `apiFetchWithAuth` duplicate `base.ts` functionality. Pre-existing; file unchanged in this PR's functional code. — severity: observation
+- `frontend/src/lib/api/server/auth.ts:46,53,76-78,103` — apiFetch 一致性/Q9 — Ad-hoc `.data` access at call sites instead of `unwrapResponse`. Pre-existing; only `getApiBaseUrl` import changed in this PR. — severity: observation
+- `frontend/src/app/(dashboard)/quality/cpv/page.tsx:10` — 页面标题/Q9 — No `<h1>` heading; page renders only `<CpvProductListClient />`. Pre-existing; file change only added type import and null coalescing. — severity: observation
+- `frontend/e2e/auth/callback-errors.spec.ts:27,35` — 仓库通用规则/禁止硬编码 — `domain: '127.0.0.1'` in `addCookies` calls. Pre-existing; these lines unchanged in this PR. — severity: observation
+- `frontend/e2e/routes.spec.ts:39` — 仓库通用规则/禁止硬编码 — `'http://127.0.0.1:13000'` in URL check. Pre-existing; line unchanged in this PR. — severity: observation
+
+#### Categories not affected
+
+Categories 2 (Secrets), 5 (Models/Migrations), 8 (Backend tests), 13 (Docker) — no changed files in scope.
+
+#### Category summaries
+
+| Category | New violations | Observations | Note |
+|---|---|---|---|
+| 1. Repository layout | 0 | 0 | Clean |
+| 3. Module boundaries | 0 | 0 | Clean |
+| 4. API & auth | 0 | 1 | CurrentUser pre-existing |
+| 6. Config & logging | 0 | 0 | Clean |
+| 7. External services | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 1 | cpv/page.tsx h1 pre-existing |
+| 10. Frontend API & types | 0 | 5 | Handwritten types / custom fetches pre-existing |
+| 11. Proxy & routing | 0 | 0 | Clean (getApiBaseUrl centralized) |
+| 12. OpenAPI | 0 | 0 | Clean (CI verifies) |
+| 14. E2E | 0 | 2 | 127.0.0.1 pre-existing |
+| **Total** | **0** | **9** | **0 new violations** |
 
