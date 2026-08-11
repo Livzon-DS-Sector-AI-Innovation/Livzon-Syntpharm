@@ -3,27 +3,42 @@ import { test, expect } from '@playwright/test'
 const LOGIN_URL = /\/login(?:\?.*)?$/
 
 test.beforeAll(async ({ browser }) => {
-  // Warm up connection — Docker port forwarding may be slow after previous project
   const page = await browser.newPage()
-  for (let i = 0; i < 5; i++) {
-    try {
-      await page.goto('/login', { timeout: 10_000 })
-      break
-    } catch {
-      await new Promise(r => setTimeout(r, 2_000))
+  // Warm up both regular pages and the auth callback route handler
+  const urls = ['/login', '/auth/callback',]
+  for (const url of urls) {
+    for (let i = 0; i < 5; i++) {
+      try {
+        await page.goto(url, { timeout: 10_000 })
+        break
+      } catch {
+        await new Promise(r => setTimeout(r, 2_000))
+      }
     }
   }
   await page.close()
 })
 
+async function gotoWithRetry(page: import('@playwright/test').Page, url: string) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      await page.goto(url)
+      return
+    } catch {
+      await new Promise(r => setTimeout(r, 2_000))
+    }
+  }
+  await page.goto(url)
+}
+
 test('missing token redirects to /login?error=callback_failed', async ({ page }) => {
-  await page.goto('/auth/callback')
+  await gotoWithRetry(page, '/auth/callback')
   await expect(page).toHaveURL(/\/login\?error=callback_failed/)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
 
 test('empty token redirects to /login?error=callback_failed', async ({ page }) => {
-  await page.goto('/auth/callback?token=')
+  await gotoWithRetry(page, '/auth/callback?token=')
   await expect(page).toHaveURL(/\/login\?error=callback_failed/)
   await expect(page.getByRole('heading', { name: '工厂管理平台' })).toBeVisible()
 })
