@@ -64,6 +64,6 @@ class CpvProductListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[CpvProductListResponse]
-    meta: dict | None = None
+    meta: dict[str, object] | None = None
 
     model_config = {"from_attributes": True}
