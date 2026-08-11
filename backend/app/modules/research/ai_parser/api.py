@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["AI解析"])
 
 
-@router.post("/parse-experiment", summary="解析实验记录文件")
-async def post(
+@router.post("/parse-experiment", operation_id="parse_experiment_ai", summary="解析实验记录文件")
+async def parse_experiment_api(
     current_user: RequiredUser,
     file: UploadFile = File(...),
     parse_type: str = Form(..., description="解析类型: lab_confirmation 或 scale_up"),
@@ -65,8 +65,8 @@ async def post(
         raise HTTPException(500, f"AI解析失败: {str(e)}")
 
 
-@router.post("/parse-parameters", summary="解析工艺参数文本")
-async def api_parse_parameters(
+@router.post("/parse-parameters", operation_id="parse_parameters_ai", summary="解析工艺参数文本")
+async def parse_parameters_api(
     current_user: RequiredUser,
     request: ParameterParseRequest,
 ) -> Any:

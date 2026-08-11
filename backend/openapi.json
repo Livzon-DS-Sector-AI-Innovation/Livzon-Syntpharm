@@ -42208,6 +42208,128 @@
         }
       }
     },
+    "/api/v1/research/ai/parse-experiment": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "AI\u89e3\u6790"
+        ],
+        "summary": "\u89e3\u6790\u5b9e\u9a8c\u8bb0\u5f55\u6587\u4ef6",
+        "description": "\u4e0a\u4f20\u5b9e\u9a8c\u8bb0\u5f55\u6587\u4ef6(PDF/Word/\u56fe\u7247/\u6587\u672c),AI\u81ea\u52a8\u63d0\u53d6\u5173\u952e\u4fe1\u606f\n\nArgs:\n    file: \u4e0a\u4f20\u7684\u5b9e\u9a8c\u8bb0\u5f55\u6587\u4ef6\n    parse_type: \u89e3\u6790\u7c7b\u578b\n\nReturns:\n    \u89e3\u6790\u7ed3\u679c",
+        "operationId": "parse_experiment_ai",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_experiment_ai"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Parse Experiment Ai"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/ai/parse-parameters": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "AI\u89e3\u6790"
+        ],
+        "summary": "\u89e3\u6790\u5de5\u827a\u53c2\u6570\u6587\u672c",
+        "description": "\u4ece\u6587\u672c\u4e2d\u63d0\u53d6\u5de5\u827a\u53c2\u6570\n\nArgs:\n    request: \u5305\u542b\u6587\u672c\u5185\u5bb9\u548c\u89e3\u6790\u7c7b\u578b\u7684\u8bf7\u6c42\n\nReturns:\n    \u89e3\u6790\u51fa\u7684\u5de5\u827a\u53c2\u6570",
+        "operationId": "parse_parameters_ai",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParameterParseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Parse Parameters Ai"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/projects": {
       "post": {
         "tags": [
@@ -83325,6 +83447,26 @@
         ],
         "title": "Body_import_supplier_records_api_v1_procurement_suppliers_import_post"
       },
+      "Body_parse_experiment_ai": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "parse_type": {
+            "type": "string",
+            "title": "Parse Type",
+            "description": "\u89e3\u6790\u7c7b\u578b: lab_confirmation \u6216 scale_up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "parse_type"
+        ],
+        "title": "Body_parse_experiment_ai"
+      },
       "Body_post_api_v1_hr_ai_exam_generate_post": {
         "properties": {
           "file": {
@@ -106596,6 +106738,27 @@
           "import_key"
         ],
         "title": "PackagingMaterialResponse"
+      },
+      "ParameterParseRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "\u6587\u672c\u5185\u5bb9"
+          },
+          "parse_type": {
+            "type": "string",
+            "title": "Parse Type",
+            "description": "\u89e3\u6790\u7c7b\u578b: lab_confirmation \u6216 scale_up"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content",
+          "parse_type"
+        ],
+        "title": "ParameterParseRequest",
+        "description": "\u5de5\u827a\u53c2\u6570\u89e3\u6790\u8bf7\u6c42"
       },
       "PermitStatus": {
         "type": "string",

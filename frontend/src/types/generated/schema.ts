@@ -8593,6 +8593,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/ai/parse-experiment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 解析实验记录文件
+         * @description 上传实验记录文件(PDF/Word/图片/文本),AI自动提取关键信息
+         *
+         *     Args:
+         *         file: 上传的实验记录文件
+         *         parse_type: 解析类型
+         *
+         *     Returns:
+         *         解析结果
+         */
+        post: operations["parse_experiment_ai"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/ai/parse-parameters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 解析工艺参数文本
+         * @description 从文本中提取工艺参数
+         *
+         *     Args:
+         *         request: 包含文本内容和解析类型的请求
+         *
+         *     Returns:
+         *         解析出的工艺参数
+         */
+        post: operations["parse_parameters_ai"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/projects": {
         parameters: {
             query?: never;
@@ -17873,6 +17926,16 @@ export interface components {
              */
             file: string;
         };
+        /** Body_parse_experiment_ai */
+        Body_parse_experiment_ai: {
+            /** File */
+            file: string;
+            /**
+             * Parse Type
+             * @description 解析类型: lab_confirmation 或 scale_up
+             */
+            parse_type: string;
+        };
         /** Body_post_api_v1_hr_ai_exam_generate_post */
         Body_post_api_v1_hr_ai_exam_generate_post: {
             /** File */
@@ -26879,6 +26942,22 @@ export interface components {
             created_at?: string | null;
             /** Updated At */
             updated_at?: string | null;
+        };
+        /**
+         * ParameterParseRequest
+         * @description 工艺参数解析请求
+         */
+        ParameterParseRequest: {
+            /**
+             * Content
+             * @description 文本内容
+             */
+            content: string;
+            /**
+             * Parse Type
+             * @description 解析类型: lab_confirmation 或 scale_up
+             */
+            parse_type: string;
         };
         /**
          * PermitStatus
@@ -56407,6 +56486,76 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    parse_experiment_ai: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_experiment_ai"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_parameters_ai: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParameterParseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
