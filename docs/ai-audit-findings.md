@@ -1004,12 +1004,22 @@ All 9 page/component files correctly refactored from raw `fetch()` + `.data` to 
 
 | Files inspected | 31 (17 client, 14 server, 2 actions, 1 route handler) |
 | Rules evaluated | 11 |
-| Confirmed findings | 1 |
+| Confirmed findings | 6 |
 | Uncertain findings | 0 |
 
 ##### Confirmed
 
 - [ ] `frontend/src/lib/api/client.ts:125-132` — AGENTS.md 写操作必须用Server Actions/Q2 — New `apiPost<T>()` utility function enables client-side POST operations. AGENTS.md: "所有 POST/PUT/DELETE 操作写在 `actions/` 目录。**禁止**在 Client 组件里直接 fetch 写接口。" The approved design plan included this helper (Phase 1b), and the only call site (`inspection.ts:100-102` `setRouteLocations`) pre-exists (only import source changed from `@/lib/http-client` to `@/lib/api/client`). — severity: **high** (accepted — design approved; existing call site, no new POST callers)
+
+- [ ] `frontend/src/actions/dossier-writer.ts:28-67` — AGENTS.md apiFetch一致性/Q10 — Custom `actionFetch<T>()` wrapper that reimplements `apiFetch()` + `unwrapResponse()` from `@/lib/api/server/base` with raw `fetch()`, manual JSON parsing, manual error handling, and ad-hoc `json.data` extraction. AGENTS.md requires all server-side API calls to use `apiFetch`/`apiFetchRaw` from `base.ts`, and `unwrapResponse()` for `.data` extraction. The custom timeout logic for AI endpoints (10min vs 30s) is the likely reason, but `apiFetch` supports `signal` via `RequestInit`, so `AbortController` with custom timeout can be passed as an option. — severity: **high**
+
+- [ ] `frontend/src/actions/dossier-writer.ts:192-199,214,226` — AGENTS.md 类型系统/API类型来源/Q1 — Handwritten inline object type annotations: `splits: Array<{split_id, appendix_slot, asset_id, page_number}>` (line 192), `Promise<{success, message, inserted_count}>` (line 199), `Promise<{id, category_id}>` (line 214), `Promise<{usage_id?, is_selected}>` (line 226). AGENTS.md requires all API types from `@/types/generated/schema`. — severity: **high**
+
+- [ ] `frontend/src/lib/api/server/procurement.ts:335-344` — AGENTS.md apiFetch一致性/Q10 — `procurementJsonFetch<T>()` is a custom wrapper around raw `fetch()` that sets `Content-Type: application/json` and calls `parseJsonResponse`. This is a JSON API helper (not FormData upload — exception does not apply). Must use `apiFetch()` from `base.ts` instead. Used by `createPurchaseRequest`, `updatePurchaseRequest`, `submitPurchaseRequest`, `approvePurchaseRequest`, `rejectPurchaseRequest`. — severity: **high**
+
+- [ ] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:65` — AGENTS.md 写操作必须用Server Actions/Q2 — Raw `fetch()` with `method: 'POST'` in a Client Component (`'use client'` at line 1). POSTs evaluation data and receives an Excel blob download. Must be a Server Action. The blob download is not an SSE/ReadableStream exception — the exception requires such calls to live in `lib/api/client/`, not in page components. — severity: **high**
+
+- [ ] `frontend/src/lib/api/server/equipment.ts:307,352,512,541` — AGENTS.md apiFetch一致性/Q11 — Four FormData upload functions use raw `fetch()` with manual error handling and ad-hoc `json.data`/`json.data ?? json` access instead of `unwrapResponse()`. Functions: `uploadWorkOrderImagesApi`, `importEquipmentsApi`, `uploadInspectionPhotoApi`, `uploadTaskPhotoApi`. AGENTS.md allows custom `uploadFetch<T>()` for FormData, but these use raw `fetch()` directly without a standardized helper. — severity: **low** (FormData — `apiFetch` would break multipart; functionally correct but inconsistent with other modules that use `uploadFetch` helpers)
 
 ##### Positive changes (selected)
 
@@ -1026,13 +1036,6 @@ All 9 page/component files correctly refactored from raw `fetch()` + `.data` to 
 | `literature/analyze/route.ts` | `getApiBaseUrl` import fixed to `base.ts` ✓ |
 | `dossier-writer.ts` | 3 functions refactored to `lib/api/server/dossier-writer.ts` ✓ |
 | `safety/helpers.ts` | Duplicate `getApiV1Url` **removed** ✓ |
-
-##### Pre-existing patterns (not in diff, not PR-introduced)
-
-- `actions/dossier-writer.ts:28-67` — Custom `actionFetch` wrapper. Unchanged.
-- `actions/dossier-writer.ts:190-225` — Handwritten inline object types. Unchanged.
-- `equipment.ts:315,360,520,549` — Ad-hoc `.data` in upload functions (FormData exception). Unchanged.
-- `procurement.ts:335` — `procurementJsonFetch` raw `fetch()`. Only minor path change in this PR (now uses `getApiBaseUrl()`).
 
 #### Category 11: Proxy and routing
 
@@ -1051,13 +1054,13 @@ All 9 page/component files correctly refactored from raw `fetch()` + `.data` to 
 #### Category summary
 
 | Category | Blocking | High | Medium | Low | Note |
-|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|
 | 1. Repository layout | 0 | 0 | 0 | 0 | Clean (obsolete files deleted) |
 | 2. Secrets | 1 | 0 | 0 | 0 | **ai.ts getApiBaseUrl regression** |
 | 9. Frontend boundaries | 0 | 0 | 0 | 0 | proxy.ts comment — accepted |
-| 10. Frontend API & types | 0 | 0 | 0 | 0 | apiPost — accepted (design approved) |
+| 10. Frontend API & types | 0 | 4 | 0 | 1 | apiPost accepted; actionFetch + inline types + procurementJsonFetch + eval POST + equipment FormData |
 | 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean |
-| **Total** | **1** | **0** | **0** | **0** | **1 blocking finding** |
+| **Total** | **1** | **4** | **0** | **1** | **6 findings (1 accepted)** |
 
 #### Previously resolved from PR #25 — verified still resolved
 

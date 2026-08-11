@@ -156,46 +156,41 @@ export async function recognizeInvoicePdf(
     body: formData,
     cache: 'no-store',
   })
-  return parseJsonResponse<InvoiceRecognitionResponse>(response, '发票识别失败')
+  const json = await response.json()
+  if (!response.ok) throw new Error(json?.message || json?.detail || '发票识别失败')
+  return unwrapResponse(json)
 }
 
 export async function deleteInvoiceRecognitionRecord(
   headers: HeadersInit,
   recordId: string
 ): Promise<InvoiceRecognitionRecordDeleteResponse> {
-  const url = `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/procurement/invoices/recognition-records/${recordId}`
-  const response = await fetch(url, {
+  return apiFetch(`/api/v1/procurement/invoices/recognition-records/${recordId}`, {
     method: 'DELETE',
     headers,
-    cache: 'no-store',
   })
-  return parseJsonResponse<InvoiceRecognitionRecordDeleteResponse>(response, '识别记录删除失败')
 }
 
 export async function deleteInvoiceRecognitionRecords(
   headers: HeadersInit,
   recordIds: string[]
 ): Promise<InvoiceRecognitionRecordDeleteResponse> {
-  const url = `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/procurement/invoices/recognition-records/batch-delete`
-  const response = await fetch(url, {
+  return apiFetch('/api/v1/procurement/invoices/recognition-records/batch-delete', {
     method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ ids: recordIds }),
-    cache: 'no-store',
   })
-  return parseJsonResponse<InvoiceRecognitionRecordDeleteResponse>(response, '识别记录删除失败')
 }
 
 export async function createPurchaseRequest(
   headers: HeadersInit,
   payload: PurchaseRequestCreate
 ): Promise<PurchaseRequestApiResponse> {
-  return procurementJsonFetch<PurchaseRequestApiResponse>(
-    '/api/v1/procurement/purchase-requests',
+  return apiFetch('/api/v1/procurement/purchase-requests', {
+    method: 'POST',
     headers,
-    { method: 'POST', body: JSON.stringify(payload) },
-    '采购申请保存失败'
-  )
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function updatePurchaseRequest(
@@ -203,24 +198,22 @@ export async function updatePurchaseRequest(
   requestId: string,
   payload: PurchaseRequestUpdate
 ): Promise<PurchaseRequestApiResponse> {
-  return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `/api/v1/procurement/purchase-requests/${requestId}`,
+  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}`, {
+    method: 'PUT',
     headers,
-    { method: 'PUT', body: JSON.stringify(payload) },
-    '采购申请更新失败'
-  )
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function submitPurchaseRequest(
   headers: HeadersInit,
   requestId: string
 ): Promise<PurchaseRequestApiResponse> {
-  return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `/api/v1/procurement/purchase-requests/${requestId}/submit`,
+  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}/submit`, {
+    method: 'POST',
     headers,
-    { method: 'POST', body: JSON.stringify({}) },
-    '采购申请提交失败'
-  )
+    body: JSON.stringify({}),
+  })
 }
 
 export async function approvePurchaseRequest(
@@ -228,12 +221,11 @@ export async function approvePurchaseRequest(
   requestId: string,
   payload: PurchaseApprovalRequest
 ): Promise<PurchaseRequestApiResponse> {
-  return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `/api/v1/procurement/purchase-requests/${requestId}/approve`,
+  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}/approve`, {
+    method: 'POST',
     headers,
-    { method: 'POST', body: JSON.stringify(payload) },
-    '审批失败'
-  )
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function rejectPurchaseRequest(
@@ -241,12 +233,11 @@ export async function rejectPurchaseRequest(
   requestId: string,
   payload: PurchaseApprovalRequest
 ): Promise<PurchaseRequestApiResponse> {
-  return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `/api/v1/procurement/purchase-requests/${requestId}/reject`,
+  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}/reject`, {
+    method: 'POST',
     headers,
-    { method: 'POST', body: JSON.stringify(payload) },
-    '驳回失败'
-  )
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function generateProcurementContract(
@@ -302,43 +293,4 @@ export async function importSupplierTable(
     throw new Error(body?.message || '供应商清单导入失败')
   }
   return body
-}
-
-async function parseJsonResponse<T extends { code: number; message: string }>(
-  response: Response,
-  fallbackMessage: string
-): Promise<T> {
-  try {
-    const body = await response.json()
-    if (response.ok && typeof body?.code === 'number') {
-      return body
-    }
-    return {
-      code: typeof body?.code === 'number' ? body.code : response.status,
-      message: body?.message || body?.detail || fallbackMessage,
-      data: body?.data ?? null,
-      meta: body?.meta ?? null,
-    } as unknown as T
-  } catch {
-    return {
-      code: response.status,
-      message: `${fallbackMessage}: ${response.status} ${response.statusText}`,
-      data: null,
-      meta: null,
-    } as unknown as T
-  }
-}
-
-async function procurementJsonFetch<T extends { code: number; message: string }>(
-  path: string,
-  headers: HeadersInit,
-  options: RequestInit,
-  fallbackMessage: string
-): Promise<T> {
-  const response = await fetch(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`, {
-    ...options,
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    cache: 'no-store',
-  })
-  return parseJsonResponse<T>(response, fallbackMessage)
 }
