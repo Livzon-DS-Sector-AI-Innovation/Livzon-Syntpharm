@@ -570,6 +570,19 @@ frontend/src/actions/          # create/update/delete/upload/import/export
 
 这防止了服务端代码被意外导入到客户端组件中。
 
+### apiFetch 一致性
+
+**必须**：
+- 所有服务器端 API 调用必须通过 `@/lib/api/server/base` 中的 `apiFetch` 或 `apiFetchRaw`
+- `getApiBaseUrl()` 仅定义在 `lib/api/server/base.ts` 中，禁止在其他模块中重复定义
+- 禁止在其他模块中自定义 `apiFetch` 实现
+- `apiFetch` 返回完整响应体 `{code, data, message, meta}`（与生成的 OpenAPI 类型一致）
+- 如需提取 `data` 字段，使用 `unwrapResponse<T>(raw)` 辅助函数，禁止在各调用处临时访问 `.data`
+
+**允许例外**：
+- FormData / 文件上传请求可使用自定义 `uploadFetch<T>()`（`apiFetch` 强制 `Content-Type: application/json` 会破坏 multipart 上传）
+- 流式响应（SSE/ReadableStream）可使用 `apiFetchRaw` 或自定义 fetch
+
 ### API 类型来源
 
 所有 API 相关的类型（请求参数、响应数据）**必须**从 `@/types/generated/schema` 导入。**禁止**手写 API 类型。

@@ -15,10 +15,7 @@ import type {
   WarehouseFeishuTableSyncResult,
   WarehouseFeishuWsStatus,
 } from '@/types/warehouse'
-
-export function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
+import { getApiBaseUrl } from './base'
 
 async function apiFetch<T>(path: string, fallbackMessage: string): Promise<T> {
   const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`

@@ -15,6 +15,7 @@ import type {
   SupplierListResponse,
 } from '@/types/procurement'
 import type { ContractGenerateActionResult } from '@/types/procurement'
+import { getApiBaseUrl } from './base'
 
 type InvoiceRecognitionRecordQuery =
   operations['list_invoice_records_api_v1_procurement_invoices_recognition_records_get']['parameters']['query']
@@ -22,10 +23,6 @@ type PurchaseRequestQuery =
   operations['list_purchase_request_records_api_v1_procurement_purchase_requests_get']['parameters']['query']
 type PurchaseOrderQuery =
   operations['list_purchase_order_records_api_v1_procurement_purchase_orders_get']['parameters']['query']
-
-export function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}${path}`

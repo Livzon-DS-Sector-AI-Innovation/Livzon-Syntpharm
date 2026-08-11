@@ -171,6 +171,7 @@ Full audit
 6. Are there any API key patterns in source code or log statements? (Patterns: `sk-[a-zA-Z0-9]{20,}`, `api_key\s*=\s*'[^']{20,}'`, `token\s*=\s*'[^']{20,}'`)
 7. Are there plaintext credentials in configuration files?
 8. Are environment variable files (`.env`, `.env.local`) properly gitignored?
+9. Are there `process.env.API_BASE_URL` reads or `getApiBaseUrl()` definitions outside of `lib/api/server/base.ts`?
 
 ### Output format
 
@@ -839,6 +840,9 @@ Full audit
 6. Are generated types (`@/types/generated/schema.ts`) committed and up to date with the backend?
 7. Is the `types/generated/` directory free of manual edits?
 8. Do any `'use server'` files in `actions/` contain `export type` or `export interface` statements?
+9. Are there any duplicate `getApiBaseUrl()` implementations in `lib/api/server/` files other than `base.ts`? (Only `base.ts` may define this function.)
+10. Are there any custom `apiFetch` implementations (function named `apiFetch` with fetch logic) in `lib/api/server/` files other than `base.ts`?
+11. Are there ad-hoc `.data` access patterns at call sites instead of using `unwrapResponse()`? (Patterns like `response.data`, `result?.data`, `(result as any)?.data`)
 
 ### Output format
 
@@ -1076,6 +1080,8 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | `'use server'` files may re-export types from `types/` via `export type { ... } from '@/types/...'` (not defining types directly). | `'use server'` 文件禁止 export type/interface | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
+| FormData / file upload may use custom `uploadFetch<T>()` (`apiFetch` sets `Content-Type: application/json`, breaking multipart). | apiFetch 一致性 — 自定义 apiFetch | 10 |
+| Streaming responses (SSE/ReadableStream) may use `apiFetchRaw` or raw fetch. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 
 ---
 
