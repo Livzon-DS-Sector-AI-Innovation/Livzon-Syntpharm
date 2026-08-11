@@ -1,6 +1,7 @@
 """Dossier Writer API endpoints."""
 
 import logging
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -315,7 +316,7 @@ async def update_asset_category(
     asset_id: UUID,
     body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, Any]:
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
@@ -652,7 +653,7 @@ async def ai_confirm_and_fill(
     chapter_id: UUID,
     data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, Any]:
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -701,7 +702,7 @@ async def split_preview(
     asset_id: UUID,
     data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, Any]:
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
@@ -730,7 +731,7 @@ async def split_confirm_and_insert(
     chapter_id: UUID,
     data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, Any]:
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -832,7 +833,7 @@ async def toggle_asset_usage(
     asset_id: UUID,
     body: AssetUsageToggleRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, Any]:
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
