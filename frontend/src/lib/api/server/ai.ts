@@ -1,10 +1,8 @@
-import { apiFetch, apiFetchRaw, unwrapResponse } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, unwrapResponse, getApiBaseUrl } from '@/lib/api/server/base'
 import type { ExamGenerateResponse } from '@/types/hr'
 
-const API_BASE = process.env.API_BASE_URL || 'http://backend:8000'
-
 export async function generateExamQuestions(formData: FormData): Promise<ExamGenerateResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/hr/ai-exam/generate`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/hr/ai-exam/generate`, {
     method: 'POST',
     body: formData,
     cache: 'no-store',
@@ -24,7 +22,7 @@ export async function exportExam(data: unknown): Promise<Response> {
 }
 
 export async function parseExperimentRecord(formData: FormData): Promise<unknown> {
-  const res = await fetch(`${API_BASE}/api/v1/ai/parse-experiment`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/ai/parse-experiment`, {
     method: 'POST',
     body: formData,
     cache: 'no-store',
