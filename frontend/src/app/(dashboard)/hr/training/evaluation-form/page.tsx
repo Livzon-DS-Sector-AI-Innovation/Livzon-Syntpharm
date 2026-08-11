@@ -62,7 +62,7 @@ export default function EvaluationFormPage() {
         excellent_count: vals.excellent_count, qualified_count: vals.qualified_count,
         unqualified_count: vals.unqualified_count,
       }
-      const res = await fetch('/api/v1/hr/training-evaluation', {
+      const res = await fetch('/api/hr/generate-evaluation', {
         method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('生成失败')

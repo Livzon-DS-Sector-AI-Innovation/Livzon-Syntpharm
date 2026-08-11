@@ -1,7 +1,6 @@
 """Dossier Writer API endpoints."""
 
 import logging
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -16,13 +15,23 @@ from app.core.response import error_response, success_response
 from .field_models import FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
 from .schemas import (
+    AIConfirmRequest,
+    AIConfirmResponse,
+    AssetCategoryUpdateRequest,
+    AssetCategoryUpdateResponse,
     AssetResponse,
     AssetUploadResponse,
+    AssetUsageToggleRequest,
+    AssetUsageToggleResponse,
     ExportRequest,
     ProductDossierCreate,
     ProductDossierListResponse,
     ProductDossierResponse,
     ProductDossierUpdate,
+    SplitConfirmRequest,
+    SplitConfirmResponse,
+    SplitPreviewRequest,
+    SplitPreviewResponse,
 )
 from .service import DossierService
 
@@ -300,31 +309,32 @@ async def delete_asset(
     return success_response(message="删除成功")
 
 
-@router.patch("/assets/{asset_id}", response_model=dict)
+@router.patch("/assets/{asset_id}", response_model=AssetCategoryUpdateResponse)
 async def update_asset_category(
     current_user: CurrentUser,
     asset_id: UUID,
-    body: dict[str, Any],
+    body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+):
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="素材不存在")
 
-    category_id = body.get("category_id")
+    category_id = body.category_id
     asset.category_id = category_id if category_id else None
     await db.commit()
     result = await db.execute(select(ChapterAsset).where(ChapterAsset.id == asset_id))
     asset = result.scalar_one()
 
-    return success_response(
-        data={
+    return {
+        "code": 0,
+        "data": {
             "id": str(asset.id),
             "category_id": str(asset.category_id) if asset.category_id else None,
         },
-        message="分类已更新",
-    )
+        "message": "分类已更新",
+    }
 
 
 # ====== Export ======
@@ -636,13 +646,13 @@ async def ai_preview_extraction(
         )
 
 
-@router.post("/chapters/{chapter_id}/ai-confirm", response_model=dict)
+@router.post("/chapters/{chapter_id}/ai-confirm", response_model=AIConfirmResponse)
 async def ai_confirm_and_fill(
     current_user: CurrentUser,
     chapter_id: UUID,
-    data: dict[str, Any],
+    data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+):
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -653,21 +663,21 @@ async def ai_confirm_and_fill(
     chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
-        return error_response(message="章节不存在", status_code=404)
+        raise HTTPException(status_code=404, detail="章节不存在")
 
     pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
     pd_result = await db.execute(pd_stmt)
     dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
-        return error_response(message="品种资料不存在", status_code=404)
+        raise HTTPException(status_code=404, detail="品种资料不存在")
 
-    user_confirmed_fields = data.get("fields", [])
+    user_confirmed_fields = data.fields
 
     service = AIFillService(db)
     result = await service.confirm_and_fill(dossier, chapter, user_confirmed_fields)
 
-    return success_response(data=result, message=result.get("message", "完成"))
+    return {"code": 0, "data": result, "message": result.get("message", "完成")}
 
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=dict)
@@ -685,13 +695,13 @@ async def get_asset_categories(
     return success_response(data=categories, message="获取成功")
 
 
-@router.post("/assets/{asset_id}/split-preview", response_model=dict)
+@router.post("/assets/{asset_id}/split-preview", response_model=SplitPreviewResponse)
 async def split_preview(
     current_user: CurrentUser,
     asset_id: UUID,
-    data: dict[str, Any],
+    data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+):
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
@@ -701,26 +711,26 @@ async def split_preview(
     asset = db_result.scalar_one_or_none()
 
     if not asset:
-        return error_response(message="素材不存在", status_code=404)
+        raise HTTPException(status_code=404, detail="素材不存在")
 
-    available_appendix_slots = data.get("available_appendix_slots", [])
+    available_appendix_slots = data.available_appendix_slots
 
     service = AIFillService(db)
     result = await service.preview_page_splits(asset, available_appendix_slots)
 
     if not result["success"]:
-        return error_response(message=result["message"])
+        raise HTTPException(status_code=500, detail=result["message"])
 
-    return success_response(data=result, message=result["message"])
+    return {"code": 0, "data": result, "message": result["message"]}
 
 
-@router.post("/chapters/{chapter_id}/split-confirm", response_model=dict)
+@router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
 async def split_confirm_and_insert(
     current_user: CurrentUser,
     chapter_id: UUID,
-    data: dict[str, Any],
+    data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+):
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -730,24 +740,24 @@ async def split_confirm_and_insert(
     chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
-        return error_response(message="章节不存在", status_code=404)
+        raise HTTPException(status_code=404, detail="章节不存在")
 
     pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
     pd_result = await db.execute(pd_stmt)
     dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
-        return error_response(message="品种资料不存在", status_code=404)
+        raise HTTPException(status_code=404, detail="品种资料不存在")
 
-    splits = data.get("splits", [])
+    splits = data.splits
 
     service = AIFillService(db)
     result = await service.confirm_page_splits_and_insert(dossier, chapter, splits)
 
     if not result["success"]:
-        return error_response(message=result["message"])
+        raise HTTPException(status_code=500, detail=result["message"])
 
-    return success_response(data=result, message=result["message"])
+    return {"code": 0, "data": result, "message": result["message"]}
 
 
 @router.get("/chapters/{chapter_code}/appendix-slots", response_model=dict)
@@ -815,26 +825,22 @@ async def list_available_assets(
     return success_response(data=result, message="获取成功")
 
 
-@router.patch("/chapters/{chapter_id}/asset-usages/{asset_id}", response_model=dict)
+@router.patch("/chapters/{chapter_id}/asset-usages/{asset_id}", response_model=AssetUsageToggleResponse)
 async def toggle_asset_usage(
     current_user: CurrentUser,
     chapter_id: UUID,
     asset_id: UUID,
-    body: dict[str, Any],
+    body: AssetUsageToggleRequest,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+):
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
     """
-    is_selected = body.get("is_selected")
-    if is_selected is None:
-        raise HTTPException(status_code=400, detail="缺少 is_selected 参数")
-
     service = DossierService(db)
     try:
-        result = await service.toggle_asset_usage(chapter_id, asset_id, is_selected)
-        return success_response(data=result, message="更新成功")
+        result = await service.toggle_asset_usage(chapter_id, asset_id, body.is_selected)
+        return {"code": 0, "data": result, "message": "更新成功"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

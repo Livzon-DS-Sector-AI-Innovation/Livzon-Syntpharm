@@ -18,7 +18,12 @@ import type {
   MatchResult,
   FieldFillResult,
 } from '@/types/dossier-writer'
+import type { components } from '@/types/generated/schema'
 import { apiFetch, unwrapResponse } from '@/lib/api/server/base'
+
+type SplitConfirmData = components['schemas']['SplitConfirmData']
+type AssetCategoryUpdateData = components['schemas']['AssetCategoryUpdateData']
+type AssetUsageToggleData = components['schemas']['AssetUsageToggleData']
 import {
   uploadTemplatesApi,
   uploadChapterAssetApi,
@@ -156,8 +161,8 @@ export async function splitConfirmAndInsert(
     asset_id: string
     page_number: number
   }>
-): Promise<{ success: boolean; message: string; inserted_count: number }> {
-  const result = unwrapResponse(await apiFetch<{code: number; data: { success: boolean; message: string; inserted_count: number }; message?: string; meta?: unknown}>(
+): Promise<SplitConfirmData> {
+  const result = unwrapResponse(await apiFetch<{code: number; data: SplitConfirmData; message?: string; meta?: unknown}>(
     `/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
     {
       method: 'POST',
@@ -172,7 +177,7 @@ export async function splitConfirmAndInsert(
 export async function updateAssetCategory(
   assetId: string,
   categoryId: string | null
-): Promise<{ id: string; category_id: string | null }> {
+): Promise<AssetCategoryUpdateData> {
   const result = await updateAssetCategoryApi(assetId, categoryId)
   revalidatePath('/registration/dossier-writer')
   return result
@@ -183,8 +188,8 @@ export async function toggleAssetUsage(
   chapterId: string,
   assetId: string,
   isSelected: boolean
-): Promise<{ usage_id?: string; is_selected: boolean }> {
-  const result = unwrapResponse(await apiFetch<{code: number; data: { usage_id?: string; is_selected: boolean }; message?: string; meta?: unknown}>(
+): Promise<AssetUsageToggleData> {
+  const result = unwrapResponse(await apiFetch<{code: number; data: AssetUsageToggleData; message?: string; meta?: unknown}>(
     `/api/v1/registration/dossier-writer/chapters/${chapterId}/asset-usages/${assetId}`,
     {
       method: 'PATCH',
