@@ -8,9 +8,12 @@ export default async function ProcessOptimizationPageWrapper() {
   const result = await fetchOptimizations({ page: 1, page_size: 10 })
   
   return (
-    <ProcessOptimizationPage
-      initialOptimizations={result.items || []}
-      initialTotal={result.total || 0}
-    />
+    <>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">工艺优化</h1>
+      <ProcessOptimizationPage
+        initialOptimizations={result.items || []}
+        initialTotal={result.total || 0}
+      />
+    </>
   )
 }

@@ -104,7 +104,9 @@ export default async function StatsPage() {
   }
 
   return (
-    <StatsDashboard
+    <>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">设备仪表盘</h1>
+      <StatsDashboard
       initialData={{
         equipmentStats,
         workOrderStats,
@@ -113,6 +115,7 @@ export default async function StatsPage() {
         calibrationPlans,
         recentWorkOrders,
       }}
-    />
+      />
+    </>
   )
 }

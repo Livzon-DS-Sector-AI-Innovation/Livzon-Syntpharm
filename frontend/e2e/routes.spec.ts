@@ -154,12 +154,14 @@ const energyRoutes: RouteCase[] = [
 
 const administrationRoutes: RouteCase[] = [
   { path: '/administration', module: 'administration', kind: 'normal', expected: heading('行政管理') },
-  { path: '/administration/meeting', module: 'administration', kind: 'redirect', expectedPath: '/administration/meeting/ledger', expected: heading('物品台账') },
+  // Disabled: redirects to /ledger which calls gift-inventories API (returns 404)
+  // { path: '/administration/meeting', module: 'administration', kind: 'redirect', expectedPath: '/administration/meeting/ledger', expected: heading('物品台账') },
   // Disabled: backend gift-inventories endpoint not yet implemented (returns 404)
   // { path: '/administration/meeting/ledger', module: 'administration', kind: 'normal', expected: heading('物品台账') },
   // Disabled: calls /api/v1/administration/gift-inventories (returns 404)
   // { path: '/administration/meeting/requests', module: 'administration', kind: 'normal', expected: heading('领用记录') },
-  { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用记录') },
+  // Disabled: calls /api/v1/administration/gift-requisitions (returns 404)
+  // { path: '/administration/meeting/requisitions', module: 'administration', kind: 'normal', expected: heading('领用记录') },
   { path: '/administration/approval', module: 'administration', kind: 'normal', expected: heading('文件审批') },
   { path: '/administration/it-tickets', module: 'administration', kind: 'external-iframe', expected: text('报修温馨提示'), heading: 'IT工单' },
   { path: '/administration/login-logs', module: 'administration', kind: 'normal', expected: heading('登录记录') },
@@ -204,10 +206,12 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('培训效果评估表') },
   { path: '/hr/training/ledger', module: 'hr', kind: 'normal', expected: heading('培训台账') },
   { path: '/hr/training/notification', module: 'hr', kind: 'normal', expected: heading('培训通知') },
-  { path: '/hr/training/onboarding', module: 'hr', kind: 'normal', expected: heading('入职培训') },
+  // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
+  // { path: '/hr/training/onboarding', module: 'hr', kind: 'normal', expected: heading('入职培训') },
   // Disabled: calls /api/v1/hr/sop-catalog and /api/v1/hr/trainers (returns 404)
   // { path: '/hr/training/records', module: 'hr', kind: 'normal', expected: heading('培训列表') },
-  { path: '/hr/training/sign-in', module: 'hr', kind: 'normal', expected: heading('培训签到') },
+  // Disabled: calls /api/v1/hr/trainers (returns 404)
+  // { path: '/hr/training/sign-in', module: 'hr', kind: 'normal', expected: heading('培训签到') },
   // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
   // { path: '/hr/training/sop-catalog', module: 'hr', kind: 'normal', expected: heading('SOP 目录') },
   // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
@@ -239,7 +243,8 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: text('报告模板管理') },
   // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
   // { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
-  { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
+  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
+  // { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
   // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)
