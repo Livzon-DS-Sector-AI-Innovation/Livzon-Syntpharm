@@ -1,7 +1,6 @@
 """Dossier Writer API endpoints."""
 
 import logging
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -11,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import error_response, success_response
+from app.core.response import ApiResponse, build_response, error_response, success_response
 
 from .field_models import FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
@@ -316,7 +315,7 @@ async def update_asset_category(
     asset_id: UUID,
     body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> ApiResponse:
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
@@ -328,14 +327,13 @@ async def update_asset_category(
     result = await db.execute(select(ChapterAsset).where(ChapterAsset.id == asset_id))
     asset = result.scalar_one()
 
-    return {
-        "code": 0,
-        "data": {
+    return build_response(
+        data={
             "id": str(asset.id),
             "category_id": str(asset.category_id) if asset.category_id else None,
         },
-        "message": "分类已更新",
-    }
+        message="分类已更新",
+    )
 
 
 # ====== Export ======
@@ -653,7 +651,7 @@ async def ai_confirm_and_fill(
     chapter_id: UUID,
     data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> ApiResponse:
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -678,7 +676,7 @@ async def ai_confirm_and_fill(
     service = AIFillService(db)
     result = await service.confirm_and_fill(dossier, chapter, user_confirmed_fields)
 
-    return {"code": 0, "data": result, "message": result.get("message", "完成")}
+    return build_response(data=result, message=result.get("message", "完成"))
 
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=dict)
@@ -702,7 +700,7 @@ async def split_preview(
     asset_id: UUID,
     data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> ApiResponse:
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
@@ -722,7 +720,7 @@ async def split_preview(
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["message"])
 
-    return {"code": 0, "data": result, "message": result["message"]}
+    return build_response(data=result, message=result["message"])
 
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
@@ -731,7 +729,7 @@ async def split_confirm_and_insert(
     chapter_id: UUID,
     data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> ApiResponse:
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -758,7 +756,7 @@ async def split_confirm_and_insert(
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["message"])
 
-    return {"code": 0, "data": result, "message": result["message"]}
+    return build_response(data=result, message=result["message"])
 
 
 @router.get("/chapters/{chapter_code}/appendix-slots", response_model=dict)
@@ -833,7 +831,7 @@ async def toggle_asset_usage(
     asset_id: UUID,
     body: AssetUsageToggleRequest,
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> ApiResponse:
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
@@ -841,7 +839,7 @@ async def toggle_asset_usage(
     service = DossierService(db)
     try:
         result = await service.toggle_asset_usage(chapter_id, asset_id, body.is_selected)
-        return {"code": 0, "data": result, "message": "更新成功"}
+        return build_response(data=result, message="更新成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

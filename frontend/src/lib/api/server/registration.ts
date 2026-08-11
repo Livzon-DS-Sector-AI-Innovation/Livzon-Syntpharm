@@ -101,6 +101,20 @@ export async function parseCOA(file: File) {
   })
 }
 
+export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateRegistrationProject(id: string, data: components['schemas']['ProjectUpdate']) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export async function deleteRegistrationProject(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}`, {
     method: 'DELETE',

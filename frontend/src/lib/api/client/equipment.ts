@@ -249,38 +249,24 @@ export async function fetchDepartments(): Promise<DepartmentOption[]> {
 // ═══════════════════════════════════════════════════════════
 
 export async function fetchMaintainersClient(): Promise<Maintainer[]> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/staff/maintainers`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/staff/maintainers`) || []
 }
 
 export async function fetchAllUsersClient(): Promise<Maintainer[]> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/staff/all-users`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/staff/all-users`) || []
 }
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []
 }
 
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/config/claim-timeout`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || { emergency: 15, high: 30, medium: 60, low: 120 }
+  return await apiGet<ClaimTimeoutConfig>(`${API_BASE}/equipment/maintenance/config/claim-timeout`)
+    || { emergency: 15, high: 30, medium: 60, low: 120 }
 }
 
 export async function fetchPersonnelList(params?: any): Promise<Personnel[]> {
-  const res = await fetch(`${API_BASE}/identity/personnel?page_size=1000`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('获取人员列表失败')
-  const json = await res.json()
-  return json.data || []
+  return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?page_size=1000`) || []
 }
 
 // ═══════════════════════════════════════════════════════════

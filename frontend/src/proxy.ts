@@ -7,7 +7,7 @@ const BACKEND_URL = process.env.API_BASE_URL || 'http://localhost:8000'
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/api')) {
+  if (pathname.startsWith('/api/v1')) {
     const url = new URL(pathname + request.nextUrl.search, BACKEND_URL)
     return NextResponse.rewrite(url)
   }

@@ -949,3 +949,115 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 8 (Ba
 | 14. E2E | 0 | 0 | 0 | 0 | Clean (tests improved) |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
+### PR #26: Ruanjiaheng — apiFetch consistency refactor (head: ruanjiaheng, base: main, date: 2026-08-11)
+
+Files changed: 54 across categories 2, 3, 4, 9, 10, 11, 12 (core: delete http-client.ts/http-server.ts, add safeApiFetch/apiFetchPaginated to base.ts, add apiGet/apiPost to client.ts, refactor all server/client modules to canonical apiFetch, fix getApiBaseUrl violations in route.ts, simplify auth.ts loginApi, fix raw fetch usage)
+
+#### Category 2: Secrets and hardcoded values
+
+| Files inspected | 54 |
+| Rules evaluated | 9 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+Clean. All `getApiBaseUrl()` duplicates consolidated into `base.ts`. `http-client.ts` and `http-server.ts` deleted. Only `proxy.ts:5` reads `process.env.API_BASE_URL` (explicitly allowed exception). No hardcoded localhost/127.0.0.1, no `NEXT_PUBLIC_API_BASE_URL`, no API key exposure.
+
+#### Category 3: Backend module boundaries
+
+| Files inspected | 2 |
+| Rules evaluated | 8 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+Clean. `dossier_writer/api.py` and `dossier_writer/schemas.py` imports only from `app.core.*` and same module. No cross-module violations.
+
+#### Category 4: API and authentication
+
+| Files inspected | 2 |
+| Rules evaluated | 10 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `backend/app/modules/registration/dossier_writer/api.py:313, 650, 699, 728, 829` — API规范/必须: 返回格式使用 app/core/response.py — 5 endpoints (`update_asset_category`, `ai_confirm_and_fill`, `split_preview`, `split_confirm_and_insert`, `toggle_asset_usage`) now return raw `{"code": 0, "data": ..., "message": "..."}` dicts instead of `success_response()`. The PR changed these endpoints from `success_response(data=...)` to raw dict return. The `response_model` decorator types (e.g. `AssetCategoryUpdateResponse`) and `code: 0` pattern is inconsistent with `app/core/response.py` which uses HTTP status codes. — severity: high
+
+Note: The PR also added proper Pydantic request/response schemas for these same 5 endpoints (positive change). The pre-existing patterns in this file (raw `HTTPException` everywhere, `CurrentUser` instead of `RequiredUser`) are not regressions from this PR.
+
+#### Category 9: Frontend component boundaries
+
+| Files inspected | 10 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 2 (barrel files — none changed) |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `frontend/src/app/(dashboard)/registration/projects/page.tsx:179` — 页面标题规范 — Uses `<Title level={4}>注册项目管理</Title>` which renders an `<h4>`, not a semantic `<h1>`. AGENTS.md requires `<h1>` or `<Title level={1}>` for page headings (WCAG 2.4.2/2.4.6). — severity: medium
+
+##### Positive changes
+- `evaluation-form/page.tsx`, `sop-catalog/page.tsx`, `trainers/page.tsx`: Changed from raw `fetch()` to `apiGet()` from `@/lib/api/client` ✓
+
+#### Category 10: Frontend API and generated types
+
+| Files inspected | 51 |
+| Files not inspected | 2 (http-client.ts, http-server.ts — confirmed deleted) |
+| Rules evaluated | 11 |
+| Confirmed findings | 3 |
+| Uncertain findings | 1 |
+
+##### Confirmed
+- [ ] `frontend/src/lib/api/server/safety.ts:1-end (~380+ call sites)` — apiFetch一致性/Q9+Q10 — All `safeApiFetch()` calls use paths WITHOUT `/api/v1` prefix (e.g. `/safety/checks`, `/safety/hazards`, `/safety/accidents`, etc.). The old code had a local `getApiBase()` function that prepended `/api/v1` and a local `safeApiFetch` that used it. The PR removed these local helpers and switched to the canonical `safeApiFetch` from `base.ts`, but `safeApiFetch` uses `getApiBaseUrl()` directly (returns `http://backend:8000`) without prepending `/api/v1`. All calls now resolve to `http://backend:8000/safety/...` instead of `http://backend:8000/api/v1/safety/...`. — severity: blocking
+
+- [ ] `frontend/src/app/(dashboard)/registration/projects/page.tsx:122-126` — 写操作必须用Server Actions/Q2 — Direct `fetch(url, {method: 'PUT'/'POST', ...})` in a `'use client'` component for create/update project. Write operations must use Server Actions in `actions/`. — severity: blocking
+
+- [ ] `frontend/src/lib/api/client/equipment.ts:251-283` — apiFetch一致性/Q4+Q11 — `fetchMaintainersClient`, `fetchAllUsersClient`, `fetchWorkOrderImagesClient`, `fetchClaimTimeoutConfigClient`, `fetchPersonnelList` use raw `fetch()` with `${API_BASE}/...` and ad-hoc `result.data || []` access instead of `apiGet()`. Pre-existing but file is in changed scope. — severity: medium
+
+##### Uncertain
+- [ ] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:65-67` — 写操作必须用Server Actions/Q2 — Direct `POST` fetch to `/api/hr/generate-evaluation` in a `'use client'` component calls a local Next.js Route Handler (not backend directly) for blob download (file generation). May qualify as a stream/download exception (like SSE/upload exceptions), but pattern deviates from standard Server Action usage. — severity: low
+
+##### Positive changes
+- `http-client.ts` and `http-server.ts` deleted; all client modules now import from `@/lib/api/client` ✓
+- `base.ts` added `safeApiFetch<T>()`, `apiFetchPaginated<T>()`, `unwrapResponse<T>()`, `buildQueryString()` as canonical exports ✓
+- `client.ts` added `apiGet`, `apiPost`, `apiFetchPaginated`, `postRaw` ✓
+- `auth.ts` `loginApi` simplified: removed 7-URL candidate fallback, now correctly uses raw `fetch()` (explicit exception for login) ✓
+- 13 server API modules consolidated to import from `@/lib/api/server/base` instead of local helper copies ✓
+- `deviation.ts`, `dossier-writer.ts`, `actions/safety/helpers.ts` had duplicate `getApiBaseUrl` definitions removed ✓
+
+#### Category 11: Proxy and routing
+
+| Files inspected | 36 |
+| Rules evaluated | 6 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+##### Confirmed
+- [ ] `frontend/src/proxy.ts:10` — proxy.ts规则/路由转发 — `pathname.startsWith('/api')` matches ALL `/api/*` requests, including Next.js local Route Handlers at `app/api/hr/generate-evaluation/route.ts` and `app/api/research/literature/analyze/route.ts`. The proxy rewrites these to the backend (where those paths don't exist), making the Route Handlers unreachable. Route Handler at `generate-evaluation/route.ts` forwards auth cookies and returns file blobs with Content-Disposition headers — bypassing this breaks blob download functionality. Should use `startsWith('/api/v1')` or `startsWith('/api/v1/')`. Pre-existing, but proxy.ts is in changed scope. — severity: high
+
+- [ ] `frontend/src/lib/api/server/quality.ts:93` — 路由转发/Q5 — Uses `const BASE = `${getApiBaseUrl()}/api/v1`` evaluated at module import time. While functionally correct, this is inconsistent with other server modules that pass relative paths to `apiFetch()` (which calls `getApiBaseUrl()` internally). The `BASE` constant is only used for upload exceptions — acceptable but introduces unnecessary module-level side effect. — severity: low
+
+##### Positive changes
+- `proxy.ts:3-5`: Added comment documenting why middleware cannot import `getApiBaseUrl` (next/headers unavailable in middleware context) — improves maintainability ✓
+- All client API modules use relative paths `/api/v1/...` ✓
+- All server API modules use `getApiBaseUrl()` from `base.ts` ✓
+
+#### Category 12: Cross-project OpenAPI — CI-verified
+
+`backend/openapi.json` and `frontend/src/types/generated/schema.ts` both updated in sync. CI (`scripts/ci.sh openapi`) verifies drift.
+
+#### Categories not affected
+
+Category 1 (Repository layout), Category 5 (Models & migrations), Category 6 (Configuration & logging), Category 7 (External services), Category 8 (Backend tests), Category 13 (Docker), Category 14 (E2E) — no changed files in scope.
+
+#### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 2. Secrets | 0 | 0 | 0 | 0 | Clean |
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 1 | 0 | 0 | 5 endpoints bypass success_response() |
+| 9. Frontend boundaries | 0 | 0 | 1 | 0 | projects page uses h4 not h1 |
+| 10. Frontend API & types | 2 | 0 | 1 | 1 | safety.ts /api/v1 regression + direct fetch |
+| 11. Proxy & routing | 0 | 1 | 0 | 1 | proxy intercepts Route Handlers |
+| 12. OpenAPI | 0 | 0 | 0 | 0 | CI verifies |
+| **Total** | **2** | **2** | **2** | **2** | |
+
