@@ -174,7 +174,7 @@ export interface AIAnalysisResult {
   workshop_name: string
   analysis_month: string
   total_energy_kwh: number
-  manual_production: number
+  production_items: { product_name: string; quantity: number; unit: string }[]
   actual_unit_consumption: number
   target_unit_consumption: number | null
   deviation_rate: number | null
@@ -185,7 +185,7 @@ export interface AIAnalysisResult {
 export async function analyzeEnergyV2(data: {
   workshop_id: string
   analysis_month: string
-  manual_production: number
+  production_items: { product_name: string; quantity: number; unit: string }[]
   include_ai_suggestion?: boolean
 }): Promise<AIAnalysisResult> {
   const res = await fetch('/api/v1/energy/ai-analysis-v2', {

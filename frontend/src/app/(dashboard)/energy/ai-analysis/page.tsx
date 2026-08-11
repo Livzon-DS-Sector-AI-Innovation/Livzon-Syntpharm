@@ -1,7 +1,14 @@
 'use client'
 
+type ProductionItem = {
+  product_name: string;
+  quantity: number;
+  unit: string;
+}
+
 import { useState, useEffect } from 'react'
-import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber } from 'antd'
+import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber, Table, Input, Space } from 'antd'
+import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import TargetModal from '@/components/energy/TargetModal'
 import { 
@@ -21,6 +28,9 @@ export default function AIAnalysisPage() {
   const [workshopId, setWorkshopId] = useState<string | null>(null)
   const [analysisMonth, setAnalysisMonth] = useState<string | null>(null)
   const [production, setProduction] = useState<number | null>(null)
+  const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
+  const [syncing, setSyncing] = useState(false)
+
   const [workshops, setWorkshops] = useState<any[]>([])
   const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
   const [targetLoading, setTargetLoading] = useState(false)
@@ -57,7 +67,36 @@ export default function AIAnalysisPage() {
     }
   }, [workshopId, analysisMonth])
 
-  const handleAnalyze = async () => {
+  
+  const handleAddItem = () => {
+    setProductionItems([...productionItems, { product_name: '', quantity: 0, unit: 'kg' }])
+  }
+
+  const handleRemoveItem = (index: number) => {
+    const newItems = [...productionItems]
+    newItems.splice(index, 1)
+    setProductionItems(newItems)
+  }
+
+  const handleItemChange = (index: number, field: keyof ProductionItem, value: string | number) => {
+    const newItems = [...productionItems]
+    newItems[index] = { ...newItems[index], [field]: value }
+    setProductionItems(newItems)
+  }
+
+  const handleSyncProduction = async () => {
+    if (!workshopId || !analysisMonth) return
+    setSyncing(true)
+    try {
+      const res = await fetch(`/api/v1/production/output?workshop_id=\${workshopId}&month=\${analysisMonth}`)
+      const json = await res.json()
+      if (json.code === 200) setProductionItems(json.data.items)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+const handleAnalyze = async () => {
     // 验证月份格式
     if (!analysisMonth || !/^\d{4}-\d{2}$/.test(analysisMonth)) {
       message.error('月份格式不正确，应为 YYYY-MM 格式')
@@ -74,7 +113,7 @@ export default function AIAnalysisPage() {
       const data = await analyzeEnergyV2({
         workshop_id: workshopId,
         analysis_month: analysisMonth,
-        manual_production: production,
+        production_items: productionItems,
         include_ai_suggestion: true,
       })
       setResult(data)
@@ -130,15 +169,53 @@ export default function AIAnalysisPage() {
             onChange={(date) => setAnalysisMonth(date ? date.format('YYYY-MM') : null)} 
           />
           
-          <InputNumber
-            placeholder="当月产量（kg）"
-            value={production}
-            onChange={(val) => setProduction(val)}
-            min={1}
-            precision={0}
-            style={{ width: 200 }}
-            addonAfter="kg"
-          />
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Button 
+              type="primary" 
+              icon={<SyncOutlined spin={syncing} />} 
+              onClick={handleSyncProduction}
+              loading={syncing}
+              disabled={!workshopId || !analysisMonth}
+            >
+              从生产模块同步
+            </Button>
+            
+            <Table 
+              dataSource={productionItems}
+              pagination={false}
+              size="small"
+              columns={[
+                { 
+                  title: '产品名称', 
+                  dataIndex: 'product_name', 
+                  key: 'name', 
+                  render: (text: string, _: any, index: number) => (
+                    <Input value={text} onChange={e => handleItemChange(index, 'product_name', e.target.value)} placeholder="输入名称" size="small" />
+                  )
+                },
+                { 
+                  title: '产量', 
+                  dataIndex: 'quantity', 
+                  key: 'qty', 
+                  width: 100, 
+                  render: (val: number, _: any, index: number) => (
+                    <InputNumber value={val} onChange={v => handleItemChange(index, 'quantity', v || 0)} style={{ width: '100%' }} size="small" min={0} />
+                  )
+                },
+                { 
+                  title: '操作', 
+                  key: 'action', 
+                  width: 60, 
+                  render: (_: any, __: any, index: number) => (
+                    <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemoveItem(index)} size="small" />
+                  )
+                }
+              ]}
+            />
+            <Button type="dashed" onClick={handleAddItem} icon={<PlusOutlined />} block>
+              添加产品
+            </Button>
+          </Space>
           
           <Button 
             type="primary" 

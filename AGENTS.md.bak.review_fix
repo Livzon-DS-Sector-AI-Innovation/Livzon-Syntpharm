@@ -672,7 +672,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 ---
 
-
 ## AI 协作强制工作流 (Matt Pocock Engineering Loop)
 
 本项目的核心工程纪律是：**状态化拷问、垂直切片交付、证据链闭环**。AI 必须严格按以下流程图执行：
@@ -693,11 +692,8 @@ graph TD
     E -->|Write Test| F[Red: 测试失败]
     F -->|Write Code| G[Green: 测试通过]
     G -->|Refactor| H[Code Review]
-    
-    %% 审查反馈回路优化
-    H -->|实现细节错误| E
-    H -->|架构/设计/需求偏差| D
     H -->|Logic OK| I{Local Pre-check}
+    H -->|Logic Fail| E
     
     %% 本地预检门禁
     I -->|Lint/Secret Fail| E
@@ -734,14 +730,7 @@ graph TD
 4. **双重验证策略**：
    - **首选**：调用 `playwright-cli` 验证 DB→UI 全通。
    - **降级**：若因环境原因（如认证阻塞）导致 E2E 失败，**必须**提供手动测试截图/录屏，并在 Commit 中标注 `[Manual Verified]`。
-5. **双轴审查 (`code-review`) 与反馈回路**：
-6. **文档归档路径 (Documentation Paths)**：
-   - **临时规格与任务**：所有由 `to-spec` 和 `to-tickets` 生成的中间产物必须保存在 `.scratch/<feature-name>/` 目录下。
-   - **正式规格文档**：经用户确认后的最终 Spec 必须移动至 `docs/specs/<feature-name>.md`。
-   - **上下文文件**：`grill-with-docs` 产生的 `CONTEXT.md` 必须始终维护在项目根目录。
-   - 并行运行 Standards（规范）和 Spec（规格）审查。
-   - **实现级错误**（如语法、简单逻辑）：回退至 **E (Implement)** 阶段修复。
-   - **设计级错误**（如架构违规、模块错位、Spec 遗漏）：必须回退至 **D (to-tickets)** 重新拆解任务，必要时回退至 **C (to-spec)** 修正需求。
+5. **双轴审查 (`code-review`)**：并行运行 Standards（规范）和 Spec（规格）审查。
 
 ## 🛑 开发纪律红线 (Engineering Discipline)
 
