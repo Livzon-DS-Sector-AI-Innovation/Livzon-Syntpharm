@@ -93,6 +93,7 @@ export default function DeviationProgressPage() {
   if (loading) {
     return (
       <div className="deviation-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <h1 className="text-2xl font-semibold text-gray-800">偏差详情</h1>
         <Text type="secondary">加载中...</Text>
       </div>
     )
@@ -101,6 +102,7 @@ export default function DeviationProgressPage() {
   if (!data) {
     return (
       <div className="deviation-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <h1 className="text-2xl font-semibold text-gray-800">偏差详情</h1>
         <Text type="secondary">偏差不存在</Text>
       </div>
     )
