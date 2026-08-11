@@ -1,9 +1,10 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, unwrapResponse } from '@/lib/api/server/base'
 import type { ExamGenerateResponse } from '@/types/hr'
 
+const API_BASE = process.env.API_BASE_URL || 'http://backend:8000'
+
 export async function generateExamQuestions(formData: FormData): Promise<ExamGenerateResponse> {
-  const url = `${getApiBaseUrl()}/api/v1/hr/ai-exam/generate`
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}/api/v1/hr/ai-exam/generate`, {
     method: 'POST',
     body: formData,
     cache: 'no-store',
@@ -16,37 +17,28 @@ export async function generateExamQuestions(formData: FormData): Promise<ExamGen
 }
 
 export async function exportExam(data: unknown): Promise<Response> {
-  const url = `${getApiBaseUrl()}/api/v1/hr/ai-exam/export`
-  const res = await fetch(url, {
+  return apiFetchRaw('/api/v1/hr/ai-exam/export', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-    cache: 'no-store',
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`导出失败: ${res.status} ${text}`)
-  }
-  return res
 }
 
 export async function parseExperimentRecord(formData: FormData): Promise<unknown> {
-  const url = `${getApiBaseUrl()}/api/v1/ai/parse-experiment`
-  const response = await fetch(url, {
+  const res = await fetch(`${API_BASE}/api/v1/ai/parse-experiment`, {
     method: 'POST',
     body: formData,
     cache: 'no-store',
   })
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`解析失败: ${response.status} ${errorText}`)
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(`解析失败: ${res.status} ${errorText}`)
   }
-  const result = await response.json()
-  return result.data
+  const result = await res.json()
+  return unwrapResponse(result)
 }
 
 export async function parseProcessParameters(content: string, type: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/ai/parse-parameters`, {
+  return apiFetch('/api/v1/ai/parse-parameters', {
     method: 'POST',
     body: JSON.stringify({ content, parse_type: type }),
   })

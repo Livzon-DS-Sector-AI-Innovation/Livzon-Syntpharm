@@ -116,3 +116,30 @@ export function safeJsonParse<T>(text: string, fallback: T): T {
     return fallback
   }
 }
+
+export async function apiGet<T>(url: string, options?: RequestInit): Promise<T> {
+  const json = await fetchApi<{ code: number; data: T; message?: string; meta?: unknown }>(url, { ...options, method: 'GET' })
+  return json.data
+}
+
+export async function apiPost<T>(url: string, body?: unknown, options?: RequestInit): Promise<T> {
+  const json = await fetchApi<{ code: number; data: T; message?: string; meta?: unknown }>(url, {
+    ...options,
+    method: 'POST',
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  return json.data
+}
+
+export async function apiFetchPaginated<T>(
+  url: string,
+  options?: RequestInit,
+): Promise<{ items: T[]; total: number; page: number; page_size: number }> {
+  const result = await fetchApi<{ code: number; data: T[]; message?: string; meta?: { page?: number; page_size?: number; total?: number } }>(url, options)
+  return {
+    items: result.data || [],
+    total: result.meta?.total || 0,
+    page: result.meta?.page || 1,
+    page_size: result.meta?.page_size || 20,
+  }
+}

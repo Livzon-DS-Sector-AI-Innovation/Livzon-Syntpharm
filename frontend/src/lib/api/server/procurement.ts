@@ -15,7 +15,7 @@ import type {
   SupplierListResponse,
 } from '@/types/procurement'
 import type { ContractGenerateActionResult } from '@/types/procurement'
-import { getApiBaseUrl } from './base'
+import { apiFetch, apiFetchRaw, unwrapResponse, getApiBaseUrl } from './base'
 
 type InvoiceRecognitionRecordQuery =
   operations['list_invoice_records_api_v1_procurement_invoices_recognition_records_get']['parameters']['query']
@@ -24,21 +24,8 @@ type PurchaseRequestQuery =
 type PurchaseOrderQuery =
   operations['list_purchase_order_records_api_v1_procurement_purchase_orders_get']['parameters']['query']
 
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}${path}`
-  const response = await fetch(url, {
-    ...options,
-    cache: options?.cache ?? 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data
-}
-
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/procurement`)
+  return apiFetch('/api/v1/procurement')
 }
 
 export async function fetchInvoiceRecognitionRecords(
@@ -50,7 +37,7 @@ export async function fetchInvoiceRecognitionRecords(
     params.set(key, String(value))
   })
 
-  const path = `${getApiBaseUrl()}/api/v1/procurement/invoices/recognition-records${
+  const path = `/api/v1/procurement/invoices/recognition-records${
     params.size ? `?${params.toString()}` : ''
   }`
   
@@ -60,25 +47,22 @@ export async function fetchInvoiceRecognitionRecords(
 export async function fetchPurchaseRequests(
   query: PurchaseRequestQuery = {}
 ): Promise<PurchaseRequestListResponse> {
-  const path = `${getApiBaseUrl()}/api/v1/procurement/purchase-requests${buildQueryString(query)}`
+  const path = `/api/v1/procurement/purchase-requests${buildQueryString(query)}`
   return apiFetch(path)
 }
 
 export async function fetchPurchaseOrders(
   query: PurchaseOrderQuery
 ): Promise<PurchaseOrderListResponse> {
-  const path = `${getApiBaseUrl()}/api/v1/procurement/purchase-orders${buildQueryString(query)}`
+  const path = `/api/v1/procurement/purchase-orders${buildQueryString(query)}`
   return apiFetch(path)
 }
 
 export async function exportPurchaseOrdersExcel(
   query: Omit<PurchaseOrderQuery, 'page' | 'page_size'>
 ): Promise<{ blob: Blob; filename: string }> {
-  const url = `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/procurement/purchase-orders/export${buildQueryString(query)}`
-  const response = await fetch(url, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
+  const path = `/api/v1/procurement/purchase-orders/export${buildQueryString(query)}`
+  const response = await apiFetchRaw(path)
   const blob = await response.blob()
   const excelBlob = blob.type
     ? blob
@@ -94,7 +78,7 @@ export async function exportPurchaseOrdersExcel(
 export async function fetchPurchaseRequest(
   requestId: string
 ): Promise<PurchaseRequestApiResponse> {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/procurement/purchase-requests/${requestId}`)
+  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}`)
 }
 
 function buildQueryString(query: Record<string, unknown>) {
@@ -118,7 +102,6 @@ function parseDownloadFilename(contentDisposition: string | null) {
   return asciiMatch?.[1] ?? '采购订单.xlsx'
 }
 
-// Contract and Supplier functions
 export async function fetchContractRecords(
   params: { keyword?: string; supplier_name?: string; material_name?: string; purchase_category?: string; page?: number; page_size?: number } = {}
 ): Promise<ContractRecordListResponse> {
@@ -131,21 +114,17 @@ export async function fetchContractRecords(
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
   const qs = searchParams.toString()
   return apiFetch<ContractRecordListResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/contracts${qs ? `?${qs}` : ''}`
+    `/api/v1/procurement/contracts${qs ? `?${qs}` : ''}`
   )
 }
 
 export async function fetchContractRecord(id: string): Promise<{ data: ContractRecordResponse }> {
-  const response = await apiFetch<ContractRecordResponse>(`${getApiBaseUrl()}/api/v1/procurement/contracts/${id}`)
-  return { data: response }
+  const response = await apiFetch(`/api/v1/procurement/contracts/${id}`)
+  return { data: unwrapResponse(response) }
 }
 
 export async function fetchContractFile(id: string, filename: string): Promise<{ blob: Blob; filename: string }> {
-  const url = `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/procurement/contracts/${id}/files/${filename}`
-  const response = await fetch(url, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error('Failed to fetch contract file')
-  }
+  const response = await apiFetchRaw(`/api/v1/procurement/contracts/${id}/files/${filename}`)
   const blob = await response.blob()
   return { blob, filename }
 }
@@ -162,11 +141,9 @@ export async function fetchSuppliers(
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
   const qs = searchParams.toString()
   return apiFetch<SupplierListResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/suppliers${qs ? `?${qs}` : ''}`
+    `/api/v1/procurement/suppliers${qs ? `?${qs}` : ''}`
   )
 }
-
-// ── 写操作 ──
 
 export async function recognizeInvoicePdf(
   headers: HeadersInit,
@@ -214,7 +191,7 @@ export async function createPurchaseRequest(
   payload: PurchaseRequestCreate
 ): Promise<PurchaseRequestApiResponse> {
   return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/purchase-requests`,
+    '/api/v1/procurement/purchase-requests',
     headers,
     { method: 'POST', body: JSON.stringify(payload) },
     '采购申请保存失败'
@@ -227,7 +204,7 @@ export async function updatePurchaseRequest(
   payload: PurchaseRequestUpdate
 ): Promise<PurchaseRequestApiResponse> {
   return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/purchase-requests/${requestId}`,
+    `/api/v1/procurement/purchase-requests/${requestId}`,
     headers,
     { method: 'PUT', body: JSON.stringify(payload) },
     '采购申请更新失败'
@@ -239,7 +216,7 @@ export async function submitPurchaseRequest(
   requestId: string
 ): Promise<PurchaseRequestApiResponse> {
   return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/purchase-requests/${requestId}/submit`,
+    `/api/v1/procurement/purchase-requests/${requestId}/submit`,
     headers,
     { method: 'POST', body: JSON.stringify({}) },
     '采购申请提交失败'
@@ -252,7 +229,7 @@ export async function approvePurchaseRequest(
   payload: PurchaseApprovalRequest
 ): Promise<PurchaseRequestApiResponse> {
   return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/purchase-requests/${requestId}/approve`,
+    `/api/v1/procurement/purchase-requests/${requestId}/approve`,
     headers,
     { method: 'POST', body: JSON.stringify(payload) },
     '审批失败'
@@ -265,7 +242,7 @@ export async function rejectPurchaseRequest(
   payload: PurchaseApprovalRequest
 ): Promise<PurchaseRequestApiResponse> {
   return procurementJsonFetch<PurchaseRequestApiResponse>(
-    `${getApiBaseUrl()}/api/v1/procurement/purchase-requests/${requestId}/reject`,
+    `/api/v1/procurement/purchase-requests/${requestId}/reject`,
     headers,
     { method: 'POST', body: JSON.stringify(payload) },
     '驳回失败'
@@ -327,8 +304,6 @@ export async function importSupplierTable(
   return body
 }
 
-// ── 内部辅助函数 ──
-
 async function parseJsonResponse<T extends { code: number; message: string }>(
   response: Response,
   fallbackMessage: string
@@ -360,7 +335,7 @@ async function procurementJsonFetch<T extends { code: number; message: string }>
   options: RequestInit,
   fallbackMessage: string
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`, {
     ...options,
     headers: { ...headers, 'Content-Type': 'application/json' },
     cache: 'no-store',

@@ -9,7 +9,7 @@ import {
   InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate, InspectionTemplateItem,
   MaterialRecord, ClaimTimeoutConfig, Maintainer, WorkOrderImage,
 } from '@/types/equipment'
-import { apiGet, apiFetchPaginated } from '@/lib/http-client'
+import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 

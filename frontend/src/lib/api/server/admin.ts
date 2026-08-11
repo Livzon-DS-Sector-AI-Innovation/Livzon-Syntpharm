@@ -1,16 +1,8 @@
-import { getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch } from '@/lib/api/server/base'
 
 export async function updateSystemSettings(data: Record<string, unknown>) {
-  const url = `${getApiBaseUrl()}/api/v1/hr/system-settings`
-  const res = await fetch(url, {
+  return apiFetch('/api/v1/hr/system-settings', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-    cache: 'no-store',
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || '保存设置失败')
-  }
-  return res.json()
 }

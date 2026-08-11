@@ -1,62 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-
-function getApiBase(): string {
-  return `${getApiBaseUrl()}/api/v1`
-}
-
-function buildQueryString(params: Record<string, unknown>): string {
-  const searchParams = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.set(key, String(value))
-    }
-  }
-  const qs = searchParams.toString()
-  return qs ? `?${qs}` : ''
-}
-
-async function safeApiFetch<T>(
-  endpoint: string,
-  options?: RequestInit,
-  authHeaders?: Record<string, string>
-): Promise<{ code: number; message: string; data: T; meta?: { page?: number; page_size?: number; total?: number } }> {
-  let response: Response
-  try {
-    const headers = { ...authHeaders, ...(options?.headers || {}) }
-    response = await fetch(`${getApiBase()}${endpoint}`, {
-      ...options,
-      headers,
-    })
-  } catch {
-    return {
-      code: -1,
-      message: `网络请求失败，无法连接到后端服务 (${getApiBase()}${endpoint})`,
-      data: null as unknown as T,
-    }
-  }
-
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`
-    try {
-      const errorBody = await response.text()
-      try {
-        const errorJson = JSON.parse(errorBody)
-        if (errorJson.message) errorMessage = errorJson.message
-        else if (errorJson.detail) errorMessage = errorJson.detail
-      } catch {
-        errorMessage = errorBody.substring(0, 200)
-      }
-    } catch { /* ignore */ }
-    return { code: response.status, message: errorMessage, data: null as unknown as T }
-  }
-
-  try {
-    return await response.json()
-  } catch {
-    const text = await response.text().catch(() => '无法读取响应')
-    return { code: -1, message: `响应解析失败: ${text.substring(0, 200)}`, data: null as unknown as T }
-  }
-}
+import { apiFetch, safeApiFetch, buildQueryString, getApiBaseUrl } from '@/lib/api/server/base'
 
 async function uploadFetch(
   endpoint: string,
@@ -64,7 +6,7 @@ async function uploadFetch(
   authHeaders?: Record<string, string>
 ): Promise<any> {
   const { 'Content-Type': _, ...uploadHeaders } = authHeaders || {}
-  const response = await fetch(`${getApiBase()}${endpoint}`, {
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     method: 'POST',
     headers: uploadHeaders,
     body: formData,
@@ -582,7 +524,7 @@ export async function parseHazardExportQuery(naturalQuery: string, authHeaders?:
 }
 
 export async function exportHazardLedgerPdf(data: any, authHeaders?: Record<string, string>) {
-  const response = await fetch(`${getApiBase()}/safety/hazard-identifications/export-pdf`, {
+  const response = await fetch(`${getApiBaseUrl()}/safety/hazard-identifications/export-pdf`, {
     method: 'POST',
     headers: authHeaders || {},
     body: JSON.stringify(data),
@@ -652,7 +594,7 @@ export async function updateSopContent(regulationId: string, data: any, authHead
 
 export async function exportSopPdf(regulationId: string, authHeaders?: Record<string, string>) {
   const { 'Content-Type': _, ...headers } = authHeaders || {}
-  const response = await fetch(`${getApiBase()}/safety/regulations/${regulationId}/export`, {
+  const response = await fetch(`${getApiBaseUrl()}/safety/regulations/${regulationId}/export`, {
     method: 'POST',
     headers,
     cache: 'no-store',
@@ -667,7 +609,7 @@ export async function exportSopPdf(regulationId: string, authHeaders?: Record<st
 
 export async function exportRegulationPdfBase64(regulationId: string, authHeaders?: Record<string, string>) {
   const { 'Content-Type': _, ...headers } = authHeaders || {}
-  const response = await fetch(`${getApiBase()}/safety/regulations/${regulationId}/export`, {
+  const response = await fetch(`${getApiBaseUrl()}/safety/regulations/${regulationId}/export`, {
     method: 'POST',
     headers,
     cache: 'no-store',
@@ -1434,7 +1376,7 @@ export async function parseSpecialOpsExportQuery(query: string, authHeaders?: Re
 }
 
 export async function exportSpecialOpsLedger(data: any) {
-  const response = await fetch(`${getApiBase()}/safety/special-ops/export`, {
+  const response = await fetch(`${getApiBaseUrl()}/safety/special-ops/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1711,5 +1653,3 @@ export async function deleteHazardRevisionArchive(id: string, authHeaders?: Reco
     headers: authHeaders,
   })
 }
-
-export { buildQueryString, getApiBase }

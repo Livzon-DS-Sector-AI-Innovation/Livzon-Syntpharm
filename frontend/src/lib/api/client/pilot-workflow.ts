@@ -1,23 +1,10 @@
 import {
   PilotWorkflow,
   PilotWorkflowFilters,
+  PilotWorkflowListItem,
   PilotWorkflowListResponse,
 } from '@/types/pilot-workflow'
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data.data
-}
+import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 export async function fetchPilotWorkflows(
   filters: PilotWorkflowFilters = {}
@@ -30,24 +17,12 @@ export async function fetchPilotWorkflows(
 
   const qs = params.toString()
   const url = `/api/v1/research/pilot/workflow${qs ? `?${qs}` : ''}`
-  const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const json = await response.json()
-  return {
-    items: json.data,
-    total: json.meta?.total ?? 0,
-    page: json.meta?.page ?? 1,
-    page_size: json.meta?.page_size ?? 20,
-  }
+  return apiFetchPaginated<PilotWorkflowListItem>(url)
 }
 
 export async function fetchPilotWorkflow(
   workflowId: string
 ): Promise<PilotWorkflow> {
   const url = `/api/v1/research/pilot/workflow/${workflowId}`
-  return apiFetch<PilotWorkflow>(url)
+  return apiGet<PilotWorkflow>(url)
 }

@@ -1,4 +1,5 @@
 'use client'
+import { apiGet } from '@/lib/api/client'
 import { deleteRegistrationProject } from '@/actions/registration'
 
 import { Suspense, useEffect, useState } from 'react'
@@ -61,9 +62,8 @@ function ProjectsContent() {
   const loadProjects = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/v1/registration/projects/')
-      const json = await res.json()
-      setProjects(json.data || [])
+      const data = await apiGet<Project[]>('/api/v1/registration/projects/')
+      setProjects(data || [])
     } catch {
       message.error('加载失败')
     } finally {

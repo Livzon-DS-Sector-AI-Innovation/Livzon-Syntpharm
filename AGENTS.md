@@ -582,6 +582,11 @@ frontend/src/actions/          # create/update/delete/upload/import/export
 **允许例外**：
 - FormData / 文件上传请求可使用自定义 `uploadFetch<T>()`（`apiFetch` 强制 `Content-Type: application/json` 会破坏 multipart 上传）
 - 流式响应（SSE/ReadableStream）可使用 `apiFetchRaw` 或自定义 fetch
+- 登录接口（`loginApi`）使用原始 `fetch`（登录前无 auth token，需区分 HTTP 状态码与业务错误）
+
+**base.ts 工具函数**：
+- `safeApiFetch<T>(endpoint, options?)` — 不抛异常的 fetch 变体，网络/HTTP 错误作为返回值 `{code, message, data}`
+- `apiFetchPaginated<T>(endpoint, options?)` — 分页请求，返回 `{items, total, page, page_size}`
 
 ### API 类型来源
 

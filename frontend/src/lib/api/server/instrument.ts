@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type {
   Instrument,
   InstrumentListItem,
@@ -30,25 +30,6 @@ import type {
   FeishuUser,
   FeishuDepartment,
 } from '@/types/instrument'
-
-async function apiFetchWithoutContentType<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
-    ...options,
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
-    let errorMessage = `请求失败: ${response.status} ${response.statusText}`
-    try {
-      const errorJson = JSON.parse(errorBody)
-      if (errorJson.message) errorMessage = errorJson.message
-      else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
-    } catch {}
-    throw new Error(errorMessage)
-  }
-  const result = await response.json()
-  return result.data ?? result
-}
 
 export async function getInstruments(params: InstrumentFilter = {}) {
   const searchParams = new URLSearchParams()
@@ -224,10 +205,18 @@ export async function approveCalibrationRecord(id: string, data: ApprovalCreate)
 export async function recognizeInstrumentLabel(file: File): Promise<AIRecognizedInstrumentInfo> {
   const formData = new FormData()
   formData.append('file', file)
-  return apiFetchWithoutContentType<AIRecognizedInstrumentInfo>(`/api/v1/quality/instrument/recognize`, {
+  const url = `${getApiBaseUrl()}/api/v1/quality/instrument/recognize`
+  const response = await fetch(url, {
     method: 'POST',
     body: formData,
+    cache: 'no-store',
   })
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => '')
+    throw new Error(`请求失败: ${response.status} ${errorBody}`)
+  }
+  const result = await response.json()
+  return unwrapResponse(result)
 }
 
 export async function getUpcomingCalibrationRecords(days: number = 30): Promise<UpcomingCalibrationResponse> {

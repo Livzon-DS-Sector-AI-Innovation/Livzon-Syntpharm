@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, unwrapResponse, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   ProductDossierCreate,
   ProductDossierUpdate,
@@ -110,12 +110,9 @@ export async function splitConfirmAndInsertApi(
 }
 
 export async function updateAssetCategoryApi(assetId: string, categoryId: string | null) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
+  const result = await apiFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ category_id: categoryId }),
   })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '更新分类失败')
-  return json.data
+  return unwrapResponse(result) as { id: string; category_id: string | null }
 }

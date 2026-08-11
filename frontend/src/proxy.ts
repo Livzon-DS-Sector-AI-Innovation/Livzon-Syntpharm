@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Proxy is Next.js middleware; cannot import getApiBaseUrl from @/lib/api/server/base
+// because base.ts uses next/headers which is unavailable in middleware context.
 const BACKEND_URL = process.env.API_BASE_URL || 'http://localhost:8000'
 
 export default function proxy(request: NextRequest) {

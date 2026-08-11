@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Table, Input, Select, Card, Space, Upload, Button, App } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import { fetchSopCatalog } from '@/lib/api/client/hr'
+import { apiGet } from '@/lib/api/client'
 
 export default function SopCatalogPage() {
   const { message } = App.useApp()
@@ -18,22 +19,19 @@ export default function SopCatalogPage() {
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([])
   const [cat, setCat] = useState<string | undefined>()
 
-  const API_BASE = '/api/v1'
-
-  // 部门列表（一次性加载）
   useEffect(() => {
-    fetch(`${API_BASE}/hr/sop-catalog/departments`).then(r => r.json()).then(res => {
-      setDepartments((res.data || []).map((d: string) => ({ value: d, label: d })))
+    apiGet<string[]>('/api/v1/hr/sop-catalog/departments').then(data => {
+      setDepartments((data || []).map((d: string) => ({ value: d, label: d })))
     })
   }, [])
 
   // 分类列表（按部门筛选，级联）
   useEffect(() => {
     const url = dept
-      ? `${API_BASE}/hr/sop-catalog/categories?department=${encodeURIComponent(dept)}`
-      : `${API_BASE}/hr/sop-catalog/categories`
-    fetch(url).then(r => r.json()).then(res => {
-      setCategories((res.data || []).map((c: string) => ({ value: c, label: c })))
+      ? `/api/v1/hr/sop-catalog/categories?department=${encodeURIComponent(dept)}`
+      : '/api/v1/hr/sop-catalog/categories'
+    apiGet<string[]>(url).then(data => {
+      setCategories((data || []).map((c: string) => ({ value: c, label: c })))
     })
   }, [dept])
 

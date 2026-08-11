@@ -61,6 +61,65 @@ export async function apiFetchRaw(url: string, options?: RequestInit): Promise<R
   return response
 }
 
+export async function safeApiFetch<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<{ code: number; message: string; data: T; meta?: { page?: number; page_size?: number; total?: number } }> {
+  const authHeaders = await getAuthHeaders()
+
+  let response: Response
+  try {
+    response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+      ...options,
+      headers: {
+        ...authHeaders,
+        ...options?.headers,
+      },
+    })
+  } catch {
+    return {
+      code: -1,
+      message: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})`,
+      data: null as unknown as T,
+    }
+  }
+
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}`
+    try {
+      const errorBody = await response.text()
+      try {
+        const errorJson = JSON.parse(errorBody)
+        if (errorJson.message) errorMessage = errorJson.message
+        else if (errorJson.detail) errorMessage = errorJson.detail
+      } catch {
+        errorMessage = errorBody.substring(0, 200)
+      }
+    } catch {}
+    return { code: response.status, message: errorMessage, data: null as unknown as T }
+  }
+
+  try {
+    return await response.json()
+  } catch {
+    const text = await response.text().catch(() => '无法读取响应')
+    return { code: -1, message: `响应解析失败: ${text.substring(0, 200)}`, data: null as unknown as T }
+  }
+}
+
+export async function apiFetchPaginated<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<{ items: T[]; total: number; page: number; page_size: number }> {
+  const result = await apiFetch<{ code: number; data: T[]; message?: string; meta?: { page?: number; page_size?: number; total?: number } }>(endpoint, options)
+  return {
+    items: unwrapResponse(result),
+    total: result.meta?.total || 0,
+    page: result.meta?.page || 1,
+    page_size: result.meta?.page_size || 20,
+  }
+}
+
 /**
  * Extract the `data` payload from a wrapped API response envelope.
  * All server-side API responses follow the shape `{code, data, message, meta}`.

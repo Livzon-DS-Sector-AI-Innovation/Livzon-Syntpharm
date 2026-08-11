@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
@@ -338,10 +338,9 @@ export async function updateClaimTimeoutConfigApi(data: any, headers?: Record<st
 }
 
 export async function downloadImportTemplateApi(headers?: Record<string, string>) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/template`, {
+  const res = await apiFetchRaw('/api/v1/equipment/equipments/import/template', {
     headers: headers || {},
   })
-  if (!res.ok) throw new Error('下载模板失败')
   const blob = await res.blob()
   const arrayBuffer = await blob.arrayBuffer()
   return Buffer.from(arrayBuffer).toString('base64')
@@ -888,8 +887,7 @@ export async function refreshFeishuOldApi(headers?: Record<string, string>) {
 }
 
 export async function downloadImportTemplateOldApi() {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-template`)
-  if (!res.ok) throw new Error('下载导入模板失败')
+  const res = await apiFetchRaw('/api/v1/equipment/equipments/import-template')
   const blob = await res.blob()
   return blob
 }

@@ -9,7 +9,7 @@ import {
   InspectionPhoto, RouteLocationsBatch, RouteLocation,
   InspectionRouteSchedule,
 } from '@/types/inspection'
-import { apiGet, apiPost, apiFetchPaginated } from '@/lib/http-client'
+import { apiGet, apiPost, apiFetchPaginated } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 const INSPECTION_BASE = `${API_BASE}/equipment/inspection`

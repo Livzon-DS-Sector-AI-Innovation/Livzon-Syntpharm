@@ -841,7 +841,7 @@ Full audit
 7. Is the `types/generated/` directory free of manual edits?
 8. Do any `'use server'` files in `actions/` contain `export type` or `export interface` statements?
 9. Are there any duplicate `getApiBaseUrl()` implementations in `lib/api/server/` files other than `base.ts`? (Only `base.ts` may define this function.)
-10. Are there any custom `apiFetch` implementations (function named `apiFetch` with fetch logic) in `lib/api/server/` files other than `base.ts`?
+10. Are there any custom `apiFetch` implementations (function named `apiFetch` with fetch logic) in `lib/api/server/` files other than `base.ts`? Note: `safeApiFetch` and `apiFetchPaginated` in `base.ts` are canonical first-class exports, not custom `apiFetch` violations.
 11. Are there ad-hoc `.data` access patterns at call sites instead of using `unwrapResponse()`? (Patterns like `response.data`, `result?.data`, `(result as any)?.data`)
 
 ### Output format
@@ -1082,6 +1082,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
 | FormData / file upload may use custom `uploadFetch<T>()` (`apiFetch` sets `Content-Type: application/json`, breaking multipart). | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | Streaming responses (SSE/ReadableStream) may use `apiFetchRaw` or raw fetch. | apiFetch 一致性 — 自定义 apiFetch | 10 |
+| Login API (`loginApi` in `auth.ts`) may use raw `fetch()` because no auth token exists before login and the caller must distinguish HTTP status codes (401 vs 500) from business errors. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 
 ---
 

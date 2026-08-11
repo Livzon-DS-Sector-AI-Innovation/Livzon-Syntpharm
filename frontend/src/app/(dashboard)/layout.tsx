@@ -1,4 +1,3 @@
-import '@/lib/http-server'
 import { AppShell } from "@/components/layout/AppShell"
 import { AntdProvider } from "@/components/AntdProvider"
 import { getCurrentUser } from "@/actions/auth"

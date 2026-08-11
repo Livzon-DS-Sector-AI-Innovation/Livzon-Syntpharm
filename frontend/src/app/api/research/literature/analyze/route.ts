@@ -12,17 +12,14 @@
  * 客户端只读取本地 route handler 的流式响应。
  */
 import { NextRequest, NextResponse } from 'next/server'
-
-function getBackendUrl(): string {
-  return process.env.API_BASE_URL || 'http://dazah-backend-app-1:8000'
-}
+import { getApiBaseUrl } from '@/lib/api/server/base'
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     
     // Forward to backend
-    const response = await fetch(`${getBackendUrl()}/api/v1/research/literature/analyze`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/research/literature/analyze`, {
       method: 'POST',
       body: formData,
     })

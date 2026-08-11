@@ -1,27 +1,10 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 
-async function apiFetchNullable<T>(url: string, options?: RequestInit): Promise<T | null> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    cache: options?.cache ?? 'no-store',
-  })
-  if (response.status === 204) return null
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
-    let errorMessage = `请求失败: ${response.status} ${response.statusText}`
-    try {
-      const errorJson = JSON.parse(errorBody)
-      if (errorJson.message) errorMessage = errorJson.message
-      else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
-    } catch {}
-    throw new Error(errorMessage)
-  }
-  const result = await response.json()
-  return result.data ?? result
+async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
+  const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
+  if (res.status === 204) return null
+  const json = await res.json()
+  return unwrapResponse(json)
 }
 import type {
   InspectionStandard,
@@ -653,9 +636,7 @@ export async function updateDeviation(deviationId: string, data: UpdateDeviation
 }
 
 export async function deleteDeviation(deviationId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/deviations/${deviationId}`)
 }
 
 // ============ CAPA Actions ============
@@ -675,9 +656,7 @@ export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
 }
 
 export async function deleteCapa(capaId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}`)
 }
 
 // ============ Department Contact Actions ============
@@ -697,9 +676,7 @@ export async function updateDepartmentContact(contactId: string, data: UpdateDep
 }
 
 export async function deleteDepartmentContact(contactId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/department-contacts/${contactId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/department-contacts/${contactId}`)
 }
 
 // ============ Label Verification Actions ============
@@ -761,9 +738,7 @@ export async function addExecutionTrack(capaId: string, data: unknown) {
 }
 
 export async function deleteExecutionTrack(capaId: string, trackId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`)
 }
 
 export async function confirmExecution(capaId: string, data: unknown) {

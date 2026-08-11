@@ -19,6 +19,11 @@ import type {
   FieldFillResult,
 } from '@/types/dossier-writer'
 import { getApiBaseUrl } from '@/lib/api/server/base'
+import {
+  uploadTemplatesApi,
+  uploadChapterAssetApi,
+  updateAssetCategoryApi,
+} from '@/lib/api/server/dossier-writer'
 
 async function actionFetch<T>(url: string, options?: RequestInit): Promise<T> {
   // AI 相关接口需要更长的超时时间（OCR + LLM 处理可能需要 10 分钟）
@@ -92,14 +97,9 @@ export async function uploadTemplates(dossierId: string, files: any): Promise<Up
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
-    method: 'POST',
-    body: formData,
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '上传失败')
+  const result = await uploadTemplatesApi(dossierId, formData)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 export async function parseTemplates(dossierId: string): Promise<ParseResult> {
@@ -118,14 +118,9 @@ export async function uploadChapterAsset(
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`, {
-    method: 'POST',
-    body: formData,
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '上传失败')
+  const result = await uploadChapterAssetApi(chapterId, formData)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 export async function deleteChapterAsset(assetId: string): Promise<void> {
@@ -217,15 +212,9 @@ export async function updateAssetCategory(
   assetId: string,
   categoryId: string | null
 ): Promise<{ id: string; category_id: string | null }> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category_id: categoryId }),
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '更新分类失败')
+  const result = await updateAssetCategoryApi(assetId, categoryId)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 // ====== Asset Usage (素材使用管理) ======

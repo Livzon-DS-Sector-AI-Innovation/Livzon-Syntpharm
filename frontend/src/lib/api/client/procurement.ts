@@ -5,6 +5,7 @@ import type {
   PurchaseRequestApiResponse,
   PurchaseRequestListResponse,
 } from '@/types/procurement'
+import { apiGet } from '@/lib/api/client'
 
 type InvoiceRecognitionRecordQuery =
   operations['list_invoice_records_api_v1_procurement_invoices_recognition_records_get']['parameters']['query']
@@ -13,17 +14,8 @@ type PurchaseRequestQuery =
 type PurchaseOrderQuery =
   operations['list_purchase_order_records_api_v1_procurement_purchase_orders_get']['parameters']['query']
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const response = await fetch(path, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data.data ?? data
-}
-
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {
-  return apiFetch(`/api/v1/procurement`)
+  return apiGet(`/api/v1/procurement`)
 }
 
 export async function fetchInvoiceRecognitionRecords(
@@ -39,21 +31,21 @@ export async function fetchInvoiceRecognitionRecords(
     params.size ? `?${params.toString()}` : ''
   }`
   
-  return apiFetch(path)
+  return apiGet(path)
 }
 
 export async function fetchPurchaseRequests(
   query: PurchaseRequestQuery = {}
 ): Promise<PurchaseRequestListResponse> {
   const path = `/api/v1/procurement/purchase-requests${buildQueryString(query)}`
-  return apiFetch(path)
+  return apiGet(path)
 }
 
 export async function fetchPurchaseOrders(
   query: PurchaseOrderQuery
 ): Promise<PurchaseOrderListResponse> {
   const path = `/api/v1/procurement/purchase-orders${buildQueryString(query)}`
-  return apiFetch(path)
+  return apiGet(path)
 }
 
 export async function exportPurchaseOrdersExcel(
@@ -79,7 +71,7 @@ export async function exportPurchaseOrdersExcel(
 export async function fetchPurchaseRequest(
   requestId: string
 ): Promise<PurchaseRequestApiResponse> {
-  return apiFetch(`/api/v1/procurement/purchase-requests/${requestId}`)
+  return apiGet(`/api/v1/procurement/purchase-requests/${requestId}`)
 }
 
 function buildQueryString(query: Record<string, unknown>) {
