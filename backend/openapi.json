@@ -71175,7 +71175,7 @@
           "CPV-\u4ea7\u54c1"
         ],
         "summary": "\u5220\u9664\u53c2\u6570",
-        "description": "\u5220\u9664\u53c2\u6570",
+        "description": "\u5220\u9664\u53c2\u6570\uff08\u8f6f\u5220\u9664\uff09",
         "operationId": "delete_parameter_api_v1_quality_cpv_parameters__parameter_id__delete",
         "parameters": [
           {

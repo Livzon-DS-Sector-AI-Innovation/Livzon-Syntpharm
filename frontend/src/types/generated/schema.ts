@@ -14525,7 +14525,7 @@ export interface paths {
         post?: never;
         /**
          * 删除参数
-         * @description 删除参数
+         * @description 删除参数（软删除）
          */
         delete: operations["delete_parameter_api_v1_quality_cpv_parameters__parameter_id__delete"];
         options?: never;
