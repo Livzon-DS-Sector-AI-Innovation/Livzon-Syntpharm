@@ -122,6 +122,7 @@ async def parse_experiment_record(content: str, parse_type: str) -> ExperimentPa
         data = result.get("data", {})
         warnings = result.get("warnings", [])
 
+        parsed_data: LabConfirmationParsedData | ScaleUpParsedData
         if parse_type == "lab_confirmation":
             parsed_data = LabConfirmationParsedData(**data)
         else:
