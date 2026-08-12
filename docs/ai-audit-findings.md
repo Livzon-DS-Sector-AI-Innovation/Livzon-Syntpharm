@@ -1061,3 +1061,55 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 6 (Co
 | 12. OpenAPI | 0 | 0 | 0 | 0 | CI verifies |
 | **Total** | **0** | **0** | **0** | **0** | **All resolved** |
 
+---
+
+## PR #28 — fix: add network retry to apiFetch for Docker DNS resilience (2026-08-12)
+
+**Changed files** (1): `frontend/src/lib/api/server/base.ts`
+
+### Category 10: Frontend API and generated types
+
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (Q1-Q11) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+#### Positive changes
+- `fetchWithRetry()` added as internal helper with bounded `maxRetries=2` and 500ms linear backoff — prevents transient Docker DNS (127.0.0.11) failures from cascading into SSR errors ✓
+- Applied to `apiFetch()` and `safeApiFetch()` calls ✓
+- `apiFetchRaw()` correctly left unchanged (used for SSE/streaming where retry is inappropriate) ✓
+- No new `apiFetch` variants introduced — `fetchWithRetry` is an internal helper, not a public API ✓
+
+#### Accepted exceptions
+_None._
+
+### Category 11: Proxy and routing
+
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+No changes to `proxy.ts`. All server-side calls use `getApiBaseUrl()`. `getApiBaseUrl()` definition remains canonical in `base.ts`. No violations.
+
+### Categories not affected
+
+Category 2 (Secrets) — no new hardcoded URLs or credentials; the `http://backend:8000` fallback is the canonical definition and pre-existing.
+Categories 1, 3-9, 12-14 — no changed files in scope.
+
+### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean |
+| 11. Proxy & routing | 0 | 0 | 0 | 0 | Clean |
+| **Total** | **0** | **0** | **0** | **0** | **0 findings** |
+
+
