@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button, Card, Form, Input, message, Divider } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { updateSystemSettings } from '@/actions/admin'
-
-const API_BASE = '/api/v1'
+import { apiGet } from '@/lib/api/client'
 
 export default function SystemSettingsClient() {
   const [form] = Form.useForm()
@@ -15,11 +14,8 @@ export default function SystemSettingsClient() {
   const loadSettings = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/hr/system-settings`)
-      const json = await res.json()
-      if (json.code === 200) {
-        form.setFieldsValue(json.data)
-      }
+      const data = await apiGet<any>('/api/v1/hr/system-settings')
+      form.setFieldsValue(data)
     } catch (err: any) {
       message.error('加载设置失败: ' + (err.message || '未知错误'))
     } finally {

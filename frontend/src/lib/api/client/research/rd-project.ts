@@ -28,35 +28,10 @@ import {
   StageTransitionResult,
   RdDeliverableTemplate,
 } from '@/types/research/rd-project'
+import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-  })
-  if (!res.ok) {
-    const json = await res.json().catch(() => null)
-    const message = json?.message || `请求失败: ${res.status}`
-    throw new Error(message)
-  }
-  const json = await res.json()
-  return json.data
-}
-
-async function apiFetchList<T>(url: string): Promise<T[]> {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const json = await res.json().catch(() => null)
-    const message = json?.message || `请求失败: ${res.status}`
-    throw new Error(message)
-  }
-  const json = await res.json()
-  return json.data || []
-}
-
-// RdProject
 export async function fetchRdProjects(params: { page?: number; page_size?: number; stage?: string; status?: string; keyword?: string } = {}) {
   const qs = new URLSearchParams()
   if (params.stage) qs.set('stage', params.stage)
@@ -64,68 +39,59 @@ export async function fetchRdProjects(params: { page?: number; page_size?: numbe
   if (params.keyword) qs.set('keyword', params.keyword)
   qs.set('page', String(params.page || 1))
   qs.set('page_size', String(params.page_size || 20))
-  const res = await fetch(`${API_BASE}/research/rd-projects?${qs}`)
-  const json = await res.json()
-  return { items: json.data || [], total: json.meta?.total || 0, page: json.meta?.page || 1, page_size: json.meta?.page_size || 20 }
+  return apiFetchPaginated<RdProject>(`${API_BASE}/research/rd-projects?${qs}`)
 }
 
 export async function fetchRdProject(id: string): Promise<RdProject> {
-  return apiFetch<RdProject>(`${API_BASE}/research/rd-projects/${id}`)
+  return apiGet<RdProject>(`${API_BASE}/research/rd-projects/${id}`)
 }
 
-// Milestones
 export async function fetchMilestones(projectId: string): Promise<RdMilestone[]> {
-  return apiFetchList<RdMilestone>(`${API_BASE}/research/projects/${projectId}/milestones`)
+  const result = await apiGet<RdMilestone[]>(`${API_BASE}/research/projects/${projectId}/milestones`)
+  return result || []
 }
 
-// Stage Records
 export async function fetchStages(projectId: string): Promise<RdStageRecord[]> {
-  return apiFetchList<RdStageRecord>(`${API_BASE}/research/projects/${projectId}/stages`)
+  const result = await apiGet<RdStageRecord[]>(`${API_BASE}/research/projects/${projectId}/stages`)
+  return result || []
 }
 
-// Research Tracks
 export async function fetchTracks(projectId: string): Promise<RdResearchTrack[]> {
-  return apiFetchList<RdResearchTrack>(`${API_BASE}/research/projects/${projectId}/tracks`)
+  const result = await apiGet<RdResearchTrack[]>(`${API_BASE}/research/projects/${projectId}/tracks`)
+  return result || []
 }
 
 export async function fetchAllTracks(params: { projectId?: string; trackType?: string } = {}): Promise<any[]> {
   const qs = new URLSearchParams()
   if (params.projectId) qs.set('project_id', params.projectId)
   if (params.trackType) qs.set('track_type', params.trackType)
-  const res = await fetch(`${API_BASE}/research/tracks?${qs}`)
-  const json = await res.json()
-  return json.data || []
+  const result = await apiGet<any[]>(`${API_BASE}/research/tracks?${qs}`)
+  return result || []
 }
 
-// Research Findings
 export async function fetchFindings(trackId: string): Promise<RdResearchFinding[]> {
-  return apiFetchList<RdResearchFinding>(`${API_BASE}/research/tracks/${trackId}/findings`)
+  const result = await apiGet<RdResearchFinding[]>(`${API_BASE}/research/tracks/${trackId}/findings`)
+  return result || []
 }
 
-// Stage Transition
 export async function fetchStageTransitionCheck(projectId: string, targetStage: string): Promise<StageTransitionCheck> {
-  return apiFetch<StageTransitionCheck>(`${API_BASE}/research/rd-projects/${projectId}/transition-check?target_stage=${targetStage}`)
+  return apiGet<StageTransitionCheck>(`${API_BASE}/research/rd-projects/${projectId}/transition-check?target_stage=${targetStage}`)
 }
-
-// ===== 中试研究 API =====
 
 export async function fetchPilotStudies(projectId: string): Promise<RdPilotStudy[]> {
-  return apiFetchList<RdPilotStudy>(`${API_BASE}/research/pilot-studies?project_id=${projectId}`)
+  const result = await apiGet<RdPilotStudy[]>(`${API_BASE}/research/pilot-studies?project_id=${projectId}`)
+  return result || []
 }
-
-// ===== 工艺验证 API =====
 
 export async function fetchValidations(projectId: string): Promise<RdProcessValidation[]> {
-  return apiFetchList<RdProcessValidation>(`${API_BASE}/research/process-validations?project_id=${projectId}`)
+  const result = await apiGet<RdProcessValidation[]>(`${API_BASE}/research/process-validations?project_id=${projectId}`)
+  return result || []
 }
-
-// ===== 申报资料 API =====
 
 export async function fetchFilings(projectId: string): Promise<RdRegistrationFiling[]> {
-  return apiFetchList<RdRegistrationFiling>(`${API_BASE}/research/registration-filings?project_id=${projectId}`)
+  const result = await apiGet<RdRegistrationFiling[]>(`${API_BASE}/research/registration-filings?project_id=${projectId}`)
+  return result || []
 }
-
-// ===== 阶段交付物 API =====
 
 export async function fetchDeliverables(projectId: string, params: { stage?: string; deliverable_type?: string; status?: string } = {}): Promise<RdStageDeliverable[]> {
   const qs = new URLSearchParams()
@@ -133,43 +99,36 @@ export async function fetchDeliverables(projectId: string, params: { stage?: str
   if (params.stage) qs.set('stage', params.stage)
   if (params.deliverable_type) qs.set('deliverable_type', params.deliverable_type)
   if (params.status) qs.set('status', params.status)
-  return apiFetchList<RdStageDeliverable>(`${API_BASE}/research/rd-stage-deliverables?${qs}`)
+  const result = await apiGet<RdStageDeliverable[]>(`${API_BASE}/research/rd-stage-deliverables?${qs}`)
+  return result || []
 }
-
-
-// ===== 实验记录 API =====
-
 
 export async function fetchExperimentLogs(projectId: string): Promise<RdExperimentLog[]> {
-  return apiFetchList<RdExperimentLog>(`${API_BASE}/research/experiment-logs?project_id=${projectId}`)
+  const result = await apiGet<RdExperimentLog[]>(`${API_BASE}/research/experiment-logs?project_id=${projectId}`)
+  return result || []
 }
-
-// ===== 研发报告 API =====
 
 export async function fetchReports(projectId: string): Promise<RdReport[]> {
-  return apiFetchList<RdReport>(`${API_BASE}/research/reports?project_id=${projectId}`)
+  const result = await apiGet<RdReport[]>(`${API_BASE}/research/reports?project_id=${projectId}`)
+  return result || []
 }
-
-// ===== 立项申请 API =====
 
 type RdInitiationCreate = Omit<RdInitiation, 'id' | 'created_at' | 'updated_at'>
 type RdInitiationUpdate = Partial<Omit<RdInitiation, 'id' | 'project_id' | 'created_at' | 'updated_at'>>
 
 export async function fetchInitiations(projectId: string): Promise<RdInitiation[]> {
-  return apiFetchList<RdInitiation>(`${API_BASE}/research/initiations?project_id=${projectId}`)
+  const result = await apiGet<RdInitiation[]>(`${API_BASE}/research/initiations?project_id=${projectId}`)
+  return result || []
 }
 
-// ===== 研究项详情 API =====
-
 export async function fetchTrackDetail(trackId: string): Promise<RdResearchTrack> {
-  return apiFetch<RdResearchTrack>(`${API_BASE}/research/tracks/${trackId}`)
+  return apiGet<RdResearchTrack>(`${API_BASE}/research/tracks/${trackId}`)
 }
 
 export async function fetchConclusionVersions(trackId: string): Promise<any[]> {
-  return apiFetchList<any>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
+  const result = await apiGet<any[]>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
+  return result || []
 }
-
-// ===== 统计报表 API =====
 
 export interface RdStatsOverview {
   projects: {
@@ -201,14 +160,12 @@ export interface RdProjectProgress {
 }
 
 export async function fetchStatsOverview(): Promise<RdStatsOverview> {
-  return apiFetch<RdStatsOverview>(`${API_BASE}/research/stats/overview`)
+  return apiGet<RdStatsOverview>(`${API_BASE}/research/stats/overview`)
 }
 
 export async function fetchProjectProgress(): Promise<RdProjectProgress[]> {
-  return apiFetch<RdProjectProgress[]>(`${API_BASE}/research/stats/project-progress`)
+  return apiGet<RdProjectProgress[]>(`${API_BASE}/research/stats/project-progress`)
 }
-
-// ===== 交付物模板 API =====
 
 export async function fetchDeliverableTemplates(params: {
   stage?: string
@@ -219,8 +176,6 @@ export async function fetchDeliverableTemplates(params: {
   if (params.stage) qs.set('stage', params.stage)
   if (params.deliverable_type) qs.set('deliverable_type', params.deliverable_type)
   if (params.is_active !== undefined) qs.set('is_active', String(params.is_active))
-  return apiFetchList<RdDeliverableTemplate>(`${API_BASE}/research/deliverable-templates?${qs}`)
+  const result = await apiGet<RdDeliverableTemplate[]>(`${API_BASE}/research/deliverable-templates?${qs}`)
+  return result || []
 }
-
-// ===== AI 报告生成 API =====
-

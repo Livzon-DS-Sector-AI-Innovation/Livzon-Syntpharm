@@ -1,27 +1,10 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 
-async function apiFetchNullable<T>(url: string, options?: RequestInit): Promise<T | null> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    cache: options?.cache ?? 'no-store',
-  })
-  if (response.status === 204) return null
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
-    let errorMessage = `请求失败: ${response.status} ${response.statusText}`
-    try {
-      const errorJson = JSON.parse(errorBody)
-      if (errorJson.message) errorMessage = errorJson.message
-      else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
-    } catch {}
-    throw new Error(errorMessage)
-  }
-  const result = await response.json()
-  return result.data ?? result
+async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
+  const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
+  if (res.status === 204) return null
+  const json = await res.json()
+  return unwrapResponse(json)
 }
 import type {
   InspectionStandard,
@@ -107,7 +90,7 @@ import type {
   TrendData,
 } from '@/types/stability'
 
-const BASE = `${getApiBaseUrl()}/api/v1`
+
 
 // ============ InspectionStandard Actions ============
 
@@ -124,7 +107,7 @@ export async function getStandards(params: StandardQueryParams = {}) {
   if (params.is_effective !== undefined) searchParams.set('is_effective', String(params.is_effective))
   const queryString = searchParams.toString()
   const endpoint = `/quality/standards${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getEffectiveStandards(params: { material_code?: string; material_category?: string } = {}) {
@@ -133,71 +116,71 @@ export async function getEffectiveStandards(params: { material_code?: string; ma
   if (params.material_category) searchParams.set('material_category', params.material_category)
   const queryString = searchParams.toString()
   const endpoint = `/quality/standards/effective${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getStandard(id: string) {
-  return apiFetch(`${BASE}/quality/standards/${id}`)
+  return apiFetch(`/api/v1/quality/standards/${id}`)
 }
 
 export async function createStandard(data: InspectionStandardFormData) {
-  return apiFetch(`${BASE}/quality/standards`, {
+  return apiFetch(`/api/v1/quality/standards`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateStandard(id: string, data: Partial<InspectionStandardFormData>) {
-  return apiFetch(`${BASE}/quality/standards/${id}`, {
+  return apiFetch(`/api/v1/quality/standards/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteStandard(id: string) {
-  return apiFetch(`${BASE}/quality/standards/${id}`, {
+  return apiFetch(`/api/v1/quality/standards/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitStandardForApproval(id: string) {
-  return apiFetch(`${BASE}/quality/standards/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/standards/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveStandard(id: string) {
-  return apiFetch(`${BASE}/quality/standards/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/standards/${id}/approve`, {
     method: 'POST',
   })
 }
 
 export async function rejectStandard(id: string, comments: string) {
-  return apiFetch(`${BASE}/quality/standards/${id}/reject?comments=${encodeURIComponent(comments)}`, {
+  return apiFetch(`/api/v1/quality/standards/${id}/reject?comments=${encodeURIComponent(comments)}`, {
     method: 'POST',
   })
 }
 
 export async function obsoleteStandard(id: string, data: ObsoleteData) {
-  return apiFetch(`${BASE}/quality/standards/${id}/obsolete`, {
+  return apiFetch(`/api/v1/quality/standards/${id}/obsolete`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function copyStandard(data: StandardCopyData) {
-  return apiFetch(`${BASE}/quality/standards/copy`, {
+  return apiFetch(`/api/v1/quality/standards/copy`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getStandardItems(standardId: string) {
-  return apiFetch(`${BASE}/quality/standards/${standardId}/items`)
+  return apiFetch(`/api/v1/quality/standards/${standardId}/items`)
 }
 
 export async function getApprovalRecords(standardId: string) {
-  return apiFetch(`${BASE}/quality/standards/${standardId}/approvals`)
+  return apiFetch(`/api/v1/quality/standards/${standardId}/approvals`)
 }
 
 // ============ Sampling Order Actions ============
@@ -216,48 +199,48 @@ export async function getSamplingOrders(params: SamplingOrderFilter & { page?: n
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/sampling/orders${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getSamplingOrder(id: string) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${id}`)
+  return apiFetch(`/api/v1/quality/sampling/orders/${id}`)
 }
 
 export async function createSamplingOrder(data: SamplingOrderCreate) {
-  return apiFetch(`${BASE}/quality/sampling/orders`, {
+  return apiFetch(`/api/v1/quality/sampling/orders`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateSamplingOrder(id: string, data: SamplingOrderUpdate) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${id}`, {
+  return apiFetch(`/api/v1/quality/sampling/orders/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteSamplingOrder(id: string) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${id}`, {
+  return apiFetch(`/api/v1/quality/sampling/orders/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitSamplingOrderForApproval(id: string) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/sampling/orders/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveSamplingOrder(id: string, data: SamplingApprovalCreate) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/sampling/orders/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getSamplingApprovals(orderId: string) {
-  return apiFetch(`${BASE}/quality/sampling/orders/${orderId}/approvals`)
+  return apiFetch(`/api/v1/quality/sampling/orders/${orderId}/approvals`)
 }
 
 // ============ Retention Ledger Actions ============
@@ -273,11 +256,11 @@ export async function getRetentionLedger(params: RetentionLedgerFilter & { page?
   if (params.retention_status) searchParams.set('retention_status', params.retention_status)
   const queryString = searchParams.toString()
   const endpoint = `/quality/sampling/retention-ledger${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getRetentionByOrder(orderId: string) {
-  return apiFetch(`${BASE}/quality/sampling/retention-ledger/order/${orderId}`)
+  return apiFetch(`/api/v1/quality/sampling/retention-ledger/order/${orderId}`)
 }
 
 // ============ IQC Inspection Actions ============
@@ -297,48 +280,48 @@ export async function getIQCInspections(params: IQCInspectionFilter & { page?: n
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/iqc/inspections${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getIQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${id}`)
+  return apiFetch(`/api/v1/quality/iqc/inspections/${id}`)
 }
 
 export async function createIQCInspection(data: IQCInspectionCreate) {
-  return apiFetch(`${BASE}/quality/iqc/inspections`, {
+  return apiFetch(`/api/v1/quality/iqc/inspections`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateIQCInspection(id: string, data: IQCInspectionUpdate) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/iqc/inspections/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteIQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/iqc/inspections/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitIQCInspectionForApproval(id: string) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/iqc/inspections/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveIQCInspection(id: string, data: IQCApprovalCreate) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/iqc/inspections/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getIQCApprovals(inspectionId: string) {
-  return apiFetch(`${BASE}/quality/iqc/inspections/${inspectionId}/approvals`)
+  return apiFetch(`/api/v1/quality/iqc/inspections/${inspectionId}/approvals`)
 }
 
 // ============ IPQC Inspection Actions ============
@@ -359,58 +342,58 @@ export async function getIPQCInspections(params: IPQCInspectionFilter & { page?:
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/ipqc/inspections${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getIPQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}`)
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}`)
 }
 
 export async function createIPQCInspection(data: IPQCInspectionCreate) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateIPQCInspection(id: string, data: IPQCInspectionUpdate) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteIPQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitIPQCInspectionForApproval(id: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveIPQCInspection(id: string, data: IPQCApprovalCreate) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getIPQCApprovals(inspectionId: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${inspectionId}/approvals`)
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${inspectionId}/approvals`)
 }
 
 export async function lockIPQCBatch(id: string, reason: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}/lock-batch?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}/lock-batch?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
   })
 }
 
 export async function unlockIPQCBatch(id: string) {
-  return apiFetch(`${BASE}/quality/ipqc/inspections/${id}/unlock-batch`, {
+  return apiFetch(`/api/v1/quality/ipqc/inspections/${id}/unlock-batch`, {
     method: 'POST',
   })
 }
@@ -434,52 +417,52 @@ export async function getFQCInspections(params: FQCInspectionFilter & { page?: n
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/fqc/inspections${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getFQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}`)
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}`)
 }
 
 export async function createFQCInspection(data: FQCInspectionCreate) {
-  return apiFetch(`${BASE}/quality/fqc/inspections`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateFQCInspection(id: string, data: FQCInspectionUpdate) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteFQCInspection(id: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitFQCInspectionForApproval(id: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveFQCInspection(id: string, data: FQCApprovalCreate) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getFQCApprovals(inspectionId: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${inspectionId}/approvals`)
+  return apiFetch(`/api/v1/quality/fqc/inspections/${inspectionId}/approvals`)
 }
 
 export async function applyFQCReinspection(id: string, reason: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}/reinspection?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}/reinspection?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
   })
 }
@@ -488,19 +471,19 @@ export async function releaseFQCInspection(id: string, releaseReason?: string) {
   const url = releaseReason
     ? `/quality/fqc/inspections/${id}/release?release_reason=${encodeURIComponent(releaseReason)}`
     : `/quality/fqc/inspections/${id}/release`
-  return apiFetch(`${BASE}${url}`, {
+  return apiFetch(`/api/v1${url}`, {
     method: 'POST',
   })
 }
 
 export async function lockFQCBatch(id: string, reason: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}/lock-batch?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}/lock-batch?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
   })
 }
 
 export async function unlockFQCBatch(id: string) {
-  return apiFetch(`${BASE}/quality/fqc/inspections/${id}/unlock-batch`, {
+  return apiFetch(`/api/v1/quality/fqc/inspections/${id}/unlock-batch`, {
     method: 'POST',
   })
 }
@@ -521,52 +504,52 @@ export async function getStabilityStudies(params: StabilityStudyFilter & { page?
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/stability/studies${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getStabilityStudy(id: string) {
-  return apiFetch(`${BASE}/quality/stability/studies/${id}`)
+  return apiFetch(`/api/v1/quality/stability/studies/${id}`)
 }
 
 export async function createStabilityStudy(data: StabilityStudyCreate) {
-  return apiFetch(`${BASE}/quality/stability/studies`, {
+  return apiFetch(`/api/v1/quality/stability/studies`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateStabilityStudy(id: string, data: StabilityStudyUpdate) {
-  return apiFetch(`${BASE}/quality/stability/studies/${id}`, {
+  return apiFetch(`/api/v1/quality/stability/studies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function deleteStabilityStudy(id: string) {
-  return apiFetch(`${BASE}/quality/stability/studies/${id}`, {
+  return apiFetch(`/api/v1/quality/stability/studies/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function submitStabilityStudy(id: string) {
-  return apiFetch(`${BASE}/quality/stability/studies/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/stability/studies/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function approveStabilityStudy(id: string, data: StabilityApprovalCreate) {
-  return apiFetch(`${BASE}/quality/stability/studies/${id}/approve`, {
+  return apiFetch(`/api/v1/quality/stability/studies/${id}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function getStabilityStudySampleNodes(studyId: string) {
-  return apiFetch(`${BASE}/quality/stability/studies/${studyId}/sample-nodes`)
+  return apiFetch(`/api/v1/quality/stability/studies/${studyId}/sample-nodes`)
 }
 
 export async function updateStabilitySampleNode(id: string, data: StabilitySampleNodeUpdate) {
-  return apiFetch(`${BASE}/quality/stability/sample-nodes/${id}`, {
+  return apiFetch(`/api/v1/quality/stability/sample-nodes/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -585,35 +568,35 @@ export async function getStabilityInspections(params: StabilityInspectionFilter 
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const queryString = searchParams.toString()
   const endpoint = `/quality/stability/inspections${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getStabilityInspection(id: string) {
-  return apiFetch(`${BASE}/quality/stability/inspections/${id}`)
+  return apiFetch(`/api/v1/quality/stability/inspections/${id}`)
 }
 
 export async function createStabilityInspection(data: StabilityInspectionCreate) {
-  return apiFetch(`${BASE}/quality/stability/inspections`, {
+  return apiFetch(`/api/v1/quality/stability/inspections`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
 export async function updateStabilityInspection(id: string, data: StabilityInspectionUpdate) {
-  return apiFetch(`${BASE}/quality/stability/inspections/${id}`, {
+  return apiFetch(`/api/v1/quality/stability/inspections/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
 export async function submitStabilityInspection(id: string) {
-  return apiFetch(`${BASE}/quality/stability/inspections/${id}/submit`, {
+  return apiFetch(`/api/v1/quality/stability/inspections/${id}/submit`, {
     method: 'POST',
   })
 }
 
 export async function getStabilityTrendData(studyId: string) {
-  return apiFetch(`${BASE}/quality/stability/studies/${studyId}/trend`)
+  return apiFetch(`/api/v1/quality/stability/studies/${studyId}/trend`)
 }
 
 // ============ AI 交互日志 Actions ============
@@ -629,11 +612,11 @@ export async function getAiLogs(params: any = {}) {
   if (params.keyword) searchParams.set('keyword', params.keyword)
   const queryString = searchParams.toString()
   const endpoint = `/ai/logs${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${BASE}${endpoint}`)
+  return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getAiLogById(id: string) {
-  return apiFetch(`${BASE}/ai/logs/${id}`)
+  return apiFetch(`/api/v1/ai/logs/${id}`)
 }
 
 // ============ Deviation Actions ============
@@ -653,9 +636,7 @@ export async function updateDeviation(deviationId: string, data: UpdateDeviation
 }
 
 export async function deleteDeviation(deviationId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/deviations/${deviationId}`)
 }
 
 // ============ CAPA Actions ============
@@ -675,9 +656,7 @@ export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
 }
 
 export async function deleteCapa(capaId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}`)
 }
 
 // ============ Department Contact Actions ============
@@ -697,9 +676,7 @@ export async function updateDepartmentContact(contactId: string, data: UpdateDep
 }
 
 export async function deleteDepartmentContact(contactId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/department-contacts/${contactId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/department-contacts/${contactId}`)
 }
 
 // ============ Label Verification Actions ============
@@ -761,9 +738,7 @@ export async function addExecutionTrack(capaId: string, data: unknown) {
 }
 
 export async function deleteExecutionTrack(capaId: string, trackId: string) {
-  return apiFetchNullable(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`, {
-    method: 'DELETE',
-  })
+  return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`)
 }
 
 export async function confirmExecution(capaId: string, data: unknown) {

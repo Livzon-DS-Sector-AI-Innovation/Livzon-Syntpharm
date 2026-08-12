@@ -1,31 +1,13 @@
 import type { ModuleInfo } from '@/types'
 import type { CapaListResponse, DeviationListResponse, DepartmentContactListResponse } from '@/types/quality'
-
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data.data ?? data
-}
+import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 export async function fetchModuleInfo(): Promise<ModuleInfo> {
-  return apiFetch(`/api/v1/quality`)
+  return apiGet(`/api/v1/quality`)
 }
 
-// CAPA read functions
 export async function fetchCapa(id: string): Promise<any> {
-  const res = await fetch(`/api/v1/quality/capas/${id}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data || { items: [], total: 0 }
+  return apiGet<any>(`/api/v1/quality/capas/${id}`)
 }
 
 export async function fetchCapas(params?: {
@@ -41,13 +23,9 @@ export async function fetchCapas(params?: {
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.status) searchParams.set('status', params.status)
   const query = searchParams.toString()
-  const res = await fetch(`/api/v1/quality/capas${query ? `?${query}` : ''}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data || { items: [], total: 0 }
+  return apiFetchPaginated<any>(`/api/v1/quality/capas${query ? `?${query}` : ''}`) as Promise<CapaListResponse>
 }
 
-// Deviation read functions
 export async function fetchDeviations(params?: {
   level?: string
   department?: string
@@ -61,23 +39,13 @@ export async function fetchDeviations(params?: {
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.status) searchParams.set('status', params.status)
   const query = searchParams.toString()
-  const res = await fetch(`/api/v1/quality/deviations${query ? `?${query}` : ''}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data || { items: [], total: 0 }
+  return apiFetchPaginated<any>(`/api/v1/quality/deviations${query ? `?${query}` : ''}`) as Promise<DeviationListResponse>
 }
 
 export async function fetchDeviation(id: string): Promise<any> {
-  const res = await fetch(`/api/v1/quality/deviations/${id}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data || { items: [], total: 0 }
+  return apiGet<any>(`/api/v1/quality/deviations/${id}`)
 }
 
-// Department Contact read function
 export async function fetchDepartmentContacts(page: number = 1, page_size: number = 20): Promise<DepartmentContactListResponse> {
-  const res = await fetch(`/api/v1/quality/department-contacts?page=${page}&page_size=${page_size}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data || { items: [], total: 0 }
+  return apiFetchPaginated<any>(`/api/v1/quality/department-contacts?page=${page}&page_size=${page_size}`) as Promise<DepartmentContactListResponse>
 }

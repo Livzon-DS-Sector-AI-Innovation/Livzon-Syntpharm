@@ -25,6 +25,7 @@ import dayjs from 'dayjs'
 import Link from 'next/link'
 import { AnnualTrainingPlan, AnnualTrainingPlanItem } from '@/types/hr'
 import { fetchPlanItems } from '@/lib/api/client/hr'
+import { apiGet } from '@/lib/api/client'
 import { batchUpdatePlanItems, deleteAnnualPlanItem } from '@/actions/hr'
 
 interface AnnualPlanDetailClientProps {
@@ -48,11 +49,10 @@ export default function AnnualPlanDetailClient({
   const [trainerList, setTrainerList] = useState<string[]>([])
 
   useEffect(() => {
-    
-    fetch(`/api/v1/hr/departments?page_size=100`).then(r => r.json())
-      .then(d => setDeptList((d.data||[]).map((x:any) => x.name)))
-    fetch(`/api/v1/hr/trainers?page_size=200`).then(r => r.json())
-      .then(d => setTrainerList((d.data||[]).map((x:any) => x.name)))
+    apiGet<any[]>('/api/v1/hr/departments?page_size=100')
+      .then(d => setDeptList(d.map((x: any) => x.name)))
+    apiGet<any[]>('/api/v1/hr/trainers?page_size=200')
+      .then(d => setTrainerList(d.map((x: any) => x.name)))
   }, [])
 
   const loadItems = async () => {
@@ -161,8 +161,6 @@ export default function AnnualPlanDetailClient({
       setSaving(false)
     }
   }
-
-  const API_BASE = '/api/v1'
 
   const handleDelete = async (item: AnnualTrainingPlanItem) => {
     if (item.id.startsWith('new-')) {

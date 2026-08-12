@@ -1,5 +1,3 @@
-// CPV API 调用
-
 import {
   CpvProduct,
   CpvProductWithStats,
@@ -14,43 +12,8 @@ import {
   CpvBatchWideListResponse,
   CpvImportTaskListResponse,
 } from "@/types/quality-cpv"
+import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const data = await response.json()
-  return data.data
-}
-
-async function apiFetchPaginated<T>(url: string, options?: RequestInit): Promise<{ items: T[]; total: number; page: number; page_size: number }> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  })
-  if (!response.ok) {
-    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
-  }
-  const result = await response.json()
-  return {
-    items: result.data || [],
-    total: result.meta?.total || 0,
-    page: result.meta?.page || 1,
-    page_size: result.meta?.page_size || 20,
-  }
-}
-
-// 产品管理
 export async function fetchCpvProducts(params?: {
   keyword?: string
   status?: string
@@ -67,18 +30,16 @@ export async function fetchCpvProducts(params?: {
 }
 
 export async function fetchCpvProduct(productId: string): Promise<CpvProduct> {
-  return apiFetch<CpvProduct>(`/api/v1/quality/cpv/products/${productId}`)
+  return apiGet<CpvProduct>(`/api/v1/quality/cpv/products/${productId}`)
 }
 
-// 参数管理
 export async function fetchCpvParameters(productId: string, type?: "CPP" | "CQA"): Promise<CpvParameter[]> {
   const searchParams = new URLSearchParams()
   if (type) searchParams.set("type", type)
   
-  return apiFetch<CpvParameter[]>(`/api/v1/quality/cpv/products/${productId}/parameters?${searchParams}`)
+  return apiGet<CpvParameter[]>(`/api/v1/quality/cpv/products/${productId}/parameters?${searchParams}`)
 }
 
-// 批次数据
 export async function fetchCpvBatches(productId: string, params?: {
   data_type?: "CPP" | "CQA"
   batch_no?: string
@@ -132,7 +93,6 @@ export async function fetchCqaBatchesWide(productId: string, params?: {
   return apiFetchPaginated<CpvBatchWide>(`/api/v1/quality/cpv/products/${productId}/cqa?${searchParams}`)
 }
 
-// 统计分析
 export async function fetchCpvStatistics(productId: string, parameterId: string, params?: {
   batch_no?: string
   start_date?: string
@@ -144,7 +104,7 @@ export async function fetchCpvStatistics(productId: string, parameterId: string,
   if (params?.start_date) searchParams.set("start_date", params.start_date)
   if (params?.end_date) searchParams.set("end_date", params.end_date)
   
-  return apiFetch<CpvStatistics>(`/api/v1/quality/cpv/products/${productId}/statistics?${searchParams}`)
+  return apiGet<CpvStatistics>(`/api/v1/quality/cpv/products/${productId}/statistics?${searchParams}`)
 }
 
 export async function fetchCpvTrend(productId: string, parameterId: string, params?: {
@@ -158,11 +118,8 @@ export async function fetchCpvTrend(productId: string, parameterId: string, para
   if (params?.start_date) searchParams.set("start_date", params.start_date)
   if (params?.end_date) searchParams.set("end_date", params.end_date)
   
-  return apiFetch<CpvTrendResponse>(`/api/v1/quality/cpv/products/${productId}/trend?${searchParams}`)
+  return apiGet<CpvTrendResponse>(`/api/v1/quality/cpv/products/${productId}/trend?${searchParams}`)
 }
-
-// 导入
-
 
 export async function fetchCpvImportTasks(productId?: string, page?: number, page_size?: number): Promise<CpvImportTaskListResponse> {
   const searchParams = new URLSearchParams()
@@ -174,5 +131,5 @@ export async function fetchCpvImportTasks(productId?: string, page?: number, pag
 }
 
 export async function fetchCpvImportTask(taskId: string): Promise<CpvImportTask> {
-  return apiFetch<CpvImportTask>(`/api/v1/quality/cpv/import/tasks/${taskId}`)
+  return apiGet<CpvImportTask>(`/api/v1/quality/cpv/import/tasks/${taskId}`)
 }

@@ -18,6 +18,8 @@ import {
   updateDrug as updateDrugApi,
   deleteDrug as deleteDrugApi,
   parseCOA as parseCOAApi,
+  createRegistrationProject as createRegistrationProjectApi,
+  updateRegistrationProject as updateRegistrationProjectApi,
   deleteRegistrationProject as deleteRegistrationProjectApi,
 } from '@/lib/api/server/registration'
 
@@ -206,6 +208,18 @@ export async function deleteDrug(id: string) {
 
 export async function parseCOA(file: File): Promise<any> {
   return parseCOAApi(file)
+}
+
+export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {
+  const result = await createRegistrationProjectApi(data)
+  revalidatePath('/registration')
+  return result
+}
+
+export async function updateRegistrationProject(id: string, data: components['schemas']['ProjectUpdate']) {
+  const result = await updateRegistrationProjectApi(id, data)
+  revalidatePath('/registration')
+  return result
 }
 
 export async function deleteRegistrationProject(id: string) {

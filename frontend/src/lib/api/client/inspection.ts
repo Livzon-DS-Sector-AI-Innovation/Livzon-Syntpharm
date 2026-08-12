@@ -9,7 +9,7 @@ import {
   InspectionPhoto, RouteLocationsBatch, RouteLocation,
   InspectionRouteSchedule,
 } from '@/types/inspection'
-import { apiGet, apiPost, apiFetchPaginated } from '@/lib/http-client'
+import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 const INSPECTION_BASE = `${API_BASE}/equipment/inspection`
@@ -98,7 +98,11 @@ export function fetchRouteLocations(routeId: string): Promise<InspectionRouteDet
 }
 
 export async function setRouteLocations(routeId: string, data: RouteLocationsBatch): Promise<RouteLocation[]> {
-  return apiPost(`${INSPECTION_BASE}/routes/${routeId}/locations`, data)
+  const json = await fetchApi<{ code: number; data: RouteLocation[]; message?: string; meta?: unknown }>(`${INSPECTION_BASE}/routes/${routeId}/locations`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return json.data
 }
 
 // ==================== 路线定时任务 ====================

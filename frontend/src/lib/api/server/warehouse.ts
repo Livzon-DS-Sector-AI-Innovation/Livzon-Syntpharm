@@ -15,67 +15,37 @@ import type {
   WarehouseFeishuTableSyncResult,
   WarehouseFeishuWsStatus,
 } from '@/types/warehouse'
-import { getApiBaseUrl } from './base'
+import { apiFetch, unwrapResponse } from './base'
 
-async function apiFetch<T>(path: string, fallbackMessage: string): Promise<T> {
-  const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
-  
-  const response = await fetch(url, {
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-  const body = await response.json().catch(() => null)
-
-  if (!response.ok || !body) {
-    throw new Error(body?.message || fallbackMessage)
-  }
-
-  return body as T
-}
+const BASE = '/api/v1/warehouse'
 
 export async function fetchModuleInfo(): Promise<{
   code: string
   name: string
   description: string
 }> {
-  const body = await apiFetch<{
+  return unwrapResponse(await apiFetch<{
+    code: number
     data: { code: string; name: string; description: string }
-  }>(`${getApiBaseUrl()}/api/v1/warehouse`, '获取仓储模块信息失败')
-  return body.data
+    message?: string
+    meta?: unknown
+  }>(BASE))
 }
 
 export async function fetchRawMaterials(): Promise<RawMaterial[]> {
-  const body = await apiFetch<RawMaterialListResponse>(
-    `${getApiBaseUrl()}/api/v1/warehouse/raw-materials`,
-    '获取原辅料库存失败',
-  )
-  return body.data || []
+  return unwrapResponse(await apiFetch<RawMaterialListResponse>(`${BASE}/raw-materials`)) || []
 }
 
 export async function fetchPackagingMaterials(): Promise<PackagingMaterial[]> {
-  const body = await apiFetch<PackagingMaterialListResponse>(
-    `${getApiBaseUrl()}/api/v1/warehouse/packaging-materials`,
-    '获取包材库存失败',
-  )
-  return body.data || []
+  return unwrapResponse(await apiFetch<PackagingMaterialListResponse>(`${BASE}/packaging-materials`)) || []
 }
 
 export async function fetchProducts(): Promise<ProductInventory[]> {
-  const body = await apiFetch<ProductInventoryListResponse>(
-    `${getApiBaseUrl()}/api/v1/warehouse/products`,
-    '获取成品库存失败',
-  )
-  return body.data || []
+  return unwrapResponse(await apiFetch<ProductInventoryListResponse>(`${BASE}/products`)) || []
 }
 
 export async function fetchWarehouseFeishuConfig(): Promise<WarehouseFeishuConfig> {
-  const body = await apiFetch<{ data: WarehouseFeishuConfig }>(
-    `${getApiBaseUrl()}/api/v1/warehouse/feishu-config`,
-    '获取仓储飞书配置失败',
-  )
-  return body.data
+  return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuConfig; message?: string; meta?: unknown }>(`${BASE}/feishu-config`))
 }
 
 export async function fetchWarehouseFeishuTables(): Promise<WarehouseFeishuTable[]> {
@@ -88,21 +58,11 @@ export async function fetchWarehouseFeishuTablesByParams(params?: {
   enabled?: boolean
 }): Promise<WarehouseFeishuTable[]> {
   const search = new URLSearchParams()
-  if (params?.business_domain) {
-    search.set('business_domain', params.business_domain)
-  }
-  if (params?.keyword) {
-    search.set('keyword', params.keyword)
-  }
-  if (params?.enabled !== undefined) {
-    search.set('enabled', String(params.enabled))
-  }
+  if (params?.business_domain) search.set('business_domain', params.business_domain)
+  if (params?.keyword) search.set('keyword', params.keyword)
+  if (params?.enabled !== undefined) search.set('enabled', String(params.enabled))
   const suffix = search.toString() ? `?${search.toString()}` : ''
-  const body = await apiFetch<{ data: WarehouseFeishuTable[] }>(
-    `${getApiBaseUrl()}/api/v1/warehouse/feishu/tables${suffix}`,
-    '获取仓储飞书表目录失败',
-  )
-  return body.data || []
+  return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuTable[]; message?: string; meta?: unknown }>(`${BASE}/feishu/tables${suffix}`)) || []
 }
 
 export async function fetchWarehouseFeishuDomainRecords(
@@ -126,11 +86,7 @@ export async function fetchWarehouseFeishuDomainRecords(
   if (params?.page) search.set('page', String(params.page))
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
-  const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `${getApiBaseUrl()}/api/v1/warehouse/feishu/domains/${businessDomain}/records${suffix}`,
-    '获取仓储飞书原始记录失败',
-  )
-  return body.data
+  return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuRawRecordData; message?: string; meta?: unknown }>(`${BASE}/feishu/domains/${businessDomain}/records${suffix}`))
 }
 
 export async function fetchWarehouseFeishuTableRecords(
@@ -152,47 +108,11 @@ export async function fetchWarehouseFeishuTableRecords(
   if (params?.page) search.set('page', String(params.page))
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
-  const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `${getApiBaseUrl()}/api/v1/warehouse/feishu/tables/${tableId}/records${suffix}`,
-    '获取仓储飞书原始记录失败',
-  )
-  return body.data
+  return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuRawRecordData; message?: string; meta?: unknown }>(`${BASE}/feishu/tables/${tableId}/records${suffix}`))
 }
 
 export async function fetchWarehouseFeishuWsStatus(): Promise<WarehouseFeishuWsStatus> {
-  const body = await apiFetch<{ data: WarehouseFeishuWsStatus }>(
-    `${getApiBaseUrl()}/api/v1/warehouse/feishu/ws/status`,
-    '获取仓储飞书长连接状态失败',
-  )
-  return body.data
-}
-
-// ── 写操作 ──
-
-async function apiFetchWithAuth<T>(
-  path: string,
-  options: RequestInit,
-  authToken: string | undefined,
-  fallbackMessage: string,
-): Promise<T> {
-  const url = path.startsWith('http') ? path : `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/warehouse${path.startsWith('/') ? path : `/${path}`}`
-
-  const response = await fetch(url, {
-    ...options,
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...options.headers,
-    },
-  })
-  const body = await response.json().catch(() => null)
-
-  if (!response.ok || !body) {
-    throw new Error(body?.message || fallbackMessage)
-  }
-
-  return body as T
+  return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuWsStatus; message?: string; meta?: unknown }>(`${BASE}/feishu/ws/status`))
 }
 
 interface ApiResponse<T> {
@@ -205,35 +125,31 @@ export async function saveWarehouseFeishuConfig(
   authToken: string | undefined,
   data: WarehouseFeishuConfigUpsert,
 ): Promise<ApiResponse<WarehouseFeishuConfig>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuConfig>>(
-    '/feishu-config',
-    { method: 'PUT', body: JSON.stringify(data) },
-    authToken,
-    '保存仓储飞书配置失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuConfig>>(`${BASE}/feishu-config`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function testWarehouseFeishuConfig(
   authToken: string | undefined,
   data: WarehouseFeishuConfigUpsert,
 ): Promise<ApiResponse<WarehouseFeishuConnectivityResult>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuConnectivityResult>>(
-    '/feishu-config/test',
-    { method: 'POST', body: JSON.stringify(data) },
-    authToken,
-    '测试仓储飞书配置失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuConnectivityResult>>(`${BASE}/feishu-config/test`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function refreshWarehouseFeishuTables(
   authToken: string | undefined,
 ): Promise<ApiResponse<WarehouseFeishuTable[]>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuTable[]>>(
-    '/feishu/tables/refresh',
-    { method: 'POST' },
-    authToken,
-    '刷新仓储飞书表失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuTable[]>>(`${BASE}/feishu/tables/refresh`, {
+    method: 'POST',
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function setWarehouseFeishuTableEnabled(
@@ -241,12 +157,11 @@ export async function setWarehouseFeishuTableEnabled(
   tableId: string,
   isEnabled: boolean,
 ): Promise<ApiResponse<WarehouseFeishuTable>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuTable>>(
-    `/feishu/tables/${tableId}/enabled`,
-    { method: 'PATCH', body: JSON.stringify({ is_enabled: isEnabled }) },
-    authToken,
-    '设置仓储飞书表启用状态失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuTable>>(`${BASE}/feishu/tables/${tableId}/enabled`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_enabled: isEnabled }),
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function setWarehouseFeishuTablesEnabled(
@@ -258,33 +173,28 @@ export async function setWarehouseFeishuTablesEnabled(
     table_ids: tableIds,
     is_enabled: isEnabled,
   }
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuTable[]>>(
-    '/feishu/tables/enabled/batch',
-    { method: 'POST', body: JSON.stringify(body) },
-    authToken,
-    '批量设置仓储飞书表启用状态失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuTable[]>>(`${BASE}/feishu/tables/enabled/batch`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function syncWarehouseFeishuTable(
   authToken: string | undefined,
   tableId: string,
 ): Promise<ApiResponse<WarehouseFeishuTableSyncResult>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuTableSyncResult>>(
-    `/feishu/tables/${tableId}/sync`,
-    { method: 'POST' },
-    authToken,
-    '同步仓储飞书表失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuTableSyncResult>>(`${BASE}/feishu/tables/${tableId}/sync`, {
+    method: 'POST',
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }
 
 export async function restartWarehouseFeishuWs(
   authToken: string | undefined,
 ): Promise<ApiResponse<WarehouseFeishuWsStatus>> {
-  return apiFetchWithAuth<ApiResponse<WarehouseFeishuWsStatus>>(
-    '/feishu/ws/restart',
-    { method: 'POST' },
-    authToken,
-    '重启仓储飞书长连接失败',
-  )
+  return apiFetch<ApiResponse<WarehouseFeishuWsStatus>>(`${BASE}/feishu/ws/restart`, {
+    method: 'POST',
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  })
 }

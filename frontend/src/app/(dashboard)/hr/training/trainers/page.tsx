@@ -4,6 +4,7 @@ import { uploadTrainers } from '@/actions/hr'
 import { useEffect, useState } from 'react'
 import { App, Button, Card, Table, Input, Select, Space, Tag, Upload } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
+import { apiGet, fetchApi } from '@/lib/api/client'
 
 export default function TrainersPage() {
   const { message } = App.useApp()
@@ -15,11 +16,9 @@ export default function TrainersPage() {
   const [dept, setDept] = useState<string | undefined>()
   const [depts, setDepts] = useState<{value:string,label:string}[]>([])
 
-  const API_BASE = '/api/v1'
-
   useEffect(() => {
-    fetch(`${API_BASE}/hr/sop-catalog/departments`).then(r => r.json())
-      .then(res => setDepts((res.data||[]).map((d:string) => ({value:d,label:d}))))
+    apiGet<string[]>('/api/v1/hr/sop-catalog/departments')
+      .then(data => setDepts((data||[]).map((d:string) => ({value:d,label:d}))))
   }, [])
 
   const load = async (p = 1) => {
@@ -28,8 +27,7 @@ export default function TrainersPage() {
       const params = new URLSearchParams({ page: String(p), page_size: '50' })
       if (keyword) params.set('keyword', keyword)
       if (dept) params.set('department', dept)
-      const res = await fetch(`${API_BASE}/hr/trainers?${params.toString()}`)
-      const d = await res.json()
+      const d = await fetchApi<{ data: any[]; meta?: { total?: number; page?: number; page_size?: number } }>(`/api/v1/hr/trainers?${params.toString()}`)
       setData(d.data || [])
       setTotal(d.meta?.total || 0)
     } finally { setLoading(false) }

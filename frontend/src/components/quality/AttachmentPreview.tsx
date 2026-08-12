@@ -1,12 +1,11 @@
 'use client'
 
-"use client"
-
 import { useState, useEffect } from 'react'
 import { App, Modal, Button, List, Input, Space, Typography, Image, Spin } from 'antd'
 import { DownloadOutlined, FileTextOutlined, CommentOutlined, DeleteOutlined, SendOutlined } from '@ant-design/icons'
 import type { AttachmentReview, FileAttachmentInfo } from '@/types/quality'
 import { submitAttachmentReview, deleteAttachmentReview } from '@/actions/quality'
+import { apiGet } from '@/lib/api/client'
 
 const { TextArea } = Input
 const { Text, Paragraph } = Typography
@@ -42,11 +41,8 @@ export function AttachmentPreview({
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch(`/api/v1/quality/attachment-reviews?attachment_url=${encodeURIComponent(attachment?.downloadUrl || '')}`)
-      if (response.ok) {
-        const data = await response.json()
-        setReviews(data)
-      }
+      const data = await apiGet<any[]>(`/api/v1/quality/attachment-reviews?attachment_url=${encodeURIComponent(attachment?.downloadUrl || '')}`)
+      setReviews(data)
     } catch (err) {
       console.error('Failed to fetch reviews:', err)
     }
@@ -68,10 +64,8 @@ export function AttachmentPreview({
         if (deviationId) params.append('deviation_id', deviationId)
         if (capaId) params.append('capa_id', capaId)
 
-        const response = await fetch(`/api/v1/quality/attachment-reviews?${params.toString()}`)
-        if (!response.ok) throw new Error('请求失败')
-        const result = await response.json()
-        if (!cancelled) setReviews(result?.data || [])
+        const result = await apiGet<any[]>(`/api/v1/quality/attachment-reviews?${params.toString()}`)
+        if (!cancelled) setReviews(result || [])
       } catch {
         if (!cancelled) message.error('加载审阅记录失败')
       } finally {

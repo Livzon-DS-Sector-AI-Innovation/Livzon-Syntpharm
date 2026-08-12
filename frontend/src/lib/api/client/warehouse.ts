@@ -1,17 +1,15 @@
 import type { ModuleInfo } from '@/types'
 import type {
   PackagingMaterial,
-  PackagingMaterialListResponse,
   ProductInventory,
-  ProductInventoryListResponse,
   RawMaterial,
-  RawMaterialListResponse,
   WarehouseFeishuBusinessDomain,
   WarehouseFeishuConfig,
   WarehouseFeishuRawRecordData,
   WarehouseFeishuTable,
   WarehouseFeishuWsStatus,
 } from '@/types/warehouse'
+import { apiGet } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
@@ -20,59 +18,27 @@ function buildWarehouseUrl(path: string): string {
   return `${API_BASE}${normalizedPath}`
 }
 
-async function apiFetch<T>(path: string, fallbackMessage: string): Promise<T> {
-  const response = await fetch(buildWarehouseUrl(path), {
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-  const body = await response.json().catch(() => null)
-
-  if (!response.ok || !body) {
-    throw new Error(body?.message || fallbackMessage)
-  }
-
-  return body as T
-}
-
 export async function fetchModuleInfo(): Promise<ModuleInfo> {
-  const body = await apiFetch<{
-    data: ModuleInfo
-  }>('/', '获取仓储模块信息失败')
-  return body.data
+  return apiGet<ModuleInfo>(buildWarehouseUrl('/'))
 }
 
 export async function fetchRawMaterials(): Promise<RawMaterial[]> {
-  const body = await apiFetch<RawMaterialListResponse>(
-    '/raw-materials',
-    '获取原辅料库存失败',
-  )
-  return body.data || []
+  const result = await apiGet<RawMaterial[]>(buildWarehouseUrl('/raw-materials'))
+  return result || []
 }
 
 export async function fetchPackagingMaterials(): Promise<PackagingMaterial[]> {
-  const body = await apiFetch<PackagingMaterialListResponse>(
-    '/packaging-materials',
-    '获取包材库存失败',
-  )
-  return body.data || []
+  const result = await apiGet<PackagingMaterial[]>(buildWarehouseUrl('/packaging-materials'))
+  return result || []
 }
 
 export async function fetchProducts(): Promise<ProductInventory[]> {
-  const body = await apiFetch<ProductInventoryListResponse>(
-    '/products',
-    '获取成品库存失败',
-  )
-  return body.data || []
+  const result = await apiGet<ProductInventory[]>(buildWarehouseUrl('/products'))
+  return result || []
 }
 
 export async function fetchWarehouseFeishuConfig(): Promise<WarehouseFeishuConfig> {
-  const body = await apiFetch<{ data: WarehouseFeishuConfig }>(
-    '/feishu-config',
-    '获取仓储飞书配置失败',
-  )
-  return body.data
+  return apiGet<WarehouseFeishuConfig>(buildWarehouseUrl('/feishu-config'))
 }
 
 export async function fetchWarehouseFeishuTables(): Promise<WarehouseFeishuTable[]> {
@@ -96,13 +62,11 @@ export async function fetchWarehouseFeishuTablesByParams(params?: {
   }
   const suffix = search.toString() ? `?${search.toString()}` : ''
   try {
-    const body = await apiFetch<{ data: WarehouseFeishuTable[] }>(
-      `/feishu/tables${suffix}`,
-      '获取仓储飞书表目录失败',
+    const result = await apiGet<WarehouseFeishuTable[]>(
+      buildWarehouseUrl(`/feishu/tables${suffix}`),
     )
-    return body.data || []
+    return result || []
   } catch {
-    // Feishu not configured — return empty, not an error
     return []
   }
 }
@@ -128,11 +92,9 @@ export async function fetchWarehouseFeishuDomainRecords(
   if (params?.page) search.set('page', String(params.page))
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
-  const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `/feishu/domains/${businessDomain}/records${suffix}`,
-    '获取仓储飞书原始记录失败',
+  return apiGet<WarehouseFeishuRawRecordData>(
+    buildWarehouseUrl(`/feishu/domains/${businessDomain}/records${suffix}`),
   )
-  return body.data
 }
 
 export async function fetchWarehouseFeishuTableRecords(
@@ -154,17 +116,11 @@ export async function fetchWarehouseFeishuTableRecords(
   if (params?.page) search.set('page', String(params.page))
   if (params?.page_size) search.set('page_size', String(params.page_size))
   const suffix = search.toString() ? `?${search.toString()}` : ''
-  const body = await apiFetch<{ data: WarehouseFeishuRawRecordData }>(
-    `/feishu/tables/${tableId}/records${suffix}`,
-    '获取仓储飞书原始记录失败',
+  return apiGet<WarehouseFeishuRawRecordData>(
+    buildWarehouseUrl(`/feishu/tables/${tableId}/records${suffix}`),
   )
-  return body.data
 }
 
 export async function fetchWarehouseFeishuWsStatus(): Promise<WarehouseFeishuWsStatus> {
-  const body = await apiFetch<{ data: WarehouseFeishuWsStatus }>(
-    '/feishu/ws/status',
-    '获取仓储飞书长连接状态失败',
-  )
-  return body.data
+  return apiGet<WarehouseFeishuWsStatus>(buildWarehouseUrl('/feishu/ws/status'))
 }

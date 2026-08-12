@@ -18,72 +18,41 @@ import type {
   MatchResult,
   FieldFillResult,
 } from '@/types/dossier-writer'
-import { getApiBaseUrl } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+import { apiFetch, unwrapResponse } from '@/lib/api/server/base'
 
-async function actionFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  // AI 相关接口需要更长的超时时间（OCR + LLM 处理可能需要 10 分钟）
-  const isAiEndpoint = url.includes('/ai-preview') || url.includes('/ai-confirm')
-  const timeout = isAiEndpoint ? 600000 : 30000 // AI: 10分钟，其他: 30秒
-  
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '')
-      let errorMessage = `请求失败: ${response.status} ${response.statusText}`
-      try {
-        const errorJson = JSON.parse(errorBody)
-        if (errorJson.message) errorMessage = errorJson.message
-      } catch {}
-      throw new Error(errorMessage)
-    }
-    const json = await response.json()
-    if (json.code !== 200) {
-      throw new Error(json.message || '操作失败')
-    }
-    return json.data
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      throw new Error('请求超时，请稍后重试')
-    }
-    throw error
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
+type SplitConfirmData = components['schemas']['SplitConfirmData']
+type AssetCategoryUpdateData = components['schemas']['AssetCategoryUpdateData']
+type AssetUsageToggleData = components['schemas']['AssetUsageToggleData']
+import {
+  uploadTemplatesApi,
+  uploadChapterAssetApi,
+  updateAssetCategoryApi,
+} from '@/lib/api/server/dossier-writer'
 
 // ====== Product Dossier ======
 export async function createProductDossier(data: ProductDossierCreate): Promise<ProductDossier> {
-  const result = await actionFetch<ProductDossier>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: ProductDossier; message?: string; meta?: unknown}>('/api/v1/registration/dossier-writer/products', {
     method: 'POST',
     body: JSON.stringify(data),
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 export async function updateProductDossier(id: string, data: ProductDossierUpdate): Promise<ProductDossier> {
-  const result = await actionFetch<ProductDossier>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${id}`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: ProductDossier; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/products/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 export async function deleteProductDossier(id: string): Promise<void> {
-  await actionFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${id}`, {
+  unwrapResponse(await apiFetch<{code: number; data: void; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/products/${id}`, {
     method: 'DELETE',
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
 }
 
@@ -92,20 +61,15 @@ export async function uploadTemplates(dossierId: string, files: any): Promise<Up
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/templates`, {
-    method: 'POST',
-    body: formData,
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '上传失败')
+  const result = await uploadTemplatesApi(dossierId, formData)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 export async function parseTemplates(dossierId: string): Promise<ParseResult> {
-  const result = await actionFetch<ParseResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/parse`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: ParseResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/products/${dossierId}/parse`, {
     method: 'POST',
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
@@ -118,65 +82,62 @@ export async function uploadChapterAsset(
   const formData = new FormData()
   files.forEach((file: any) => formData.append('files', file))
 
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`, {
-    method: 'POST',
-    body: formData,
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '上传失败')
+  const result = await uploadChapterAssetApi(chapterId, formData)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 export async function deleteChapterAsset(assetId: string): Promise<void> {
-  await actionFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
+  unwrapResponse(await apiFetch<{code: number; data: void; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/assets/${assetId}`, {
     method: 'DELETE',
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
 }
 
 // ====== Export ======
 export async function exportDossier(dossierId: string, chapterIds?: string[]): Promise<ExportResult> {
-  const result = await actionFetch<ExportResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/export`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: ExportResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/products/${dossierId}/export`, {
     method: 'POST',
     body: JSON.stringify({ chapter_ids: chapterIds || null, format: 'docx' }),
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 // ====== Asset Matching ======
 export async function matchAssetsToChapters(dossierId: string): Promise<MatchResult> {
-  const result = await actionFetch<MatchResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/products/${dossierId}/match-assets`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: MatchResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/products/${dossierId}/match-assets`, {
     method: 'POST',
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 // ====== Field Filling ======
 export async function fillChapterFields(chapterId: string): Promise<FieldFillResult> {
-  const result = await actionFetch<FieldFillResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/fill-fields`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: FieldFillResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/fill-fields`, {
     method: 'POST',
-  })
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 // ====== AI Fill ======
 export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewResult> {
-  const result = await actionFetch<AIPreviewResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: AIPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
     method: 'POST',
-  })
+    signal: AbortSignal.timeout(600000),
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
 
 export async function aiConfirmAndFill(chapterId: string, data: AIConfirmRequest): Promise<AIFillResult> {
-  const result = await actionFetch<AIFillResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-confirm`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: AIFillResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-confirm`, {
     method: 'POST',
     body: JSON.stringify(data),
-  })
+    signal: AbortSignal.timeout(600000),
+  }))
   revalidatePath('/registration/dossier-writer')
   return result
 }
@@ -185,10 +146,10 @@ export async function splitPreview(
   assetId: string,
   availableAppendixSlots: string[]
 ): Promise<PageSplitPreviewResult> {
-  const result = await actionFetch<PageSplitPreviewResult>(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
+  const result = unwrapResponse(await apiFetch<{code: number; data: PageSplitPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
     method: 'POST',
     body: JSON.stringify({ available_appendix_slots: availableAppendixSlots }),
-  })
+  }))
   return result
 }
 
@@ -200,14 +161,14 @@ export async function splitConfirmAndInsert(
     asset_id: string
     page_number: number
   }>
-): Promise<{ success: boolean; message: string; inserted_count: number }> {
-  const result = await actionFetch<{ success: boolean; message: string; inserted_count: number }>(
-    `${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
+): Promise<SplitConfirmData> {
+  const result = unwrapResponse(await apiFetch<{code: number; data: SplitConfirmData; message?: string; meta?: unknown}>(
+    `/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
     {
       method: 'POST',
       body: JSON.stringify({ splits }),
     }
-  )
+  ))
   revalidatePath('/registration/dossier-writer')
   return result
 }
@@ -216,16 +177,10 @@ export async function splitConfirmAndInsert(
 export async function updateAssetCategory(
   assetId: string,
   categoryId: string | null
-): Promise<{ id: string; category_id: string | null }> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/assets/${assetId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category_id: categoryId }),
-  })
-  const json = await res.json()
-  if (json.code !== 200) throw new Error(json.message || '更新分类失败')
+): Promise<AssetCategoryUpdateData> {
+  const result = await updateAssetCategoryApi(assetId, categoryId)
   revalidatePath('/registration/dossier-writer')
-  return json.data
+  return result
 }
 
 // ====== Asset Usage (素材使用管理) ======
@@ -233,15 +188,14 @@ export async function toggleAssetUsage(
   chapterId: string,
   assetId: string,
   isSelected: boolean
-): Promise<{ usage_id?: string; is_selected: boolean }> {
-  const result = await actionFetch<{ usage_id?: string; is_selected: boolean }>(
-    `${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/asset-usages/${assetId}`,
+): Promise<AssetUsageToggleData> {
+  const result = unwrapResponse(await apiFetch<{code: number; data: AssetUsageToggleData; message?: string; meta?: unknown}>(
+    `/api/v1/registration/dossier-writer/chapters/${chapterId}/asset-usages/${assetId}`,
     {
       method: 'PATCH',
       body: JSON.stringify({ is_selected: isSelected }),
     }
-  )
+  ))
   revalidatePath('/registration/dossier-writer')
   return result
 }
-

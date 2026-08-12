@@ -1,5 +1,6 @@
 'use client'
-import { deleteRegistrationProject } from '@/actions/registration'
+import { apiGet } from '@/lib/api/client'
+import { deleteRegistrationProject, createRegistrationProject, updateRegistrationProject } from '@/actions/registration'
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -61,9 +62,8 @@ function ProjectsContent() {
   const loadProjects = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/v1/registration/projects/')
-      const json = await res.json()
-      setProjects(json.data || [])
+      const data = await apiGet<Project[]>('/api/v1/registration/projects/')
+      setProjects(data || [])
     } catch {
       message.error('加载失败')
     } finally {
@@ -114,18 +114,11 @@ function ProjectsContent() {
         expected_completion_at: values.expected_completion_at?.format('YYYY-MM-DD') || null,
       }
 
-      const url = editingProject
-        ? `/api/v1/registration/projects/${editingProject.id}`
-        : '/api/v1/registration/projects/'
-      const method = editingProject ? 'PUT' : 'POST'
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error()
+      if (editingProject) {
+        await updateRegistrationProject(editingProject.id, payload)
+      } else {
+        await createRegistrationProject(payload)
+      }
       message.success(editingProject ? '更新成功' : '创建成功')
       setModalOpen(false)
       loadProjects()
@@ -176,7 +169,7 @@ function ProjectsContent() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Title level={4} className="mb-0">注册项目管理</Title>
+        <Title level={1} className="mb-0">注册项目管理</Title>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadProjects}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增项目</Button>

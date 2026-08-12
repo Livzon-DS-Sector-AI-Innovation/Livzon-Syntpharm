@@ -16624,6 +16624,51 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AIConfirmData
+         * @description AI 填充确认响应数据
+         */
+        AIConfirmData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Results */
+            results: components["schemas"]["AIFillResultItem"][];
+        };
+        /**
+         * AIConfirmRequest
+         * @description AI 填充确认请求
+         */
+        AIConfirmRequest: {
+            /** Fields */
+            fields: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * AIConfirmResponse
+         * @description AI 填充确认响应
+         */
+        AIConfirmResponse: {
+            /** Code */
+            code: number;
+            data: components["schemas"]["AIConfirmData"];
+            /** Message */
+            message: string;
+        };
+        /**
+         * AIFillResultItem
+         * @description AI 填充字段结果
+         */
+        AIFillResultItem: {
+            /** Field Name */
+            field_name: string;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * AIWorkflowConfigCreate
          * @description 创建 AI 工作流配置
          */
@@ -17185,6 +17230,64 @@ export interface components {
              * @description 审批意见
              */
             comments?: string | null;
+        };
+        /**
+         * AssetCategoryUpdateData
+         * @description 素材分类更新响应数据
+         */
+        AssetCategoryUpdateData: {
+            /** Id */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+        };
+        /**
+         * AssetCategoryUpdateRequest
+         * @description 素材分类更新请求
+         */
+        AssetCategoryUpdateRequest: {
+            /** Category Id */
+            category_id?: string | null;
+        };
+        /**
+         * AssetCategoryUpdateResponse
+         * @description 素材分类更新响应
+         */
+        AssetCategoryUpdateResponse: {
+            /** Code */
+            code: number;
+            data: components["schemas"]["AssetCategoryUpdateData"];
+            /** Message */
+            message: string;
+        };
+        /**
+         * AssetUsageToggleData
+         * @description 素材使用状态切换响应数据
+         */
+        AssetUsageToggleData: {
+            /** Usage Id */
+            usage_id?: string | null;
+            /** Is Selected */
+            is_selected: boolean;
+        };
+        /**
+         * AssetUsageToggleRequest
+         * @description 素材使用状态切换请求
+         */
+        AssetUsageToggleRequest: {
+            /** Is Selected */
+            is_selected: boolean;
+        };
+        /**
+         * AssetUsageToggleResponse
+         * @description 素材使用状态切换响应
+         */
+        AssetUsageToggleResponse: {
+            /** Code */
+            code: number;
+            data: components["schemas"]["AssetUsageToggleData"];
+            /** Message */
+            message: string;
         };
         /**
          * AuditMode
@@ -26881,6 +26984,20 @@ export interface components {
             updated_at?: string | null;
         };
         /**
+         * PageSplitItem
+         * @description 页拆分项
+         */
+        PageSplitItem: {
+            /** Page Number */
+            page_number: number;
+            /** Page Type */
+            page_type: string;
+            /** Content Summary */
+            content_summary: string;
+            /** Appendix Slot */
+            appendix_slot?: string | null;
+        };
+        /**
          * PermitStatus
          * @description 作业票状态枚举
          * @enum {string}
@@ -32126,6 +32243,75 @@ export interface components {
              * @description 关键作业判定理由
              */
             is_critical_reason?: string | null;
+        };
+        /**
+         * SplitConfirmData
+         * @description AI 拆分确认响应数据
+         */
+        SplitConfirmData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Inserted Count */
+            inserted_count: number;
+        };
+        /**
+         * SplitConfirmRequest
+         * @description AI 拆分确认请求
+         */
+        SplitConfirmRequest: {
+            /** Splits */
+            splits: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * SplitConfirmResponse
+         * @description AI 拆分确认响应
+         */
+        SplitConfirmResponse: {
+            /** Code */
+            code: number;
+            data: components["schemas"]["SplitConfirmData"];
+            /** Message */
+            message: string;
+        };
+        /**
+         * SplitPreviewData
+         * @description AI 拆分预览响应数据
+         */
+        SplitPreviewData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Pages */
+            pages: components["schemas"]["PageSplitItem"][];
+            /** Page Count */
+            page_count: number;
+        };
+        /**
+         * SplitPreviewRequest
+         * @description AI 拆分预览请求
+         */
+        SplitPreviewRequest: {
+            /**
+             * Available Appendix Slots
+             * @default []
+             */
+            available_appendix_slots: string[];
+        };
+        /**
+         * SplitPreviewResponse
+         * @description AI 拆分预览响应
+         */
+        SplitPreviewResponse: {
+            /** Code */
+            code: number;
+            data: components["schemas"]["SplitPreviewData"];
+            /** Message */
+            message: string;
         };
         /**
          * StabilityApprovalCreate
@@ -74995,9 +75181,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["AssetCategoryUpdateRequest"];
             };
         };
         responses: {
@@ -75007,9 +75191,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AssetCategoryUpdateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75420,9 +75602,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["AIConfirmRequest"];
             };
         };
         responses: {
@@ -75432,9 +75612,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AIConfirmResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75496,9 +75674,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["SplitPreviewRequest"];
             };
         };
         responses: {
@@ -75508,9 +75684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SplitPreviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75537,9 +75711,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["SplitConfirmRequest"];
             };
         };
         responses: {
@@ -75549,9 +75721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SplitConfirmResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75649,9 +75819,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["AssetUsageToggleRequest"];
             };
         };
         responses: {
@@ -75661,9 +75829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AssetUsageToggleResponse"];
                 };
             };
             /** @description Validation Error */

@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
@@ -301,7 +301,7 @@ export async function consumeMaterialsApi(workOrderId: string, data: any, header
   })
 }
 
-export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers: Record<string, string>) {
+export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
   const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
     method: 'POST',
     headers,
@@ -312,7 +312,7 @@ export async function uploadWorkOrderImagesApi(workOrderId: string, formData: Fo
     throw new Error((err as any).message || '上传失败')
   }
   const json = await res.json()
-  return json.data
+  return unwrapResponse(json)
 }
 
 export async function deleteWorkOrderImageApi(workOrderId: string, imageId: string, headers?: Record<string, string>) {
@@ -338,16 +338,15 @@ export async function updateClaimTimeoutConfigApi(data: any, headers?: Record<st
 }
 
 export async function downloadImportTemplateApi(headers?: Record<string, string>) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/template`, {
+  const res = await apiFetchRaw('/api/v1/equipment/equipments/import/template', {
     headers: headers || {},
   })
-  if (!res.ok) throw new Error('下载模板失败')
   const blob = await res.blob()
   const arrayBuffer = await blob.arrayBuffer()
   return Buffer.from(arrayBuffer).toString('base64')
 }
 
-export async function importEquipmentsApi(formData: FormData, headers: Record<string, string>) {
+export async function importEquipmentsApi(formData: FormData, headers: Record<string, string>): Promise<any> {
   const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     headers,
@@ -358,7 +357,7 @@ export async function importEquipmentsApi(formData: FormData, headers: Record<st
     throw new Error((err as any).message || '导入失败')
   }
   const json = await res.json()
-  return json.data ?? json
+  return unwrapResponse(json)
 }
 
 export async function previewEquipmentImportApi(data: any, headers?: Record<string, string>) {
@@ -507,7 +506,7 @@ export async function submitEquipmentCheckApi(taskId: string, equipmentId: strin
   })
 }
 
-export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers: Record<string, string>) {
+export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
   const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
     headers,
@@ -518,7 +517,7 @@ export async function uploadInspectionPhotoApi(taskId: string, equipmentId: stri
     throw new Error((err as any).message || '上传失败')
   }
   const json = await res.json()
-  return json.data
+  return unwrapResponse(json)
 }
 
 export async function deleteInspectionPhotoApi(taskId: string, photoId: string, headers?: Record<string, string>) {
@@ -536,7 +535,7 @@ export async function submitRouteCheckApi(taskId: string, data: any, headers?: R
   })
 }
 
-export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers: Record<string, string>) {
+export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
   const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
     headers,
@@ -547,7 +546,7 @@ export async function uploadTaskPhotoApi(taskId: string, formData: FormData, hea
     throw new Error((err as any).message || '上传失败')
   }
   const json = await res.json()
-  return json.data
+  return unwrapResponse(json)
 }
 
 export async function analyzeInspectionPhotoApi(
@@ -888,8 +887,7 @@ export async function refreshFeishuOldApi(headers?: Record<string, string>) {
 }
 
 export async function downloadImportTemplateOldApi() {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-template`)
-  if (!res.ok) throw new Error('下载导入模板失败')
+  const res = await apiFetchRaw('/api/v1/equipment/equipments/import-template')
   const blob = await res.blob()
   return blob
 }

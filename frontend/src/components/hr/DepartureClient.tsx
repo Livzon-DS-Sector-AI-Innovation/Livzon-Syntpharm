@@ -10,6 +10,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import { fetchDepartments } from '@/lib/api/client/hr'
+import { apiGet } from '@/lib/api/client'
 import { syncDepartureFromFeishu, createDepartureRecord } from '@/actions/hr'
 import { DepartureRecord } from '@/types/hr'
 import {
@@ -57,10 +58,7 @@ export default function DepartureClient({
     if (!dept) { setDeptEmployees([]); return }
     try {
       const url = `/api/v1/hr/employees?department=${encodeURIComponent(dept)}&page=1&page_size=200`
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const d = await res.json()
-      const list = (d.data||[]).map((e:any) => ({
+      const list = (await apiGet<any[]>(url)).map((e: any) => ({
         value: e.id, label: `${e.employee_number} ${e.name} (${e.position||''})`,
         name: e.name, department: e.department, position: e.position
       }))

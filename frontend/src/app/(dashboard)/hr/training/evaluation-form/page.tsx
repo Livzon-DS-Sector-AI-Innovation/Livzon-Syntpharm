@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, Form, Input, InputNumber, Select, Button, message, Alert } from 'antd'
 import { DownloadOutlined } from '@ant-design/icons'
 import EvaluationPreview from '@/components/hr/EvaluationPreview'
+import { apiGet } from '@/lib/api/client'
 
 const METHODS = [{v:'面授',l:'面授'},{v:'自学',l:'自学'},{v:'自学+面授',l:'自学+面授'}]
 const ASSESSMENT = [{v:'笔试',l:'笔试'},{v:'问答',l:'问答'}]
@@ -12,7 +13,6 @@ export default function EvaluationFormPage() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [pendingList, setPendingList] = useState<any[]>([])
-  const API_BASE = '/api/v1'
 
   // 实时监听表单字段
   const watchedSubject = Form.useWatch('subject', form)
@@ -23,8 +23,9 @@ export default function EvaluationFormPage() {
   const watchedExpected = Form.useWatch('expected_count', form)
 
   useEffect(() => {
-    fetch(`${API_BASE}/hr/training-evaluations/pending`).then(r => r.json())
-      .then(res => setPendingList(res.data || []))
+    apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
+      setPendingList(data || [])
+    })
   }, [])
 
   const handleSelect = (id: string) => {
@@ -61,7 +62,7 @@ export default function EvaluationFormPage() {
         excellent_count: vals.excellent_count, qualified_count: vals.qualified_count,
         unqualified_count: vals.unqualified_count,
       }
-      const res = await fetch(`${API_BASE}/hr/training-evaluation`, {
+      const res = await fetch('/api/hr/generate-evaluation', {
         method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('生成失败')
@@ -73,8 +74,9 @@ export default function EvaluationFormPage() {
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')
       // 刷新待评估列表
-      fetch(`${API_BASE}/hr/training-evaluations/pending`).then(r => r.json())
-        .then(res => setPendingList(res.data || []))
+      apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
+        setPendingList(data || [])
+      })
     } catch (err: any) { message.error(err.message || '生成失败') }
     finally { setLoading(false) }
   }

@@ -78605,9 +78605,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Body"
+                "$ref": "#/components/schemas/AssetCategoryUpdateRequest"
               }
             }
           }
@@ -78618,9 +78616,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Update Asset Category Api V1 Registration Dossier Writer Assets  Asset Id  Patch"
+                  "$ref": "#/components/schemas/AssetCategoryUpdateResponse"
                 }
               }
             }
@@ -79353,9 +79349,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Data"
+                "$ref": "#/components/schemas/AIConfirmRequest"
               }
             }
           }
@@ -79366,9 +79360,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Ai Confirm And Fill Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Confirm Post"
+                  "$ref": "#/components/schemas/AIConfirmResponse"
                 }
               }
             }
@@ -79488,9 +79480,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Data"
+                "$ref": "#/components/schemas/SplitPreviewRequest"
               }
             }
           }
@@ -79501,9 +79491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Split Preview Api V1 Registration Dossier Writer Assets  Asset Id  Split Preview Post"
+                  "$ref": "#/components/schemas/SplitPreviewResponse"
                 }
               }
             }
@@ -79562,9 +79550,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Data"
+                "$ref": "#/components/schemas/SplitConfirmRequest"
               }
             }
           }
@@ -79575,9 +79561,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Split Confirm And Insert Api V1 Registration Dossier Writer Chapters  Chapter Id  Split Confirm Post"
+                  "$ref": "#/components/schemas/SplitConfirmResponse"
                 }
               }
             }
@@ -79769,9 +79753,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Body"
+                "$ref": "#/components/schemas/AssetUsageToggleRequest"
               }
             }
           }
@@ -79782,9 +79764,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Toggle Asset Usage Api V1 Registration Dossier Writer Chapters  Chapter Id  Asset Usages  Asset Id  Patch"
+                  "$ref": "#/components/schemas/AssetUsageToggleResponse"
                 }
               }
             }
@@ -80635,6 +80615,98 @@
   },
   "components": {
     "schemas": {
+      "AIConfirmData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AIFillResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "results"
+        ],
+        "title": "AIConfirmData",
+        "description": "AI \u586b\u5145\u786e\u8ba4\u54cd\u5e94\u6570\u636e"
+      },
+      "AIConfirmRequest": {
+        "properties": {
+          "fields": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields"
+        ],
+        "title": "AIConfirmRequest",
+        "description": "AI \u586b\u5145\u786e\u8ba4\u8bf7\u6c42"
+      },
+      "AIConfirmResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AIConfirmData"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "AIConfirmResponse",
+        "description": "AI \u586b\u5145\u786e\u8ba4\u54cd\u5e94"
+      },
+      "AIFillResultItem": {
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_name",
+          "status",
+          "message"
+        ],
+        "title": "AIFillResultItem",
+        "description": "AI \u586b\u5145\u5b57\u6bb5\u7ed3\u679c"
+      },
       "AIWorkflowConfigCreate": {
         "properties": {
           "module_code": {
@@ -81891,6 +81963,136 @@
         ],
         "title": "ApproveEhsChangeRequest",
         "description": "\u5ba1\u6279EHS\u53d8\u66f4\u8bf7\u6c42"
+      },
+      "AssetCategoryUpdateData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id"
+        ],
+        "title": "AssetCategoryUpdateData",
+        "description": "\u7d20\u6750\u5206\u7c7b\u66f4\u65b0\u54cd\u5e94\u6570\u636e"
+      },
+      "AssetCategoryUpdateRequest": {
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "title": "AssetCategoryUpdateRequest",
+        "description": "\u7d20\u6750\u5206\u7c7b\u66f4\u65b0\u8bf7\u6c42"
+      },
+      "AssetCategoryUpdateResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssetCategoryUpdateData"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "AssetCategoryUpdateResponse",
+        "description": "\u7d20\u6750\u5206\u7c7b\u66f4\u65b0\u54cd\u5e94"
+      },
+      "AssetUsageToggleData": {
+        "properties": {
+          "usage_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Id"
+          },
+          "is_selected": {
+            "type": "boolean",
+            "title": "Is Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_selected"
+        ],
+        "title": "AssetUsageToggleData",
+        "description": "\u7d20\u6750\u4f7f\u7528\u72b6\u6001\u5207\u6362\u54cd\u5e94\u6570\u636e"
+      },
+      "AssetUsageToggleRequest": {
+        "properties": {
+          "is_selected": {
+            "type": "boolean",
+            "title": "Is Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_selected"
+        ],
+        "title": "AssetUsageToggleRequest",
+        "description": "\u7d20\u6750\u4f7f\u7528\u72b6\u6001\u5207\u6362\u8bf7\u6c42"
+      },
+      "AssetUsageToggleResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssetUsageToggleData"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "AssetUsageToggleResponse",
+        "description": "\u7d20\u6750\u4f7f\u7528\u72b6\u6001\u5207\u6362\u54cd\u5e94"
       },
       "AuditMode": {
         "type": "string",
@@ -106597,6 +106799,41 @@
         ],
         "title": "PackagingMaterialResponse"
       },
+      "PageSplitItem": {
+        "properties": {
+          "page_number": {
+            "type": "integer",
+            "title": "Page Number"
+          },
+          "page_type": {
+            "type": "string",
+            "title": "Page Type"
+          },
+          "content_summary": {
+            "type": "string",
+            "title": "Content Summary"
+          },
+          "appendix_slot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appendix Slot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page_number",
+          "page_type",
+          "content_summary"
+        ],
+        "title": "PageSplitItem",
+        "description": "\u9875\u62c6\u5206\u9879"
+      },
       "PermitStatus": {
         "type": "string",
         "enum": [
@@ -119580,6 +119817,141 @@
         "type": "object",
         "title": "SpecialOperationReportUpdate",
         "description": "\u66f4\u65b0\u7279\u6b8a\u4f5c\u4e1a\u62a5\u5907"
+      },
+      "SplitConfirmData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "inserted_count": {
+            "type": "integer",
+            "title": "Inserted Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "inserted_count"
+        ],
+        "title": "SplitConfirmData",
+        "description": "AI \u62c6\u5206\u786e\u8ba4\u54cd\u5e94\u6570\u636e"
+      },
+      "SplitConfirmRequest": {
+        "properties": {
+          "splits": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Splits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "splits"
+        ],
+        "title": "SplitConfirmRequest",
+        "description": "AI \u62c6\u5206\u786e\u8ba4\u8bf7\u6c42"
+      },
+      "SplitConfirmResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SplitConfirmData"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "SplitConfirmResponse",
+        "description": "AI \u62c6\u5206\u786e\u8ba4\u54cd\u5e94"
+      },
+      "SplitPreviewData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/PageSplitItem"
+            },
+            "type": "array",
+            "title": "Pages"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "pages",
+          "page_count"
+        ],
+        "title": "SplitPreviewData",
+        "description": "AI \u62c6\u5206\u9884\u89c8\u54cd\u5e94\u6570\u636e"
+      },
+      "SplitPreviewRequest": {
+        "properties": {
+          "available_appendix_slots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Appendix Slots",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "SplitPreviewRequest",
+        "description": "AI \u62c6\u5206\u9884\u89c8\u8bf7\u6c42"
+      },
+      "SplitPreviewResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SplitPreviewData"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "SplitPreviewResponse",
+        "description": "AI \u62c6\u5206\u9884\u89c8\u54cd\u5e94"
       },
       "StabilityApprovalCreate": {
         "properties": {

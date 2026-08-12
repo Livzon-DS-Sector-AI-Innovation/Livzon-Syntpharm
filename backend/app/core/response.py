@@ -4,7 +4,19 @@ from fastapi.responses import JSONResponse
 
 from app.shared.schemas import ApiResponse
 
-__all__ = ["ApiResponse", "success_response", "error_response", "paginated_response"]
+__all__ = ["ApiResponse", "build_response", "success_response", "error_response", "paginated_response"]
+
+
+def build_response(
+    data: Any = None,
+    message: str = "success",
+    meta: dict[str, Any] | None = None,
+    code: int = 0,
+) -> ApiResponse:
+    """Return ApiResponse model for FastAPI to serialize.
+    Unlike success_response(), does not wrap in JSONResponse —
+    allows FastAPI to apply response_model for OpenAPI + validation."""
+    return ApiResponse(code=code, message=message, data=data, meta=meta)
 
 
 def success_response(

@@ -21,6 +21,7 @@ import {
   fetchOnboardingEvaluationByEmployeeId,
   fetchOnboardingRecords
 } from '@/lib/api/client/hr'
+import { apiGet } from '@/lib/api/client'
 
 const DEPT_CONTENT_MAP: Record<string, string[]> = {
   '人事行政部': [
@@ -100,12 +101,12 @@ export default function OnboardingPrejobClient() {
 
   // 加载部门和分类列表
   useEffect(() => {
-    fetch(`/api/v1/hr/sop-catalog/departments`).then(r => r.json())
-      .then(res => setSopDepts((res.data||[]).map((d:string) => ({value:d,label:d}))))
-    fetch(`/api/v1/hr/sop-catalog/categories`).then(r => r.json())
-      .then(res => setSopCats((res.data||[]).map((c:string) => ({value:c,label:c}))))
-    fetch(`/api/v1/hr/trainers?page_size=200`).then(r => r.json())
-      .then(res => setTrainers((res.data||[]).map((t:any) => ({value:t.name,label:`${t.name}(${t.department})`}))))
+    apiGet<string[]>('/api/v1/hr/sop-catalog/departments')
+      .then(res => setSopDepts(res.map((d: string) => ({value:d,label:d}))))
+    apiGet<string[]>('/api/v1/hr/sop-catalog/categories')
+      .then(res => setSopCats(res.map((c: string) => ({value:c,label:c}))))
+    apiGet<any[]>('/api/v1/hr/trainers?page_size=200')
+      .then(res => setTrainers(res.map((t: any) => ({value:t.name,label:`${t.name}(${t.department})`}))))
   }, [])
 
   // 按条件加载 SOP 列表
@@ -114,9 +115,8 @@ export default function OnboardingPrejobClient() {
     if (sopDept) params.set('department', sopDept)
     if (sopCat) params.set('category', sopCat)
     if (sopSearch) params.set('keyword', sopSearch)
-    fetch(`/api/v1/hr/sop-catalog?${params.toString()}`)
-      .then(r => r.json())
-      .then(res => setAllSops(res.data || []))
+    apiGet<any[]>(`/api/v1/hr/sop-catalog?${params.toString()}`)
+      .then(res => setAllSops(res || []))
       .catch(() => setAllSops([]))
   }, [sopDept, sopCat, sopSearch])
 
