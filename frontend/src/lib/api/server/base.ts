@@ -16,10 +16,22 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return {}
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetch(url, options)
+    } catch (error) {
+      if (attempt === maxRetries) throw error
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)))
+    }
+  }
+  throw new Error('unreachable')
+}
+
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders()
 
-  const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
+  const response = await fetchWithRetry(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -69,7 +81,7 @@ export async function safeApiFetch<T>(
 
   let response: Response
   try {
-    response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    response = await fetchWithRetry(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
       headers: {
         ...authHeaders,
