@@ -1,4 +1,3 @@
-from app.modules.research.ai_parser.api import router as ai_parser_router
 
 """研发项目 API 路由."""
 
@@ -63,6 +62,8 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+
+from app.modules.research.ai_parser.api import router as ai_parser_router
 
 logger = logging.getLogger(__name__)
 
