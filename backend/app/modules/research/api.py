@@ -3462,8 +3462,3 @@ async def generate_report(
     return success_response(data=result, message="生成成功")
 
 
-# ===== AI Parser API (实验记录解析) =====
-
-from app.modules.research.ai_parser.api import router as ai_parser_sub_router
-
-router.include_router(ai_parser_sub_router)
