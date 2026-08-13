@@ -1,6 +1,6 @@
 # AI Audit Plan
 
-This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 14 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
+This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 15 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
 
 No scanners, scripts, or automation. This document IS the procedure. Feed one category at a time to an AI auditor with the relevant source files.
 
@@ -22,6 +22,7 @@ No scanners, scripts, or automation. This document IS the procedure. Feed one ca
 12. [Cross-project OpenAPI](#12-cross-project-openapi)
 13. [Docker and deployment](#13-docker-and-deployment)
 14. [E2E](#14-e2e)
+15. [SQL 注入与不安全查询](#15-sql-注入与不安全查询)
 
 ---
 
@@ -1097,11 +1098,55 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 
 ---
 
+## 15. SQL 注入与不安全查询
+
+### Audit type
+Full audit
+
+### Rules (from AGENTS.md)
+
+**后端 / 安全规则 / SQL 查询:**
+- **必须**使用参数化查询（`:param` 占位符 + 绑定参数）或 SQLAlchemy ORM 构建所有 SQL 查询
+- **禁止**使用 f-string、字符串拼接（`+`）或 `.format()` 将运行时数据嵌入 SQL 语句
+- 所有外部数据源（包括飞书多维表格等内部系统）均视为不可信，必须参数化
+
+### Directories to inspect
+- `backend/app/modules/`
+- `backend/app/core/`
+- `backend/app/platform/`
+- `backend/scripts/`
+
+### Questions
+
+1. Are there any f-strings, string concatenation (`+`), or `.format()` calls used to build SQL query strings (including inside `text()` calls)?
+2. Are all `text()` SQL queries using bound parameters (`:param` syntax) with a separate parameter dict?
+3. Are there any raw SQL strings constructed from external data sources (Feishu Bitable, user input, file imports, API responses) without parameterization?
+4. Are all ORM queries using SQLAlchemy constructs (`and_`, `or_`, column comparisons) rather than string interpolation?
+5. Are there any dynamic `ORDER BY`, `LIMIT`, or table/column name references built via string interpolation?
+
+### Output format
+
+| Stat | Count |
+|------|-------|
+| Files inspected | |
+| Files not inspected | |
+| Rules evaluated | |
+| Rules not evaluated | |
+| Confirmed findings | |
+| Uncertain findings | |
+
+Each finding:
+```
+file:line — rule reference — evidence — severity: blocking|high|medium|low
+```
+
+---
+
 ## Audit procedure
 
 ### Baseline audit (run once for the full repository)
 
-For each category 1–14 in sequence:
+For each category 1–15 in sequence:
 1. Read this category's section above
 2. Read the referenced AGENTS.md sections (including any exception clauses)
 3. Check the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table for this category
@@ -1110,7 +1155,7 @@ For each category 1–14 in sequence:
 6. Report counts: files inspected, not inspected, rules evaluated, not evaluated
 7. Record findings in `docs/ai-audit-findings.md`
 
-After all 14 categories:
+After all 15 categories:
 - Fix confirmed violations that should be corrected immediately
 - Mark accepted exceptions with reason, approver, and date
 - Commit `docs/ai-audit-findings.md`
