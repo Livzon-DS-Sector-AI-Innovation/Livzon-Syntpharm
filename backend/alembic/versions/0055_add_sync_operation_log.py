@@ -1,7 +1,7 @@
-"""0054_add_sync_operation_log
+"""0055_add_sync_operation_log
 
-Revision ID: 0054_add_sync_operation_log
-Revises: 0053_add_import_batch_id
+Revision ID: 0055_add_sync_operation_log
+Revises: 0054_add_import_batch_id
 Create Date: 2026-08-06 11:00:00.000000
 """
 from typing import Sequence, Union
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 
-revision: str = '0054_add_sync_operation_log'
-down_revision: Union[str, None] = '0053_add_import_batch_id'
+revision: str = '0055_add_sync_operation_log'
+down_revision: Union[str, None] = '0054_add_import_batch_id'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
