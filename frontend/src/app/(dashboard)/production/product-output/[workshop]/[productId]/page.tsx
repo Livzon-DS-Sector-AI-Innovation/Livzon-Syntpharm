@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchPreviewPush, fetchPreviewPull, fetchUndoLastSync } from '@/actions/product-sync'
 import { useEffect, useState, useRef } from 'react'
 import {
   Table,
@@ -19,6 +20,8 @@ import {
   Statistic,
   Tag,
   Breadcrumb,
+  Dropdown,
+  Alert,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -31,6 +34,8 @@ import {
   DownloadOutlined,
   FileExcelOutlined,
   HomeOutlined,
+  UndoOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -40,9 +45,13 @@ import {
   updateProductOutput,
   deleteProductOutput,
   importProductOutputs,
+  fetchPreviewImport,
+  fetchUndoImport,
   importFromBitable,
   batchDeleteProductOutputs,
   getSummary,
+  pushToFeishu,
+  pullFromFeishu,
 } from '@/actions/product-output'
 import { getProduct } from '@/actions/product'
 import type { ProductOutput, ProductOutputFormData } from '@/types/product-output'
@@ -74,9 +83,15 @@ export default function ProductOutputRecordsPage() {
   const [form] = Form.useForm()
 
   const [importModalVisible, setImportModalVisible] = useState(false)
+  const [previewData, setPreviewData] = useState<any>(null)
+  const [lastBatchId, setLastBatchId] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
   const [bitableModalVisible, setBitableModalVisible] = useState(false)
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 
@@ -245,13 +260,36 @@ export default function ProductOutputRecordsPage() {
   }
 
   const handleImport = async (file: File) => {
+    setImportFile(file)
     const formData = new FormData()
     formData.append('file', file)
     try {
+      const response = await fetchPreviewImport(formData)
+      if (response.code === 200) {
+        setPreviewData(response.data)
+        message.info(`预览完成：共 ${response.data.total_rows} 行，可导入 ${response.data.new_records} 行`)
+      } else {
+        message.error(response.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+    return false
+  }
+
+  const handleConfirmImport = async () => {
+    if (!previewData || !importFile) return
+    setImporting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
       const response = await importProductOutputs(formData)
       if (response.code === 200) {
         message.success(response.message || '导入成功')
+        setLastBatchId(response.data?.batch_id)
         setImportModalVisible(false)
+        setPreviewData(null)
+        setImportFile(null)
         loadRecords()
         loadSummary()
       } else {
@@ -259,8 +297,38 @@ export default function ProductOutputRecordsPage() {
       }
     } catch {
       message.error('导入失败')
+    } finally {
+      setImporting(false)
     }
-    return false
+  }
+
+  const handleUndoImport = async () => {
+    if (!lastBatchId) {
+      message.warning('没有可撤销的导入记录')
+      return
+    }
+    Modal.confirm({
+      title: '确认撤销',
+      content: `确定要撤销批次 ${lastBatchId} 的导入记录吗？`,
+      okText: '撤销',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const response = await fetchUndoImport(lastBatchId)
+          if (response.code === 200) {
+            message.success(response.message || '撤销成功')
+            setLastBatchId(null)
+            loadRecords()
+            loadSummary()
+          } else {
+            message.error(response.message || '撤销失败')
+          }
+        } catch {
+          message.error('撤销失败')
+        }
+      },
+    })
   }
 
   const handleBatchDelete = async () => {
@@ -287,6 +355,106 @@ export default function ProductOutputRecordsPage() {
           }
         } catch {
           message.error('批量删除失败')
+        }
+      },
+    })
+  }
+
+  const handlePushToFeishu = async () => {
+    setSyncing(true)
+    try {
+      const res = await pushToFeishu(productId)
+      if (res.code === 200) {
+        message.success(res.data?.message || '推送成功')
+        loadRecords()
+      } else {
+        message.error(res.message || '推送失败')
+      }
+    } catch {
+      message.error('推送失败')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handlePullFromFeishu = async () => {
+    setSyncing(true)
+    try {
+      const res = await pullFromFeishu(productId)
+      if (res.code === 200) {
+        message.success(res.data?.message || '拉取成功')
+        loadRecords()
+      } else {
+        message.error(res.message || '拉取失败')
+      }
+    } catch {
+      message.error('拉取失败')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+
+  const handlePreviewPush = async () => {
+    try {
+      const data = await fetchPreviewPush(productId)
+      if (data.code === 200) {
+        Modal.info({
+          title: '推送预览',
+          content: (
+            <div>
+              <p>新增：{data.data.to_create} 条</p>
+              <p>更新：{data.data.to_update} 条</p>
+              <p>跳过：{data.data.to_skip} 条</p>
+            </div>
+          ),
+          onOk: () => handlePushToFeishu(),
+        })
+      } else {
+        message.error(data.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+  }
+
+  const handlePreviewPull = async () => {
+    try {
+      const data = await fetchPreviewPull(productId)
+      if (data.code === 200) {
+        Modal.info({
+          title: '拉取预览',
+          content: (
+            <div>
+              <p>新增：{data.data.to_create} 条</p>
+              <p>更新：{data.data.to_update} 条</p>
+            </div>
+          ),
+          onOk: () => handlePullFromFeishu(),
+        })
+      } else {
+        message.error(data.message || '预览失败')
+      }
+    } catch {
+      message.error('预览失败')
+    }
+  }
+
+  const handleUndoLastSync = async () => {
+    Modal.confirm({
+      title: '确认撤销',
+      content: '确定要撤销上次同步操作吗？此操作不可恢复。',
+      onOk: async () => {
+        try {
+          const data = await fetchUndoLastSync(productId)
+          if (data.code === 200) {
+            message.success(data.message || '撤销成功')
+            loadRecords()
+          } else {
+            message.error(data.message || '撤销失败')
+          }
+        } catch {
+          message.error('撤销失败')
         }
       },
     })
@@ -570,11 +738,57 @@ export default function ProductOutputRecordsPage() {
               <Button icon={<UploadOutlined />} onClick={() => setImportModalVisible(true)}>
                 导入
               </Button>
-              <Button icon={<CloudSyncOutlined />} onClick={() => setBitableModalVisible(true)}>
-                从飞书导入
-              </Button>
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'preview_push',
+                      label: '预览推送',
+                      onClick: handlePreviewPush,
+                    },
+                    {
+                      key: 'push',
+                      label: '仅推送（平台 → 飞书）',
+                      onClick: handlePushToFeishu,
+                    },
+                    {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'preview_pull',
+                      label: '预览拉取',
+                      onClick: handlePreviewPull,
+                    },
+                    {
+                      key: 'pull',
+                      label: '仅拉取（飞书 → 平台）',
+                      onClick: handlePullFromFeishu,
+                    },
+                    {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'undo',
+                      label: '撤销上次同步',
+                      onClick: handleUndoLastSync,
+                      danger: true,
+                    },
+                  ],
+                }}
+              >
+                <Button icon={<CloudSyncOutlined />} loading={syncing}>
+                  飞书同步
+                </Button>
+              </Dropdown>
               <Button icon={<DownloadOutlined />} onClick={handleExport}>
                 导出
+              </Button>
+              <Button 
+                icon={<UndoOutlined />} 
+                onClick={handleUndoImport}
+                disabled={!lastBatchId}
+              >
+                撤销导入
               </Button>
               <ProductSyncConfig productId={productId} onSynced={loadRecords} />
               {selectedRowKeys.length > 0 && (
@@ -586,6 +800,41 @@ export default function ProductOutputRecordsPage() {
           </Col>
         </Row>
       </Card>
+
+      {lastBatchId && (
+        <Alert
+          message={
+            <div className="flex items-center justify-between">
+              <div>
+                <CheckCircleOutlined className="text-green-500 mr-2" />
+                <span className="font-medium">导入成功</span>
+                <span className="ml-4 text-gray-600">批次 ID: {lastBatchId}</span>
+              </div>
+              <Space>
+                <Button 
+                  size="small" 
+                  danger 
+                  icon={<UndoOutlined />}
+                  onClick={handleUndoImport}
+                >
+                  撤销本次导入
+                </Button>
+                <Button 
+                  size="small" 
+                  type="text" 
+                  onClick={() => setLastBatchId(null)}
+                >
+                  关闭
+                </Button>
+              </Space>
+            </div>
+          }
+          type="success"
+          closable
+          onClose={() => setLastBatchId(null)}
+          className="mb-4"
+        />
+      )}
 
       <Card>
         <Table
@@ -662,8 +911,22 @@ export default function ProductOutputRecordsPage() {
       <Modal
         title="导入产量记录"
         open={importModalVisible}
-        onCancel={() => setImportModalVisible(false)}
-        footer={null}
+        onCancel={() => {
+          setImportModalVisible(false)
+          setPreviewData(null)
+        }}
+        footer={
+          previewData ? (
+            <div className="flex justify-between">
+              <Button onClick={() => setPreviewData(null)}>重新选择文件</Button>
+              <div>
+                <Button onClick={handleConfirmImport} type="primary" loading={importing}>
+                  确认导入 {previewData.new_records} 条
+                </Button>
+              </div>
+            </div>
+          ) : null
+        }
       >
         <div className="space-y-4">
           <div className="p-4 bg-gray-50 rounded">
@@ -684,6 +947,72 @@ export default function ProductOutputRecordsPage() {
               选择文件导入（CSV 或 XLSX）
             </Button>
           </Upload>
+          {previewData && (
+            <div className="border rounded p-4">
+              <div className="flex justify-between items-center mb-3">
+                <Text strong>预览结果</Text>
+                <Space>
+                  <Tag color="green">可导入 {previewData.new_records} 条</Tag>
+                  {previewData.duplicate_records > 0 && (
+                    <Tag color="orange">重复 {previewData.duplicate_records} 条</Tag>
+                  )}
+                  {previewData.not_found_product > 0 && (
+                    <Tag color="red">未匹配产品 {previewData.not_found_product} 条</Tag>
+                  )}
+                </Space>
+              </div>
+              <Table
+                size="small"
+                dataSource={previewData.records}
+                rowKey="row_num"
+                pagination={false}
+                scroll={{ y: 350 }}
+                rowClassName={(record: any) => {
+                  if (record.is_duplicate) return 'bg-orange-50';
+                  if (!record.product_found) return 'bg-red-50';
+                  return '';
+                }}
+                columns={[
+                  { 
+                    title: '状态', 
+                    width: 80, 
+                    align: 'center',
+                    render: (_: any, r: any) => {
+                      if (r.is_duplicate) return <Tag color="orange">⚠️ 重复</Tag>;
+                      if (!r.product_found) return <Tag color="red">❌ 未匹配</Tag>;
+                      return <Tag color="green">✅ 可导入</Tag>;
+                    }
+                  },
+                  { title: '行号', dataIndex: 'row_num', width: 60, align: 'center' },
+                  { title: '车间', dataIndex: 'workshop', width: 90 },
+                  { title: '产品名称', dataIndex: 'product_name', width: 140, ellipsis: true },
+                  { title: '批号', dataIndex: 'batch_no', width: 160, ellipsis: true },
+                  { title: '生产日期', dataIndex: 'production_date', width: 110 },
+                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: any) => `${val} ${r.unit || 'kg'}` },
+                  { 
+                    title: '产品匹配', 
+                    width: 90, 
+                    align: 'center',
+                    render: (_: any, r: any) => r.product_found ? (
+                      <span className="text-green-600 font-bold">✓</span>
+                    ) : (
+                      <span className="text-red-600 font-bold">✗</span>
+                    )
+                  },
+                ]}
+              />
+              {previewData.invalid_details && previewData.invalid_details.length > 0 && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                  <Text strong type="danger">无效记录 ({previewData.invalid_details.length} 条):</Text>
+                  <ul className="mt-2 text-sm text-red-600 list-disc list-inside max-h-32 overflow-y-auto">
+                    {previewData.invalid_details.map((item: any, idx: number) => (
+                      <li key={idx}>第 {item.row} 行: {item.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 

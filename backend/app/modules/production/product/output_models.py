@@ -44,6 +44,7 @@ class ProductOutput(BaseModel):
     unit: Mapped[str] = mapped_column(String(20), nullable=False, default="kg", comment="单位")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
+    import_batch_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True, comment="导入批次ID")
     feishu_record_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书多维表格记录ID")
     sync_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="local_only", comment="同步状态: local_only/synced/conflict"

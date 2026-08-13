@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -84,3 +85,102 @@ class SummaryResponse(BaseModel):
     year: int | None = Field(None, description="查询年份")
     workshops: list[WorkshopSummary] = Field(default_factory=list)
     grand_total: float = Field(0, description="所有车间合计")
+
+
+class MonthlyTrend(BaseModel):
+    """月度趋势数据"""
+
+    month: int = Field(..., description="月份 1-12")
+    current_year_weight: float = Field(0, description="当年产量(kg)")
+    previous_year_weight: float = Field(0, description="去年产量(kg)")
+
+
+class WorkshopRanking(BaseModel):
+    """车间排名"""
+
+    workshop: str = Field(..., description="车间名称")
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    batch_count: int = Field(0, description="批次数")
+
+
+class TopProduct(BaseModel):
+    """TOP产品"""
+
+    rank: int = Field(..., description="排名")
+    product_name: str = Field(..., description="产品名称")
+    workshop: str = Field(..., description="车间")
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    batch_count: int = Field(0, description="批次数")
+    avg_weight: float = Field(0, description="平均批次重量(kg)")
+
+
+class AnnualOverview(BaseModel):
+    """年度概览"""
+
+    total_weight: float = Field(0, description="年度总产量(kg)")
+    previous_year_weight: float = Field(0, description="去年总产量(kg)")
+    weight_yoy: float = Field(0, description="产量同比(%)")
+    total_batches: int = Field(0, description="年度总批次")
+    previous_year_batches: int = Field(0, description="去年总批次")
+    batch_yoy: float = Field(0, description="批次同比(%)")
+    active_workshops: int = Field(0, description="活跃车间数")
+    active_products: int = Field(0, description="活跃产品数")
+
+
+class AnnualReviewResponse(BaseModel):
+    """年度回顾响应"""
+
+    year: int = Field(..., description="年份")
+    overview: AnnualOverview = Field(default_factory=AnnualOverview)
+    monthly_trend: list[MonthlyTrend] = Field(default_factory=list)
+    workshop_ranking: list[WorkshopRanking] = Field(default_factory=list)
+    top_products: list[TopProduct] = Field(default_factory=list)
+
+
+class PreviewPushResponse(BaseModel):
+    """预览推送响应"""
+
+    to_create: list[dict[str, Any]] = Field(default_factory=list, description="待新增记录")
+    to_update: list[dict[str, Any]] = Field(default_factory=list, description="待更新记录")
+    to_skip: list[dict[str, Any]] = Field(default_factory=list, description="待跳过记录")
+
+
+class PreviewPullResponse(BaseModel):
+    """预览拉取响应"""
+
+    to_create: list[dict[str, Any]] = Field(default_factory=list, description="待新增记录")
+    to_update: list[dict[str, Any]] = Field(default_factory=list, description="待更新记录")
+
+
+class UndoSyncResponse(BaseModel):
+    """撤销同步响应"""
+
+    deleted: int = Field(..., description="删除的记录数")
+
+
+class PreviewImportResponse(BaseModel):
+    """预览导入响应"""
+
+    total_rows: int = Field(..., description="总行数")
+    valid_records: int = Field(..., description="有效记录数")
+    invalid_records: int = Field(..., description="无效记录数")
+    new_records: int = Field(..., description="新增记录数")
+    duplicate_records: int = Field(..., description="重复记录数")
+    not_found_product: int = Field(..., description="未找到产品的记录数")
+    records: list[dict[str, Any]] = Field(default_factory=list, description="记录详情")
+    invalid_details: list[dict[str, Any]] = Field(default_factory=list, description="无效记录详情")
+
+
+class UndoImportResponse(BaseModel):
+    """撤销导入响应"""
+
+    deleted: int = Field(..., description="删除的记录数")
+    batch_id: str = Field(..., description="批次 ID")
+
+
+class ImportResponse(BaseModel):
+    """导入响应"""
+
+    imported: int = Field(..., description="导入记录数")
+    skipped: int = Field(..., description="跳过记录数")
+    batch_id: str = Field(..., description="批次 ID")

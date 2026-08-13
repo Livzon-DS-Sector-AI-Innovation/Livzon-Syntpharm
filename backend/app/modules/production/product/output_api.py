@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import and_, not_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -17,9 +17,13 @@ from app.core.response import ApiResponse
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
+    AnnualReviewResponse,
+    ImportResponse,
+    PreviewImportResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
+    UndoImportResponse,
 )
 from app.modules.production.product.output_service import ProductOutputService
 from app.platform.integrations.feishu.bitable import BitableClient
@@ -191,6 +195,77 @@ async def export_product_outputs(
     )
 
 
+@router.get("/product-output/annual-review", summary="获取年度回顾数据")
+async def get_annual_review(
+    current_user: RequiredUser,
+    year: int = Query(..., description="年份"),
+    db: AsyncSession = Depends(get_db),
+) -> AnnualReviewResponse:
+    """获取年度回顾数据"""
+    service = ProductOutputService(db)
+    return await service.get_annual_review(year)
+
+
+@router.get("/product-output/annual-review/export", summary="导出年度回顾Excel")
+async def export_annual_review(
+    current_user: RequiredUser,
+    year: int = Query(..., description="年份"),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """导出年度回顾Excel"""
+    from io import BytesIO
+
+    from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+
+    service = ProductOutputService(db)
+    data = await service.get_annual_review(year)
+
+    wb = Workbook()
+
+    # Sheet 1: 年度概览
+    ws1 = wb.active
+    ws1.title = "年度概览"
+    ws1.append(["指标", "数值"])
+    ws1.append(["年度总产量(kg)", data.overview.total_weight])
+    ws1.append(["去年总产量(kg)", data.overview.previous_year_weight])
+    ws1.append(["产量同比(%)", data.overview.weight_yoy])
+    ws1.append(["年度总批次", data.overview.total_batches])
+    ws1.append(["去年总批次", data.overview.previous_year_batches])
+    ws1.append(["批次同比(%)", data.overview.batch_yoy])
+    ws1.append(["活跃车间数", data.overview.active_workshops])
+    ws1.append(["活跃产品数", data.overview.active_products])
+
+    # Sheet 2: 月度趋势
+    ws2 = wb.create_sheet("月度趋势")
+    ws2.append(["月份", "当年产量(kg)", "去年产量(kg)"])
+    for item in data.monthly_trend:
+        ws2.append([item.month, item.current_year_weight, item.previous_year_weight])
+
+    # Sheet 3: 车间排名
+    ws3 = wb.create_sheet("车间排名")
+    ws3.append(["排名", "车间", "总产量(kg)", "批次数"])
+    for i, wr in enumerate(data.workshop_ranking, 1):
+        ws3.append([i, wr.workshop, wr.total_weight, wr.batch_count])
+
+    # Sheet 4: TOP产品
+    ws4 = wb.create_sheet("TOP产品")
+    ws4.append(["排名", "产品名称", "车间", "总产量(kg)", "批次数", "平均批次重量(kg)"])
+    for tp in data.top_products:
+        ws4.append([tp.rank, tp.product_name, tp.workshop, tp.total_weight, tp.batch_count, tp.avg_weight])
+
+    # 输出Excel
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''annual_review_{year}.xlsx"},
+    )
+
+
 @router.get("/product-output/{record_id}", summary="获取产量记录详情")
 async def get_product_output(
     record_id: uuid.UUID,
@@ -272,139 +347,182 @@ async def delete_product_output(
     return ApiResponse(message="删除成功")
 
 
-@router.post("/product-output/import", summary="导入产量记录")
-async def import_product_outputs(
-    current_user: RequiredUser,
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """通过 CSV 或 XLSX 文件批量导入产量记录
+async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """解析导入文件，返回 (有效记录，无效记录)
 
-    列：车间，产品名称，批号，生产日期，结束日期，重量，单位，备注
+    返回格式:
+    - 有效记录：包含所有字段 + product_found (bool) + is_duplicate (bool)
+    - 无效记录：包含错误信息
     """
-    products_result = await db.execute(
-        select(Product).where(Product.is_deleted == False)  # noqa: E712
-    )
+    products_result = await db.execute(select(Product).where(not_(Product.is_deleted)))
     all_products = products_result.scalars().all()
     product_map: dict[tuple[str, str], uuid.UUID] = {}
     for p in all_products:
-        product_map[(p.workshop, p.name)] = p.id
+        workshop_key = p.workshop.replace(" ", "")
+        product_map[(workshop_key, p.name)] = p.id
 
     filename = file.filename or ""
     file_ext = filename.lower().split(".")[-1] if "." in filename else ""
-
     content = await file.read()
+
+    records_data = []
+    invalid_records = []
+
+    def parse_row(row_dict: dict[str, Any], row_num: int) -> None:
+        workshop = str(row_dict.get("车间", "") or "").strip().replace(" ", "")
+        product_name = str(row_dict.get("产品名称", "") or "").strip()
+        batch_no = str(row_dict.get("批号", "") or "").strip()
+
+        production_date_val = row_dict.get("生产日期")
+        if production_date_val is not None and hasattr(production_date_val, "strftime"):
+            production_date_str = production_date_val.strftime("%Y-%m-%d")
+        else:
+            production_date_str = str(production_date_val or "").strip()
+
+        end_date_val = row_dict.get("结束日期")
+        if end_date_val is not None and hasattr(end_date_val, "strftime"):
+            end_date_str = end_date_val.strftime("%Y-%m-%d")
+        else:
+            end_date_str = str(end_date_val or "").strip()
+
+        weight_str = str(row_dict.get("重量", "0") or "0").strip()
+        unit = str(row_dict.get("单位", "kg") or "kg").strip() or "kg"
+        notes = str(row_dict.get("备注", "") or "").strip() or None
+
+        # 检查必填字段
+        if not workshop or not product_name or not batch_no or not production_date_str:
+            invalid_records.append({"row": row_num, "error": "缺少必填字段", "data": row_dict})
+            return
+
+        # 检查重量
+        try:
+            weight = float(weight_str)
+        except ValueError:
+            invalid_records.append({"row": row_num, "error": f"重量格式错误：{weight_str}", "data": row_dict})
+            return
+
+        # 匹配产品
+        product_id = product_map.get((workshop, product_name))
+        product_found = product_id is not None
+
+        # 解析日期
+        try:
+            prod_date = date.fromisoformat(production_date_str)
+            end_date = date.fromisoformat(end_date_str) if end_date_str else None
+        except ValueError as e:
+            invalid_records.append({"row": row_num, "error": f"日期格式错误：{e}", "data": row_dict})
+            return
+
+        records_data.append(
+            {
+                "workshop": workshop,
+                "product_name": product_name,
+                "product_id": product_id,
+                "batch_no": batch_no,
+                "production_date": prod_date,
+                "end_date": end_date,
+                "weight": weight,
+                "unit": unit,
+                "notes": notes,
+                "product_found": product_found,
+                "row_num": row_num,
+            }
+        )
 
     if file_ext == "xlsx":
         from openpyxl import load_workbook
 
         wb = load_workbook(filename=io.BytesIO(content))
         ws = wb.active
-
         headers_row = [cell.value for cell in ws[1]]
-        records_data: list[dict[str, Any]] = []
-        for row in ws.iter_rows(min_row=2, values_only=True):
+        for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if not any(row):
                 continue
             row_dict = dict(zip(headers_row, row))
-
-            workshop = str(row_dict.get("车间", "") or "").strip()
-            product_name = str(row_dict.get("产品名称", "") or "").strip()
-            batch_no = str(row_dict.get("批号", "") or "").strip()
-
-            production_date_val = row_dict.get("生产日期")
-            if production_date_val is not None and hasattr(production_date_val, "strftime"):
-                production_date_str = production_date_val.strftime("%Y-%m-%d")
-            else:
-                production_date_str = str(production_date_val or "").strip()
-
-            end_date_val = row_dict.get("结束日期")
-            if end_date_val is not None and hasattr(end_date_val, "strftime"):
-                end_date_str = end_date_val.strftime("%Y-%m-%d")
-            else:
-                end_date_str = str(end_date_val or "").strip()
-
-            weight_str = str(row_dict.get("重量", "0") or "0").strip()
-            unit = str(row_dict.get("单位", "kg") or "kg").strip() or "kg"
-            notes = str(row_dict.get("备注", "") or "").strip() or None
-
-            if not workshop or not product_name or not batch_no or not production_date_str:
-                continue
-
-            try:
-                weight = float(weight_str)
-            except ValueError:
-                continue
-
-            product_id = product_map.get((workshop, product_name))
-            records_data.append(
-                {
-                    "workshop": workshop,
-                    "product_name": product_name,
-                    "product_id": product_id,
-                    "batch_no": batch_no,
-                    "production_date": date.fromisoformat(production_date_str),
-                    "end_date": date.fromisoformat(end_date_str) if end_date_str else None,
-                    "weight": weight,
-                    "unit": unit,
-                    "notes": notes,
-                }
-            )
+            parse_row(row_dict, i)
     else:
         text = content.decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(text))
+        for i, row in enumerate(reader, start=2):
+            parse_row(row, i)
 
-        records_data = []
-        for row in reader:
-            workshop = row.get("车间", "").strip()
-            product_name = row.get("产品名称", "").strip()
-            batch_no = row.get("批号", "").strip()
-            production_date_str = row.get("生产日期", "").strip()
-            end_date_str = row.get("结束日期", "").strip()
-            weight_str = row.get("重量", "0").strip()
-            unit = row.get("单位", "kg").strip() or "kg"
-            notes = row.get("备注", "").strip() or None
+    return records_data, invalid_records
 
-            if not workshop or not product_name or not batch_no or not production_date_str:
-                continue
 
-            try:
-                weight = float(weight_str)
-            except ValueError:
-                continue
+@router.post("/product-output/import/preview", summary="预览导入文件")
+async def preview_import(
+    current_user: RequiredUser,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """预览导入文件，返回解析结果（不写入数据库）"""
+    records_data, invalid_records = await parse_import_file(file, db)
 
-            product_id = product_map.get((workshop, product_name))
-            records_data.append(
-                {
-                    "workshop": workshop,
-                    "product_name": product_name,
-                    "product_id": product_id,
-                    "batch_no": batch_no,
-                    "production_date": date.fromisoformat(production_date_str),
-                    "end_date": date.fromisoformat(end_date_str) if end_date_str else None,
-                    "weight": weight,
-                    "unit": unit,
-                    "notes": notes,
-                }
-            )
+    # 检查重复
+    existing_result = await db.execute(
+        select(ProductOutput.batch_no, ProductOutput.product_id).where(
+            not_(ProductOutput.is_deleted),
+        )
+    )
+    existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
+
+    for record in records_data:
+        record["is_duplicate"] = (record["batch_no"], record["product_id"]) in existing_pairs
+
+    new_count = sum(1 for r in records_data if r["product_found"] and not r["is_duplicate"])
+    duplicate_count = sum(1 for r in records_data if r["is_duplicate"])
+    not_found_count = sum(1 for r in records_data if not r["product_found"])
+
+    return ApiResponse(
+        data=PreviewImportResponse(
+            total_rows=len(records_data) + len(invalid_records),
+            valid_records=len(records_data),
+            invalid_records=len(invalid_records),
+            new_records=new_count,
+            duplicate_records=duplicate_count,
+            not_found_product=not_found_count,
+            records=records_data,
+            invalid_details=invalid_records,
+        )
+    )
+
+
+@router.post("/product-output/import", summary="导入产量记录")
+async def import_product_outputs(
+    current_user: RequiredUser,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """通过 CSV 或 XLSX 文件批量导入产量记录"""
+    import time
+
+    batch_id = f"batch_{int(time.time())}"
+
+    records_data, invalid_records = await parse_import_file(file, db)
 
     if not records_data:
         return ApiResponse(code=400, message="未找到有效数据，请检查文件格式")
 
-    batch_nos = [r["batch_no"] for r in records_data]
+    # 按 (批号 + 产品ID) 组合检查重复
     existing_result = await db.execute(
-        select(ProductOutput.batch_no).where(
-            ProductOutput.batch_no.in_(batch_nos),
-            ProductOutput.is_deleted == False,  # noqa: E712
+        select(ProductOutput.batch_no, ProductOutput.product_id).where(
+            not_(ProductOutput.is_deleted),
         )
     )
-    existing_batch_nos = set(existing_result.scalars().all())
+    existing_pairs = set((row.batch_no, row.product_id) for row in existing_result.all())
 
-    new_records = [r for r in records_data if r["batch_no"] not in existing_batch_nos]
+    new_records = [r for r in records_data if (r["batch_no"], r["product_id"]) not in existing_pairs]
     skipped_count = len(records_data) - len(new_records)
 
     if not new_records:
         return ApiResponse(code=400, message=f"所有 {skipped_count} 条记录的批号已存在，跳过导入")
+
+    # 添加批次ID
+    for record in new_records:
+        record["import_batch_id"] = batch_id
+        # 移除预览用的临时字段
+        record.pop("product_found", None)
+        record.pop("row_num", None)
 
     service = ProductOutputService(db)
     count = await service.batch_import(new_records)
@@ -413,7 +531,37 @@ async def import_product_outputs(
     if skipped_count > 0:
         message += f"，跳过 {skipped_count} 条重复批号"
 
-    return ApiResponse(data={"imported": count, "skipped": skipped_count}, message=message)
+    return ApiResponse(
+        data=ImportResponse(imported=count, skipped=skipped_count, batch_id=batch_id),
+        message=message,
+    )
+
+
+@router.delete("/product-output/import/{batch_id}", summary="撤销导入批次")
+async def undo_import(
+    current_user: RequiredUser,
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """撤销指定批次的导入记录"""
+    result = await db.execute(
+        select(ProductOutput).where(
+            ProductOutput.import_batch_id == batch_id,
+            not_(ProductOutput.is_deleted),
+        )
+    )
+    records = result.scalars().all()
+
+    if not records:
+        return ApiResponse(code=404, message=f"未找到批次 {batch_id} 的记录")
+
+    count = len(records)
+    for record in records:
+        record.is_deleted = True
+
+    await db.commit()
+
+    return ApiResponse(data=UndoImportResponse(deleted=count, batch_id=batch_id))
 
 
 @router.post("/product-output/import-from-bitable", summary="从飞书多维表格导入产量记录")
@@ -570,22 +718,29 @@ async def import_from_bitable(
                 f"{record_data['batch_no']}|{record_data['production_date']}"
             )
 
-        # Check existing records in DB
-        from sqlalchemy import text
-
+        # Check existing records in DB using parameterized queries
         existing_in_db: set[str] = set()
         if existing_keys:
-            or_clauses = " OR ".join(
-                [
-                    f"(product_name = '{k.split('|')[0]}' AND workshop = '{k.split('|')[1]}' "
-                    f"AND batch_no = '{k.split('|')[2]}' AND production_date = '{k.split('|')[3]}')"
-                    for k in existing_keys
-                ]
-            )
+            conditions = []
+            for k in existing_keys:
+                parts = k.split("|")
+                conditions.append(
+                    and_(
+                        ProductOutput.product_name == parts[0],
+                        ProductOutput.workshop == parts[1],
+                        ProductOutput.batch_no == parts[2],
+                        ProductOutput.production_date == parts[3],
+                    )
+                )
             result = await db.execute(
-                text(
-                    "SELECT product_name, workshop, batch_no, production_date "
-                    "FROM production.product_outputs WHERE is_deleted = false AND (" + or_clauses + ")"
+                select(
+                    ProductOutput.product_name,
+                    ProductOutput.workshop,
+                    ProductOutput.batch_no,
+                    ProductOutput.production_date,
+                ).where(
+                    not_(ProductOutput.is_deleted),
+                    or_(*conditions),
                 )
             )
             for row in result.fetchall():
@@ -607,7 +762,7 @@ async def import_from_bitable(
             return ApiResponse(
                 code=200,
                 message=f"所有 {skipped_count} 条记录已存在，无需导入",
-                data={"imported": 0, "skipped": skipped_count},
+                data=ImportResponse(imported=0, skipped=skipped_count, batch_id=""),
             )
 
         # Match product_id
@@ -629,7 +784,7 @@ async def import_from_bitable(
         service = ProductOutputService(db)
         count = await service.batch_import(filtered_records)
         return ApiResponse(
-            data={"imported": count, "skipped": skipped_count},
+            data=ImportResponse(imported=count, skipped=skipped_count, batch_id=""),
             message=f"成功导入 {count} 条记录，跳过 {skipped_count} 条重复记录",
         )
     except Exception as e:

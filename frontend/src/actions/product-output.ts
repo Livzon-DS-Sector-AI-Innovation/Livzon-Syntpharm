@@ -17,6 +17,8 @@ import {
   getWorkshops as getWorkshopsApi,
   getSummary as getSummaryApi,
   importProductOutputs as importProductOutputsApi,
+  fetchPreviewImport as fetchPreviewImportApi,
+  fetchUndoImport as fetchUndoImportApi,
   getBatchCount as getBatchCountApi,
 } from '@/lib/api/server/product-output'
 
@@ -144,4 +146,34 @@ export async function importFromBitable(appToken: string, tableId: string = '') 
 export async function batchDeleteProductOutputs(ids: string[]) {
   const authHeaders = await getAuthHeaders()
   return batchDeleteApi(ids, authHeaders)
+}
+
+// ─── Annual Review Actions ───
+
+import {
+  fetchAnnualReview as fetchAnnualReviewApi,
+  fetchExportAnnualReview as fetchExportAnnualReviewApi,
+} from '@/lib/api/server/product-output'
+import type { AnnualReviewData } from '@/types/product-output'
+
+export async function fetchAnnualReview(year: number) {
+  const authHeaders = await getAuthHeaders()
+  return fetchAnnualReviewApi(year, authHeaders)
+}
+
+export async function fetchExportAnnualReview(year: number) {
+  const authHeaders = await getAuthHeaders()
+  return fetchExportAnnualReviewApi(year, authHeaders)
+}
+
+export async function fetchPreviewImport(formData: FormData) {
+  const authHeaders = await getAuthHeaders()
+  return fetchPreviewImportApi(formData, authHeaders)
+}
+
+export async function fetchUndoImport(batchId: string) {
+  const authHeaders = await getAuthHeaders()
+  const response = await fetchUndoImportApi(batchId, authHeaders)
+  revalidatePath('/production/product-output')
+  return response
 }

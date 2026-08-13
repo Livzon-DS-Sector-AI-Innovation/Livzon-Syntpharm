@@ -61,10 +61,12 @@ export async function getSummary(
 }
 
 export async function importProductOutputs(formData: FormData, headers: Record<string, string>) {
+  // 删除 Content-Type，让浏览器自动设置 multipart/form-data
+  const { 'Content-Type': _, ...restHeaders } = headers
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import`, {
     method: 'POST',
     body: formData,
-    headers,
+    headers: restHeaders,
   })
 }
 
@@ -144,6 +146,52 @@ export async function importFromBitable(appToken: string, tableId: string, heade
 export async function batchDeleteProductOutputs(ids: string[], headers: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/batch?ids=${ids.join(',')}`, {
     method: 'DELETE',
+    headers,
+  })
+}
+
+export async function fetchAnnualReview(year: number, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/annual-review?year=${year}`, { headers })
+}
+
+export async function fetchExportAnnualReview(year: number, headers: Record<string, string>) {
+  return apiFetchRaw(`${getApiBaseUrl()}/api/v1/production/product-output/annual-review/export?year=${year}`, { headers })
+}
+
+export async function fetchPreviewImport(formData: FormData, headers: Record<string, string>) {
+  // 删除 Content-Type，让浏览器自动设置 multipart/form-data
+  const { 'Content-Type': _, ...restHeaders } = headers
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import/preview`, {
+    method: 'POST',
+    body: formData,
+    headers: restHeaders,
+  })
+}
+
+export async function fetchUndoImport(batchId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-output/import/${batchId}`, {
+    method: 'DELETE',
+    headers,
+  })
+}
+
+export async function fetchPreviewPush(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-push`, {
+    method: 'POST',
+    headers,
+  })
+}
+
+export async function fetchPreviewPull(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/preview-pull`, {
+    method: 'POST',
+    headers,
+  })
+}
+
+export async function fetchUndoLastSync(productId: string, headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/production/product-sync-config/${productId}/undo-last-sync`, {
+    method: 'POST',
     headers,
   })
 }

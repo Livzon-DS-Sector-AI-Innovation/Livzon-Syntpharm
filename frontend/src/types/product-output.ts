@@ -1,3 +1,5 @@
+import type { components } from '@/types/generated/schema'
+
 /**
  * Domain model types (ViewModels) — not in OpenAPI spec.
  * API input types (Create/Update) use @/types/generated/schema.
@@ -6,6 +8,12 @@
 // product-output module TypeScript types
 
 import type { ApiResponse } from '@/types/production'
+// Annual Review types (from generated schema)
+export type MonthlyTrend = components["schemas"]["app__modules__production__product__output_schemas__MonthlyTrend"]
+export type WorkshopRanking = components["schemas"]["app__modules__production__product__output_schemas__WorkshopRanking"]
+export type TopProduct = components["schemas"]["app__modules__production__product__output_schemas__TopProduct"]
+export type AnnualOverview = components["schemas"]["app__modules__production__product__output_schemas__AnnualOverview"]
+export type AnnualReviewData = components["schemas"]["app__modules__production__product__output_schemas__AnnualReviewResponse"]
 
 export type { ApiResponse }
 
@@ -79,3 +87,5 @@ export interface SummaryData {
   workshops: WorkshopSummary[]
   grand_total: number
 }
+
+

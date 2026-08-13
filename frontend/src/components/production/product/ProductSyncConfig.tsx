@@ -129,6 +129,30 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
         >
           同步配置
         </Button>
+        {config && (
+          <Button
+            onClick={async () => {
+              setSyncing(true)
+              try {
+                const res = await pullFromFeishu(productId)
+                if (res.code === 200) {
+                  message.success(res.data?.message || '拉取成功')
+                  onSynced?.()
+                  await loadConfig()
+                } else {
+                  message.error(res.message || '拉取失败')
+                }
+              } catch {
+                message.error('拉取失败')
+              } finally {
+                setSyncing(false)
+              }
+            }}
+            loading={syncing}
+          >
+            手动拉取
+          </Button>
+        )}
       </Space>
 
       <Modal

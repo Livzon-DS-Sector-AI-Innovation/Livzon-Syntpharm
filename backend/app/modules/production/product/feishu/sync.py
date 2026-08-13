@@ -1,7 +1,7 @@
 """Bidirectional sync service for product outputs and Feishu Bitable."""
 
 import logging
-from datetime import date
+from datetime import UTC, date
 from typing import Any
 
 from sqlalchemy import text
@@ -14,8 +14,12 @@ from app.modules.production.product.feishu.bitable import (
     _extract_text,
     _to_ms_timestamp,
 )
+from app.modules.production.product.output_schemas import PreviewPullResponse, PreviewPushResponse
+from app.modules.production.product.sync_operation_log_model import SyncOperationLog
 
 logger = logging.getLogger(__name__)
+
+__all__ = ["ProductSyncService", "SyncOperationLog"]
 
 DEFAULT_FIELD_MAPPING = {
     "workshop": "车间",
@@ -38,21 +42,174 @@ class ProductSyncService:
         self.field_mapping = field_mapping or DEFAULT_FIELD_MAPPING
         self.reverse_mapping = {v: k for k, v in self.field_mapping.items()}
 
-    async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
+    async def preview_push(self, product_id: str | None = None) -> PreviewPushResponse:
+        """预览推送操作，不实际执行"""
+        logger.info("预览推送到飞书", extra={"product_id": product_id})
+
+        # 获取飞书所有记录
+        all_feishu_records = await self.bitable.list_records(page_size=500)
+        feishu_record_map = {}
+        for record in all_feishu_records:
+            fields = record.get("fields", {})
+            batch_no = str(fields.get("批号（批次编号）", ""))
+            product_name = str(fields.get("产品名称（产品）", ""))
+            workshop = str(fields.get("车间（生产车间）", ""))
+            if batch_no and product_name and workshop:
+                key = (batch_no, product_name, workshop)
+                feishu_record_map[key] = record.get("record_id")
+
+        # 查询平台记录
         query = text("""
             SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
             FROM production.product_outputs
             WHERE is_deleted = false
-            AND sync_status = 'local_only'
             AND (product_id = :product_id OR :product_id IS NULL)
         """)
         result = await self.db.execute(query, {"product_id": product_id})
         rows = result.fetchall()
 
+        # 分析变更
+        to_create = []
+        to_update = []
+        to_skip: list[dict[str, Any]] = []
+
+        for row in rows:
+            record_id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes = row
+            key = (batch_no, product_name, workshop)
+
+            if key in feishu_record_map:
+                to_update.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": str(production_date),
+                        "weight": weight,
+                        "action": "更新",
+                    }
+                )
+            else:
+                to_create.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": str(production_date),
+                        "weight": weight,
+                        "action": "新增",
+                    }
+                )
+
+        return PreviewPushResponse(
+            to_create=to_create,
+            to_update=to_update,
+            to_skip=to_skip,
+        )
+
+    async def preview_pull(self, product_id: str | None = None) -> PreviewPullResponse:
+        """预览拉取操作，不实际执行"""
+        logger.info("预览从飞书拉取", extra={"product_id": product_id})
+
+        # 获取飞书所有记录
+        all_feishu_records = await self.bitable.list_records(page_size=500)
+
+        # 查询平台现有记录
+        query = text("""
+            SELECT batch_no, product_name, workshop, production_date
+            FROM production.product_outputs
+            WHERE is_deleted = false
+            AND (product_id = :product_id OR :product_id IS NULL)
+        """)
+        result = await self.db.execute(query, {"product_id": product_id})
+        existing_records = {(row[0], row[1], row[2], str(row[3])) for row in result.fetchall()}
+
+        # 分析变更
+        to_create = []
+        to_update = []
+
+        for record in all_feishu_records:
+            fields = record.get("fields", {})
+            batch_no = str(fields.get("批号（批次编号）", ""))
+            product_name = str(fields.get("产品名称（产品）", ""))
+            workshop = str(fields.get("车间（生产车间）", ""))
+            production_date_raw = fields.get("生产日期（生产开始日）")
+
+            if not batch_no or not product_name or not workshop:
+                continue
+
+            # 解析日期
+            if isinstance(production_date_raw, int):
+                from datetime import datetime
+
+                dt = datetime.fromtimestamp(production_date_raw / 1000, tz=UTC)
+                production_date = dt.strftime("%Y-%m-%d")
+            else:
+                production_date = str(production_date_raw) if production_date_raw else ""
+
+            key = (batch_no, product_name, workshop, production_date)
+            weight = fields.get("重量（产出量）", 0)
+
+            if key in existing_records:
+                to_update.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": production_date,
+                        "weight": weight,
+                        "action": "更新",
+                    }
+                )
+            else:
+                to_create.append(
+                    {
+                        "batch_no": batch_no,
+                        "product_name": product_name,
+                        "workshop": workshop,
+                        "production_date": production_date,
+                        "weight": weight,
+                        "action": "新增",
+                    }
+                )
+
+        return PreviewPullResponse(
+            to_create=to_create,
+            to_update=to_update,
+        )
+
+    async def push_to_feishu(self, product_id: str | None = None) -> dict[str, Any]:
+        logger.info("开始推送到飞书", extra={"product_id": product_id})
+
+        # 一次性获取飞书所有记录，建立批号→record_id 映射
+        logger.info("获取飞书所有记录", extra={"page_size": 500})
+        all_feishu_records = await self.bitable.list_records(page_size=500)
+        feishu_record_map = {}  # (batch_no, product_name, workshop) -> record_id
+        for record in all_feishu_records:
+            fields = record.get("fields", {})
+            batch_no = str(fields.get("批号（批次编号）", ""))
+            product_name = str(fields.get("产品名称（产品）", ""))
+            workshop = str(fields.get("车间（生产车间）", ""))
+            if batch_no and product_name and workshop:
+                key = (batch_no, product_name, workshop)
+                feishu_record_map[key] = record.get("record_id")
+        logger.info("飞书记录统计", extra={"count": len(feishu_record_map)})
+
+        query = text("""
+            SELECT id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes
+            FROM production.product_outputs
+            WHERE is_deleted = false
+            AND (product_id = :product_id OR :product_id IS NULL)
+        """)
+        result = await self.db.execute(query, {"product_id": product_id})
+        rows = result.fetchall()
+        logger.info("待推送记录统计", extra={"count": len(rows)})
+
         imported = 0
         updated = 0
         skipped = 0
         errors: list[str] = []
+        to_create = []
+        to_update = []
 
         for row in rows:
             record_id, workshop, product_name, batch_no, production_date, end_date, weight, unit, notes = row
@@ -70,12 +227,16 @@ class ProductSyncService:
                 }
             )
 
-            feishu_record_id = await self._find_feishu_record(batch_no, product_name, workshop, production_date)
+            # 直接从映射表查找，不再调用 API
+            key = (batch_no, product_name, workshop)
+            feishu_record_id = feishu_record_map.get(key)
+            logger.info("批号匹配飞书记录", extra={"batch_no": batch_no, "feishu_record_id": feishu_record_id})
 
             try:
                 if feishu_record_id:
                     await self.bitable.update_record(feishu_record_id, fields)
                     updated += 1
+                    to_update.append({"batch_no": batch_no, "action": "update"})
                     await self.db.execute(
                         text("""
                         UPDATE production.product_outputs
@@ -88,6 +249,7 @@ class ProductSyncService:
                     create_result = await self.bitable.create_record(fields)
                     feishu_record_id = create_result.get("record_id")
                     imported += 1
+                    to_create.append({"batch_no": batch_no, "action": "create"})
                     await self.db.execute(
                         text("""
                         UPDATE production.product_outputs
@@ -98,9 +260,13 @@ class ProductSyncService:
                     )
             except Exception as e:
                 errors.append(f"批号 {batch_no}: {str(e)}")
-                logger.error("Failed to push record %s to Feishu: %s", batch_no, e)
+                logger.exception("Failed to push record %s to Feishu", batch_no)
 
         await self.db.commit()
+
+        # 记录操作日志
+        operation_records = [{"batch_no": r["batch_no"], "action": r["action"]} for r in (to_create + to_update)]
+        await SyncOperationLog.log_operation(self.db, product_id or "", "push", operation_records)
 
         return {
             "imported": imported,
@@ -111,18 +277,23 @@ class ProductSyncService:
         }
 
     async def pull_from_feishu(self, product_id: str | None = None) -> dict[str, Any]:
+        logger.info("开始从飞书拉取数据", extra={"product_id": product_id})
         feishu_records = await self.bitable.list_records()
+        logger.info("飞书记录获取完成", extra={"count": len(feishu_records)})
 
         imported = 0
         updated = 0
         skipped = 0
         errors: list[str] = []
+        to_create = []
+        to_update = []
 
         for feishu_record in feishu_records:
             record_id = feishu_record.get("record_id", "")
             fields = feishu_record.get("fields", {})
 
             data = self._extract_record_data(fields)
+            logger.info("飞书记录数据提取完成", extra={"record_id": record_id, "fields_count": len(data)})
 
             workshop = str(data.get("workshop", "")).strip()
             product_name = str(data.get("product_name", "")).strip()
@@ -181,6 +352,7 @@ class ProductSyncService:
                         },
                     )
                     updated += 1
+                    to_update.append({"batch_no": batch_no, "action": "update"})
                 else:
                     product_result = await self.db.execute(
                         text("""
@@ -196,10 +368,10 @@ class ProductSyncService:
                     await self.db.execute(
                         text("""
                         INSERT INTO production.product_outputs
-                        (product_id, workshop, product_name, batch_no,
+                        (id, product_id, workshop, product_name, batch_no,
                          production_date, end_date, weight, unit, notes,
                          feishu_record_id, sync_status)
-                        VALUES (:product_id, :workshop, :product_name, :batch_no,
+                        VALUES (gen_random_uuid(), :product_id, :workshop, :product_name, :batch_no,
                                 :production_date, :end_date, :weight, :unit, :notes,
                                 :feishu_record_id, 'synced')
                     """),
@@ -217,11 +389,16 @@ class ProductSyncService:
                         },
                     )
                     imported += 1
+                    to_create.append({"batch_no": batch_no, "action": "create"})
             except Exception as e:
                 errors.append(f"批号 {batch_no}: {str(e)}")
-                logger.error("Failed to pull record %s from Feishu: %s", batch_no, e)
+                logger.exception("Failed to pull record %s from Feishu", batch_no)
 
         await self.db.commit()
+
+        # 记录操作日志
+        operation_records = [{"batch_no": r["batch_no"], "action": r["action"]} for r in (to_create + to_update)]
+        await SyncOperationLog.log_operation(self.db, product_id or "", "pull", operation_records)
 
         return {
             "imported": imported,
@@ -278,10 +455,13 @@ class ProductSyncService:
     async def _find_feishu_record(
         self, batch_no: str, product_name: str, workshop: str, production_date: date
     ) -> str | None:
-        filter_str = (
-            f'CurrentValue.[批号] = "{batch_no}" AND '
-            f'CurrentValue.[产品名称] = "{product_name}" AND '
-            f'CurrentValue.[车间] = "{workshop}"'
-        )
-        items = await self.bitable.search_records(filter_str=filter_str)
-        return items[0].get("record_id") if items else None
+        # 飞书 filter API 不支持带括号的字段名，改用获取所有记录后在代码中匹配
+        all_records = await self.bitable.list_records(page_size=500)
+        for record in all_records:
+            fields = record.get("fields", {})
+            record_batch = str(fields.get("批号（批次编号）", ""))
+            record_product = str(fields.get("产品名称（产品）", ""))
+            record_workshop = str(fields.get("车间（生产车间）", ""))
+            if record_batch == batch_no and record_product == product_name and record_workshop == workshop:
+                return record.get("record_id")
+        return None
