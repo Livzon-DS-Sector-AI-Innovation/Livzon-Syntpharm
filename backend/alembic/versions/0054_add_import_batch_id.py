@@ -19,10 +19,21 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         'product_outputs',
-        sa.Column('import_batch_id', sa.String(), nullable=True),
+        sa.Column('import_batch_id', sa.String(length=64), nullable=True, comment='导入批次ID'),
+        schema='production',
+    )
+    op.create_index(
+        'ix_production_product_outputs_import_batch_id',
+        'product_outputs',
+        ['import_batch_id'],
         schema='production',
     )
 
 
 def downgrade() -> None:
+    op.drop_index(
+        'ix_production_product_outputs_import_batch_id',
+        table_name='product_outputs',
+        schema='production',
+    )
     op.drop_column('product_outputs', 'import_batch_id', schema='production')
