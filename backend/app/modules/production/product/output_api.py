@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import not_, select
+from sqlalchemy import and_, not_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -718,22 +718,29 @@ async def import_from_bitable(
                 f"{record_data['batch_no']}|{record_data['production_date']}"
             )
 
-        # Check existing records in DB
-        from sqlalchemy import text
-
+        # Check existing records in DB using parameterized queries
         existing_in_db: set[str] = set()
         if existing_keys:
-            or_clauses = " OR ".join(
-                [
-                    f"(product_name = '{k.split('|')[0]}' AND workshop = '{k.split('|')[1]}' "
-                    f"AND batch_no = '{k.split('|')[2]}' AND production_date = '{k.split('|')[3]}')"
-                    for k in existing_keys
-                ]
-            )
+            conditions = []
+            for k in existing_keys:
+                parts = k.split("|")
+                conditions.append(
+                    and_(
+                        ProductOutput.product_name == parts[0],
+                        ProductOutput.workshop == parts[1],
+                        ProductOutput.batch_no == parts[2],
+                        ProductOutput.production_date == parts[3],
+                    )
+                )
             result = await db.execute(
-                text(
-                    "SELECT product_name, workshop, batch_no, production_date "
-                    "FROM production.product_outputs WHERE is_deleted = false AND (" + or_clauses + ")"
+                select(
+                    ProductOutput.product_name,
+                    ProductOutput.workshop,
+                    ProductOutput.batch_no,
+                    ProductOutput.production_date,
+                ).where(
+                    not_(ProductOutput.is_deleted),
+                    or_(*conditions),
                 )
             )
             for row in result.fetchall():
