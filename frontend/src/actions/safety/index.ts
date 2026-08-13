@@ -713,9 +713,14 @@ export async function generateSop(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
-  const response = await safetyApi.generateSop(formData, authHeaders)
-  revalidatePath('/safety/regulation')
-  return response
+  try {
+    const response = await safetyApi.generateSop(formData, authHeaders)
+    revalidatePath('/safety/regulation')
+    return response
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '生成失败'
+    return { code: 500, message: msg, data: null }
+  }
 }
 
 export async function updateSopContent(regulationId: string, content: string, status?: string) {
