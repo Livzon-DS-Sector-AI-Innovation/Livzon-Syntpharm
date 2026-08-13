@@ -11,14 +11,14 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import select
+
+from app.core.database import async_session_factory
 from app.modules.regulatory_tracker.models import (
     DataChannel,
     DataSource,
     RegulatoryDocument,
 )
-from sqlalchemy import select
-
-from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 

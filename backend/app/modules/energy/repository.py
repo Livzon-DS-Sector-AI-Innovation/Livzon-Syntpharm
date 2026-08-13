@@ -881,9 +881,8 @@ async def get_monthly_energy_total(
     return Decimal(str(total)) if total else None
 
 
-
-
 # ── Unit Consumption Target Repository Functions ──
+
 
 async def create_unit_consumption_target(
     db: AsyncSession,

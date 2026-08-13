@@ -21,6 +21,7 @@
 ```python
 from app.core.deps import CurrentUser
 
+
 @router.get("/batches")
 async def list_batches(current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     # current_user 可能是 None（未登录）或 User 对象
@@ -90,10 +91,12 @@ except LLMRateLimitError:
 ```python
 # 运行时配置（从数据库）
 from app.shared.config_reader import get_module_setting, get_module_setting_bool
+
 model = await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash")
 
 # 部署配置（从环境变量）
 from app.core.config import get_settings
+
 settings = get_settings()
 api_key = settings.SAFETY_AI_TEXT_API_KEY
 ```
@@ -102,6 +105,7 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 
 ```python
 from app.core.config import get_settings
+
 settings = get_settings()
 app_id = settings.feishu.platform.app_id
 safety_app_id = settings.feishu.safety.credentials.app_id

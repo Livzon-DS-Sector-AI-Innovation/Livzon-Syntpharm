@@ -234,7 +234,8 @@
    ```python
    from playwright.async_api import async_playwright
    from playwright_stealth import stealth_async
-   
+
+
    async def fetch_page(url):
        async with async_playwright() as p:
            browser = await p.chromium.launch(headless=True)

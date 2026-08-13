@@ -1,4 +1,5 @@
 """Energy business workflows live here."""
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,6 @@ logger = logging.getLogger(__name__)
 
 # 中国标准时间 timezone.utc+8
 CST = timezone(timedelta(hours=8))
-
 
 
 async def create_device_config(db: AsyncSession, data: EnergyDeviceConfigCreate) -> EnergyDeviceConfig:
@@ -568,18 +568,13 @@ async def get_monthly_summary(
         end_date=end_date,
     )
 
+
 # ── AI 分析相关服务 ──
 
 
-
-
 async def prepare_daily_stats(
-    db: AsyncSession,
-    workshop_id: UUID,
-    start_date: date,
-    end_date: date,
-    energy_types: list[str]
-) -> list[dict]:
+    db: AsyncSession, workshop_id: UUID, start_date: date, end_date: date, energy_types: list[str]
+) -> list[dict[str, Any]]:
     """准备每日统计数据，处理跨天记录的平均拆分"""
 
     from app.modules.energy.models import EnergyMonthlyRecord
@@ -588,13 +583,13 @@ async def prepare_daily_stats(
         EnergyMonthlyRecord.workshop_id == workshop_id,
         EnergyMonthlyRecord.record_date <= end_date,
         (EnergyMonthlyRecord.date_range_end >= start_date) | (EnergyMonthlyRecord.date_range_end.is_(None)),
-        EnergyMonthlyRecord.energy_type.in_(energy_types)
+        EnergyMonthlyRecord.energy_type.in_(energy_types),
     )
 
     result = await db.execute(query)
     records = result.scalars().all()
 
-    daily_map = {} # {date_str: {energy_type: value}}
+    daily_map: dict[str, Any] = {}  # {date_str: {energy_type: value}}
 
     for record in records:
         s_date = record.record_date
@@ -622,20 +617,29 @@ async def prepare_daily_stats(
 
     return [{"date": k, **v} for k, v in sorted(daily_map.items())]
 
-async def fetch_mock_production(workshop_name: str, dates: list[str]) -> list[dict]:
+
+async def fetch_mock_production(workshop_name: str, dates: list[str]) -> list[dict[str, Any]]:
     """获取模拟产量数据"""
     import random
+
     production_data = []
     for d in dates:
-        production_data.append({
-            "date": d,
-            "workshop": workshop_name,
-            "weight": round(random.uniform(1000, 5000), 2), # 模拟随机产量
-            "unit": "kg"
-        })
+        production_data.append(
+            {
+                "date": d,
+                "workshop": workshop_name,
+                "weight": round(random.uniform(1000, 5000), 2),  # 模拟随机产量
+                "unit": "kg",
+            }
+        )
     return production_data
 
-async def analyze_energy_with_ai(daily_stats: list, production_data: list, weather_info: str = "") -> dict:
+
+async def analyze_energy_with_ai(
+    daily_stats: list[Any],
+    production_data: list[Any],
+    weather_info: str = "",
+) -> dict[str, Any]:
     """调用 LLM 进行能耗偏差分析"""
     client = LLMClient()
 
@@ -656,11 +660,17 @@ async def analyze_energy_with_ai(daily_stats: list, production_data: list, weath
     try:
         response_text = await client.chat(messages, temperature=0.3)
         content = response_text.replace("```json", "").replace("```", "").strip()
-        return json.loads(content)
+        try:
+            result: dict[str, Any] = json.loads(content)
+            return result
+        except json.JSONDecodeError as e:
+            logger.error(f"LLM JSON 解析失败: {e}, 原始内容: {content[:200]}")
+            return {"error": "AI 响应格式错误", "summary": "请稍后重试"}
     except Exception as e:
         return {"error": f"AI 分析失败: {str(e)}", "summary": "分析过程中出现错误。"}
 
-async def analyze_energy_with_vision(image_base64: str, prompt: str) -> dict:
+
+async def analyze_energy_with_vision(image_base64: str, prompt: str) -> dict[str, Any]:
     """利用多模态大模型分析能耗图表截图"""
     client = LLMClient()
 
@@ -669,15 +679,12 @@ async def analyze_energy_with_vision(image_base64: str, prompt: str) -> dict:
 
     try:
         # 调用专门的多模态接口
-        response_text = await client.chat_vision(
-            text_prompt=prompt,
-            image_urls=[image_url],
-            config_type="vision"
-        )
+        response_text = await client.chat_vision(text_prompt=prompt, image_urls=[image_url])
 
         # 尝试解析 JSON 结果
         cleaned = response_text.replace("```json", "").replace("```", "").strip()
-        return json.loads(cleaned)
+        result: dict[str, Any] = json.loads(cleaned)
+        return result
     except Exception as e:
         return {"error": f"视觉分析失败: {str(e)}", "summary": "无法解析图表内容。"}
 
@@ -685,13 +692,8 @@ async def analyze_energy_with_vision(image_base64: str, prompt: str) -> dict:
 # ── 单耗目标管理 ──
 
 
-
-
 async def create_target(
-    db: AsyncSession,
-    workshop_id: UUID,
-    target_month: str,
-    target_unit_consumption: float
+    db: AsyncSession, workshop_id: UUID, target_month: str, target_unit_consumption: float
 ) -> EnergyUnitConsumptionTarget:
     """创建单耗目标"""
 
@@ -709,23 +711,20 @@ async def create_target(
     year, month = map(int, target_month.split("-"))
     target_date = date(year, month, 1)
 
-    target = await repo.create_unit_consumption_target(
-        db, workshop_id, target_date, target_unit_consumption
-    )
+    target = await repo.create_unit_consumption_target(db, workshop_id, target_date, target_unit_consumption)
     await db.commit()
 
     # Re-fetch after commit
-    target = await repo.get_unit_consumption_target_by_id(db, target.id)
+    if target.id:
+        _target = await repo.get_unit_consumption_target_by_id(db, target.id)
+        if _target:
+            target = _target
     assert target is not None
 
     return target
 
 
-async def get_target(
-    db: AsyncSession,
-    workshop_id: UUID,
-    target_month: str
-) -> EnergyUnitConsumptionTarget | None:
+async def get_target(db: AsyncSession, workshop_id: UUID, target_month: str) -> EnergyUnitConsumptionTarget | None:
     """查询单耗目标"""
     year, month = map(int, target_month.split("-"))
     target_date = date(year, month, 1)
@@ -739,15 +738,9 @@ async def get_target(
     return result.scalar_one_or_none()
 
 
-async def update_target(
-    db: AsyncSession,
-    target_id: UUID,
-    new_value: float
-) -> EnergyUnitConsumptionTarget:
+async def update_target(db: AsyncSession, target_id: UUID, new_value: float) -> EnergyUnitConsumptionTarget:
     """更新单耗目标"""
-    query = select(EnergyUnitConsumptionTarget).where(
-        EnergyUnitConsumptionTarget.id == target_id
-    )
+    query = select(EnergyUnitConsumptionTarget).where(EnergyUnitConsumptionTarget.id == target_id)
 
     result = await db.execute(query)
     target = result.scalar_one_or_none()
@@ -771,10 +764,7 @@ async def get_workshop_by_id(db: AsyncSession, workshop_id: UUID) -> EnergyWorks
     return result.scalar_one_or_none()
 
 
-async def calculate_unit_consumption(
-    total_energy_kwh: float,
-    production: int
-) -> float:
+async def calculate_unit_consumption(total_energy_kwh: float, production: int) -> float:
     """计算实际单耗"""
     if not isinstance(production, int) or production <= 0:
         raise ValueError("产量必须为正整数")
@@ -790,10 +780,7 @@ async def calculate_unit_consumption(
         raise ValueError("单耗计算失败")
 
 
-def calculate_deviation_rate(
-    actual: float,
-    target: float
-) -> float:
+def calculate_deviation_rate(actual: float, target: float) -> float:
     """计算偏差率（百分比）"""
     if target <= 0:
         raise ValueError("目标值必须为正数")
@@ -815,11 +802,8 @@ def determine_deviation_status(deviation_rate: float | None) -> str:
 
 
 async def prepare_ai_analysis_data(
-    db: AsyncSession,
-    workshop_id: UUID,
-    analysis_month: str,
-    manual_production: int
-) -> dict:
+    db: AsyncSession, workshop_id: UUID, analysis_month: str, production_items: list[dict[str, Any]]
+) -> dict[str, Any]:
     """准备 AI 分析所需的所有数据"""
 
     # 1. 获取车间信息
@@ -835,17 +819,45 @@ async def prepare_ai_analysis_data(
     else:
         month_end = date(year, month + 1, 1)
 
-    total_energy = await repo.get_monthly_energy_total(
-        db, workshop_id, month_start, month_end
-    )
+    total_energy = await repo.get_monthly_energy_total(db, workshop_id, month_start, month_end)
 
     if total_energy is None or total_energy == 0:
         raise NotFoundException("能耗数据", f"{workshop.name}在{analysis_month}无能耗数据")
 
     total_energy_kwh = float(total_energy)
 
-    # 3. 计算实际单耗
-    actual_unit_consumption = await calculate_unit_consumption(total_energy_kwh, manual_production)
+    # 3. 计算折算总产量
+    from sqlalchemy import select
+
+    from app.modules.energy.models import EnergyProductConversion
+
+    converted_production = 0.0
+    product_details = []
+
+    for item in production_items:
+        product_name = item.get("product_name")
+        quantity = float(item.get("quantity", 0))
+
+        # 获取折算系数
+        stmt = select(EnergyProductConversion).where(
+            EnergyProductConversion.product_name == product_name, EnergyProductConversion.is_active
+        )
+        result = await db.execute(stmt)
+        conv_record = result.scalars().first()
+
+        factor = float(conv_record.conversion_factor) if conv_record else 1.0
+        converted_qty = quantity * factor
+
+        converted_production += converted_qty
+        product_details.append(
+            {"product_name": product_name, "quantity": quantity, "factor": factor, "converted_qty": converted_qty}
+        )
+
+    if converted_production <= 0:
+        raise ValueError("折算后总产量不能为 0")
+
+    # 4. 计算实际单耗
+    actual_unit_consumption = await calculate_unit_consumption(total_energy_kwh, int(converted_production))
 
     # 4. 查询目标值
     target_record = await get_target(db, workshop_id, analysis_month)
@@ -863,7 +875,8 @@ async def prepare_ai_analysis_data(
         "workshop_name": workshop.name,
         "analysis_month": analysis_month,
         "total_energy_kwh": total_energy_kwh,
-        "manual_production": manual_production,
+        "production_details": product_details,
+        "converted_production": converted_production,
         "actual_unit_consumption": actual_unit_consumption,
         "target_unit_consumption": target_unit_consumption,
         "deviation_rate": deviation_rate,
@@ -871,28 +884,39 @@ async def prepare_ai_analysis_data(
     }
 
 
-def construct_ai_prompt(analysis_data: dict) -> str:
-    """构造 AI Prompt"""
+def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
+    """构造 AI Prompt（包含多产品明细）"""
     has_target = analysis_data["target_unit_consumption"] is not None
+
+    # 构造产品明细字符串
+    product_details = ""
+    for item in analysis_data.get("production_details", []):
+        product_details += (
+            f"- {item['name']}: {item['quantity']} kg\n"
+            f"  (系数: {item['factor']}, 折算后: {item['converted_qty']:.2f} kg)\n"
+        )
 
     prompt = f"""你是一名能源管理专家。请根据以下数据分析车间的能源使用效率，并提供优化建议。
 
 【基础信息】
-- 车间名称：{analysis_data['workshop_name']}
-- 分析月份：{analysis_data['analysis_month']}
+- 车间名称：{analysis_data["workshop_name"]}
+- 分析月份：{analysis_data["analysis_month"]}
+
+【产品结构】
+{product_details}
 
 【能耗数据】
-- 当月总能耗：{analysis_data['total_energy_kwh']:.2f} kWh
-- 当月产量：{analysis_data['manual_production']} 件
-- 实际单耗：{analysis_data['actual_unit_consumption']:.4f} kWh/kg
+- 当月总能耗：{analysis_data["total_energy_kwh"]:.2f} kWh
+- 折算总产量：{analysis_data["converted_production"]:.2f} kg
+- 实际单耗：{analysis_data["actual_unit_consumption"]:.4f} kWh/kg
 
 【目标对比】
 """
 
     if has_target:
-        prompt += f"""- 目标单耗：{analysis_data['target_unit_consumption']:.4f} kWh/kg
-- 偏差率：{analysis_data['deviation_rate']:+.2f}%
-- 偏差状态：{analysis_data['deviation_status']}
+        prompt += f"""- 目标单耗：{analysis_data["target_unit_consumption"]:.4f} kWh/kg
+- 偏差率：{analysis_data["deviation_rate"]:+.2f}%
+- 偏差状态：{analysis_data["deviation_status"]}
 
 【分析要求】
 1. 分析可能导致偏差的原因（至少 2-3 个）

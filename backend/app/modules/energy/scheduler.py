@@ -269,7 +269,8 @@ async def bitable_monthly_sync_loop() -> None:
 
                             logger.info(
                                 "月度数据同步完成 (尝试 %d/%d)",
-                                attempt, max_retries,
+                                attempt,
+                                max_retries,
                                 extra={
                                     "month_table": month_table,
                                     "created": result.get("total_created", 0),
@@ -280,16 +281,18 @@ async def bitable_monthly_sync_loop() -> None:
 
                             # 标记今天已同步
                             last_sync_date = today_str
-                            break # 成功则跳出重试循环
+                            break  # 成功则跳出重试循环
 
                     except Exception as e:
                         logger.warning(
                             "月度数据同步失败 (尝试 %d/%d): %s",
-                            attempt, max_retries, str(e),
-                            extra={"month_table": month_table}
+                            attempt,
+                            max_retries,
+                            str(e),
+                            extra={"month_table": month_table},
                         )
                         if attempt < max_retries:
-                            await asyncio.sleep(60) # 等待 60 秒后重试
+                            await asyncio.sleep(60)  # 等待 60 秒后重试
                         else:
                             logger.exception("月度数据同步最终失败", extra={"month_table": month_table})
 

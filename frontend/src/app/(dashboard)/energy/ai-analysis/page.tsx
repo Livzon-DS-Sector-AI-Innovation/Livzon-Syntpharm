@@ -27,7 +27,6 @@ export default function AIAnalysisPage() {
   const [result, setResult] = useState<AIAnalysisResult | null>(null)
   const [workshopId, setWorkshopId] = useState<string | null>(null)
   const [analysisMonth, setAnalysisMonth] = useState<string | null>(null)
-  const [production, setProduction] = useState<number | null>(null)
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
   const [syncing, setSyncing] = useState(false)
 
@@ -38,7 +37,7 @@ export default function AIAnalysisPage() {
 
   // 获取车间列表
   useEffect(() => {
-    fetch('/api/v1/energy/workshops')
+    fetch('/api/v1/energy/workshops?category=workshop')
       .then(res => res.json())
       .then(json => {
         if (json.code === 200) {
@@ -88,9 +87,16 @@ export default function AIAnalysisPage() {
     if (!workshopId || !analysisMonth) return
     setSyncing(true)
     try {
-      const res = await fetch(`/api/v1/production/output?workshop_id=\${workshopId}&month=\${analysisMonth}`)
+      const res = await fetch(`/api/v1/energy/production/output?workshop_id=${workshopId}&month=${analysisMonth}`)
       const json = await res.json()
-      if (json.code === 200) setProductionItems(json.data.items)
+      if (json.code === 200) {
+        setProductionItems(json.data.items)
+        message.success('同步成功')
+      } else {
+        message.error(json.message || '同步失败')
+      }
+    } catch (error) {
+      message.error('网络请求失败')
     } finally {
       setSyncing(false)
     }
@@ -103,8 +109,8 @@ const handleAnalyze = async () => {
       return
     }
 
-    if (!workshopId || !analysisMonth || !production || production <= 0) {
-      message.warning('请选择车间、月份并输入有效的产量')
+    if (!workshopId || !analysisMonth || productionItems.length === 0) {
+      message.warning('请至少添加一个产品')
       return
     }
 
@@ -126,7 +132,7 @@ const handleAnalyze = async () => {
 
   const handleTargetSuccess = (target: UnitConsumptionTarget) => {
     setCurrentTarget(target)
-    if (result && production) {
+    if (result && productionItems.length > 0) {
       handleAnalyze()
     }
   }
@@ -221,7 +227,7 @@ const handleAnalyze = async () => {
             type="primary" 
             onClick={handleAnalyze} 
             loading={loading}
-            disabled={!workshopId || !analysisMonth || !production}
+            disabled={!workshopId || !analysisMonth || productionItems.length === 0}
           >
             🤖 开始智能分析
           </Button>

@@ -370,18 +370,30 @@ class AIAnalysisRequest(BaseModel):
 
     workshop_id: str = Field(..., description="车间ID (UUID)")
     analysis_month: str = Field(..., pattern=r"^\d{4}-\d{2}$", description="分析月份，格式 YYYY-MM")
-    manual_production: int = Field(..., gt=0, description="当月产量（件）")
+    production_items: list[dict[str, object]] = Field(
+        ..., min_length=1, description="产品产量列表，每项包含 product_name 和 quantity"
+    )
     include_ai_suggestion: bool = Field(default=True, description="是否包含 AI 建议")
 
 
+class ProductionItemDetail(BaseModel):
+    """产品产量明细"""
+
+    product_name: str
+    quantity: float
+    conversion_factor: float
+    converted_quantity: float
+
+
 class AIAnalysisResponse(BaseModel):
-    """AI 能耗分析响应"""
+    """AI 能耗分析响应（支持多产品）"""
 
     workshop_id: str
     workshop_name: str
     analysis_month: str
     total_energy_kwh: float
-    manual_production: int
+    production_items: list[ProductionItemDetail]
+    converted_production: float
     actual_unit_consumption: float
     target_unit_consumption: float | None = None
     deviation_rate: float | None = None

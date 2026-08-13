@@ -23,6 +23,10 @@ os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright-browsers"
 # 添加项目根目录到 path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.modules.regulatory_tracker.services.sync_service import run_sync_job
+from sqlalchemy import select, text
+
+from app.core.database import async_session_factory
 from app.modules.regulatory_tracker import repository as repo
 from app.modules.regulatory_tracker.models import (
     DataChannel,
@@ -30,10 +34,6 @@ from app.modules.regulatory_tracker.models import (
     RegulatoryDocument,
     SyncJob,
 )
-from app.modules.regulatory_tracker.services.sync_service import run_sync_job
-from sqlalchemy import select, text
-
-from app.core.database import async_session_factory
 
 logging.basicConfig(
     level=logging.INFO,
