@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 revision: str = '0053_add_import_batch_id'
-down_revision: Union[str, None] = '0052_add_dossier_unique_indexes_and_cleanup'
+down_revision: Union[str, None] = '0052_add_unique_constraints_dossier_writer'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
