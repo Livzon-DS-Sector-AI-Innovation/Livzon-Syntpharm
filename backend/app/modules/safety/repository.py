@@ -1079,6 +1079,29 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def check_personnel_duplicate(
+        self,
+        personnel_no: str,
+        department: str | None,
+        certificate_type: str,
+        certificate_number: str | None,
+        expiry_date: datetime | None,
+        exclude_id: uuid.UUID | None = None,
+    ) -> SpecialOperationPersonnel | None:
+        """检查人员资质是否重复（五字段：人员编号 + 部门 + 证书类型 + 证书编号 + 到期日期）"""
+        query = select(SpecialOperationPersonnel).where(
+            ~SpecialOperationPersonnel.is_deleted,
+            SpecialOperationPersonnel.personnel_no == personnel_no,
+            SpecialOperationPersonnel.department == department,
+            SpecialOperationPersonnel.certificate_type == certificate_type,
+            SpecialOperationPersonnel.certificate_number == certificate_number,
+            SpecialOperationPersonnel.expiry_date == expiry_date,
+        )
+        if exclude_id:
+            query = query.where(SpecialOperationPersonnel.id != exclude_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def create_special_operation_personnel(self, data: dict[str, Any]) -> SpecialOperationPersonnel:
         """创建特殊作业人员资质"""
         item = SpecialOperationPersonnel(**data)
@@ -1143,6 +1166,12 @@ class SafetyRepository:
                 SpecialOperationPermit.permit_no.ilike(like)
                 | SpecialOperationPermit.location.ilike(like)
                 | SpecialOperationPermit.work_description.ilike(like)
+                | SpecialOperationPermit.equipment_tag.ilike(like)
+                | SpecialOperationPermit.applicant_name.ilike(like)
+                | SpecialOperationPermit.work_leader_name.ilike(like)
+                | SpecialOperationPermit.operator_names.ilike(like)
+                | SpecialOperationPermit.guardian_name.ilike(like)
+                | SpecialOperationPermit.approver_name.ilike(like)
             )
 
         count_query = select(func.count(SpecialOperationPermit.id)).where(~SpecialOperationPermit.is_deleted)
@@ -1158,6 +1187,12 @@ class SafetyRepository:
                 SpecialOperationPermit.permit_no.ilike(like)
                 | SpecialOperationPermit.location.ilike(like)
                 | SpecialOperationPermit.work_description.ilike(like)
+                | SpecialOperationPermit.equipment_tag.ilike(like)
+                | SpecialOperationPermit.applicant_name.ilike(like)
+                | SpecialOperationPermit.work_leader_name.ilike(like)
+                | SpecialOperationPermit.operator_names.ilike(like)
+                | SpecialOperationPermit.guardian_name.ilike(like)
+                | SpecialOperationPermit.approver_name.ilike(like)
             )
 
         total = await self.session.scalar(count_query)
@@ -1349,6 +1384,13 @@ class SafetyRepository:
                     SpecialOperationReport.report_no.ilike(like)
                     | SpecialOperationReport.work_description.ilike(like)
                     | SpecialOperationReport.location.ilike(like)
+                    | SpecialOperationReport.equipment_tag.ilike(like)
+                    | SpecialOperationReport.applicant_name.ilike(like)
+                    | SpecialOperationReport.work_leader_name.ilike(like)
+                    | SpecialOperationReport.operator_names.ilike(like)
+                    | SpecialOperationReport.guardian_name.ilike(like)
+                    | SpecialOperationReport.approver_name.ilike(like)
+                    | SpecialOperationReport.department.ilike(like)
                 )
             return q
 
