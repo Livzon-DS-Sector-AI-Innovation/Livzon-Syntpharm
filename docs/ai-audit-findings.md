@@ -1113,3 +1113,302 @@ Categories 1, 3-9, 12-14 — no changed files in scope.
 | **Total** | **0** | **0** | **0** | **0** | **0 findings** |
 
 
+
+---
+
+## PR #29 — liangxuechao-ProductManagement-v2（产品管理功能增强（年度回顾/飞书同步/导入预览撤销）(2026-08-13)
+
+**PR URL:** https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm/pull/29
+**Author:** liangxuechao201
+**Base:** main ← liangxuechao-ProductManagement-v2
+
+**Changed files** (24):
+- `.gitattributes`
+- `backend/alembic/env.py`
+- `backend/alembic/versions/0054_add_import_batch_id.py`
+- `backend/alembic/versions/0055_add_sync_operation_log.py`
+- `backend/app/modules/production/product/feishu/sync.py`
+- `backend/app/modules/production/product/output_api.py`
+- `backend/app/modules/production/product/output_models.py`
+- `backend/app/modules/production/product/output_repository.py`
+- `backend/app/modules/production/product/output_schemas.py`
+- `backend/app/modules/production/product/output_service.py`
+- `backend/app/modules/production/product/sync_config_api.py`
+- `backend/app/modules/production/product/sync_operation_log_model.py`
+- `frontend/src/actions/product-output.ts`
+- `frontend/src/actions/product-sync.ts`
+- `frontend/src/app/(dashboard)/production/product-output/[workshop]/[productId]/page.tsx`
+- `frontend/src/app/(dashboard)/production/product-output/page.tsx`
+- `frontend/src/components/production/AnnualReviewTab.tsx`
+- `frontend/src/components/production/product/ProductSyncConfig.tsx`
+- `frontend/src/lib/api/server/base.ts`
+- `frontend/src/lib/api/server/product-output.ts`
+- `frontend/src/types/generated/schema.ts`
+- `frontend/src/types/product-output.ts`
+- `scripts/ci.sh`
+
+---
+
+### Category 1: Repository layout
+
+| Files inspected | 2 (`.gitattributes`, `scripts/ci.sh`) |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (Q1-Q10) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+`scripts/ci.sh` is the documented cross-project CI script at repo root (per AGENTS.md "跨项目CI"). `.gitattributes` adds `text eol=lf` for generated files — correct.
+
+---
+
+### Category 2: Secrets and hardcoded values
+
+| Files inspected | 24 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- `frontend/src/lib/api/server/base.ts` — `http://backend:8000` fallback is the canonical pre-existing definition, uses env var first.
+- `scripts/ci.sh` — `http://localhost:3000` and `http://127.0.0.1:*` are CI infrastructure defaults with env var overrides. Acceptable for CI orchestration context.
+
+---
+
+### Category 3: Backend module boundaries
+
+| Files inspected | 8 (all `backend/app/modules/production/product/*` files + `alembic/env.py`) |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (Q1-Q8) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- All new backend code is within `backend/app/modules/production/product/` — same module, no cross-module boundary violations.
+- `sync_config_api.py` imports from `app.modules.production.product.feishu.sync` and `app.modules.production.product.output_schemas` — same module, allowed.
+- `sync_config_api.py` imports `from app.platform.integrations.feishu.bitable import BitableClient` — platform layer public integration, allowed.
+- `alembic/env.py` adds `import_module("app.modules.production.product.sync_operation_log_model")` — global layer registering module model, standard pattern.
+- No circular dependencies detected.
+
+---
+
+### Category 4: API and authentication
+
+| Files inspected | 2 (`output_api.py`, `sync_config_api.py`) |
+| Files not inspected | 0 |
+| Rules evaluated | 7 (Q1-Q7) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+#### Security concern (outside AGENTS.md audit scope) — RESOLVED
+- ~~⚠️ **`backend/app/modules/production/product/output_api.py:~630-645`** — **SQL注入风险**~~ — 已修复。`import_from_bitable` 端点现在使用 SQLAlchemy ORM 的 `and_()`、`or_()`、`not_()` 构建查询，不再使用 f-string 拼接 SQL。
+
+  **问题代码：**
+  ```python
+  or_clauses = " OR ".join(
+      [
+          f"(product_name = '{k.split('|')[0]}' AND workshop = '{k.split('|')[1]}' "
+          f"AND batch_no = '{k.split('|')[2]}' AND production_date = '{k.split('|')[3]}')"
+          for k in existing_keys
+      ]
+  )
+  result = await db.execute(
+      text(
+          "SELECT product_name, workshop, batch_no, production_date "
+          "FROM production.product_outputs WHERE is_deleted = false AND (" + or_clauses + ")"
+      )
+  )
+  ```
+
+  **修复建议：** 使用参数化查询，例如：
+  ```python
+  from sqlalchemy import or_, and_
+  conditions = []
+  params = {}
+  for i, k in enumerate(existing_keys):
+      parts = k.split('|')
+      conditions.append(
+          and_(
+              ProductOutput.product_name == parts[0],
+              ProductOutput.workshop == parts[1],
+              ProductOutput.batch_no == parts[2],
+              ProductOutput.production_date == parts[3],
+          )
+      )
+  if conditions:
+      query = select(...).where(ProductOutput.is_deleted == False, or_(*conditions))
+  ```
+
+#### Positive observations
+- All endpoints require `RequiredUser` authentication ✓
+- All responses use `ApiResponse` wrapper ✓
+- Delete operations use soft delete (`is_deleted = true`) ✓
+- `sync_config_api.py` uses parameterized queries correctly ✓
+- `feishu/sync.py` uses parameterized queries correctly ✓
+
+---
+
+### Category 5: Models and migrations
+
+| Files inspected | 5 (`alembic/env.py`, 2 migrations, `output_models.py`, `sync_operation_log_model.py`) |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (Q1-Q11) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- Migration `0054` adds `import_batch_id` column to `production.product_outputs` — single module, correct schema.
+- Migration `0055` creates `production.sync_operation_logs` table — single module, correct schema. Includes `created_by`/`updated_by` FK to `identity.users`, soft delete (`is_deleted`), and proper indexes.
+- `output_models.py` adds `import_batch_id`, `feishu_record_id`, `sync_status` fields — consistent with migration 0054.
+- `sync_operation_log_model.py` — model fields consistent with migration 0055. Extends `BaseModel` (inherits id, created_at, updated_at, etc.).
+- `alembic/env.py` registers the new model for autogenerate detection — correct pattern.
+- Migration chain: `0053 → 0054 → 0055` — sequential, no gaps.
+
+---
+
+### Category 6: Configuration and logging
+
+| Files inspected | 2 (`feishu/sync.py`, `output_service.py`) |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- `feishu/sync.py` uses `logger.info()` and `logger.exception()` — no sensitive data in log messages.
+- `output_service.py` uses `logger.info()` — no sensitive data.
+- No `os.getenv()` usage in newly added code. (`alembic/env.py` has pre-existing `os.environ.get("ALEMBIC_TARGET_SCHEMA")` — not introduced by this PR.)
+
+---
+
+### Category 7: External services and background tasks
+
+| Files inspected | 2 (`feishu/sync.py`, `sync_config_api.py`) |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- `feishu/sync.py` — Feishu Bitable sync service. All operations are synchronous (awaited). No `asyncio.create_task()` usage.
+- `sync_config_api.py` — sync endpoints call service layer synchronously. No background task creation.
+- Exception check: `asyncio.create_task()` allowed in long-running background workers — not applicable here, no tasks created.
+
+---
+
+### Category 8: Backend tests
+
+| Files inspected | 0 |
+| Rules evaluated | 0 |
+| Status | not affected — no test files changed |
+
+---
+
+### Category 9: Frontend component boundaries
+
+| Files inspected | 4 (2 page files, `AnnualReviewTab.tsx`, `ProductSyncConfig.tsx`) |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (Q1-Q8) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- All components have `'use client'` directive ✓
+- All API calls go through `@/actions/*` (Server Actions) — no direct `fetch()` from client components ✓
+- Components are in correct directories: `app/(dashboard)/production/product-output/` and `components/production/` ✓
+- No barrel file violations ✓
+- No imports of server-only modules from client components ✓
+
+---
+
+### Category 10: Frontend API and generated types
+
+| Files inspected | 6 (`actions/product-output.ts`, `actions/product-sync.ts`, `lib/api/server/base.ts`, `lib/api/server/product-output.ts`, `types/generated/schema.ts`, `types/product-output.ts`) |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (Q1-Q11) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+- All `'use server'` files import types (not define them) ✓
+- `actions/product-sync.ts` uses `components["schemas"]["ProductSyncConfigCreate"]` from generated schema — correct ✓
+- `types/product-output.ts` defines domain ViewModel types (not API types) with explicit comment — acceptable ✓
+- All server API calls use `apiFetch`/`apiFetchRaw` from `base.ts` ✓
+- `getApiBaseUrl()` defined only in `base.ts` ✓
+- `types/generated/schema.ts` is auto-generated (CI verifies drift) ✓
+- `.gitattributes` ensures `text eol=lf` for generated files ✓
+- `base.ts` adds `fetchWithRetry()` with bounded retries — pre-existing from PR #28, unchanged ✓
+
+#### Minor observation (not a finding)
+- `lib/api/server/product-output.ts` prepends `getApiBaseUrl()` explicitly in every call (e.g., `${getApiBaseUrl()}/api/v1/...`). Other server API modules pass relative paths to `apiFetch()` which handles the base URL internally. This is redundant but not a rule violation.
+
+---
+
+### Category 11: Proxy and routing
+
+| Files inspected | 0 |
+| Rules evaluated | 0 |
+| Status | not affected — no `proxy.ts` changes |
+
+---
+
+### Category 12: Cross-project OpenAPI
+
+| Files inspected | 2 (`.gitattributes`, `types/generated/schema.ts`) |
+| Rules evaluated | 3 |
+| Confirmed findings | 0 |
+
+`types/generated/schema.ts` is auto-generated. `.gitattributes` ensures consistent line endings. CI verifies drift.
+
+---
+
+### Categories not affected
+
+Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), Category 14 (E2E) — no changed files in scope.
+
+---
+
+### Category summary
+
+| Category | Blocking | High | Medium | Low | Note |
+|---|---|---|---|---|---|
+| 1. Repository layout | 0 | 0 | 0 | 0 | Clean |
+| 2. Secrets | 0 | 0 | 0 | 0 | Clean |
+| 3. Module boundaries | 0 | 0 | 0 | 0 | Clean |
+| 4. API & auth | 0 | 0 | 0 | 0 | Clean (1 security concern outside scope) |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | Clean |
+| 6. Config & logging | 0 | 0 | 0 | 0 | Clean |
+| 7. External services | 0 | 0 | 0 | 0 | Clean |
+| 9. Frontend boundaries | 0 | 0 | 0 | 0 | Clean |
+| 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean |
+| 12. OpenAPI | 0 | 0 | 0 | 0 | CI verifies |
+| **Total** | **0** | **0** | **0** | **0** | **0 findings** (1 security concern outside scope) |
