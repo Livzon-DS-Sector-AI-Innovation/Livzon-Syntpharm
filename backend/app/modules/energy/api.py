@@ -17,8 +17,6 @@ from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.schemas import (
-    UnitConsumptionTargetCreate,
-    UnitConsumptionTargetUpdate,
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
     CollectLogResponse,
@@ -39,6 +37,8 @@ from app.modules.energy.schemas import (
     EnergyWorkshopUpdate,
     FeishuEnergyImportRequest,
     FeishuEnergyImportResponse,
+    UnitConsumptionTargetCreate,
+    UnitConsumptionTargetUpdate,
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
