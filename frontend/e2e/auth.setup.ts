@@ -88,7 +88,42 @@ export default async function globalSetup(config: FullConfig) {
   
   console.log('✅ Auth cookie set successfully')
 
-  // Step 4: Navigate to production page and verify
+  // Step 4: Create test workshop data for energy tests
+  console.log('🏭 Creating test workshop data...')
+  try {
+    const workshopResponse = await context.request.post(
+      `${apiURL}/api/v1/energy/workshops`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        data: {
+          code: 'E2E-TEST-WORKSHOP',
+          name: 'E2E测试车间',
+          category: 'workshop',
+          sort_order: 0,
+          is_active: true,
+        },
+      },
+    )
+
+    if (workshopResponse.ok()) {
+      console.log('✅ Test workshop created successfully')
+    } else {
+      // Workshop might already exist (idempotent), check if it's a duplicate error
+      const responseText = await workshopResponse.text()
+      if (responseText.includes('duplicate') || responseText.includes('已存在')) {
+        console.log('ℹ️  Test workshop already exists (skipping creation)')
+      } else {
+        console.warn(`⚠️  Workshop creation failed: ${workshopResponse.status()} ${responseText}`)
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️  Failed to create test workshop:', error)
+  }
+
+  // Step 5: Navigate to production page and verify
   console.log('🚀 Navigating to production page...')
   await page.goto(`${baseURL}/production`, {
     waitUntil: 'networkidle',
