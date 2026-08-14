@@ -31,10 +31,20 @@ test.describe('能源单耗智能分析功能', () => {
     // 等待下拉菜单关闭
     await page.waitForSelector('.ant-select-dropdown', { state: 'hidden', timeout: 5000 })
 
-    // 2. 选择月份
+    // 2. 选择月份 - MonthPicker 使用不同的选择器
     await page.locator('.ant-picker-input > input').first().click()
+    
+    // 等待月份面板出现
+    await page.waitForSelector('.ant-picker-panel-container', { state: 'visible', timeout: 10000 })
     await page.waitForTimeout(500)
-    await page.getByRole('cell', { name: /\d+/ }).first().click()
+    
+    // 点击当前月份的单元格（MonthPicker 显示的是月份网格）
+    const monthCell = page.locator('.ant-picker-cell-inner').filter({ hasText: /\d+月/ }).first()
+    await expect(monthCell).toBeVisible({ timeout: 5000 })
+    await monthCell.click()
+    
+    // 等待面板关闭
+    await page.waitForSelector('.ant-picker-panel-container', { state: 'hidden', timeout: 5000 })
 
     // 3. 设定目标
     await page.getByRole('button', { name: /设定目标/ }).click()
