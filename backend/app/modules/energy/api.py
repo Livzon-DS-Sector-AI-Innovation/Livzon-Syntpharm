@@ -19,6 +19,7 @@ from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.models import EnergyUnitConsumptionTarget
 from app.modules.energy.schemas import (
+    AIAnalysisRequest,
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
     CollectLogResponse,
@@ -748,3 +749,50 @@ async def update_target(
 ) -> JSONResponse:
     target = await service.update_target(db, target_id, body.target_unit_consumption)
     return success_response(_target_to_response(target))
+
+
+@router.post("/ai-analysis-v2", summary="AI 能耗分析 V2（支持多产品和单耗）")
+async def ai_analysis_v2(
+    body: AIAnalysisRequest,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """执行 AI 能耗分析，支持多产品产量输入和单耗计算"""
+    from uuid import UUID
+
+    from app.modules.energy.schemas import AIAnalysisResponse, ProductionItemDetail
+
+    result = await service.analyze_energy_v2(
+        db,
+        workshop_id=UUID(body.workshop_id),
+        analysis_month=body.analysis_month,
+        production_items=body.production_items,
+        include_ai_suggestion=body.include_ai_suggestion,
+    )
+
+    # 构造产品明细
+    production_items_detail = [
+        ProductionItemDetail(
+            product_name=item["product_name"],
+            quantity=item["quantity"],
+            conversion_factor=item["conversion_factor"],
+            converted_quantity=item["converted_quantity"],
+        )
+        for item in result["production_items"]
+    ]
+
+    response = AIAnalysisResponse(
+        workshop_id=result["workshop_id"],
+        workshop_name=result["workshop_name"],
+        analysis_month=result["analysis_month"],
+        total_energy_kwh=result["total_energy_kwh"],
+        production_items=production_items_detail,
+        converted_production=result["converted_production"],
+        actual_unit_consumption=result["actual_unit_consumption"],
+        target_unit_consumption=result["target_unit_consumption"],
+        deviation_rate=result["deviation_rate"],
+        deviation_status=result["deviation_status"],
+        ai_suggestion=result["ai_suggestion"],
+    )
+
+    return success_response(response.model_dump())

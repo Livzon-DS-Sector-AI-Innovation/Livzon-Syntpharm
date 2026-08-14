@@ -948,3 +948,81 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
 """
 
     return prompt
+
+
+async def analyze_energy_v2(
+    db: AsyncSession,
+    workshop_id: UUID,
+    analysis_month: str,
+    production_items: list[dict[str, Any]],
+    include_ai_suggestion: bool = True,
+) -> dict[str, Any]:
+    """执行 AI 能耗分析 V2（支持多产品和单耗计算）"""
+    from app.core.llm import LLMClient
+    from app.modules.energy.schemas import AISuggestion
+
+    # 1. 准备分析数据
+    analysis_data = await prepare_ai_analysis_data(db, workshop_id, analysis_month, production_items)
+
+    # 2. 生成 AI 建议（如果请求）
+    ai_suggestion = None
+    if include_ai_suggestion:
+        try:
+            prompt = construct_ai_prompt(analysis_data)
+            client = LLMClient()
+            messages = [{"role": "user", "content": prompt}]
+
+            response_text = await client.chat(messages, temperature=0.3)
+            content = response_text.replace("```json", "").replace("```", "").strip()
+
+            import json
+            try:
+                ai_result = json.loads(content)
+                ai_suggestion = AISuggestion(
+                    status=analysis_data["deviation_status"],
+                    summary=ai_result.get("summary", ""),
+                    detailed_analysis=ai_result.get("detailed_analysis", ""),
+                    recommendations=ai_result.get("recommendations", []),
+                    confidence_level=ai_result.get("confidence_level", "medium"),
+                )
+            except json.JSONDecodeError:
+                ai_suggestion = AISuggestion(
+                    status=analysis_data["deviation_status"],
+                    summary="AI 分析暂时不可用",
+                    detailed_analysis="请稍后重试",
+                    recommendations=[],
+                    confidence_level="low",
+                )
+        except Exception as e:
+            ai_suggestion = AISuggestion(
+                status=analysis_data["deviation_status"],
+                summary=f"AI 分析失败: {str(e)}",
+                detailed_analysis="",
+                recommendations=[],
+                confidence_level="low",
+            )
+
+    # 3. 构造产品明细（用于响应）
+    production_items_detail = []
+    for item in analysis_data["production_details"]:
+        production_items_detail.append({
+            "product_name": item["product_name"],
+            "quantity": item["quantity"],
+            "unit": "kg",
+            "conversion_factor": item["factor"],
+            "converted_quantity": item["converted_qty"],
+        })
+
+    return {
+        "workshop_id": str(analysis_data["workshop_id"]),
+        "workshop_name": analysis_data["workshop_name"],
+        "analysis_month": analysis_data["analysis_month"],
+        "total_energy_kwh": analysis_data["total_energy_kwh"],
+        "production_items": production_items_detail,
+        "converted_production": analysis_data["converted_production"],
+        "actual_unit_consumption": analysis_data["actual_unit_consumption"],
+        "target_unit_consumption": analysis_data["target_unit_consumption"],
+        "deviation_rate": analysis_data["deviation_rate"],
+        "deviation_status": analysis_data["deviation_status"],
+        "ai_suggestion": ai_suggestion,
+    }
