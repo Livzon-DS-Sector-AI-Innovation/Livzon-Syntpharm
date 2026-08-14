@@ -70,12 +70,16 @@ test.describe('能源单耗智能分析功能', () => {
     // 5. 录入多产品
     await page.getByRole('button', { name: /添加产品/ }).click()
     
+    // 等待新行添加到表格
+    await page.waitForSelector('table tbody tr', { state: 'visible', timeout: 5000 })
+    
     // 产品名称字段使用 placeholder="输入名称"
     await page.getByPlaceholder('输入名称').fill('布南色林')
     
-    // 产量字段是 InputNumber，通过表格行定位
-    const lastRow = page.locator('table tbody tr').last()
-    await lastRow.locator('.ant-input-number-input').fill('12000')
+    // 产量字段是 InputNumber，使用更通用的选择器
+    // Ant Design InputNumber 的输入框可以通过 input[aria-label] 或 .ant-input-number input 定位
+    const quantityInput = page.locator('.ant-input-number').first().locator('input')
+    await quantityInput.fill('12000')
 
     // 6. 开始分析
     await page.getByRole('button', { name: /开始智能分析/ }).click()
