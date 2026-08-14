@@ -13,15 +13,20 @@ test.describe('能源单耗智能分析功能', () => {
   })
 
   test('TC1: 设定目标 → 录入多产品 → 查看分析结果', async ({ page }) => {
-    // 1. 选择车间 - 使用更稳健的选择器
+    // 1. 选择车间 - 使用 getByRole 定位 Select
     const workshopSelect = page.locator('.ant-select').filter({ hasText: '选择车间' })
     await workshopSelect.click()
     
-    // 等待下拉选项出现（Ant Design 5.x 使用 rc-virtual-list）
-    await page.waitForSelector('.ant-select-item-option', { state: 'visible', timeout: 5000 })
+    // 等待下拉菜单容器出现并可见
+    await page.waitForSelector('.ant-select-dropdown', { state: 'visible', timeout: 10000 })
     
-    // 点击第一个选项
-    await page.locator('.ant-select-item-option').first().click()
+    // 增加短暂延迟确保选项渲染完成
+    await page.waitForTimeout(500)
+    
+    // 尝试多种选择器策略
+    const firstOption = page.locator('.ant-select-item-option-content').first()
+    await expect(firstOption).toBeVisible({ timeout: 5000 })
+    await firstOption.click()
     
     // 验证选择生效
     await expect(workshopSelect).not.toHaveText(/选择车间/, { timeout: 5000 })
