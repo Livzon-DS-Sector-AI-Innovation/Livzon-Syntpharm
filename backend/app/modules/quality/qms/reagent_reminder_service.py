@@ -49,7 +49,7 @@ class ReagentReminderService:
             config.updated_at = datetime.utcnow()
         else:
             config = ReagentReminderConfig(
-                id=str(uuid.uuid4()),
+                id=uuid.uuid4(),
                 feishu_app_id=feishu_app_id,
                 feishu_app_secret=feishu_app_secret,
                 feishu_chat_id=feishu_chat_id,
