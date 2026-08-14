@@ -13,19 +13,26 @@ test.describe('能源单耗智能分析功能', () => {
   })
 
   test('TC1: 设定目标 → 录入多产品 → 查看分析结果', async ({ page }) => {
-    // 1. 选择车间
+    // 1. 选择车间 - 等待车间数据加载
+    // 拦截 API 请求确保数据加载完成
+    const workshopsPromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/energy/workshops') && response.status() === 200
+    )
+    
     const workshopSelect = page.locator('.ant-select').filter({ hasText: '选择车间' })
     await workshopSelect.click()
+    
+    // 等待 API 响应
+    await workshopsPromise
     
     // 等待下拉菜单容器出现并可见
     await page.waitForSelector('.ant-select-dropdown', { state: 'visible', timeout: 10000 })
     
-    // 增加短暂延迟确保选项渲染完成
-    await page.waitForTimeout(500)
+    // 等待选项渲染完成
+    await page.waitForSelector('.ant-select-item-option-content', { state: 'visible', timeout: 5000 })
     
     // 点击第一个选项
     const firstOption = page.locator('.ant-select-item-option-content').first()
-    await expect(firstOption).toBeVisible({ timeout: 5000 })
     await firstOption.click()
     
     // 等待下拉菜单关闭
@@ -77,7 +84,6 @@ test.describe('能源单耗智能分析功能', () => {
     await page.getByPlaceholder('输入名称').fill('布南色林')
     
     // 产量字段是 InputNumber，使用更通用的选择器
-    // Ant Design InputNumber 的输入框可以通过 input[aria-label] 或 .ant-input-number input 定位
     const quantityInput = page.locator('.ant-input-number').first().locator('input')
     await quantityInput.fill('12000')
 
