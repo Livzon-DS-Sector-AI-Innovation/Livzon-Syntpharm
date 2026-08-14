@@ -31,15 +31,15 @@ test.describe('能源单耗智能分析功能', () => {
     // 等待下拉菜单关闭
     await page.waitForSelector('.ant-select-dropdown', { state: 'hidden', timeout: 5000 })
 
-    // 2. 选择月份 - MonthPicker 使用不同的选择器
+    // 2. 选择月份 - Ant Design 6.x MonthPicker 显示英文月份缩写 (Jan, Feb...)
     await page.locator('.ant-picker-input > input').first().click()
     
     // 等待月份面板出现
     await page.waitForSelector('.ant-picker-panel-container', { state: 'visible', timeout: 10000 })
     await page.waitForTimeout(500)
     
-    // 点击当前月份的单元格（MonthPicker 显示的是月份网格）
-    const monthCell = page.locator('.ant-picker-cell-inner').filter({ hasText: /\d+月/ }).first()
+    // 点击任意月份单元格（使用英文月份缩写匹配）
+    const monthCell = page.locator('.ant-picker-cell-inner').filter({ hasText: /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/ }).first()
     await expect(monthCell).toBeVisible({ timeout: 5000 })
     await monthCell.click()
     
