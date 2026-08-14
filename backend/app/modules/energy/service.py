@@ -976,6 +976,7 @@ async def analyze_energy_v2(
             content = response_text.replace("```json", "").replace("```", "").strip()
 
             import json
+
             try:
                 ai_result = json.loads(content)
                 ai_suggestion = AISuggestion(
@@ -1005,13 +1006,15 @@ async def analyze_energy_v2(
     # 3. 构造产品明细（用于响应）
     production_items_detail = []
     for item in analysis_data["production_details"]:
-        production_items_detail.append({
-            "product_name": item["product_name"],
-            "quantity": item["quantity"],
-            "unit": "kg",
-            "conversion_factor": item["factor"],
-            "converted_quantity": item["converted_qty"],
-        })
+        production_items_detail.append(
+            {
+                "product_name": item["product_name"],
+                "quantity": item["quantity"],
+                "unit": "kg",
+                "conversion_factor": item["factor"],
+                "converted_quantity": item["converted_qty"],
+            }
+        )
 
     return {
         "workshop_id": str(analysis_data["workshop_id"]),
