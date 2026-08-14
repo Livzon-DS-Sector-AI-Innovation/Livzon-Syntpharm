@@ -13,12 +13,18 @@ test.describe('能源单耗智能分析功能', () => {
   })
 
   test('TC1: 设定目标 → 录入多产品 → 查看分析结果', async ({ page }) => {
-    // 1. 选择车间
-    await page.locator('.ant-select').filter({ hasText: '选择车间' }).click()
-    // 等待下拉菜单弹出 (使用更稳健的选择器)
-    await page.waitForSelector('.ant-select-dropdown', { state: 'visible', timeout: 5000 })
-    // 点击第一个选项 (使用类名定位，兼容 Ant Design)
-    await page.locator('.ant-select-item').first().click()
+    // 1. 选择车间 - 使用更稳健的选择器
+    const workshopSelect = page.locator('.ant-select').filter({ hasText: '选择车间' })
+    await workshopSelect.click()
+    
+    // 等待下拉选项出现（Ant Design 5.x 使用 rc-virtual-list）
+    await page.waitForSelector('.ant-select-item-option', { state: 'visible', timeout: 5000 })
+    
+    // 点击第一个选项
+    await page.locator('.ant-select-item-option').first().click()
+    
+    // 验证选择生效
+    await expect(workshopSelect).not.toHaveText(/选择车间/, { timeout: 5000 })
 
     // 2. 选择月份
     await page.locator('.ant-picker-input > input').first().click()
