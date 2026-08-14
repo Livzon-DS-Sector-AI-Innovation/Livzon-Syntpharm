@@ -13,23 +13,18 @@ test.describe('能源单耗智能分析功能', () => {
   })
 
   test('TC1: 设定目标 → 录入多产品 → 查看分析结果', async ({ page }) => {
-    // 1. 选择车间 - 等待车间数据加载
-    // 拦截 API 请求确保数据加载完成
-    const workshopsPromise = page.waitForResponse(
-      response => response.url().includes('/api/v1/energy/workshops') && response.status() === 200
-    )
-    
+    // 1. 选择车间 - 等待下拉菜单有数据
     const workshopSelect = page.locator('.ant-select').filter({ hasText: '选择车间' })
     await workshopSelect.click()
     
-    // 等待 API 响应
-    await workshopsPromise
-    
-    // 等待下拉菜单容器出现并可见
+    // 等待下拉菜单出现
     await page.waitForSelector('.ant-select-dropdown', { state: 'visible', timeout: 10000 })
     
-    // 等待选项渲染完成
-    await page.waitForSelector('.ant-select-item-option-content', { state: 'visible', timeout: 5000 })
+    // 等待选项出现（不是"暂无数据"）
+    await page.waitForFunction(() => {
+      const options = document.querySelectorAll('.ant-select-item-option-content')
+      return options.length > 0 && !options[0].textContent?.includes('暂无数据')
+    }, { timeout: 10000 })
     
     // 点击第一个选项
     const firstOption = page.locator('.ant-select-item-option-content').first()
