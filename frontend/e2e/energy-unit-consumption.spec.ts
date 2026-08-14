@@ -46,8 +46,21 @@ test.describe('能源单耗智能分析功能', () => {
     // 等待面板关闭
     await page.waitForSelector('.ant-picker-panel-container', { state: 'hidden', timeout: 5000 })
 
-    // 3. 设定目标
-    await page.getByRole('button', { name: /设定目标/ }).click()
+    // 3. 设定目标 - 等待目标区域加载完成
+    await page.waitForTimeout(1000)
+    
+    // 检查是否已有目标（显示"修改目标"）或需要设定新目标（显示"设定目标"）
+    const hasExistingTarget = await page.getByRole('button', { name: /修改目标/ }).isVisible({ timeout: 3000 }).catch(() => false)
+    
+    if (hasExistingTarget) {
+      // 已有目标，点击修改
+      await page.getByRole('button', { name: /修改目标/ }).click()
+    } else {
+      // 没有目标，点击设定
+      await page.getByRole('button', { name: /设定目标/ }).click()
+    }
+    
+    // 填写目标值
     await page.getByPlaceholder('请输入目标单耗').fill('2.30')
     await page.getByRole('button', { name: '确认设定' }).click()
 
@@ -56,8 +69,13 @@ test.describe('能源单耗智能分析功能', () => {
 
     // 5. 录入多产品
     await page.getByRole('button', { name: /添加产品/ }).click()
-    await page.getByPlaceholder('产品名称').fill('布南色林')
-    await page.getByPlaceholder('产量').fill('12000')
+    
+    // 产品名称字段使用 placeholder="输入名称"
+    await page.getByPlaceholder('输入名称').fill('布南色林')
+    
+    // 产量字段是 InputNumber，通过表格行定位
+    const lastRow = page.locator('table tbody tr').last()
+    await lastRow.locator('.ant-input-number-input').fill('12000')
 
     // 6. 开始分析
     await page.getByRole('button', { name: /开始智能分析/ }).click()
