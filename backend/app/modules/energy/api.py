@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -16,6 +17,7 @@ from app.core.response import paginated_response, success_response
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
+from app.modules.energy.models import EnergyUnitConsumptionTarget
 from app.modules.energy.schemas import (
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
@@ -697,7 +699,7 @@ async def get_job_status(job_id: str, current_user: RequiredUser) -> JSONRespons
 # ── 单耗目标 ──────────────────────────────────────────────────────────────
 
 
-def _target_to_response(target) -> dict:
+def _target_to_response(target: EnergyUnitConsumptionTarget) -> dict[str, Any]:
     """将 ORM 对象转换为响应格式"""
     return {
         "id": str(target.id),
