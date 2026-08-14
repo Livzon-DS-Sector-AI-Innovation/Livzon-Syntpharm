@@ -17,6 +17,8 @@ from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.schemas import (
+    UnitConsumptionTargetCreate,
+    UnitConsumptionTargetUpdate,
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
     CollectLogResponse,
@@ -690,3 +692,57 @@ async def get_job_status(job_id: str, current_user: RequiredUser) -> JSONRespons
     if not job:
         raise NotFoundException("job", job_id)
     return success_response(job)
+
+
+# ── 单耗目标 ──────────────────────────────────────────────────────────────
+
+
+def _target_to_response(target) -> dict:
+    """将 ORM 对象转换为响应格式"""
+    return {
+        "id": str(target.id),
+        "workshop_id": str(target.workshop_id),
+        "target_month": target.target_month.strftime("%Y-%m"),
+        "target_unit_consumption": float(target.target_unit_consumption),
+        "created_at": target.created_at.isoformat() if target.created_at else None,
+    }
+
+
+@router.post("/targets", summary="创建单耗目标")
+async def create_target(
+    body: UnitConsumptionTargetCreate,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+
+    target = await service.create_target(
+        db,
+        workshop_id=UUID(body.workshop_id),
+        target_month=body.target_month,
+        target_unit_consumption=body.target_unit_consumption,
+    )
+    return success_response(_target_to_response(target))
+
+
+@router.get("/targets/{workshop_id}/{target_month}", summary="查询单耗目标")
+async def get_target(
+    workshop_id: UUID,
+    target_month: str,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    target = await service.get_target(db, workshop_id, target_month)
+    if not target:
+        raise NotFoundException("单耗目标", f"{workshop_id}-{target_month}")
+    return success_response(_target_to_response(target))
+
+
+@router.put("/targets/{target_id}", summary="更新单耗目标")
+async def update_target(
+    target_id: UUID,
+    body: UnitConsumptionTargetUpdate,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    target = await service.update_target(db, target_id, body.target_unit_consumption)
+    return success_response(_target_to_response(target))
