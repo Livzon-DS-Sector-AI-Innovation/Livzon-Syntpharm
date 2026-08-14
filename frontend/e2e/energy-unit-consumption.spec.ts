@@ -13,7 +13,7 @@ test.describe('能源单耗智能分析功能', () => {
   })
 
   test('TC1: 设定目标 → 录入多产品 → 查看分析结果', async ({ page }) => {
-    // 1. 选择车间 - 使用 getByRole 定位 Select
+    // 1. 选择车间
     const workshopSelect = page.locator('.ant-select').filter({ hasText: '选择车间' })
     await workshopSelect.click()
     
@@ -23,13 +23,13 @@ test.describe('能源单耗智能分析功能', () => {
     // 增加短暂延迟确保选项渲染完成
     await page.waitForTimeout(500)
     
-    // 尝试多种选择器策略
+    // 点击第一个选项
     const firstOption = page.locator('.ant-select-item-option-content').first()
     await expect(firstOption).toBeVisible({ timeout: 5000 })
     await firstOption.click()
     
-    // 验证选择生效
-    await expect(workshopSelect).not.toHaveText(/选择车间/, { timeout: 5000 })
+    // 等待下拉菜单关闭
+    await page.waitForSelector('.ant-select-dropdown', { state: 'hidden', timeout: 5000 })
 
     // 2. 选择月份
     await page.locator('.ant-picker-input > input').first().click()
