@@ -9,7 +9,10 @@ export default function proxy(request: NextRequest) {
 
   if (pathname.startsWith('/api/v1')) {
     const url = new URL(pathname + request.nextUrl.search, BACKEND_URL)
-    return NextResponse.rewrite(url)
+    const response = NextResponse.rewrite(url)
+    // Prevent Next.js standalone mode from leaking internal rewrite URL to browser
+    response.headers.delete('x-middleware-rewrite')
+    return response
   }
 
   const response = NextResponse.next()
