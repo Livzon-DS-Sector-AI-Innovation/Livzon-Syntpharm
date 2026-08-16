@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
 from app.modules.equipment.models.equipment import Equipment
@@ -67,7 +67,7 @@ async def create_equipment_category(
 ) -> ApiResponse:
     """创建设备分类"""
     category = await service.create_equipment_category(db, data)
-    return success_response(data=EquipmentCategoryResponse.model_validate(category))
+    return build_response(data=EquipmentCategoryResponse.model_validate(category))
 
 
 @router.get("/categories", summary="获取设备分类列表")
@@ -79,9 +79,9 @@ async def get_equipment_categories(
     """获取设备分类列表"""
     if tree:
         categories = await service.get_equipment_category_tree(db)
-        return success_response(data=[EquipmentCategoryTree.model_validate(c) for c in categories])
+        return build_response(data=[EquipmentCategoryTree.model_validate(c) for c in categories])
     categories = await service.get_equipment_categories(db, parent_id)
-    return success_response(data=[EquipmentCategoryResponse.model_validate(c) for c in categories])
+    return build_response(data=[EquipmentCategoryResponse.model_validate(c) for c in categories])
 
 
 @router.get("/categories/{category_id}", summary="获取设备分类详情")
@@ -91,7 +91,7 @@ async def get_equipment_category(
 ) -> ApiResponse:
     """获取设备分类详情"""
     category = await service.get_equipment_category_by_id(db, category_id)
-    return success_response(data=EquipmentCategoryResponse.model_validate(category))
+    return build_response(data=EquipmentCategoryResponse.model_validate(category))
 
 
 @router.put("/categories/{category_id}", summary="更新设备分类")
@@ -103,7 +103,7 @@ async def update_equipment_category(
 ) -> ApiResponse:
     """更新设备分类"""
     category = await service.update_equipment_category(db, category_id, data)
-    return success_response(data=EquipmentCategoryResponse.model_validate(category))
+    return build_response(data=EquipmentCategoryResponse.model_validate(category))
 
 
 @router.delete("/categories/{category_id}", summary="删除设备分类")
@@ -114,7 +114,7 @@ async def delete_equipment_category(
 ) -> ApiResponse:
     """删除设备分类"""
     await service.delete_equipment_category(db, category_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 位置管理 ====================
@@ -126,7 +126,7 @@ async def create_location(
 ) -> ApiResponse:
     """创建位置"""
     location = await service.create_location(db, data)
-    return success_response(data=LocationResponse.model_validate(location))
+    return build_response(data=LocationResponse.model_validate(location))
 
 
 @router.get("/locations", summary="获取位置列表")
@@ -138,9 +138,9 @@ async def get_locations(
     """获取位置列表"""
     if tree:
         locations = await service.get_location_tree(db)
-        return success_response(data=[LocationTree.model_validate(loc) for loc in locations])
+        return build_response(data=[LocationTree.model_validate(loc) for loc in locations])
     locations = await service.get_locations(db, parent_id)
-    return success_response(data=[LocationResponse.model_validate(loc) for loc in locations])
+    return build_response(data=[LocationResponse.model_validate(loc) for loc in locations])
 
 
 @router.get("/locations/{location_id}", summary="获取位置详情")
@@ -150,7 +150,7 @@ async def get_location(
 ) -> ApiResponse:
     """获取位置详情"""
     location = await service.get_location_by_id(db, location_id)
-    return success_response(data=LocationResponse.model_validate(location))
+    return build_response(data=LocationResponse.model_validate(location))
 
 
 @router.put("/locations/{location_id}", summary="更新位置")
@@ -162,7 +162,7 @@ async def update_location(
 ) -> ApiResponse:
     """更新位置"""
     location = await service.update_location(db, location_id, data)
-    return success_response(data=LocationResponse.model_validate(location))
+    return build_response(data=LocationResponse.model_validate(location))
 
 
 @router.delete("/locations/{location_id}", summary="删除位置")
@@ -173,7 +173,7 @@ async def delete_location(
 ) -> ApiResponse:
     """删除位置"""
     await service.delete_location(db, location_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 部门列表（供设备表单下拉使用） ====================
@@ -183,7 +183,7 @@ async def get_departments_list(
 ) -> ApiResponse:
     """获取可选部门列表，含部门名称和负责人姓名"""
     departments = await service.get_departments_for_select(db)
-    return success_response(data=departments)
+    return build_response(data=departments)
 
 
 # ==================== 设备管理 ====================
@@ -195,7 +195,7 @@ async def create_equipment(
 ) -> ApiResponse:
     """创建设备"""
     equipment = await service.create_equipment(db, data)
-    return success_response(data=await _equipment_to_response(equipment, db))
+    return build_response(data=await _equipment_to_response(equipment, db))
 
 
 @router.get("/equipments", summary="获取设备列表")
@@ -230,7 +230,7 @@ async def get_equipment_statistics(
 ) -> ApiResponse:
     """获取设备统计"""
     stats = await service.get_equipment_statistics(db)
-    return success_response(data=EquipmentStatistics(**stats))
+    return build_response(data=EquipmentStatistics(**stats))
 
 
 @router.get("/equipments/{equipment_id}", summary="获取设备详情")
@@ -240,7 +240,7 @@ async def get_equipment(
 ) -> ApiResponse:
     """获取设备详情"""
     equipment = await service.get_equipment_by_id(db, equipment_id)
-    return success_response(data=await _equipment_to_response(equipment, db))
+    return build_response(data=await _equipment_to_response(equipment, db))
 
 
 @router.put("/equipments/{equipment_id}", summary="更新设备")
@@ -252,7 +252,7 @@ async def update_equipment(
 ) -> ApiResponse:
     """更新设备"""
     equipment = await service.update_equipment(db, equipment_id, data)
-    return success_response(data=await _equipment_to_response(equipment, db))
+    return build_response(data=await _equipment_to_response(equipment, db))
 
 
 @router.delete("/equipments/{equipment_id}", summary="删除设备")
@@ -263,4 +263,4 @@ async def delete_equipment(
 ) -> ApiResponse:
     """删除设备"""
     await service.delete_equipment(db, equipment_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")

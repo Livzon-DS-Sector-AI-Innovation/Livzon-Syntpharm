@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     MaintenancePlanCreate,
@@ -34,7 +34,7 @@ async def create_maintenance_plan(
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.create_maintenance_plan(db, data)
-    return success_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=MaintenancePlanResponse.model_validate(plan))
 
 
 @router.get("/", summary="维护计划列表")
@@ -72,7 +72,7 @@ async def get_overdue_plans(
 ) -> ApiResponse:
     _require_user(current_user)
     plans = await service.get_overdue_maintenance_plans(db, days)
-    return success_response(data=[MaintenancePlanResponse.model_validate(p) for p in plans])
+    return build_response(data=[MaintenancePlanResponse.model_validate(p) for p in plans])
 
 
 @router.get("/{plan_id}", summary="维护计划详情")
@@ -83,7 +83,7 @@ async def get_maintenance_plan(
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.get_maintenance_plan_by_id(db, plan_id)
-    return success_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=MaintenancePlanResponse.model_validate(plan))
 
 
 @router.put("/{plan_id}", summary="修改维护计划")
@@ -95,7 +95,7 @@ async def update_maintenance_plan(
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.update_maintenance_plan(db, plan_id, data)
-    return success_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=MaintenancePlanResponse.model_validate(plan))
 
 
 @router.delete("/{plan_id}", summary="删除维护计划")
@@ -106,4 +106,4 @@ async def delete_maintenance_plan(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_maintenance_plan(db, plan_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")

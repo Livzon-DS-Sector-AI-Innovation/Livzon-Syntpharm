@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models.inspection import InspectionTask
 from app.modules.equipment.schemas.inspection import (
@@ -96,7 +96,7 @@ async def create_route(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     route = await inspection_svc.create_route(db, data.model_dump())
-    return success_response(data=InspectionRouteResponse.model_validate(route))
+    return build_response(data=InspectionRouteResponse.model_validate(route))
 
 
 @router.get("/routes", summary="巡检路线列表")
@@ -172,7 +172,7 @@ async def get_route(
         )
         for loc in (route.locations_rel or [])
     ]
-    return success_response(data=resp)
+    return build_response(data=resp)
 
 
 @router.put("/routes/{route_id}", summary="更新巡检路线")
@@ -184,7 +184,7 @@ async def update_route(
 ) -> ApiResponse:
     update_data = data.model_dump(exclude_unset=True)
     route = await inspection_svc.update_route(db, route_id, update_data)
-    return success_response(data=InspectionRouteResponse.model_validate(route))
+    return build_response(data=InspectionRouteResponse.model_validate(route))
 
 
 @router.delete("/routes/{route_id}", summary="删除巡检路线")
@@ -194,7 +194,7 @@ async def delete_route(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await inspection_svc.delete_route(db, route_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @router.post("/routes/{route_id}/locations", summary="配置路线地点设备模板")
@@ -233,7 +233,7 @@ async def set_route_locations(
         )
         for loc in locations
     ]
-    return success_response(data=resp_list)
+    return build_response(data=resp_list)
 
 
 # ═══════════ 巡检任务 ═══════════
@@ -244,7 +244,7 @@ async def create_task(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.create_task(db, data.model_dump())
-    return success_response(data=_task_to_response(task))
+    return build_response(data=_task_to_response(task))
 
 
 @router.get("/tasks", summary="巡检任务列表")
@@ -300,7 +300,7 @@ async def get_task(
     completed_ids = await repo.get_task_equipment_completed_ids(db, task_id)
     resp.completed_equipment_ids = list(completed_ids)
     resp.completed_count = len(completed_ids)
-    return success_response(data=resp)
+    return build_response(data=resp)
 
 
 @router.put("/tasks/{task_id}/start", summary="开始巡检")
@@ -310,7 +310,7 @@ async def start_task(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.start_task(db, task_id)
-    return success_response(data=_task_to_response(task))
+    return build_response(data=_task_to_response(task))
 
 
 @router.put("/tasks/{task_id}/complete", summary="提交完成")
@@ -320,7 +320,7 @@ async def complete_task(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.complete_task(db, task_id)
-    return success_response(data=_task_to_response(task))
+    return build_response(data=_task_to_response(task))
 
 
 @router.post("/tasks/{task_id}/route-check", summary="提交线路巡检结果")
@@ -331,7 +331,7 @@ async def submit_route_check(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.submit_route_check(db, task_id, data.overall_result, data.route_summary)
-    return success_response(data=_task_to_response(task))
+    return build_response(data=_task_to_response(task))
 
 
 @router.put("/tasks/{task_id}/close", summary="关闭任务")
@@ -342,7 +342,7 @@ async def close_task(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.close_task(db, task_id, data.closure_remark if data else None)
-    return success_response(data=_task_to_response(task))
+    return build_response(data=_task_to_response(task))
 
 
 # ═══════════ 巡检执行 ═══════════
@@ -359,7 +359,7 @@ async def submit_equipment_check(
 ) -> ApiResponse:
     records = [r.model_dump() for r in data.records]
     result = await inspection_svc.submit_equipment_check(db, task_id, equipment_id, records)
-    return success_response(data=[InspectionRecordResponse.model_validate(r) for r in result])
+    return build_response(data=[InspectionRecordResponse.model_validate(r) for r in result])
 
 
 @router.post(
@@ -374,7 +374,7 @@ async def upload_equipment_photo(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
-    return success_response(data=InspectionPhotoResponse.model_validate(photo))
+    return build_response(data=InspectionPhotoResponse.model_validate(photo))
 
 
 @router.post(
@@ -388,7 +388,7 @@ async def upload_task_photo(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
-    return success_response(data=InspectionPhotoResponse.model_validate(photo))
+    return build_response(data=InspectionPhotoResponse.model_validate(photo))
 
 
 @router.get("/tasks/{task_id}/photos", summary="获取任务所有照片")
@@ -398,7 +398,7 @@ async def get_task_photos(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
-    return success_response(data=[InspectionPhotoResponse.model_validate(p) for p in photos])
+    return build_response(data=[InspectionPhotoResponse.model_validate(p) for p in photos])
 
 
 @router.get("/photos/{photo_id}/file", summary="查看照片文件")
@@ -435,7 +435,7 @@ async def remove_photo(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await inspection_svc.delete_photo(db, photo_id)
-    return success_response(message="照片已删除")
+    return build_response(message="照片已删除")
 
 
 # ═══════════ AI 分析 ═══════════
@@ -459,7 +459,7 @@ async def ai_analyze_photo(
         image_base64=data.image_base64,
         image_mime_type=data.image_mime_type,
     )
-    return success_response(
+    return build_response(
         data=[
             InspectionAIItemResult(
                 template_item_id=uuid.UUID(r["template_item_id"]),
@@ -549,7 +549,7 @@ async def get_history_detail(
         ],
         photos=[InspectionPhotoResponse.model_validate(p) for p in detail["photos"]],
     )
-    return success_response(data=model)
+    return build_response(data=model)
 
 
 # ═══════════ 路线定时任务 ═══════════
@@ -565,7 +565,7 @@ async def list_schedules(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     schedules = await inspection_svc.get_schedules_by_route(db, route_id)
-    return success_response(schedules)
+    return build_response(schedules)
 
 
 @router.post(
@@ -580,7 +580,7 @@ async def create_schedule(
 ) -> Any:
     data = body.model_dump(exclude_unset=True)
     schedule = await inspection_svc.create_schedule(db, route_id, data)
-    return success_response(InspectionScheduleResponse.model_validate(schedule))
+    return build_response(InspectionScheduleResponse.model_validate(schedule))
 
 
 @router.put(
@@ -598,7 +598,7 @@ async def update_schedule(
     schedule = await inspection_svc.update_schedule(db, schedule_id, data)
     if str(schedule.route_id) != str(route_id):
         raise NotFoundException("定时任务", str(schedule_id))
-    return success_response(InspectionScheduleResponse.model_validate(schedule))
+    return build_response(InspectionScheduleResponse.model_validate(schedule))
 
 
 @router.delete(
@@ -615,4 +615,4 @@ async def delete_schedule(
     if not schedule or str(schedule.route_id) != str(route_id):
         raise NotFoundException("定时任务", str(schedule_id))
     await inspection_svc.delete_schedule(db, schedule_id)
-    return success_response(None)
+    return build_response(None)

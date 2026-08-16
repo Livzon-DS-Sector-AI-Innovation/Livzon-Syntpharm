@@ -3,11 +3,12 @@
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import error_response, paginated_response, success_response
+from app.core.response import build_response, error_response, paginated_response
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvImportConfirmRequest,
@@ -25,7 +26,7 @@ async def preview_import(
     data_type: str = Query(..., description="数据类型: CPP/CQA"),
     import_mode: str = Query("create", description="导入模式: create/update/overwrite"),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> JSONResponse | ApiResponse:
     """上传Excel文件并预览导入数据"""
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -37,7 +38,7 @@ async def preview_import(
         db, file_content, product_id, data_type, import_mode
     )
 
-    return success_response(data=preview.model_dump())
+    return build_response(data=preview.model_dump())
 
 
 @router.post("/import/confirm", summary="确认导入")
@@ -70,7 +71,7 @@ async def confirm_import(
 
     task = await service.confirm_import(db, file_content, request, current_user_id)  # type: ignore[attr-defined]
 
-    return success_response(data=task.model_dump())
+    return build_response(data=task.model_dump())
 
 
 @router.get("/import/tasks", summary="获取导入任务列表")
@@ -103,4 +104,4 @@ async def get_import_task(
 
     task = await service.get_import_task_by_id(db, task_id)  # type: ignore[attr-defined]
 
-    return success_response(data=task.model_dump())
+    return build_response(data=task.model_dump())

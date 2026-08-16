@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvParameterCreate,
@@ -41,7 +41,7 @@ async def create_product(
 
     product = await service.create_product(db, data)
 
-    return success_response(data=CpvProductResponse.model_validate(product))
+    return build_response(data=CpvProductResponse.model_validate(product))
 
 
 @router.get("/products", summary="获取产品列表", response_model=CpvProductListApiResponse)
@@ -104,7 +104,7 @@ async def get_product(
 
     product = await service.get_product_by_id(db, product_id)
 
-    return success_response(data=CpvProductResponse.model_validate(product))
+    return build_response(data=CpvProductResponse.model_validate(product))
 
 
 @router.put("/products/{product_id}", summary="更新产品")
@@ -118,7 +118,7 @@ async def update_product(
 
     product = await service.update_product(db, product_id, data)
 
-    return success_response(data=CpvProductResponse.model_validate(product))
+    return build_response(data=CpvProductResponse.model_validate(product))
 
 
 @router.delete("/products/{product_id}", summary="删除产品")
@@ -131,7 +131,7 @@ async def delete_product(
 
     await service.delete_product(db, product_id)
 
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 参数配置 ====================
@@ -148,7 +148,7 @@ async def get_parameters(
 
     parameters = await service.get_parameters(db, product_id, type)
 
-    return success_response(data=[CpvParameterResponse.model_validate(p) for p in parameters])
+    return build_response(data=[CpvParameterResponse.model_validate(p) for p in parameters])
 
 
 @router.post("/products/{product_id}/parameters", summary="新增参数")
@@ -162,7 +162,7 @@ async def create_parameter(
 
     parameter = await service.create_parameter(db, product_id, data)
 
-    return success_response(data=CpvParameterResponse.model_validate(parameter))
+    return build_response(data=CpvParameterResponse.model_validate(parameter))
 
 
 @router.put("/parameters/{parameter_id}", summary="更新参数")
@@ -176,7 +176,7 @@ async def update_parameter(
 
     parameter = await service.update_parameter(db, parameter_id, data)
 
-    return success_response(data=CpvParameterResponse.model_validate(parameter))
+    return build_response(data=CpvParameterResponse.model_validate(parameter))
 
 
 @router.delete("/parameters/{parameter_id}", summary="删除参数")
@@ -189,7 +189,7 @@ async def delete_parameter(
 
     await service.delete_parameter(db, parameter_id)
 
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 批次数据 ====================
@@ -290,7 +290,7 @@ async def get_statistics(
 
     stats = await service.get_statistics(db, product_id, parameter_id, batch_no, start_date, end_date)
 
-    return success_response(data=stats.model_dump())
+    return build_response(data=stats.model_dump())
 
 
 @router.get("/products/{product_id}/trend", summary="获取趋势图数据")
@@ -307,4 +307,4 @@ async def get_trend(
 
     trend = await service.get_trend_data(db, product_id, parameter_id, batch_no, start_date, end_date)
 
-    return success_response(data=trend.model_dump())
+    return build_response(data=trend.model_dump())

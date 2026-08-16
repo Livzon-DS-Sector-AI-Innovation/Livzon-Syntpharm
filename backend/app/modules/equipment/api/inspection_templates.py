@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     InspectionCompleteRequest,
@@ -39,7 +39,7 @@ async def create_inspection_template(
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.create_inspection_template(db, data)
-    return success_response(data=InspectionTemplateResponse.model_validate(template))
+    return build_response(data=InspectionTemplateResponse.model_validate(template))
 
 
 @router.get("/", summary="巡检模板列表")
@@ -77,7 +77,7 @@ async def get_inspection_template(
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.get_inspection_template_by_id(db, template_id)
-    return success_response(data=InspectionTemplateResponse.model_validate(template))
+    return build_response(data=InspectionTemplateResponse.model_validate(template))
 
 
 @router.put("/{template_id}", summary="修改巡检模板")
@@ -89,7 +89,7 @@ async def update_inspection_template(
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.update_inspection_template(db, template_id, data)
-    return success_response(data=InspectionTemplateResponse.model_validate(template))
+    return build_response(data=InspectionTemplateResponse.model_validate(template))
 
 
 @router.delete("/{template_id}", summary="删除巡检模板")
@@ -100,7 +100,7 @@ async def delete_inspection_template(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_inspection_template(db, template_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ---------- 检查项管理 ----------
@@ -113,7 +113,7 @@ async def add_template_item(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.add_template_item(db, template_id, data)
-    return success_response(message="添加成功")
+    return build_response(message="添加成功")
 
 
 @router.put("/items/{item_id}", summary="修改检查项")
@@ -125,7 +125,7 @@ async def update_template_item(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.update_template_item(db, item_id, data)
-    return success_response(message="修改成功")
+    return build_response(message="修改成功")
 
 
 @router.delete("/items/{item_id}", summary="删除检查项")
@@ -136,7 +136,7 @@ async def delete_template_item(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_template_item(db, item_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ---------- 巡检执行 ----------
@@ -149,4 +149,4 @@ async def complete_inspection(
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.complete_inspection(db, work_order_id, data)
-    return success_response(data=WorkOrderResponse.model_validate(wo))
+    return build_response(data=WorkOrderResponse.model_validate(wo))

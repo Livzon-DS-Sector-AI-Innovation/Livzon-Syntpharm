@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     SparePartCreate,
@@ -38,7 +38,7 @@ async def create_spare_part(
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.create_spare_part(db, data)
-    return success_response(data=SparePartResponse.model_validate(spare_part))
+    return build_response(data=SparePartResponse.model_validate(spare_part))
 
 
 @router.get("/", summary="备件列表")
@@ -75,7 +75,7 @@ async def get_stock_warnings(
 ) -> ApiResponse:
     _require_user(current_user)
     warnings = await service.get_stock_warnings(db)
-    return success_response(
+    return build_response(
         data=[
             StockWarningResponse(
                 spare_part=SparePartResponse.model_validate(w["spare_part"]),  # type: ignore[index]
@@ -95,7 +95,7 @@ async def get_spare_part(
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.get_spare_part_by_id(db, spare_part_id)
-    return success_response(data=SparePartResponse.model_validate(spare_part))
+    return build_response(data=SparePartResponse.model_validate(spare_part))
 
 
 @router.put("/{spare_part_id}", summary="更新备件")
@@ -107,7 +107,7 @@ async def update_spare_part(
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.update_spare_part(db, spare_part_id, data)
-    return success_response(data=SparePartResponse.model_validate(spare_part))
+    return build_response(data=SparePartResponse.model_validate(spare_part))
 
 
 @router.delete("/{spare_part_id}", summary="删除备件")
@@ -118,7 +118,7 @@ async def delete_spare_part(
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_spare_part(db, spare_part_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @router.get("/{spare_part_id}/stock", summary="查看库存")
@@ -129,7 +129,7 @@ async def get_stock(
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.get_stock_by_spare_part_id(db, spare_part_id)
-    return success_response(data=StockResponse.model_validate(stock))
+    return build_response(data=StockResponse.model_validate(stock))
 
 
 @router.post("/{spare_part_id}/stock/inbound", summary="入库")
@@ -141,7 +141,7 @@ async def inbound_stock(
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.inbound_stock(db, spare_part_id, data)
-    return success_response(data=StockResponse.model_validate(stock))
+    return build_response(data=StockResponse.model_validate(stock))
 
 
 @router.post("/{spare_part_id}/stock/adjust", summary="盘点调整")
@@ -153,4 +153,4 @@ async def adjust_stock(
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.adjust_stock(db, spare_part_id, data)
-    return success_response(data=StockResponse.model_validate(stock))
+    return build_response(data=StockResponse.model_validate(stock))
