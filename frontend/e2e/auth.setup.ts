@@ -1,10 +1,11 @@
-import { chromium, expect, FullConfig } from '@playwright/test'
+import { chromium, expect } from '@playwright/test'
 import path from 'path'
+import fs from 'fs'
 
 const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
-async function globalSetup(config: FullConfig) {
-  const baseURL = config.projects[0].use.baseURL || 'http://localhost:3000'
+async function globalSetup(config: any) {
+  const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000'
   const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
   const e2eSecret = process.env.E2E_AUTH_SECRET || 'e2e-test-secret'
   
@@ -87,7 +88,6 @@ async function globalSetup(config: FullConfig) {
     
     // 保存认证状态
     // Ensure directory exists
-    const fs = await import("fs")
     const dir = path.dirname(authFile)
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
