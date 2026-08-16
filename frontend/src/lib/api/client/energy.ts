@@ -35,7 +35,7 @@ export async function fetchCollectLogDetailClient(logId: string): Promise<Collec
 }
 
 export async function fetchPlatformsClient(): Promise<any[]> {
-  const res = await fetch('/api/v1/energy/platforms')
+  const res = await fetch('/api/v1/energy/platforms', { credentials: 'include' })
   if (!res.ok) throw new Error(`请求失败: ${res.status}`)
   const json = await res.json()
   return json.data
@@ -120,6 +120,7 @@ export async function createTarget(data: {
 }): Promise<UnitConsumptionTarget> {
   const res = await fetch('/api/v1/energy/targets', {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
