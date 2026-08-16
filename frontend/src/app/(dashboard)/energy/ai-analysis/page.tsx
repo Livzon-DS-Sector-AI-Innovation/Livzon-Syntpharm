@@ -37,12 +37,22 @@ export default function AIAnalysisPage() {
 
   // 获取车间列表
   useEffect(() => {
-    fetch('/api/v1/energy/workshops?category=workshop', { credentials: 'include' })
-      .then(res => res.json())
+    console.log('Fetching workshops...')
+    fetch(`/api/v1/energy/workshops?category=workshop`, { credentials: 'include' })
+      .then(res => {
+        console.log('Response status:', res.status)
+        return res.json()
+      })
       .then(json => {
+        console.log('Workshop response:', json)
         if (json.code === 200) {
-          setWorkshops(json.data.map((w: any) => ({ value: w.id, label: w.name })))
+          const workshops = json.data.map((w: any) => ({ value: w.id, label: w.name }))
+          console.log('Setting workshops:', workshops)
+          setWorkshops(workshops)
         }
+      })
+      .catch(err => {
+        console.error('Failed to fetch workshops:', err)
       })
   }, [])
 
