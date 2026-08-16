@@ -194,7 +194,7 @@ run_e2e() {
 
     log_info "Waiting for frontend..."
     local frontend_ready=false
-    for i in $(seq 1 60); do
+    for i in $(seq 1 120); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
             frontend_ready=true
             break
@@ -216,7 +216,7 @@ run_e2e() {
     cd "$REPO_ROOT/frontend"
 
     local e2e_exit_code=0
-    pnpm exec playwright test || e2e_exit_code=$?
+    PATH="/home/ruanjiaheng/.local/bin:$PATH" pnpm exec playwright test || e2e_exit_code=$?
 
     # ── Collect E2E frontend log ────────────────────────────────────────
     if [[ $e2e_exit_code -ne 0 ]]; then
