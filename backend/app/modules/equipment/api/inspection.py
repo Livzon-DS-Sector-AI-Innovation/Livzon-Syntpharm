@@ -13,6 +13,7 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
+from app.shared.schemas import ApiResponse
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models.inspection import InspectionTask
 from app.modules.equipment.schemas.inspection import (

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import error_response, paginated_response, success_response
+from app.shared.schemas import ApiResponse
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvImportConfirmRequest,
