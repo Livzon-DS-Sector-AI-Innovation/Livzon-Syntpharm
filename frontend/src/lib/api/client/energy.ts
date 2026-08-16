@@ -189,6 +189,7 @@ export async function analyzeEnergyV2(data: {
   include_ai_suggestion?: boolean
 }): Promise<AIAnalysisResult> {
   const res = await fetch('/api/v1/energy/ai-analysis-v2', {
+    credentials: 'include',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
