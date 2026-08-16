@@ -37,7 +37,7 @@ export default function AIAnalysisPage() {
 
   // 获取车间列表
   useEffect(() => {
-    fetch('/api/v1/energy/workshops?category=workshop')
+    fetch('/api/v1/energy/workshops?category=workshop', { credentials: 'include' })
       .then(res => res.json())
       .then(json => {
         if (json.code === 200) {
