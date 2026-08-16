@@ -195,6 +195,15 @@ _None yet._
 
 ---
 
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
 ### Category 10: Frontend API and generated types
 
 | Files inspected | ~42 action files + ~15 API client files |
@@ -215,6 +224,19 @@ _None._
 _None yet._
 
 ---
+
+
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
 
 ### Category 11: Proxy and routing
 
@@ -568,7 +590,16 @@ Files changed: 334 across all 14 categories (core: energy auth refactor to Requi
 - [x] `frontend/src/app/(dashboard)/safety/hazard-identification-legacy/page.tsx` — 页面标题/Q9 — No `<h1>`. **RESOLVED** — now has `<h1>隐患识别（旧版）</h1>`. — severity: low
 - [x] `frontend/src/app/(dashboard)/safety/hazard-legacy/page.tsx` — 页面标题/Q9 — No `<h1>`. **RESOLVED** — now has `<h1>隐患管理（旧版）</h1>`. — severity: low
 
-##### Category 10: Frontend API and generated types
+##
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+### Category 10: Frontend API and generated types
 
 - [x] `frontend/src/actions/administration.ts:13-67` — 类型系统/Q1 — Server Actions use `data: any`. **ACCEPTED** (deferred) — backend administration module is a stub (models.py, schemas.py empty). Frontend has TODO comments acknowledging this. Will fix when backend module is built. — severity: high
 - [x] `frontend/src/actions/equipment-personnel.ts:6-10` — 类型系统/Q1 — Imported from handwritten `@/types/equipment-personnel`. **RESOLVED** — now imports directly from `@/types/generated/schema` using `components['schemas']['RoleCreate']` etc. — severity: high
@@ -580,7 +611,20 @@ Files changed: 334 across all 14 categories (core: energy auth refactor to Requi
 - [x] `frontend/src/lib/api/server/energy.ts:13` — API 调用层级 — Local `apiFetch`/`getApiBaseUrl()` duplicate `base.ts`. **RESOLVED** — now imports from `./base`. — severity: medium
 - [x] `frontend/src/types/generated/schema.ts` — 类型系统/Q6 — Drift against current backend OpenAPI spec unverified. **ACCEPTED** (needs CI run) — module code changes may require regenerating types. Run `pnpm generate:api` + `scripts/ci.sh openapi` to verify. — severity: low
 
-##### Category 11: Proxy and routing
+##
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+### Category 11: Proxy and routing
 
 - [x] `frontend/src/actions/inspection.ts:87` — Q6 / Actions must call lib/api — `uploadInspectionPhoto` directly fetches. **RESOLVED** — no raw `fetch()` calls remain on main. — severity: medium
 - [x] `frontend/src/actions/inspection.ts:115` — Q6 / Actions must call lib/api — `uploadTaskPhoto` directly fetches. **RESOLVED** — no raw `fetch()` calls remain. — severity: medium
@@ -798,7 +842,16 @@ _None._
 ##### Accepted exceptions
 _None._
 
-#### Category 10: Frontend API and generated types
+#
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+### Category 10: Frontend API and generated types
 
 | Files inspected | 24 (actions, lib/api, types, components with type imports) |
 | Rules evaluated | 8 |
@@ -819,7 +872,20 @@ _None._
 ##### Accepted exceptions
 _None._
 
-#### Category 11: Proxy and routing
+#
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+### Category 11: Proxy and routing
 
 | Files inspected | 5 (lib/api/server, lib/api/client, actions with routing-relevant changes) |
 | Rules evaluated | 6 |
@@ -889,7 +955,16 @@ Files changed: 30 across categories 2, 3, 4, 6, 7, 9, 10, 11, 12, 14 (core: remo
 
 - [x] `frontend/src/app/(dashboard)/quality/cpv/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Page renders `<CpvProductListClient>` without a semantic heading element. AGENTS.md requires every `page.tsx` to have an `<h1>` or `<Title level={1}>`. Every other page changed in this PR received an `<h1>` — this page was missed. — severity: medium — **RESOLVED** (added `<h1>CPV产品管理</h1>` at line 12)
 
-##### Category 10: Frontend API and generated types
+##
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+### Category 10: Frontend API and generated types
 
 - [x] `frontend/src/actions/safety/helpers.ts:8` — apiFetch一致性/Q9 addendum — `getApiV1Url()` reads `process.env.API_BASE_URL` directly instead of relying solely on `getApiBaseUrl()` from `base.ts`. The function imports `getApiBaseUrl` from `base.ts` but also performs a direct `process.env.API_BASE_URL` null-check (line 8) before calling it. Since `getApiBaseUrl()` already provides a fallback (`http://backend:8000`), the direct `process.env` read bypasses this fallback and is redundant. Q9: "Are there `process.env.API_BASE_URL` reads outside of `lib/api/server/base.ts`?" — severity: high — **RESOLVED** (removed `process.env.API_BASE_URL` check; `getApiV1Url()` now simply returns `${getApiBaseUrl()}/api/v1`)
 
@@ -997,7 +1072,16 @@ Note: The PR also upgraded the 5 endpoints to proper Pydantic request/response s
 ##### Positive changes
 - `evaluation-form/page.tsx`, `sop-catalog/page.tsx`, `trainers/page.tsx`: Changed from raw `fetch()` to `apiGet()` from `@/lib/api/client` ✓
 
-#### Category 10: Frontend API and generated types
+#
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+### Category 10: Frontend API and generated types
 
 | Files inspected | 51 |
 | Files not inspected | 2 (http-client.ts, http-server.ts — confirmed deleted) |
@@ -1023,7 +1107,20 @@ Note: The PR also upgraded the 5 endpoints to proper Pydantic request/response s
 - 13 server API modules consolidated to import from `@/lib/api/server/base` instead of local helper copies ✓
 - `deviation.ts`, `dossier-writer.ts`, `actions/safety/helpers.ts` had duplicate `getApiBaseUrl` definitions removed ✓
 
-#### Category 11: Proxy and routing
+#
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+### Category 11: Proxy and routing
 
 | Files inspected | 36 |
 | Rules evaluated | 6 |
@@ -1067,6 +1164,15 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 6 (Co
 
 **Changed files** (1): `frontend/src/lib/api/server/base.ts`
 
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
 ### Category 10: Frontend API and generated types
 
 | Files inspected | 1 |
@@ -1087,6 +1193,19 @@ _None._
 
 #### Accepted exceptions
 _None._
+
+
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
 
 ### Category 11: Proxy and routing
 
@@ -1347,6 +1466,15 @@ _None._
 
 ---
 
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
 ### Category 10: Frontend API and generated types
 
 | Files inspected | 6 (`actions/product-output.ts`, `actions/product-sync.ts`, `lib/api/server/base.ts`, `lib/api/server/product-output.ts`, `types/generated/schema.ts`, `types/product-output.ts`) |
@@ -1372,6 +1500,19 @@ _None._
 - `lib/api/server/product-output.ts` prepends `getApiBaseUrl()` explicitly in every call (e.g., `${getApiBaseUrl()}/api/v1/...`). Other server API modules pass relative paths to `apiFetch()` which handles the base URL internally. This is redundant but not a rule violation.
 
 ---
+
+
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
 
 ### Category 11: Proxy and routing
 
@@ -1412,3 +1553,536 @@ Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), C
 | 10. Frontend API & types | 0 | 0 | 0 | 0 | Clean |
 | 12. OpenAPI | 0 | 0 | 0 | 0 | CI verifies |
 | **Total** | **0** | **0** | **0** | **0** | **0 findings** (1 security concern outside scope) |
+
+---
+
+## PR #30 Audit (date: 2026-08-16, branch: lzhc-zhuang → main)
+
+**PR Title:** 实现能源 AI 智能分析多产品折算功能及数据治理
+**Changed files:** 55 files across backend (energy module, quality, safety, scripts, migrations) and frontend (energy pages, components, actions, API clients, types, E2E, Docker, CI)
+
+---
+
+### Category 1: Repository layout
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 12 |
+| Files not inspected | 0 |
+| Rules evaluated | 10 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+---
+
+### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 55 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+#### Confirmed
+
+```
+scripts/ci.sh:219 — 仓库通用规则/禁止硬编码绝对文件路径 — PATH="/home/ruanjiaheng/.local/bin:$PATH" hardcodes a user-specific absolute path; will break on other machines and CI. — severity: blocking
+```
+
+```
+.requirements/20260810_energy_unit_analysis/E2E_TEST_PLAN.md:21 — 仓库通用规则/禁止硬编码密码 — Hardcoded test credentials (username/password) in documentation. Even if "test" values, committed credentials can leak into real environments. — severity: medium
+```
+
+#### Uncertain
+
+- `scripts/ci.sh:124` — Weak default `E2E_AUTH_SECRET` — low (uncertain whether this is used in production or only CI)
+
+---
+
+### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 11 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+backend/app/modules/energy/public_api.py:7 — 模块所有权/public_api.py must expose cross-module API — The diff removes ALL exports (EnergyService, EnergyRepository, schemas), leaving only `from __future__ import annotations`. The file is now an empty shell that exposes nothing. Any cross-module consumer that previously imported from energy.public_api will break. — severity: blocking
+```
+
+```
+backend/app/main.py:101 → backend/app/modules/energy/scheduler.py — 模块所有权/禁止直接 import 内部文件 — `from app.modules.energy.scheduler import (energy_collection_loop, ...)` bypasses public_api.py. While __init__.py re-exports these symbols, the import path reaches directly into scheduler.py. — severity: low
+```
+
+---
+
+### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+backend/app/modules/energy/api.py:68-798 (35 occurrences) — API 规范/禁止 success_response() for structured JSON — All 35 endpoint returns use `success_response(...)` which returns a raw `JSONResponse`, bypassing FastAPI's `response_model` validation and OpenAPI schema generation. The codebase provides `build_response()` returning `ApiResponse` model for proper FastAPI integration, but it is never used in this module. — severity: high
+```
+
+```
+backend/app/modules/energy/api.py:669 — API 规范/禁止在 API 层直接操作数据库 — `await db.execute(select(distinct(EnergyDailyData.date))...)` is called directly inside the `daily_import_from_bitable` endpoint handler (within a nested `_run()` closure). This query belongs in repository.py or service.py. — severity: medium
+```
+
+---
+
+### Category 5: Models and migrations
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 5 |
+| Files not inspected | 0 |
+| Rules evaluated | 7 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 4 |
+| Uncertain findings | 1 |
+
+#### Confirmed
+
+```
+backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:55-120 — 迁移规范/migration correctness — The downgrade() function is severely malformed: `op.drop_table('energy_product_conversions')` appears twice, `op.create_foreign_key` calls appear 4 times, `op.alter_column` for `target_unit_consumption` appears 3 times, and `op.drop_index`/`op.drop_table_comment` appear multiple times. Running downgrade would crash on the second `drop_table` call (table already dropped). — severity: blocking
+```
+
+```
+backend/app/modules/quality/qms/reagent_reminder_config.py:13 — 迁移规范/Model 必须继承 BaseORMModel — `ReagentReminderConfig` inherits from `app.modules.quality.qms.static_data.models.BaseModel`, which is a *different* `DeclarativeBase` subclass defined locally in static_data/models.py, NOT `app.shared.base_model.BaseModel`. This means the model is on a different declarative base than the rest of the application, potentially causing metadata/transaction isolation issues and alembic may not detect changes. — severity: high (uncertain: may be intentional for the qms sub-module)
+```
+
+```
+backend/alembic/versions/0053_add_energy_unit_consumption_targets.py:10 — 迁移规范/down_revision chain correctness — `down_revision = '0053_add_dossier_unique_indexes_and_cleanup'` collides with `0054_add_import_batch_id` which has the SAME down_revision, creating a fork in the migration graph. Later patched by merge migration d89b9d01b93a, but indicates the 0053_energy migration was inserted as a parallel branch. — severity: medium
+```
+
+```
+backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:26-27 — code quality — `op.execute('CREATE SCHEMA IF NOT EXISTS energy')` is duplicated on consecutive lines (same statement twice). Harmless but wasteful. — severity: low
+```
+
+```
+backend/app/modules/energy/models.py:350-355 — 迁移规范/model consistency — `EnergyProductConversion` inherits from `BaseModel` but re-declares `id` with `server_default=sa.text("gen_random_uuid()")`, shadowing BaseModel's `id` definition (`default=uuid.uuid4`). Creates inconsistency with every other model. — severity: low
+```
+
+---
+
+### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 11 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 4 |
+| Uncertain findings | 1 |
+
+#### Confirmed
+
+```
+backend/app/modules/energy/scheduler.py:230 — 配置管理/禁止使用 os.getenv() — os.getenv("ENERGY_BITABLE_AUTO_SYNC_ENABLED") reads config directly from env instead of Settings class. — severity: high
+```
+
+```
+backend/app/modules/energy/scheduler.py:241 — 配置管理/禁止使用 os.getenv() — os.getenv("ENERGY_BITABLE_SYNC_HOUR") reads config directly from env instead of Settings class. — severity: high
+```
+
+```
+backend/scripts/seed/seed_regulatory_documents.py:36,46,54,61,74,105,106,107 — 配置管理/禁止 print() 语句 — 8 print() statements used for CLI output instead of logging. — severity: medium
+```
+
+```
+backend/scripts/seed/seed_regulatory_tracker.py:30,46,58,72,84,88,90 — 配置管理/禁止 print() 语句 — 7 print() statements used for CLI output instead of logging. — severity: medium
+```
+
+```
+backend/app/modules/quality/qms/reagent_reminder_service.py:216-217 — 仓库通用规则/禁止在日志或异常中输出敏感信息 — logger.error(f"发送飞书提醒失败: {str(e)}") and return {"message": f"发送失败: {str(e)}"} pass raw exception strings to log and API response; FeishuClient exceptions may contain app_secret, tokens, or internal URLs. — severity: medium
+```
+
+#### Uncertain
+
+- `reagent_reminder_config.py:26` stores `feishu_app_secret` in plaintext in the DB model. Not a Category 6 rule violation per se, but a security concern.
+
+---
+
+### Category 7: External services and background tasks
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 6 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+Background loops use `register_background_worker()` from `app.shared.lifecycle` — the proper lifecycle mechanism. No direct `asyncio.create_task()` calls. External adapter calls wrapped in try/except with `logger.exception()`.
+
+---
+
+### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+backend/scripts/test/test_regulatory_sync.py — 仓库组织/测试/测试文件放在 backend/tests/modules/<module>/ — Test file located in scripts/test/ instead of backend/tests/modules/regulatory_tracker/; also not a pytest test file (uses asyncio.run(main()) pattern, no pytest assertions/fixtures). — severity: medium
+```
+
+```
+backend/scripts/test/test_scheduler.py — 仓库组织/测试/测试文件放在 backend/tests/modules/<module>/ — Test file located in scripts/test/ instead of backend/tests/modules/regulatory_tracker/; also not a pytest test file (uses asyncio.run(main()) pattern, no pytest assertions/fixtures). — severity: medium
+```
+
+---
+
+### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 5 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 8 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+**Blocking — write operations bypassing Server Actions:**
+
+```
+frontend/src/components/energy/TargetModal.tsx:5,53,59 — 前端/写操作必须用 Server Actions — Imports `createTarget`, `updateTarget` directly from `@/lib/api/client/energy` and calls them from a client component. These are write operations that must go through Server Actions in `@/actions/energy.ts`. No corresponding server actions exist for these operations. — severity: blocking
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:15,129 — 前端/写操作必须用 Server Actions — Imports `analyzeEnergyV2` directly from `@/lib/api/client/energy` and calls it from a client component. This is a write/analysis operation that must go through a Server Action. — severity: blocking
+```
+
+**High — read operations bypassing Server Actions:**
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:14-19 — 前端/API 调用层级 — Imports read functions directly from `@/lib/api/client/energy` in a client component. Client components should use Server Actions for data fetching to enable proper caching and revalidation. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/alerts/page.tsx:13 — 前端/API 调用层级 — Imports `fetchAlertRecords`, `fetchAlertRules` directly from `@/lib/api/client/energy` in a client component. — severity: high
+```
+
+```
+frontend/src/components/energy/MonthlyRecordTable.tsx:9 — 前端/API 调用层级 — Imports `fetchMonthlyRecordsClient`, `fetchWorkshopsClient`, `fetchMonthlySummaryClient` directly from `@/lib/api/client/energy` in a client component. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/alerts/page.tsx:13 — 前端/API 调用层级 — Also imports `AlertRule`, `AlertRecord` types from `@/types/energy` (hand-written types, see Category 10). — severity: high
+```
+
+---
+
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
+```
+
+### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 6 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 7 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+frontend/src/lib/api/client/energy.ts:107,165,173 — API 类型来源/禁止手写 API 类型 — Defines `UnitConsumptionTarget`, `AISuggestion`, `AIAnalysisResult` interfaces directly in the API client file. These are API response types that should be imported from `@/types/generated/schema`. — severity: medium
+```
+
+```
+frontend/src/types/energy.ts:19-265 — API 类型来源/禁止手写 API 类型 — Defines numerous hand-written API types (`EnergyDeviceConfig`, `AlertRule`, `AlertRecord`, `CollectLog`, etc.) that mirror backend schemas. These should be imported from `@/types/generated/schema` to stay in sync with the OpenAPI spec. — severity: medium
+```
+
+```
+frontend/src/lib/api/client/energy.ts:45,61,77,89,96 — apiFetch 一致性 — Multiple functions use `Promise<any>` return types instead of proper generated schema types. This defeats type safety and OpenAPI contract enforcement. — severity: medium
+```
+
+```
+frontend/src/lib/api/client/energy.ts:37 — apiFetch 一致性 — `fetchPlatformsClient()` returns `Promise<any[]>` instead of a typed response. — severity: medium
+```
+
+---
+
+
+```
+frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Server Actions — result = await updateTarget(existingTarget.id, {...}); PUT operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+```
+frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
+```
+
+### Category 11: Proxy and routing
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+`proxy.ts` changes are clean — only API forwarding, streaming handling, and light login checks.
+
+---
+
+### Category 12: Cross-project OpenAPI
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 0 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+`types/generated/schema.ts` is NOT in the changed file list. However, backend added new endpoints and schemas (energy module). CI should verify drift.
+
+---
+
+### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 3 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+docker-compose.dev.yml:7 — Docker 开发环境/热重载 — Backend volume `./backend:/app/backend:ro` targets wrong path. The backend Dockerfile likely copies code to `/app`, but the volume mount path may not match the container's working directory structure. Hot-reload will not work. — severity: blocking
+```
+
+```
+docker-compose.dev.yml:16 — Docker 开发环境/前端 dev mode — Frontend service is missing `build: dockerfile: Dockerfile.dev` or equivalent. The production image may not have `pnpm dev` available. Frontend dev mode will fail. — severity: blocking
+```
+
+```
+scripts/dev.sh:16 — Docker 开发环境/必须使用 docker compose -f docker-compose.yml -f docker-compose.dev.yml — The script uses plain `docker compose` without the `-f docker-compose.dev.yml` overlay. AGENTS.md requires: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`. — severity: high
+```
+
+---
+
+### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+_None._
+
+E2E tests are in `frontend/e2e/`, use Playwright, and follow conventions.
+
+---
+
+### Category 15: SQL injection
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 7 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+#### Confirmed
+
+```
+backend/app/modules/energy/repository.py:67 — 安全规则/SQL 查询/必须使用参数化查询 — `query.where(EnergyDeviceConfig.device_name.ilike(f"%{keyword}%"))` uses an f-string to build the LIKE pattern. While SQLAlchemy's `ilike()` does parameterize the final value sent to the database (not a true SQL injection), LIKE wildcards (`%`, `_`) in `keyword` are not escaped, leading to unintended wildcard matching — a LIKE-wildcard injection. — severity: low
+```
+
+---
+
+## PR #30 Summary
+
+| Severity | Count |
+|----------|-------|
+| **Blocking** | 8 |
+| **High** | 9 |
+| **Medium** | 14 |
+| **Low** | 4 |
+| **Total** | **35** |
+
+### Blocking findings (must fix before merge)
+
+| # | Category | File | Issue |
+|---|----------|------|-------|
+| 1 | Cat 2 | `scripts/ci.sh:219` | Hardcoded `/home/ruanjiaheng/.local/bin` absolute path |
+| 2 | Cat 3 | `energy/public_api.py:7` | All exports removed — cross-module API contract broken |
+| 3 | Cat 5 | `29a5a96069e8` migration:55-120 | downgrade() severely duplicated, would crash on execution |
+| 4 | Cat 9 | `TargetModal.tsx:5,53,59` | Write operations (createTarget, updateTarget) bypass Server Actions |
+| 5 | Cat 9 | `ai-analysis/page.tsx:15,129` | analyzeEnergyV2 write operation bypasses Server Actions |
+| 6 | Cat 13 | `docker-compose.dev.yml:7,16` | Backend volume path wrong + frontend missing dev Dockerfile — dev workflow completely broken |
+
+### High severity findings
+
+| # | Category | File | Issue |
+|---|----------|------|-------|
+| 1 | Cat 4 | `energy/api.py:68-798` | 35× `success_response()` bypasses FastAPI response_model |
+| 2 | Cat 5 | `reagent_reminder_config.py:13` | Model on different DeclarativeBase than app-wide BaseModel |
+| 3 | Cat 6 | `scheduler.py:230` | `os.getenv()` for ENERGY_BITABLE_AUTO_SYNC_ENABLED |
+| 4 | Cat 6 | `scheduler.py:241` | `os.getenv()` for ENERGY_BITABLE_SYNC_HOUR |
+| 5 | Cat 9 | `ai-analysis/page.tsx:14-19` | Client component reads bypass Server Actions |
+| 6 | Cat 9 | `alerts/page.tsx:13` | Client component reads bypass Server Actions |
+| 7 | Cat 13 | `scripts/dev.sh:16` | Missing `-f docker-compose.dev.yml` overlay |
+
+
+
+---
+
+## Second Review Pass (same session)
+
+The second review identified **critical gaps** in the first review:
+
+### Critical: Forbidden file modified
+
+```
+frontend/src/proxy.ts — 禁止修改的文件 — proxy.ts was significantly rewritten from a simple NextResponse.rewrite() to a full fetch()-based proxy. AGENTS.md explicitly states: "以下文件只有架构负责人可以修改: src/proxy.ts". The PR author (Vitz_Z) is not the architecture lead. This change requires architecture lead approval. — severity: blocking
+```
+
+### Critical: AGENTS.md rules removed
+
+The PR **removed** the following rules from AGENTS.md — the exact rules that the PR's own code violates:
+
+```
+AGENTS.md — 禁止修改 AGENTS.md 规则 — Removed: "禁止 response_model=dict" prohibition (3 paragraphs). This is the rule that energy/api.py violates with 35× success_response() calls. — severity: blocking
+```
+
+```
+AGENTS.md — 禁止修改 AGENTS.md 规则 — Removed: "success_response() 返回 JSONResponse 绕过该流程" prohibition. Same as above. — severity: blocking
+```
+
+```
+AGENTS.md — 禁止修改 AGENTS.md 规则 — Removed: Barrel file ('use client') rules for frontend. — severity: high
+```
+
+```
+AGENTS.md — 禁止修改 AGENTS.md 规则 — Removed: 'use server' 文件禁止 export type/interface rule. — severity: high
+```
+
+```
+AGENTS.md — 禁止修改 AGENTS.md 规则 — Removed: Entire "apiFetch 一致性" section (must use apiFetch/apiFetchRaw, getApiBaseUrl() only in base.ts, etc.). — severity: high
+```
+
+### Additional findings
+
+```
+frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:40,43,47,50,55,68 — console.log in production — 6 console.log/console.error calls left in production code. — severity: medium
+```
+
+```
+backend/app/modules/energy/repository.py:38,88,112,125,137,151 — Double noqa comments — Multiple lines have `# noqa: E712  # noqa: E712` (duplicated). Code quality issue. — severity: low
+```
+
+```
+frontend/src/types/regulatory-tracker.ts — API 类型来源/禁止手写 API 类型 — 15 hand-written interfaces (SummaryStats, RegulatoryDocument, SyncJob, etc.) that should come from generated OpenAPI schema. — severity: medium
+```
+
+```
+frontend/src/lib/api/client/regulatory-tracker.ts — API 类型来源 — Re-exports hand-written types from @/types/regulatory-tracker instead of generated schema. — severity: medium
+```
+
+```
+backend/pyproject.toml — Added "scripts/*" = ["I001"] exclusion — Scripts excluded from import sorting. Reasonable but should be noted. — severity: low (informational)
+```
+
+### Updated Summary
+
+| Severity | Original | + Second Review | **Total** |
+|----------|----------|-----------------|-----------|
+| **Blocking** | 8 | +3 | **11** |
+| **High** | 9 | +3 | **12** |
+| **Medium** | 14 | +3 | **17** |
+| **Low** | 4 | +2 | **6** |
+| **Total** | 35 | +11 | **46** |
+
+### Updated Blocking findings (11 total)
+
+| # | Category | File | Issue |
+|---|----------|------|-------|
+| 1 | Cat 2 | `scripts/ci.sh:219` | Hardcoded `/home/ruanjiaheng/.local/bin` absolute path |
+| 2 | Cat 3 | `energy/public_api.py:7` | All exports removed — cross-module API contract broken |
+| 3 | Cat 5 | `29a5a96069e8` migration:55-120 | downgrade() severely duplicated, would crash on execution |
+| 4 | Cat 9 | `TargetModal.tsx:5,53,59` | Write operations (createTarget, updateTarget) bypass Server Actions |
+| 5 | Cat 9 | `ai-analysis/page.tsx:15,129` | analyzeEnergyV2 write operation bypasses Server Actions |
+| 6 | Cat 13 | `docker-compose.dev.yml:7` | Backend volume path wrong — hot-reload broken |
+| 7 | Cat 13 | `docker-compose.dev.yml:16` | Frontend missing dev Dockerfile — dev mode fails |
+| 8 | Cat 9 | `TargetModal.tsx:53,59` | PUT/POST from client without revalidatePath |
+| **9** | **Cat 11** | **`proxy.ts`** | **FORBIDDEN FILE modified — requires architecture lead approval** |
+| **10** | **AGENTS.md** | **AGENTS.md** | **Removed `response_model=dict` prohibition — the rule this PR violates** |
+| **11** | **AGENTS.md** | **AGENTS.md** | **Removed `success_response()` prohibition — the rule this PR violates** |
+
+### Recommendation
+
+**Do not merge.** The PR has 11 blocking issues including modification of a forbidden file (`proxy.ts`) and removal of AGENTS.md rules that the PR's own code violates. The migration downgrade is broken, the Docker dev workflow is broken, and the frontend architecture is violated throughout.
+
+### Recommendation
+
+**Do not merge** until the 6 blocking issues are resolved. The migration downgrade and Docker dev workflow are completely broken. The frontend architecture violations (bypassing Server Actions for writes) undermine the caching/revalidation model and violate the established API layering contract.
