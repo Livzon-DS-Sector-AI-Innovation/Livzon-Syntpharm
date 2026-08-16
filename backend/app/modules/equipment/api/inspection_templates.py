@@ -3,14 +3,12 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
 from app.core.response import paginated_response, success_response
-from app.shared.schemas import ApiResponse
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     InspectionCompleteRequest,
@@ -21,6 +19,7 @@ from app.modules.equipment.schemas import (
     InspectionTemplateUpdate,
     WorkOrderResponse,
 )
+from app.shared.schemas import ApiResponse
 
 router = APIRouter()
 
@@ -37,7 +36,7 @@ async def create_inspection_template(
     data: InspectionTemplateCreate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     template = await service.create_inspection_template(db, data)
     return success_response(data=InspectionTemplateResponse.model_validate(template))
@@ -52,7 +51,7 @@ async def list_inspection_templates(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     templates, total = await service.get_inspection_templates(
         db,
@@ -75,7 +74,7 @@ async def get_inspection_template(
     template_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     template = await service.get_inspection_template_by_id(db, template_id)
     return success_response(data=InspectionTemplateResponse.model_validate(template))
@@ -87,7 +86,7 @@ async def update_inspection_template(
     data: InspectionTemplateUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     template = await service.update_inspection_template(db, template_id, data)
     return success_response(data=InspectionTemplateResponse.model_validate(template))
@@ -98,7 +97,7 @@ async def delete_inspection_template(
     template_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     await service.delete_inspection_template(db, template_id)
     return success_response(message="删除成功")
@@ -111,7 +110,7 @@ async def add_template_item(
     data: InspectionTemplateItemCreate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     await service.add_template_item(db, template_id, data)
     return success_response(message="添加成功")
@@ -123,7 +122,7 @@ async def update_template_item(
     data: InspectionTemplateItemUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     await service.update_template_item(db, item_id, data)
     return success_response(message="修改成功")
@@ -134,7 +133,7 @@ async def delete_template_item(
     item_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     await service.delete_template_item(db, item_id)
     return success_response(message="删除成功")
@@ -147,7 +146,7 @@ async def complete_inspection(
     data: InspectionCompleteRequest,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.complete_inspection(db, work_order_id, data)
     return success_response(data=WorkOrderResponse.model_validate(wo))

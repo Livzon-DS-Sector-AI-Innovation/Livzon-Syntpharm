@@ -6,14 +6,13 @@ from io import BytesIO
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
-from app.shared.schemas import ApiResponse
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models.inspection import InspectionTask
 from app.modules.equipment.schemas.inspection import (
@@ -40,6 +39,7 @@ from app.modules.equipment.schemas.inspection import (
     RouteLocationsBatch,
 )
 from app.modules.equipment.service import inspection as inspection_svc
+from app.shared.schemas import ApiResponse
 
 router = APIRouter()
 
@@ -94,7 +94,7 @@ async def create_route(
     data: InspectionRouteCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     route = await inspection_svc.create_route(db, data.model_dump())
     return success_response(data=InspectionRouteResponse.model_validate(route))
 
@@ -108,7 +108,7 @@ async def list_routes(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     routes, total = await inspection_svc.get_routes(
         db,
         is_active=is_active,
@@ -140,7 +140,7 @@ async def get_route(
     route_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     route = await inspection_svc.get_route_by_id(db, route_id)
     resp = InspectionRouteDetailResponse.model_validate(route)
     resp.locations = [
@@ -181,7 +181,7 @@ async def update_route(
     data: InspectionRouteUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     update_data = data.model_dump(exclude_unset=True)
     route = await inspection_svc.update_route(db, route_id, update_data)
     return success_response(data=InspectionRouteResponse.model_validate(route))
@@ -192,7 +192,7 @@ async def delete_route(
     route_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     await inspection_svc.delete_route(db, route_id)
     return success_response(message="删除成功")
 
@@ -203,7 +203,7 @@ async def set_route_locations(
     data: RouteLocationsBatch,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     items = [item.model_dump() for item in data.locations]
     locations = await inspection_svc.set_route_locations(db, route_id, items)
     resp_list = [
@@ -242,7 +242,7 @@ async def create_task(
     data: InspectionTaskCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.create_task(db, data.model_dump())
     return success_response(data=_task_to_response(task))
 
@@ -260,7 +260,7 @@ async def list_tasks(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     from datetime import datetime as dt_type
 
     pt_from = dt_type.fromisoformat(planned_time_from) if planned_time_from else None
@@ -293,7 +293,7 @@ async def get_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.get_task_by_id(db, task_id)
     resp = _task_to_response(task)
     # 填充已完成设备列表
@@ -308,7 +308,7 @@ async def start_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.start_task(db, task_id)
     return success_response(data=_task_to_response(task))
 
@@ -318,7 +318,7 @@ async def complete_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.complete_task(db, task_id)
     return success_response(data=_task_to_response(task))
 
@@ -329,7 +329,7 @@ async def submit_route_check(
     data: RouteCheckSubmit,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.submit_route_check(db, task_id, data.overall_result, data.route_summary)
     return success_response(data=_task_to_response(task))
 
@@ -340,7 +340,7 @@ async def close_task(
     current_user: RequiredUser,
     data: InspectionTaskClose | None = None,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     task = await inspection_svc.close_task(db, task_id, data.closure_remark if data else None)
     return success_response(data=_task_to_response(task))
 
@@ -356,7 +356,7 @@ async def submit_equipment_check(
     data: EquipmentCheckResult,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     records = [r.model_dump() for r in data.records]
     result = await inspection_svc.submit_equipment_check(db, task_id, equipment_id, records)
     return success_response(data=[InspectionRecordResponse.model_validate(r) for r in result])
@@ -372,7 +372,7 @@ async def upload_equipment_photo(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id, file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
@@ -386,7 +386,7 @@ async def upload_task_photo(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     photo = await inspection_svc.upload_photo(db, task_id, equipment_id=None, file=file)
     return success_response(data=InspectionPhotoResponse.model_validate(photo))
 
@@ -396,7 +396,7 @@ async def get_task_photos(
     task_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     photos = await inspection_svc.get_task_photos(db, task_id)
     return success_response(data=[InspectionPhotoResponse.model_validate(p) for p in photos])
 
@@ -433,7 +433,7 @@ async def remove_photo(
     photo_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     await inspection_svc.delete_photo(db, photo_id)
     return success_response(message="照片已删除")
 
@@ -449,7 +449,7 @@ async def ai_analyze_photo(
     data: InspectionAIAnalyzeRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     from app.modules.equipment.service.ai import analyze_inspection_photo
 
     results = await analyze_inspection_photo(
@@ -486,7 +486,7 @@ async def get_history(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     from datetime import date as date_type
 
     d_from = date_type.fromisoformat(date_from) if date_from else None
@@ -517,7 +517,7 @@ async def get_history_detail(
     task_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     detail = await inspection_svc.get_task_detail(db, task_id)
     resp = _task_to_response(detail["task"])
     await _enrich_multi_device_names(db, [resp])

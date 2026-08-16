@@ -5,13 +5,11 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import paginated_response, success_response
-from app.shared.schemas import ApiResponse
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvParameterCreate,
@@ -23,6 +21,7 @@ from app.modules.quality.cpv.schemas import (
     CpvProductResponse,
     CpvProductUpdate,
 )
+from app.shared.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ async def create_product(
     current_user: CurrentUser,
     data: CpvProductCreate,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """创建CPV产品"""
 
     product = await service.create_product(db, data)
@@ -53,7 +52,7 @@ async def get_products(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取CPV产品列表（带统计摘要）"""
 
     from app.modules.quality.cpv import repository as repo
@@ -100,7 +99,7 @@ async def get_product(
     current_user: CurrentUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取CPV产品详情"""
 
     product = await service.get_product_by_id(db, product_id)
@@ -114,7 +113,7 @@ async def update_product(
     product_id: uuid.UUID,
     data: CpvProductUpdate,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """更新CPV产品"""
 
     product = await service.update_product(db, product_id, data)
@@ -127,7 +126,7 @@ async def delete_product(
     current_user: CurrentUser,
     product_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """删除CPV产品（软删除）"""
 
     await service.delete_product(db, product_id)
@@ -144,7 +143,7 @@ async def get_parameters(
     product_id: uuid.UUID,
     type: str | None = Query(None, description="参数类型: CPP/CQA"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取产品参数列表"""
 
     parameters = await service.get_parameters(db, product_id, type)
@@ -158,7 +157,7 @@ async def create_parameter(
     product_id: uuid.UUID,
     data: CpvParameterCreate,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """新增产品参数"""
 
     parameter = await service.create_parameter(db, product_id, data)
@@ -172,7 +171,7 @@ async def update_parameter(
     parameter_id: uuid.UUID,
     data: CpvParameterUpdate,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """更新参数"""
 
     parameter = await service.update_parameter(db, parameter_id, data)
@@ -185,7 +184,7 @@ async def delete_parameter(
     current_user: CurrentUser,
     parameter_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """删除参数（软删除）"""
 
     await service.delete_parameter(db, parameter_id)
@@ -207,7 +206,7 @@ async def get_batches(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取批次列表"""
 
     batches, total = await service.get_batches(
@@ -234,7 +233,7 @@ async def get_cpp_batches(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取CPP批次数据（宽表格式）"""
 
     batches, total = await service.get_batches_wide(
@@ -259,7 +258,7 @@ async def get_cqa_batches(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取CQA批次数据（宽表格式）"""
 
     batches, total = await service.get_batches_wide(
@@ -286,7 +285,7 @@ async def get_statistics(
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取统计数据（批次总数、均值、标准差、CPK、异常数）"""
 
     stats = await service.get_statistics(db, product_id, parameter_id, batch_no, start_date, end_date)
@@ -303,7 +302,7 @@ async def get_trend(
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取趋势图数据"""
 
     trend = await service.get_trend_data(db, product_id, parameter_id, batch_no, start_date, end_date)

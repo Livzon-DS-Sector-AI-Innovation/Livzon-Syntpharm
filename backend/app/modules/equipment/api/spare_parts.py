@@ -3,14 +3,12 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
 from app.core.response import paginated_response, success_response
-from app.shared.schemas import ApiResponse
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     SparePartCreate,
@@ -21,6 +19,7 @@ from app.modules.equipment.schemas import (
     StockResponse,
     StockWarningResponse,
 )
+from app.shared.schemas import ApiResponse
 
 router = APIRouter()
 
@@ -36,7 +35,7 @@ async def create_spare_part(
     data: SparePartCreate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.create_spare_part(db, data)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -51,7 +50,7 @@ async def list_spare_parts(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     spare_parts, total = await service.get_spare_parts(
         db,
@@ -73,7 +72,7 @@ async def list_spare_parts(
 async def get_stock_warnings(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     warnings = await service.get_stock_warnings(db)
     return success_response(
@@ -93,7 +92,7 @@ async def get_spare_part(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.get_spare_part_by_id(db, spare_part_id)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -105,7 +104,7 @@ async def update_spare_part(
     data: SparePartUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.update_spare_part(db, spare_part_id, data)
     return success_response(data=SparePartResponse.model_validate(spare_part))
@@ -116,7 +115,7 @@ async def delete_spare_part(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     await service.delete_spare_part(db, spare_part_id)
     return success_response(message="删除成功")
@@ -127,7 +126,7 @@ async def get_stock(
     spare_part_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     stock = await service.get_stock_by_spare_part_id(db, spare_part_id)
     return success_response(data=StockResponse.model_validate(stock))
@@ -139,7 +138,7 @@ async def inbound_stock(
     data: StockInboundRequest,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     stock = await service.inbound_stock(db, spare_part_id, data)
     return success_response(data=StockResponse.model_validate(stock))
@@ -151,7 +150,7 @@ async def adjust_stock(
     data: StockAdjustRequest,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     stock = await service.adjust_stock(db, spare_part_id, data)
     return success_response(data=StockResponse.model_validate(stock))
