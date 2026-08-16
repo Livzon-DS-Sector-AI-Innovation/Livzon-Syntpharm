@@ -6,17 +6,17 @@ const authFile = path.join(__dirname, '.auth', 'user.json')
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0].use.baseURL || 'http://localhost:3000'
   const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
+  const e2eSecret = process.env.E2E_AUTH_SECRET || 'e2e-test-secret'
   
   const browser = await chromium.launch()
   const context = await browser.newContext()
   const page = await context.newPage()
   
   try {
-    // 登录获取 token
-    const loginResponse = await page.request.post(`${apiURL}/api/v1/auth/login`, {
-      data: {
-        username: 'admin',
-        password: 'admin123'
+    // 使用 test-login 端点获取 token
+    const loginResponse = await page.request.post(`${apiURL}/api/v1/auth/test-login`, {
+      headers: {
+        'X-E2E-Secret': e2eSecret
       }
     })
     
@@ -32,7 +32,7 @@ async function globalSetup(config: FullConfig) {
     
     // 设置认证状态
     await context.addCookies([{
-      name: 'token',
+      name: 'auth_token',
       value: token,
       domain: new URL(baseURL).hostname,
       path: '/'
