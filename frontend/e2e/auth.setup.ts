@@ -14,7 +14,7 @@ async function globalSetup(config: FullConfig) {
   
   try {
     // 使用 test-login 端点获取 token
-    const loginResponse = await page.request.post(`${apiURL}/api/v1/auth/test-login`, {
+    const loginResponse = await page.request.post(`${apiURL}/api/v1/identity/auth/test-login`, {
       headers: {
         'X-E2E-Secret': e2eSecret
       }
