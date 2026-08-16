@@ -194,7 +194,7 @@ run_e2e() {
 
     log_info "Waiting for frontend..."
     local frontend_ready=false
-    for i in $(seq 1 30); do
+    for i in $(seq 1 60); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
             frontend_ready=true
             break
