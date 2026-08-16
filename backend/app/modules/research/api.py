@@ -247,7 +247,7 @@ async def delete_ich_record(
     return build_response(data={"message": "记录已删除"})
 
 
-@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化")
+@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=None)
 async def edbo_optimize(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="反应范围 CSV 文件"),

@@ -18,7 +18,7 @@ from app.shared.schemas import ApiResponse
 router = APIRouter()
 
 
-@router.post("/import/preview", summary="上传Excel预览")
+@router.post("/import/preview", summary="上传Excel预览", response_model=None)
 async def preview_import(
     current_user: CurrentUser,
     file: UploadFile = File(...),
