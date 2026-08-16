@@ -13,7 +13,7 @@
 - 禁止硬编码绝对文件路径（使用配置、环境变量或相对路径）
 - 禁止在 URL 中硬编码 `localhost` / `127.0.0.1`（使用环境变量）
 - 禁止在日志或异常中输出 API key、token、密码等敏感信息
-- 禁止提交 `.env` 文件
+- 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
 ## 仓库组织
@@ -28,22 +28,13 @@
 
 | 目录 | 用途 |
 |---|---|
-| `scripts/ci/` | CI 编排、迁移检查 |
+| `scripts/ci/` | CI 编排、spec 生成、迁移检查 |
 | `scripts/seed/` | 数据库种子数据与模块设置 |
 | `scripts/migration/` | 一次性数据迁移与回填 |
 | `scripts/sync/` | 飞书同步与多维表格检查 |
 | `scripts/import/` | Excel/CSV 数据导入脚本 |
 | `scripts/test/` | 测试辅助与调试脚本 |
 | `scripts/regulatory_poc/` | 法规追踪概念验证 |
-
-### 跨项目 CI (`scripts/ci.sh`)
-
-根目录 `scripts/ci.sh` 负责跨项目 CI 检查，不属于单独的后端或前端：
-
-| 子命令 | 用途 |
-|---|---|
-| `openapi` | 后端导出 OpenAPI spec → 前端生成类型 → 检查漂移 |
-| `e2e` | 启动服务（PostgreSQL + 后端 + 前端）→ 运行 Playwright → 清理 |
 
 ### 第三方代码
 - 第三方库放在 `backend/vendor/`
@@ -132,55 +123,15 @@ DELETE /api/v1/{module}/{resource}/{id}
 
 ## 认证与权限
 
-认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
+通过 `app.core.deps.CurrentUser` 获取当前用户（FastAPI 依赖注入）。认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
 
-### 依赖注入
+**注意**：当前为 Phase 1（预留接口），`current_user` 可能为 `None`。
 
-从 `app.core.deps` 导入。新增业务接口必须显式选择以下三者之一：
-
-```python
-from app.core.deps import RequiredUser, OptionalUser
-```
-
-| 选项 | 参数声明 | 类型 | 未登录行为 | 使用场景 |
-|---|---|---|---|---|
-| `RequiredUser` | `current_user: RequiredUser` | `User` | 返回 401 | **默认**。所有业务 API 必须使用 |
-| `OptionalUser` | `current_user: OptionalUser` | `User \| None` | 返回 `None`（端点可判断） | 少数场景：AI 工具、公开参考数据等允许未登录访问的接口 |
-| public（不注入） | 不声明 `current_user` 参数 | — | 不解析用户 | 仅 SSO 认证流程、飞书 webhook 回调、E2E 测试 |
-
-`OptionalUser` 与 public 的区别：`OptionalUser` 仍然会解析 JWT/cookie，端点可以拿到用户信息做条件逻辑（如登录用户显示个性化内容，未登录显示默认内容）。public 完全不解析，适合无需用户上下文的端点（登录页、webhook）。
-
-### 默认规则
-
-- **所有业务 API 默认需要登录**，使用 `RequiredUser`
-- 新增业务接口时必须从 `RequiredUser` / `OptionalUser` / public（不声明参数）中显式选择
-- 未声明的业务接口按 `RequiredUser` 处理
-
-### 公开接口（无需登录）
-
-| 端点 | 原因 | 认证方式 |
-|---|---|---|
-| `GET /api/v1/identity/auth/login` | 飞书 SSO 登录入口 | 无 |
-| `GET /api/v1/identity/auth/callback` | 飞书 SSO 回调 | 无 |
-| `GET /api/v1/identity/auth/logout` | 登出 | 无 |
-| `POST /api/v1/identity/auth/test-login` | E2E 测试专用 | `APP_ENV` 环境变量守卫 |
-| `POST /api/v1/hr/webhook/feishu-approval` | 飞书审批回调 | 飞书验证 token + 签名 |
-
-### Feishu Webhook 处理
-
-飞书 HTTP 回调（webhook）**禁止**使用 `RequiredUser` —— 这是服务器到服务器的回调，没有用户会话。
-
-**必须**按 Feishu 标准协议验证请求来源：
-
-1. **验证 Token 检查**：飞书事件 payload 包含 `token` 字段，必须与 Feishu 应用配置的 Verification Token 比对
-2. **签名验证**（如配置了 encrypt_key）：`SHA256(timestamp + nonce + encrypt_key + raw_body)`，通过 `hmac.compare_digest` 比对
-
-验证函数复用 `app/platform/identity/service.py` 中的 `_verify_feishu_callback_signature()`。
-
-**禁止**在 webhook 端点中：
-- 使用 `RequiredUser` 或 `get_current_user`
-- 不验证 token 直接处理 payload
-- 在 `_verify_feishu_callback_signature` 缺少字段时放行
+**默认规则**：
+- 所有业务 API 默认需要登录
+- 只有明确标记为 public 的接口可以允许 `current_user` 为 `None`
+- 新增业务接口时必须显式选择 `require_user` / `optional_user` / `public`
+- 未声明的业务接口按 `require_user` 处理
 
 ## 数据库规范
 
@@ -473,15 +424,17 @@ Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数�
 
 详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
 
-**Barrel 文件（index.ts）规则**：导出使用 Zustand store 或 React Context 的组件时，barrel 必须加 `'use client'`（否则构建报错 `TypeError: createContext is not a function`）。其他 barrel 建议统一加 `'use client'` 以防未来引入 store 导入时构建失败。
+**Barrel 文件（index.ts）规则**：当 Server Component 从 `components/<模块>/index.ts` 导入 Client 组件时，如果导出的组件使用了 **Zustand store**、**React Context** 或其他 Context-based 状态管理，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。示例：
 
 ```typescript
 // frontend/src/components/energy/index.ts
-'use client'
+'use client'  // ← 必须加，因为导出的组件使用 useEnergyStore
 
 export { AlertsPageClient } from './AlertsPageClient'
 export { DevicesPageClient } from './DevicesPageClient'
 ```
+
+如果 barrel 文件导出的组件只使用基本 hooks（`useState`、`useEffect`），理论上不需要 `'use client'`，但**最佳实践**是所有 `components/<模块>/index.ts` 统一加 `'use client'`，避免未来添加 zustand 导入时构建失败。
 
 ### 动态渲染
 
@@ -523,22 +476,11 @@ export const dynamic = 'force-dynamic'
 ## 新增页面的步骤
 
 1. 在 `app/(dashboard)/<模块>/` 下新建目录和 `page.tsx`
-   - **每个页面必须包含一个语义化 `<h1>` 标题**（符合 WCAG 2.4.2/2.4.6 无障碍标准）。
-   - 使用 `<h1>标题文本</h1>` 或 antd 的 `<Title level={1}>标题文本</Title>`。
-   - 标题文本必须与 E2E 测试期望的 heading 文本一致。
 2. `page.tsx` 里 fetch 数据，传给 `components/<模块>/` 里的组件
 3. 组件写在 `components/<模块>/` 里，需要交互的加 `'use client'`
 4. 如果有写操作，写在 `actions/<模块>.ts` 里
 5. 类型定义更新到 `types/<模块>.ts`
 6. 新增的对外组件记得在 `components/<模块>/index.ts` 里导出
-
-### 页面标题规范
-
-每个页面必须有一个 `<h1>` 标题：
-- 使用 `<h1>标题文本</h1>` 或 `<Title level={1}>标题文本</Title>`
-- 标题描述页面核心功能（如"批次管理"、"采购管理工作台"）
-- 禁止使用 `<Card title="...">` 替代页面标题（Card title 不生成语义化 heading 元素）
-- 禁止页面没有标题（影响无障碍访问和 E2E 测试可断言性）
 
 ## API 调用架构
 
@@ -632,10 +574,6 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 如果后端 API 发生变化，前端必须重新生成类型：
 
 ```bash
-# 使用根目录 CI 脚本（推荐，一次性完成导出 + 生成 + 漂移检查）
-bash scripts/ci.sh openapi
-
-# 或分步执行：
 # 1. 在 backend 目录导出最新 spec
 cd ../backend && uv run python scripts/ci/export_openapi.py
 
@@ -661,7 +599,7 @@ CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并�
 ## Docker 开发环境
 
 两种 docker-compose 配置：
-- `docker-compose.yml` — 生产构建（`next build` → `node .next/standalone/server.js`，无热更新，位于仓库根目录）
+- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新，位于仓库根目录）
 - `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新，位于仓库根目录）
 
 开发时**必须**使用：
