@@ -5,13 +5,13 @@ import uuid
 from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response, error_response, paginated_response
+from app.core.response import build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
     RdDeliverableTemplateCreate,
@@ -255,7 +255,7 @@ async def edbo_optimize(
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
     batch_size: int = Body(5, ge=1, le=100, description="建议实验数量"),
     save_prediction: bool = Body(False, description="是否保存预测文件"),
-) -> JSONResponse | ApiResponse:
+) -> ApiResponse:
     """
 
     使用 EDBO+ 进行贝叶斯反应优化。
@@ -291,9 +291,8 @@ async def edbo_optimize(
         csv_content = (await file.read()).decode("utf-8")
 
     except UnicodeDecodeError:
-        from app.core.response import error_response
-
-        return error_response(message="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
 
     # Run EDBO+ optimization
 
@@ -307,9 +306,8 @@ async def edbo_optimize(
         )
 
     except RuntimeError as e:
-        from app.core.response import error_response
-
-        return error_response(message=str(e))
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
 
     return build_response(data=EDBOOptimizeResponse(**result))
 
@@ -2065,15 +2063,15 @@ async def transition_stage(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse | ApiResponse:
+) -> ApiResponse:
 
     target_stage = data.get("target_stage")
 
     review_notes = data.get("review_notes")
 
     if not target_stage:
-        return error_response(message="缺少 target_stage 参数")
-
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="缺少 target_stage 参数")
     user_id = current_user.id
 
     result = await service.transition_stage(db, project_id, target_stage, review_notes, user_id)
@@ -2082,7 +2080,8 @@ async def transition_stage(
         return build_response(data=result, message="阶段流转成功")
 
     else:
-        return error_response(message=result.get("message", "阶段流转失败"))
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=result.get("message", "阶段流转失败"))
 
 
 @router.get("/rd-projects/{project_id}/transition-check", summary="检查阶段流转条件")

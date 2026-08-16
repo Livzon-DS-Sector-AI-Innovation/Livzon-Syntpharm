@@ -3,12 +3,11 @@
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import build_response, error_response, paginated_response
+from app.core.response import build_response, paginated_response
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
     CpvImportConfirmRequest,
@@ -26,11 +25,12 @@ async def preview_import(
     data_type: str = Query(..., description="数据类型: CPP/CQA"),
     import_mode: str = Query("create", description="导入模式: create/update/overwrite"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse | ApiResponse:
+) -> ApiResponse:
     """上传Excel文件并预览导入数据"""
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return error_response("请上传 Excel 文件 (.xlsx, .xls)", status_code=400)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="请上传 Excel 文件 (.xlsx, .xls)")
 
     file_content = await file.read()
 
