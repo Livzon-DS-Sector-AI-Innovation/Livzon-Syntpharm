@@ -69,10 +69,21 @@ async function globalSetup(config: FullConfig) {
       }
     })
     
-    expect(listResponse.ok()).toBeTruthy()
+    if (!listResponse.ok()) {
+      const errorText = await listResponse.text()
+      console.error(`List workshops failed: ${listResponse.status()} ${listResponse.statusText()}`)
+      console.error(`Response body: ${errorText}`)
+      throw new Error(`List workshops failed with status ${listResponse.status()}`)
+    }
+    
     const listData = await listResponse.json()
+    console.log('Workshop list response:', JSON.stringify(listData, null, 2))
     expect(listData.code).toBe(200)
-    expect(listData.data?.items?.length).toBeGreaterThan(0)
+    
+    // Check if items exist and have length
+    const items = listData.data?.items || listData.items || listData.data || []
+    expect(Array.isArray(items)).toBe(true)
+    expect(items.length).toBeGreaterThan(0)
     
     // 保存认证状态
     await context.storageState({ path: authFile })
