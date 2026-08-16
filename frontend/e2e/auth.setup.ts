@@ -1,7 +1,7 @@
 import { chromium, expect, FullConfig } from '@playwright/test'
 import path from 'path'
 
-const authFile = path.join(__dirname, '.auth', 'user.json')
+const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0].use.baseURL || 'http://localhost:3000'
@@ -86,6 +86,12 @@ async function globalSetup(config: FullConfig) {
     expect(items.length).toBeGreaterThan(0)
     
     // 保存认证状态
+    // Ensure directory exists
+    const fs = await import("fs")
+    const dir = path.dirname(authFile)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
     await context.storageState({ path: authFile })
   } finally {
     await browser.close()
