@@ -184,12 +184,7 @@ run_e2e() {
         ci-build \
         sh -c "
             API_BASE_URL=http://backend-e2e:8000 pnpm build &&
-            rm -rf .next/standalone/.next/static &&
-            cp -r .next/static .next/standalone/.next/static &&
-            rm -rf .next/standalone/public &&
-            cp -r public .next/standalone/public &&
-            cd .next/standalone &&
-            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 node server.js
+            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 pnpm exec next start -H 0.0.0.0 -p 3000
         "
 
     log_info "Waiting for frontend..."
