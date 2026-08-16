@@ -52,8 +52,8 @@ def paginated_response(
     page_size: int,
     total: int,
     message: str = "success",
-) -> JSONResponse:
-    return success_response(
+) -> ApiResponse:
+    return build_response(
         data=data,
         message=message,
         meta={
