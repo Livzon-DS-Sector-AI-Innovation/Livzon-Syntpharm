@@ -86,6 +86,35 @@ async function globalSetup(config: any) {
     expect(Array.isArray(items)).toBe(true)
     expect(items.length).toBeGreaterThan(0)
     
+    // 创建测试能耗数据（用于能源单耗分析测试）
+    const energyDataResponse = await page.request.post(`${apiURL}/api/v1/energy/monthly/batch`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        records: [
+          {
+            workshop_id: workshop.data.id,
+            energy_type: 'electricity',
+            record_date: '2026-01-15',
+            value: 50000,
+            unit: 'kWh',
+            source: 'manual',
+            remark: 'E2E test data'
+          }
+        ]
+      }
+    })
+    
+    if (!energyDataResponse.ok()) {
+      const errorText = await energyDataResponse.text()
+      console.error(`Failed to create energy data: ${energyDataResponse.status()} ${errorText}`)
+      throw new Error(`Failed to create energy data: ${energyDataResponse.status()}`)
+    }
+    
+    console.log('Energy data created successfully')
+
     // 保存认证状态
     // Ensure directory exists
     const dir = path.dirname(authFile)
