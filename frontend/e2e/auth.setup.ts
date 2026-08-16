@@ -20,7 +20,13 @@ async function globalSetup(config: FullConfig) {
       }
     })
     
-    expect(loginResponse.ok()).toBeTruthy()
+    if (!loginResponse.ok()) {
+      const errorText = await loginResponse.text()
+      console.error(`Login failed: ${loginResponse.status()} ${loginResponse.statusText()}`)
+      console.error(`Response body: ${errorText}`)
+      throw new Error(`Login failed with status ${loginResponse.status()}`)
+    }
+    
     const { token } = await loginResponse.json()
     expect(token).toBeTruthy()
     
