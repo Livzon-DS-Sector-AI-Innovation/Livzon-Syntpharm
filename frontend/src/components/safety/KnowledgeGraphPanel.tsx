@@ -286,7 +286,7 @@ export default function KnowledgeGraphPanel() {
     } finally {
       store.setLoading(false)
     }
-  }, [store.nodeTypeFilter, store.relationTypeFilter])
+  }, [store.nodeTypeFilter, store.relationTypeFilter, message, store])
 
   useEffect(() => { loadGraph() }, [loadGraph])
 
@@ -311,7 +311,7 @@ export default function KnowledgeGraphPanel() {
     setTimeout(() => {
       rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
-  }, [store.nodes, store.edges])
+  }, [store.nodes, store.edges, setFlowEdges, setFlowNodes])
 
   // 节点点击 → 展开邻居
   const onNodeClick = useCallback(

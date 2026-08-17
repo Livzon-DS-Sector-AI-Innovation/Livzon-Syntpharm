@@ -42,7 +42,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         }
       }).catch(() => {})
     }
-  }, [workOrderDrawerOpen])
+  }, [workOrderDrawerOpen, editingWorkOrder, editingWorkOrder.responsible_person_id, form])
 
   // 构建 initialValues：编辑时填充已有数据，新建时给默认值
   const initialValues = useMemo(() => {

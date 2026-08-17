@@ -258,7 +258,7 @@ export default function HazardLedgerPanel() {
   useEffect(() => {
     setSelectedRowKeys([loadData, loadStats])
     loadData()
-  }, [queryParams.page, queryParams.page_size, riskLevel, department, position])
+  }, [queryParams.page, queryParams.page_size, riskLevel, department, position, loadData, loadStats])
 
   // 排序/日期变化时重新加载
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function HazardLedgerPanel() {
   useEffect(() => {
     loadData()
     loadStats()
-  }, [dateRange])
+  }, [dateRange, loadData, loadStats])
 
   const handleSearch = () => {
     searchKeywordRef.current = keyword

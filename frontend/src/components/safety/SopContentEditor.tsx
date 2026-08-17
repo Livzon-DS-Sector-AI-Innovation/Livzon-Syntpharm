@@ -1702,7 +1702,7 @@ export default function SopContentEditor({
           )
       }
     },
-    [handleChapterChange, chapters, collapsedKeys],
+    [handleChapterChange, chapters, collapsedKeys, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
   )
 
   /* ── key styles ── */

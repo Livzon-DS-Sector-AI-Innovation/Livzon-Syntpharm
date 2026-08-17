@@ -101,7 +101,7 @@ export function EquipmentPage({
       }
     }
     loadMissing()
-  }, [])
+  }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
 
   // 获取列表数据
   const fetchData = useCallback(async (p: number, ps: number) => {
