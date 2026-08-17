@@ -17,7 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createDeviationFlow, updateDeviationFlow, submitDeviationFlow } from '@/actions/deviation'
 import '../deviation-style.css'
 
-const { Title, Text } = Typography
+const { _Title, Text } = Typography
 const { TextArea } = Input
 
 const API_BASE = '/api/v1'

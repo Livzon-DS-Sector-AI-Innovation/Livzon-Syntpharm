@@ -98,7 +98,7 @@ const RISK_LABELS: Record<RiskLevel, string> = {
 }
 
 // 状态颜色映射
-const STATUS_COLORS: Record<CheckStatus, string> = {
+const _STATUS_COLORS: Record<CheckStatus, string> = {
   pending: 'default',
   running: 'processing',
   completed: 'success',
@@ -107,7 +107,7 @@ const STATUS_COLORS: Record<CheckStatus, string> = {
 }
 
 // 状态文本映射
-const STATUS_LABELS: Record<CheckStatus, string> = {
+const _STATUS_LABELS: Record<CheckStatus, string> = {
   pending: '待处理',
   running: '校验中',
   completed: '已完成',
@@ -134,7 +134,7 @@ export default function DocCheckPage() {
   const [checking, setChecking] = useState(false)
   const [checkProgress, setCheckProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState('')
-  const [taskId, setTaskId] = useState('')
+  const [_taskId, setTaskId] = useState('')
   const [checkError, setCheckError] = useState<string | null>(null)
 
   // 校验结果状态
@@ -142,9 +142,9 @@ export default function DocCheckPage() {
   const [activeTab, setActiveTab] = useState<string>('duplicate')
 
   // 记录列表状态
-  const [records, setRecords] = useState<CheckMainDetail[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
+  const [_records, setRecords] = useState<CheckMainDetail[]>([])
+  const [_loading, setLoading] = useState(false)
+  const [_total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -280,7 +280,7 @@ export default function DocCheckPage() {
         message.error({ content: data.message || '启动失败', key: 'check' })
         setChecking(false)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error({ content: '启动失败', key: 'check' })
       setChecking(false)
     }
@@ -425,7 +425,7 @@ export default function DocCheckPage() {
       } else {
         message.error(data.message || '处理失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('处理失败')
     }
   }
@@ -451,7 +451,7 @@ export default function DocCheckPage() {
       } else {
         message.error({ content: data.message || '生成失败', key: 'export' })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error({ content: '生成失败', key: 'export' })
     }
   }
@@ -477,7 +477,7 @@ export default function DocCheckPage() {
       } else {
         message.error(data.message || '确认失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('确认失败')
     }
   }

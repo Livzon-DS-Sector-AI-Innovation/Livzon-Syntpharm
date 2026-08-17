@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import {useState, useCallback} from 'react'
 import {
   Table,
   Button,
@@ -99,7 +99,7 @@ export default function FQCPage() {
 
   // 弹窗状态 - 新建和编辑使用不同的弹窗
   const [createModalVisible, setCreateModalVisible] = useState(false)
-  const [modalTitle, setModalTitle] = useState('新建FQC检验单')
+  const [_modalTitle, setModalTitle] = useState('新建FQC检验单')
   const [editingRecord, setEditingRecord] = useState<FQCInspection | null>(null)
   const [viewRecord, setViewRecord] = useState<FQCInspection | null>(null)
   const [viewModalVisible, setViewModalVisible] = useState(false)
@@ -127,7 +127,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '加载失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
@@ -188,7 +188,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -203,7 +203,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -218,7 +218,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '删除失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -233,7 +233,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '提交失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('提交失败')
     }
   }
@@ -250,7 +250,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '操作失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('操作失败')
     }
   }
@@ -272,7 +272,7 @@ export default function FQCPage() {
           } else {
             message.error(response.message || '申请失败')
           }
-        } catch (error) {
+        } catch (_error) {
           message.error('申请失败')
         }
       },
@@ -289,7 +289,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '放行失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('放行失败')
     }
   }
@@ -304,7 +304,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '锁定失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('锁定失败')
     }
   }
@@ -319,7 +319,7 @@ export default function FQCPage() {
       } else {
         message.error(response.message || '解锁失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('解锁失败')
     }
   }
@@ -367,7 +367,7 @@ export default function FQCPage() {
   }
 
   // 保存并提交审批（新建）
-  const handleSaveAndSubmit = async () => {
+  const _handleSaveAndSubmit = async () => {
     try {
       const values = await createForm.validateFields()
 

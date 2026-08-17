@@ -24,7 +24,6 @@ import {
   DeleteOutlined,
   FileWordOutlined,
 } from '@ant-design/icons'
-import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
   getTemplates,
@@ -58,7 +57,7 @@ export default function TemplateListPage() {
       const result = await getTemplates({ is_active: undefined, page, page_size: pageSize })
       setTemplates(result.data?.items || [])
       setTotal(result.data?.total || 0)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取模板列表失败')
     } finally {
       setLoading(false)

@@ -172,7 +172,7 @@ export default function CreateInstrumentPage() {
 
       message.success('创建成功')
       router.push('/quality/instrument/list')
-    } catch (error) {
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setLoading(false)

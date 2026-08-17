@@ -1,4 +1,3 @@
-import { getFullGraph } from '@/actions/safety/knowledge-graph'
 import KnowledgeGraphPanel from '@/components/safety/KnowledgeGraphPanel'
 
 export const dynamic = 'force-dynamic'

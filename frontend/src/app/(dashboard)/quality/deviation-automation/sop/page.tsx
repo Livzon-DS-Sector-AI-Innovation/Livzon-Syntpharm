@@ -1,5 +1,5 @@
 'use client'
-import { createSopTemplate, createSopFromTemplate, updateSopTemplate, deleteSopTemplate, generateSop, deleteSopRule, updateSopRuleStatus, createSopRule, uploadSopRule, aiParseSopRule } from '@/actions/quality'
+import {createSopTemplate, createSopFromTemplate, updateSopTemplate, deleteSopTemplate, deleteSopRule, updateSopRuleStatus, createSopRule, uploadSopRule, aiParseSopRule} from '@/actions/quality'
 
 import { useState, useRef } from 'react'
 import {

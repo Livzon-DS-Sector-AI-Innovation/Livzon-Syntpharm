@@ -521,7 +521,7 @@ export default function MobileReagentCreatePage() {
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
-  const [recognizedData, setRecognizedData] = useState<Record<string, string>>({})
+  const [_recognizedData, setRecognizedData] = useState<Record<string, string>>({})
 
   // 初始化表单
   const initForm = async () => {

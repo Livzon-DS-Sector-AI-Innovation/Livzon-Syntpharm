@@ -71,7 +71,7 @@ export default function DocCheckNewPage() {
   const [checking, setChecking] = useState(false)
   const [checkProgress, setCheckProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState('')
-  const [taskId, setTaskId] = useState('')
+  const [_taskId, setTaskId] = useState('')
   const [checkError, setCheckError] = useState<string | null>(null)
   const [checkConfig, setCheckConfig] = useState<CheckConfig>(DEFAULT_CHECK_CONFIG)
 
@@ -190,7 +190,7 @@ export default function DocCheckNewPage() {
         message.error({ content: data.message || '启动失败', key: 'check' })
         setChecking(false)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error({ content: '启动失败', key: 'check' })
       setChecking(false)
     }

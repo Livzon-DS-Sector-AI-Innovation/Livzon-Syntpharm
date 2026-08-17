@@ -1,5 +1,5 @@
 'use client'
-import { saveAIConfig, resetAIConfig, testAIConnection } from '@/actions/quality'
+import {saveAIConfig, resetAIConfig} from '@/actions/quality'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
@@ -76,7 +76,7 @@ export default function AiConfigPage() {
       } else {
         form.setFieldsValue(defaultConfig)
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('从后端加载配置失败，使用默认配置')
       form.setFieldsValue(defaultConfig)
     } finally {

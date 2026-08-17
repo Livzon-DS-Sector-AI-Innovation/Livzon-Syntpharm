@@ -27,7 +27,7 @@ import {
   InboxOutlined,
 } from '@ant-design/icons'
 import { batchCheck } from '@/actions/sop-ai'
-import { BatchCheckResult, BatchCheckResult as BatchResultType } from '@/types/sop-ai'
+import {BatchCheckResult as BatchResultType} from '@/types/sop-ai'
 
 const { Title, Text, Paragraph } = Typography
 const { Dragger } = Upload
@@ -37,7 +37,7 @@ type SopAiBatchPageProps = Record<string, never>
 /**
  * 批量巡检页面
  */
-export default function SopAiBatchPage(props: SopAiBatchPageProps) {
+export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<BatchResultType | null>(null)

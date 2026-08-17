@@ -50,7 +50,7 @@ type SopAiRecordsPageProps = Record<string, never>
 /**
  * 记录台账页面
  */
-export default function SopAiRecordsPage(props: SopAiRecordsPageProps) {
+export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
   const [loading, setLoading] = useState(false)
   const [records, setRecords] = useState<CheckMain[]>([])
   const [total, setTotal] = useState(0)

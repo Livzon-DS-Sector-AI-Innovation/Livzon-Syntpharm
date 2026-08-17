@@ -94,7 +94,7 @@ export default function DeviationQueryPage() {
         setData(result.data.items || [])
         setTotal(result.data.total || 0)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)

@@ -1,11 +1,10 @@
 
 'use client'
 
-import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Space, App, Tabs, DatePicker, Select, Card, message, Modal, Form, Input } from 'antd'
+import {Button, Space, App, Tabs, DatePicker, Select, Card, Modal, Form, Input} from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
 import { AlertRule, AlertRecord } from '@/types/energy'
@@ -15,7 +14,7 @@ import { useEnergyStore } from '@/stores/energy'
 
 export default function AlertsPage() {
   const { message } = App.useApp()
-  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
   
   // 预警规则状态
   const [rules, setRules] = useState<AlertRule[]>([])
@@ -45,7 +44,7 @@ export default function AlertsPage() {
       if (showSuccessMessage) {
         message.success('刷新成功')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取预警规则失败')
     } finally {
       setRulesLoading(false)
@@ -70,7 +69,7 @@ export default function AlertsPage() {
       if (showSuccessMessage) {
         message.success('刷新成功')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取预警记录失败')
     } finally {
       setRecordsLoading(false)

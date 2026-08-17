@@ -118,7 +118,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '加载失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
@@ -173,7 +173,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -188,7 +188,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -203,7 +203,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '删除失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -218,7 +218,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '提交失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('提交失败')
     }
   }
@@ -235,7 +235,7 @@ export default function IQCPage() {
       } else {
         message.error(response.message || '操作失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('操作失败')
     }
   }

@@ -43,7 +43,7 @@ export default function InspectionTableListPage() {
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [selectedTable, setSelectedTable] = useState<TableListItem | null>(null)
-  const [columnsModalVisible, setColumnsModalVisible] = useState(false)
+  const [_columnsModalVisible, setColumnsModalVisible] = useState(false)
   const [columns, setColumns] = useState<ColumnConfig[]>([])
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
@@ -59,7 +59,7 @@ export default function InspectionTableListPage() {
       })
       setData(result.data?.items || [])
       setTotal(result.data?.total || 0)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     } finally {
       setLoading(false)

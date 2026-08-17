@@ -22,7 +22,7 @@ interface WorkshopStats {
 }
 
 export default function ProductDetailPage() {
-  const router = useRouter()
+  const _router = useRouter()
   const params = useParams()
   const productName = decodeURIComponent(params.productName as string)
   

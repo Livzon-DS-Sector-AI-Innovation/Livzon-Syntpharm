@@ -3,7 +3,6 @@
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { App } from 'antd'
-import { ThunderboltOutlined } from '@ant-design/icons'
 import SopGeneratorPanel from '@/components/safety/SopGeneratorPanel'
 import type { OperationRegulation } from '@/types/safety'
 

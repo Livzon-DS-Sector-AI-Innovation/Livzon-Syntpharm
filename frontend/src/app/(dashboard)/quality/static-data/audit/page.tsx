@@ -67,7 +67,7 @@ export default function AuditLogPage() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
   const [detailRecord, setDetailRecord] = useState<AuditLogItem | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [_detailLoading, setDetailLoading] = useState(false)
 
   // 加载模块列表
   useEffect(() => {

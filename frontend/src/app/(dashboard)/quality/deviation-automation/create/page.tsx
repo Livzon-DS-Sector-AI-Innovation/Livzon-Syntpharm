@@ -1,5 +1,5 @@
 'use client'
-import { createDeviationTask, generateDeviationReport, submitDeviationApproval, uploadDeviationFile, triggerAIProcess, uploadDeviationFileWithTask } from '@/actions/quality'
+import {createDeviationTask, generateDeviationReport, submitDeviationApproval, triggerAIProcess, uploadDeviationFileWithTask} from '@/actions/quality'
 
 import { useState } from 'react'
 import {
@@ -44,7 +44,7 @@ export default function CreateDeviationReportPage() {
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [taskId, setTaskId] = useState<number | null>(null)
+  const [_taskId, setTaskId] = useState<number | null>(null)
   const [templateModalVisible, setTemplateModalVisible] = useState(false)
   const [templates, setTemplates] = useState<ReportTemplate[]>([])
   const [templatesLoading, setTemplatesLoading] = useState(false)

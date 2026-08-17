@@ -33,7 +33,7 @@ import {
 } from '@ant-design/icons'
 import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemReminder } from '@/actions/quality-reagent'
 
-const { Title, Text } = Typography
+const { _Title, Text } = Typography
 
 interface ReminderConfig {
   feishu_app_id?: string
@@ -90,7 +90,7 @@ export default function ReagentReminderPage() {
           is_enabled: data.data.is_enabled,
         })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载配置失败')
     } finally {
       setLoading(false)
@@ -125,7 +125,7 @@ export default function ReagentReminderPage() {
       } else {
         message.error(data.message || '保存失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('保存失败')
     } finally {
       setSaving(false)
@@ -143,7 +143,7 @@ export default function ReagentReminderPage() {
       } else {
         message.error(data.message || '检查失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('检查失败')
     } finally {
       setChecking(false)
@@ -160,7 +160,7 @@ export default function ReagentReminderPage() {
       } else {
         message.error(data.message || '设置失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('设置失败')
     } finally {
       setSettingItem(null)
