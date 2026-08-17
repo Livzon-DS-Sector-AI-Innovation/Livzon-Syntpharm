@@ -1556,3 +1556,325 @@ Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), C
 
 ---
 
+
+---
+
+---
+
+## PR #30 Audit (commit: 2eb03c7, date: 2026-08-17)
+
+**PR Title:** 实现能源 AI 智能分析多产品折算功能及数据治理  
+**Branch:** `lzhc-zhuang` → `main`  
+**Changed files:** 59 files
+
+---
+
+### Category 1: Repository layout
+
+| Files inspected | 59 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (all layout rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 2: Secrets and hardcoded values
+
+| Files inspected | 59 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (all secret/hardcoded value rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 3: Backend module boundaries
+
+| Files inspected | 15 (energy module files) |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (all module boundary rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 4: API and authentication
+
+| Files inspected | 3 (energy/api.py, energy/public_api.py, equipment/api/*.py) |
+| Files not inspected | 0 |
+| Rules evaluated | 7 (all API rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+- [ ] `backend/app/modules/energy/service.py:502-503` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Duplicate `raise NotFoundException` statement. Line 502 raises with `data.workshop_id` (UUID object), line 503 raises with `str(data.workshop_id)`. The second raise is unreachable dead code. — severity: medium
+
+#### Uncertain
+_None._
+
+---
+
+### Category 5: Models and migrations
+
+| Files inspected | 4 (energy/models.py, 3 migration files) |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (all model/migration rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+- [ ] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:22-23` — 模型与迁移/迁移规范 — Duplicate `op.execute('CREATE SCHEMA IF NOT EXISTS energy')` statement. The schema creation is executed twice. — severity: low
+- [ ] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:56-119` — 模型与迁移/迁移规范 — Migration `downgrade()` function contains duplicate operations: `op.drop_table('energy_product_conversions', schema='energy')` appears twice (lines 56 and 119), and multiple FK/index operations are duplicated. The downgrade function is malformed and will fail if executed. — severity: high
+
+#### Uncertain
+_None._
+
+---
+
+### Category 6: Configuration and logging
+
+| Files inspected | 59 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 6 (all config/logging rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 7: External services and background tasks
+
+| Files inspected | 2 (energy/service.py, energy/scheduler.py) |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all external service rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 8: Backend tests
+
+| Files inspected | 1 (tests/modules/energy/test_unit_consumption.py) |
+| Files not inspected | 0 |
+| Rules evaluated | 4 (all test rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 9: Frontend component boundaries
+
+| Files inspected | 5 (frontend page and component files) |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (all component boundary rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 10: Frontend API and generated types
+
+| Files inspected | 4 (frontend API client files) |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (all frontend API rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 4 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+- [ ] `frontend/src/lib/api/client/energy.ts:13-103` — 前端 API/必须使用 apiFetch — Multiple functions (`fetchEnergyOverviewClient`, `fetchCollectLogDetailClient`, `fetchPlatformsClient`, `fetchAlertRules`, `fetchAlertRecords`, `fetchMonthlyRecordsClient`, `fetchWorkshopsClient`, `fetchMonthlySummaryClient`) use raw `fetch()` instead of `apiFetch<T>()`. This violates the API client consistency rule. — severity: high
+- [ ] `frontend/src/lib/api/client/energy.ts:186-202` — 前端 API/必须使用 apiFetch — `analyzeEnergyV2()` function uses raw `fetch()` with manual JSON parsing instead of `apiFetch<AIAnalysisResult>()`. — severity: high
+- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:44-58` — 前端 API/必须使用 apiFetch — Component uses raw `fetch()` to call `/api/v1/energy/workshops` instead of using the proper API client from `@/lib/api/client/energy`. This bypasses the standardized error handling and type safety. — severity: medium
+- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:107-118` — 前端 API/必须使用 apiFetch — `handleSyncProduction()` uses raw `fetch()` to call `/api/v1/energy/production/output` instead of using a typed API client function. — severity: medium
+
+#### Uncertain
+_None._
+
+---
+
+### Category 11: Proxy and routing
+
+| Files inspected | 2 (proxy.ts, menu-config.ts) |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (all proxy/routing rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 12: Cross-project OpenAPI
+
+| Files inspected | 2 (client API files) |
+| Files not inspected | 0 |
+| Rules evaluated | 4 (all OpenAPI rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 13: Docker and deployment
+
+| Files inspected | 3 (docker-compose.dev.yml, scripts/ci.sh, scripts/dev.sh) |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all Docker/deployment rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 14: E2E
+
+| Files inspected | 2 (e2e test files) |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (all E2E rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+---
+
+### Category 15: SQL injection and unsafe queries
+
+| Files inspected | 3 (energy/repository.py, energy/service.py, energy/models.py) |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all SQL injection rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+- [ ] `backend/app/modules/energy/repository.py:67` — 安全规则/SQL 查询 — Uses f-string to build `ilike` pattern: `EnergyDeviceConfig.device_name.ilike(f"%{keyword}%")`. While SQLAlchemy's `ilike()` method does parameterize the value, the f-string construction bypasses proper LIKE wildcard escaping. If `keyword` contains `%` or `_` characters, they will be interpreted as wildcards rather than literal characters. Should use `ilike(f"%{keyword.replace('%', '\\%').replace('_', '\\_')}%")` or SQLAlchemy's `contains()` method. — severity: medium
+
+#### Uncertain
+_None._
+
+---
+
+### Summary
+
+| Category | Confirmed | Uncertain | Severity |
+|----------|-----------|-----------|----------|
+| 1. Repository layout | 0 | 0 | — |
+| 2. Secrets and hardcoded values | 0 | 0 | — |
+| 3. Backend module boundaries | 0 | 0 | — |
+| 4. API and authentication | 1 | 0 | medium |
+| 5. Models and migrations | 2 | 0 | high, low |
+| 6. Configuration and logging | 0 | 0 | — |
+| 7. External services and background tasks | 0 | 0 | — |
+| 8. Backend tests | 0 | 0 | — |
+| 9. Frontend component boundaries | 0 | 0 | — |
+| 10. Frontend API and generated types | 4 | 0 | high, high, medium, medium |
+| 11. Proxy and routing | 0 | 0 | — |
+| 12. Cross-project OpenAPI | 0 | 0 | — |
+| 13. Docker and deployment | 0 | 0 | — |
+| 14. E2E | 0 | 0 | — |
+| 15. SQL injection and unsafe queries | 1 | 0 | medium |
+| **Total** | **8** | **0** | — |
+
+### Blocking issues
+1. **Migration downgrade is broken** (Category 5) — The `downgrade()` function in `29a5a96069e8_add_energy_product_conversion_table.py` contains duplicate operations and will fail if executed.
+
+### High priority
+2. **Frontend API client inconsistency** (Category 10) — Multiple frontend functions use raw `fetch()` instead of `apiFetch<T>()`, bypassing standardized error handling and type safety.
+
+### Medium priority
+3. **Dead code in service layer** (Category 4) — Duplicate `raise` statement in `create_monthly_record()`.
+4. **Raw fetch in page component** (Category 10) — AI analysis page uses raw `fetch()` instead of API client.
+5. **SQL LIKE wildcard escaping** (Category 15) — `ilike` pattern construction doesn't escape special characters.
+
+### Low priority
+6. **Duplicate schema creation** (Category 5) — Migration executes `CREATE SCHEMA` twice.
+
