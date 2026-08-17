@@ -11,7 +11,7 @@ def build_response(
     data: Any = None,
     message: str = "success",
     meta: dict[str, Any] | None = None,
-    code: int = 0,
+    code: int = 200,
 ) -> ApiResponse:
     """Return ApiResponse model for FastAPI to serialize.
     Unlike success_response(), does not wrap in JSONResponse —
