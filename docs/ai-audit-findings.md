@@ -1634,7 +1634,7 @@ _None._
 | Status | complete |
 
 #### Confirmed
-- [ ] `backend/app/modules/energy/service.py:502-503` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Duplicate `raise NotFoundException` statement. Line 502 raises with `data.workshop_id` (UUID object), line 503 raises with `str(data.workshop_id)`. The second raise is unreachable dead code. — severity: medium
+- [x] `backend/app/modules/energy/service.py:502-503` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Duplicate `raise NotFoundException` statement. Line 502 raises with `data.workshop_id` (UUID object), line 503 raises with `str(data.workshop_id)`. The second raise is unreachable dead code. — severity: medium — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -1652,8 +1652,8 @@ _None._
 | Status | complete |
 
 #### Confirmed
-- [ ] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:22-23` — 模型与迁移/迁移规范 — Duplicate `op.execute('CREATE SCHEMA IF NOT EXISTS energy')` statement. The schema creation is executed twice. — severity: low
-- [ ] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:56-119` — 模型与迁移/迁移规范 — Migration `downgrade()` function contains duplicate operations: `op.drop_table('energy_product_conversions', schema='energy')` appears twice (lines 56 and 119), and multiple FK/index operations are duplicated. The downgrade function is malformed and will fail if executed. — severity: high
+- [x] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:22-23` — 模型与迁移/迁移规范 — Duplicate `op.execute('CREATE SCHEMA IF NOT EXISTS energy')` statement. The schema creation is executed twice. — severity: low — **RESOLVED**
+- [x] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:56-119` — 模型与迁移/迁移规范 — Migration `downgrade()` function contains duplicate operations: `op.drop_table('energy_product_conversions', schema='energy')` appears twice (lines 56 and 119), and multiple FK/index operations are duplicated. The downgrade function is malformed and will fail if executed. — severity: high — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -1743,10 +1743,10 @@ _None._
 | Status | complete |
 
 #### Confirmed
-- [ ] `frontend/src/lib/api/client/energy.ts:13-103` — 前端 API/必须使用 apiFetch — Multiple functions (`fetchEnergyOverviewClient`, `fetchCollectLogDetailClient`, `fetchPlatformsClient`, `fetchAlertRules`, `fetchAlertRecords`, `fetchMonthlyRecordsClient`, `fetchWorkshopsClient`, `fetchMonthlySummaryClient`) use raw `fetch()` instead of `apiFetch<T>()`. This violates the API client consistency rule. — severity: high
-- [ ] `frontend/src/lib/api/client/energy.ts:186-202` — 前端 API/必须使用 apiFetch — `analyzeEnergyV2()` function uses raw `fetch()` with manual JSON parsing instead of `apiFetch<AIAnalysisResult>()`. — severity: high
-- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:44-58` — 前端 API/必须使用 apiFetch — Component uses raw `fetch()` to call `/api/v1/energy/workshops` instead of using the proper API client from `@/lib/api/client/energy`. This bypasses the standardized error handling and type safety. — severity: medium
-- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:107-118` — 前端 API/必须使用 apiFetch — `handleSyncProduction()` uses raw `fetch()` to call `/api/v1/energy/production/output` instead of using a typed API client function. — severity: medium
+- [x] `frontend/src/lib/api/client/energy.ts:13-103` — 前端 API/必须使用 apiFetch — Multiple functions (`fetchEnergyOverviewClient`, `fetchCollectLogDetailClient`, `fetchPlatformsClient`, `fetchAlertRules`, `fetchAlertRecords`, `fetchMonthlyRecordsClient`, `fetchWorkshopsClient`, `fetchMonthlySummaryClient`) use raw `fetch()` instead of `apiFetch<T>()`. This violates the API client consistency rule. — severity: high — **RESOLVED**
+- [x] `frontend/src/lib/api/client/energy.ts:186-202` — 前端 API/必须使用 apiFetch — `analyzeEnergyV2()` function uses raw `fetch()` with manual JSON parsing instead of `apiFetch<AIAnalysisResult>()`. — severity: high — **RESOLVED**
+- [x] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:44-58` — 前端 API/必须使用 apiFetch — Component uses raw `fetch()` to call `/api/v1/energy/workshops` instead of using the proper API client from `@/lib/api/client/energy`. This bypasses the standardized error handling and type safety. — severity: medium — **RESOLVED**
+- [x] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:107-118` — 前端 API/必须使用 apiFetch — `handleSyncProduction()` uses raw `fetch()` to call `/api/v1/energy/production/output` instead of using a typed API client function. — severity: medium — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -1836,7 +1836,7 @@ _None._
 | Status | complete |
 
 #### Confirmed
-- [ ] `backend/app/modules/energy/repository.py:67` — 安全规则/SQL 查询 — Uses f-string to build `ilike` pattern: `EnergyDeviceConfig.device_name.ilike(f"%{keyword}%")`. While SQLAlchemy's `ilike()` method does parameterize the value, the f-string construction bypasses proper LIKE wildcard escaping. If `keyword` contains `%` or `_` characters, they will be interpreted as wildcards rather than literal characters. Should use `ilike(f"%{keyword.replace('%', '\\%').replace('_', '\\_')}%")` or SQLAlchemy's `contains()` method. — severity: medium
+- [x] `backend/app/modules/energy/repository.py:67` — 安全规则/SQL 查询 — Uses f-string to build `ilike` pattern: `EnergyDeviceConfig.device_name.ilike(f"%{keyword}%")`. While SQLAlchemy's `ilike()` method does parameterize the value, the f-string construction bypasses proper LIKE wildcard escaping. If `keyword` contains `%` or `_` characters, they will be interpreted as wildcards rather than literal characters. Should use `ilike(f"%{keyword.replace('%', '\\%').replace('_', '\\_')}%")` or SQLAlchemy's `contains()` method. — severity: medium — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -1877,4 +1877,13 @@ _None._
 
 ### Low priority
 6. **Duplicate schema creation** (Category 5) — Migration executes `CREATE SCHEMA` twice.
+
+### Resolution status (updated 2026-08-17)
+
+All 8 findings have been resolved in commits:
+- `23ad2d7 fix: resolve PR audit findings` — Fixed 7 findings (migration downgrade, frontend API consistency, dead code, raw fetch usage, SQL LIKE escaping)
+- `9cf5ca3 fix: remove duplicate CREATE SCHEMA in migration` — Fixed remaining low-priority duplicate schema creation
+
+**Status: ✅ ALL RESOLVED — PR ready to merge**
+
 
