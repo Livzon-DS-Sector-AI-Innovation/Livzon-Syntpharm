@@ -196,7 +196,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (!isNew) {
       loadRecord()
     }
-  }, [id, moduleType])
+  }, [id, moduleType, isNew, loadRecord])
 
   async function loadRecord() {
     if (!id) return

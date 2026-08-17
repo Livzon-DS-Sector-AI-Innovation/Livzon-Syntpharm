@@ -71,7 +71,7 @@ export default function EditInstrumentPage() {
       return
     }
     loadData()
-  }, [instrumentId])
+  }, [instrumentId, router])
 
   const loadData = async () => {
     if (!instrumentId) return

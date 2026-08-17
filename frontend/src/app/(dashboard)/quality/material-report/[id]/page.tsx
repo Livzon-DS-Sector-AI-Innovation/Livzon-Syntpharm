@@ -188,7 +188,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     fetchData()
     fetchReportImages()
-  }, [resolvedParams.id])
+  }, [resolvedParams.id, fetchData, fetchReportImages])
 
   // 添加行
   const handleAddRow = () => {
