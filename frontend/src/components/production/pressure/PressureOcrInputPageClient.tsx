@@ -15,7 +15,7 @@ import {
   Tag,
   Steps,
 } from 'antd'
-import { UploadOutlined, SendOutlined, CameraOutlined } from '@ant-design/icons'
+import {SendOutlined, CameraOutlined} from '@ant-design/icons'
 import { createOcrTask, submitOcrTaskResult } from '@/actions/pressure'
 import type { OcrResultRecord } from '@/types/pressure'
 
@@ -27,8 +27,8 @@ export function PressureOcrInputPageClient() {
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [taskId, setTaskId] = useState<string | null>(null)
-  const [imageUrl, setImageUrl] = useState('')
-  const [records, setRecords] = useState<OcrResultRecord[]>([])
+  const [_imageUrl, setImageUrl] = useState('')
+  const [_records, setRecords] = useState<OcrResultRecord[]>([])
   const [editableRecords, setEditableRecords] = useState<OcrResultRecord[]>([])
 
   const handleUpload = async (file: File) => {

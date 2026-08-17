@@ -21,7 +21,7 @@ export default function PreJobPlanClient() {
   const { message } = App.useApp()
 
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
 

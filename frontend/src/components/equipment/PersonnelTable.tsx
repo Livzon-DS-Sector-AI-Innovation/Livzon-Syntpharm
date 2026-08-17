@@ -34,7 +34,7 @@ const STATUS_PILL: Record<string, React.CSSProperties> = {
   },
 }
 
-export function PersonnelTable({ roles, onAddClick, onRoleClick, onCategoryClick }: Props) {
+export function PersonnelTable({ roles, _onAddClick, onRoleClick, onCategoryClick }: Props) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [keyword, setKeyword] = useState('')

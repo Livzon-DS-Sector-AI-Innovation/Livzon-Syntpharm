@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, ReactNode } from 'react'
-import { App, Card, Table, Tag, Button, Input, Space } from 'antd'
+import {App, Card, Table, Tag, Button, Input} from 'antd'
 import { ArrowLeftOutlined, SearchOutlined, EnterOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import {
@@ -34,7 +34,7 @@ interface StageModuleLayoutProps {
 export function StageModuleLayout({ title, description, stage, children }: StageModuleLayoutProps) {
   const { message: msgApi } = App.useApp()
   const [projects, setProjects] = useState<RdProject[]>([])
-  const [total, setTotal] = useState(0)
+  const [_total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Card, Checkbox, Spin, Segmented, Empty, Alert } from 'antd'
+import {Card, Spin, Segmented, Empty, Alert} from 'antd'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
 import { getProductOutputs } from '@/actions/product-output'

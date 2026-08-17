@@ -100,7 +100,7 @@ export function WorkshopTable() {
       })
       setWorkshops(result.items || [])
       setTotal(result.total || 0)
-    } catch (error) {
+    } catch (_error) {
       message.error('加载车间列表失败')
     } finally {
       setLoading(false)

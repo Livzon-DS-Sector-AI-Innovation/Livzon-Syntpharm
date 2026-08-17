@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Collapse, Row, Col, Statistic, Descriptions } from 'antd'
+import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, ExperimentOutlined, BarChartOutlined, TableOutlined, SettingOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import 'echarts-gl'
@@ -243,7 +243,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
     // 模拟 ANOVA 分析结果
     const anovaTable = [
       { source: '模型', df: factors.length, sum_of_squares: 245.6, mean_square: 81.87, f_value: 12.34, p_value: 0.001, significance: '**' },
-      ...factors.map((f, i) => ({
+      ...factors.map((f, _i) => ({
         source: f.name,
         df: 1,
         sum_of_squares: 50 + Math.random() * 100,
@@ -273,7 +273,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
 
     const result: DOEAnalysisResult = {
       anova_table: anovaTable,
-      regression_model: `Y = ${Math.round(Math.random() * 10 + 70)} + ${factors.map((f, i) => `${(Math.random() * 5 + 1).toFixed(2)}×${f.symbol}`).join(' + ')}`,
+      regression_model: `Y = ${Math.round(Math.random() * 10 + 70)} + ${factors.map((f, _i) => `${(Math.random() * 5 + 1).toFixed(2)}×${f.symbol}`).join(' + ')}`,
       r_squared: Math.round((0.85 + Math.random() * 0.1) * 1000) / 1000,
       adjusted_r_squared: Math.round((0.80 + Math.random() * 0.1) * 1000) / 1000,
       optimal_conditions: optimalConditions,

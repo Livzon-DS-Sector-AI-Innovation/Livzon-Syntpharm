@@ -81,7 +81,7 @@ export function DossierWriterPageClient() {
     if (!currentDossier || !files || files.length === 0) return
     
     try {
-      const fileArray = Array.from(files)
+      const _fileArray = Array.from(files)
       const result: UploadResponse = await uploadTemplates(currentDossier.id, files)
       
       if (result.success_count > 0) {

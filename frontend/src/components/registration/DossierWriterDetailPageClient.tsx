@@ -18,16 +18,16 @@ import {
   getDownloadUrl, getChapterPreview, fetchChapterAssets,
   getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets,
 } from '@/lib/api/client/dossier-writer'
-import { uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, parseTemplates, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage } from '@/actions/dossier-writer'
+import {uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage} from '@/actions/dossier-writer'
 import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/types/dossier-writer'
 import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
 
-const { Text, Title, Paragraph } = Typography
+const { Text, _Title, Paragraph } = Typography
 
 // M3 标准目录结构（固定）
-const M3_STRUCTURE = [
+const _M3_STRUCTURE = [
   { code: "3.2", title: "主体数据", level: 1, parent_code: null },
   { code: "3.2.S", title: "原料药", level: 2, parent_code: "3.2" },
   { code: "3.2.S.1", title: "基本信息", level: 3, parent_code: "3.2.S" },

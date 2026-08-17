@@ -44,7 +44,7 @@ export default function BatchProgressPanel({
   const router = useRouter()
   const [records, setRecords] = useState<HazardIdentification[]>([])
   const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
+  const [_total, setTotal] = useState(0)
 
   useEffect(() => {
     async function load() {

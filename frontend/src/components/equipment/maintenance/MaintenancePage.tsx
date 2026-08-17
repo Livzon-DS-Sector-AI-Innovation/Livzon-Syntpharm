@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { App, ConfigProvider, Tabs, Button, Spin, Collapse, Input, InputNumber, Space } from 'antd'
+import {App, ConfigProvider, Tabs, Button, Spin, Collapse, InputNumber, Space} from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { PlusOutlined } from '@ant-design/icons'
 import {
@@ -96,7 +96,7 @@ export function MaintenancePage({
 
   // 设备列表和分类（客户端回退）
   const [equipments, setEquipmentsState] = useState<Equipment[]>(initialEquipments)
-  const [categories, setCategoriesState] = useState<EquipmentCategory[]>([])
+  const [_categories, setCategoriesState] = useState<EquipmentCategory[]>([])
 
   useEffect(() => {
     // 如果服务端没拿到设备数据，客户端重新获取

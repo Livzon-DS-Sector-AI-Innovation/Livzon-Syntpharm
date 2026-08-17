@@ -40,7 +40,7 @@ const ASSESSMENT_METHODS = [
   { value: '问答', label: '问答' },
 ]
 
-const TD_LABEL = {
+const _TD_LABEL = {
   border: '1px solid #1f2937',
   padding: '8px'
 } as React.CSSProperties
@@ -82,7 +82,7 @@ export default function TrainingNotificationClient() {
   const [nameToNumberMap, setNameToNumberMap] = useState<Record<string, string>>({})
   const [submittingWord, setSubmittingWord] = useState(false)
   const [submittingExcel, setSubmittingExcel] = useState(false)
-  const [submittingEval, setSubmittingEval] = useState(false)
+  const [_submittingEval, setSubmittingEval] = useState(false)
   const [addingToLedger, setAddingToLedger] = useState(false)
   const [sendingNotify, setSendingNotify] = useState(false)
   const [trainerDept, setTrainerDept] = useState<string | undefined>(undefined)

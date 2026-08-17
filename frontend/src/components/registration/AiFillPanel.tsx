@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import {useState, useEffect} from 'react'
 import {
   App, Button, Tag, Select, Table, InputNumber, Input, Space, Alert,
   Badge, Popconfirm, Empty, Spin, Card, Modal, Typography,
@@ -26,12 +26,12 @@ interface AiFillPanelProps {
   onFillComplete?: () => void
 }
 
-export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
+export function AiFillPanel({ chapterId, chapterCode, _assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
   const { message } = App.useApp()
 
   // Categories (for display labels)
   const [categories, setCategories] = useState<AssetCategory[]>([])
-  const [categoriesLoading, setCategoriesLoading] = useState(false)
+  const [_categoriesLoading, setCategoriesLoading] = useState(false)
 
   // AI preview
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -74,7 +74,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
 
   // Selected assets (loaded from API)
   const [selectedAssets, setSelectedAssets] = useState<ChapterAsset[]>([])
-  const [selectedAssetsLoading, setSelectedAssetsLoading] = useState(false)
+  const [_selectedAssetsLoading, setSelectedAssetsLoading] = useState(false)
   // Reset fill state when chapter changes
   useEffect(() => {
     setFillDone(false)

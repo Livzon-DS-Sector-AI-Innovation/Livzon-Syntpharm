@@ -5,7 +5,6 @@ import { Select } from "antd"
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Button, message, Tabs } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
 import { Employee, Department } from '@/types/hr'
 import { fetchEmployeesAction, uploadEmployeesAction } from '@/actions/hr'
 import { fetchNewEmployees, fetchNewDepartments } from '@/lib/api/client/hr'

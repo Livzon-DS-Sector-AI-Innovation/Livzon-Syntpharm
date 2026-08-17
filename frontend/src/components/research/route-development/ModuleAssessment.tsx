@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, Slider, Button, Space, Tag, Alert, Select, Row, Col, App } from 'antd'
-import { CheckCircleOutlined, ReloadOutlined, FileTextOutlined, DownloadOutlined } from '@ant-design/icons'
+import {Card, Slider, Button, Space, Alert, Select, Row, Col, App} from 'antd'
+import {CheckCircleOutlined, ReloadOutlined, DownloadOutlined} from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import type { DimensionAssessment, DimensionWeights, ExperimentRecord } from '@/types/research'
 
@@ -13,7 +13,7 @@ interface ModuleAssessmentProps {
   onComplete: (assessment: DimensionAssessment) => void
 }
 
-export function ModuleAssessment({ routeId, selectedRouteName, experiments = [], onComplete }: ModuleAssessmentProps) {
+export function ModuleAssessment({ _routeId, selectedRouteName, experiments = [], onComplete }: ModuleAssessmentProps) {
   const { message } = App.useApp()
   const [weights, setWeights] = useState<DimensionWeights>({
     safety: 30,
@@ -93,7 +93,7 @@ export function ModuleAssessment({ routeId, selectedRouteName, experiments = [],
   }
 
   const handleGenerateReport = () => {
-    const report = {
+    const _report = {
       title: '四维度评估报告',
       route: selectedRouteName,
       date: new Date().toLocaleString('zh-CN'),

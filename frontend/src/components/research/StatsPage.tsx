@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { App, Card, Row, Col, Statistic, Table, Tag, Progress, Spin } from 'antd'
-import { ProjectOutlined, ExperimentOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import {ProjectOutlined, ExperimentOutlined, CheckCircleOutlined} from '@ant-design/icons'
 import { fetchStatsOverview, fetchProjectProgress, RdStatsOverview, RdProjectProgress } from '@/lib/api/client/research/rd-project'
 import { STAGE_LABELS, TRACK_TYPE_LABELS } from '@/types/research/rd-project'
 
@@ -16,7 +16,7 @@ const stageColorMap: Record<string, string> = {
   filing: 'pink',
 }
 
-const typeColorMap: Record<string, string> = {
+const _typeColorMap: Record<string, string> = {
   impurity: 'red',
   crystal_form: 'purple',
   stability: 'cyan',

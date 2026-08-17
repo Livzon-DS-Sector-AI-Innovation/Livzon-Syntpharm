@@ -1,6 +1,6 @@
 'use client'
 
-import { Descriptions, Drawer, Table, Tag, Timeline, Typography } from 'antd'
+import {Descriptions, Drawer, Table, Tag, Typography} from 'antd'
 import { useEffect, useState } from 'react'
 import type { ScheduledTaskLog } from '@/types/safety'
 import { getScheduledTaskLogs } from '@/actions/safety'

@@ -48,7 +48,7 @@ export default function TrainingLedgerClient({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<TrainingLedgerRecord>>({})
   const [saving, setSaving] = useState(false)
-  const [searchEmpNo, setSearchEmpNo] = useState(employeeNumber || '')
+  const [_searchEmpNo, setSearchEmpNo] = useState(employeeNumber || '')
   const [searching, setSearching] = useState(false)
   const [searchOptions, setSearchOptions] = useState<{value:string, label:string}[]>([])
 

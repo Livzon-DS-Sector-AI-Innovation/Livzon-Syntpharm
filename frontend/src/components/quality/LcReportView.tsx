@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, Descriptions, Table, Tag, Typography, Divider, Collapse, Statistic, Row, Col, Space } from 'antd'
+import {Card, Descriptions, Table, Tag, Typography, Collapse, Statistic, Row, Col, Space} from 'antd'
 import {
   CheckCircleOutlined,
   WarningOutlined,

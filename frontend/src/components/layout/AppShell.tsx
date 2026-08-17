@@ -5,7 +5,6 @@ import { useState, useEffect } from "react"
 import { App, Drawer } from "antd"
 import { TopNav } from "./TopNav"
 import { Sidebar } from "./Sidebar"
-import { MenuOutlined } from "@ant-design/icons"
 
 interface AppShellProps {
   children: React.ReactNode

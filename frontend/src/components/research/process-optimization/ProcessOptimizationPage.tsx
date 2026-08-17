@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Button, Input, Table, Tag, Card, App, Alert, Space, Popconfirm, Select } from 'antd'
-import { PlayCircleOutlined, ReloadOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import {Button, Input, Table, Tag, Card, App, Alert, Space, Popconfirm} from 'antd'
+import {PlayCircleOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icons'
 import { ProcessOptimizationWorkflowPage } from './ProcessOptimizationWorkflowPage'
 import { fetchOptimizations } from '@/lib/api/client/research'
 import { createOptimizationAction, deleteOptimizationAction } from '@/actions/research/process-optimization'
-import { fetchRoutes } from '@/lib/api/client/research'
 
-import { ProcessOptimization, OptimizationStatus, OptimizationModule, RouteDevelopment } from '@/types/research'
+import {ProcessOptimization, OptimizationStatus, OptimizationModule} from '@/types/research'
 
 interface ProcessOptimizationPageProps {
   projectId?: string

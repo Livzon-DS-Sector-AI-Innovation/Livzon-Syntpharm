@@ -2,7 +2,7 @@
 import { uploadAnnualTrainingPlan } from '@/actions/hr'
 
 import { useEffect, useState } from 'react'
-import { App, Button, Card, Row, Col, Popconfirm, Spin, Modal, Form, Select, InputNumber, Upload } from 'antd'
+import {App, Button, Card, Row, Col, Popconfirm, Spin, Modal, Form, Select, Upload} from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, UploadOutlined } from '@ant-design/icons'
 import Link from 'next/link'
 import { AnnualTrainingPlan } from '@/types/hr'

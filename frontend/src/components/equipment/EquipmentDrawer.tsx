@@ -32,7 +32,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const [submitting, setSubmitting] = useState(false)
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const _searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const {
     equipmentDrawerOpen,
     editingEquipment,

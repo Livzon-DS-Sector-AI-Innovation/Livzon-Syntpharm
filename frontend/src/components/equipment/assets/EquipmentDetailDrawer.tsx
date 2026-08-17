@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { App, Drawer, Descriptions, Table, Tabs, Tag, Space, Empty, Spin } from 'antd'
+import {App, Drawer, Descriptions, Table, Tabs, Tag, Empty, Spin} from 'antd'
 import { ToolOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment'
 import type { InspectionTask } from '@/types/inspection'
 import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/client/equipment'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
-import { monoFont, pillNeutral, pillSuccess, pillWarning, pillError, pillInfo, pillPurple, statusPill } from '@/components/equipment/shared/shared-styles'
+import {monoFont, pillNeutral, pillSuccess, pillWarning, pillError, pillPurple, statusPill} from '@/components/equipment/shared/shared-styles'
 import type { EquipmentStatus, EquipmentImportance } from '@/types/equipment'
 
 interface EquipmentDetailDrawerProps {

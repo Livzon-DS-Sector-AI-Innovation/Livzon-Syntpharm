@@ -126,7 +126,7 @@ export function BatchesPageClient() {
         setBatches(response.data)
         setBatchTotal(response.meta?.total || 0)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载批次列表失败')
     } finally {
       setLoading(false)

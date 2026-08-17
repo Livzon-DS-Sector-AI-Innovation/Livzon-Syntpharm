@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Descriptions, Space, Tag, Tooltip } from 'antd'
+import {Button, Descriptions, Space, Tag} from 'antd'
 import { CloseOutlined, LinkOutlined } from '@ant-design/icons'
 import type { GraphNode, GraphEdge as GraphEdgeData } from '@/types/safety'
 import {

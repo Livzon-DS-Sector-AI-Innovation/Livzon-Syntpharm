@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions } from 'antd'
-import { CheckCircleOutlined, PlusOutlined, ExpandOutlined } from '@ant-design/icons'
+import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
+import {CheckCircleOutlined, ExpandOutlined} from '@ant-design/icons'
 import type { ScaleUpStudy, ScaleUpBatch, DOEExperiment, LabConfirmationStudy } from '@/types/research'
 import { AIFileParser } from './AIFileParser'
 
@@ -14,7 +14,7 @@ interface ModuleScaleUpProps {
   onComplete: (study: ScaleUpStudy) => void
 }
 
-export function ModuleScaleUp({ optimizationId, doeExperiment, labConfirmationStudy, initialData, onComplete }: ModuleScaleUpProps) {
+export function ModuleScaleUp({ optimizationId, _doeExperiment, labConfirmationStudy, initialData, onComplete }: ModuleScaleUpProps) {
   const { message } = App.useApp()
   const [activeTab, setActiveTab] = useState('plan')
   const [targetScale, setTargetScale] = useState(initialData?.target_scale_kg || 5)

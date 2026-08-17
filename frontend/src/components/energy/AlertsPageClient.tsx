@@ -11,7 +11,7 @@ import { useEnergyStore } from '@/stores/energy'
 
 export function AlertsPageClient() {
   const { message } = App.useApp()
-  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
   const [data, setData] = useState<AlertRule[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
@@ -24,7 +24,7 @@ export function AlertsPageClient() {
       const result = await getAlertRules({ page: p, page_size: ps })
       setData(result.items)
       setTotal(result.total)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取预警规则失败')
     } finally {
       setLoading(false)

@@ -46,7 +46,7 @@ export default function OffboardingClient({
     setPageSize(newPageSize)
   }
 
-  const handleRefresh = () => {
+  const _handleRefresh = () => {
     loadData()
   }
 

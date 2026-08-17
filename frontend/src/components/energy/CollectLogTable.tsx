@@ -1,6 +1,6 @@
 'use client'
 
-import { Table, Tag, Button, Space } from 'antd'
+import {Table, Tag, Button} from 'antd'
 import { ReloadOutlined, EyeOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { CollectLog, CollectStatus } from '@/types/energy'

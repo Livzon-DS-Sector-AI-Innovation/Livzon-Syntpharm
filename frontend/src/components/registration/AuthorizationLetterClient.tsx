@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload, InputNumber } from 'antd'
+import {Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload} from 'antd'
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AuthorizationLetterListItem, ProductInfo } from '@/types/registration'
 import { fetchAuthorizationLetters, fetchAuthorizationLetterDownloadUrl } from '@/lib/api/client/registration'

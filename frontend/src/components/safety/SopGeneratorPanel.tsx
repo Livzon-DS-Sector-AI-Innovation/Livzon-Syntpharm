@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { App, Table, Button, Space, Typography, Empty, Spin } from 'antd'
+import {App, Table, Button, Typography, Empty, Spin} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   InboxOutlined,

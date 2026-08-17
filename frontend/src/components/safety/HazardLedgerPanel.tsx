@@ -87,7 +87,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ]
 
 // ── 危险源辨识特有字段标签 ──
-const HI_FIELD_LABELS: Record<string, string> = {
+const _HI_FIELD_LABELS: Record<string, string> = {
   hazard_id_no: '编号',
   department: '部门',
   position: '岗位',

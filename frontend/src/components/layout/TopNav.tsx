@@ -37,7 +37,7 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
   const isLoaded = !loading
   const { collapsed, toggle: toggleSidebar } = useSidebarStore()
 
-  const [impersonation, setImpersonation] = useState<ImpersonationStatus | null>(null)
+  const [_impersonation, setImpersonation] = useState<ImpersonationStatus | null>(null)
 
   useEffect(() => {
     getCurrentUser().then(setUser)

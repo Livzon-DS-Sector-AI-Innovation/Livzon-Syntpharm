@@ -9,7 +9,6 @@ import {
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
-import dayjs from 'dayjs'
 import { createRdProject, deleteRdProject } from '@/actions/research/rd-project'
 
 interface Props {
@@ -62,7 +61,7 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
   const handleCreate = async () => {
     const values = await createForm.validateFields()
     try {
-      const project = await createRdProject({
+      const _project = await createRdProject({
         ...values,
         start_date: values.start_date?.format('YYYY-MM-DD'),
         target_filing_date: values.target_filing_date?.format('YYYY-MM-DD'),

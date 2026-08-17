@@ -5,7 +5,7 @@ import { EditOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { WorkOrder, WorkOrderStatus, WorkOrderPriority, WorkOrderType } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
-import { statusPill, pillSuccess, pillError, pillWarning, pillPurple, pillNeutral, pillInfo, actionLink, linkPrimary, linkPurple } from '@/components/equipment/shared-styles'
+import {statusPill, pillSuccess, pillError, pillWarning, pillPurple, pillNeutral, pillInfo, linkPrimary, linkPurple} from '@/components/equipment/shared-styles'
 
 const statusColorMap: Record<WorkOrderStatus, React.CSSProperties> = {
   '待处理': pillError,

@@ -182,7 +182,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { user: currentUser } = usePermission()
   const moduleKey = pathname.split("/")[1] || "production"
   const currentModule = getModuleByKey(moduleKey)
-  const [user, setUser] = useState<User | null>(null)
+  const [_user, setUser] = useState<User | null>(null)
   const [warehouseTables, setWarehouseTables] = useState<WarehouseFeishuTable[]>([])
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])

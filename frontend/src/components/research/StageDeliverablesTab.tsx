@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { App, Card, Table, Tag, Button, Modal, Form, Input, Select, Collapse, Space, Popconfirm, Progress, Empty, Upload } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CheckCircleOutlined, UploadOutlined, DownloadOutlined, HistoryOutlined, RobotOutlined } from '@ant-design/icons'
+import {EditOutlined, DeleteOutlined, FileTextOutlined, CheckCircleOutlined, UploadOutlined, DownloadOutlined, HistoryOutlined, RobotOutlined} from '@ant-design/icons'
 import {
   RdStageDeliverable, RdProjectStage, RdDeliverableStatus,
   DELIVERABLE_TYPES, DELIVERABLE_STATUS_LABELS, STAGE_LABELS, STAGE_ORDER,

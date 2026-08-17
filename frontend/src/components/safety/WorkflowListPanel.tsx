@@ -113,7 +113,7 @@ export default function WorkflowListPanel() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [progressFilter, setProgressFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
-  const { message, modal } = App.useApp()
+  const { _message, modal } = App.useApp()
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()

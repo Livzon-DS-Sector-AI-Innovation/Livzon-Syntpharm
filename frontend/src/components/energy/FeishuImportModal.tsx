@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal, Form, Input, Switch, Button, Steps, Result, Space, App, Alert, Typography } from 'antd'
+import {Modal, Form, Input, Button, Steps, Result, Space, App, Alert, Typography} from 'antd'
 import { importFromFeishuAction } from '@/actions/energy'
 import type { FeishuImportResult } from '@/types/energy'
 

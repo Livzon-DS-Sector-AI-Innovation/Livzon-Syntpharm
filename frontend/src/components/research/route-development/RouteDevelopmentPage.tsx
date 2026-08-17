@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { Button, Input, Table, Tag, Card, Upload, App, Alert, Progress, Tooltip, Space, Popconfirm } from 'antd'
-import { PlayCircleOutlined, UploadOutlined, FilePdfOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons'
+import {PlayCircleOutlined, UploadOutlined, FilePdfOutlined, DeleteOutlined} from '@ant-design/icons'
 import { RouteWorkflowPage } from './RouteWorkflowPage'
 import { fetchRoutes } from '@/lib/api/client/research'
 import { createRouteAction, deleteRouteAction } from '@/actions/research/route-development'
@@ -27,7 +27,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
   const [literatureFile, setLiteratureFile] = useState<File | null>(null)
   const [literatureInput, setLiteratureInput] = useState('')
   const [creating, setCreating] = useState(false)
-  const [apiAvailable, setApiAvailable] = useState(true)
+  const [_apiAvailable, setApiAvailable] = useState(true)
   const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(new Map())
 
   const loadRoutes = useCallback(async () => {

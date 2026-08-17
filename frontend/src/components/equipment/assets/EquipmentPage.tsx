@@ -130,7 +130,7 @@ export function EquipmentPage({
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
 
   // 单独刷新统计（仅 mount 或需要时使用）
-  const refreshStatistics = useCallback(async () => {
+  const _refreshStatistics = useCallback(async () => {
     try {
       const stats = await fetchEquipmentStatisticsClient()
       setStatistics(stats)

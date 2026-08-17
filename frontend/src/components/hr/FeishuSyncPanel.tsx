@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { App, Card, Button, Statistic, Row, Col, Tag, Spin } from 'antd'
-import { SyncOutlined, CloudSyncOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import {SyncOutlined, CloudSyncOutlined, ExclamationCircleOutlined} from '@ant-design/icons'
 import { fetchSyncStatus } from '@/lib/api/client/hr'
 import { syncFromFeishuAction as syncFromFeishu } from '@/actions/hr'
 

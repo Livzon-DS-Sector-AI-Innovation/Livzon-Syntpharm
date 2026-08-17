@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker, InputNumber, Collapse } from 'antd'
+import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker, InputNumber} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, HistoryOutlined, ExperimentOutlined, FileTextOutlined, DownloadOutlined } from '@ant-design/icons'
-import { fetchTracks, fetchFindings, fetchTrackDetail } from '@/lib/api/client/research/rd-project'
+import {fetchTracks, fetchTrackDetail} from '@/lib/api/client/research/rd-project'
 import { publishConclusionVersion } from '@/actions/research/rd-project'
 import { deleteTrack, deleteFinding } from '@/actions/research/modules'
 import {
@@ -69,7 +69,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   
   // Track detail
   const [selectedTrack, setSelectedTrack] = useState<RdResearchTrack | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [_detailLoading, setDetailLoading] = useState(false)
   
   // Create/Edit track drawer
   const [trackDrawerOpen, setTrackDrawerOpen] = useState(false)

@@ -33,8 +33,8 @@ import { generateExamQuestions, exportExam } from '@/actions/ai'
 const { Title, Text } = Typography
 
 // 参考新员工入职培训预览边框样式
-const BORDER_STYLE = { border: '1px solid #1f2937', padding: '8px' } as React.CSSProperties
-const BORDER_STYLE_CENTER = { border: '1px solid #1f2937', padding: '8px', textAlign: 'center' } as React.CSSProperties
+const _BORDER_STYLE = { border: '1px solid #1f2937', padding: '8px' } as React.CSSProperties
+const _BORDER_STYLE_CENTER = { border: '1px solid #1f2937', padding: '8px', textAlign: 'center' } as React.CSSProperties
 
 export default function AiExamClient() {
   const { message } = App.useApp()

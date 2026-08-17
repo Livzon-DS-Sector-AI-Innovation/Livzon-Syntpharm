@@ -7,7 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useInspectionStore } from '@/stores/inspection'
 import { deleteInspectionRoute } from '@/actions/inspection'
 import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
-import { statusPill, pillSuccess, pillNeutral, linkPurple, linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
+import {pillSuccess, pillNeutral, linkPurple, linkPrimary, linkDanger} from '@/components/equipment/shared-styles'
 import type { InspectionRoute } from '@/types/inspection'
 import type { InspectionTemplate } from '@/types/equipment'
 
@@ -16,7 +16,7 @@ interface Props {
   equipments: { id: string; name: string; equipment_no: string }[]
 }
 
-export function InspectionRoutesTab({ templates, equipments }: Props) {
+export function InspectionRoutesTab({ _templates, equipments }: Props) {
   const { message, modal } = App.useApp()
   const {
     routes, routesTotal, routesPage, routesPageSize, routesLoading, routesKeyword, routesRefreshKey,
