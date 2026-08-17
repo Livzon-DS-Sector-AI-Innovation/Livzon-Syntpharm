@@ -253,10 +253,10 @@ export default function HazardLedgerPanel() {
     }
   }
 
-  useEffect(() => { loadStats() }, [])
+  useEffect(() => { loadStats() }, [loadData, loadStats])
 
   useEffect(() => {
-    setSelectedRowKeys([])
+    setSelectedRowKeys([loadData, loadStats])
     loadData()
   }, [queryParams.page, queryParams.page_size, riskLevel, department, position])
 

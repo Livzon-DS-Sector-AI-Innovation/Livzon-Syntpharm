@@ -74,12 +74,12 @@ export function EquipmentPage({
     setEquipments(initialEquipments)
     setTotal(initialTotal)
     setStatistics(initialStatistics)
-  }, [])
+  }, [initialCategories])
 
   // 初始化部门列表（服务端数据）
   useEffect(() => {
     setDepartments(initialDepartments as any)
-  }, [])
+  }, [initialCategories])
 
   // 客户端补偿加载：如果服务端初始数据为空（某个 API 失败导致），从客户端重新获取
   useEffect(() => {
