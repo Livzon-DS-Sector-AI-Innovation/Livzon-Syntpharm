@@ -30,6 +30,7 @@ async def preview_import(
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail="请上传 Excel 文件 (.xlsx, .xls)")
 
     file_content = await file.read()

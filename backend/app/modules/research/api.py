@@ -292,6 +292,7 @@ async def edbo_optimize(
 
     except UnicodeDecodeError:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
 
     # Run EDBO+ optimization
@@ -307,6 +308,7 @@ async def edbo_optimize(
 
     except RuntimeError as e:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail=str(e))
 
     return build_response(data=EDBOOptimizeResponse(**result))
@@ -2071,6 +2073,7 @@ async def transition_stage(
 
     if not target_stage:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail="缺少 target_stage 参数")
     user_id = current_user.id
 
@@ -2081,6 +2084,7 @@ async def transition_stage(
 
     else:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail=result.get("message", "阶段流转失败"))
 
 
