@@ -6,13 +6,12 @@ labels:
   - frontend
   - lint
   - ci
-created: 2026-08-14
-updated: 2026-08-17
-blocked_by: ["03-replace-any-in-components", "04-replace-any-in-app", "05-replace-any-in-remaining"]
+created: 2026-08-17
+blocked_by: ["07-replace-any-components", "08-replace-any-app", "09-replace-any-remaining"]
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
 
-# 06 — Promote lint warnings to errors
+# 10 — Promote lint warnings to errors
 
 ## What to build
 

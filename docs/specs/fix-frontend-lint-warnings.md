@@ -18,7 +18,7 @@ The frontend CI lint step (`bash scripts/ci.sh lint`) passes but produces **3,29
 
 ## Solution
 
-Systematically eliminate all 3,297 ESLint warnings across the frontend codebase, organized by warning type and directory, so that `pnpm lint` produces **0 warnings**. After cleanup, promote the warning-level rules to `error` in `eslint.config.mjs` to prevent regression.
+Systematically eliminate all 3,297 ESLint warnings across the frontend codebase, organized into 10 focused tickets that balance granularity with reviewability. After cleanup, promote the warning-level rules to `error` in `eslint.config.mjs` to prevent regression.
 
 ## User Stories
 
@@ -32,69 +32,130 @@ Systematically eliminate all 3,297 ESLint warnings across the frontend codebase,
 8. As a developer, I want all `react-hooks/purity` warnings resolved, so that render functions remain pure and side-effect-free.
 9. As a developer, I want the `react-hooks/rules-of-hooks` warning resolved, so that hooks are only called at the top level of components.
 10. As a developer, I want the lint rules promoted from `warn` to `error` after cleanup, so that CI blocks any future regression.
-11. As a reviewer, I want changes organized by directory/module, so that PRs are reviewable in logical chunks rather than one massive diff.
+11. As a reviewer, I want changes organized by directory and warning type, so that PRs are reviewable in logical chunks rather than one massive diff.
 12. As a developer, I want the `prefer-const` auto-fix applied, so that variables that are never reassigned are declared as `const`.
 
 ## Implementation Decisions
 
 ### Warning Breakdown (3,297 total)
 
-| Rule | Count | Category |
-|------|-------|----------|
-| `@typescript-eslint/no-explicit-any` | 1,653 | Type safety |
-| `@typescript-eslint/no-unused-vars` | 1,158 | Dead code |
-| `react-hooks/set-state-in-effect` | 222 | Hooks correctness |
-| `react-hooks/exhaustive-deps` | 182 | Hooks correctness |
-| `react-hooks/immutability` | 28 | Hooks correctness |
-| `react-hooks/static-components` | 10 | Hooks correctness |
-| `react-hooks/purity` | 2 | Hooks correctness |
-| `react-hooks/rules-of-hooks` | 1 | Hooks correctness |
-| `prefer-const` | 3 | Auto-fixable |
+**By Rule:**
 
-### Phase 1: Quick Wins (auto-fixable + unused cleanup)
+| Rule | Count | % |
+|------|-------|---|
+| `@typescript-eslint/no-explicit-any` | 1,653 | 50.1% |
+| `@typescript-eslint/no-unused-vars` | 1,158 | 35.1% |
+| `react-hooks/set-state-in-effect` | 222 | 6.7% |
+| `react-hooks/exhaustive-deps` | 182 | 5.5% |
+| `react-hooks/immutability` | 28 | 0.8% |
+| `react-hooks/static-components` | 10 | 0.3% |
+| `prefer-const` | 3 | 0.1% |
+| `react-hooks/purity` | 2 | 0.1% |
+| `react-hooks/rules-of-hooks` | 1 | 0.03% |
 
-- Run `pnpm lint --fix` to auto-fix the 3 `prefer-const` warnings and any other auto-fixable issues.
-- Remove all unused imports, variables, and type exports (`@typescript-eslint/no-unused-vars`). For type files (`src/types/`), many exported types are unused — prefix with `_` or remove if truly dead code. For function parameters, prefix unused args with `_`.
-- This eliminates ~1,158 warnings.
+**By Directory:**
 
-### Phase 2: React Hooks Correctness (445 warnings)
+| Directory | Warnings | Files | Breakdown |
+|-----------|----------|-------|-----------|
+| `src/components/` | 1,091 | 352 | any: 519, unused: 439, hooks: 300, prefer-const: 3 |
+| `src/app/` | 909 | 149 | unused: 479, any: 380, hooks: 145 |
+| `src/lib/` | 678 | 47 | any: 589, unused: 89 |
+| `src/actions/` | 240 | 30 | any: 126, unused: 114 |
+| `src/types/` | 54 | 20 | any: 35, unused: 19 |
+| `src/stores/` | 18 | 11 | unused: 17, any: 1 |
+| `e2e/` | 4 | 2 | any: 3, unused: 1 |
 
-These are the highest-risk warnings because they can cause runtime bugs. Fix them before `any` cleanup.
+**React Hooks Distribution:**
 
-- **`exhaustive-deps` (182)**: Add missing dependencies to useEffect/useCallback. Where adding a dependency would cause an infinite loop, wrap the dependency in `useCallback` or `useMemo`, or use a ref. Do NOT suppress with `// eslint-disable`.
-- **`set-state-in-effect` (222)**: Refactor useEffect callbacks that call setState to avoid triggering re-render loops. Common patterns: move setState outside useEffect, use functional updates, or guard with conditionals.
-- **`immutability` (28)**: Replace direct state mutations (e.g., `state.x = y`) with immutable updates (e.g., `setState({...state, x: y})`).
-- **`static-components` (10)**: Extract components defined inside other components to module scope.
-- **`purity` (2)**: Remove side effects from render functions.
-- **`rules-of-hooks` (1)**: Move the hook call to the top level of the component.
+| Directory | set-state-in-effect | exhaustive-deps | immutability | static-components | purity | rules-of-hooks | Total |
+|-----------|---------------------|-----------------|--------------|-------------------|--------|----------------|-------|
+| `src/components/` | 146 | 131 | 12 | 9 | 2 | 0 | 300 |
+| `src/app/` | 76 | 51 | 16 | 1 | 0 | 1 | 145 |
+| **Total** | **222** | **182** | **28** | **10** | **2** | **1** | **445** |
 
-### Phase 3: Type Safety — Replace `any` (1,653 warnings)
+### Ticket Plan (10 tickets)
 
-This is the largest phase. Organize by directory to keep PRs reviewable:
+**Phase 1: Quick Wins**
 
-- **`src/components/`**: Replace `any` in component props, event handlers, and API response types. Use the existing generated API types from `lib/api/` where available. For Ant Design component callbacks, use the library's provided type generics.
-- **`src/app/`**: Replace `any` in page components, server action parameters, and route handlers.
-- **`src/lib/`**: Replace `any` in utility functions and API helpers.
-- **`src/actions/`**: Replace `any` in server action return types and parameters.
-- **`src/types/`**: Replace `any` in type definitions.
-- **`e2e/`**: Replace `any` in test helpers.
+**Ticket 01: Auto-fix prefer-const** (3 warnings)
+- Run `pnpm lint --fix` to auto-fix the 3 `prefer-const` warnings
+- Mechanical change, zero risk
 
-Strategy for `any` replacement:
-- Use the OpenAPI-generated types from `lib/api/server/` for API responses.
+**Phase 2: Remove Unused Code by Directory**
+
+**Ticket 02: Remove unused in src/components/** (439 warnings)
+- Remove all unused imports, variables, and type exports in `src/components/`
+- For unused function parameters, prefix with `_`
+- For unused type exports, verify they're not dynamically referenced before removing
+
+**Ticket 03: Remove unused in src/app/** (479 warnings)
+- Remove all unused imports, variables, and type exports in `src/app/`
+- Same approach as ticket 02
+
+**Ticket 04: Remove unused in remaining directories** (240 warnings)
+- Remove all unused imports, variables, and type exports in `src/lib/`, `src/actions/`, `src/types/`, `src/stores/`, and `e2e/`
+- Same approach as ticket 02
+
+**Phase 3: Fix React Hooks by Directory**
+
+**Ticket 05: Fix React hooks in src/components/** (300 warnings)
+- Fix all React hooks warnings in `src/components/`:
+  - 146 `set-state-in-effect` warnings
+  - 131 `exhaustive-deps` warnings
+  - 12 `immutability` warnings
+  - 9 `static-components` warnings
+  - 2 `purity` warnings
+- Highest-risk ticket: hooks misuse can cause runtime bugs
+- Do NOT suppress with `// eslint-disable`
+- For `exhaustive-deps`, if adding a dependency causes an infinite loop, wrap it in useCallback/useMemo or use a ref
+- For `set-state-in-effect`, add conditional guards or restructure the effect
+
+**Ticket 06: Fix React hooks in src/app/** (145 warnings)
+- Fix all React hooks warnings in `src/app/`:
+  - 76 `set-state-in-effect` warnings
+  - 51 `exhaustive-deps` warnings
+  - 16 `immutability` warnings
+  - 1 `static-components` warning
+  - 1 `rules-of-hooks` warning
+- Same approach as ticket 05
+
+**Phase 4: Replace any Types by Directory**
+
+**Ticket 07: Replace any in src/components/** (519 warnings)
+- Replace all `any` types in `src/components/`
+- Use OpenAPI-generated types from `lib/api/server/` for API responses
+- Use Ant Design generic type parameters (e.g., `ColumnsType<RecordType>`, `FormInstance<Values>`) for Ant Design components
+- Use `unknown` + type guards for genuinely dynamic data
+
+**Ticket 08: Replace any in src/app/** (380 warnings)
+- Replace all `any` types in `src/app/`
+- Use OpenAPI-generated types for API response data in page components
+- Type server action parameters and return values properly
+
+**Ticket 09: Replace any in remaining directories** (754 warnings)
+- Replace all `any` types in `src/lib/` (589), `src/actions/` (126), `src/types/` (35), `src/stores/` (1), and `e2e/` (3)
+- For `src/types/`, some types may be unused — verify before replacing
+- For `src/stores/`, ensure Zustand store state and actions are properly typed
+- For `e2e/`, test helpers can use `unknown` with type assertions where needed
+
+**Phase 5: Promote to Errors**
+
+**Ticket 10: Promote lint warnings to errors**
+- After all 3,297 warnings are resolved, update `eslint.config.mjs` to change all `warn` rules to `error`
+- Verify CI passes with 0 warnings and 0 errors
+- Any future lint violation will now fail CI
+
+### Strategy for any Replacement
+
+- Use the OpenAPI-generated types from `lib/api/server/` for API responses
 - Use Ant Design's generic type parameters for table columns, form values, etc.
-- Use `unknown` + type guards/narrowing where the type is genuinely dynamic.
-- Use specific union types or generics where the function handles multiple shapes.
-- As a last resort for truly untyped external libraries, use `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a `// TODO: type this` comment — but minimize these.
-
-### Phase 4: Promote Warnings to Errors
-
-After all 3,297 warnings are resolved:
-- Update `eslint.config.mjs` to change all current `warn` rules to `error`.
-- Verify CI passes with 0 warnings and 0 errors.
+- Use `unknown` + type guards/narrowing where the type is genuinely dynamic
+- Use specific union types or generics where the function handles multiple shapes
+- As a last resort for truly untyped external libraries, use `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a `// TODO: type this` comment — but minimize these
 
 ### Modules Modified
 
-- `eslint.config.mjs` — rule severity changes (Phase 4 only)
+- `eslint.config.mjs` — rule severity changes (ticket 10 only)
 - All `.ts` and `.tsx` files under `src/` and `e2e/` — warning fixes
 
 ### Interfaces Modified
@@ -106,10 +167,18 @@ After all 3,297 warnings are resolved:
 
 ## Testing Decisions
 
-- **What makes a good test**: The primary test is `pnpm lint` producing 0 warnings and 0 errors. This is already enforced by CI (`bash scripts/ci.sh lint`).
-- **No new test files needed**: The existing CI seam is sufficient. The lint command itself is the test.
-- **Manual verification**: For React hooks fixes, manually verify that affected pages still render correctly and don't produce infinite re-render loops. Focus on pages with `set-state-in-effect` and `exhaustive-deps` fixes.
-- **Prior art**: The existing `bash scripts/ci.sh lint` command in `frontend/scripts/ci.sh` is the established seam. The `eslint.config.mjs` flat config is the established configuration point.
+**What makes a good test:**
+- The primary test is `pnpm lint` producing 0 warnings and 0 errors
+- This is already enforced by CI (`bash scripts/ci.sh lint`)
+- No new test files needed — the existing CI seam is sufficient
+
+**Manual verification:**
+- For React hooks fixes (tickets 05, 06), manually verify that affected pages still render correctly and don't produce infinite re-render loops
+- Focus on pages with `set-state-in-effect` and `exhaustive-deps` fixes
+
+**Prior art:**
+- The existing `bash scripts/ci.sh lint` command in `frontend/scripts/ci.sh` is the established seam
+- The `eslint.config.mjs` flat config is the established configuration point
 
 ## Out of Scope
 
@@ -124,4 +193,7 @@ After all 3,297 warnings are resolved:
 - The `react-hooks/set-state-in-effect` rule is a newer rule from `eslint-plugin-react-hooks`. It flags setState calls inside useEffect that could cause infinite loops. The fix pattern is typically to add a conditional guard or restructure the effect.
 - Many `any` types exist in Ant Design table column definitions and form handlers. The fix is to use Ant Design's generic type parameters (e.g., `ColumnsType<RecordType>`, `FormInstance<Values>`).
 - The `src/types/` directory has many unused exported types — these may be dead code from earlier iterations. Verify before removing; some may be used dynamically or re-exported.
-- Consider running the cleanup in this order: Phase 1 → Phase 2 → Phase 3 (by directory) → Phase 4. Each phase should be a separate PR for reviewability.
+- The ticket plan balances granularity with reviewability: 10 tickets is more granular than 6, making each PR smaller and easier to review, but not so granular that we have excessive overhead.
+- Tickets 02, 03, 04 can be done in parallel (different directories, no overlap).
+- Tickets 05, 06 can be done in parallel (different directories, no overlap).
+- Tickets 07, 08, 09 can be done in parallel (different directories, no overlap).
