@@ -1,11 +1,12 @@
 ---
 title: "Remove unused code in src/components/"
-status: ready-for-agent
+status: done
 labels:
-  - ready-for-agent
+  - done
   - frontend
   - lint
 created: 2026-08-17
+completed: 2026-08-17
 blocked_by: ["01-auto-fix-prefer-const"]
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
@@ -18,11 +19,11 @@ After this ticket, all 439 unused imports, variables, and type exports in `src/c
 
 ## Acceptance criteria
 
-- [ ] Remove all unused imports in `src/components/` (439 warnings)
-- [ ] Remove unused variables or prefix with `_` if intentionally unused
-- [ ] Remove unused type exports or prefix with `_`
-- [ ] `pnpm lint` produces 2,855 warnings (down from 3,294)
-- [ ] No runtime behavior changes — this is purely cleanup
+- [x] Remove all unused imports in `src/components/` (439 warnings)
+- [x] Remove unused variables or prefix with `_` if intentionally unused
+- [x] Remove unused type exports or prefix with `_`
+- [x] `pnpm lint` produces 2,855 warnings (down from 3,294)
+- [x] No runtime behavior changes — this is purely cleanup
 
 ## Notes
 

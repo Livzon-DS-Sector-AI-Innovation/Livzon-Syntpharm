@@ -1,11 +1,12 @@
 ---
 title: "Auto-fix prefer-const"
-status: ready-for-agent
+status: done
 labels:
-  - ready-for-agent
+  - done
   - frontend
   - lint
 created: 2026-08-17
+completed: 2026-08-17
 blocked_by: []
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
@@ -18,9 +19,9 @@ After this ticket, the 3 `prefer-const` warnings are resolved. Variables that ar
 
 ## Acceptance criteria
 
-- [ ] Run `pnpm lint --fix` to auto-fix the 3 `prefer-const` warnings
-- [ ] `pnpm lint` produces 3,294 warnings (down from 3,297)
-- [ ] No runtime behavior changes — this is purely mechanical
+- [x] Run `pnpm lint --fix` to auto-fix the 3 `prefer-const` warnings
+- [x] `pnpm lint` produces 3,294 warnings (down from 3,297)
+- [x] No runtime behavior changes — this is purely mechanical
 
 ## Notes
 
