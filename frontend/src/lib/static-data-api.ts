@@ -170,7 +170,7 @@ export async function adjustHplcReferenceQuantity(id: number, quantity_change: n
   return result
 }
 
-export async function useHplcReference(
+export async function consumeHplcReference(
   id: number,
   data: {
     usage_amount: number

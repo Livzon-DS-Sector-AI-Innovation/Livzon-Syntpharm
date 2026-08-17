@@ -49,7 +49,7 @@ export default function AlertsPage() {
     } finally {
       setRulesLoading(false)
     }
-  }, [rulesPage, rulesPageSize])
+  }, [rulesPage, rulesPageSize, message])
 
   // 获取预警记录（支持筛选）
   const fetchRecords = useCallback(async (showSuccessMessage = false) => {
