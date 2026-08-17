@@ -6,6 +6,7 @@ labels:
   - frontend
   - lint
 created: 2026-08-14
+updated: 2026-08-17
 blocked_by: []
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
@@ -14,15 +15,15 @@ spec: docs/specs/fix-frontend-lint-warnings.md
 
 ## What to build
 
-After this ticket, running `pnpm lint` produces ~2,100 warnings instead of 3,279. All auto-fixable issues are resolved, and all unused imports, variables, and type exports are removed.
+After this ticket, running `pnpm lint` produces ~2,136 warnings instead of 3,297. All auto-fixable issues are resolved, and all unused imports, variables, and type exports are removed.
 
 ## Acceptance criteria
 
 - [ ] Run `pnpm lint --fix` to auto-fix `prefer-const` and other auto-fixable warnings
-- [ ] Remove all unused imports across the codebase (1,155 warnings)
+- [ ] Remove all unused imports across the codebase (1,158 warnings)
 - [ ] Remove unused variables or prefix with `_` if intentionally unused
 - [ ] Remove unused type exports in `src/types/` or prefix with `_`
-- [ ] `pnpm lint` produces exactly 2,124 warnings (down from 3,279)
+- [ ] `pnpm lint` produces exactly 2,136 warnings (down from 3,297)
 - [ ] No runtime behavior changes — this is purely cleanup
 
 ## Notes

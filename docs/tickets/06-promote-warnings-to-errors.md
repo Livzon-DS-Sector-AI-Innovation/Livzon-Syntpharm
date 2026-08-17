@@ -7,6 +7,7 @@ labels:
   - lint
   - ci
 created: 2026-08-14
+updated: 2026-08-17
 blocked_by: ["03-replace-any-in-components", "04-replace-any-in-app", "05-replace-any-in-remaining"]
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---

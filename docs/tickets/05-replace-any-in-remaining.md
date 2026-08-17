@@ -7,6 +7,7 @@ labels:
   - lint
   - typescript
 created: 2026-08-14
+updated: 2026-08-17
 blocked_by: ["02-fix-react-hooks-correctness"]
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
@@ -15,16 +16,16 @@ spec: docs/specs/fix-frontend-lint-warnings.md
 
 ## What to build
 
-After this ticket, all 58 `any` types in `src/lib/`, `src/actions/`, `src/types/`, `src/stores/`, and `e2e/` are replaced with proper types. Utility functions, server actions, type definitions, stores, and test helpers use proper TypeScript types.
+After this ticket, all `any` types in `src/lib/`, `src/actions/`, `src/types/`, `src/stores/`, and `e2e/` are replaced with proper types. Utility functions, server actions, type definitions, stores, and test helpers use proper TypeScript types.
 
 ## Acceptance criteria
 
-- [ ] Replace all 47 `any` warnings in `src/lib/` (utility functions, API helpers)
-- [ ] Replace all 30 `any` warnings in `src/actions/` (server action return types and parameters)
-- [ ] Replace all 20 `any` warnings in `src/types/` (type definitions)
-- [ ] Replace all 11 `any` warnings in `src/stores/` (Zustand stores)
-- [ ] Replace the 1 `any` warning in `e2e/` (test helpers)
-- [ ] `pnpm lint` produces exactly 0 warnings (down from 1,013)
+- [ ] Replace all `any` warnings in `src/lib/` (utility functions, API helpers)
+- [ ] Replace all `any` warnings in `src/actions/` (server action return types and parameters)
+- [ ] Replace all `any` warnings in `src/types/` (type definitions)
+- [ ] Replace all `any` warnings in `src/stores/` (Zustand stores)
+- [ ] Replace all `any` warnings in `e2e/` (test helpers)
+- [ ] `pnpm lint` produces exactly 0 warnings (down from 1,691)
 - [ ] TypeScript compilation succeeds with `pnpm typecheck`
 - [ ] All modules work correctly with proper types
 

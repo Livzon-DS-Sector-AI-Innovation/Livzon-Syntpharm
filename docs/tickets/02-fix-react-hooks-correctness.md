@@ -7,6 +7,7 @@ labels:
   - lint
   - react-hooks
 created: 2026-08-14
+updated: 2026-08-17
 blocked_by: ["01-auto-fix-and-remove-unused"]
 spec: docs/specs/fix-frontend-lint-warnings.md
 ---
@@ -15,17 +16,17 @@ spec: docs/specs/fix-frontend-lint-warnings.md
 
 ## What to build
 
-After this ticket, all 442 React hooks warnings are resolved. useEffect/useCallback hooks have correct dependency arrays, setState calls don't cause infinite loops, state is never mutated directly, and components are not defined inside other components.
+After this ticket, all 445 React hooks warnings are resolved. useEffect/useCallback hooks have correct dependency arrays, setState calls don't cause infinite loops, state is never mutated directly, and components are not defined inside other components.
 
 ## Acceptance criteria
 
 - [ ] Fix all 182 `react-hooks/exhaustive-deps` warnings by adding missing dependencies or wrapping in useCallback/useMemo
-- [ ] Fix all 220 `react-hooks/set-state-in-effect` warnings by refactoring useEffect callbacks to avoid infinite re-render loops
+- [ ] Fix all 222 `react-hooks/set-state-in-effect` warnings by refactoring useEffect callbacks to avoid infinite re-render loops
 - [ ] Fix all 28 `react-hooks/immutability` warnings by replacing direct state mutations with immutable updates
-- [ ] Fix all 9 `react-hooks/static-components` warnings by extracting components to module scope
+- [ ] Fix all 10 `react-hooks/static-components` warnings by extracting components to module scope
 - [ ] Fix all 2 `react-hooks/purity` warnings by removing side effects from render functions
 - [ ] Fix the 1 `react-hooks/rules-of-hooks` warning by moving the hook call to the top level
-- [ ] `pnpm lint` produces exactly 1,682 warnings (down from 2,124)
+- [ ] `pnpm lint` produces exactly 1,691 warnings (down from 2,136)
 - [ ] Manual verification: affected pages render correctly without infinite loops or stale state
 
 ## Notes
