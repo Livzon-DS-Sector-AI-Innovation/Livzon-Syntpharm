@@ -3,7 +3,6 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +11,7 @@ from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.exceptions import AppException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.models.work_order import WorkOrder
 from app.modules.equipment.schemas import (
@@ -26,6 +25,7 @@ from app.modules.equipment.schemas import (
     WorkOrderUpdate,
     WorkOrderVerify,
 )
+from app.shared.schemas import ApiResponse
 
 
 def _require_user(current_user: CurrentUser) -> uuid.UUID:
@@ -76,10 +76,10 @@ async def create_work_order(
     data: WorkOrderCreate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     reporter_id = _require_user(current_user)
     wo = await service.create_work_order(db, data, reporter_id)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}", summary="更新工单")
@@ -88,10 +88,10 @@ async def update_work_order(
     data: WorkOrderUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.update_work_order(db, work_order_id, data)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.get("/", summary="工单列表")
@@ -104,7 +104,7 @@ async def list_work_orders(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     work_orders, total = await service.get_work_orders(
         db,
@@ -127,10 +127,10 @@ async def list_work_orders(
 async def get_work_order_statistics(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     stats = await service.get_work_order_statistics(db)
-    return success_response(data=WorkOrderStatistics.model_validate(stats))
+    return build_response(data=WorkOrderStatistics.model_validate(stats))
 
 
 @router.get("/{work_order_id}", summary="工单详情")
@@ -138,10 +138,10 @@ async def get_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.get_work_order_by_id(db, work_order_id)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}/assign", summary="指派维修人")
@@ -150,10 +150,10 @@ async def assign_work_order(
     data: WorkOrderAssign,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.assign_work_order(db, work_order_id, data.assignee_id)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}/start", summary="开始维修")
@@ -161,10 +161,10 @@ async def start_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.start_work_order(db, work_order_id)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}/complete", summary="提交完成")
@@ -173,10 +173,10 @@ async def complete_work_order(
     data: WorkOrderComplete,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.complete_work_order(db, work_order_id, data)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}/verify", summary="验收")
@@ -185,10 +185,10 @@ async def verify_work_order(
     data: WorkOrderVerify,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     verifier_id = _require_user(current_user)
     wo = await service.verify_work_order(db, work_order_id, verifier_id, data)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.put("/{work_order_id}/close", summary="关闭工单")
@@ -196,10 +196,10 @@ async def close_work_order(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     wo = await service.close_work_order(db, work_order_id)
-    return success_response(data=_to_response(wo))
+    return build_response(data=_to_response(wo))
 
 
 @router.post("/{work_order_id}/materials", summary="领料")
@@ -208,11 +208,11 @@ async def consume_materials(
     data: MaterialConsumeRequest,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     items = [item.model_dump() for item in data.items]
     transactions = await service.consume_materials(db, work_order_id, items)
-    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
+    return build_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
 
 
 @router.get("/{work_order_id}/materials", summary="工单领料记录")
@@ -220,9 +220,9 @@ async def get_material_consumptions(
     work_order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-) -> JSONResponse:
+) -> ApiResponse:
     _require_user(current_user)
     from app.modules.equipment import repository as repo
 
     transactions = await repo.get_material_consumptions(db, work_order_id)
-    return success_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
+    return build_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])

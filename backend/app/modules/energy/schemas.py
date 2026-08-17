@@ -323,3 +323,81 @@ class FeishuEnergyImportResponse(BaseModel):
     records_created: int = 0
     records_skipped: int = 0
     errors: list[str] = Field(default_factory=list)
+
+
+# ── 单耗目标管理 ──
+
+
+class UnitConsumptionTargetCreate(BaseModel):
+    """创建单耗目标请求"""
+
+    workshop_id: str = Field(..., description="车间ID (UUID)")
+    target_month: str = Field(..., pattern=r"^\d{4}-\d{2}$", description="目标月份，格式 YYYY-MM")
+    target_unit_consumption: float = Field(..., gt=0, le=100, description="目标单耗（kWh/kg）")
+
+
+class UnitConsumptionTargetUpdate(BaseModel):
+    """更新单耗目标请求"""
+
+    target_unit_consumption: float = Field(..., gt=0, le=100, description="目标单耗（kWh/kg）")
+
+
+class UnitConsumptionTargetResponse(BaseModel):
+    """单耗目标响应"""
+
+    id: int
+    workshop_id: str
+    workshop_name: str | None = None
+    target_month: str
+    target_unit_consumption: float
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AISuggestion(BaseModel):
+    """AI 建议对象"""
+
+    status: str = Field(..., description="状态：normal/warning/critical/info/unknown")
+    summary: str = Field(..., description="一句话总结")
+    detailed_analysis: str = Field(..., description="详细分析")
+    recommendations: list[str] = Field(..., description="建议列表")
+    confidence_level: Literal["high", "medium", "low"] = Field(..., description="置信度")
+
+
+class AIAnalysisRequest(BaseModel):
+    """AI 能耗分析请求（V2 - 支持单耗分析）"""
+
+    workshop_id: str = Field(..., description="车间ID (UUID)")
+    analysis_month: str = Field(..., pattern=r"^\d{4}-\d{2}$", description="分析月份，格式 YYYY-MM")
+    production_items: list[dict[str, object]] = Field(
+        ..., min_length=1, description="产品产量列表，每项包含 product_name 和 quantity"
+    )
+    include_ai_suggestion: bool = Field(default=True, description="是否包含 AI 建议")
+
+
+class ProductionItemDetail(BaseModel):
+    """产品产量明细"""
+
+    product_name: str
+    quantity: float
+    conversion_factor: float
+    converted_quantity: float
+
+
+class AIAnalysisResponse(BaseModel):
+    """AI 能耗分析响应（支持多产品）"""
+
+    workshop_id: str
+    workshop_name: str
+    analysis_month: str
+    total_energy_kwh: float
+    production_items: list[ProductionItemDetail]
+    converted_production: float
+    actual_unit_consumption: float
+    target_unit_consumption: float | None = None
+    deviation_rate: float | None = None
+    deviation_status: Literal["normal", "warning", "critical", "unknown"]
+    ai_suggestion: AISuggestion | None = None
+
+    model_config = {"from_attributes": False}

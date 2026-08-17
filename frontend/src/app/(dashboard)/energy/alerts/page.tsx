@@ -5,11 +5,11 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Space, App, Tabs, DatePicker, Select, Card, message } from 'antd'
+import { Button, Space, App, Tabs, DatePicker, Select, Card, message, Modal, Form, Input } from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
 import { AlertRule, AlertRecord } from '@/types/energy'
-import { deleteAlertRule, syncBitableDailyDataAction } from '@/actions/energy'
+import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
 import { useEnergyStore } from '@/stores/energy'
 
@@ -36,12 +36,15 @@ export default function AlertsPage() {
   const [filterEnergyType, setFilterEnergyType] = useState<string | undefined>(undefined)
 
   // 获取预警规则
-  const fetchRules = useCallback(async () => {
+  const fetchRules = useCallback(async (showSuccessMessage = false) => {
     setRulesLoading(true)
     try {
       const result = await fetchAlertRulesAPI({ page: rulesPage, page_size: rulesPageSize })
       setRules(result.items)
       setRulesTotal(result.total)
+      if (showSuccessMessage) {
+        message.success('刷新成功')
+      }
     } catch (error) {
       message.error('获取预警规则失败')
     } finally {
@@ -50,7 +53,7 @@ export default function AlertsPage() {
   }, [rulesPage, rulesPageSize])
 
   // 获取预警记录（支持筛选）
-  const fetchRecords = useCallback(async () => {
+  const fetchRecords = useCallback(async (showSuccessMessage = false) => {
     setRecordsLoading(true)
     try {
       const params: any = { page: recordsPage, page_size: recordsPageSize }
@@ -64,6 +67,9 @@ export default function AlertsPage() {
       const result = await fetchAlertRecordsAPI(params)
       setRecords(result.items)
       setRecordsTotal(result.total)
+      if (showSuccessMessage) {
+        message.success('刷新成功')
+      }
     } catch (error) {
       message.error('获取预警记录失败')
     } finally {
@@ -100,11 +106,43 @@ export default function AlertsPage() {
     }
   }
 
+  const [processModalOpen, setProcessModalOpen] = useState(false)
+  const [processingRecord, setProcessingRecord] = useState<AlertRecord | null>(null)
+  const [processForm] = Form.useForm()
+  const [processing, setProcessing] = useState(false)
+
   const handleProcessRecord = (record: AlertRecord) => {
-    message.info('处理功能待实现')
+    setProcessingRecord(record)
+    processForm.resetFields()
+    setProcessModalOpen(true)
+  }
+
+  const handleSubmitProcess = async () => {
+    if (!processingRecord) return
+    
+    try {
+      const values = await processForm.validateFields()
+      setProcessing(true)
+      
+      await processAlertRecord(processingRecord.id, {
+        status: values.status || 'processed',
+        process_note: values.process_note,
+      })
+      
+      message.success('处理成功')
+      setProcessModalOpen(false)
+      fetchRecords()
+    } catch (error: any) {
+      if (error?.errorFields) return // 表单验证错误
+      message.error('处理失败：' + (error?.message || '未知错误'))
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const [syncLoading, setSyncLoading] = useState(false)
+  const [recordsRefreshing, setRecordsRefreshing] = useState(false)
+  const [rulesRefreshing, setRulesRefreshing] = useState(false)
 
   const handleSyncData = async () => {
     setSyncLoading(true)
@@ -177,7 +215,14 @@ export default function AlertsPage() {
                   { label: '天然气', value: 'natural_gas' },
                 ]}
               />
-              <Button icon={<ReloadOutlined />} onClick={() => fetchRecords()}>
+              <Button 
+                icon={<ReloadOutlined />} 
+                onClick={() => {
+                  setRecordsRefreshing(true)
+                  fetchRecords(true).finally(() => setRecordsRefreshing(false))
+                }}
+                loading={recordsRefreshing}
+              >
                 刷新
               </Button>
             </Space>
@@ -206,7 +251,14 @@ export default function AlertsPage() {
         >
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
             <Space size="middle">
-              <Button icon={<ReloadOutlined />} onClick={() => fetchRules()}>
+              <Button 
+                icon={<ReloadOutlined />} 
+                onClick={() => {
+                  setRulesRefreshing(true)
+                  fetchRules(true).finally(() => setRulesRefreshing(false))
+                }}
+                loading={rulesRefreshing}
+              >
                 刷新
               </Button>
               <Button type="primary" icon={<PlusOutlined />} onClick={() => openAlertConfigDrawer('create')}>
@@ -229,6 +281,58 @@ export default function AlertsPage() {
       ),
     },
   ]
+
+
+  // 处理预警记录弹窗
+  const ProcessModal = () => (
+    <Modal
+      title="处理预警记录"
+      open={processModalOpen}
+      onCancel={() => setProcessModalOpen(false)}
+      onOk={handleSubmitProcess}
+      confirmLoading={processing}
+      okText="确认处理"
+      cancelText="取消"
+    >
+      <Form form={processForm} layout="vertical">
+        <Form.Item
+          label="预警信息"
+        >
+          <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: 4 }}>
+            <div>能源类型：{processingRecord?.energy_type}</div>
+            <div>预警等级：{processingRecord?.alert_level}</div>
+            <div>触发值：{processingRecord?.trigger_value} {processingRecord?.unit}</div>
+            <div>阈值：{processingRecord?.threshold_value} {processingRecord?.unit}</div>
+            <div>预警时间：{processingRecord?.alert_time ? new Date(processingRecord.alert_time).toLocaleString('zh-CN') : '-'}</div>
+          </div>
+        </Form.Item>
+        
+        <Form.Item
+          name="status"
+          label="处理状态"
+          initialValue="processed"
+          rules={[{ required: true, message: '请选择处理状态' }]}
+        >
+          <Select
+            options={[
+              { label: '已处理', value: 'processed' },
+              { label: '已忽略', value: 'ignored' },
+            ]}
+          />
+        </Form.Item>
+        
+        <Form.Item
+          name="process_note"
+          label="处理备注"
+        >
+          <Input.TextArea
+            rows={4}
+            placeholder="请输入处理说明..."
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
 
   return (
     <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
@@ -264,6 +368,7 @@ export default function AlertsPage() {
       />
       
       <AlertConfigDrawer onRefresh={() => fetchRules()} />
-    </div>
+          <ProcessModal />
+</div>
   )
 }

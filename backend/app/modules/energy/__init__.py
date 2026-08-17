@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 from typing import Any
 
 from app.modules.energy.api import router
@@ -11,6 +14,8 @@ from app.modules.energy.scheduler import (
 )
 from app.shared.lifecycle import register_background_worker
 
+logger = logging.getLogger(__name__)
+
 __all__ = [
     "router",
     "energy_collection_loop",
@@ -23,6 +28,8 @@ __all__ = [
 
 
 # ── Background worker registration ────────────────────────────
+
+logger.info("Registering energy background workers...")
 
 
 async def _start_energy_collection() -> Any:
@@ -38,6 +45,7 @@ register_background_worker(
     start=_start_energy_collection,
     stop=_stop_energy_collection,
 )
+logger.info("Registered worker: energy.collection")
 
 
 async def _start_bitable_monthly_sync() -> Any:
@@ -53,6 +61,7 @@ register_background_worker(
     start=_start_bitable_monthly_sync,
     stop=_stop_bitable_monthly_sync,
 )
+logger.info("Registered worker: energy.bitable_monthly_sync")
 
 
 async def _start_bitable_daily_sync() -> Any:
@@ -68,3 +77,6 @@ register_background_worker(
     start=_start_bitable_daily_sync,
     stop=_stop_bitable_daily_sync,
 )
+logger.info("Registered worker: energy.bitable_daily_sync")
+
+logger.info("All energy background workers registered successfully.")

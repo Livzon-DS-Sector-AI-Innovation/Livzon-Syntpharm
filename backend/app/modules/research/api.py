@@ -5,13 +5,13 @@ import uuid
 from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import error_response, paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
     RdDeliverableTemplateCreate,
@@ -61,6 +61,7 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+from app.shared.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -72,11 +73,11 @@ async def create_project(
     data: ResearchProjectCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     project = await service.create_project(db, data)
 
-    return success_response(data=ResearchProjectResponse.model_validate(project))
+    return build_response(data=ResearchProjectResponse.model_validate(project))
 
 
 @router.get("/projects", summary="获取研发项目列表")
@@ -89,7 +90,7 @@ async def get_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     projects, total = await service.get_projects(
         db,
@@ -114,11 +115,11 @@ async def get_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     project = await service.get_project(db, project_id)
 
-    return success_response(data=ResearchProjectResponse.model_validate(project))
+    return build_response(data=ResearchProjectResponse.model_validate(project))
 
 
 @router.put("/projects/{project_id}", summary="更新研发项目")
@@ -127,11 +128,11 @@ async def update_project(
     data: ResearchProjectUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     project = await service.update_project(db, project_id, data)
 
-    return success_response(data=ResearchProjectResponse.model_validate(project))
+    return build_response(data=ResearchProjectResponse.model_validate(project))
 
 
 @router.delete("/projects/{project_id}", summary="删除研发项目")
@@ -139,11 +140,11 @@ async def delete_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     await service.delete_project(db, project_id)
 
-    return success_response(data={"message": "项目已删除"})
+    return build_response(data={"message": "项目已删除"})
 
 
 @router.post("/ich/q3c/analyze", summary="ICH Q3C 溶剂残留分析")
@@ -152,7 +153,7 @@ async def analyze_ich_q3c(
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     file_content = await file.read()
 
@@ -160,7 +161,7 @@ async def analyze_ich_q3c(
 
     result = await service.analyze_ich_q3c(db, file_content, filename, route)
 
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @router.post("/ich/analyze", summary="ICH Q3C/Q3D 联合分析")
@@ -170,7 +171,7 @@ async def analyze_ich_combined(
     route: str = Query("oral", description="给药途径"),
     use_llm: bool = Query(False, description="是否使用 LLM 增强"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     file_content = await file.read()
 
@@ -178,7 +179,7 @@ async def analyze_ich_combined(
 
     result = await service.analyze_ich_combined(db, file_content, filename, route, use_llm)
 
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @router.get("/ich/records", summary="获取 ICH Q3C/Q3D 杂质识别记录列表")
@@ -187,7 +188,7 @@ async def get_ich_records(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     records, total = await service.get_ich_records(db, page=page, page_size=page_size)
 
@@ -216,11 +217,11 @@ async def get_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     record = await service.get_ich_record(db, record_id)
 
-    return success_response(
+    return build_response(
         data={
             "id": str(record.id),
             "filename": record.filename,
@@ -239,14 +240,14 @@ async def delete_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     await service.delete_ich_record(db, record_id)
 
-    return success_response(data={"message": "记录已删除"})
+    return build_response(data={"message": "记录已删除"})
 
 
-@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化")
+@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=None)
 async def edbo_optimize(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="反应范围 CSV 文件"),
@@ -254,7 +255,7 @@ async def edbo_optimize(
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
     batch_size: int = Body(5, ge=1, le=100, description="建议实验数量"),
     save_prediction: bool = Body(False, description="是否保存预测文件"),
-) -> JSONResponse:
+) -> ApiResponse:
     """
 
     使用 EDBO+ 进行贝叶斯反应优化。
@@ -290,9 +291,9 @@ async def edbo_optimize(
         csv_content = (await file.read()).decode("utf-8")
 
     except UnicodeDecodeError:
-        from app.core.response import error_response
+        from fastapi import HTTPException
 
-        return error_response(message="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
+        raise HTTPException(status_code=400, detail="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
 
     # Run EDBO+ optimization
 
@@ -306,11 +307,11 @@ async def edbo_optimize(
         )
 
     except RuntimeError as e:
-        from app.core.response import error_response
+        from fastapi import HTTPException
 
-        return error_response(message=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
-    return success_response(data=EDBOOptimizeResponse(**result))
+    return build_response(data=EDBOOptimizeResponse(**result))
 
 
 @router.post("/edbo/generate-scope", summary="生成反应范围")
@@ -681,7 +682,7 @@ async def create_pilot_workflow(
     data: PilotWorkflowCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflow_data = data.model_dump()
 
@@ -695,7 +696,7 @@ async def create_pilot_workflow(
 
     response_data.steps = []
 
-    return success_response(data=response_data)
+    return build_response(data=response_data)
 
 
 @router.get("/pilot/workflow", summary="获取中试研究列表")
@@ -706,7 +707,7 @@ async def get_pilot_workflows(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflows, total = await pilot_repo.get_workflows(
         db, status=status, keyword=keyword, page=page, page_size=page_size
@@ -742,7 +743,7 @@ async def get_pilot_workflow_detail(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -755,7 +756,7 @@ async def get_pilot_workflow_detail(
 
     response_data.steps = [PilotWorkflowStepResponse.model_validate(s) for s in steps]
 
-    return success_response(data=response_data)
+    return build_response(data=response_data)
 
 
 @router.post("/pilot/workflow/{workflow_id}/start", summary="启动工作流执行")
@@ -763,7 +764,7 @@ async def start_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -777,21 +778,21 @@ async def start_pilot_workflow(
 
     await start_workflow_engine(workflow_id)
 
-    return success_response(data={"message": "工作流已启动", "workflow_id": str(workflow_id)})
+    return build_response(data={"message": "工作流已启动", "workflow_id": str(workflow_id)})
 
 
 @router.post("/pilot/workflow/{workflow_id}/approve", summary="确认当前步骤并执行下一步")
 async def approve_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
-) -> JSONResponse:
+) -> ApiResponse:
 
     result = await approve_step_engine(workflow_id)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @router.get("/pilot/workflow/{workflow_id}/steps/{step_id}", summary="获取步骤详情")
@@ -800,14 +801,14 @@ async def get_pilot_workflow_step(
     step_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     step = await pilot_repo.get_workflow_step_by_id(db, step_id)
 
     if not step or step.workflow_id != workflow_id:
         raise HTTPException(status_code=404, detail="步骤不存在")
 
-    return success_response(data=PilotWorkflowStepResponse.model_validate(step))
+    return build_response(data=PilotWorkflowStepResponse.model_validate(step))
 
 
 @router.post("/pilot/workflow/{workflow_id}/upload", summary="上传工艺文档")
@@ -816,7 +817,7 @@ async def upload_pilot_document(
     current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -845,7 +846,7 @@ async def upload_pilot_document(
 
     await db.flush()
 
-    return success_response(
+    return build_response(
         data={
             "file_path": file_path,
             "filename": file.filename,
@@ -859,7 +860,7 @@ async def delete_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -874,7 +875,7 @@ async def delete_pilot_workflow(
 
     await db.flush()
 
-    return success_response(data={"id": str(workflow_id)})
+    return build_response(data={"id": str(workflow_id)})
 
 
 @router.post("/literature/analyze", summary="AI 文献解析（流式）")
@@ -1018,7 +1019,7 @@ async def get_routes(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import func, or_, select
 
@@ -1095,7 +1096,7 @@ async def get_route(
     route_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1170,7 +1171,7 @@ async def get_route(
         "created_by": str(route.created_by) if route.created_by else None,
     }
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post("/routes", summary="创建路线")
@@ -1178,7 +1179,7 @@ async def create_route(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     import uuid as uuid_mod
     from datetime import date as date_mod
@@ -1205,7 +1206,7 @@ async def create_route(
 
     await db.flush()
 
-    return success_response(data={"id": str(route.id), "route_no": route.route_no})
+    return build_response(data={"id": str(route.id), "route_no": route.route_no})
 
 
 @router.put("/routes/{route_id}", summary="更新路线（保存工作流状态）")
@@ -1214,7 +1215,7 @@ async def update_route(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1258,7 +1259,7 @@ async def update_route(
 
     await db.flush()
 
-    return success_response(data={"id": str(route.id), "message": "已保存"})
+    return build_response(data={"id": str(route.id), "message": "已保存"})
 
 
 @router.delete("/routes/{route_id}", summary="删除路线")
@@ -1266,7 +1267,7 @@ async def delete_route(
     route_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1288,13 +1289,13 @@ async def delete_route(
     # 如果已经删除，直接返回成功（幂等性）
 
     if route.is_deleted:
-        return success_response(data={"message": "已删除"})
+        return build_response(data={"message": "已删除"})
 
     route.is_deleted = True
 
     await db.flush()
 
-    return success_response(data={"message": "已删除"})
+    return build_response(data={"message": "已删除"})
 
 
 # ==================== 实验记录 CRUD ====================
@@ -1306,7 +1307,7 @@ async def create_experiment(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     import uuid as uuid_mod
     from datetime import date as date_mod
@@ -1349,7 +1350,7 @@ async def create_experiment(
 
     await db.flush()
 
-    return success_response(data={"id": str(exp.id), "experiment_no": exp.experiment_no})
+    return build_response(data={"id": str(exp.id), "experiment_no": exp.experiment_no})
 
 
 @router.put("/experiments/{exp_id}", summary="更新实验记录")
@@ -1358,7 +1359,7 @@ async def update_experiment(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from datetime import date as date_mod
 
@@ -1406,7 +1407,7 @@ async def update_experiment(
 
     await db.flush()
 
-    return success_response(data={"id": str(exp.id), "message": "已保存"})
+    return build_response(data={"id": str(exp.id), "message": "已保存"})
 
 
 @router.delete("/experiments/{exp_id}", summary="删除实验记录")
@@ -1414,7 +1415,7 @@ async def delete_experiment(
     exp_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1436,7 +1437,7 @@ async def delete_experiment(
 
     await db.flush()
 
-    return success_response(data={"message": "已删除"})
+    return build_response(data={"message": "已删除"})
 
 
 # ============ 工艺优化 API ============
@@ -1451,7 +1452,7 @@ async def get_optimizations(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import func, select
 
@@ -1521,7 +1522,7 @@ async def get_optimization(
     optimization_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1534,7 +1535,7 @@ async def get_optimization(
     if not opt:
         raise HTTPException(status_code=404, detail="工艺优化记录不存在")
 
-    return success_response(
+    return build_response(
         data={
             "id": str(opt.id),
             "project_id": opt.project_id,
@@ -1561,7 +1562,7 @@ async def create_optimization(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     import uuid
     from datetime import date
@@ -1587,7 +1588,7 @@ async def create_optimization(
 
     await db.refresh(opt)
 
-    return success_response(
+    return build_response(
         data={
             "id": str(opt.id),
             "source_route_id": opt.source_route_id,
@@ -1604,7 +1605,7 @@ async def update_optimization(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1627,7 +1628,7 @@ async def update_optimization(
 
     await db.refresh(opt)
 
-    return success_response(
+    return build_response(
         data={
             "id": str(opt.id),
             "source_route_id": opt.source_route_id,
@@ -1643,7 +1644,7 @@ async def delete_optimization(
     optimization_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1656,13 +1657,13 @@ async def delete_optimization(
     if not opt:
         # Idempotent delete: return success even if record doesn't exist
 
-        return success_response(data={"message": "工艺优化记录已删除"})
+        return build_response(data={"message": "工艺优化记录已删除"})
 
     await db.delete(opt)
 
     await db.commit()
 
-    return success_response(data={"message": "工艺优化记录已删除"})
+    return build_response(data={"message": "工艺优化记录已删除"})
 
 
 # ===== Pilot Workflow Endpoints =====
@@ -1850,7 +1851,7 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
             }
         )
 
-    return success_response(data=tracks)
+    return build_response(data=tracks)
 
 
 @router.get(
@@ -1974,7 +1975,7 @@ async def get_rd_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     projects, total = await service.get_rd_projects(
         db,
@@ -1999,11 +2000,11 @@ async def get_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     project = await service.get_rd_project(db, project_id)
 
-    return success_response(data=RdProjectResponse.model_validate(project))
+    return build_response(data=RdProjectResponse.model_validate(project))
 
 
 @router.post("/rd-projects", summary="创建研发项目(RdProject)")
@@ -2011,13 +2012,13 @@ async def create_rd_project(
     data: RdProjectCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     project = await service.create_rd_project(db, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdProjectResponse.model_validate(project),
         message="创建成功",
     )
@@ -2029,13 +2030,13 @@ async def update_rd_project(
     data: RdProjectUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     project = await service.update_rd_project(db, project_id, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdProjectResponse.model_validate(project),
         message="更新成功",
     )
@@ -2046,13 +2047,13 @@ async def delete_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     await service.delete_rd_project(db, project_id, user_id)
 
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ===== Stage Transition API Endpoints =====
@@ -2064,24 +2065,27 @@ async def transition_stage(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     target_stage = data.get("target_stage")
 
     review_notes = data.get("review_notes")
 
     if not target_stage:
-        return error_response(message="缺少 target_stage 参数")
+        from fastapi import HTTPException
 
+        raise HTTPException(status_code=400, detail="缺少 target_stage 参数")
     user_id = current_user.id
 
     result = await service.transition_stage(db, project_id, target_stage, review_notes, user_id)
 
     if result.get("success"):
-        return success_response(data=result, message="阶段流转成功")
+        return build_response(data=result, message="阶段流转成功")
 
     else:
-        return error_response(message=result.get("message", "阶段流转失败"))
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail=result.get("message", "阶段流转失败"))
 
 
 @router.get("/rd-projects/{project_id}/transition-check", summary="检查阶段流转条件")
@@ -2090,11 +2094,11 @@ async def check_stage_transition(
     current_user: RequiredUser,
     target_stage: str = Query(..., description="目标阶段"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     result = await service.check_stage_transition(db, project_id, target_stage)
 
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 # ===== 中试研究 API Endpoints =====
@@ -2105,11 +2109,11 @@ async def get_pilot_studies(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     studies = await service.get_pilot_studies(db, project_id)
 
-    return success_response(data=[RdPilotStudyResponse.model_validate(s) for s in studies])
+    return build_response(data=[RdPilotStudyResponse.model_validate(s) for s in studies])
 
 
 @router.post("/pilot-studies", summary="创建中试研究记录")
@@ -2117,13 +2121,13 @@ async def create_pilot_study(
     data: RdPilotStudyCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     study = await service.create_pilot_study(db, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdPilotStudyResponse.model_validate(study),
         message="创建成功",
     )
@@ -2135,13 +2139,13 @@ async def update_pilot_study(
     data: RdPilotStudyUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     study = await service.update_pilot_study(db, study_id, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdPilotStudyResponse.model_validate(study),
         message="更新成功",
     )
@@ -2155,11 +2159,11 @@ async def get_validations(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     validations = await service.get_validations(db, project_id)
 
-    return success_response(data=[RdProcessValidationResponse.model_validate(v) for v in validations])
+    return build_response(data=[RdProcessValidationResponse.model_validate(v) for v in validations])
 
 
 @router.post("/process-validations", summary="创建工艺验证记录")
@@ -2167,13 +2171,13 @@ async def create_validation(
     data: RdProcessValidationCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     validation = await service.create_validation(db, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdProcessValidationResponse.model_validate(validation),
         message="创建成功",
     )
@@ -2185,13 +2189,13 @@ async def update_validation(
     data: RdProcessValidationUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     validation = await service.update_validation(db, validation_id, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdProcessValidationResponse.model_validate(validation),
         message="更新成功",
     )
@@ -2205,11 +2209,11 @@ async def get_filings(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     filings = await service.get_filings(db, project_id)
 
-    return success_response(data=[RdRegistrationFilingResponse.model_validate(f) for f in filings])
+    return build_response(data=[RdRegistrationFilingResponse.model_validate(f) for f in filings])
 
 
 @router.post("/registration-filings", summary="创建申报资料记录")
@@ -2217,13 +2221,13 @@ async def create_filing(
     data: RdRegistrationFilingCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     filing = await service.create_filing(db, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdRegistrationFilingResponse.model_validate(filing),
         message="创建成功",
     )
@@ -2235,13 +2239,13 @@ async def update_filing(
     data: RdRegistrationFilingUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
     filing = await service.update_filing(db, filing_id, data, user_id)
 
-    return success_response(
+    return build_response(
         data=RdRegistrationFilingResponse.model_validate(filing),
         message="更新成功",
     )
@@ -2389,7 +2393,7 @@ async def upload_deliverable_file(
         current_user.id,
     )
 
-    return success_response(  # type: ignore[return-value]
+    return build_response(  # type: ignore[return-value]
         data={
             "file_url": file_url,
             "file_name": filename,
@@ -2610,11 +2614,11 @@ async def get_experiment_logs(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     logs = await service.get_experiment_logs(db, project_id)
 
-    return success_response(data=[RdExperimentLogResponse.model_validate(log) for log in logs])
+    return build_response(data=[RdExperimentLogResponse.model_validate(log) for log in logs])
 
 
 @router.post("/experiment-logs", summary="创建实验记录")
@@ -2622,7 +2626,7 @@ async def create_experiment_log(
     data: RdExperimentLogCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2630,7 +2634,7 @@ async def create_experiment_log(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdExperimentLogResponse.model_validate(log),
         message="创建成功",
     )
@@ -2642,7 +2646,7 @@ async def update_experiment_log(
     data: RdExperimentLogUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2650,7 +2654,7 @@ async def update_experiment_log(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdExperimentLogResponse.model_validate(log),
         message="更新成功",
     )
@@ -2678,11 +2682,11 @@ async def get_reports(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     reports = await service.get_reports(db, project_id)
 
-    return success_response(data=[RdReportResponse.model_validate(r) for r in reports])
+    return build_response(data=[RdReportResponse.model_validate(r) for r in reports])
 
 
 @router.post("/reports", summary="创建研发报告")
@@ -2690,7 +2694,7 @@ async def create_report(
     data: RdReportCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2698,7 +2702,7 @@ async def create_report(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdReportResponse.model_validate(report),
         message="创建成功",
     )
@@ -2710,7 +2714,7 @@ async def update_report(
     data: RdReportUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2718,7 +2722,7 @@ async def update_report(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdReportResponse.model_validate(report),
         message="更新成功",
     )
@@ -2746,11 +2750,11 @@ async def get_initiations(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     items = await service.get_initiations(db, project_id)
 
-    return success_response(data=[RdInitiationResponse.model_validate(i.__dict__) for i in items])
+    return build_response(data=[RdInitiationResponse.model_validate(i.__dict__) for i in items])
 
 
 @router.post("/initiations", summary="创建立项申请")
@@ -2758,7 +2762,7 @@ async def create_initiation(
     data: RdInitiationCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2766,7 +2770,7 @@ async def create_initiation(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdInitiationResponse.model_validate(item.__dict__),
         message="创建成功",
     )
@@ -2778,7 +2782,7 @@ async def update_initiation(
     data: RdInitiationUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2786,7 +2790,7 @@ async def update_initiation(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdInitiationResponse.model_validate(item.__dict__),
         message="更新成功",
     )
@@ -2879,7 +2883,7 @@ async def get_track_detail(
     track_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取研究项详情，包含研究发现和结论历史"""
 
     from sqlalchemy import select
@@ -2912,7 +2916,7 @@ async def get_track_detail(
 
     track_data["conclusion_history"] = conclusion_history
 
-    return success_response(data=track_data)
+    return build_response(data=track_data)
 
 
 # ===== 结论版本管理 API =====
@@ -2924,7 +2928,7 @@ async def create_conclusion_version_api(
     data: RdTrackConclusionVersionCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """发布新的结论版本"""
 
     version_data = data.model_dump()
@@ -2947,7 +2951,7 @@ async def create_conclusion_version_api(
 
     await db.commit()
 
-    return success_response(data=result, message="结论版本发布成功")
+    return build_response(data=result, message="结论版本发布成功")
 
 
 @router.get("/tracks/{track_id}/conclusion-versions", summary="获取结论版本历史")
@@ -2955,12 +2959,12 @@ async def get_conclusion_versions_api(
     track_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取研究项的结论版本历史"""
 
     versions = await service.get_conclusion_history(db, track_id)
 
-    return success_response(data=versions)
+    return build_response(data=versions)
 
 
 # ===== 数据导出 API =====
@@ -3200,7 +3204,7 @@ async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
 async def get_stats_overview(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取研发模块概览统计数据"""
 
     from sqlalchemy import func, select
@@ -3283,7 +3287,7 @@ async def get_stats_overview(
 
     deliverable_status_distribution = {s or "unknown": c for s, c in deliverable_status_stats.all()}
 
-    return success_response(
+    return build_response(
         data={
             "projects": {
                 "total": total_projects,
@@ -3309,7 +3313,7 @@ async def get_stats_overview(
 async def get_project_progress(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """获取各项目进度统计"""
 
     from sqlalchemy import select
@@ -3364,7 +3368,7 @@ async def get_project_progress(
             }
         )
 
-    return success_response(data=projects)
+    return build_response(data=projects)
 
 
 # ===== 交付物模板 API =====
@@ -3377,11 +3381,11 @@ async def get_deliverable_templates(
     deliverable_type: str | None = Query(None, description="交付物类型"),
     is_active: bool | None = Query(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     templates = await service.get_deliverable_templates(db, stage, deliverable_type, is_active)
 
-    return success_response(data=[RdDeliverableTemplateResponse.model_validate(t.__dict__) for t in templates])
+    return build_response(data=[RdDeliverableTemplateResponse.model_validate(t.__dict__) for t in templates])
 
 
 @router.post("/deliverable-templates", summary="创建交付物模板")
@@ -3389,7 +3393,7 @@ async def create_deliverable_template(
     data: RdDeliverableTemplateCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -3397,7 +3401,7 @@ async def create_deliverable_template(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdDeliverableTemplateResponse.model_validate(template.__dict__),
         message="创建成功",
     )
@@ -3409,7 +3413,7 @@ async def update_deliverable_template(
     data: RdDeliverableTemplateUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -3417,7 +3421,7 @@ async def update_deliverable_template(
 
     await db.commit()
 
-    return success_response(
+    return build_response(
         data=RdDeliverableTemplateResponse.model_validate(template.__dict__),
         message="更新成功",
     )
@@ -3445,7 +3449,7 @@ async def generate_report(
     data: RdReportGenerateRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
 
     result = await service.generate_report_with_ai(
         db,
@@ -3455,4 +3459,4 @@ async def generate_report(
         data.additional_context,
     )
 
-    return success_response(data=result, message="生成成功")
+    return build_response(data=result, message="生成成功")

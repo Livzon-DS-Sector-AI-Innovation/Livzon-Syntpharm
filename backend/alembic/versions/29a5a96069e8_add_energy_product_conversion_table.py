@@ -1,0 +1,97 @@
+"""add energy product conversion table
+
+Revision ID: 29a5a96069e8
+Revises: 0054_add_product_conversion
+Create Date: 2026-08-13 08:15:52.433887
+"""
+
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = "29a5a96069e8"
+down_revision: Union[str, None] = "0053_add_energy_unit_consumption_targets"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    op.execute("CREATE SCHEMA IF NOT EXISTS energy")
+    op.create_table(
+        "energy_product_conversions",
+        sa.Column("id", sa.UUID(), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column("product_name", sa.String(length=100), nullable=False, unique=True, comment="产品名称"),
+        sa.Column(
+            "conversion_factor",
+            sa.Numeric(precision=10, scale=4),
+            nullable=False,
+            server_default="1.0",
+            comment="折算系数（相对于标准品）",
+        ),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true", comment="是否启用"),
+        sa.Column("description", sa.Text(), nullable=True, comment="备注说明"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("created_by", sa.UUID(), nullable=True),
+        sa.Column("updated_by", sa.UUID(), nullable=True),
+        sa.Column("is_deleted", sa.Boolean(), nullable=False, server_default="false"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("product_name", name="uk_product_name"),
+        schema="energy",
+    )
+    op.create_foreign_key(
+        "fk_epc_created_by",
+        "energy_product_conversions",
+        "users",
+        ["created_by"],
+        ["id"],
+        source_schema="energy",
+        referent_schema="identity",
+    )
+    op.create_foreign_key(
+        "fk_epc_updated_by",
+        "energy_product_conversions",
+        "users",
+        ["updated_by"],
+        ["id"],
+        source_schema="energy",
+        referent_schema="identity",
+    )
+    op.alter_column(
+        "energy_unit_consumption_targets",
+        "target_unit_consumption",
+        existing_type=sa.NUMERIC(precision=10, scale=4),
+        comment="目标单耗(kWh/kg)",
+        existing_comment="目标单耗(kWh/件)",
+        existing_nullable=False,
+        schema="energy",
+    )
+    op.drop_index("idx_workshop_id", table_name="energy_unit_consumption_targets", schema="energy")
+    op.drop_table_comment("energy_unit_consumption_targets", schema="energy")
+    # ### end Alembic commands ###
+
+
+# ### end Alembic commands ###
+def downgrade() -> None:
+    # Reverse the upgrade operations in reverse order
+    # 1. Restore the comment on energy_unit_consumption_targets
+    op.create_table_comment("energy_unit_consumption_targets", "车间单耗目标表", existing_comment=None, schema="energy")
+    # 2. Recreate the index
+    op.create_index(
+        "idx_workshop_id", "energy_unit_consumption_targets", ["workshop_id"], unique=False, schema="energy"
+    )
+    # 3. Restore the column comment
+    op.alter_column(
+        "energy_unit_consumption_targets",
+        "target_unit_consumption",
+        existing_type=sa.NUMERIC(precision=10, scale=4),
+        comment="目标单耗(kWh/件)",
+        existing_comment="目标单耗(kWh/kg)",
+        existing_nullable=False,
+        schema="energy",
+    )
+    # 4. Drop the energy_product_conversions table
+    op.drop_table("energy_product_conversions", schema="energy")

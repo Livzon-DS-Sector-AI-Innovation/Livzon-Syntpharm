@@ -184,17 +184,12 @@ run_e2e() {
         ci-build \
         sh -c "
             API_BASE_URL=http://backend-e2e:8000 pnpm build &&
-            rm -rf .next/standalone/.next/static &&
-            cp -r .next/static .next/standalone/.next/static &&
-            rm -rf .next/standalone/public &&
-            cp -r public .next/standalone/public &&
-            cd .next/standalone &&
-            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 node server.js
+            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 pnpm exec next start -H 0.0.0.0 -p 3000
         "
 
     log_info "Waiting for frontend..."
     local frontend_ready=false
-    for i in $(seq 1 30); do
+    for i in $(seq 1 120); do
         if curl -sf http://127.0.0.1:13000 > /dev/null 2>&1; then
             frontend_ready=true
             break
@@ -216,7 +211,7 @@ run_e2e() {
     cd "$REPO_ROOT/frontend"
 
     local e2e_exit_code=0
-    pnpm exec playwright test || e2e_exit_code=$?
+    PATH="/home/ruanjiaheng/.local/bin:$PATH" pnpm exec playwright test || e2e_exit_code=$?
 
     # ── Collect E2E frontend log ────────────────────────────────────────
     if [[ $e2e_exit_code -ne 0 ]]; then

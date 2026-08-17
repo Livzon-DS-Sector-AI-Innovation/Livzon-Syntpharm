@@ -3,12 +3,11 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
     CalibrationPlanCreate,
@@ -17,6 +16,7 @@ from app.modules.equipment.schemas import (
     CalibrationRecordCreate,
     CalibrationRecordResponse,
 )
+from app.shared.schemas import ApiResponse
 
 router = APIRouter()
 
@@ -27,9 +27,9 @@ async def create_calibration_plan(
     data: CalibrationPlanCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     plan = await service.create_calibration_plan(db, data)
-    return success_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=CalibrationPlanResponse.model_validate(plan))
 
 
 @router.get("/plans", summary="校准计划列表")
@@ -40,7 +40,7 @@ async def list_calibration_plans(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     plans, total = await service.get_calibration_plans(
         db,
         equipment_id=equipment_id,
@@ -61,9 +61,9 @@ async def get_overdue_plans(
     current_user: RequiredUser,
     days: int = Query(30, ge=1, description="提前天数"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     plans = await service.get_overdue_calibration_plans(db, days)
-    return success_response(data=[CalibrationPlanResponse.model_validate(p) for p in plans])
+    return build_response(data=[CalibrationPlanResponse.model_validate(p) for p in plans])
 
 
 @router.get("/plans/{plan_id}", summary="校准计划详情")
@@ -71,9 +71,9 @@ async def get_calibration_plan(
     plan_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     plan = await service.get_calibration_plan_by_id(db, plan_id)
-    return success_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=CalibrationPlanResponse.model_validate(plan))
 
 
 @router.put("/plans/{plan_id}", summary="修改校准计划")
@@ -82,9 +82,9 @@ async def update_calibration_plan(
     data: CalibrationPlanUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     plan = await service.update_calibration_plan(db, plan_id, data)
-    return success_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=CalibrationPlanResponse.model_validate(plan))
 
 
 @router.delete("/plans/{plan_id}", summary="删除校准计划")
@@ -92,9 +92,9 @@ async def delete_calibration_plan(
     plan_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     await service.delete_calibration_plan(db, plan_id)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ---------- 校准记录 ----------
@@ -103,9 +103,9 @@ async def create_calibration_record(
     data: CalibrationRecordCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     record = await service.create_calibration_record(db, data)
-    return success_response(data=CalibrationRecordResponse.model_validate(record))
+    return build_response(data=CalibrationRecordResponse.model_validate(record))
 
 
 @router.get("/records", summary="校准记录列表")
@@ -116,7 +116,7 @@ async def list_calibration_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     records, total = await service.get_calibration_records(
         db,
         equipment_id=equipment_id,
@@ -137,6 +137,6 @@ async def get_calibration_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     record = await service.get_calibration_record_by_id(db, record_id)
-    return success_response(data=CalibrationRecordResponse.model_validate(record))
+    return build_response(data=CalibrationRecordResponse.model_validate(record))

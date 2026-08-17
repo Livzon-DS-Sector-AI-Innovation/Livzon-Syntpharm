@@ -8,6 +8,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID as UUIDType
 
+# import sqlalchemy as sa
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -322,3 +324,44 @@ class EnergyDailyData(BaseModel):
         nullable=True,
         comment="关联预警记录ID",
     )
+
+
+class EnergyUnitConsumptionTarget(BaseModel):
+    """车间单耗目标表"""
+
+    __tablename__ = "energy_unit_consumption_targets"
+    __table_args__ = (
+        UniqueConstraint("workshop_id", "target_month", name="uk_workshop_month"),
+        {"schema": "energy"},
+    )
+
+    # BaseModel 已提供: id (UUID), created_at, updated_at, created_by, updated_by, is_deleted
+
+    workshop_id: Mapped[UUIDType] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("energy.energy_workshops.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="关联车间ID",
+    )
+    target_month: Mapped[date] = mapped_column(Date, nullable=False, comment="目标月份")
+    target_unit_consumption: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, comment="目标单耗(kWh/kg)")
+
+
+class EnergyProductConversion(BaseModel):
+    """产品折算系数表：用于将不同产品的产量折算为标准品产量"""
+
+    __tablename__ = "energy_product_conversions"
+    __table_args__ = (
+        UniqueConstraint("product_name", name="uk_product_name"),
+        {"schema": "energy"},
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")
+    )
+    product_name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, comment="产品名称")
+    conversion_factor: Mapped[Decimal] = mapped_column(
+        Numeric(10, 4), nullable=False, default=1.0, comment="折算系数（相对于标准品）"
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注说明")

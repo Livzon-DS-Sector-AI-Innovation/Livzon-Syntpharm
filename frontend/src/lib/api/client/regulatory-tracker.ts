@@ -96,7 +96,7 @@ function generateMockAnalysis(doc: RegulatoryDocument): AIAnalysisResult {
 
 // ====== API 调用 ======
 export async function fetchSummary(): Promise<SummaryStats> {
-  const res = await fetch(`/api/v1/registration/regulatory-tracker/summary`)
+  const res = await fetch(`/api/v1/registration/regulatory-tracker/summary`, { credentials: 'include' })
   const json: ApiResponse<SummaryStats> = await res.json()
   return json.data
 }
@@ -116,7 +116,7 @@ export async function fetchDocuments(
   if (params.pageSize) searchParams.append('pageSize', params.pageSize.toString())
 
   const url = `/api/v1/registration/regulatory-documents?${searchParams.toString()}`
-  const res = await fetch(url)
+  const res = await fetch(url, { credentials: 'include' })
   const json: ApiResponse<PaginatedResponse<RegulatoryDocument>> = await res.json()
   return json.data
 }
@@ -127,7 +127,7 @@ export async function fetchSyncJobs(
   pageSize: number = 20
 ): Promise<PaginatedResponse<SyncJob>> {
   const url = `/api/v1/sync-jobs?page=${page}&pageSize=${pageSize}`
-  const res = await fetch(url)
+  const res = await fetch(url, { credentials: 'include' })
   const json: ApiResponse<PaginatedResponse<SyncJob>> = await res.json()
   return json.data
 }
@@ -148,7 +148,7 @@ export async function fetchSyncJobs(
 // ====== 新增类型和函数（来自 feature/ra-hcra-frontend） ======
 
 export async function fetchDashboard(): Promise<DashboardData> {
-  const res = await fetch(`/api/v1/registration/regulatory-tracker/dashboard`)
+  const res = await fetch(`/api/v1/registration/regulatory-tracker/dashboard`, { credentials: 'include' })
   const json = await res.json()
   if (json.code !== 200) {
     throw new Error(json.message || '获取仪表盘数据失败')
@@ -157,7 +157,7 @@ export async function fetchDashboard(): Promise<DashboardData> {
 }
 
 export async function fetchDocumentDetail(docId: string): Promise<DocumentDetail> {
-  const res = await fetch(`/api/v1/registration/regulatory-documents/${docId}/detail`)
+  const res = await fetch(`/api/v1/registration/regulatory-documents/${docId}/detail`, { credentials: 'include' })
   const json = await res.json()
   if (json.code !== 200) {
     throw new Error(json.message || '获取文档详情失败')

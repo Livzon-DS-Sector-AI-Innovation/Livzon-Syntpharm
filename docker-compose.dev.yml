@@ -1,34 +1,24 @@
+version: '3.8'
+
 services:
   backend:
     volumes:
-      - ./backend/app:/app/app
-      - ./backend/alembic:/app/alembic
-      - ./backend/alembic.ini:/app/alembic.ini
-      - ./storage:/app/storage
-    dns:
-      - 127.0.0.11
-      - 223.5.5.5
-      - 8.8.8.8
-    command: >
-      sh -c "uv run alembic upgrade head &&
-      .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"
+      - ./backend:/app/backend:ro  # 只读挂载，避免权限问题
     environment:
-      DEBUG: "true"
+      - UVICORN_RELOAD=true
+    command: >
+      bash -c "
+        cd /app &&
+        uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+      "
 
   frontend:
-    build:
-      dockerfile: Dockerfile.dev
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - frontend_dev_next:/app/.next
+      - ./frontend:/app/frontend:ro
     environment:
-      NODE_ENV: development
-      WATCHPACK_POLLING: "true"
-      WATCHPACK_POLLING_INTERVAL: "1000"
-      CHOKIDAR_USEPOLLING: "true"
-      ALLOWED_DEV_ORIGINS: "${ALLOWED_DEV_ORIGINS:-}"
-    command: pnpm dev
-
-volumes:
-  frontend_dev_next:
+      - NEXT_TELEMETRY_DISABLED=1
+    command: >
+      bash -c "
+        cd /app &&
+        pnpm dev
+      "

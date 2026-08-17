@@ -29,6 +29,7 @@ from app.modules.safety.ai_hazard_identification import (
 
 # 创建 AI 服务（任意 OpenAI-compatible 接口）
 from app.platform.integrations.ai.client import AIService
+
 ai = AIService(
     api_key="sk-xxx",
     base_url="https://api.deepseek.com",
@@ -39,18 +40,20 @@ ai = AIService(
 plugin = AIHazardIdentifier(ai)
 
 # 执行识别
-result = await plugin.identify(HazardIdentificationInput(
-    hazard_no="HZ-2026-0001",
-    description="防爆电箱备用引入口未封堵，箱内积尘严重",
-    department="生产部",
-    location="合成车间一楼",
-    defect_photos=["https://..."],  # 可选
-))
+result = await plugin.identify(
+    HazardIdentificationInput(
+        hazard_no="HZ-2026-0001",
+        description="防爆电箱备用引入口未封堵，箱内积尘严重",
+        department="生产部",
+        location="合成车间一楼",
+        defect_photos=["https://..."],  # 可选
+    )
+)
 
-print(result.key_defect)          # 隐患描述（AI）
-print(result.hazard_type)         # unsafe_condition
-print(result.hazard_category)     # instrument_electrical
-print(result.hazard_level)        # major
+print(result.key_defect)  # 隐患描述（AI）
+print(result.hazard_type)  # unsafe_condition
+print(result.hazard_category)  # instrument_electrical
+print(result.hazard_level)  # major
 print(result.rectification_suggestion.immediate)  # 立即措施
 print(result.major_hazard_basis)  # 判定依据（含法规引用）
 ```
@@ -126,9 +129,9 @@ await repo.create_ai_workflow_config(config)
 from app.modules.safety.ai_hazard_identification import PluginConfig
 
 config = PluginConfig(
-    temperature=0.05,       # 低温度 = 高复现
-    strict_mode=True,        # 验证失败时抛异常
-    enable_vision=True,      # 启用多模态
+    temperature=0.05,  # 低温度 = 高复现
+    strict_mode=True,  # 验证失败时抛异常
+    enable_vision=True,  # 启用多模态
     enable_reasoning=False,  # 不输出推理过程（省 token）
 )
 plugin = AIHazardIdentifier(ai, config=config)

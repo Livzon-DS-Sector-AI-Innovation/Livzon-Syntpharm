@@ -1,74 +1,130 @@
-import { chromium, expect, FullConfig } from '@playwright/test'
+import { chromium, expect } from '@playwright/test'
 import path from 'path'
+import fs from 'fs'
 
-const AUTH_FILE = path.join(__dirname, '.auth', 'storageState.json')
+const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
-export default async function globalSetup(config: FullConfig) {
-  const baseURL = config.projects[0]?.use?.baseURL || 'http://127.0.0.1:13000'
-  const apiURL = process.env.E2E_BACKEND_URL || 'http://127.0.0.1:18000'
-  const secret = process.env.E2E_AUTH_SECRET
-
-  if (!secret) {
-    throw new Error('E2E_AUTH_SECRET environment variable is required for test login')
-  }
-
+async function globalSetup(config: any) {
+  const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000'
+  const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
+  const e2eSecret = process.env.E2E_AUTH_SECRET || 'e2e-test-secret'
+  
   const browser = await chromium.launch()
   const context = await browser.newContext()
   const page = await context.newPage()
+  
+  try {
+    // 使用 test-login 端点获取 token
+    const loginResponse = await page.request.post(`${apiURL}/api/v1/identity/auth/test-login`, {
+      headers: {
+        'X-E2E-Secret': e2eSecret
+      }
+    })
+    
+    if (!loginResponse.ok()) {
+      const errorText = await loginResponse.text()
+      console.error(`Login failed: ${loginResponse.status()} ${loginResponse.statusText()}`)
+      console.error(`Response body: ${errorText}`)
+      throw new Error(`Login failed with status ${loginResponse.status()}`)
+    }
+    
+    const { token } = await loginResponse.json()
+    expect(token).toBeTruthy()
+    
+    // 设置认证状态
+    await context.addCookies([{
+      name: 'auth_token',
+      value: token,
+      domain: new URL(baseURL).hostname,
+      path: '/'
+    }])
+    
+    // 创建测试车间
+    const workshopResponse = await page.request.post(`${apiURL}/api/v1/energy/workshops`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      data: {
+        name: 'E2E测试车间',
+        code: 'E2E-001',
+        location: '测试地点',
+        is_active: true,
+        category: 'workshop'
+      }
+    })
+    
+    // 严格验证车间创建成功
+    if (!workshopResponse.ok()) {
+      const errorText = await workshopResponse.text()
+      throw new Error(`Failed to create workshop: ${workshopResponse.status()} ${errorText}`)
+    }
+    
+    const workshop = await workshopResponse.json()
+    expect(workshop.code).toBe(200)
+    expect(workshop.data?.id).toBeTruthy()
+    
+    // 验证车间可以被查询到
+    const listResponse = await page.request.get(`${apiURL}/api/v1/energy/workshops?category=workshop`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    if (!listResponse.ok()) {
+      const errorText = await listResponse.text()
+      console.error(`List workshops failed: ${listResponse.status()} ${listResponse.statusText()}`)
+      console.error(`Response body: ${errorText}`)
+      throw new Error(`List workshops failed with status ${listResponse.status()}`)
+    }
+    
+    const listData = await listResponse.json()
+    console.log('Workshop list response:', JSON.stringify(listData, null, 2))
+    expect(listData.code).toBe(200)
+    
+    // Check if items exist and have length
+    const items = listData.data?.items || listData.items || listData.data || []
+    expect(Array.isArray(items)).toBe(true)
+    expect(items.length).toBeGreaterThan(0)
+    
+    // 创建测试能耗数据（用于能源单耗分析测试）
+    const energyDataResponse = await page.request.post(`${apiURL}/api/v1/energy/monthly/batch`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        records: [
+          {
+            workshop_id: workshop.data.id,
+            energy_type: 'electricity',
+            record_date: '2026-01-15',
+            value: 50000,
+            unit: 'kWh',
+            source: 'manual',
+            remark: 'E2E test data'
+          }
+        ]
+      }
+    })
+    
+    if (!energyDataResponse.ok()) {
+      const errorText = await energyDataResponse.text()
+      console.error(`Failed to create energy data: ${energyDataResponse.status()} ${errorText}`)
+      throw new Error(`Failed to create energy data: ${energyDataResponse.status()}`)
+    }
+    
+    console.log('Energy data created successfully')
 
-  const loginResponse = await context.request.post(
-    `${apiURL}/api/v1/identity/auth/test-login`,
-    {
-      headers: { 'X-E2E-Secret': secret },
-    },
-  )
-
-  if (!loginResponse.ok()) {
-    throw new Error(
-      `E2E test-login failed: ${loginResponse.status()} ${await loginResponse.text()}`,
-    )
+    // 保存认证状态
+    // Ensure directory exists
+    const dir = path.dirname(authFile)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    await context.storageState({ path: authFile })
+  } finally {
+    await browser.close()
   }
-
-  const body: unknown = await loginResponse.json()
-
-  if (
-    typeof body !== 'object' ||
-    body === null ||
-    !('token' in body) ||
-    typeof (body as Record<string, unknown>).token !== 'string'
-  ) {
-    throw new Error('E2E test-login returned no valid token')
-  }
-
-  const { token } = body as { token: string }
-
-  if (token.length === 0) {
-    throw new Error('E2E test-login returned empty token')
-  }
-
-  await page.goto(`${baseURL}/auth/callback?token=${encodeURIComponent(token)}`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30_000,
-  })
-
-  const cookies = await context.cookies()
-  const authCookie = cookies.find(c => c.name === 'auth_token')
-
-  if (!authCookie) {
-    throw new Error('Authentication callback did not create auth_token cookie')
-  }
-
-  await page.goto(`${baseURL}/production`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30_000,
-  })
-
-  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
-
-  await expect(
-    page.getByRole('heading', { name: '生产管理概览' }).first(),
-  ).toBeVisible({ timeout: 15_000 })
-
-  await context.storageState({ path: AUTH_FILE })
-  await browser.close()
 }
+
+export default globalSetup

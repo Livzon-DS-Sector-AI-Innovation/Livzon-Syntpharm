@@ -11,7 +11,7 @@ def build_response(
     data: Any = None,
     message: str = "success",
     meta: dict[str, Any] | None = None,
-    code: int = 0,
+    code: int = 200,
 ) -> ApiResponse:
     """Return ApiResponse model for FastAPI to serialize.
     Unlike success_response(), does not wrap in JSONResponse —
@@ -52,8 +52,8 @@ def paginated_response(
     page_size: int,
     total: int,
     message: str = "success",
-) -> JSONResponse:
-    return success_response(
+) -> ApiResponse:
+    return build_response(
         data=data,
         message=message,
         meta={
