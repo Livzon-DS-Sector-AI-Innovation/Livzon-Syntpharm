@@ -20,7 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS energy")
-    op.execute("CREATE SCHEMA IF NOT EXISTS energy")
     op.create_table(
         "energy_product_conversions",
         sa.Column("id", sa.UUID(), server_default=sa.text("gen_random_uuid()"), nullable=False),
