@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { parse, NonEmptyStringSchema } from '@/lib/validation/schemas'
+import {parse} from '@/lib/validation/schemas'
 
 import { revalidatePath } from 'next/cache'
 import {
@@ -101,18 +101,18 @@ import {
 
 
 // HR schemas
-const TrainingSignInSheetSchema = z.object({
+const _TrainingSignInSheetSchema = z.object({
   training_id: z.string().uuid(),
   trainee_ids: z.array(z.string().uuid()),
 })
 
-const TrainingNotificationSchema = z.object({
+const _TrainingNotificationSchema = z.object({
   training_id: z.string().uuid(),
   notification_type: z.string(),
   recipients: z.array(z.string().uuid()),
 })
 
-const TrainingEvaluationSchema = z.object({
+const _TrainingEvaluationSchema = z.object({
   training_id: z.string().uuid(),
   employee_id: z.string().uuid(),
   score: z.number().optional(),
@@ -555,14 +555,14 @@ export async function generateOnboardingEvaluation(data: unknown): Promise<Blob>
 // ─── Additional HR Actions (moved from components) ───
 
 export async function createOnboardingTrainingRecord(employeeNumber: string, data: unknown) {
-  const validated = parse(OnboardingTrainingRecordSchema, data)
+  const _validated = parse(OnboardingTrainingRecordSchema, data)
   const blob = await createOnboardingTrainingRecordApi(employeeNumber, data)
   revalidatePath('/hr')
   return blob
 }
 
 export async function createDepartureRecord(data: unknown) {
-  const validated = parse(DepartureRecordSchema, data)
+  const _validated = parse(DepartureRecordSchema, data)
   const res = await createDepartureRecordApi(data)
   revalidatePath('/hr')
   return res

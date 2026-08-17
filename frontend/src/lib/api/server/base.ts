@@ -44,7 +44,7 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
     cache: options?.cache ?? 'no-store',
   })
   if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
+    const _errorBody = await response.text().catch(() => '')
     let errorMessage = `请求失败: ${response.status} ${response.statusText}`
     try {
       const errorJson = await response.json()

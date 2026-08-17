@@ -15,7 +15,7 @@ import type {
 } from '@/types/dossier-writer'
 
 
-const headers = { 'Content-Type': 'application/json' }
+const _headers = { 'Content-Type': 'application/json' }
 
 // ====== Product Dossier ======
 

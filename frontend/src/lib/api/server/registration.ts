@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import {apiFetch, getApiBaseUrl} from '@/lib/api/server/base'
 import type { AuthorizationLetterCreateInput } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
 

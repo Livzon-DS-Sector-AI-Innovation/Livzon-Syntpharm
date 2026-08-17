@@ -4,7 +4,6 @@
  * 质量检验试剂/标准品管理 Server Actions
  */
 
-import { revalidatePath } from 'next/cache'
 import type {
   Reagent,
   ReagentListResponse,

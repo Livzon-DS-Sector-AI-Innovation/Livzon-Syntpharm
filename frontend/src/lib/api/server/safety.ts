@@ -1,4 +1,4 @@
-import { apiFetch, safeApiFetch, buildQueryString, getApiBaseUrl } from '@/lib/api/server/base'
+import {safeApiFetch, buildQueryString, getApiBaseUrl} from '@/lib/api/server/base'
 
 async function uploadFetch(
   endpoint: string,

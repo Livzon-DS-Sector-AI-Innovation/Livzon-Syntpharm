@@ -6,7 +6,7 @@ export interface WorkflowStep {
   expected_keys: string[]
 }
 
-export function getWorkflowStepList(workflowType: string): WorkflowStep[] {
+export function getWorkflowStepList(_workflowType: string): WorkflowStep[] {
   // Stub implementation - returns empty array
   return []
 }
