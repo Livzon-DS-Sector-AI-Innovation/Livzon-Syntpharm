@@ -18,12 +18,12 @@ export default function TrainingRecordClient() {
     setLoading(true)
     fetchEmployees({ page_size: 200 })
       .then((res) => {
-        // eslint-disable-next-line no-console
+         
         console.log('fetchEmployees success:', res)
         setEmployees(res.data || [])
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
+         
         console.error('fetchEmployees error:', err)
         message.error('加载员工列表失败: ' + (err.message || JSON.stringify(err) || '未知错误'))
       })
