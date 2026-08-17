@@ -395,15 +395,12 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
     const xData = Array.from({ length: 10 }, (_, i) => bounds1.lower + (bounds1.upper - bounds1.lower) * i / 9)
     const yData = Array.from({ length: 10 }, (_, i) => bounds2.lower + (bounds2.upper - bounds2.lower) * i / 9)
 
-    const surfaceData: number[][][] = []
-    for (let i = 0; i < xData.length; i++) {
-      const row: number[][] = []
-      for (let j = 0; j < yData.length; j++) {
+    const surfaceData = xData.map((x, i) => 
+      yData.map((y, j) => {
         const val = 70 + 15 * Math.sin(i / 3) * Math.cos(j / 3) + Math.random() * 5
-        row.push([xData[i], yData[j], Math.round(val * 10) / 10])
-      }
-      surfaceData.push(row)
-    }
+        return [x, y, Math.round(val * 10) / 10]
+      })
+    )
 
     return {
       tooltip: {},

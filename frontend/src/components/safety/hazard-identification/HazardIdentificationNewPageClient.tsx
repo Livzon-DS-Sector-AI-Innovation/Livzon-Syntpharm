@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState , useMemo} from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -117,8 +117,9 @@ export function HazardIdentificationNewPageClient() {
         <Form
           form={form}
           layout="vertical"
+          const initialHazardIdNo = useMemo(() => `HI-${Date.now().toString(36).toUpperCase()}`, [])
           initialValues={{
-            hazard_id_no: `HI-${Date.now().toString(36).toUpperCase()}`,
+            hazard_id_no: initialHazardIdNo,
           }}
         >
           <Row gutter={16}>

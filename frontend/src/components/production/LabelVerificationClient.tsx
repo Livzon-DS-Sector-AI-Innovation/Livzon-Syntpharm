@@ -18,6 +18,48 @@ interface LabelVerificationClientProps {
   initialTotal: number
 }
 
+// CheckItem component
+const CheckItem = ({ label, passed }: { label: string; passed: boolean }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+    {passed ? (
+      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+    ) : (
+      <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />
+    )}
+    <span>{label}</span>
+    <Tag color={passed ? 'success' : 'error'}>{passed ? '一致' : '不一致'}</Tag>
+  </div>
+)
+
+// AutoCompareResultPanel component
+const AutoCompareResultPanel = ({ result }: { result: AutoCompareResult }) => {
+  const checkLabels: Record<string, string> = {
+    check_batch_number: '1. 标签批号对比',
+    check_production_date: '2. 每桶生产日期对比',
+    check_expiry_date: '3. 每桶有效期至对比',
+    check_standard_barrels: '4. 整桶数量/桶号/重量对比',
+    check_remainder_barrel: '5. 零头数量/桶号/重量对比',
+    check_total_weight: '6. 总重量对比',
+    check_all_barrels_identified: '7. 是否识别到每一桶',
+  }
+
+  return (
+    <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
+      <h4 style={{ marginBottom: 16 }}>自动对比结果</h4>
+      {Object.entries(checkLabels).map(([key, label]) => {
+        const passed = result[key as keyof AutoCompareResult]
+        return <CheckItem key={key} label={label} passed={passed as boolean} />
+      })}
+      <div style={{ marginTop: 16, padding: 12, background: '#fff', borderRadius: 4 }}>
+        <strong>总体结果：</strong>
+        <Tag color={result.all_passed ? 'success' : 'error'} style={{ marginLeft: 8 }}>
+          {result.all_passed ? '全部一致' : '存在不一致'}
+        </Tag>
+      </div>
+    </div>
+  )
+}
+
 export default function LabelVerificationClient({
   initialVerifications,
   initialTotal,
@@ -286,30 +328,7 @@ export default function LabelVerificationClient({
     },
   ]
 
-  const CheckItem = ({ label, passed }: { label: string; passed: boolean }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      {passed ? (
-        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
-      ) : (
-        <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />
-      )}
-      <span>{label}</span>
-      <Tag color={passed ? 'success' : 'error'}>{passed ? '一致' : '不一致'}</Tag>
-    </div>
-  )
 
-  // 自动对比结果展示组件
-  const AutoCompareResultPanel = ({ result }: { result: AutoCompareResult }) => {
-    const checkLabels: Record<string, string> = {
-      check_batch_number: '1. 标签批号对比',
-      check_production_date: '2. 每桶生产日期对比',
-      check_expiry_date: '3. 每桶有效期至对比',
-      check_standard_barrels: '4. 整桶数量/桶号/重量对比',
-      check_remainder_barrel: '5. 零头数量/桶号/重量对比',
-      check_total_weight: '6. 总重量对比',
-      check_all_barrels_identified: '7. 是否识别到每一桶',
-      check_exception_handled: '8. 异常处理',
-    }
 
     return (
       <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, marginTop: 8, marginBottom: 16 }}>

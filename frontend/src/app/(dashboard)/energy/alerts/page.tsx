@@ -12,6 +12,71 @@ import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from 
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
 import { useEnergyStore } from '@/stores/energy'
 
+// 处理预警记录弹窗组件
+const ProcessModal = ({
+  processModalOpen,
+  setProcessModalOpen,
+  handleSubmitProcess,
+  processing,
+  processForm,
+  processingRecord
+}: {
+  processModalOpen: boolean
+  setProcessModalOpen: (open: boolean) => void
+  handleSubmitProcess: () => void
+  processing: boolean
+  processForm: any
+  processingRecord: any
+}) => (
+  <Modal
+    title="处理预警记录"
+    open={processModalOpen}
+    onCancel={() => setProcessModalOpen(false)}
+    onOk={handleSubmitProcess}
+    confirmLoading={processing}
+    okText="确认处理"
+    cancelText="取消"
+  >
+    <Form form={processForm} layout="vertical">
+      <Form.Item
+        label="预警信息"
+      >
+        <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: 4 }}>
+          <div>能源类型：{processingRecord?.energy_type}</div>
+          <div>预警等级：{processingRecord?.alert_level}</div>
+          <div>触发值：{processingRecord?.trigger_value} {processingRecord?.unit}</div>
+          <div>阈值：{processingRecord?.threshold_value} {processingRecord?.unit}</div>
+          <div>预警时间：{processingRecord?.alert_time ? new Date(processingRecord.alert_time).toLocaleString('zh-CN') : '-'}</div>
+        </div>
+      </Form.Item>
+      
+      <Form.Item
+        name="status"
+        label="处理状态"
+        initialValue="processed"
+        rules={[{ required: true, message: '请选择处理状态' }]}
+      >
+        <Select
+          options={[
+            { label: '已处理', value: 'processed' },
+            { label: '已忽略', value: 'ignored' },
+          ]}
+        />
+      </Form.Item>
+      
+      <Form.Item
+        name="process_note"
+        label="处理备注"
+      >
+        <Input.TextArea
+          rows={4}
+          placeholder="请输入处理说明..."
+        />
+      </Form.Item>
+    </Form>
+  </Modal>
+)
+
 export default function AlertsPage() {
   const { message } = App.useApp()
   const { _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
@@ -282,58 +347,8 @@ export default function AlertsPage() {
   ]
 
 
-  // 处理预警记录弹窗
-  const ProcessModal = () => (
-    <Modal
-      title="处理预警记录"
-      open={processModalOpen}
-      onCancel={() => setProcessModalOpen(false)}
-      onOk={handleSubmitProcess}
-      confirmLoading={processing}
-      okText="确认处理"
-      cancelText="取消"
-    >
-      <Form form={processForm} layout="vertical">
-        <Form.Item
-          label="预警信息"
-        >
-          <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: 4 }}>
-            <div>能源类型：{processingRecord?.energy_type}</div>
-            <div>预警等级：{processingRecord?.alert_level}</div>
-            <div>触发值：{processingRecord?.trigger_value} {processingRecord?.unit}</div>
-            <div>阈值：{processingRecord?.threshold_value} {processingRecord?.unit}</div>
-            <div>预警时间：{processingRecord?.alert_time ? new Date(processingRecord.alert_time).toLocaleString('zh-CN') : '-'}</div>
-          </div>
-        </Form.Item>
-        
-        <Form.Item
-          name="status"
-          label="处理状态"
-          initialValue="processed"
-          rules={[{ required: true, message: '请选择处理状态' }]}
-        >
-          <Select
-            options={[
-              { label: '已处理', value: 'processed' },
-              { label: '已忽略', value: 'ignored' },
-            ]}
-          />
-        </Form.Item>
-        
-        <Form.Item
-          name="process_note"
-          label="处理备注"
-        >
-          <Input.TextArea
-            rows={4}
-            placeholder="请输入处理说明..."
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
-  )
-
   return (
+
     <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ 
@@ -367,7 +382,14 @@ export default function AlertsPage() {
       />
       
       <AlertConfigDrawer onRefresh={() => fetchRules()} />
-          <ProcessModal />
+          <ProcessModal
+          processModalOpen={processModalOpen}
+          setProcessModalOpen={setProcessModalOpen}
+          handleSubmitProcess={handleSubmitProcess}
+          processing={processing}
+          processForm={processForm}
+          processingRecord={processingRecord}
+        />
 </div>
   )
 }
