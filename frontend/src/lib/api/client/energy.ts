@@ -1,4 +1,11 @@
-import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'
+import type { EnergyOverviewData, CollectLogDetail } from '@/types/energy'
+import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
+
+const API_BASE = '/api/v1'
+
+// ═══════════════════════════════════════════════════════════
+//  能源总览
+// ═══════════════════════════════════════════════════════════
 
 function buildQueryString(params?: Record<string, unknown>): string {
   if (!params) return ''
@@ -15,94 +22,58 @@ export async function fetchEnergyOverviewClient(params: {
   start_time: string
   end_time: string
 }): Promise<EnergyOverviewData> {
-  const searchParams = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      searchParams.set(key, String(value))
-    }
-  })
-  const res = await fetch(`/api/v1/energy/overview?${searchParams.toString()}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data
+  const query = buildQueryString(params)
+  return apiGet<EnergyOverviewData>(`${API_BASE}/energy/overview${query}`)
 }
 
 export async function fetchCollectLogDetailClient(logId: string): Promise<CollectLogDetail> {
-  const res = await fetch(`/api/v1/energy/collect-logs/${logId}`)
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data
+  return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect-logs/${logId}`)
 }
 
 export async function fetchPlatformsClient(): Promise<any[]> {
-  const res = await fetch('/api/v1/energy/platforms', { credentials: 'include' })
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
-  const json = await res.json()
-  return json.data
+  return apiGet<any[]>(`${API_BASE}/energy/platforms`)
 }
-// ── 预警规则 ──
+
+// ═══════════════════════════════════════════════════════════
+//  预警规则
+// ═══════════════════════════════════════════════════════════
 
 export async function fetchAlertRules(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
   const query = buildQueryString(params)
-  // 浏览器端使用相对路径
-  const fullUrl = `/api/v1/energy/alerts/rules${query}`
-  const res = await fetch(fullUrl)
-  const json = await res.json()
-  return {
-    items: json.data || [],
-    total: json.meta?.total || 0,
-    page: json.meta?.page || 1,
-    page_size: json.meta?.page_size || 20,
-  }
+  return apiFetchPaginated<any>(`${API_BASE}/energy/alerts/rules${query}`)
 }
 
-// ── 预警记录 ──
+// ═══════════════════════════════════════════════════════════
+//  预警记录
+// ═══════════════════════════════════════════════════════════
 
 export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
   const query = buildQueryString(params)
-  // 浏览器端使用相对路径
-  const fullUrl = `/api/v1/energy/alerts/records${query}`
-  const res = await fetch(fullUrl)
-  const json = await res.json()
-  return {
-    items: json.data || [],
-    total: json.meta?.total || 0,
-    page: json.meta?.page || 1,
-    page_size: json.meta?.page_size || 20,
-  }
+  return apiFetchPaginated<any>(`${API_BASE}/energy/alerts/records${query}`)
 }
 
-// ── 月度记录 ──
+// ═══════════════════════════════════════════════════════════
+//  月度记录
+// ═══════════════════════════════════════════════════════════
 
 export async function fetchMonthlyRecordsClient(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
   const query = buildQueryString(params)
-  const res = await fetch(`/api/v1/energy/monthly${query}`)
-  const json = await res.json()
-  return {
-    items: json.data || [],
-    total: json.meta?.total || 0,
-    page: json.meta?.page || 1,
-    page_size: json.meta?.page_size || 20,
-  }
+  return apiFetchPaginated<any>(`${API_BASE}/energy/monthly${query}`)
 }
 
 export async function fetchWorkshopsClient(params?: any): Promise<any[]> {
   const query = buildQueryString(params)
-  const res = await fetch(`/api/v1/energy/workshops${query}`)
-  const json = await res.json()
-  return json.data || []
+  return apiGet<any[]>(`${API_BASE}/energy/workshops${query}`)
 }
 
 export async function fetchMonthlySummaryClient(params?: any): Promise<any> {
   const query = buildQueryString(params)
-  const res = await fetch(`/api/v1/energy/monthly/summary${query}`)
-  const json = await res.json()
-  return json.data
+  return apiGet<any>(`${API_BASE}/energy/monthly/summary${query}`)
 }
 
-
-
-// ── 单耗目标管理 ──
+// ═══════════════════════════════════════════════════════════
+//  单耗目标管理
+// ═══════════════════════════════════════════════════════════
 
 export interface UnitConsumptionTarget {
   id: string
@@ -118,49 +89,39 @@ export async function createTarget(data: {
   target_month: string
   target_unit_consumption: number
 }): Promise<UnitConsumptionTarget> {
-  const res = await fetch('/api/v1/energy/targets', {
+  const result = await fetchApi<{ code: number; data: UnitConsumptionTarget; message?: string }>(`${API_BASE}/energy/targets`, {
     method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-  const json = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '创建目标失败')
-  }
-  return json.data
+  return result.data
 }
 
 export async function updateTarget(
-
   targetId: string,
   data: { target_unit_consumption: number }
 ): Promise<UnitConsumptionTarget> {
-  const res = await fetch(`/api/v1/energy/targets/${targetId}`, {
+  const result = await fetchApi<{ code: number; data: UnitConsumptionTarget; message?: string }>(`${API_BASE}/energy/targets/${targetId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-  const json = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '更新目标失败')
-  }
-  return json.data
+  return result.data
 }
 
 export async function getTarget(
   workshopId: string,
   targetMonth: string
 ): Promise<UnitConsumptionTarget | null> {
-  const res = await fetch(`/api/v1/energy/targets/${workshopId}/${targetMonth}`)
-  const json = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '查询目标失败')
+  try {
+    const result = await fetchApi<{ code: number; data: UnitConsumptionTarget | null; message?: string }>(`${API_BASE}/energy/targets/${workshopId}/${targetMonth}`)
+    return result.data
+  } catch {
+    return null
   }
-  return json.data
 }
 
-// ── AI 分析（V2 - 支持单耗） ──
+// ═══════════════════════════════════════════════════════════
+//  AI 分析（V2 - 支持单耗）
+// ═══════════════════════════════════════════════════════════
 
 export interface AISuggestion {
   status: string
@@ -189,15 +150,27 @@ export async function analyzeEnergyV2(data: {
   production_items: { product_name: string; quantity: number; unit: string }[]
   include_ai_suggestion?: boolean
 }): Promise<AIAnalysisResult> {
-  const res = await fetch('/api/v1/energy/ai-analysis-v2', {
-    credentials: 'include',
+  const result = await fetchApi<{ code: number; data: AIAnalysisResult; message?: string }>(`${API_BASE}/energy/ai-analysis-v2`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-  const json = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '分析失败')
-  }
-  return json.data
+  return result.data
+}
+
+// ═══════════════════════════════════════════════════════════
+//  生产数据同步
+// ═══════════════════════════════════════════════════════════
+
+export interface ProductionOutputItem {
+  product_name: string
+  quantity: number
+  unit: string
+}
+
+export async function fetchProductionOutput(params: {
+  workshop_id: string
+  month: string
+}): Promise<{ items: ProductionOutputItem[] }> {
+  const query = buildQueryString(params)
+  return apiGet<{ items: ProductionOutputItem[] }>(`${API_BASE}/energy/production/output${query}`)
 }

@@ -64,7 +64,8 @@ async def list_device_configs(
     if is_enabled is not None:
         query = query.where(EnergyDeviceConfig.is_enabled == is_enabled)
     if keyword:
-        query = query.where(EnergyDeviceConfig.device_name.ilike(f"%{keyword}%"))
+        escaped_keyword = keyword.replace("%", "\\%").replace("_", "\\_")
+        query = query.where(EnergyDeviceConfig.device_name.ilike(f"%{escaped_keyword}%", escape="\\"))
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0

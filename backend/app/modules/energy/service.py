@@ -500,7 +500,6 @@ async def create_monthly_record(db: AsyncSession, data: EnergyMonthlyRecordCreat
     workshop = await repo.get_workshop_by_id(db, data.workshop_id)  # type: ignore[arg-type]
     if workshop is None:
         raise NotFoundException("车间", data.workshop_id)
-        raise NotFoundException("车间", str(data.workshop_id))
     return await repo.create_monthly_record(db, data.model_dump())
 
 

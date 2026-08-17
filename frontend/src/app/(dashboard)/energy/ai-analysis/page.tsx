@@ -14,6 +14,8 @@ import TargetModal from '@/components/energy/TargetModal'
 import { 
   analyzeEnergyV2, 
   getTarget, 
+  fetchWorkshopsClient,
+  fetchProductionOutput,
   type AIAnalysisResult, 
   type UnitConsumptionTarget 
 } from '@/lib/api/client/energy'
@@ -37,19 +39,10 @@ export default function AIAnalysisPage() {
 
   // 获取车间列表
   useEffect(() => {
-    console.log('Fetching workshops...')
-    fetch(`/api/v1/energy/workshops?category=workshop`, { credentials: 'include' })
-      .then(res => {
-        console.log('Response status:', res.status)
-        return res.json()
-      })
-      .then(json => {
-        console.log('Workshop response:', json)
-        if (json.code === 200) {
-          const workshops = json.data.map((w: any) => ({ value: w.id, label: w.name }))
-          console.log('Setting workshops:', workshops)
-          setWorkshops(workshops)
-        }
+    fetchWorkshopsClient({ category: 'workshop' })
+      .then(data => {
+        const workshops = data.map((w: any) => ({ value: w.id, label: w.name }))
+        setWorkshops(workshops)
       })
       .catch(err => {
         console.error('Failed to fetch workshops:', err)
@@ -97,16 +90,14 @@ export default function AIAnalysisPage() {
     if (!workshopId || !analysisMonth) return
     setSyncing(true)
     try {
-      const res = await fetch(`/api/v1/energy/production/output?workshop_id=${workshopId}&month=${analysisMonth}`)
-      const json = await res.json()
-      if (json.code === 200) {
-        setProductionItems(json.data.items)
-        message.success('同步成功')
-      } else {
-        message.error(json.message || '同步失败')
-      }
+      const result = await fetchProductionOutput({
+        workshop_id: workshopId,
+        month: analysisMonth,
+      })
+      setProductionItems(result.items)
+      message.success('同步成功')
     } catch (error) {
-      message.error('网络请求失败')
+      message.error('同步失败')
     } finally {
       setSyncing(false)
     }
