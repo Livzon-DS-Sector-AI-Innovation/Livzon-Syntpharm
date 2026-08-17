@@ -41,21 +41,64 @@ const AutoCompareResultPanel = ({ result }: { result: AutoCompareResult }) => {
     check_remainder_barrel: '5. 零头数量/桶号/重量对比',
     check_total_weight: '6. 总重量对比',
     check_all_barrels_identified: '7. 是否识别到每一桶',
+    check_exception_handled: '8. 异常处理',
   }
 
   return (
-    <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
-      <h4 style={{ marginBottom: 16 }}>自动对比结果</h4>
-      {Object.entries(checkLabels).map(([key, label]) => {
-        const passed = result[key as keyof AutoCompareResult]
-        return <CheckItem key={key} label={label} passed={passed as boolean} />
-      })}
-      <div style={{ marginTop: 16, padding: 12, background: '#fff', borderRadius: 4 }}>
-        <strong>总体结果：</strong>
-        <Tag color={result.all_passed ? 'success' : 'error'} style={{ marginLeft: 8 }}>
-          {result.all_passed ? '全部一致' : '存在不一致'}
-        </Tag>
+    <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, marginTop: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <strong><RobotOutlined /> AI 自动对比结果</strong>
+        <Space>
+          <Tag color={result.confidence >= 70 ? 'success' : result.confidence >= 50 ? 'warning' : 'error'}>
+            置信度 {result.confidence}%
+          </Tag>
+          <Tag>提取 {result.frames_count} 帧</Tag>
+          {result.retry_count > 0 && <Tag color="orange">重试 {result.retry_count} 次</Tag>}
+        </Space>
       </div>
+
+      {/* 8项结论 */}
+      <div style={{ marginBottom: 12 }}>
+        {Object.entries(result.checks).map(([key, passed]) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            {passed ? (
+              <CheckCircleOutlined style={{ color: '#52c41a' }} />
+            ) : (
+              <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+            )}
+            <span style={{ fontSize: 13 }}>{checkLabels[key] || key}</span>
+            {result.reasons?.[key] && (
+              <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>
+                — {result.reasons[key]}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* AI 识别到的数据 */}
+      <Descriptions size="small" column={3} bordered style={{ fontSize: 12 }}>
+        <Descriptions.Item label="AI识别批号">{result.ai_data.batch_number || '未识别'}</Descriptions.Item>
+        <Descriptions.Item label="AI识别生产日期">{result.ai_data.production_date || '未识别'}</Descriptions.Item>
+        <Descriptions.Item label="AI识别有效期至">{result.ai_data.expiry_date || '未识别'}</Descriptions.Item>
+        <Descriptions.Item label="AI识别总桶数">{result.ai_data.total_barrels ?? '未识别'}</Descriptions.Item>
+        <Descriptions.Item label="AI识别整桶数">{result.ai_data.standard_barrels ?? '未识别'}</Descriptions.Item>
+        <Descriptions.Item label="AI识别总重量">{result.ai_data.total_weight != null ? `${result.ai_data.total_weight}kg` : '未识别'}</Descriptions.Item>
+      </Descriptions>
+
+      {result.notes && (
+        <Alert type="info" title={result.notes} style={{ marginTop: 8 }} showIcon />
+      )}
+
+      {result.confidence < 70 && (
+        <Alert
+          type="warning"
+          message="置信度较低，建议人工复核"
+          description="AI 识别不够清晰，已自动降低帧率多次尝试，但仍建议人工确认结果。"
+          style={{ marginTop: 8 }}
+          showIcon
+        />
+      )}
     </div>
   )
 }
@@ -329,65 +372,6 @@ export default function LabelVerificationClient({
   ]
 
 
-
-    return (
-      <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, marginTop: 8, marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <strong><RobotOutlined /> AI 自动对比结果</strong>
-          <Space>
-            <Tag color={result.confidence >= 70 ? 'success' : result.confidence >= 50 ? 'warning' : 'error'}>
-              置信度 {result.confidence}%
-            </Tag>
-            <Tag>提取 {result.frames_count} 帧</Tag>
-            {result.retry_count > 0 && <Tag color="orange">重试 {result.retry_count} 次</Tag>}
-          </Space>
-        </div>
-
-        {/* 8项结论 */}
-        <div style={{ marginBottom: 12 }}>
-          {Object.entries(result.checks).map(([key, passed]) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              {passed ? (
-                <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              ) : (
-                <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-              )}
-              <span style={{ fontSize: 13 }}>{checkLabels[key] || key}</span>
-              {result.reasons?.[key] && (
-                <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>
-                  — {result.reasons[key]}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* AI 识别到的数据 */}
-        <Descriptions size="small" column={3} bordered style={{ fontSize: 12 }}>
-          <Descriptions.Item label="AI识别批号">{result.ai_data.batch_number || '未识别'}</Descriptions.Item>
-          <Descriptions.Item label="AI识别生产日期">{result.ai_data.production_date || '未识别'}</Descriptions.Item>
-          <Descriptions.Item label="AI识别有效期至">{result.ai_data.expiry_date || '未识别'}</Descriptions.Item>
-          <Descriptions.Item label="AI识别总桶数">{result.ai_data.total_barrels ?? '未识别'}</Descriptions.Item>
-          <Descriptions.Item label="AI识别整桶数">{result.ai_data.standard_barrels ?? '未识别'}</Descriptions.Item>
-          <Descriptions.Item label="AI识别总重量">{result.ai_data.total_weight != null ? `${result.ai_data.total_weight}kg` : '未识别'}</Descriptions.Item>
-        </Descriptions>
-
-        {result.notes && (
-          <Alert type="info" title={result.notes} style={{ marginTop: 8 }} showIcon />
-        )}
-
-        {result.confidence < 70 && (
-          <Alert
-            type="warning"
-            message="置信度较低，建议人工复核"
-            description="AI 识别不够清晰，已自动降低帧率多次尝试，但仍建议人工确认结果。"
-            style={{ marginTop: 8 }}
-            showIcon
-          />
-        )}
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-4">

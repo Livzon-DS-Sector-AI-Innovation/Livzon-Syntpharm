@@ -80,6 +80,8 @@ export function HazardIdentificationNewPageClient() {
     }
   }
 
+  const [initialHazardIdNo] = useState(() => `HI-${Date.now().toString(36).toUpperCase()}`)
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       {/* 返回 */}
@@ -117,7 +119,6 @@ export function HazardIdentificationNewPageClient() {
         <Form
           form={form}
           layout="vertical"
-          const initialHazardIdNo = useMemo(() => `HI-${Date.now().toString(36).toUpperCase()}`, [])
           initialValues={{
             hazard_id_no: initialHazardIdNo,
           }}
