@@ -8,8 +8,8 @@ FROM node:22-alpine AS base
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10.33.0
+# Enable corepack and install pnpm
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 # Use Chinese npm mirror for faster downloads
 RUN npm config set registry https://registry.npmmirror.com
