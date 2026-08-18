@@ -166,6 +166,7 @@ Full audit
    - Test fixtures
    - `proxy.ts` default fallback (`API_BASE_URL || 'http://localhost:8000'`)
    - CI configuration
+   - Docker service discovery names (e.g., `http://backend:8000` in docker-compose.yml, Dockerfile)
 3. Are there hardcoded absolute file paths (e.g. `D:/`, `C:/`, `/home/` as string literals)?
 4. Is `NEXT_PUBLIC_API_BASE_URL` used anywhere in the frontend?
 5. Does `LLM_ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
@@ -259,7 +260,7 @@ Do NOT inspect what `public_api.py` exports to decide publicness. Other modules 
 ### Questions
 
 1. Are there any cross-module imports NOT through `public_api.py`?
-   (Scan every Python file in `backend/app/modules/` for imports from `app.modules.<other_module>.*` where `*` is not `public_api`)
+   (Scan every Python file in `backend/app/modules/` for imports from `app.modules.<other_module>.*` where `<other_module>` is different from the current module and `*` is not `public_api`. Note: imports within the same module do NOT need to go through `public_api.py`)
 2. Are there any `from app.modules import <module>` broad package imports that enable boundary bypass?
 3. Are there any circular imports between modules? (A imports from B, B imports from A)
 4. Has any new module directory been created under `backend/app/modules/`? Is new functionality placed in existing modules as required (new modules only created with explicit user approval)?
@@ -1114,6 +1115,8 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | Streaming responses (SSE/ReadableStream) may use `apiFetchRaw` or raw fetch. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | Login API (`loginApi` in `auth.ts`) may use raw `fetch()` because no auth token exists before login and the caller must distinguish HTTP status codes (401 vs 500) from business errors. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | File download, streaming responses, and redirects may return the HTTP Response object directly (e.g. `FileResponse`, `StreamingResponse`) instead of `build_response()`. | API 规范 — 禁止 response_model=dict / 禁止 success_response() for structured JSON | 4 |
+| Docker service discovery names (e.g., `http://backend:8000`) in docker-compose.yml and Dockerfile are allowed, not hardcoded URLs. | 仓库通用规则 — 禁止硬编码 URL | 2, 13 |
+| Dummy credentials (e.g., `POSTGRES_PASSWORD: postgres`) in CI/test configuration files are allowed. | 仓库通用规则 — 禁止硬编码凭据 | 2, 13 |
 
 ---
 

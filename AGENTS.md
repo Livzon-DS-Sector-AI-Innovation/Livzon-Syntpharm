@@ -16,6 +16,11 @@
 - 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
+**例外情况**：
+- Docker 服务发现名称（如 `http://backend:8000`、`redis://erp-redis:6379`）不是硬编码 URL，而是 Docker 内部网络的服务名，仅在容器网络中有效
+- CI/测试环境可以使用虚拟凭据（如 `POSTGRES_PASSWORD: postgres`），但这些文件不得用于生产环境
+
+
 
 以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
 - `frontend/Dockerfile`
