@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Modal, Upload, Button, Table, Tag, App, Steps } from 'antd'
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
-import { previewEquipmentImport, batchImportEquipment } from '@/actions/equipment'
+import { previewEquipmentImportApi, batchImportEquipmentApi } from '@/lib/api/server/equipment'
 
 const { Dragger } = Upload
 
@@ -74,25 +74,19 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         // 将 sheet 转换为数组（包含所有行）
         const sheetData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][]
         
-        // 查找表头行（第一个包含"资产编号"或"编号"的行）
-        let headerRowIndex = -1
-        for (let i = 0; i < Math.min(20, sheetData.length); i++) {
-          const row = sheetData[i]
-          if (row && row.some(cell => {
-            const cellStr = String(cell || '').trim()
-            return cellStr.includes('资产编号') || cellStr.includes('编号') || cellStr.includes('Asset')
-          })) {
-            headerRowIndex = i
-            break
-          }
-        }
-        
-        if (headerRowIndex === -1) {
-          message.error('未找到表头行，请确保 Excel 包含"资产编号"列')
-          return
-        }
+
         
         // 从表头行开始解析
+        // Smart Header Detection: Look for "资产编号" in the first 10 rows
+        let headerRowIndex = 0
+        for (let i = 0; i < Math.min(sheetData.length, 10); i++) {
+            const row = sheetData[i] as any[]
+            if (row && row.some((cell: any) => String(cell).trim() === '资产编号' || String(cell).trim() === 'Asset No')) {
+                headerRowIndex = i
+                break
+            }
+        }
+        
         const headers = sheetData[headerRowIndex] as string[]
         const dataRows = sheetData.slice(headerRowIndex + 1).filter(row => 
           row.some(cell => cell !== '' && cell !== null && cell !== undefined)
@@ -132,7 +126,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const fetchPreview = async (data: any[]) => {
     setLoading(true)
     try {
-      const result = await previewEquipmentImport(data)
+      const result = await previewEquipmentImportApi(data)
       if (result.code === 200) {
         setPreviewData(result.data.items)
         setCurrentStep(2)
@@ -153,7 +147,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const handleImport = async () => {
     setLoading(true)
     try {
-      const result = await batchImportEquipment(rawData)
+      const result = await batchImportEquipmentApi(rawData)
       if (result.code === 200) {
         setImportResult(result.data)
         setCurrentStep(3)
@@ -180,6 +174,12 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     { title: '制造商', dataIndex: 'manufacturer', width: 120, ellipsis: true, render: (v: string) => v || '-' },
     { title: '型号', dataIndex: 'model', width: 120, ellipsis: true, render: (v: string) => v || '-' },
     { title: '当前成本', dataIndex: 'current_cost', width: 100, render: (v: number) => v != null ? `¥${v.toLocaleString()}` : '-' },
+    { 
+      title: '数量', 
+      dataIndex: 'technical_params', 
+      width: 80, 
+      render: (params: any) => params?.['数量'] ?? '-' 
+    },
     { title: '部门', dataIndex: 'department_name', width: 120, ellipsis: true, render: (v: string) => v || '-' },
     { title: '位置', dataIndex: 'location_text', width: 120, ellipsis: true, render: (v: string) => v || '-' },
     { title: '状态', dataIndex: 'status', width: 80, render: (v: string) => <Tag color={v === '在用' ? 'green' : 'default'}>{v}</Tag> },
