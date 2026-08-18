@@ -2027,19 +2027,10 @@ Total diff: 28 insertions(+), 38 deletions(-)
 | Rules not evaluated | 0 |
 | Confirmed findings | 0 (PR changes clean) |
 | Uncertain findings | 0 |
-| Pre-existing findings | 6 (not introduced by this PR) |
 | Status | complete |
 
 #### Confirmed
 _None in PR changes._
-
-#### Pre-existing (not introduced by PR #31)
-- `frontend/src/lib/api/client/dossier-writer.ts:1-14` — All 13 types imported from `@/types/dossier-writer` (hand-written), not `@/types/generated/schema` — severity: high
-- `frontend/src/lib/api/client/hr.ts:1-27` — All 25 response types imported from `@/types/hr` (hand-written) — severity: high
-- `frontend/src/lib/api/client/regulatory-tracker.ts:1` — All types imported from `@/types/regulatory-tracker` (hand-written) — severity: high
-- `frontend/src/types/dossier-writer.ts:7-24` — Hand-written API response types — severity: high
-- `frontend/src/types/hr.ts:3-30` — Hand-written API response types — severity: high
-- `frontend/src/types/regulatory-tracker.ts:20-40` — Hand-written API response types — severity: medium
 
 ---
 
