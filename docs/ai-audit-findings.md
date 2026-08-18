@@ -1914,11 +1914,11 @@ All 8 findings have been resolved in commits:
 
 #### Confirmed
 
-- [ ] `fix-any-progress.json:1` — repo root cleanliness — scratch state file from local fix-any-types.sh run (JSON progress tracker, status "completed") — severity: **blocking**
-- [ ] `fix-any-types.sh:1` — repo root cleanliness — local bash script with hardcoded absolute path `/home/ruanjiaheng/projects/Livzon-Syntpharm` — severity: **blocking**
-- [ ] `fix-any.log:1` — repo root cleanliness — local log output from fix-any-types.sh execution — severity: **blocking**
-- [ ] `lint-output.txt:1` — repo root cleanliness — raw ESLint output dump, 1653+ warnings — severity: **blocking**
-- [ ] `frontend/src/lib/static-data-api.ts:1` — frontend layout rule 8 (lib/api/client/ for browser GET APIs) — file is a client-side fetch API (客户端直连 API 客户端, uses browser fetch), but lives in lib/ root instead of lib/api/client/ — severity: **medium** (pre-existing, but touched by PR)
+- [x] `fix-any-progress.json:1` — repo root cleanliness — scratch state file from local fix-any-types.sh run (JSON progress tracker, status "completed") — severity: **blocking** — **RESOLVED**
+- [x] `fix-any-types.sh:1` — repo root cleanliness — local bash script with hardcoded absolute path `/home/ruanjiaheng/projects/Livzon-Syntpharm` — severity: **blocking** — **RESOLVED**
+- [x] `fix-any.log:1` — repo root cleanliness — local log output from fix-any-types.sh execution — severity: **blocking** — **RESOLVED**
+- [x] `lint-output.txt:1` — repo root cleanliness — raw ESLint output dump, 1653+ warnings — severity: **blocking** — **RESOLVED**
+- [x] `frontend/src/lib/static-data-api.ts:1` — frontend layout rule 8 (lib/api/client/ for browser GET APIs) — file is a client-side fetch API (客户端直连 API 客户端, uses browser fetch), but lives in lib/ root instead of lib/api/client/ — severity: **medium** (pre-existing, but touched by PR) — **RESOLVED**
 
 #### Uncertain
 _None._
@@ -1940,11 +1940,11 @@ _None yet._
 
 #### Confirmed
 
-- [ ] `fix-any-types.sh:5` — Rule 1 (No hardcoded absolute paths) — `PROJECT_DIR="/home/ruanjiaheng/projects/Livzon-Syntpharm"` — severity: **blocking**
-- [ ] `lint-output.txt:1-800+` — Rule 1 (No hardcoded absolute paths) — Multiple instances of `/home/ruanjiaheng/projects/Livzon-Syntpharm/frontend/...` — severity: **blocking**
-- [ ] `fix-any.log:1-16` — Build artifact committed — severity: **blocking**
-- [ ] `fix-any-progress.json:1-11` — Build artifact committed — severity: **blocking**
-- [ ] `frontend/src/lib/api/server/base.ts:100` — Rule 3 (No API keys/tokens in logs/exceptions) — Error message exposes internal backend URL: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})` — severity: **medium**
+- [x] `fix-any-types.sh:5` — Rule 1 (No hardcoded absolute paths) — `PROJECT_DIR="/home/ruanjiaheng/projects/Livzon-Syntpharm"` — severity: **blocking** — **RESOLVED**
+- [x] `lint-output.txt:1-800+` — Rule 1 (No hardcoded absolute paths) — Multiple instances of `/home/ruanjiaheng/projects/Livzon-Syntpharm/frontend/...` — severity: **blocking** — **RESOLVED**
+- [x] `fix-any.log:1-16` — Build artifact committed — severity: **blocking** — **RESOLVED**
+- [x] `fix-any-progress.json:1-11` — Build artifact committed — severity: **blocking** — **RESOLVED**
+- [x] `frontend/src/lib/api/server/base.ts:100` — Rule 3 (No API keys/tokens in logs/exceptions) — Error message exposes internal backend URL: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})` — severity: **medium** — **RESOLVED**
 
 #### False positives (corrected)
 The following were initially flagged but are acceptable patterns:
@@ -2055,8 +2055,8 @@ _None in PR changes._
 
 #### Confirmed
 
-- [ ] `scripts/ci.sh:213` — Rule 7 (env vars, not hardcoded paths) — `PATH="/home/ruanjiaheng/.local/bin:$PATH"` hardcodes developer's home directory — severity: **blocking**
-- [ ] `scripts/ci.sh:181` — Rule 7 (no hardcoded URLs) — `docker compose ... build ci-build` rebuilds frontend image, ignoring pre-built artifact — severity: **medium**
+- [x] `scripts/ci.sh:213` — Rule 7 (env vars, not hardcoded paths) — `PATH="/home/ruanjiaheng/.local/bin:$PATH"` hardcodes developer's home directory — severity: **blocking** — **RESOLVED**
+- [x] `scripts/ci.sh:181` — Rule 7 (no hardcoded URLs) — `docker compose ... build ci-build` rebuilds frontend image, ignoring pre-built artifact — severity: **medium** — **RESOLVED**
 
 #### False positives (corrected)
 The following were initially flagged but are acceptable patterns:
@@ -2083,7 +2083,7 @@ The following were initially flagged but are acceptable patterns:
 _None._
 
 #### Uncertain
-- [ ] `frontend/e2e/routes.spec.ts:110` — `_iframe` helper is defined but unused (now prefixed with _) — severity: low (dead code observation)
+- [x] `frontend/e2e/routes.spec.ts:110` — `_iframe` helper is defined but unused (now prefixed with _) — severity: low (dead code observation) — **RESOLVED**
 
 ---
 
