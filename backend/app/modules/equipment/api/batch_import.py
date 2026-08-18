@@ -242,12 +242,23 @@ async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(
             warnings.append(f"部门 '{dept_raw}' 未在系统中找到，将设为 NULL")
 
         results.append({
-            "row_index": idx, "asset_no": asset_no, "name": name,
-            "department_name": dept_name, "department_id": str(dept_id) if dept_id else None,
-            "equipment_class": equipment_class, "importance": importance, "status": status,
-            "category_description": category_desc, "current_cost": current_cost,
+            "row_index": idx,
+            "asset_no": asset_no,
+            "name": name,
+            "label_no": get_column_value(row, "标签号"),
+            "manufacturer": get_column_value(row, "制造商"),
+            "model": get_column_value(row, "型号"),
+            "location_text": get_column_value(row, "实物所在地点"),
+            "department_name": dept_name,
+            "department_id": str(dept_id) if dept_id else None,
+            "equipment_class": equipment_class,
+            "importance": importance,
+            "status": status,
+            "category_description": category_desc,
+            "current_cost": current_cost,
             "technical_params": technical_params,
-            "validation_errors": errors, "warnings": warnings
+            "validation_errors": errors,
+            "warnings": warnings
         })
 
     valid_count = sum(1 for r in results if not r["validation_errors"])
