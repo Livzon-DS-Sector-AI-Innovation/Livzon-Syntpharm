@@ -201,7 +201,8 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
   }
 
   const handleEdit = (node: TreeNodeData) => {
-    function find(items: Location[]): Location | undefined {
+    function find(items: Location[] | undefined): Location | undefined {
+      if (!items) return undefined
       for (const item of items) {
         if (item.id === node.id) return item
         if (item.children?.length) {
