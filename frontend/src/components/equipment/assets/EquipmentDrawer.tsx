@@ -24,7 +24,8 @@ const statusOptions: { label: string; value: EquipmentStatus }[] = [
 ]
 
 // 扁平化树结构
-function flattenCategories(categories: EquipmentCategory[], prefix = ''): { label: string; value: string }[] {
+function flattenCategories(categories: EquipmentCategory[] | undefined | null, prefix = ''): { label: string; value: string }[] {
+  if (!categories) return []
   const result: { label: string; value: string }[] = []
   for (const cat of categories) {
     const label = prefix ? `${prefix} / ${cat.name}` : cat.name
@@ -36,7 +37,8 @@ function flattenCategories(categories: EquipmentCategory[], prefix = ''): { labe
   return result
 }
 
-function flattenLocations(locations: Location[], prefix = ''): { label: string; value: string }[] {
+function flattenLocations(locations: Location[] | undefined | null, prefix = ''): { label: string; value: string }[] {
+  if (!locations) return []
   const result: { label: string; value: string }[] = []
   for (const loc of locations) {
     const label = prefix ? `${prefix} / ${loc.name}` : loc.name

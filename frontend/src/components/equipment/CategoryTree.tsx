@@ -202,7 +202,8 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
 
   const handleEdit = (node: TreeNodeData) => {
     // 从 categories 中找到完整对象传给 drawer
-    function find(items: EquipmentCategory[]): EquipmentCategory | undefined {
+    function find(items: EquipmentCategory[] | undefined): EquipmentCategory | undefined {
+      if (!items) return undefined
       for (const item of items) {
         if (item.id === node.id) return item
         if (item.children?.length) {
