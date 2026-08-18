@@ -1958,25 +1958,57 @@ _None yet._
 
 ### Category 9: Frontend component boundaries
 
-| Files inspected | PENDING |
-| Files not inspected | PENDING |
-| Rules evaluated | PENDING |
-| Rules not evaluated | PENDING |
-| Confirmed findings | PENDING |
-| Uncertain findings | PENDING |
-| Status | **IN PROGRESS** |
+| Files inspected | 168 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (Q1-Q5) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 6 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+
+- [ ] `frontend/src/components/equipment/personnel/PersonnelInfo.tsx:1` — Rule 1 ('use client' directive) — Exports a React component using antd (Avatar, Popover, Typography) and JSX return, but file has no 'use client' directive — severity: **blocking**
+- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:12` — Rule 2 (module boundaries) — Deep import `import TargetModal from '@/components/energy/TargetModal'` bypasses barrel. TargetModal is NOT re-exported from `@/components/energy/index.ts`. Should use barrel or add to barrel. — severity: **high**
+- [ ] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:6` — Rule 2 (module boundaries) — Deep import `import EvaluationPreview from '@/components/hr/EvaluationPreview'` bypasses barrel. EvaluationPreview is NOT re-exported from `@/components/hr/index.ts`. Should use barrel or add to barrel. — severity: **high**
+- [ ] `frontend/src/app/(dashboard)/production/product-output/[workshop]/[productId]/page.tsx:58` — Rule 2 (module boundaries) — Deep import `import ProductSyncConfig from '@/components/production/product/ProductSyncConfig'` bypasses barrel. ProductSyncConfig IS already re-exported via `production/product/index.ts` → `export * from './product'` in `production/index.ts`. Should be `import { ProductSyncConfig } from '@/components/production'`. — severity: **high**
+- [ ] `frontend/src/app/(dashboard)/safety/knowledge-base/graph/page.tsx:1` — Rule 2 (module boundaries) — Deep import `import KnowledgeGraphPanel from '@/components/safety/KnowledgeGraphPanel'` bypasses barrel. KnowledgeGraphPanel IS already re-exported from `@/components/safety/index.ts`. Should be `import { KnowledgeGraphPanel } from '@/components/safety'`. — severity: **high**
+- [ ] `frontend/src/app/(dashboard)/safety/regulation/generator/page.tsx:6` — Rule 2 (module boundaries) — Deep import `import SopGeneratorPanel from '@/components/safety/SopGeneratorPanel'` bypasses barrel. SopGeneratorPanel IS already re-exported from `@/components/safety/index.ts`. Should be `import { SopGeneratorPanel } from '@/components/safety'`. — severity: **high**
+
+#### Uncertain
+_None._
+
+#### Accepted exceptions
+_None yet._
 
 ---
 
 ### Category 10: Frontend API and generated types
 
-| Files inspected | PENDING |
-| Files not inspected | PENDING |
-| Rules evaluated | PENDING |
-| Rules not evaluated | PENDING |
-| Confirmed findings | PENDING |
-| Uncertain findings | PENDING |
-| Status | **IN PROGRESS** |
+| Files inspected | 30 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 (Q1-Q6) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+_None._
+
+#### Accepted exceptions
+_None yet._
+
+#### Notes
+This PR introduces **zero new violations** in Category 10. All changes are safe code cleanup:
+- 15 files: Removed unused imports (revalidatePath, z, apiFetchRaw, unwrapResponse, create, enum imports)
+- 10 files: Prefixed unused variables/parameters with `_` to satisfy linter
+- 1 file: Renamed function `useHplcReference` → `consumeHplcReference` for clarity
+
+Total diff: 28 insertions(+), 38 deletions(-)
 
 ---
 
@@ -2056,22 +2088,29 @@ _None._
 |----------|-----------|-----------|----------|
 | 1. Repository layout | 5 | 0 | 4 blocking, 1 medium |
 | 2. Secrets and hardcoded values | 7 | 0 | 4 blocking, 3 medium |
-| 9. Frontend component boundaries | PENDING | PENDING | PENDING |
-| 10. Frontend API and generated types | PENDING | PENDING | PENDING |
+| 9. Frontend component boundaries | 6 | 0 | 1 blocking, 5 high |
+| 10. Frontend API and generated types | 0 | 0 | — |
 | 12. Cross-project OpenAPI | 0 (PR) | 0 | — (6 pre-existing) |
 | 13. Docker and deployment | 13 | 0 | 1 blocking, 2 medium, 10 low |
 | 14. E2E | 0 | 1 | low |
-| **Total** | **25+** | **1** | **9 blocking, 6 medium, 10+ low** |
+| **Total** | **31** | **1** | **10 blocking, 5 high, 6 medium, 10 low** |
 
 ### Blocking issues (must fix before merge)
 
 1. **Scratch files at repo root** (Category 1) — Remove `fix-any-progress.json`, `fix-any-types.sh`, `fix-any.log`, `lint-output.txt` and add to `.gitignore`
 2. **Hardcoded developer path in CI script** (Category 13) — `scripts/ci.sh:213` contains `/home/ruanjiaheng/.local/bin`
+3. **Missing 'use client' directive** (Category 9) — `PersonnelInfo.tsx` exports React component using antd without 'use client'
 
 ### High priority
 
-3. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
-4. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
+4. **Module boundary violations** (Category 9) — 5 deep imports bypass barrel files:
+   - `energy/ai-analysis/page.tsx:12` — TargetModal
+   - `hr/training/evaluation-form/page.tsx:6` — EvaluationPreview
+   - `production/product-output/[workshop]/[productId]/page.tsx:58` — ProductSyncConfig
+   - `safety/knowledge-base/graph/page.tsx:1` — KnowledgeGraphPanel
+   - `safety/regulation/generator/page.tsx:6` — SopGeneratorPanel
+5. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
+6. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
 
 ### Medium priority
 
@@ -2084,5 +2123,5 @@ _None._
 
 ---
 
-**Status: ⏳ IN PROGRESS — Categories 9 and 10 pending**
+**Status: ✅ COMPLETE — All categories audited**
 
