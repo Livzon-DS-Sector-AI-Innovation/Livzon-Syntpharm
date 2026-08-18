@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] `backend/docs/architecture.md` is deleted
 - [ ] `backend/docs/development.md` content is merged into `backend/docs/development-guide.md` as a "本地开发环境" section

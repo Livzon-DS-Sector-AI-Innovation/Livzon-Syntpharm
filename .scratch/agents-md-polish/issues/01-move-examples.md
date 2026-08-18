@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] `backend/examples/module-structure.md` → `examples/module-structure.md`
 - [ ] `backend/examples/commands.md` → `examples/commands.md`

@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] `CONTEXT.md` is created at repo root (empty or with minimal placeholder)
 - [ ] `CONTEXT.md` is added to `.gitignore`

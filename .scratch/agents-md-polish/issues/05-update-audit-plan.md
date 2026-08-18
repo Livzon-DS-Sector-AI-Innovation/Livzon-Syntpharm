@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — Restructure AGENTS.md
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] All references to `backend/examples/` and `frontend/examples/` update to `examples/`
 - [ ] All "Rules (from AGENTS.md)" sections match the updated AGENTS.md

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Move examples to repo root, 02 — Consolidate backend docs
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Code examples for authentication, config, feishu, storage, OCR, LLM, error handling move to `backend/docs/development-guide.md`
 - [ ] Rules + pointers stay in AGENTS.md (e.g., "使用全局单例 llm_client，禁止创建自己的")
