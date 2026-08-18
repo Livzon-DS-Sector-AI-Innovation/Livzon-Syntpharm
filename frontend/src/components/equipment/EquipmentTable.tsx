@@ -114,6 +114,17 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
     { title: '账面净值', dataIndex: 'book_value', key: 'book_value', width: 120, render: (v: number | null) => v ? `¥${v.toLocaleString()}` : '-' },
     { title: '报废状态', dataIndex: 'scrap_status', key: 'scrap_status', width: 100, render: (v: string | null) => v || '-' },
     { title: '报废时间', dataIndex: 'scrap_time', key: 'scrap_time', width: 120 },
+    { 
+      title: '数量', 
+      dataIndex: 'technical_params', 
+      key: 'quantity', 
+      width: 80, 
+      render: (params: Record<string, unknown> | null) => {
+        if (!params || typeof params !== 'object') return '-'
+        const quantity = (params as Record<string, unknown>)['数量']
+        return quantity ?? '-'
+      } 
+    },
     { title: '操作', key: 'action', width: 240, fixed: 'end' as const,
       render: (_: unknown, record: Equipment) => (
         <Space size={8}>
