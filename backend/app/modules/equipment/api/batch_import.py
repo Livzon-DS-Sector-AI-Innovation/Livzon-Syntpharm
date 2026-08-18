@@ -1,67 +1,62 @@
-"""设备导入 API 路由."""
+"""设备导入 API 路由 (v3 - Smart Mapping & Inference)."""
 
+import base64
+import io
 import uuid
 from datetime import date, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import success_response
 from app.modules.equipment import repository as repo
+from app.modules.hr.models import HrDepartment
 
 router = APIRouter()
 
-
-# 列名映射：支持多种常见的列名变体
 COLUMN_MAPPING = {
-    "资产编号": ["资产编号", "编号", "资产号", "Asset No", "AssetNo"],
-    "标签号": ["标签号", "标签", "Label No", "LabelNo"],
-    "设备位号": ["设备位号", "位号", "Tag No", "TagNo", "Equipment Tag"],
-    "资产说明": ["资产说明", "设备名称", "名称", "Name", "Description"],
-    "设备分类": ["设备分类", "分类", "Class", "Equipment Class"],
-    "资产类别说明": ["资产类别说明", "类别", "Category", "资产类别"],
-    "制造商": ["制造商", "厂家", "Manufacturer"],
-    "型号": ["型号", "规格型号", "Model"],
-    "设备规格": ["设备规格", "规格", "Specification", "Spec"],
-    "供应商": ["供应商", "供货商", "Supplier", "Vendor"],
-    "当前成本": ["当前成本", "成本", "金额", "价值", "Value", "Cost"],
-    "出厂日期": ["出厂日期", "生产日期", "制造日期", "Production Date"],
-    "启用日期": ["启用日期", "投入使用日期", "启用时间", "Commissioning Date"],
-    "实物所在部门": ["实物所在部门", "部门", "使用部门", "Department"],
-    "实物所在地点": ["实物所在地点", "地点", "位置", "存放地点", "Location"],
-    "负责人": ["负责人", "责任人", "负责人姓名", "Responsible Person"],
-    "报废状态": ["报废状态", "状态", "Status"],
-    "报废时间": ["报废时间", "报废日期", "Scrap Date"],
-    "账面净值": ["账面净值", "帐面净值", "净值", "账面价值", "帐面价值", "Book Value", "BookValue"],
+    "资产编号": ["资产编号", "编号", "Asset No"],
+    "标签号": ["标签号", "Label No"],
+    "资产说明": ["资产说明", "设备名称", "Name"],
+    "设备位号": ["设备位号", "Tag No"],
+    "设备分类": ["设备分类", "Class"],
+    "资产类别说明": ["资产类别说明", "类别"],
+    "制造商": ["制造商", "厂家"],
+    "型号": ["型号", "Model"],
+    "设备规格": ["设备规格", "Spec"],
+    "供应商": ["供应商", "Vendor"],
+    "当前成本": ["当前成本", "金额"],
+    "账面净值": ["账面净值", "帐面净值", "净值"],
+    "出厂日期": ["出厂日期", "生产日期"],
+    "启用日期": ["启用日期", "投用日期"],
+    "实物所在部门": ["实物所在部门", "部门", "归属部门"],
+    "实物所在地点": ["实物所在地点", "位置", "Location"],
+    "负责人": ["负责人", "责任人"],
+    "报废状态": ["报废状态", "状态"],
+    "报废时间": ["报废时间", "报废日期"],
+    "数量": ["数量", "Quantity"],
 }
 
-
-def get_column_value(row: dict[str, Any], field_name: str) -> Any:
-    """从行数据中获取字段值，支持多种列名变体"""
-    possible_names = COLUMN_MAPPING.get(field_name, [field_name])
-    for name in possible_names:
-        if name in row:
-            return row[name]
-    return None
-
-
-# 部门映射表：Excel 部门名称 → 飞书部门名称
-DEPT_MAPPING = {
-    # 直接映射
-    "仪表电工班": "设备工程部",
-    "工程部": "设备工程部",
-    "制冷班": "动力部",
-    "锅炉制水班": "动力部",
-    "机修班": "动力部",
-    "实验室": "技术研发部",
+DEPT_MAPPING_V3 = {
     "检验室": "质量控制部",
     "质量部": "质量保证部",
+    "环保中心": "安全环保部",
+    "安全中心": "安全环保部",
+    "工程部": "设备工程部",
+    "仪表电工班": "设备工程部",
+    "机修班": "动力部",
+    "制冷班": "动力部",
+    "锅炉制水班": "动力部",
+    "仓库": "仓储部",
+    "炊事班": "人事行政部",
+    "实验室": "技术研发部",
     "生产管理部": "生产部",
     "头孢精制制造部": "头孢无菌制造部",
-    # 车间映射
+    "头孢合成制造部": "头孢合成制造部",
     "头孢合成一车间": "201车间",
     "头孢合成二车间": "202车间",
     "头孢精制一车间": "301车间",
@@ -73,339 +68,89 @@ DEPT_MAPPING = {
     "非头孢五车间": "105车间",
     "非头孢六车间": "106车间",
     "非头孢七车间": "107车间",
+    "溶剂回收车间-401岗": "溶剂回收车间",
+    "溶剂回收车间-402岗": "溶剂回收车间",
+    "溶剂回收车间-403岗": "溶剂回收车间",
+    "溶剂回收车间-404岗": "溶剂回收车间",
+    "溶剂回收车间-405岗": "溶剂回收车间",
+    "非头孢制造部": "非头孢制造部",
+    "头孢销售部": "头孢销售部",
+    "注册部": "注册部",
+    "财务部": "财务部",
+    "采购部": "采购部",
 }
 
 
-def map_department_name(excel_dept: str) -> tuple[str | None, str | None]:
-    """
-    映射 Excel 部门名称到飞书部门名称
-
-    Returns:
-        (dept_name, location_text): 部门名称和地点文本
-    """
-    if not excel_dept:
-        return None, None
-
-    # 特殊处理：溶剂回收车间-XXX岗
-    if excel_dept.startswith("溶剂回收车间-"):
-        gang = excel_dept.replace("溶剂回收车间-", "")
-        return "溶剂回收车间", gang
-
-    # 查映射表
-    mapped_name = DEPT_MAPPING.get(excel_dept, excel_dept)
-    return mapped_name, None
+def get_column_value(row: dict[str, Any], field_name: str) -> Any:
+    possible_names = COLUMN_MAPPING.get(field_name, [field_name])
+    if not any(name in row for name in possible_names):
+        for key in row.keys():
+            clean_key = str(key).strip()
+            if clean_key in possible_names:
+                return row[key]
+    for name in possible_names:
+        if name in row:
+            return row[name]
+    return None
 
 
 async def get_department_id_by_name(db: AsyncSession, dept_name: str) -> uuid.UUID | None:
-    """根据部门名称查询部门 ID"""
-    if not dept_name:
-        return None
-
     from sqlalchemy import select
-
-    from app.platform.identity.models import Department
-
     result = await db.execute(
-        select(Department.id).where(
-            Department.name == dept_name,
-            not Department.is_deleted,  # type: ignore[arg-type]
+        select(HrDepartment.id).where(
+            HrDepartment.name == dept_name,
+            ~HrDepartment.is_deleted
         )
     )
     return result.scalar_one_or_none()
 
 
+async def map_department_name_v3(excel_dept: str, db: AsyncSession) -> tuple[str | None, uuid.UUID | None]:
+    if not excel_dept:
+        return None, None
+
+    # Phase 1: Special handling
+    if excel_dept.startswith("溶剂回收车间-"):
+        standard_name = "溶剂回收车间"
+    else:
+        standard_name = DEPT_MAPPING_V3.get(excel_dept, excel_dept)
+
+    # Phase 2 & 3: DB Lookup
+    dept_id = await get_department_id_by_name(db, standard_name)
+    if dept_id:
+        return standard_name, dept_id
+
+    # Fallback
+    return None, None
+
+
 def parse_excel_date(value: Any) -> date | None:
-    """解析 Excel 日期（可能是数字或字符串）"""
     if not value:
         return None
-
-    # 如果是数字（Excel 日期序列号）
     if isinstance(value, (int, float)):
-        # Excel 日期序列号从 1900-01-01 开始
         from datetime import timedelta
-
         base_date = date(1899, 12, 30)
-        return base_date + timedelta(days=int(value))
-
-    # 如果是字符串
+        try:
+            return base_date + timedelta(days=int(value))
+        except (ValueError, OverflowError):
+            return None
     if isinstance(value, str):
-        for fmt in ["%Y-%m-%d", "%Y/%m/%d", "%Y年%m月%d日"]:
+        value = value.strip()
+        if not value:
+            return None
+        for fmt in ["%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"]:
             try:
                 return datetime.strptime(value, fmt).date()
             except ValueError:
                 continue
-
     return None
-
-
-def map_equipment_class_raw(equipment_class_raw: str) -> str | None:
-    """映射设备分类（A/B/C）"""
-    if not equipment_class_raw:
-        return None
-    equipment_class_raw = equipment_class_raw.strip().upper()
-    if equipment_class_raw in ["A", "B", "C"]:
-        return equipment_class_raw
-    return None
-
-
-def map_equipment_class(category_desc: str) -> str:
-    """映射资产类别到设备分类（A/B/C）"""
-    if not category_desc:
-        return "C"
-
-    # 简单映射逻辑，可根据实际需求调整
-    if "机器设备" in category_desc:
-        return "A"
-    elif "电子设备" in category_desc:
-        return "B"
-    else:
-        return "C"
-
-
-def map_scrap_status(status: str) -> tuple[str, str]:
-    """映射报废状态到设备状态"""
-    if status == "已报废":
-        return "报废", "已报废"
-    else:
-        return "在用", "未报废"
-
-
-@router.post("/preview", summary="预览导入数据")
-async def preview_import(
-    data: list[dict[str, Any]],
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
-) -> dict[str, Any]:
-    """
-    预览导入数据，返回转换后的结果（不入库）
-
-    数据格式（来自 Excel）：
-    [
-        {
-            "资产编号": "59070",
-            "标签号": "107001252",
-            "资产说明": "生化培养箱",
-            "资产类别说明": "固定资产.电子设备",
-            "制造商": "重庆永生",
-            "型号": "SHH-L",
-            "当前成本": 22123.89,
-            "启用日期": 46196.0,
-            "实物所在部门": "检验室",
-            "实物所在地点": "微生物室",
-            "报废状态": "未报废",
-            "报废时间": ""
-        }
-    ]
-    """
-    preview_items = []
-
-    for idx, row in enumerate(data):
-        # 提取字段
-        asset_no = str(get_column_value(row, "资产编号") or "").strip()
-        label_no = str(get_column_value(row, "标签号") or "").strip() or None
-        equipment_tag = str(get_column_value(row, "设备位号") or "").strip() or None
-        name = str(get_column_value(row, "资产说明") or "").strip()
-        equipment_class_raw = str(get_column_value(row, "设备分类") or "").strip()
-        category_desc = str(get_column_value(row, "资产类别说明") or "").strip()
-        manufacturer = str(get_column_value(row, "制造商") or "").strip() or None
-        model = str(get_column_value(row, "型号") or "").strip() or None
-        specification = str(get_column_value(row, "设备规格") or "").strip() or None
-        supplier = str(get_column_value(row, "供应商") or "").strip() or None
-        current_cost = get_column_value(row, "当前成本")
-        book_value = get_column_value(row, "账面净值")
-        production_date_raw = get_column_value(row, "出厂日期")
-        commissioning_date_raw = get_column_value(row, "启用日期")
-        excel_dept = str(get_column_value(row, "实物所在部门") or "").strip()
-        excel_location = str(get_column_value(row, "实物所在地点") or "").strip()
-        responsible_person = str(get_column_value(row, "负责人") or "").strip() or None
-        scrap_status_raw = str(get_column_value(row, "报废状态") or "").strip()
-        scrap_time_raw = get_column_value(row, "报废时间")
-
-        # 映射部门
-        mapped_dept_name, location_from_dept = map_department_name(excel_dept)
-        dept_id = await get_department_id_by_name(db, mapped_dept_name) if mapped_dept_name else None
-
-        # 地点：优先使用从部门映射的地点，否则使用 Excel 的地点列
-        location_text = excel_location or location_from_dept or None
-
-        # 映射状态
-        status, scrap_status = map_scrap_status(scrap_status_raw)
-
-        # 解析日期
-        production_date = parse_excel_date(production_date_raw)
-        commissioning_date = parse_excel_date(commissioning_date_raw)
-        scrap_time = parse_excel_date(scrap_time_raw)
-
-        # 映射设备分类
-        equipment_class = map_equipment_class_raw(equipment_class_raw) or map_equipment_class(category_desc)
-
-        # 构建预览项
-        preview_item: dict[str, Any] = {
-            "row_index": idx,
-            "asset_no": asset_no,
-            "label_no": label_no,
-            "equipment_tag": equipment_tag,
-            "name": name,
-            "equipment_class": equipment_class,
-            "category_description": category_desc or None,
-            "manufacturer": manufacturer,
-            "model": model,
-            "specification": specification,
-            "supplier": supplier,
-            "current_cost": current_cost,
-            "book_value": book_value,
-            "production_date": production_date.isoformat() if production_date else None,
-            "commissioning_date": commissioning_date.isoformat() if commissioning_date else None,
-            "department_name": mapped_dept_name,
-            "department_id": str(dept_id) if dept_id else None,
-            "location_text": location_text,
-            "responsible_person_name": responsible_person,
-            "status": status,
-            "scrap_status": scrap_status,
-            "scrap_time": scrap_time.isoformat() if scrap_time else None,
-            "validation_errors": [],
-        }
-
-        # 验证必填字段
-        if not asset_no:
-            preview_item["validation_errors"].append("资产编号不能为空")
-        if not name:
-            preview_item["validation_errors"].append("设备名称不能为空")
-
-        # 检查部门是否存在
-        if mapped_dept_name and not dept_id:
-            preview_item["validation_errors"].append(f"部门 '{mapped_dept_name}' 在系统中不存在")
-
-        preview_items.append(preview_item)
-
-    # 统计
-    valid_count = sum(1 for item in preview_items if not item["validation_errors"])
-    invalid_count = len(preview_items) - valid_count
-
-    return success_response(  # type: ignore[return-value]
-        data={
-            "total": len(preview_items),
-            "valid_count": valid_count,
-            "invalid_count": invalid_count,
-            "items": preview_items,
-        }
-    )
-
-
-@router.post("/batch", summary="批量导入设备")
-async def batch_import(
-    data: list[dict[str, Any]],
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
-) -> dict[str, Any]:
-    """
-    批量导入设备（先预览，再导入）
-
-    数据格式同 preview 接口
-    """
-    created_count = 0
-    skipped_count = 0
-    errors = []
-
-    for idx, row in enumerate(data):
-        try:
-            # 提取字段
-            asset_no = str(get_column_value(row, "资产编号") or "").strip()
-            label_no = str(get_column_value(row, "标签号") or "").strip() or None
-            equipment_tag = str(get_column_value(row, "设备位号") or "").strip() or None
-            name = str(get_column_value(row, "资产说明") or "").strip()
-            equipment_class_raw = str(get_column_value(row, "设备分类") or "").strip()
-            category_desc = str(get_column_value(row, "资产类别说明") or "").strip()
-            manufacturer = str(get_column_value(row, "制造商") or "").strip() or None
-            model = str(get_column_value(row, "型号") or "").strip() or None
-            specification = str(get_column_value(row, "设备规格") or "").strip() or None
-            supplier = str(get_column_value(row, "供应商") or "").strip() or None
-            current_cost = get_column_value(row, "当前成本")
-            book_value = get_column_value(row, "账面净值")
-            production_date_raw = get_column_value(row, "出厂日期")
-            commissioning_date_raw = get_column_value(row, "启用日期")
-            excel_dept = str(get_column_value(row, "实物所在部门") or "").strip()
-            excel_location = str(get_column_value(row, "实物所在地点") or "").strip()
-            responsible_person = str(get_column_value(row, "负责人") or "").strip() or None
-            scrap_status_raw = str(get_column_value(row, "报废状态") or "").strip()
-            scrap_time_raw = get_column_value(row, "报废时间")
-
-            # 验证必填字段
-            if not asset_no or not name:
-                skipped_count += 1
-                errors.append({"row": idx, "error": "资产编号或设备名称为空"})
-                continue
-
-            # 映射部门
-            mapped_dept_name, location_from_dept = map_department_name(excel_dept)
-            dept_id = await get_department_id_by_name(db, mapped_dept_name) if mapped_dept_name else None
-
-            # 地点
-            location_text = excel_location or location_from_dept or None
-
-            # 映射状态
-            status, scrap_status = map_scrap_status(scrap_status_raw)
-
-            # 解析日期
-            production_date = parse_excel_date(production_date_raw)
-            commissioning_date = parse_excel_date(commissioning_date_raw)
-            scrap_time = parse_excel_date(scrap_time_raw)
-
-            # 映射设备分类
-            equipment_class = map_equipment_class_raw(equipment_class_raw) or map_equipment_class(category_desc)
-
-            # 创建设备
-            equipment_data = {
-                "asset_no": asset_no,
-                "label_no": label_no,
-                "equipment_tag": equipment_tag,
-                "name": name,
-                "equipment_class": equipment_class,
-                "category_description": category_desc or None,
-                "manufacturer": manufacturer,
-                "model": model,
-                "specification": specification,
-                "supplier": supplier,
-                "current_cost": current_cost,
-                "book_value": book_value,
-                "production_date": production_date,
-                "commissioning_date": commissioning_date,
-                "department_id": dept_id,
-                "location_text": location_text,
-                "responsible_person_name": responsible_person,
-                "status": status,
-                "scrap_status": scrap_status,
-                "scrap_time": scrap_time,
-                "importance": "中",
-            }
-
-            await repo.create_equipment(db, equipment_data)
-            # 每行独立 commit，确保成功的数据立即保存
-            await db.commit()
-            created_count += 1
-
-        except Exception as e:
-            # 失败时 rollback 当前事务，继续处理下一行
-            await db.rollback()
-            skipped_count += 1
-            errors.append({"row": idx, "error": str(e)})
-
-    return success_response(  # type: ignore[return-value]
-        data={
-            "created_count": created_count,
-            "skipped_count": skipped_count,
-            "errors": errors,
-        }
-    )
 
 
 # ── v3 Smart Inference Functions ──
 
 def infer_equipment_class(category_description: str | None) -> str:
-    """根据资产类别说明推断设备分类（A/B/C）"""
     if not category_description:
         return "C"
-
     if "房屋建筑物" in category_description or "房屋" in category_description:
         return "A"
     elif "运输设备" in category_description or "车辆" in category_description:
@@ -413,14 +158,12 @@ def infer_equipment_class(category_description: str | None) -> str:
     elif "电子设备" in category_description or "机器设备" in category_description:
         return "C"
     else:
-        return "C"  # 默认
+        return "C"
 
 
 def infer_importance(current_cost: float | None) -> str:
-    """根据当前成本推断设备重要性（高/中/低）"""
     if current_cost is None:
         return "中"
-
     if current_cost > 100000:
         return "高"
     elif current_cost >= 50000:
@@ -430,10 +173,191 @@ def infer_importance(current_cost: float | None) -> str:
 
 
 def infer_status(scrap_status: str | None) -> str:
-    """根据报废状态推断设备状态"""
     if scrap_status == "未报废":
         return "在用"
     elif scrap_status in ["已报废", "报废"]:
         return "报废"
     else:
-        return "在用"  # 默认
+        return "在用"
+
+
+@router.get("/template", summary="下载导入模板")
+async def download_template():
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "设备台账"
+    headers = list(COLUMN_MAPPING.keys())
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True)
+        ws.column_dimensions[get_column_letter(col)].width = 15
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return success_response(data=base64.b64encode(buffer.read()).decode())
+
+
+@router.post("/preview", summary="预览导入数据")
+async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(get_db)):
+    results = []
+    for idx, row in enumerate(data):
+        asset_no = get_column_value(row, "资产编号")
+        name = get_column_value(row, "资产说明")
+        dept_raw = get_column_value(row, "实物所在部门")
+        category_desc = get_column_value(row, "资产类别说明")
+        current_cost_raw = get_column_value(row, "当前成本")
+        scrap_status = get_column_value(row, "报废状态")
+        quantity = get_column_value(row, "数量")
+
+        try:
+            current_cost = float(str(current_cost_raw or "0").replace("¥", "").replace(",", ""))
+        except (ValueError, TypeError):
+            current_cost = None
+
+        equipment_class = infer_equipment_class(category_desc)
+        importance = infer_importance(current_cost)
+        status = infer_status(scrap_status)
+
+        dept_name, dept_id = await map_department_name_v3(dept_raw, db)
+
+        technical_params = {}
+        if quantity is not None:
+            technical_params["数量"] = quantity
+
+        errors = []
+        warnings = []
+        if not asset_no:
+            errors.append("资产编号不能为空")
+        if not name:
+            errors.append("设备名称不能为空")
+        if not dept_id and dept_raw:
+            warnings.append(f"部门 '{dept_raw}' 未在系统中找到，将设为 NULL")
+
+        results.append({
+            "row_index": idx, "asset_no": asset_no, "name": name,
+            "department_name": dept_name, "department_id": str(dept_id) if dept_id else None,
+            "equipment_class": equipment_class, "importance": importance, "status": status,
+            "category_description": category_desc, "current_cost": current_cost,
+            "technical_params": technical_params,
+            "validation_errors": errors, "warnings": warnings
+        })
+
+    valid_count = sum(1 for r in results if not r["validation_errors"])
+    warning_count = sum(1 for r in results if r["warnings"])
+    return success_response(data={"total": len(results), "valid_count": valid_count,
+        "warning_count": warning_count,
+        "items": results})
+
+
+@router.post("/batch", summary="执行批量导入")
+async def batch_import(
+    data: list[dict[str, Any]],
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
+):
+    created = 0
+    skipped = 0
+    errors = []
+    for idx, row in enumerate(data):
+        try:
+            asset_no = str(get_column_value(row, "资产编号") or "").strip()
+            if not asset_no:
+                skipped += 1
+                continue
+            name = str(get_column_value(row, "资产说明") or "")
+            if not name:
+                skipped += 1
+                continue
+
+            dept_raw = get_column_value(row, "实物所在部门")
+            dept_name, dept_id = await map_department_name_v3(dept_raw, db)
+
+            try:
+                current_cost = float(str(get_column_value(row, "当前成本") or "0").replace("¥", "").replace(",", ""))
+            except (ValueError, TypeError):
+                current_cost = None
+
+            category_desc = get_column_value(row, "资产类别说明")
+            scrap_status = get_column_value(row, "报废状态")
+            quantity = get_column_value(row, "数量")
+
+            equipment_class = infer_equipment_class(category_desc)
+            importance = infer_importance(current_cost)
+            status = infer_status(scrap_status)
+
+            technical_params = {}
+            if quantity is not None:
+                technical_params["数量"] = quantity
+
+            try:
+                book_value = float(str(get_column_value(row, "账面净值") or "0").replace("¥", "").replace(",", ""))
+            except (ValueError, TypeError):
+                book_value = None
+
+            equipment_data = {
+                "asset_no": asset_no, "name": name,
+                "label_no": str(get_column_value(row, "标签号") or "") or None,
+                "equipment_tag": str(get_column_value(row, "设备位号") or "") or None,
+                "equipment_class": equipment_class,
+                "category_description": category_desc,
+                "manufacturer": str(get_column_value(row, "制造商") or "") or None,
+                "model": str(get_column_value(row, "型号") or "") or None,
+                "specification": str(get_column_value(row, "设备规格") or "") or None,
+                "supplier": str(get_column_value(row, "供应商") or "") or None,
+                "current_cost": current_cost,
+                "book_value": book_value,
+                "production_date": parse_excel_date(get_column_value(row, "出厂日期")),
+                "commissioning_date": parse_excel_date(get_column_value(row, "启用日期")),
+                "department_id": dept_id,
+                "location_text": str(get_column_value(row, "实物所在地点") or "") or None,
+                "responsible_person_name": str(get_column_value(row, "负责人") or "") or None,
+                "status": status,
+                "importance": importance,
+                "scrap_status": str(scrap_status or "") or None,
+                "scrap_time": parse_excel_date(get_column_value(row, "报废时间")),
+                "technical_params": technical_params if technical_params else None,
+            }
+
+            existing = await repo.get_equipment_by_asset_no(db, asset_no)
+            if existing:
+                skipped += 1
+                continue
+            await repo.create_equipment(db, equipment_data)
+            await db.commit()
+            created += 1
+        except Exception as e:
+            await db.rollback()
+            skipped += 1
+            errors.append({"row": idx, "error": str(e)})
+    return success_response(data={"created_count": created, "skipped_count": skipped, "errors": errors})
+
+
+@router.post("/", summary="上传Excel文件并解析")
+async def import_excel(file: UploadFile = File(...)) -> dict[str, Any]:
+    if not file.filename or not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="仅支持 .xlsx 或 .xls 文件")
+    from openpyxl import load_workbook
+    content_bytes = await file.read()
+    try:
+        wb = load_workbook(io.BytesIO(content_bytes))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Excel 解析失败: {str(e)}")
+    ws = wb.active
+    headers = None
+    start_row = 2
+    for i, row in enumerate(ws.iter_rows(values_only=True), 1):
+        if row and row[0] == "资产编号":
+            headers = list(row)
+            start_row = i + 1
+            break
+    if not headers:
+        headers = [cell.value for cell in ws[1]]
+        start_row = 2
+    data = []
+    for row in ws.iter_rows(min_row=start_row, values_only=True):
+        if any(cell is not None for cell in row):
+            row_dict = {str(headers[i]): row[i] for i in range(len(headers)) if i < len(row) and headers[i]}
+            data.append(row_dict)
+    return success_response(data=data)
