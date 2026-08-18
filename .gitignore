@@ -30,3 +30,9 @@ e2e-frontend.log
 /.next/
 backend/tests/fixtures/dossier_splits/
 backend/storage/**/_versions/
+
+# Local development scratch files
+fix-any-progress.json
+fix-any-types.sh
+fix-any.log
+lint-output.txt

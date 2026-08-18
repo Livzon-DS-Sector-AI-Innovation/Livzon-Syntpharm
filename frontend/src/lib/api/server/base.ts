@@ -97,7 +97,7 @@ export async function safeApiFetch<T>(
   } catch {
     return {
       code: -1,
-      message: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})`,
+      message: '网络请求失败，无法连接到后端服务',
       data: null as unknown as T,
     }
   }

@@ -177,8 +177,6 @@ run_e2e() {
     log_info "Starting E2E frontend (port 13000)..."
     cd "$REPO_ROOT"
 
-    # Build the production image first
-    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" build ci-build
 
     # Start the container with the pre-built production image
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" \
@@ -210,7 +208,7 @@ run_e2e() {
     cd "$REPO_ROOT/frontend"
 
     local e2e_exit_code=0
-    PATH="/home/ruanjiaheng/.local/bin:$PATH" pnpm exec playwright test || e2e_exit_code=$?
+    pnpm exec playwright test || e2e_exit_code=$?
 
     # ── Collect E2E frontend log ────────────────────────────────────────
     if [[ $e2e_exit_code -ne 0 ]]; then

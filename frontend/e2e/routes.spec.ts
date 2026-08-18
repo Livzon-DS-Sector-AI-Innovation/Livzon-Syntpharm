@@ -107,8 +107,6 @@ const heading =
 
 const text = (t: string) => (page: Page): Locator => page.getByText(t).first()
 
-const _iframe = (title: string) => (page: Page): Locator =>
-  page.locator(`iframe[title="${title}"]`)
 
 // ═══════════════════════════════════════════════════════════════
 // Route definitions
