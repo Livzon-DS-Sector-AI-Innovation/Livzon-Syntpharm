@@ -397,3 +397,43 @@ async def batch_import(
             "errors": errors,
         }
     )
+
+
+# ── v3 Smart Inference Functions ──
+
+def infer_equipment_class(category_description: str | None) -> str:
+    """根据资产类别说明推断设备分类（A/B/C）"""
+    if not category_description:
+        return "C"
+
+    if "房屋建筑物" in category_description or "房屋" in category_description:
+        return "A"
+    elif "运输设备" in category_description or "车辆" in category_description:
+        return "B"
+    elif "电子设备" in category_description or "机器设备" in category_description:
+        return "C"
+    else:
+        return "C"  # 默认
+
+
+def infer_importance(current_cost: float | None) -> str:
+    """根据当前成本推断设备重要性（高/中/低）"""
+    if current_cost is None:
+        return "中"
+
+    if current_cost > 100000:
+        return "高"
+    elif current_cost >= 50000:
+        return "中"
+    else:
+        return "低"
+
+
+def infer_status(scrap_status: str | None) -> str:
+    """根据报废状态推断设备状态"""
+    if scrap_status == "未报废":
+        return "在用"
+    elif scrap_status in ["已报废", "报废"]:
+        return "报废"
+    else:
+        return "在用"  # 默认
