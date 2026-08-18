@@ -1965,7 +1965,7 @@ _None yet._
 | Files not inspected | 0 |
 | Rules evaluated | 5 (Q1-Q5) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 1 |
+| Confirmed findings | 0 |
 | Uncertain findings | 0 |
 | Status | complete |
 
