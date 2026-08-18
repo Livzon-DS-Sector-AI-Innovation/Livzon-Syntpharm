@@ -519,6 +519,8 @@ export const dynamic = 'force-dynamic'
 
 **禁止**：手写 API 响应类型、手写 API 请求类型、在 API 调用中使用手写类型。
 
+**判断标准**：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用生成类型。UI 类型（表单状态、组件 props、本地状态）可以手写。
+
 ### API 调用层级
 
 ```
