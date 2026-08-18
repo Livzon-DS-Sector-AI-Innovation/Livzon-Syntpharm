@@ -582,6 +582,54 @@ frontend/src/actions/          # create/update/delete/upload/import/export
   export async function updateRoute(id: string, data: RouteUpdate)
 ```
 
+
+### API 契约类型 vs UI 类型
+
+**API 契约类型（必须使用生成的 schema）：**
+- 请求体（POST/PUT 的 payload）
+- 查询参数（GET 的 filters、pagination）
+- 响应体（API 返回的数据）
+- 路径参数
+
+判断标准：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用 `components['schemas']` 中的生成类型。
+
+**UI 类型（可以手写）：**
+- 表单字段状态（如 `isSubmitting: boolean`）
+- 筛选器 UI 状态（如 `showAdvancedFilters: boolean`）
+- 下拉选项（如 `statusOptions: Array<{label: string, value: string}>`）
+- 组件 props（如 `ModalProps`）
+- 本地状态（永远不会发送到 API 的数据）
+
+**示例：**
+```typescript
+// ✅ 正确：API 契约类型使用生成的 schema
+import type { components } from '@/types/generated/schema'
+
+type EmployeeCreate = components['schemas']['EmployeeCreate']
+type EmployeeResponse = components['schemas']['EmployeeResponse']
+
+async function createEmployee(data: EmployeeCreate): Promise<EmployeeResponse> {
+  return apiPost('/api/v1/hr/employees', data)
+}
+
+// ✅ 正确：UI 类型可以手写
+interface EmployeeFilterForm {
+  name: string
+  department: string
+  showInactive: boolean  // UI-only state
+}
+
+const statusOptions = [
+  { label: '在职', value: 'active' },
+  { label: '离职', value: 'inactive' }
+]
+```
+
+**禁止：**
+- 手写 API 响应类型（如 `interface EmployeeResponse { ... }`）
+- 手写 API 请求类型（如 `interface EmployeeCreate { ... }`）
+- 在 API 调用中使用手写类型
+
 ### API 调用层级
 
 ```
