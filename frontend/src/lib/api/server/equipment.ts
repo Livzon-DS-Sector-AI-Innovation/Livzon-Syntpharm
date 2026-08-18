@@ -938,7 +938,8 @@ export async function fetchEquipmentStatistics() {
 }
 
 export async function fetchDepartments() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/departments`)
+  const res = await apiFetch(`${getApiBaseUrl()}/api/v1/equipment/departments`)
+  return res.data || []
 }
 
 export async function fetchInspectionTemplates(filters: any = {}) {
