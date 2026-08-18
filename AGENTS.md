@@ -141,6 +141,27 @@ DELETE /api/v1/{module}/{resource}/{id}
 - 业务异常使用 `app/core/exceptions.py`
 - 删除业务数据默认软删除（`is_deleted`），不做物理删除（除非需求明确要求）
 
+
+**禁止** `response_model=dict` 或 `response_model=ApiResponse`：所有结构化 JSON 响应的 endpoint 必须使用具体的 Pydantic 响应模型，且该模型必须描述完整的实际响应体（包括 `code`、`data`、`message` 等实际返回字段），不能仅描述 `data`。
+
+`response_model=dict` 会生成缺乏具体字段类型的 OpenAPI schema（如 `{type: object}`），导致前端无法获得可靠的生成类型。`response_model=ApiResponse` 同样有问题，因为 `ApiResponse.data` 被定义为 `Any`，OpenAPI 无法推断实际的数据结构。
+
+具体业务响应模型定义在对应模块的 `schemas.py` 中。例如：
+
+```python
+# ✅ 正确：使用具体的响应模型
+@router.get("/employees", response_model=EmployeeListResponse)
+async def list_employees(...):
+    data = [EmployeeResponse.model_validate(e).model_dump(mode="json") for e in employees]
+    return build_response(data=data, ...)
+
+# ❌ 错误：使用通用模型
+@router.get("/employees", response_model=ApiResponse)
+async def list_employees(...):
+    return build_response(data=employees)
+```
+
+`build_response()` 返回 `ApiResponse` 是可以的，因为 FastAPI 会优先使用路由声明的 `response_model` 进行 OpenAPI 生成和响应校验。文件下载、流式响应、重定向等需要直接控制 HTTP Response 的场景除外。
 **前端访问方式**：
 - 开发环境：浏览器 → Next.js (3000) → `src/proxy.ts` → 后端 (8000)
 - 生产环境：浏览器 → nginx → Next.js (3000) 或后端 (8000)
