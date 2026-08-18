@@ -832,6 +832,7 @@ Full audit
   ✓ import type { RouteUpdate } from '@/types/generated/schema'
   ```
 
+- 判断标准：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用生成类型。UI 类型（表单状态、组件 props、本地状态）可以手写。
 **类型系统 / API 调用层级:**
 - `frontend/src/types/generated/` ← 自动生成，禁止编辑
 - `frontend/src/lib/api/client/*.ts` ← 浏览器 GET/list/search/detail，使用 `/api/v1/...`
