@@ -4,6 +4,7 @@
 
 ## 目录
 
+- [本地开发环境](#本地开发环境)
 - [认证与权限使用](#认证与权限使用)
 - [LLM 调用](#llm-调用)
 - [配置管理](#配置管理)
@@ -13,6 +14,95 @@
 - [错误处理策略](#错误处理策略)
 
 ---
+
+
+## 本地开发环境
+
+本项目采用模块化单体架构。不同开发者可以维护不同的业务模块，但所有数据库结构变更必须通过 Alembic 迁移文件提交到仓库。
+
+### 数据库对齐规则
+
+- 禁止对开发数据库使用 `Base.metadata.create_all()`
+- 每个影响 PostgreSQL 的 ORM 模型变更必须有对应的 Alembic 迁移文件
+- 创建迁移前，先拉取最新分支并运行迁移：
+
+```powershell
+uv run alembic upgrade head
+```
+
+- 编辑模型后创建迁移：
+
+```powershell
+uv run alembic revision --autogenerate -m "add production batch table"
+```
+
+- 提交前审查生成的迁移文件。Alembic 可以检测很多变更，但无法可靠推断数据回填、列重命名或破坏性操作
+- 如果两个开发者从同一个父版本创建迁移，合并前先解决分支冲突。通常做法是 rebase 一个分支并重新生成迁移。只有当两个迁移分支都需要保留时，才使用 Alembic merge revision
+
+### Windows 本地 PostgreSQL 和 Redis
+
+复制环境变量模板：
+
+```powershell
+Copy-Item .env.example .env
+```
+
+仅启动 PostgreSQL 和 Redis：
+
+```powershell
+docker compose up -d db redis
+```
+
+运行迁移：
+
+```powershell
+uv run alembic upgrade head
+```
+
+本地启动后端：
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+本地应用使用 `.env` 中的这些 URL：
+
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dazah
+REDIS_URL=redis://localhost:6379/0
+```
+
+### 完整 Docker 运行（可选）
+
+在 Docker 中运行整个应用：
+
+```powershell
+docker compose --profile app up --build
+```
+
+应用容器在启动 Uvicorn 前会运行 `alembic upgrade head`。使用 `.env.example` 中的 Docker 服务主机名：
+
+```env
+APP_DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/dazah
+APP_REDIS_URL=redis://redis:6379/0
+```
+
+### 常用命令
+
+```powershell
+docker compose ps
+docker compose logs -f db
+docker compose logs -f redis
+docker compose down
+```
+
+重置本地容器数据：
+
+```powershell
+docker compose down -v
+docker compose up -d db redis
+uv run alembic upgrade head
+```
 
 ## 认证与权限使用
 

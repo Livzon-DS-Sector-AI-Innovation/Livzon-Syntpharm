@@ -1086,7 +1086,7 @@ These AGENTS.md sections are architectural guidance, procedural documentation, o
 | 代码格式规范 (E501, ruff per-file-ignores) | CI-enforced by `ruff check` |
 | 前端/技术栈 (Next.js 16, Ant Design v6) | Architectural intent |
 | 前端/新增页面的步骤 | Procedural guidance |
-| 模块结构 (see backend/examples/) | Referenced documentation |
+| 模块结构 (see examples/) | Referenced documentation |
 | 开发指南 (see backend/docs/) | Referenced documentation |
 | 错误处理/降级策略 (LLM unavailable -> default) | Design guidance, implementation patterns vary |
 | 前端/表单与数据校验 (Zod usage) | Procedural guidance, not a pass/fail rule |
