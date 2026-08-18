@@ -1887,3 +1887,202 @@ All 8 findings have been resolved in commits:
 **Status: ✅ ALL RESOLVED — PR ready to merge**
 
 
+
+---
+
+## PR #31 — Ruanjiaheng (audit date: 2026-08-18)
+
+### Audit scope
+- **PR**: [#31](https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm/pull/31)
+- **Base**: `main`
+- **Head**: `ruanjiaheng` (SHA `2e79101`)
+- **Changed files**: 233 (all frontend, docs, and root-level infra; no backend changes)
+- **Commits since baseline**: 15 (2026-08-17 to 2026-08-18)
+- **Focus**: React hooks fixes, unused imports removal, Docker consolidation, CI workflow fixes
+
+---
+
+### Category 1: Repository layout
+
+| Files inspected | 233 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (Q1-Q10) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 5 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+
+- [ ] `fix-any-progress.json:1` — repo root cleanliness — scratch state file from local fix-any-types.sh run (JSON progress tracker, status "completed") — severity: **blocking**
+- [ ] `fix-any-types.sh:1` — repo root cleanliness — local bash script with hardcoded absolute path `/home/ruanjiaheng/projects/Livzon-Syntpharm` — severity: **blocking**
+- [ ] `fix-any.log:1` — repo root cleanliness — local log output from fix-any-types.sh execution — severity: **blocking**
+- [ ] `lint-output.txt:1` — repo root cleanliness — raw ESLint output dump, 1653+ warnings — severity: **blocking**
+- [ ] `frontend/src/lib/static-data-api.ts:1` — frontend layout rule 8 (lib/api/client/ for browser GET APIs) — file is a client-side fetch API (客户端直连 API 客户端, uses browser fetch), but lives in lib/ root instead of lib/api/client/ — severity: **medium** (pre-existing, but touched by PR)
+
+#### Uncertain
+_None._
+
+#### Accepted exceptions
+_None yet._
+
+---
+
+### Category 2: Secrets and hardcoded values
+
+| Files inspected | 233 (all changed files) |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 7 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+
+- [ ] `fix-any-types.sh:5` — Rule 1 (No hardcoded absolute paths) — `PROJECT_DIR="/home/ruanjiaheng/projects/Livzon-Syntpharm"` — severity: **blocking**
+- [ ] `lint-output.txt:1-800+` — Rule 1 (No hardcoded absolute paths) — Multiple instances of `/home/ruanjiaheng/projects/Livzon-Syntpharm/frontend/...` — severity: **blocking**
+- [ ] `fix-any.log:1-16` — Build artifact committed — severity: **blocking**
+- [ ] `fix-any-progress.json:1-11` — Build artifact committed — severity: **blocking**
+- [ ] `frontend/src/lib/api/server/base.ts:100` — Rule 3 (No API keys/tokens in logs/exceptions) — Error message exposes internal backend URL: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})` — severity: **medium**
+- [ ] `frontend/Dockerfile:44` — Rule 5 (No hardcoded backend addresses) — `ENV API_BASE_URL=http://backend:8000` — severity: **medium**
+- [ ] `docker-compose.yml:110` — Rule 5 (No hardcoded backend addresses) — `API_BASE_URL=http://backend:8000` — severity: **medium**
+
+#### Uncertain
+_None._
+
+#### Accepted exceptions
+_None yet._
+
+---
+
+### Category 9: Frontend component boundaries
+
+| Files inspected | PENDING |
+| Files not inspected | PENDING |
+| Rules evaluated | PENDING |
+| Rules not evaluated | PENDING |
+| Confirmed findings | PENDING |
+| Uncertain findings | PENDING |
+| Status | **IN PROGRESS** |
+
+---
+
+### Category 10: Frontend API and generated types
+
+| Files inspected | PENDING |
+| Files not inspected | PENDING |
+| Rules evaluated | PENDING |
+| Rules not evaluated | PENDING |
+| Confirmed findings | PENDING |
+| Uncertain findings | PENDING |
+| Status | **IN PROGRESS** |
+
+---
+
+### Category 12: Cross-project OpenAPI
+
+| Files inspected | 3 (dossier-writer.ts, hr.ts, regulatory-tracker.ts) |
+| Files not inspected | 0 |
+| Rules evaluated | 4 (all OpenAPI rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 (PR changes clean) |
+| Uncertain findings | 0 |
+| Pre-existing findings | 6 (not introduced by this PR) |
+| Status | complete |
+
+#### Confirmed
+_None in PR changes._
+
+#### Pre-existing (not introduced by PR #31)
+- `frontend/src/lib/api/client/dossier-writer.ts:1-14` — All 13 types imported from `@/types/dossier-writer` (hand-written), not `@/types/generated/schema` — severity: high
+- `frontend/src/lib/api/client/hr.ts:1-27` — All 25 response types imported from `@/types/hr` (hand-written) — severity: high
+- `frontend/src/lib/api/client/regulatory-tracker.ts:1` — All types imported from `@/types/regulatory-tracker` (hand-written) — severity: high
+- `frontend/src/types/dossier-writer.ts:7-24` — Hand-written API response types — severity: high
+- `frontend/src/types/hr.ts:3-30` — Hand-written API response types — severity: high
+- `frontend/src/types/regulatory-tracker.ts:20-40` — Hand-written API response types — severity: medium
+
+---
+
+### Category 13: Docker and deployment
+
+| Files inspected | 7 (Dockerfile, docker-compose.*, ci.yml, ci.sh) |
+| Files not inspected | 0 |
+| Rules evaluated | 7 (all Docker/deployment rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 13 |
+| Uncertain findings | 0 |
+| Status | complete |
+
+#### Confirmed
+
+- [ ] `scripts/ci.sh:213` — Rule 7 (env vars, not hardcoded paths) — `PATH="/home/ruanjiaheng/.local/bin:$PATH"` hardcodes developer's home directory — severity: **blocking**
+- [ ] `scripts/ci.sh:181` — Rule 7 (no hardcoded URLs) — `docker compose ... build ci-build` rebuilds frontend image, ignoring pre-built artifact — severity: **medium**
+- [ ] `frontend/Dockerfile:44` — Rule 7 (env vars, not hardcoded values) — `ENV API_BASE_URL=http://backend:8000` baked into builder stage — severity: **medium**
+- [ ] `scripts/ci.sh:186` — Rule 7 — `-e API_BASE_URL=http://backend-e2e:8000` hardcoded — severity: low
+- [ ] `scripts/ci.sh:206-207` — Rule 7 — `E2E_BACKEND_URL` and `E2E_FRONTEND_URL` hardcoded — severity: low
+- [ ] `frontend/Dockerfile:15` — Rule 7 — `npm config set registry https://registry.npmmirror.com` hardcodes Chinese npm mirror — severity: low
+- [ ] `docker-compose.yml:110` — Rule 7 — `API_BASE_URL=http://backend:8000` hardcoded — severity: low
+- [ ] `docker-compose.yml:63,79` — Rule 7 — `REDIS_URL=redis://erp-redis:6379/0` hardcoded — severity: low
+- [ ] `docker-compose.ci.yml:14` — Rule 6 — `POSTGRES_PASSWORD: postgres` — severity: low
+- [ ] `docker-compose.ci.yml:32` — Rule 6 — `DATABASE_URL` contains embedded password — severity: low
+- [ ] `docker-compose.ci.yml:34-37` — Rule 6 — Dummy secrets — severity: low
+- [ ] `docker-compose.dev.yml:1` — Rule 4 — `version: '3.8'` inconsistent with siblings — severity: low
+- [ ] `.github/workflows/ci.yml:128,156` — Rule 6 — `POSTGRES_PASSWORD: postgres` — severity: low
+
+---
+
+### Category 14: E2E
+
+| Files inspected | 1 (routes.spec.ts) |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (all E2E rules) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+| Status | complete |
+
+#### Confirmed
+_None._
+
+#### Uncertain
+- [ ] `frontend/e2e/routes.spec.ts:110` — `_iframe` helper is defined but unused (now prefixed with _) — severity: low (dead code observation)
+
+---
+
+### Summary
+
+| Category | Confirmed | Uncertain | Severity |
+|----------|-----------|-----------|----------|
+| 1. Repository layout | 5 | 0 | 4 blocking, 1 medium |
+| 2. Secrets and hardcoded values | 7 | 0 | 4 blocking, 3 medium |
+| 9. Frontend component boundaries | PENDING | PENDING | PENDING |
+| 10. Frontend API and generated types | PENDING | PENDING | PENDING |
+| 12. Cross-project OpenAPI | 0 (PR) | 0 | — (6 pre-existing) |
+| 13. Docker and deployment | 13 | 0 | 1 blocking, 2 medium, 10 low |
+| 14. E2E | 0 | 1 | low |
+| **Total** | **25+** | **1** | **9 blocking, 6 medium, 10+ low** |
+
+### Blocking issues (must fix before merge)
+
+1. **Scratch files at repo root** (Category 1) — Remove `fix-any-progress.json`, `fix-any-types.sh`, `fix-any.log`, `lint-output.txt` and add to `.gitignore`
+2. **Hardcoded developer path in CI script** (Category 13) — `scripts/ci.sh:213` contains `/home/ruanjiaheng/.local/bin`
+
+### High priority
+
+3. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
+4. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
+
+### Medium priority
+
+5. **Error message leaks internal backend URL** (Category 2) — `base.ts:100` exposes `getApiBaseUrl()` to client
+6. **Client API file in wrong directory** (Category 1) — `static-data-api.ts` should be in `lib/api/client/`
+
+### Low priority
+
+7. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
+
+---
+
+**Status: ⏳ IN PROGRESS — Categories 9 and 10 pending**
+
