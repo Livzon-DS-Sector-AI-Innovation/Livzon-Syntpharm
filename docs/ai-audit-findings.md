@@ -789,7 +789,7 @@ Energy sync endpoints converted from synchronous HTTP handlers to `spawn_task()`
 
 | Files inspected | 5 (config.py, energy/api.py, energy/job_store.py, .env.example, backend/.env.ci.example) |
 | Rules evaluated | 9 |
-| Confirmed findings | 1 |
+| Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
 ##### Confirmed
@@ -1934,7 +1934,7 @@ _None yet._
 | Files not inspected | 0 |
 | Rules evaluated | 9 (Q1-Q9) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 7 |
+| Confirmed findings | 5 |
 | Uncertain findings | 0 |
 | Status | complete |
 
@@ -1945,8 +1945,11 @@ _None yet._
 - [ ] `fix-any.log:1-16` — Build artifact committed — severity: **blocking**
 - [ ] `fix-any-progress.json:1-11` — Build artifact committed — severity: **blocking**
 - [ ] `frontend/src/lib/api/server/base.ts:100` — Rule 3 (No API keys/tokens in logs/exceptions) — Error message exposes internal backend URL: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})` — severity: **medium**
-- [ ] `frontend/Dockerfile:44` — Rule 5 (No hardcoded backend addresses) — `ENV API_BASE_URL=http://backend:8000` — severity: **medium**
-- [ ] `docker-compose.yml:110` — Rule 5 (No hardcoded backend addresses) — `API_BASE_URL=http://backend:8000` — severity: **medium**
+
+#### False positives (corrected)
+The following were initially flagged but are acceptable patterns:
+- `frontend/Dockerfile:44` and `docker-compose.yml:110` — `http://backend:8000` is Docker's internal service discovery hostname, not a hardcoded secret. AGENTS.md rule targets `localhost`/`127.0.0.1`, not Docker network names.
+- CI dummy credentials (`POSTGRES_PASSWORD: postgres`, `FEISHU__PLATFORM__APP_SECRET: ci_dummy`, etc.) — Intentional dummy values for ephemeral CI test environments. Standard practice.
 
 #### Uncertain
 _None._
@@ -1967,11 +1970,12 @@ _None yet._
 | Status | complete |
 
 #### Confirmed
-
-- [ ] `frontend/src/components/equipment/personnel/PersonnelInfo.tsx:1` — Rule 1 ('use client' directive) — Exports a React component using antd (Avatar, Popover, Typography) and JSX return, but file has no 'use client' directive — severity: **blocking**
+_None._
 
 #### False positives (corrected)
-The following were initially flagged as module boundary violations but are actually **intra-module imports** (same module importing from itself), which are allowed:
+The following were initially flagged but are acceptable patterns:
+- `PersonnelInfo.tsx` missing 'use client' — Only imported by `PersonnelTable.tsx` which already has 'use client', so it inherits the client boundary.
+- 5 deep imports (energy/ai-analysis, hr/training/evaluation-form, production/product-output, safety/knowledge-base, safety/regulation) — These are **intra-module imports** (same module importing from itself), which are allowed:
 - `energy/ai-analysis/page.tsx:12` → `@/components/energy/TargetModal` (energy → energy)
 - `hr/training/evaluation-form/page.tsx:6` → `@/components/hr/EvaluationPreview` (hr → hr)
 - `production/product-output/.../page.tsx:58` → `@/components/production/product/ProductSyncConfig` (production → production)
@@ -2045,7 +2049,7 @@ _None in PR changes._
 | Files not inspected | 0 |
 | Rules evaluated | 7 (all Docker/deployment rules) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 13 |
+| Confirmed findings | 2 |
 | Uncertain findings | 0 |
 | Status | complete |
 
@@ -2053,17 +2057,15 @@ _None in PR changes._
 
 - [ ] `scripts/ci.sh:213` — Rule 7 (env vars, not hardcoded paths) — `PATH="/home/ruanjiaheng/.local/bin:$PATH"` hardcodes developer's home directory — severity: **blocking**
 - [ ] `scripts/ci.sh:181` — Rule 7 (no hardcoded URLs) — `docker compose ... build ci-build` rebuilds frontend image, ignoring pre-built artifact — severity: **medium**
-- [ ] `frontend/Dockerfile:44` — Rule 7 (env vars, not hardcoded values) — `ENV API_BASE_URL=http://backend:8000` baked into builder stage — severity: **medium**
-- [ ] `scripts/ci.sh:186` — Rule 7 — `-e API_BASE_URL=http://backend-e2e:8000` hardcoded — severity: low
-- [ ] `scripts/ci.sh:206-207` — Rule 7 — `E2E_BACKEND_URL` and `E2E_FRONTEND_URL` hardcoded — severity: low
-- [ ] `frontend/Dockerfile:15` — Rule 7 — `npm config set registry https://registry.npmmirror.com` hardcodes Chinese npm mirror — severity: low
-- [ ] `docker-compose.yml:110` — Rule 7 — `API_BASE_URL=http://backend:8000` hardcoded — severity: low
-- [ ] `docker-compose.yml:63,79` — Rule 7 — `REDIS_URL=redis://erp-redis:6379/0` hardcoded — severity: low
-- [ ] `docker-compose.ci.yml:14` — Rule 6 — `POSTGRES_PASSWORD: postgres` — severity: low
-- [ ] `docker-compose.ci.yml:32` — Rule 6 — `DATABASE_URL` contains embedded password — severity: low
-- [ ] `docker-compose.ci.yml:34-37` — Rule 6 — Dummy secrets — severity: low
-- [ ] `docker-compose.dev.yml:1` — Rule 4 — `version: '3.8'` inconsistent with siblings — severity: low
-- [ ] `.github/workflows/ci.yml:128,156` — Rule 6 — `POSTGRES_PASSWORD: postgres` — severity: low
+
+#### False positives (corrected)
+The following were initially flagged but are acceptable patterns:
+- `frontend/Dockerfile:44` and `docker-compose.yml:110` — `http://backend:8000` is Docker's internal service discovery, not a hardcoded secret.
+- `docker-compose.yml:63,79` — `redis://erp-redis:6379/0` is Docker's internal service discovery.
+- `scripts/ci.sh:186,206-207` — CI-internal URLs for E2E testing.
+- `frontend/Dockerfile:15` — npm mirror is a build-time optimization, acceptable.
+- `docker-compose.ci.yml` and `.github/workflows/ci.yml` — Dummy credentials for ephemeral CI environments.
+- `docker-compose.dev.yml:1` — `version: '3.8'` inconsistency is cosmetic.
 
 ---
 
@@ -2090,13 +2092,13 @@ _None._
 | Category | Confirmed | Uncertain | Severity |
 |----------|-----------|-----------|----------|
 | 1. Repository layout | 5 | 0 | 4 blocking, 1 medium |
-| 2. Secrets and hardcoded values | 7 | 0 | 4 blocking, 3 medium |
-| 9. Frontend component boundaries | 1 | 0 | 1 blocking |
+| 2. Secrets and hardcoded values | 5 | 0 | 4 blocking, 1 medium |
+| 9. Frontend component boundaries | 0 | 0 | — |
 | 10. Frontend API and generated types | 0 | 0 | — |
 | 12. Cross-project OpenAPI | 0 (PR) | 0 | — (6 pre-existing) |
-| 13. Docker and deployment | 13 | 0 | 1 blocking, 2 medium, 10 low |
+| 13. Docker and deployment | 2 | 0 | 1 blocking, 1 medium |
 | 14. E2E | 0 | 1 | low |
-| **Total** | **26** | **1** | **6 blocking, 6 medium, 10 low** |
+| **Total** | **12** | **1** | **5 blocking, 2 medium, 1 low** |
 
 ### Blocking issues (must fix before merge)
 
