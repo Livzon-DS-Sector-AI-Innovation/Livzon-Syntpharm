@@ -5,6 +5,7 @@ import { App, Button, Space, Popconfirm, Empty } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { EquipmentCategory } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
+import { CategoryEditor } from './CategoryEditor'
 import { deleteCategory } from '@/actions/equipment'
 
 interface CategoryTreeProps {
@@ -75,6 +76,13 @@ function TreeNode({
 
   return (
     <div>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
+        <CategoryEditor 
+          mode="create" 
+          trigger={<Button type="dashed" size="small" icon={<PlusOutlined />}>新增根分类</Button>}
+          onSuccess={onRefresh}
+        />
+      </div>
       {/* 节点行 */}
       <div
         role="button"
@@ -240,6 +248,13 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
 
   return (
     <div>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
+        <CategoryEditor 
+          mode="create" 
+          trigger={<Button type="dashed" size="small" icon={<PlusOutlined />}>新增根分类</Button>}
+          onSuccess={onRefresh}
+        />
+      </div>
       <div style={{ marginBottom: 12 }}>
         <Button
           type="primary"

@@ -13,7 +13,6 @@ import { EquipmentTable } from './EquipmentTable'
 import { CategoryTree } from './CategoryTree'
 import { LocationTree } from './LocationTree'
 import { EquipmentDrawer } from './EquipmentDrawer'
-import { CategoryDrawer } from './CategoryDrawer'
 import { LocationDrawer } from './LocationDrawer'
 import { RepairDrawer } from './RepairDrawer'
 
@@ -250,9 +249,7 @@ export function EquipmentPage({
         </div>
 
         {/* 抽屉组件 */}
-        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1) }} />
-        <CategoryDrawer onRefresh={refreshCategoriesAndLocations} />
-        <LocationDrawer onRefresh={refreshCategoriesAndLocations} />
+        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1) }} /><LocationDrawer onRefresh={refreshCategoriesAndLocations} />
         <RepairDrawer
           equipments={equipments.map(e => ({
             id: e.id, asset_no: e.asset_no, name: e.name,
