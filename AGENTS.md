@@ -16,6 +16,19 @@
 - 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
+
+以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.dev.yml`
+- `docker-compose.ci.yml`
+
+修改这些文件前，请：
+1. 在 PR 中说明修改原因
+2. 验证所有三种环境（生产、开发、CI）均能正常工作
+3. 确保不破坏现有工作流
+
 ## 仓库组织
 
 ### 测试
@@ -605,12 +618,24 @@ CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并�
 
 ## Docker 开发环境
 
-两种 docker-compose 配置：
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新，位于仓库根目录）
-- `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新，位于仓库根目录）
+前端使用**单文件多阶段构建**（`frontend/Dockerfile`），包含四个阶段：
+- **base** — 共享基础：Node 22 Alpine、pnpm 10.33.0、依赖安装
+- **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
+- **builder** — 生产构建阶段：运行 `pnpm build`
+- **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
+
+三种 docker-compose 配置：
+- `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
+- `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新，支持跨平台文件监听）
+- `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
 
 开发时**必须**使用：
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
+
+开发环境通过轮询实现跨平台文件监听（macOS/Windows Docker Desktop 需要）：
+- `WATCHPACK_POLLING=true` — webpack 文件监听
+- `CHOKIDAR_USEPOLLING=true` — chokidar 文件监听
+

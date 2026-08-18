@@ -989,15 +989,32 @@ Full audit
 ### Rules (from AGENTS.md)
 
 **Docker 开发环境:**
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新）
-- `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新）
+- 前端使用**单文件多阶段构建**（`frontend/Dockerfile`），包含四个阶段：
+  - **base** — 共享基础：Node 22 Alpine、pnpm 10.33.0、依赖安装
+  - **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
+  - **builder** — 生产构建阶段：运行 `pnpm build`
+  - **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
+- 三种 docker-compose 配置：
+  - `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
+  - `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新）
+  - `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
 - 开发时必须使用：
   ```bash
   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
   ```
+- 文件监听：Linux 使用原生 inotify，macOS/Windows Docker Desktop 需要轮询（`WATCHPACK_POLLING=true`、`CHOKIDAR_USEPOLLING=true`）
+
+**基础设施文件审批**（见 AGENTS.md "仓库通用规则" 章节）:
+- 以下文件修改前**必须**获得批准：
+  - `frontend/Dockerfile`
+  - `backend/Dockerfile`
+  - `docker-compose.yml`
+  - `docker-compose.dev.yml`
+  - `docker-compose.ci.yml`
 
 ### Directories to inspect
-- `Dockerfile` (backend and frontend)
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
 - `docker-compose.yml`
 - `docker-compose.dev.yml`
 - `docker-compose.ci.yml`
@@ -1005,11 +1022,15 @@ Full audit
 
 ### Questions
 
-1. Are Dockerfiles using appropriate base images and following project conventions?
-2. Are the docker-compose files consistent (service names, port mappings, volume mounts)?
-3. Does `docker-compose.dev.yml` correctly override `docker-compose.yml` for development?
-4. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
-5. Is the CI compose file (`docker-compose.ci.yml`) properly isolated from dev/prod?
+1. Does `frontend/Dockerfile` use multi-stage build with correct stage names (base, dev, builder, runtime)?
+2. Does `docker-compose.yml` specify `target: runtime` for the frontend service?
+3. Does `docker-compose.dev.yml` specify `target: dev` for the frontend service?
+4. Does `docker-compose.ci.yml` specify `target: runtime` for the ci-build service?
+5. Are the docker-compose files consistent (service names, port mappings, volume mounts)?
+6. Does `docker-compose.dev.yml` include polling environment variables for cross-platform file watching?
+7. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
+8. Is `frontend/Dockerfile.dev` deleted (should not exist after consolidation)?
+9. Are all Dockerfile and docker-compose changes documented with approval in the PR?
 
 ### Output format
 
@@ -1023,8 +1044,6 @@ Full audit
 | Uncertain findings | |
 
 ---
-
-
 ## 14. E2E
 
 ### Audit type

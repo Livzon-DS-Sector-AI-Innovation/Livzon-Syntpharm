@@ -173,19 +173,18 @@ run_e2e() {
 
     log_info "Backend ready ($(( SECONDS - start_time ))s)"
 
-    # ── Build and serve frontend via Docker (reuses ci-build) ──────────
-    log_info "Building and starting E2E frontend (port 13000)..."
+    # ── Start frontend via Docker (uses pre-built production image) ─────
+    log_info "Starting E2E frontend (port 13000)..."
     cd "$REPO_ROOT"
 
+    # Build the production image first
+    docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" build ci-build
+
+    # Start the container with the pre-built production image
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" \
         run -d --name e2e-frontend -p 13000:3000 \
-        --build \
         -e API_BASE_URL=http://backend-e2e:8000 \
-        ci-build \
-        sh -c "
-            API_BASE_URL=http://backend-e2e:8000 pnpm build &&
-            NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 API_BASE_URL=http://backend-e2e:8000 pnpm exec next start -H 0.0.0.0 -p 3000
-        "
+        ci-build
 
     log_info "Waiting for frontend..."
     local frontend_ready=false
