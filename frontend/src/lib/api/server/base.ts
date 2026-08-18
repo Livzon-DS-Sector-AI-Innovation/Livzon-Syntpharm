@@ -1,5 +1,14 @@
 export function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://backend:8000'
+  // 如果是环境变量指定，优先使用
+  if (process.env.API_BASE_URL) {
+    return process.env.API_BASE_URL
+  }
+  
+  // 判断运行环境：浏览器端使用 localhost，服务端使用 docker 服务名
+  if (typeof window !== 'undefined') {
+    return 'http://localhost:8000'
+  }
+  return 'http://backend:8000'
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
