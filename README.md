@@ -1,6 +1,6 @@
 # Livzon Syntpharm ERP System
 
-原料药厂 ERP 管理系统，替代旧系统，为 GMP 合规提供集成数据管理。
+原料药厂 ERP 管理系统。
 
 ## 技术栈
 
@@ -20,9 +20,9 @@
 - **React Query** 服务端数据请求
 - **pnpm** 包管理
 
-## Prerequisites
+## 环境要求
 
-- Ubuntu 22.04+ (or any Linux distribution that supports Docker)
+- Ubuntu 22.04+（或其他支持 Docker 的 Linux 发行版）
 - Docker + Docker Compose
 - Git
 
