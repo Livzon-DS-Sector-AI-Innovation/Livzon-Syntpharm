@@ -86,6 +86,11 @@ frontend/src/
 ├── lib/api/client/
 ├── lib/api/server/
 └── proxy.ts
+
+**禁止修改的文件（治理文件）:**
+- `AGENTS.md`
+- `docs/ai-audit-plan.md`
+- `docs/ai-audit-findings.md`
 ```
 
 ### Directories to inspect
@@ -111,6 +116,7 @@ frontend/src/
 9. Are backend documents in `backend/docs/`?
 10. Is the training template directory `backend/docs/training/` present if referenced?
 
+11. Have `AGENTS.md`, `docs/ai-audit-plan.md`, or `docs/ai-audit-findings.md` been modified in a way that requires architecture approval?
 ### Output format
 
 | Stat | Count |
