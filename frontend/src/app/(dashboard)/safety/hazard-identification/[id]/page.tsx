@@ -89,7 +89,7 @@ const statusPill = (color: string, bg: string): React.CSSProperties => ({
   background: bg,
 })
 
-const actionLink = (color: string): React.CSSProperties => ({
+const _actionLink = (color: string): React.CSSProperties => ({
   color,
   fontSize: 13,
   fontWeight: 600,

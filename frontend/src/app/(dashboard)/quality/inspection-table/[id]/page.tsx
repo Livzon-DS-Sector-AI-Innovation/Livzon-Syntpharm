@@ -187,7 +187,7 @@ export default function InspectionTableDetailPage({
         ...row.row_data,
       }))
       setRows(rowData)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     } finally {
       setLoading(false)

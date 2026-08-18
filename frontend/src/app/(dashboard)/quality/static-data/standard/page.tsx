@@ -43,7 +43,7 @@ import {
   updateStandard,
   deleteStandard,
   adjustStandardQuantity,
-} from '@/lib/static-data-api'
+} from '@/lib/api/client/static-data-api'
 import './standard-style.css'
 
 const { Search } = Input

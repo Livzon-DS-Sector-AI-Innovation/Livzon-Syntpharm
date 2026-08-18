@@ -1,5 +1,5 @@
 import type { DeviationCreate, DeviationUpdate, InvestigationCreate, CorrectionCreate, ClosingCreate } from '@/types/deviation'
-import { apiFetch, unwrapResponse, getApiBaseUrl } from '@/lib/api/server/base'
+import {apiFetch, getApiBaseUrl} from '@/lib/api/server/base'
 
 async function deviationFetchUpload(endpoint: string, body: FormData) {
   const response = await fetch(`${getApiBaseUrl()}/api/v1${endpoint}`, {

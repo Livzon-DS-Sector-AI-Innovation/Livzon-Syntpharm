@@ -6,7 +6,6 @@
 
 // ==================== 风险作业报备 ====================
 
-import { SpecialOperationType } from './enums'
 export enum ReportStatus {
   DRAFT = 'draft',
   SUBMITTED = 'submitted',

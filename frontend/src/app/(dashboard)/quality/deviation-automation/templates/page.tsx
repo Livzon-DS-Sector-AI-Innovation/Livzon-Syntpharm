@@ -1,5 +1,5 @@
 'use client'
-import { createDeviationTemplate, updateDeviationTemplate, deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate } from '@/actions/quality'
+import {createDeviationTemplate, deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
 
 import { useState, useEffect } from 'react'
 import {

@@ -1,5 +1,5 @@
 // ============ RegulationRevision Types ============
-import { RevisionType, RevisionScope, ReviewOpinion } from './regulation'
+import {RevisionType, ReviewOpinion} from './regulation'
 
 export interface RegulationRevision {
   id: string

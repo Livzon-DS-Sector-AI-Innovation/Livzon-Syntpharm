@@ -82,7 +82,7 @@ export default function EvaluationFormPage() {
   }
 
   const C = { border:'1px solid #ccc', padding:'6px 10px', fontSize:13 } as const
-  const H = { ...C, background:'#f5f5f5', fontWeight:600, textAlign:'center' as const }
+  const _H = { ...C, background:'#f5f5f5', fontWeight:600, textAlign:'center' as const }
 
   return (
     <div className="space-y-4 max-w-5xl">

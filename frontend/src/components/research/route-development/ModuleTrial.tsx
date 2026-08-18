@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Input, Button, Space, Tag, Table, Form, DatePicker, Select, Alert, App, Collapse, Descriptions, Upload } from 'antd'
+import {Card, Input, Button, Space, Tag, Table, Form, DatePicker, Select, Alert, App, Collapse, Upload} from 'antd'
 import { UploadOutlined, RobotOutlined, WarningOutlined, CheckCircleOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons'
 import type { ExperimentRecord, ExperimentPlan } from '@/types/research'
-import dayjs from 'dayjs'
 
 interface ModuleTrialProps {
   routeId: string
@@ -53,7 +52,7 @@ export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initia
       form.resetFields()
       setShowForm(false)
       message.success('实验记录已添加')
-    } catch (e) {
+    } catch (_e) {
       // validation error
     }
   }

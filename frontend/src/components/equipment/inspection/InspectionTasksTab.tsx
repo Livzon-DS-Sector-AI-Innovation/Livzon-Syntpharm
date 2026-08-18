@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useState } from 'react'
-import { App, Button, Space, Table, Tooltip } from 'antd'
+import {App, Button, Space, Table} from 'antd'
 import { PlayCircleOutlined, CloseCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useInspectionStore } from '@/stores/inspection'
@@ -10,7 +10,7 @@ import {
   fetchInspectionTasks, fetchInspectionRouteById,
   fetchInspectionTemplateByIdClient, fetchInspectionTaskById,
 } from '@/lib/api/client/inspection'
-import { statusPill, pillSuccess, pillError, pillTab, actionLink, linkSuccess, linkWarning, linkMuted } from '@/components/equipment/shared-styles'
+import {statusPill, pillSuccess, pillError, pillTab, linkSuccess, linkWarning, linkMuted} from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionTaskStatus } from '@/types/inspection'
 import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment'
 

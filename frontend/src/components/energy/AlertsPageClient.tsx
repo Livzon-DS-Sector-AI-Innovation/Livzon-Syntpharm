@@ -24,7 +24,7 @@ export function AlertsPageClient() {
       const result = await getAlertRules({ page: p, page_size: ps })
       setData(result.items)
       setTotal(result.total)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取预警规则失败')
     } finally {
       setLoading(false)

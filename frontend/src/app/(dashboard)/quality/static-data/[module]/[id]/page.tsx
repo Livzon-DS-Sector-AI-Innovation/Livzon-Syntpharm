@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import {useState, useEffect} from 'react'
 import { useParams } from 'next/navigation'
 import {
   Card,
@@ -26,7 +26,7 @@ import type { UploadFile, UploadProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useRouter } from 'next/navigation'
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, PaperClipOutlined, DownloadOutlined } from '@ant-design/icons'
-import { uploadFile as uploadFileApi, getDownloadUrl } from '@/actions/static-data'
+import {uploadFile as uploadFileApi} from '@/actions/static-data'
 import dayjs from 'dayjs'
 import {
   EQ_STATUS_OPTIONS,
@@ -107,7 +107,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(!!id && id !== 'new')
   const [saving, setSaving] = useState(false)
-  const [record, setRecord] = useState<any>(null)
+  const [_record, setRecord] = useState<any>(null)
   const [items, setItems] = useState<any[]>([])
   const [testItemOptions, setTestItemOptions] = useState<{ label: string; value: string }[]>([])
   const [attachFiles, setAttachFiles] = useState<UploadFile[]>([])
@@ -170,7 +170,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         if (tic.code === 200 || tic.code === 0) setTestItemCategoryOptions(tic.data.map((x: any) => ({ label: x.label, value: x.value })))
         if (ccs.code === 200 || ccs.code === 0) setChromColumnStatusOptions(ccs.data.map((x: any) => ({ label: x.label, value: x.value })))
         if (uo.code === 200 || uo.code === 0) setUnitOptions(uo.data.map((x: any) => ({ label: x.label || x.unit_name, value: x.value || x.unit_code })))
-      } catch (e) {
+      } catch (_e) {
         // ignore errors
       }
     }
@@ -196,7 +196,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (!isNew) {
       loadRecord()
     }
-  }, [id, moduleType])
+  }, [id, moduleType, isNew, loadRecord])
 
   async function loadRecord() {
     if (!id) return

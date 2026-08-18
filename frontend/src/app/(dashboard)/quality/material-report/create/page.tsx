@@ -45,7 +45,7 @@ export default function CreateReportPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateResponse | null>(null)
   const [tableColumns, setTableColumns] = useState<TemplateColumnConfig[]>([])
   const [tableData, setTableData] = useState<TableRow[]>([])
-  const [reportId, setReportId] = useState<string | null>(null)
+  const [_reportId, setReportId] = useState<string | null>(null)
 
   // 加载模板列表
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function CreateReportPage() {
       try {
         const result = await getTemplates({ is_active: true, page: 1, page_size: 100 })
         setTemplates(result.data?.items || [])
-      } catch (error) {
+      } catch (_error) {
         message.error('获取模板列表失败')
       }
     }
@@ -83,7 +83,7 @@ export default function CreateReportPage() {
       if (columns.length > 0) {
         setTableData([{ key: 1, ...Object.fromEntries(columns.map((c) => [c.key, ''])) }])
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取模板详情失败')
     }
   }

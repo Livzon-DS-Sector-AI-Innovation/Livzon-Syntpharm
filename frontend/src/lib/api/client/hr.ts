@@ -626,7 +626,7 @@ export async function fetchPlanItems(id: string): Promise<AnnualTrainingPlanItem
 
 // ─── 招聘候选人（待后端实现）───
 
-export async function fetchCandidates(params: Record<string, any> = {}): Promise<{ data: any[]; meta?: { total: number } }> {
+export async function fetchCandidates(_params: Record<string, any> = {}): Promise<{ data: any[]; meta?: { total: number } }> {
   // TODO: backend candidate API not yet implemented
   return { data: [], meta: { total: 0 } }
 }
@@ -647,7 +647,7 @@ export async function fetchSopCatalog(params?: {
   return res.json()
 }
 
-export async function fetchCandidateById(id: string): Promise<GenericDataResponse> {
+export async function fetchCandidateById(_id: string): Promise<GenericDataResponse> {
   // TODO: backend candidate API not yet implemented
   return { code: 404, message: '招聘功能暂未实现', data: null }
 }

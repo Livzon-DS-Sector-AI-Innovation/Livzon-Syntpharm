@@ -1,7 +1,7 @@
 'use client'
 
 import { fetchPreviewPush, fetchPreviewPull, fetchUndoLastSync } from '@/actions/product-sync'
-import { useEffect, useState, useRef } from 'react'
+import {useEffect, useState} from 'react'
 import {
   Table,
   Button,
@@ -62,7 +62,7 @@ import dayjs from 'dayjs'
 const { Title, Text } = Typography
 
 export default function ProductOutputRecordsPage() {
-  const router = useRouter()
+  const _router = useRouter()
   const params = useParams()
   const workshop = decodeURIComponent(params.workshop as string)
   const productId = params.productId as string
@@ -91,7 +91,7 @@ export default function ProductOutputRecordsPage() {
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  const [_lastSyncAt, setLastSyncAt] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 

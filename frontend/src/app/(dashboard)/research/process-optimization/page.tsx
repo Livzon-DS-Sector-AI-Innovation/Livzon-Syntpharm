@@ -1,6 +1,5 @@
 import { ProcessOptimizationPage } from '@/components/research/process-optimization'
 import { fetchOptimizations } from '@/lib/api/server/research/process-optimization'
-import { ProcessOptimization } from '@/types/research'
 
 export const dynamic = 'force-dynamic'
 

@@ -49,7 +49,7 @@ const STATUS_MAP: Record<string, { color: string; label: string }> = Object.from
 )
 
 function ProjectsContent() {
-  const router = useRouter()
+  const _router = useRouter()
   const searchParams = useSearchParams()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)

@@ -17,7 +17,6 @@ import type { Contractor, ContractorFormData, QualificationTypeEnum } from '@/ty
 import {
   CONTRACTOR_STATUS_OPTIONS, QUALIFICATION_TYPE_OPTIONS, QUALIFICATION_LEVEL_OPTIONS, CONTRACTOR_TRAINING_STATUS_OPTIONS,
 } from '@/types/safety'
-import dayjs from 'dayjs'
 
 
 export function ContractorPageClient() {
@@ -34,7 +33,7 @@ export function ContractorPageClient() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [trainingFilter, setTrainingFilter] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
-  const [tab, setTab] = useState('list')
+  const [_tab, setTab] = useState('list')
 
   const loadData = async () => {
     setLoading(true)

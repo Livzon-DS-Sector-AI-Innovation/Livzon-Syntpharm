@@ -3,7 +3,7 @@
 "use client"
 
 
-import { useEffect, useState } from 'react'
+import {useEffect} from 'react'
 import {
   Table,
   Button,
@@ -30,7 +30,6 @@ import {
   CheckCircleOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
 import {
   getHazards,
   createHazard,
@@ -52,7 +51,6 @@ import {
   HAZARD_STATUS_OPTIONS,
   RECTIFICATION_STATUS_OPTIONS,
 } from '@/types/safety'
-import dayjs from 'dayjs'
 
 const { Text } = Typography
 export default function HazardLegacyPage() {

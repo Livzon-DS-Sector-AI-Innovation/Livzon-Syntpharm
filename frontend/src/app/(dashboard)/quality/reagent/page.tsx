@@ -233,7 +233,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '加载失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)

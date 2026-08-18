@@ -89,7 +89,7 @@ import {
   listHplcReference as clientListHplcReference,
   downloadHplcReferenceTemplate,
   batchImportHplcReference,
-} from '@/lib/static-data-api'
+} from '@/lib/api/client/static-data-api'
 
 const { RangePicker } = DatePicker
 

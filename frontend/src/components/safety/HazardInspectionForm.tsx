@@ -78,7 +78,7 @@ export default function HazardInspectionForm({
       return
     }
     // 组件卸载标记，防止在已卸载组件上 setState
-    let cancelled = false
+    const cancelled = false
     searchTimerRef.current = setTimeout(async () => {
       setUserSearchLoading(true)
       try {

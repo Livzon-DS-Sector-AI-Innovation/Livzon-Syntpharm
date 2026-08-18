@@ -16,6 +16,12 @@
 - 禁止提交 `.env` 文件 — 仅提交 `.env.example` 模板
 - 前后端之间的交叉引用必须通过公共契约（OpenAPI spec）
 
+**例外情况**：
+- Docker 服务发现名称（如 `http://backend:8000`、`redis://erp-redis:6379`）不是硬编码 URL，而是 Docker 内部网络的服务名，仅在容器网络中有效
+- CI/测试环境可以使用虚拟凭据（如 `POSTGRES_PASSWORD: postgres`），但这些文件不得用于生产环境
+
+
+
 ## 仓库组织
 
 ### 测试
@@ -53,7 +59,7 @@
 
 ## 架构原则
 
-本项目采用**模块化单体架构**，不是微服务。禁止引入微服务、消息队列或其他复杂架构。
+本项目采用**模块化单体架构**，不是微服务。禁止引入微服务、消息队列或其他复杂架构。 原因：当前团队规模和业务复杂度不需要微服务，模块化单体更易维护、部署和调试。
 
 **技术栈**：Python 3.12+、FastAPI、SQLAlchemy 2.0 async、PostgreSQL 17、Redis、Alembic、Pydantic v2、uv、pytest、ruff（line-length=120）、mypy（strict）、MinIO。
 
@@ -66,6 +72,13 @@
   - 排除列表在 `pyproject.toml` 的 `[tool.ruff.lint.per-file-ignores]` 中维护
   - 新增 prompt/知识库/测试 fixture 文件时，若其长字符串行超过 120 字符，应添加到排除列表
   - 代码文件（service/repository/api）的 E501 必须修复，不得添加到排除列表
+
+## 安全规则
+
+### SQL 查询
+- **必须**使用参数化查询（`:param` 占位符 + 绑定参数）或 SQLAlchemy ORM 构建所有 SQL 查询
+- **禁止**使用 f-string、字符串拼接（`+`）或 `.format()` 将运行时数据嵌入 SQL 语句
+- 所有外部数据源（包括飞书多维表格等内部系统）均视为不可信，必须参数化
 
 ## 目录结构
 
@@ -116,6 +129,27 @@ DELETE /api/v1/{module}/{resource}/{id}
 - 业务异常使用 `app/core/exceptions.py`
 - 删除业务数据默认软删除（`is_deleted`），不做物理删除（除非需求明确要求）
 
+
+**禁止** `response_model=dict` 或 `response_model=ApiResponse`：所有结构化 JSON 响应的 endpoint 必须使用具体的 Pydantic 响应模型，且该模型必须描述完整的实际响应体（包括 `code`、`data`、`message` 等实际返回字段），不能仅描述 `data`。
+
+`response_model=dict` 会生成缺乏具体字段类型的 OpenAPI schema（如 `{type: object}`），导致前端无法获得可靠的生成类型。`response_model=ApiResponse` 同样有问题，因为 `ApiResponse.data` 被定义为 `Any`，OpenAPI 无法推断实际的数据结构。
+
+具体业务响应模型定义在对应模块的 `schemas.py` 中。例如：
+
+```python
+# ✅ 正确：使用具体的响应模型
+@router.get("/employees", response_model=EmployeeListResponse)
+async def list_employees(...):
+    data = [EmployeeResponse.model_validate(e).model_dump(mode="json") for e in employees]
+    return build_response(data=data, ...)
+
+# ❌ 错误：使用通用模型
+@router.get("/employees", response_model=ApiResponse)
+async def list_employees(...):
+    return build_response(data=employees)
+```
+
+`build_response()` 返回 `ApiResponse` 是可以的，因为 FastAPI 会优先使用路由声明的 `response_model` 进行 OpenAPI 生成和响应校验。文件下载、流式响应、重定向等需要直接控制 HTTP Response 的场景除外。
 **前端访问方式**：
 - 开发环境：浏览器 → Next.js (3000) → `src/proxy.ts` → 后端 (8000)
 - 生产环境：浏览器 → nginx → Next.js (3000) 或后端 (8000)
@@ -213,18 +247,6 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 
 - 内容：模型名称、功能开关、调度参数等运营配置
 - 管理：模块负责人通过 Web UI 管理，变更频率高
 
-**读取配置**：
-```python
-# 运行时配置（从数据库）
-from app.shared.config_reader import get_module_setting, get_module_setting_bool
-model = await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash")
-
-# 部署配置（从环境变量）
-from app.core.config import get_settings
-settings = get_settings()
-api_key = settings.SAFETY_AI_TEXT_API_KEY
-```
-
 **新增配置**：
 - LLM API keys → 通过管理界面配置，加密存储在 `core.llm_configs` 表
 - 其他 API key / 凭证 → 加到 `core/config.py` 的 `Settings` 类
@@ -237,21 +259,13 @@ api_key = settings.SAFETY_AI_TEXT_API_KEY
 - 将 API key 等凭证**明文**存入数据库（必须使用加密）
 - 在 `core/config.py` 中存放模型名称等频繁变更的配置
 
+代码示例详见 [backend/docs/development-guide.md](backend/docs/development-guide.md#配置管理)。
+
 ### 飞书凭证管理
 
-所有飞书应用凭证采用嵌套结构管理，按模块分组。结构定义在 `app/core/config.py`：
-
-**结构定义**在 `app/core/config.py` 的 `FeishuSettings` 类中，按模块分组。
+所有飞书应用凭证采用嵌套结构管理，按模块分组。结构定义在 `app/core/config.py` 的 `FeishuSettings` 类中。
 
 **环境变量命名规则**：使用双下划线 `__` 分隔层级，格式 `FEISHU__{MODULE}__{FIELD}` 或 `FEISHU__{MODULE}__CREDENTIALS__{FIELD}`。
-
-**代码中读取**：
-```python
-from app.core.config import get_settings
-settings = get_settings()
-app_id = settings.feishu.platform.app_id
-safety_app_id = settings.feishu.safety.credentials.app_id
-```
 
 **新增飞书应用**：
 1. 在 `FeishuSettings` 中添加新的子模型
@@ -266,7 +280,7 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 **OCR 服务**：应用启动时自动初始化 OCR 服务（PaddleOCR），所有模块共享同一实例。使用 `app/shared/ocr_service.py` 中的 `get_ocr_service()`，参考 `app/modules/safety/service/hazard.py` 中的用法。
 
 **禁止**：
-- 在模块中直接 import `paddleocr` 或自行初始化 OCR 引擎
+- 在模块中直接 import `paddleocr` 或自行初始化 OCR 引擎（原因：OCR 服务是全局单例，重复初始化会浪费内存和启动时间）
 - 在测试中初始化真实 OCR 服务（必须 mock `get_ocr_service`）
 
 ## 跨模块通信
@@ -334,9 +348,9 @@ uv run pytest tests/modules/<module>/ -k "test_name"  # 单个用例
 
 ## 模块结构
 
-详见 [backend/examples/module-structure.md](backend/examples/module-structure.md)。
+详见 [examples/module-structure.md](examples/module-structure.md)。
 
-常用命令见 [backend/examples/commands.md](backend/examples/commands.md)。
+常用命令见 [examples/commands.md](examples/commands.md)。
 
 ## 开发指南
 
@@ -403,38 +417,14 @@ frontend/src/
 
 `page.tsx` 默认是 Server Component，**不加** `'use client'`。
 
-**必须加 `'use client'` 的情况**：
-- 使用了 `useState`、`useEffect`、`useContext` 等 React Hooks
-- 使用了浏览器 API（`window`、`document`、`localStorage`）
-- 使用了事件处理器（`onClick`、`onChange`、`onSubmit`）
-- 使用了 antd 的 `App.useApp()` hook
-- 使用了 Zustand store
-- **直接在页面中使用了 antd 组件**（Card、Row、Col、Button 等）
+**规则**：
+- 使用了 React Hooks、浏览器 API、事件处理器、Zustand store 或直接使用 antd 组件 → 必须加 `'use client'`
+- 页面只是导入并渲染 Client Component → 不需要 `'use client'`
+- Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数据然后传给 Client 组件
 
-**不需要 `'use client'` 的情况**：
-- 页面只是导入并渲染一个 Client Component
-- 导出了 `generateMetadata` 函数（Server Component 专属功能）
-- 页面是 `async function` 并且只是获取数据后传递给 Client 组件
+详见 [examples/server-component-pattern.md](examples/server-component-pattern.md)。
 
-**判断标准**：
-- 如果页面文件中有 JSX 使用了 antd 组件 → 需要 `'use client'`
-- 如果页面只是 `<ClientComponent />` → 不需要 `'use client'`
-
-Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数据然后传给 Client 组件。
-
-详见 [frontend/examples/server-component-pattern.md](frontend/examples/server-component-pattern.md)。
-
-**Barrel 文件（index.ts）规则**：当 Server Component 从 `components/<模块>/index.ts` 导入 Client 组件时，如果导出的组件使用了 **Zustand store**、**React Context** 或其他 Context-based 状态管理，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。示例：
-
-```typescript
-// frontend/src/components/energy/index.ts
-'use client'  // ← 必须加，因为导出的组件使用 useEnergyStore
-
-export { AlertsPageClient } from './AlertsPageClient'
-export { DevicesPageClient } from './DevicesPageClient'
-```
-
-如果 barrel 文件导出的组件只使用基本 hooks（`useState`、`useEffect`），理论上不需要 `'use client'`，但**最佳实践**是所有 `components/<模块>/index.ts` 统一加 `'use client'`，避免未来添加 zustand 导入时构建失败。
+**Barrel 文件规则**：`components/<模块>/index.ts` 导出的组件如果使用了 Zustand store 或 React Context，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。最佳实践：所有 barrel 文件统一加 `'use client'`。
 
 ### 动态渲染
 
@@ -454,7 +444,7 @@ export const dynamic = 'force-dynamic'
 
 原因：Server Actions 自动处理 CSRF、revalidation 和错误边界，客户端 fetch 写操作会绕过这些安全机制。
 
-详见 [frontend/examples/server-actions.md](frontend/examples/server-actions.md)。
+详见 [examples/server-actions.md](examples/server-actions.md)。
 
 ## 模块边界
 
@@ -488,20 +478,7 @@ export const dynamic = 'force-dynamic'
 
 客户端代码使用相对路径 `/api/v1/...`，由 `src/proxy.ts` 转发到后端。服务器端代码使用 `API_BASE_URL` 环境变量。
 
-```typescript
-// 客户端：相对路径（自动代理到后端）
-const response = await fetch('/api/v1/quality/cpv/products')
-
-// 服务器端：环境变量（Docker 内部网络）
-const API_BASE = process.env.API_BASE_URL || 'http://backend:8000'
-const response = await fetch(`${API_BASE}/api/v1/production/batches`)
-```
-
-**禁止**：
-- 硬编码后端地址或暴露后端端口
-- 使用 `NEXT_PUBLIC_API_BASE_URL`
-- 硬编码绝对文件路径（如 `D:/xxx`、`C:/xxx`）。必须使用相对路径或配置项
-- 硬编码 `localhost:3000` 或其他固定地址生成跳转/分享链接。必须使用环境变量或运行时动态获取（如 `window.location.origin`）
+**禁止**：硬编码后端地址、暴露后端端口、使用 `NEXT_PUBLIC_API_BASE_URL`、硬编码绝对文件路径或固定地址。
 
 ### proxy.ts 规则
 
@@ -535,75 +512,78 @@ const response = await fetch(`${API_BASE}/api/v1/production/batches`)
 
 ## 类型系统
 
-### lib/api 分层
-
-```
-frontend/src/lib/api/client/   # 浏览器 GET/list/search/detail，使用 /api/v1/...
-frontend/src/lib/api/server/   # Server Component / Server Action 使用，使用 API_BASE_URL
-frontend/src/actions/          # create/update/delete/upload/import/export
-```
-
-这防止了服务端代码被意外导入到客户端组件中。
-
 ### API 类型来源
 
-所有 API 相关的类型（请求参数、响应数据）**必须**从 `@/types/generated/schema` 导入。**禁止**手写 API 类型。
+所有 API 相关的类型（请求参数、响应数据）**必须**从 `@/types/generated/schema` 导入。**禁止**手写 API 类型。原因：OpenAPI spec 是前后端契约的唯一来源，手写类型会与后端漂移。
 
-原因：OpenAPI spec 是前后端契约的唯一来源，手写类型会与后端漂移，导致运行时错误。
 
-```typescript
-✗ export async function updateRoute(id: string, data: { name?: string; status?: string })
-✓ import type { RouteUpdate } from '@/types/generated/schema'
-  export async function updateRoute(id: string, data: RouteUpdate)
-```
+**禁止**：手写 API 响应类型、手写 API 请求类型、在 API 调用中使用手写类型。
+
+**判断标准**：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用生成类型。UI 类型（表单状态、组件 props、本地状态）可以手写。
 
 ### API 调用层级
 
 ```
 frontend/src/types/generated/     ← 自动生成，禁止编辑
 frontend/src/lib/api/client/*.ts     ← 浏览器 GET/list/search/detail，使用 /api/v1/...
-frontend/src/lib/api/server/*.ts     ← Server Component / Server Action，使用 API_BASE_URL
+frontend/src/lib/api/server/*.ts     ← Server Component / Server Action 使用，使用 API_BASE_URL
 frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 ```
+
+这防止了服务端代码被意外导入到客户端组件中。
 
 - **GET / list / search / detail**：浏览器调用放在 `src/lib/api/client/`，服务器调用放在 `src/lib/api/server/`
 - **create / update / delete / upload**：必须通过 Server Actions
 
 ### 类型检查
 
-如果后端 API 发生变化，前端必须重新生成类型：
-
-```bash
-# 1. 在 backend 目录导出最新 spec
-cd ../backend && uv run python scripts/ci/export_openapi.py
-
-# 2. 在 frontend 目录重新生成类型
-cd ../frontend && pnpm generate:api
-```
-
-CI 会检查生成的类型是否与后端同步，不同步的 PR 无法合并。
-
-生成脚本：`frontend/scripts/generate-api.mjs`
-
-生成文件：
-- `frontend/src/types/generated/schema.ts` — 所有 API 类型定义（需提交到仓库）
-- `frontend/src/types/generated/openapi.json` — OpenAPI spec 快照
+后端 API 变化后，前端必须重新生成类型：`cd ../backend && uv run python scripts/ci/export_openapi.py` 然后 `cd ../frontend && pnpm generate:api`。CI 会检查类型同步。
 
 ## 禁止修改的文件
 
-以下文件只有架构负责人可以修改，如有需求提 PR 说明原因：
+以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
+
+**架构文件**（只有架构负责人可以修改）：
 - `src/proxy.ts`
 - `src/components/shared/` 下所有文件
 - `src/hooks/usePermission.ts`
 
+**治理文件**（影响 AI 审计和开发规范）：
+- `AGENTS.md`
+- `docs/ai-audit-plan.md`
+- `docs/ai-audit-findings.md`
+
+**部署文件**（影响所有环境）：
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.dev.yml`
+- `docker-compose.ci.yml`
+
+修改这些文件前，请：
+1. 在 PR 中说明修改原因
+2. 验证所有三种环境（生产、开发、CI）均能正常工作
+3. 确保不破坏现有工作流
 ## Docker 开发环境
 
-两种 docker-compose 配置：
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新，位于仓库根目录）
-- `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新，位于仓库根目录）
+前端使用**单文件多阶段构建**（`frontend/Dockerfile`），包含四个阶段：
+- **base** — 共享基础：Node 22 Alpine、pnpm 10.33.0、依赖安装
+- **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
+- **builder** — 生产构建阶段：运行 `pnpm build`
+- **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
+
+三种 docker-compose 配置：
+- `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
+- `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新，支持跨平台文件监听）
+- `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
 
 开发时**必须**使用：
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
+
+开发环境通过轮询实现跨平台文件监听（macOS/Windows Docker Desktop 需要）：
+- `WATCHPACK_POLLING=true` — webpack 文件监听
+- `CHOKIDAR_USEPOLLING=true` — chokidar 文件监听
+

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions, Modal } from 'antd'
+import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, BugOutlined, SafetyOutlined, RobotOutlined } from '@ant-design/icons'
 import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment } from '@/types/research'
 import { identifyImpurities, generateIdentificationReport } from '@/components/research/utils/impurity-identifier'
@@ -110,7 +110,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
     setImpurities(prev => prev.filter(i => i.id !== id))
   }
 
-  const handleUpdateImpurity = (id: string, updates: Partial<Impurity>) => {
+  const _handleUpdateImpurity = (id: string, updates: Partial<Impurity>) => {
     setImpurities(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
   }
 

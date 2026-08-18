@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Popover, Space, Tag } from 'antd'
+import {Button, Popover, Space} from 'antd'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import {
   NODE_TYPE_STYLE,

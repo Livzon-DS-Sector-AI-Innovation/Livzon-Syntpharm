@@ -40,7 +40,7 @@ import {
   createStorageCondition,
   updateStorageCondition,
   deleteStorageCondition,
-} from '@/lib/static-data-api'
+} from '@/lib/api/client/static-data-api'
 import './storage-condition-style.css'
 
 const { Search } = Input

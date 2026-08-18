@@ -44,7 +44,7 @@ import {
   updateMedium,
   deleteMedium,
   adjustMediumStock,
-} from '@/lib/static-data-api'
+} from '@/lib/api/client/static-data-api'
 import './medium-style.css'
 
 const { Search } = Input

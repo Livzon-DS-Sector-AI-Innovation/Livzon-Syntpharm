@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { App, Avatar, Card, DatePicker, Drawer, Form, Select, Tag, Typography } from 'antd'
 import { UserOutlined, CheckSquareOutlined, CalendarOutlined } from '@ant-design/icons'
-import { PersonnelSelect } from '@/components/equipment'
 import { useInspectionStore } from '@/stores/inspection'
 import { createInspectionTask } from '@/actions/inspection'
 import { fetchInspectionRoutes } from '@/lib/api/client/inspection'

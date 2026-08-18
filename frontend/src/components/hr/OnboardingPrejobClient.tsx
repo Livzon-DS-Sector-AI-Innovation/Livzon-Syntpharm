@@ -34,17 +34,17 @@ const DEPT_CONTENT_MAP: Record<string, string[]> = {
   ]
 }
 
-const TD_LABEL = {
+const _TD_LABEL = {
   border: '1px solid #1f2937',
   padding: '8px'
 } as React.CSSProperties
 
-const TD_VALUE = {
+const _TD_VALUE = {
   border: '1px solid #1f2937',
   padding: '8px'
 } as React.CSSProperties
 
-const TH = {
+const _TH = {
   border: '1px solid #1f2937',
   padding: '8px'
 } as React.CSSProperties

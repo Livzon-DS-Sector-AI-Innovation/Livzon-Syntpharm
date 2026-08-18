@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Modal, InputNumber, Button, Typography, Space, App } from 'antd'
-import { createTarget, updateTarget, getTarget, type UnitConsumptionTarget } from '@/lib/api/client/energy'
+import {Modal, InputNumber, Typography, Space, App} from 'antd'
+import {createTarget, updateTarget, type UnitConsumptionTarget} from '@/lib/api/client/energy'
 
 const { Text } = Typography
 

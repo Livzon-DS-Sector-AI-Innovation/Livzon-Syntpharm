@@ -64,7 +64,7 @@ export default function TrainingSessionDetailModal({
   const [editing, setEditing] = useState(isCreate || startEditing)
   const [saving, setSaving] = useState(false)
   const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
-  const [employees, setEmployees] = useState<{ value: string; label: string }[]>([])
+  const [_employees, setEmployees] = useState<{ value: string; label: string }[]>([])
   const [nameToNumberMap, setNameToNumberMap] = useState<Record<string, string>>({})
   const [factory, setFactory] = useState<'old' | 'new'>('old')
 

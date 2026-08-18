@@ -70,12 +70,12 @@ export function EquipmentPage({
     setEquipments(initialEquipments)
     setTotal(initialTotal)
     setStatistics(initialStatistics)
-  }, [])
+  }, [initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
 
   // 初始化部门列表（服务端数据）
   useEffect(() => {
     setDepartments(initialDepartments)
-  }, [])
+  }, [initialDepartments, setDepartments])
 
   // 客户端补偿加载：如果服务端初始数据为空（某个 API 失败导致），从客户端重新获取
   useEffect(() => {
@@ -101,7 +101,7 @@ export function EquipmentPage({
       }
     }
     loadMissing()
-  }, [])
+  }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
 
   // 获取列表数据
   const fetchData = useCallback(async (p: number, ps: number) => {
@@ -126,7 +126,7 @@ export function EquipmentPage({
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
 
   // 单独刷新统计（仅 mount 或需要时使用）
-  const refreshStatistics = useCallback(async () => {
+  const _refreshStatistics = useCallback(async () => {
     try {
       const stats = await fetchEquipmentStatisticsClient()
       setStatistics(stats)

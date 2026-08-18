@@ -63,10 +63,10 @@ import {
   downloadHplcReferenceTemplate,
   batchImportHplcReference,
   adjustHplcReferenceQuantity,
-  useHplcReference,
+  consumeHplcReference,
   getHplcReferenceUsageHistory,
   getHplcReferencesNeedRecal,
-} from '@/lib/static-data-api'
+} from '@/lib/api/client/static-data-api'
 import './hplc-style.css'
 
 const { RangePicker } = DatePicker
@@ -228,7 +228,7 @@ export default function HplcReferencePage() {
     try {
       const values = await usageForm.validateFields()
       if (!usageRecord) return
-      await useHplcReference(usageRecord.id, {
+      await consumeHplcReference(usageRecord.id, {
         usage_amount: Number(values.usage_amount),
         usage_unit: values.usage_unit || 'mg',
         usage_person: values.usage_person || undefined,

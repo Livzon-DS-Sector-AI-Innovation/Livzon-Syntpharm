@@ -16,7 +16,6 @@ import {
   PrinterOutlined,
   FileTextOutlined
 } from '@ant-design/icons'
-import dayjs from 'dayjs'
 import { generateOnboardingEvaluation } from '@/actions/hr'
 
 export default function OnboardingEvaluationClient() {

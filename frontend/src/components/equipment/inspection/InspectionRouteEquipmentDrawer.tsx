@@ -61,7 +61,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
   const { message } = App.useApp()
   const { routeEquipmentDrawerOpen, editingRouteId, closeRouteEquipmentDrawer, triggerRoutesRefresh } = useInspectionStore()
   const [locationRows, setLocationRows] = useState<LocationRow[]>([])
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 

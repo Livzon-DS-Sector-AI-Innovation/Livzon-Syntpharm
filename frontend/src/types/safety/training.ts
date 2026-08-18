@@ -6,7 +6,7 @@
 
 // ============ SafetyTraining Types ============
 
-import { TrainingType, TrainingMode, TrainingLevel, CertificateStatus } from "./enums"
+import {TrainingType, TrainingMode, TrainingLevel} from "./enums"
 export interface SafetyTraining {
   id: string
   training_no: string

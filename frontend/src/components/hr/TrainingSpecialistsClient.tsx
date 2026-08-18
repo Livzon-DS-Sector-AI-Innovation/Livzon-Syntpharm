@@ -43,7 +43,7 @@ export default function TrainingSpecialistsClient() {
   const [teamSpecialists, setTeamSpecialists] = useState<{ value: string; label: string; department: string; number: string }[]>([])
   const [teamEmployees, setTeamEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const [teamSaving, setTeamSaving] = useState(false)
-  const [teamDept, setTeamDept] = useState('')
+  const [_teamDept, setTeamDept] = useState('')
 
   const handleSyncOpenIds = async () => {
     try {

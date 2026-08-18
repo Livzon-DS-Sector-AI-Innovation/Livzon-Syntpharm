@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal, Typography, Tag, Empty } from 'antd'
+import {Modal, Typography, Empty} from 'antd'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import type { SafetyKnowledgeArticle, KnowledgeCardContent } from '@/types/safety'
 

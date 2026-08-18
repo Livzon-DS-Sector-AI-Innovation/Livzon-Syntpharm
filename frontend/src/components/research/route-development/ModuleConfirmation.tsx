@@ -38,7 +38,7 @@ export function ModuleConfirmation({
   }
 
   const handleDownload = () => {
-    const report = {
+    const _report = {
       title: '工艺路线确认报告',
       route_no: routeId,
       route_name: selectedRouteName,

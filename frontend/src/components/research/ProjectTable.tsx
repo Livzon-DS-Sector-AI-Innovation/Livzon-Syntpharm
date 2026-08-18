@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { App, Table, Tag, Space, Button, Input, Select, Modal } from 'antd'
+import {App, Table, Tag, Space, Button, Input, Select} from 'antd'
 import { EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { ResearchProject, ResearchProjectStage, ResearchProjectStatus } from '@/types/research'
 import { useResearchStore } from '@/stores/research'

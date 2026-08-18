@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { App, ConfigProvider, Button, Spin } from 'antd'
+import {App, ConfigProvider, Button} from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { PlusOutlined } from '@ant-design/icons'
 import { SparePart, StockWarning } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'

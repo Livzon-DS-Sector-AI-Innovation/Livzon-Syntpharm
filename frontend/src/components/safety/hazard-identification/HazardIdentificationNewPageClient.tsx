@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState , useMemo} from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -80,6 +80,8 @@ export function HazardIdentificationNewPageClient() {
     }
   }
 
+  const [initialHazardIdNo] = useState(() => `HI-${Date.now().toString(36).toUpperCase()}`)
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       {/* 返回 */}
@@ -118,7 +120,7 @@ export function HazardIdentificationNewPageClient() {
           form={form}
           layout="vertical"
           initialValues={{
-            hazard_id_no: `HI-${Date.now().toString(36).toUpperCase()}`,
+            hazard_id_no: initialHazardIdNo,
           }}
         >
           <Row gutter={16}>

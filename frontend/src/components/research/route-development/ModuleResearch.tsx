@@ -2,8 +2,8 @@
 import { analyzeLiterature } from '@/actions/research'
 
 import { useState, useEffect, useRef } from 'react'
-import { Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, Table, Descriptions, Divider, Upload } from 'antd'
-import { CheckCircleOutlined, SaveOutlined, ExperimentOutlined, ShoppingCartOutlined, SafetyOutlined, FileTextOutlined, DownloadOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons'
+import {Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, Table, Descriptions, Divider} from 'antd'
+import {CheckCircleOutlined, SaveOutlined, ExperimentOutlined, ShoppingCartOutlined, SafetyOutlined, FileTextOutlined, DownloadOutlined, EditOutlined} from '@ant-design/icons'
 import type { CandidateRoute, ExperimentPlan } from '@/types/research'
 import { updateRouteAction } from '@/actions/research/route-development'
 
@@ -37,7 +37,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
   const [candidateRoutes, setCandidateRoutes] = useState<CandidateRoute[]>(initialData?.candidateRoutes || [])
   const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>(initialData?.selectedRouteIds || [])
   const [experimentPlans, setExperimentPlans] = useState<ExperimentPlan[]>(initialData?.experimentPlans || [])
-  const [parseComplete, setParseComplete] = useState(!!initialData)
+  const [_parseComplete, setParseComplete] = useState(!!initialData)
   const [activeTab, setActiveTab] = useState('routes')
   const [parseError, setParseError] = useState<string | null>(null)
   const [parseStatus, setParseStatus] = useState<string>('')

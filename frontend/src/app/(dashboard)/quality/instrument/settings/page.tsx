@@ -79,7 +79,7 @@ export default function ReminderSettingsPage() {
           is_active: first.is_active,
         })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载配置失败')
     } finally {
       setLoading(false)

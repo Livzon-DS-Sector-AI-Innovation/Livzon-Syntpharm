@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { App, Table, Button, Space, Select, DatePicker } from 'antd'
-import { DeleteOutlined, ImportOutlined, SyncOutlined } from '@ant-design/icons'
+import {DeleteOutlined, ImportOutlined} from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import type { EnergyMonthlyRecord, EnergyType } from '@/types/energy'
 import { deleteMonthlyRecordAction } from '@/actions/energy'

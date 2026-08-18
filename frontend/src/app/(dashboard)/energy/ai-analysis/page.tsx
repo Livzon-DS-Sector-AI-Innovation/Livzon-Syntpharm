@@ -9,7 +9,6 @@ type ProductionItem = {
 import { useState, useEffect } from 'react'
 import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber, Table, Input, Space } from 'antd'
 import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
-import dayjs from 'dayjs'
 import TargetModal from '@/components/energy/TargetModal'
 import { 
   analyzeEnergyV2, 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, Drawer, Select, Typography, Avatar, Space } from 'antd'
+import {App, Button, Drawer, Select, Typography, Avatar} from 'antd'
 import { UserOutlined, SearchOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { addPersonnel } from '@/actions/equipment-personnel'

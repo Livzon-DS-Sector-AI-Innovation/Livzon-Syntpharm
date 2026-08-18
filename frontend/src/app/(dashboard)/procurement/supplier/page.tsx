@@ -13,12 +13,15 @@ function getColumnsFromMeta(meta: Record<string, unknown> | null | undefined) {
 
 export default async function SupplierManagementPage() {
   let initialLoadFailed = false
-  const response = await fetchSuppliers({
-    page: 1,
-    page_size: DEFAULT_PAGE_SIZE,
-  }).catch(() => {
+  let response
+  try {
+    response = await fetchSuppliers({
+      page: 1,
+      page_size: DEFAULT_PAGE_SIZE,
+    })
+  } catch {
     initialLoadFailed = true
-    return {
+    response = {
       code: 200,
       message: 'success',
       data: [],
@@ -29,7 +32,7 @@ export default async function SupplierManagementPage() {
         columns: [],
       },
     }
-  })
+  }
 
   const initialTotal = Number(response.meta?.total ?? response.data.length)
 

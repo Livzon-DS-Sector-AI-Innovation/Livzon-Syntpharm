@@ -12,7 +12,6 @@ import { OnboardingRecord } from '@/types/hr'
 import { fetchOnboardingRecords,
   fetchNewOnboardingRecords,
  } from '@/lib/api/client/hr'
-import { syncOnboardingFromFeishu } from '@/actions/hr'
 import OnboardingDetailModal from './OnboardingDetailModal'
 import EmployeeForm from './EmployeeForm'
 

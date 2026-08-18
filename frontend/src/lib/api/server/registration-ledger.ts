@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import {apiFetch, getApiBaseUrl} from '@/lib/api/server/base'
 
 function base(): string { return `${getApiBaseUrl()}/api/v1/registration` }
 

@@ -78,7 +78,7 @@ export default function MaterialReportPage() {
       setPagination((prev) => ({ ...prev, total: result.data?.total || 0 }))
       setStatistics(stats.data || {})
       setTemplates(templateResult.data?.items || [])
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     } finally {
       setLoading(false)

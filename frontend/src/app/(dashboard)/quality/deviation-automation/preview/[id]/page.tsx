@@ -1,5 +1,5 @@
 'use client'
-import { updateDeviationTask, updateDeviationTaskFields, submitDeviationApproval, updateAIResult, generateStandard } from '@/actions/quality'
+import {updateDeviationTask, updateDeviationTaskFields, updateAIResult, generateStandard} from '@/actions/quality'
 
 import { useState, useEffect, useRef } from 'react'
 import { use } from 'react'

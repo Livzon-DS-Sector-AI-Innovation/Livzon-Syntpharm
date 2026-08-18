@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Upload, App, Space, Typography } from 'antd'
+import {Upload, App, Typography} from 'antd'
 import { InboxOutlined, FileExcelOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
 import { uploadLcExcel } from '@/actions/quality'

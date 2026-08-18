@@ -14,7 +14,7 @@ import {
   message,
   Space,
 } from 'antd'
-import { InboxOutlined, UploadOutlined } from '@ant-design/icons'
+import {InboxOutlined} from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
 import {
   createKnowledgeArticle,

@@ -432,15 +432,15 @@ export function HazardDetailPageClient() {
   // 整改回复状态
   const [replyFiles, setReplyFiles] = useState<any[]>([])
   const [replySubmitting, setReplySubmitting] = useState(false)
-  const [leaderLoading, setLeaderLoading] = useState(false)
+  const [_leaderLoading, setLeaderLoading] = useState(false)
 
   // ── 人员搜索状态 ──
   interface UserOption { value: string; label: string }
-  const [userOptions, setUserOptions] = useState<UserOption[]>([])
-  const [userSearchLoading, setUserSearchLoading] = useState(false)
+  const [_userOptions, setUserOptions] = useState<UserOption[]>([])
+  const [_userSearchLoading, setUserSearchLoading] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const handleUserSearch = useCallback((keyword: string) => {
+  const _handleUserSearch = useCallback((keyword: string) => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     if (!keyword || keyword.length < 1) {
       setUserOptions([])

@@ -29,7 +29,7 @@ export default function DepartmentClient({
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null)
   const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
-  const router = useRouter()
+  const _router = useRouter()
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
 
@@ -57,7 +57,7 @@ export default function DepartmentClient({
     setPageSize(newPageSize)
   }
 
-  const handleRefresh = () => {
+  const _handleRefresh = () => {
     loadData()
   }
 

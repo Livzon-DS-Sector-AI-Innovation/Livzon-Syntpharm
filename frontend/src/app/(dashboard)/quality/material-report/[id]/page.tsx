@@ -66,22 +66,22 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const router = useRouter()
   const searchParams = useSearchParams()
   const isEditMode = searchParams.get('edit') === 'true'
-  const isGenerateMode = searchParams.get('generate') === 'true'
+  const _isGenerateMode = searchParams.get('generate') === 'true'
 
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [_uploading, setUploading] = useState(false)
   const [report, setReport] = useState<ReportDetailResponse | null>(null)
   const [templates, setTemplates] = useState<TemplateListItem[]>([])
   const [form] = Form.useForm()
   const [tableColumns, setTableColumns] = useState<TemplateColumnConfig[]>([])
   const [tableData, setTableData] = useState<TableRow[]>([])
-  const [hasChanges, setHasChanges] = useState(false)
+  const [_hasChanges, setHasChanges] = useState(false)
   const [reportImages, setReportImages] = useState<any[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
   const [previewAIResult, setPreviewAIResult] = useState<any>(null)
-  const uploadRef = useRef<any>(null)
+  const _uploadRef = useRef<any>(null)
 
   // 获取报告单图片
   const fetchReportImages = async () => {
@@ -178,7 +178,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           },
         ])
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取报告单详情失败')
     } finally {
       setLoading(false)
@@ -188,7 +188,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     fetchData()
     fetchReportImages()
-  }, [resolvedParams.id])
+  }, [resolvedParams.id, fetchData, fetchReportImages])
 
   // 添加行
   const handleAddRow = () => {

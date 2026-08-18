@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
-import { UploadOutlined, DownloadOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons'
+import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
 import { fetchReferenceStandards, fetchReferenceStandardDownloadUrl } from '@/lib/api/client/registration'
 import { parseCOA } from '@/actions/registration'

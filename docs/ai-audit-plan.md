@@ -1,6 +1,6 @@
 # AI Audit Plan
 
-This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 14 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
+This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 15 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
 
 No scanners, scripts, or automation. This document IS the procedure. Feed one category at a time to an AI auditor with the relevant source files.
 
@@ -22,6 +22,7 @@ No scanners, scripts, or automation. This document IS the procedure. Feed one ca
 12. [Cross-project OpenAPI](#12-cross-project-openapi)
 13. [Docker and deployment](#13-docker-and-deployment)
 14. [E2E](#14-e2e)
+15. [SQL 注入与不安全查询](#15-sql-注入与不安全查询)
 
 ---
 
@@ -85,6 +86,11 @@ frontend/src/
 ├── lib/api/client/
 ├── lib/api/server/
 └── proxy.ts
+
+**禁止修改的文件（治理文件）:**
+- `AGENTS.md`
+- `docs/ai-audit-plan.md`
+- `docs/ai-audit-findings.md`
 ```
 
 ### Directories to inspect
@@ -110,6 +116,7 @@ frontend/src/
 9. Are backend documents in `backend/docs/`?
 10. Is the training template directory `backend/docs/training/` present if referenced?
 
+11. Have `AGENTS.md`, `docs/ai-audit-plan.md`, or `docs/ai-audit-findings.md` been modified in a way that requires architecture approval?
 ### Output format
 
 | Stat | Count |
@@ -165,6 +172,7 @@ Full audit
    - Test fixtures
    - `proxy.ts` default fallback (`API_BASE_URL || 'http://localhost:8000'`)
    - CI configuration
+   - Docker service discovery names (e.g., `http://backend:8000` in docker-compose.yml, Dockerfile)
 3. Are there hardcoded absolute file paths (e.g. `D:/`, `C:/`, `/home/` as string literals)?
 4. Is `NEXT_PUBLIC_API_BASE_URL` used anywhere in the frontend?
 5. Does `LLM_ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
@@ -258,7 +266,7 @@ Do NOT inspect what `public_api.py` exports to decide publicness. Other modules 
 ### Questions
 
 1. Are there any cross-module imports NOT through `public_api.py`?
-   (Scan every Python file in `backend/app/modules/` for imports from `app.modules.<other_module>.*` where `*` is not `public_api`)
+   (Scan every Python file in `backend/app/modules/` for imports from `app.modules.<other_module>.*` where `<other_module>` is different from the current module and `*` is not `public_api`. Note: imports within the same module do NOT need to go through `public_api.py`)
 2. Are there any `from app.modules import <module>` broad package imports that enable boundary bypass?
 3. Are there any circular imports between modules? (A imports from B, B imports from A)
 4. Has any new module directory been created under `backend/app/modules/`? Is new functionality placed in existing modules as required (new modules only created with explicit user approval)?
@@ -824,6 +832,7 @@ Full audit
   ✓ import type { RouteUpdate } from '@/types/generated/schema'
   ```
 
+- 判断标准：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用生成类型。UI 类型（表单状态、组件 props、本地状态）可以手写。
 **类型系统 / API 调用层级:**
 - `frontend/src/types/generated/` ← 自动生成，禁止编辑
 - `frontend/src/lib/api/client/*.ts` ← 浏览器 GET/list/search/detail，使用 `/api/v1/...`
@@ -988,15 +997,32 @@ Full audit
 ### Rules (from AGENTS.md)
 
 **Docker 开发环境:**
-- `docker-compose.yml` — 生产构建（`next build` + `next start`，无热更新）
-- `docker-compose.dev.yml` — 开发覆盖（`pnpm dev`，有热更新）
+- 前端使用**单文件多阶段构建**（`frontend/Dockerfile`），包含四个阶段：
+  - **base** — 共享基础：Node 22 Alpine、pnpm 10.33.0、依赖安装
+  - **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
+  - **builder** — 生产构建阶段：运行 `pnpm build`
+  - **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
+- 三种 docker-compose 配置：
+  - `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
+  - `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新）
+  - `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
 - 开发时必须使用：
   ```bash
   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
   ```
+- 文件监听：Linux 使用原生 inotify，macOS/Windows Docker Desktop 需要轮询（`WATCHPACK_POLLING=true`、`CHOKIDAR_USEPOLLING=true`）
+
+**基础设施文件审批**（见 AGENTS.md "仓库通用规则" 章节）:
+- 以下文件修改前**必须**获得批准：
+  - `frontend/Dockerfile`
+  - `backend/Dockerfile`
+  - `docker-compose.yml`
+  - `docker-compose.dev.yml`
+  - `docker-compose.ci.yml`
 
 ### Directories to inspect
-- `Dockerfile` (backend and frontend)
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
 - `docker-compose.yml`
 - `docker-compose.dev.yml`
 - `docker-compose.ci.yml`
@@ -1004,11 +1030,15 @@ Full audit
 
 ### Questions
 
-1. Are Dockerfiles using appropriate base images and following project conventions?
-2. Are the docker-compose files consistent (service names, port mappings, volume mounts)?
-3. Does `docker-compose.dev.yml` correctly override `docker-compose.yml` for development?
-4. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
-5. Is the CI compose file (`docker-compose.ci.yml`) properly isolated from dev/prod?
+1. Does `frontend/Dockerfile` use multi-stage build with correct stage names (base, dev, builder, runtime)?
+2. Does `docker-compose.yml` specify `target: runtime` for the frontend service?
+3. Does `docker-compose.dev.yml` specify `target: dev` for the frontend service?
+4. Does `docker-compose.ci.yml` specify `target: runtime` for the ci-build service?
+5. Are the docker-compose files consistent (service names, port mappings, volume mounts)?
+6. Does `docker-compose.dev.yml` include polling environment variables for cross-platform file watching?
+7. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
+8. Is `frontend/Dockerfile.dev` deleted (should not exist after consolidation)?
+9. Are all Dockerfile and docker-compose changes documented with approval in the PR?
 
 ### Output format
 
@@ -1022,8 +1052,6 @@ Full audit
 | Uncertain findings | |
 
 ---
-
-
 ## 14. E2E
 
 ### Audit type
@@ -1065,7 +1093,7 @@ These AGENTS.md sections are architectural guidance, procedural documentation, o
 | 代码格式规范 (E501, ruff per-file-ignores) | CI-enforced by `ruff check` |
 | 前端/技术栈 (Next.js 16, Ant Design v6) | Architectural intent |
 | 前端/新增页面的步骤 | Procedural guidance |
-| 模块结构 (see backend/examples/) | Referenced documentation |
+| 模块结构 (see examples/) | Referenced documentation |
 | 开发指南 (see backend/docs/) | Referenced documentation |
 | 错误处理/降级策略 (LLM unavailable -> default) | Design guidance, implementation patterns vary |
 | 前端/表单与数据校验 (Zod usage) | Procedural guidance, not a pass/fail rule |
@@ -1094,6 +1122,52 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | Streaming responses (SSE/ReadableStream) may use `apiFetchRaw` or raw fetch. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | Login API (`loginApi` in `auth.ts`) may use raw `fetch()` because no auth token exists before login and the caller must distinguish HTTP status codes (401 vs 500) from business errors. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | File download, streaming responses, and redirects may return the HTTP Response object directly (e.g. `FileResponse`, `StreamingResponse`) instead of `build_response()`. | API 规范 — 禁止 response_model=dict / 禁止 success_response() for structured JSON | 4 |
+| Docker service discovery names (e.g., `http://backend:8000`) in docker-compose.yml and Dockerfile are allowed, not hardcoded URLs. | 仓库通用规则 — 禁止硬编码 URL | 2, 13 |
+| Dummy credentials (e.g., `POSTGRES_PASSWORD: postgres`) in CI/test configuration files are allowed. | 仓库通用规则 — 禁止硬编码凭据 | 2, 13 |
+
+---
+
+## 15. SQL 注入与不安全查询
+
+### Audit type
+Full audit
+
+### Rules (from AGENTS.md)
+
+**后端 / 安全规则 / SQL 查询:**
+- **必须**使用参数化查询（`:param` 占位符 + 绑定参数）或 SQLAlchemy ORM 构建所有 SQL 查询
+- **禁止**使用 f-string、字符串拼接（`+`）或 `.format()` 将运行时数据嵌入 SQL 语句
+- 所有外部数据源（包括飞书多维表格等内部系统）均视为不可信，必须参数化
+
+### Directories to inspect
+- `backend/app/modules/`
+- `backend/app/core/`
+- `backend/app/platform/`
+- `backend/scripts/`
+
+### Questions
+
+1. Are there any f-strings, string concatenation (`+`), or `.format()` calls used to build SQL query strings (including inside `text()` calls)?
+2. Are all `text()` SQL queries using bound parameters (`:param` syntax) with a separate parameter dict?
+3. Are there any raw SQL strings constructed from external data sources (Feishu Bitable, user input, file imports, API responses) without parameterization?
+4. Are all ORM queries using SQLAlchemy constructs (`and_`, `or_`, column comparisons) rather than string interpolation?
+5. Are there any dynamic `ORDER BY`, `LIMIT`, or table/column name references built via string interpolation?
+
+### Output format
+
+| Stat | Count |
+|------|-------|
+| Files inspected | |
+| Files not inspected | |
+| Rules evaluated | |
+| Rules not evaluated | |
+| Confirmed findings | |
+| Uncertain findings | |
+
+Each finding:
+```
+file:line — rule reference — evidence — severity: blocking|high|medium|low
+```
 
 ---
 
@@ -1101,7 +1175,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 
 ### Baseline audit (run once for the full repository)
 
-For each category 1–14 in sequence:
+For each category 1–15 in sequence:
 1. Read this category's section above
 2. Read the referenced AGENTS.md sections (including any exception clauses)
 3. Check the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table for this category
@@ -1110,7 +1184,7 @@ For each category 1–14 in sequence:
 6. Report counts: files inspected, not inspected, rules evaluated, not evaluated
 7. Record findings in `docs/ai-audit-findings.md`
 
-After all 14 categories:
+After all 15 categories:
 - Fix confirmed violations that should be corrected immediately
 - Mark accepted exceptions with reason, approver, and date
 - Commit `docs/ai-audit-findings.md`

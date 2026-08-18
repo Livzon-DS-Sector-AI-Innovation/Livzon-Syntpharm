@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button, Card, Table, Tag, Space, Modal, Input, message } from 'antd'
-import { ReloadOutlined, ImportOutlined, LinkOutlined, CopyOutlined } from '@ant-design/icons'
+import {ReloadOutlined, ImportOutlined, CopyOutlined} from '@ant-design/icons'
 import { fetchTrainingSelectTasks, fetchTrainingSelectTaskResult } from '@/lib/api/client/hr'
 import Link from 'next/link'
 

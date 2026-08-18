@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar, Popover, Tag, Typography } from 'antd'
+import {Avatar, Popover, Typography} from 'antd'
 import {
   UserOutlined, IdcardOutlined, BankOutlined,
   PhoneOutlined, AimOutlined,

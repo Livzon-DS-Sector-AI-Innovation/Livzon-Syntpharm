@@ -3,8 +3,7 @@
 "use client"
 
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import {useEffect} from 'react'
 import {
   Table,
   Button,
@@ -67,8 +66,6 @@ import {
   REVIEW_OPINION_OPTIONS,
   ARCHIVE_STATUS_OPTIONS,
 } from '@/types/safety'
-import dayjs from 'dayjs'
-import { useSafetyStore } from '@/stores/safety'
 
 const { Text } = Typography
 export default function HazardIdentificationLegacyPage() {

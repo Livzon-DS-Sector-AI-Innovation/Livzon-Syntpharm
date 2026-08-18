@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons'
 import { fetchDepartments } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
-import { syncDepartureFromFeishu, createDepartureRecord } from '@/actions/hr'
+import {createDepartureRecord} from '@/actions/hr'
 import { DepartureRecord } from '@/types/hr'
 import {
   fetchDepartureRecords,

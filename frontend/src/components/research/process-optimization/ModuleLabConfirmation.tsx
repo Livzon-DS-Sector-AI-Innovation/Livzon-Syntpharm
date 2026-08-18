@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button, Form, Input, InputNumber, Select, App, Descriptions, Alert } from 'antd'
+import {Card, Button, Form, Input, InputNumber, App, Descriptions, Alert} from 'antd'
 import { CheckCircleOutlined, ExperimentOutlined } from '@ant-design/icons'
 import type { LabConfirmationStudy, LabConfirmationBatch, DOEExperiment, QualityStandardSet } from '@/types/research'
 import { AIFileParser } from './AIFileParser'

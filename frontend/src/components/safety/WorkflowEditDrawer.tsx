@@ -271,7 +271,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                   items={fields.map(({ key, name, ...restField }) => {
                     const scriptNum = name + 1
                     const formValues = form.getFieldValue('script_configs') || []
-                    const scriptData = formValues[name] || {}
+                    const _scriptData = formValues[name] || {}
 
                     return {
                       key: String(name),

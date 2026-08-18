@@ -136,7 +136,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ]
 
 // ── AI 输出字段标签 ──
-const AI_FIELD_LABELS: Record<string, string> = {
+const _AI_FIELD_LABELS: Record<string, string> = {
   hazard_type: '隐患分类',
   hazard_level: '隐患等级',
   hazard_category: '隐患类别',
@@ -174,7 +174,7 @@ export default function HazardLedgerPage() {
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
   const [pendingFilterField, setPendingFilterField] = useState<string | null>(null)
 
-  const [rerunLoading, setRerunLoading] = useState(false)
+  const [_rerunLoading, setRerunLoading] = useState(false)
 
   // ── 整改回复 & 三级复核 ──
   const [replyModalVisible, setReplyModalVisible] = useState(false)

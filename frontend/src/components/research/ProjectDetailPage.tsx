@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Space, Popconfirm } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowRightOutlined } from '@ant-design/icons'
+import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Space} from 'antd'
+import {PlusOutlined, EditOutlined, ArrowRightOutlined} from '@ant-design/icons'
 import {
   RdProject, RdMilestone, RdStageRecord, RdResearchTrack, RdResearchFinding,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
-import { fetchMilestones, fetchStages, fetchStageTransitionCheck,  } from '@/lib/api/client/research/rd-project'
+import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-project'
 import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
 import dayjs from 'dayjs'
-import { createMilestone, updateMilestone, createStage, updateStage, doTransition } from '@/actions/research/rd-project'
+import {createMilestone, updateMilestone, createStage, doTransition} from '@/actions/research/rd-project'
 
 interface Props { project: RdProject }
 
@@ -49,7 +49,7 @@ export function ProjectDetailPage({ project }: Props) {
       ])
       setMilestones(m)
       setStages(s)
-    } catch (e) {
+    } catch (_e) {
       msgApi.error('加载数据失败')
     } finally {
       setLoading(false)

@@ -19,7 +19,7 @@ export type { AIAnalysisResult, AIBatchAnalysisResult }
 
 
 // Mock AI 分析数据（未来替换为真实 API 调用）
-const MOCK_AI_ANALYSIS: Record<string, AIAnalysisResult> = {}
+const _MOCK_AI_ANALYSIS: Record<string, AIAnalysisResult> = {}
 
 function generateMockAnalysis(doc: RegulatoryDocument): AIAnalysisResult {
   const title = doc.title || ''

@@ -15,7 +15,7 @@ import {
   App,
   Tag,
 } from 'antd'
-import { EditOutlined, SaveOutlined } from '@ant-design/icons'
+import {EditOutlined} from '@ant-design/icons'
 import {
   getModuleSettings,
   updateModuleSetting,

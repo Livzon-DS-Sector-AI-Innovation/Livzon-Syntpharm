@@ -37,7 +37,7 @@ type SopAiPreviewPageProps = Record<string, never>
 /**
  * 单文件预审页面
  */
-export default function SopAiPreviewPage(props: SopAiPreviewPageProps) {
+export default function SopAiPreviewPage(_props: SopAiPreviewPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckTaskResponse | null>(null)

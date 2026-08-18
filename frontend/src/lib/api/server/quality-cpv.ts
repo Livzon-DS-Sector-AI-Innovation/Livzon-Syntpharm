@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import {apiFetch, getApiBaseUrl, unwrapResponse} from '@/lib/api/server/base'
 import type {
   CreateCpvProductInput,
   UpdateCpvProductInput,

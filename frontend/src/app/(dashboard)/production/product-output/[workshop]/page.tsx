@@ -136,7 +136,7 @@ export default function WorkshopProductsPage() {
     if (products.length > 0) {
       loadSummaries(products)
     }
-  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange])
+  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange, loadSummaries, products])
 
   const handleAddProduct = async () => {
     try {

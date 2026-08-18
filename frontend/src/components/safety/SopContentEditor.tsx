@@ -530,7 +530,7 @@ function parseEmergencyBlocks(md: string): EmergencyBlock[] {
   const lines = md.split('\n')
   let currentBlock: EmergencyBlock | null = null
   let contentLines: string[] = []
-  let preambleLines: string[] = []
+  const preambleLines: string[] = []
   let inPreamble = true
 
   for (const line of lines) {
@@ -1702,7 +1702,7 @@ export default function SopContentEditor({
           )
       }
     },
-    [handleChapterChange, chapters, collapsedKeys],
+    [handleChapterChange, chapters, collapsedKeys, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
   )
 
   /* ── key styles ── */

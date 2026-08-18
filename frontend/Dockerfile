@@ -1,24 +1,57 @@
-FROM node:22-alpine AS builder
+# Multi-stage Dockerfile for frontend
+# Stages: base → dev/builder → runtime
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: base — shared foundation
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
-RUN npm install -g pnpm@10.33.0
+# Enable corepack and install pnpm
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
+# Use Chinese npm mirror for faster downloads
 RUN npm config set registry https://registry.npmmirror.com
 
-COPY package.json pnpm-lock.yaml ./
+# Copy dependency files
+COPY package.json pnpm-lock.yaml* ./
+
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: dev — development stage with hot reload
+# ─────────────────────────────────────────────────────────────────────────────
+FROM base AS dev
+
+# Copy source code
 COPY . .
 
+EXPOSE 3000
+
+CMD ["pnpm", "dev"]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 3: builder — production build stage
+# ─────────────────────────────────────────────────────────────────────────────
+FROM base AS builder
+
+# Copy source code
+COPY . .
+
+# Set production environment variables
 ENV API_BASE_URL=http://backend:8000
 ENV NODE_ENV=production
 
+# Clean and build
 RUN rm -rf .next
 RUN pnpm build
 
-# Runtime stage — uses Next.js standalone output
-FROM node:22-alpine
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 4: runtime — production runtime (minimal image)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
@@ -26,6 +59,7 @@ ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
+# Copy only the standalone output from builder
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public

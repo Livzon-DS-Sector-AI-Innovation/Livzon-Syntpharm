@@ -10,12 +10,12 @@ import {
 } from '@ant-design/icons'
 import { useEquipmentStore } from '@/stores/equipment'
 import { assignWorkOrder, startWorkOrder, completeWorkOrder, verifyWorkOrder, closeWorkOrder, claimWorkOrder } from '@/actions/equipment'
-import { WorkOrderStatus, WorkOrderPriority, Maintainer } from '@/types/equipment'
+import {WorkOrderStatus, WorkOrderPriority} from '@/types/equipment'
 import type { Personnel } from '@/types/equipment'
 import { fetchPersonnelList } from '@/lib/api/client/equipment'
 import { PersonnelSelect } from '@/components/equipment/shared/PersonnelSelect'
 import { uploadWorkOrderImages } from '@/actions/equipment'
-import { fetchMaintainersClient, fetchWorkOrderByIdClient } from '@/lib/api/client/equipment'
+import {fetchWorkOrderByIdClient} from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 
@@ -61,7 +61,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
 
   const refreshDetail = async (id: string) => {
     try {
-      const updated = await fetchWorkOrderByIdClient(id)
+      const _updated = await fetchWorkOrderByIdClient(id)
     } catch { /* 静默失败，列表刷新已覆盖 */ }
     onRefresh?.()
   }
