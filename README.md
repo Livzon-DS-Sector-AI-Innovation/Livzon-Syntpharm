@@ -28,23 +28,96 @@
 
 ## 部署
 
-### 快速开始
+### 第一步：准备 Ubuntu 系统
 
-```bash
-# 1. 配置环境变量
-cp .env.example .env
-# 编辑 .env 填入实际值
+1. 准备一台服务器或虚拟机，安装 Ubuntu 22.04 LTS 或更高版本
+2. 确保系统已更新：
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
 
-# 2. 启动所有服务
-docker compose up -d --build
-```
+### 第二步：安装 Docker
 
-### 访问地址
+1. 安装 Docker：
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   ```
 
-- **前端**: http://your-server-ip (Nginx 80 端口)
-- **后端 API**: http://your-server-ip/api/v1/
-- **API 文档**: http://your-server-ip/docs
-- **MinIO 控制台**: http://your-server-ip:9001
+2. 将当前用户添加到 docker 组（避免每次都要 sudo）：
+   ```bash
+   sudo usermod -aG docker $USER
+   ```
+
+3. 重新登录或执行 `newgrp docker` 使组权限生效
+
+4. 验证 Docker 安装：
+   ```bash
+   docker --version
+   docker compose version
+   ```
+
+### 第三步：获取代码仓库
+
+1. 安装 Git（如果未安装）：
+   ```bash
+   sudo apt install git -y
+   ```
+
+2. 克隆项目代码：
+   ```bash
+   git clone <repository-url>
+   cd Livzon-Syntpharm
+   ```
+
+### 第四步：配置环境变量
+
+1. 复制环境变量模板：
+   ```bash
+   cp .env.example .env
+   ```
+
+2. 编辑 `.env` 文件，填入实际配置值：
+   ```bash
+   nano .env
+   ```
+   
+   需要配置的关键项：
+   - 数据库密码（POSTGRES_PASSWORD）
+   - MinIO 访问密钥（MINIO_ROOT_USER、MINIO_ROOT_PASSWORD）
+   - 其他服务配置
+
+### 第五步：构建并启动容器
+
+1. 构建并启动所有服务（首次运行会下载镜像，可能需要几分钟）：
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. 查看容器状态：
+   ```bash
+   docker compose ps
+   ```
+   
+   所有服务应显示 "Up" 状态。
+
+3. 查看日志（可选）：
+   ```bash
+   docker compose logs -f
+   ```
+   
+   按 `Ctrl+C` 退出日志查看。
+
+### 第六步：访问系统
+
+等待所有服务启动完成后（通常需要 1-2 分钟），通过浏览器访问：
+
+- **前端界面**: http://服务器IP地址
+- **后端 API**: http://服务器IP地址/api/v1/
+- **API 文档**: http://服务器IP地址/docs
+- **MinIO 控制台**: http://服务器IP地址:9001
+
+如果是本地部署，使用 `http://localhost` 或 `http://127.0.0.1`。
 
 ## 开发
 
