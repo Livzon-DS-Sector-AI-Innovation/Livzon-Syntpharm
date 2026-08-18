@@ -13,7 +13,8 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.platform.identity.models import Department, User
+from app.modules.hr.models import HrDepartment
+from app.platform.identity.models import User
 
 
 def _escape_like(value: str) -> str:
@@ -598,21 +599,16 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
 
 
 async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
-    """获取可选部门列表（含负责人姓名和 leader_id），供下拉使用"""
+    """获取可选部门列表（含负责人），供下拉使用"""
     query = (
         select(
-            Department.id.label("id"),
-            Department.name.label("name"),
-            Department.leader_user_id.label("leader_user_id"),
-            User.id.label("leader_id"),
-            User.name.label("leader_name"),
+            HrDepartment.id.label("id"),
+            HrDepartment.name.label("name"),
         )
-        .outerjoin(User, Department.leader_user_id == User.feishu_open_id)
         .where(
-            Department.status_is_deleted.isnot(True),
-            Department.is_deleted == False,  # noqa: E712
+            HrDepartment.is_deleted == False,  # noqa: E712
         )
-        .order_by(Department.name)
+        .order_by(HrDepartment.name)
     )
     result = await db.execute(query)
     rows = result.all()
@@ -620,41 +616,35 @@ async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
 
 
 async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dict[str, Any] | None:
-    """获取单个部门信息（含负责人姓名和 leader_id）"""
+    """获取单个部门信息（含负责人姓名和 leader_id）
+    注意：当前 HrDepartment 模型暂无负责人字段，暂时只返回基本信息
+    """
     query = (
         select(
-            Department.id.label("id"),
-            Department.name.label("name"),
-            Department.leader_user_id.label("leader_user_id"),
-            User.id.label("leader_id"),
-            User.name.label("leader_name"),
+            HrDepartment.id.label("id"),
+            HrDepartment.name.label("name"),
         )
-        .outerjoin(User, Department.leader_user_id == User.feishu_open_id)
         .where(
-            Department.id == department_id,
-            Department.is_deleted == False,  # noqa: E712
+            HrDepartment.id == department_id,
+            HrDepartment.is_deleted == False,  # noqa: E712
         )
     )
     result = await db.execute(query)
     row = result.one_or_none()
     if row is None:
         return None
-    return dict(row._mapping)
+    d = dict(row._mapping)
+    d["leader_user_id"] = None
+    d["leader_id"] = None
+    d["leader_name"] = None
+    return d
 
 
 async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UUID) -> uuid.UUID | None:
-    """获取部门负责人的 User.id（UUID），通过 feishu_open_id 关联"""
-    from app.platform.identity.models import Department, User
-
-    result = await db.execute(
-        select(User.id)
-        .join(Department, Department.leader_user_id == User.feishu_open_id)
-        .where(
-            Department.id == department_id,
-            Department.is_deleted == False,  # noqa: E712
-        )
-    )
-    return result.scalar_one_or_none()
+    """获取部门负责人的 User.id（UUID）
+    注意：当前 HrDepartment 模型暂无负责人字段，暂时返回 None
+    """
+    return None
 
 
 async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | None:
