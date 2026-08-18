@@ -22,18 +22,6 @@
 
 
 
-以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
-- `frontend/Dockerfile`
-- `backend/Dockerfile`
-- `docker-compose.yml`
-- `docker-compose.dev.yml`
-- `docker-compose.ci.yml`
-
-修改这些文件前，请：
-1. 在 PR 中说明修改原因
-2. 验证所有三种环境（生产、开发、CI）均能正常工作
-3. 确保不破坏现有工作流
-
 ## 仓库组织
 
 ### 测试
@@ -494,7 +482,27 @@ export const dynamic = 'force-dynamic'
 
 ### proxy.ts 规则
 
-`src/proxy.ts` 仅负责 API 转发、流式响应处理和轻量登录状态判断。**禁止**在 proxy.ts 中执行身份验证、权限判断、业务规则、数据转换、LLM 调用或审计日志写入。真实身份验证、权限判断、业务规则必须由 FastAPI 后端执行。
+`src/proxy.ts` 是 Next.js 请求中间层，仅负责 API 转发、流式响应处理和轻量登录状态判断。当前项目使用 Turbopack，因此不使用 `next.config.js` 的 `rewrites()`，而通过 `proxy.ts` 转发 `/api/v1/*`。
+
+**允许：**
+- 将 `/api/v1/*` 转发到后端
+- 透传 HTTP method、body、headers 和 cookies
+- 保持流式响应和 SSE 行为
+- 仅判断 session cookie 或 token 是否存在
+- 将明显未登录的页面请求重定向到 `/login`
+- 通过 `matcher` 排除公开路由和静态资源
+
+**禁止：**
+- 调用数据库或 API 验证 token
+- 角色、权限或模块访问判断
+- 业务规则和模块专属逻辑
+- 请求或响应数据转换
+- LLM 调用
+- 审计日志写入
+- 数据库访问
+- 将 `proxy.ts` 的检查视为正式授权结果
+
+真实身份验证、权限判断、业务规则、审计和数据访问必须由 FastAPI 后端执行。Server Actions 可以调用后端，但不能替代后端授权。
 
 ### 新增 API 调用
 
@@ -508,7 +516,6 @@ export const dynamic = 'force-dynamic'
 
 所有 API 相关的类型（请求参数、响应数据）**必须**从 `@/types/generated/schema` 导入。**禁止**手写 API 类型。原因：OpenAPI spec 是前后端契约的唯一来源，手写类型会与后端漂移。
 
-**判断标准**：如果类型用在 `fetch()`、`apiGet()`、`apiPost()`、`apiFetch()` 或任何 API 调用中，就是 API 契约类型，必须使用生成类型。UI 类型（表单状态、组件 props、本地状态）可以手写。
 
 **禁止**：手写 API 响应类型、手写 API 请求类型、在 API 调用中使用手写类型。
 
@@ -530,11 +537,24 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 ## 禁止修改的文件
 
-以下文件只有架构负责人可以修改，如有需求提 PR 说明原因：
+以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
+
+**架构文件**（只有架构负责人可以修改）：
 - `src/proxy.ts`
 - `src/components/shared/` 下所有文件
 - `src/hooks/usePermission.ts`
 
+**部署文件**（影响所有环境）：
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.dev.yml`
+- `docker-compose.ci.yml`
+
+修改这些文件前，请：
+1. 在 PR 中说明修改原因
+2. 验证所有三种环境（生产、开发、CI）均能正常工作
+3. 确保不破坏现有工作流
 ## Docker 开发环境
 
 前端使用**单文件多阶段构建**（`frontend/Dockerfile`），包含四个阶段：
