@@ -1962,18 +1962,21 @@ _None yet._
 | Files not inspected | 0 |
 | Rules evaluated | 5 (Q1-Q5) |
 | Rules not evaluated | 0 |
-| Confirmed findings | 6 |
+| Confirmed findings | 1 |
 | Uncertain findings | 0 |
 | Status | complete |
 
 #### Confirmed
 
 - [ ] `frontend/src/components/equipment/personnel/PersonnelInfo.tsx:1` — Rule 1 ('use client' directive) — Exports a React component using antd (Avatar, Popover, Typography) and JSX return, but file has no 'use client' directive — severity: **blocking**
-- [ ] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:12` — Rule 2 (module boundaries) — Deep import `import TargetModal from '@/components/energy/TargetModal'` bypasses barrel. TargetModal is NOT re-exported from `@/components/energy/index.ts`. Should use barrel or add to barrel. — severity: **high**
-- [ ] `frontend/src/app/(dashboard)/hr/training/evaluation-form/page.tsx:6` — Rule 2 (module boundaries) — Deep import `import EvaluationPreview from '@/components/hr/EvaluationPreview'` bypasses barrel. EvaluationPreview is NOT re-exported from `@/components/hr/index.ts`. Should use barrel or add to barrel. — severity: **high**
-- [ ] `frontend/src/app/(dashboard)/production/product-output/[workshop]/[productId]/page.tsx:58` — Rule 2 (module boundaries) — Deep import `import ProductSyncConfig from '@/components/production/product/ProductSyncConfig'` bypasses barrel. ProductSyncConfig IS already re-exported via `production/product/index.ts` → `export * from './product'` in `production/index.ts`. Should be `import { ProductSyncConfig } from '@/components/production'`. — severity: **high**
-- [ ] `frontend/src/app/(dashboard)/safety/knowledge-base/graph/page.tsx:1` — Rule 2 (module boundaries) — Deep import `import KnowledgeGraphPanel from '@/components/safety/KnowledgeGraphPanel'` bypasses barrel. KnowledgeGraphPanel IS already re-exported from `@/components/safety/index.ts`. Should be `import { KnowledgeGraphPanel } from '@/components/safety'`. — severity: **high**
-- [ ] `frontend/src/app/(dashboard)/safety/regulation/generator/page.tsx:6` — Rule 2 (module boundaries) — Deep import `import SopGeneratorPanel from '@/components/safety/SopGeneratorPanel'` bypasses barrel. SopGeneratorPanel IS already re-exported from `@/components/safety/index.ts`. Should be `import { SopGeneratorPanel } from '@/components/safety'`. — severity: **high**
+
+#### False positives (corrected)
+The following were initially flagged as module boundary violations but are actually **intra-module imports** (same module importing from itself), which are allowed:
+- `energy/ai-analysis/page.tsx:12` → `@/components/energy/TargetModal` (energy → energy)
+- `hr/training/evaluation-form/page.tsx:6` → `@/components/hr/EvaluationPreview` (hr → hr)
+- `production/product-output/.../page.tsx:58` → `@/components/production/product/ProductSyncConfig` (production → production)
+- `safety/knowledge-base/graph/page.tsx:1` → `@/components/safety/KnowledgeGraphPanel` (safety → safety)
+- `safety/regulation/generator/page.tsx:6` → `@/components/safety/SopGeneratorPanel` (safety → safety)
 
 #### Uncertain
 _None._
@@ -2088,12 +2091,12 @@ _None._
 |----------|-----------|-----------|----------|
 | 1. Repository layout | 5 | 0 | 4 blocking, 1 medium |
 | 2. Secrets and hardcoded values | 7 | 0 | 4 blocking, 3 medium |
-| 9. Frontend component boundaries | 6 | 0 | 1 blocking, 5 high |
+| 9. Frontend component boundaries | 1 | 0 | 1 blocking |
 | 10. Frontend API and generated types | 0 | 0 | — |
 | 12. Cross-project OpenAPI | 0 (PR) | 0 | — (6 pre-existing) |
 | 13. Docker and deployment | 13 | 0 | 1 blocking, 2 medium, 10 low |
 | 14. E2E | 0 | 1 | low |
-| **Total** | **31** | **1** | **10 blocking, 5 high, 6 medium, 10 low** |
+| **Total** | **26** | **1** | **6 blocking, 6 medium, 10 low** |
 
 ### Blocking issues (must fix before merge)
 
@@ -2103,23 +2106,17 @@ _None._
 
 ### High priority
 
-4. **Module boundary violations** (Category 9) — 5 deep imports bypass barrel files:
-   - `energy/ai-analysis/page.tsx:12` — TargetModal
-   - `hr/training/evaluation-form/page.tsx:6` — EvaluationPreview
-   - `production/product-output/[workshop]/[productId]/page.tsx:58` — ProductSyncConfig
-   - `safety/knowledge-base/graph/page.tsx:1` — KnowledgeGraphPanel
-   - `safety/regulation/generator/page.tsx:6` — SopGeneratorPanel
-5. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
-6. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
+4. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
+5. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
 
 ### Medium priority
 
-5. **Error message leaks internal backend URL** (Category 2) — `base.ts:100` exposes `getApiBaseUrl()` to client
-6. **Client API file in wrong directory** (Category 1) — `static-data-api.ts` should be in `lib/api/client/`
+6. **Error message leaks internal backend URL** (Category 2) — `base.ts:100` exposes `getApiBaseUrl()` to client
+7. **Client API file in wrong directory** (Category 1) — `static-data-api.ts` should be in `lib/api/client/`
 
 ### Low priority
 
-7. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
+8. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
 
 ---
 
