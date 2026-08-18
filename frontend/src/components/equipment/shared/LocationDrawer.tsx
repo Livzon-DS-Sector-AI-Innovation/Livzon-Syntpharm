@@ -65,10 +65,11 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
 
   // 递归展平位置树，用缩进前缀区分层级
   function flattenTree(
-    items: typeof locations,
+    items: any[] | undefined | null, typeof locations,
     excludeId?: string,
     depth = 0,
   ): { label: string; value: string }[] {
+    if (!items) return []
     const result: { label: string; value: string }[] = []
     for (const loc of items) {
       if (loc.id === excludeId) {
