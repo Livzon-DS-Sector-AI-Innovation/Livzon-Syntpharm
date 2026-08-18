@@ -12,7 +12,6 @@ class MockDB:
     async def execute(self, stmt):
         self.executed_sql.append(str(stmt))
         mock_result = MagicMock()
-        # 模拟部门查询
         if "质量控制部" in str(stmt):
             mock_result.scalar_one_or_none.return_value = "uuid-quality"
         elif "溶剂回收车间" in str(stmt):
@@ -29,7 +28,6 @@ class MockDB:
 
 @pytest.mark.asyncio
 async def test_preview_returns_inferred_fields():
-    """测试预览接口返回智能推断的字段"""
     db = MockDB()
     data = [{
         "资产编号": "TEST001",
@@ -52,7 +50,6 @@ async def test_preview_returns_inferred_fields():
 
 @pytest.mark.asyncio
 async def test_batch_import_handles_null_department():
-    """测试批量导入支持部门为 NULL 的情况"""
     db = MockDB()
     data = [{
         "资产编号": "TEST002",
@@ -68,6 +65,6 @@ async def test_batch_import_handles_null_department():
         result = await batch_import(data, db)
         
         assert result["data"]["created_count"] == 1
-        # 验证传入 create_equipment 的数据中 department_id 为 None
         call_args = mock_repo.create_equipment.call_args[0][1]
         assert call_args["department_id"] is None
+        assert call_args["technical_params"] is None # No quantity provided
