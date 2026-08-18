@@ -1,78 +1,53 @@
-# ┌──────────────────────────────────────────────────────────────────────┐
-# │ CI Groups (documentation only — not executable)                     │
-# │                                                                     │
-# │  quick  = backend-lint + backend-typecheck                          │
-# │         + backend-migration-scope + frontend-lint                   │
-# │         + frontend-typecheck + openapi                              │
-# │                                                                     │
-# │  full   = quick + backend-alembic + backend-test                    │
-# │         + frontend-build + e2e                             │
-# │                                                                     │
-# │  To run locally:                                                    │
-# │    bash scripts/ci.sh openapi                                       │
-# │    bash scripts/ci.sh e2e                                           │
-# │    cd backend && bash scripts/ci/ci.sh test                         │
-# │    cd frontend && bash scripts/ci.sh lint                           │
-# └──────────────────────────────────────────────────────────────────────┘
-
 name: CI
-
-on:
+true:
   push:
-    branches: ['**']
+    branches:
+    - '**'
   pull_request:
-    branches: [main]
-  workflow_dispatch:
-
+    branches:
+    - main
+  workflow_dispatch: null
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   pr-rebase:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Check PR is rebased onto latest main
-        run: |
-          git fetch origin main
-          MAIN_SHA=$(git rev-parse origin/main)
-          MERGE_BASE=$(git merge-base ${{ github.event.pull_request.head.sha }} origin/main)
-          if [ "$MERGE_BASE" != "$MAIN_SHA" ]; then
-            echo "::error::PR branch is not rebased onto the latest main."
-            echo "Merge-base is $MERGE_BASE, but main tip is $MAIN_SHA."
-            echo "Please rebase your branch onto origin/main and force-push."
-            exit 1
-          fi
-          echo "PR is rebased onto the latest main ($MAIN_SHA)."
-
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+    - name: Check PR is rebased onto latest main
+      run: "git fetch origin main\nMAIN_SHA=$(git rev-parse origin/main)\nMERGE_BASE=$(git merge-base ${{ github.event.pull_request.head.sha }} origin/main)\nif [ \"$MERGE_BASE\" != \"$MAIN_SHA\" ]; then\n  echo \"::error::PR branch is not rebased onto the latest main.\"\n  echo \"Merge-base is $MERGE_BASE, but main tip is $MAIN_SHA.\"\n  echo \"Please rebase your branch onto origin/main and force-push.\"\n  exit 1\nfi\necho \"PR is rebased onto the latest main ($MAIN_SHA).\"\n"
   backend-lint:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-      - run: bash scripts/ci/ci.sh lint
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh lint
   backend-typecheck:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     env:
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
       FRONTEND_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-      - run: bash scripts/ci/ci.sh typecheck
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh typecheck
   openapi:
     runs-on: ubuntu-latest
     env:
@@ -80,53 +55,71 @@ jobs:
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
       FRONTEND_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && cd backend && uv sync --dev
-      - uses: pnpm/action-setup@v6
-        with: { version: "10.33.0" }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: cd frontend && pnpm install --frozen-lockfile
-      - run: bash scripts/ci.sh openapi
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && cd backend && uv sync --dev
+    - uses: pnpm/action-setup@v6
+      with:
+        version: 10.33.0
+    - uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+        cache: pnpm
+        cache-dependency-path: frontend/pnpm-lock.yaml
+    - run: cd frontend && pnpm install --frozen-lockfile
+    - run: bash scripts/ci.sh openapi
   backend-migration-scope:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-      - run: bash scripts/ci/ci.sh migration-scope
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh migration-scope
   frontend-lint:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
+    defaults:
+      run:
+        working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-        with: { version: "10.33.0" }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: bash scripts/ci.sh lint
-
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v6
+      with:
+        version: 10.33.0
+    - uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+        cache: pnpm
+        cache-dependency-path: frontend/pnpm-lock.yaml
+    - run: bash scripts/ci.sh lint
   frontend-typecheck:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
+    defaults:
+      run:
+        working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-        with: { version: "10.33.0" }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: bash scripts/ci.sh typecheck
-
+    - uses: actions/checkout@v5
+    - uses: pnpm/action-setup@v6
+      with:
+        version: 10.33.0
+    - uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+        cache: pnpm
+        cache-dependency-path: frontend/pnpm-lock.yaml
+    - run: bash scripts/ci.sh typecheck
   backend-alembic:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     services:
       postgres:
         image: postgres:17
@@ -134,28 +127,27 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: dazah_ci
-        ports: [5432:5432]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        ports:
+        - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
       FRONTEND_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-      - run: bash scripts/ci/ci.sh alembic
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh alembic
   backend-test:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    defaults:
+      run:
+        working-directory: backend
     services:
       postgres:
         image: postgres:17
@@ -163,64 +155,79 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: dazah_ci
-        ports: [5432:5432]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        ports:
+        - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/dazah_ci
       FEISHU__PLATFORM__APP_ID: ci_dummy
       FEISHU__PLATFORM__APP_SECRET: ci_dummy
       FRONTEND_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - run: pip install uv && uv sync --dev
-      - run: bash scripts/ci/ci.sh test
-
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh test
   frontend-build:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: frontend } }
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-        with: { version: "10.33.0" }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci.sh build
-        env:
-          API_BASE_URL: http://localhost:8000
-
+    - uses: actions/checkout@v5
+    - name: Build Docker image
+      run: docker build --target runtime -t frontend-production:latest ./frontend
+    - name: Save Docker image
+      run: docker save frontend-production:latest | gzip > frontend-image.tar.gz
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-image
+        path: frontend-image.tar.gz
+        retention-days: 1
   e2e:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
-      - uses: pnpm/action-setup@v6
-        with: { version: "10.33.0" }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'frontend/pnpm-lock.yaml' }
-      - run: cd frontend && pnpm install --frozen-lockfile
-      - run: cd backend && pip install uv && uv sync --dev
-      - run: cd frontend && pnpm exec playwright install --with-deps chromium
-      - run: bash scripts/ci.sh e2e
-        env:
-          CI: true
-      - name: Upload E2E diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-diagnostics
-          retention-days: 7
-          path: |
-            frontend/playwright-report/
-            frontend/test-results/
-            e2e-backend.log
-            e2e-frontend.log
+    - uses: actions/checkout@v5
+    - name: Download Docker image artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-image
+        path: .
+    - name: Load Docker image
+      run: docker load < frontend-image.tar.gz
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - uses: pnpm/action-setup@v6
+      with:
+        version: 10.33.0
+    - uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+        cache: pnpm
+        cache-dependency-path: frontend/pnpm-lock.yaml
+    - run: cd frontend && pnpm install --frozen-lockfile
+    - run: cd backend && pip install uv && uv sync --dev
+    - run: cd frontend && pnpm exec playwright install --with-deps chromium
+    - run: bash scripts/ci.sh e2e
+      env:
+        CI: true
+    - name: Upload E2E diagnostics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-diagnostics
+        retention-days: 7
+        path: 'frontend/playwright-report/
+
+          frontend/test-results/
+
+          e2e-backend.log
+
+          e2e-frontend.log
+
+          '
+    needs:
+    - frontend-build
