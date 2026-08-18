@@ -424,7 +424,7 @@ frontend/src/
 
 详见 [examples/server-component-pattern.md](examples/server-component-pattern.md)。
 
-**Barrel 文件规则**：`components/<模块>/index.ts` 导出的组件如果使用了 Zustand store 或 React Context，barrel 文件**必须**加 `'use client'`（否则构建失败）。最佳实践：所有 barrel 文件统一加 `'use client'`。
+**Barrel 文件规则**：`components/<模块>/index.ts` 导出的组件如果使用了 Zustand store 或 React Context，barrel 文件**必须**加 `'use client'`。原因：Next.js 构建时会在服务端评估所有导入，如果 barrel 文件导出的组件使用了 `createContext()`（如 zustand 的 `create()`），服务端无法执行，导致构建失败：`TypeError: createContext is not a function`。最佳实践：所有 barrel 文件统一加 `'use client'`。
 
 ### 动态渲染
 
@@ -529,6 +529,8 @@ frontend/src/lib/api/client/*.ts     ← 浏览器 GET/list/search/detail，使�
 frontend/src/lib/api/server/*.ts     ← Server Component / Server Action 使用，使用 API_BASE_URL
 frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 ```
+
+这防止了服务端代码被意外导入到客户端组件中。
 
 - **GET / list / search / detail**：浏览器调用放在 `src/lib/api/client/`，服务器调用放在 `src/lib/api/server/`
 - **create / update / delete / upload**：必须通过 Server Actions
