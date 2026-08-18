@@ -369,7 +369,7 @@ export async function previewEquipmentImportApi(data: any, headers?: Record<stri
 }
 
 export async function batchImportEquipmentApi(data: any, headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
     method: 'POST',
     body: JSON.stringify(data),
     headers,
