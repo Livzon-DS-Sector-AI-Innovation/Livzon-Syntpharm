@@ -79,7 +79,7 @@ const ProcessModal = ({
 
 export default function AlertsPage() {
   const { message } = App.useApp()
-  const { _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
   
   // 预警规则状态
   const [rules, setRules] = useState<AlertRule[]>([])

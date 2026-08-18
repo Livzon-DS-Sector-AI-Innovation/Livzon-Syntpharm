@@ -253,12 +253,12 @@ export default function HazardLedgerPanel() {
     }
   }
 
-  useEffect(() => { loadStats() }, [loadData, loadStats])
+  useEffect(() => { loadStats() }, [])
 
   useEffect(() => {
-    setSelectedRowKeys([loadData, loadStats])
+    setSelectedRowKeys([])
     loadData()
-  }, [queryParams.page, queryParams.page_size, riskLevel, department, position, loadData, loadStats])
+  }, [queryParams.page, queryParams.page_size, riskLevel, department, position])
 
   // 排序/日期变化时重新加载
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function HazardLedgerPanel() {
   useEffect(() => {
     loadData()
     loadStats()
-  }, [dateRange, loadData, loadStats])
+  }, [dateRange])
 
   const handleSearch = () => {
     searchKeywordRef.current = keyword

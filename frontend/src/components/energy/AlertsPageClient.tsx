@@ -11,7 +11,7 @@ import { useEnergyStore } from '@/stores/energy'
 
 export function AlertsPageClient() {
   const { message } = App.useApp()
-  const { _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
   const [data, setData] = useState<AlertRule[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)

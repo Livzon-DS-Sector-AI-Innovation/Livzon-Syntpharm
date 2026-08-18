@@ -33,7 +33,7 @@ import {
 } from '@ant-design/icons'
 import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemReminder } from '@/actions/quality-reagent'
 
-const { _Title, Text } = Typography
+const { Title, Text } = Typography
 
 interface ReminderConfig {
   feishu_app_id?: string

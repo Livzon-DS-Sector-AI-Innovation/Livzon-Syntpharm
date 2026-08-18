@@ -57,7 +57,7 @@ export default function HazardAIResultPanel({
   onConfirm,
   onRerun,
 }: Props) {
-  const { _message, modal } = App.useApp()
+  const { message, modal } = App.useApp()
   const [editing, setEditing] = useState(false)
   const [edits, setEdits] = useState<Partial<EditableFields>>({})
 

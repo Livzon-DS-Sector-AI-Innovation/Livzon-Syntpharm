@@ -26,7 +26,7 @@ interface AiFillPanelProps {
   onFillComplete?: () => void
 }
 
-export function AiFillPanel({ chapterId, chapterCode, _assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
+export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
   const { message } = App.useApp()
 
   // Categories (for display labels)

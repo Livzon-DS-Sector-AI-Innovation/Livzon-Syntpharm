@@ -16,7 +16,7 @@ interface Props {
   equipments: { id: string; name: string; equipment_no: string }[]
 }
 
-export function InspectionRoutesTab({ _templates, equipments }: Props) {
+export function InspectionRoutesTab({ templates, equipments }: Props) {
   const { message, modal } = App.useApp()
   const {
     routes, routesTotal, routesPage, routesPageSize, routesLoading, routesKeyword, routesRefreshKey,

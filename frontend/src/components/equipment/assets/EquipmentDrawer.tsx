@@ -148,7 +148,7 @@ export function EquipmentDrawer({ onRefresh, defaultDepartmentId }: EquipmentDra
         }
       }
     }
-  }, [equipmentDrawerOpen, editingEquipment, form, defaultDepartmentId, handleDepartmentChange])
+  }, [equipmentDrawerOpen, editingEquipment, form])
 
   // 选择部门后自动填入负责人（默认为部门负责人，但可手动修改）
   const handleDepartmentChange = (deptId: string | undefined) => {

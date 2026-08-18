@@ -24,7 +24,7 @@ import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
 
-const { Text, _Title, Paragraph } = Typography
+const { Text, Title, Paragraph } = Typography
 
 // M3 标准目录结构（固定）
 const _M3_STRUCTURE = [

@@ -4,7 +4,7 @@ import {Modal, Typography, Empty} from 'antd'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import type { SafetyKnowledgeArticle, KnowledgeCardContent } from '@/types/safety'
 
-const { _Text, Title } = Typography
+const { Text, Title } = Typography
 
 const CARD_FIELD_LABELS: Record<string, string> = {
   hazard_type_definitions: '隐患分类定义',
