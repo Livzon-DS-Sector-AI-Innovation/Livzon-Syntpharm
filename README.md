@@ -66,7 +66,7 @@
 
 2. 克隆项目代码：
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm.git
    cd Livzon-Syntpharm
    ```
 
