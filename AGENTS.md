@@ -544,6 +544,11 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 - `src/components/shared/` 下所有文件
 - `src/hooks/usePermission.ts`
 
+**治理文件**（影响 AI 审计和开发规范）：
+- `AGENTS.md`
+- `docs/ai-audit-plan.md`
+- `docs/ai-audit-findings.md`
+
 **部署文件**（影响所有环境）：
 - `frontend/Dockerfile`
 - `backend/Dockerfile`
