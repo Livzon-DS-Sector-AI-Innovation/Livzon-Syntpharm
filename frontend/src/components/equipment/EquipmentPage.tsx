@@ -184,15 +184,16 @@ export function EquipmentPage({
       <App>
         {/* 标题行 */}
         <div style={{ marginBottom: 16 }}>
-          <h2
+          <h2 className="equipment-page-title"
             style={{
-              fontSize: 22, fontWeight: 600, color: '#1a1a1a',
+              fontSize: 22, fontWeight: 600,
               margin: 0, marginBottom: 4, lineHeight: 1.3,
             }}
           >
             设备台账
           </h2>
-          <p style={{ fontSize: 14, color: '#787671', margin: 0, lineHeight: 1.5 }}>
+          <p className="equipment-page-subtitle"
+            style={{ fontSize: 14, margin: 0, lineHeight: 1.5 }}>
             分类管理 · 位置管理 · 设备档案 · 状态追踪
           </p>
         </div>

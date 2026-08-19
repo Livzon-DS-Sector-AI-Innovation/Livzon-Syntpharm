@@ -698,3 +698,6 @@ body {
     transform: translateY(-2px);
   }
 }
+
+/* 工业风格主题色彩令牌 */
+@import '../styles/industrial-theme.css';
