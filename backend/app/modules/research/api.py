@@ -3471,7 +3471,7 @@ async def generate_report(
 async def generate_research_report(
     project_id: UUID = Body(...),
     template_id: UUID = Body(...),
-    current_user: RequiredUser = Depends(),
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """
