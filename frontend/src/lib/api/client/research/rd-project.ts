@@ -179,3 +179,18 @@ export async function fetchDeliverableTemplates(params: {
   const result = await apiGet<RdDeliverableTemplate[]>(`${API_BASE}/research/deliverable-templates?${qs}`)
   return result || []
 }
+
+export async function fetchProjectTracks(projectId: string): Promise<any[]> {
+  const response = await fetch(`/api/v1/research/projects/${projectId}/tracks`)
+  if (!response.ok) {
+    throw new Error('获取研究项失败')
+  }
+  const result = await response.json()
+  return result.data || []
+}
+
+export async function deleteDeliverableTemplateApi(id: string): Promise<void> {
+  await fetch(`${API_BASE}/research/deliverable-templates/${id}`, {
+    method: 'DELETE',
+  })
+}

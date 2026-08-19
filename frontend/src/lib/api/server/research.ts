@@ -739,3 +739,19 @@ export async function generateReactionScope(data: {
 export async function analyzeLiterature(formData: FormData) {
   return uploadFetch(`${getApiBaseUrl()}/api/v1/research/literature/analyze`, formData)
 }
+
+export async function generateDeliverableReport(projectId: string, templateId: string) {
+  // 直接使用 fetch 和相对路径，确保请求经过 Nginx/Next.js 代理
+  const response = await fetch('/api/v1/research/test-generate-report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ project_id: projectId, template_id: templateId }),
+  })
+  
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`生成失败: ${response.status} ${errorText}`)
+  }
+  
+  return response.json()
+}

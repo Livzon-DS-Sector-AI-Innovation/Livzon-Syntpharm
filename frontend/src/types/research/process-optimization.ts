@@ -265,6 +265,10 @@ export interface ProcessOptimization {
   created_at: string
   updated_at: string
   created_by: string | null
+  
+  // 研究项关联（新架构）
+  impurity_track_id?: string  // 关联的杂质研究项ID
+  crystal_track_id?: string   // 关联的晶型研究项ID
 }
 
 // ============ API 请求/响应类型 ============

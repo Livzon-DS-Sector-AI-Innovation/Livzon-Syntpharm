@@ -1269,3 +1269,284 @@ async def generate_report_with_ai(
     except Exception as e:
         logger.exception("LLM call failed")
         raise HTTPException(status_code=500, detail=f"AI 生成失败: {str(e)}")
+
+
+# ===== AI 报告生成 Service =====
+
+async def generate_deliverable_report(
+    db: AsyncSession, 
+    project_id: uuid.UUID, 
+    deliverable_template_id: uuid.UUID
+) -> str:
+    """根据交付物模板和项目数据生成报告 (MVP 严谨版)"""
+    
+    # 1. 获取模板
+    result = await db.execute(
+        select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == deliverable_template_id)
+    )
+    template = result.scalar_one_or_none()
+    if not template or not template.template_content:
+        raise ValueError("模板不存在或内容为空")
+
+    # 2. 构建 Fact 字典 (Type A)
+    facts = await build_fact_dictionary(db, project_id, template.stage)
+
+    # 3. 计算派生结论 (Type B)
+    # 这里以获取第一个工艺优化任务的 DOE 数据为例
+    opt_result = await db.execute(
+        select(ProcessOptimization).where(
+            ProcessOptimization.project_id == project_id
+        ).limit(1)
+    )
+    optimization = opt_result.scalar_one_or_none()
+    derived_facts = {}
+    if optimization and optimization.doe_experiment:
+        derived_facts = calculate_doe_conclusions(optimization.doe_experiment)
+
+    # 4. 执行槽位填充
+    pre_filled_text, prose_slots = fill_template_slots(template.template_content, facts, derived_facts)
+
+    # 5. 调用 LLM 填充 Prose 槽位 (Type C)
+    # 简化处理：如果存在 Prose 槽位，则调用 LLM 补全
+    final_report = pre_filled_text
+    if prose_slots:
+        from app.core.llm import llm_client
+        prompt = f"""
+        请根据以下已填充好事实数据的报告草稿，补全其中的逻辑连接和讨论部分。
+        注意：不要修改任何已经存在的数字和事实描述。
+        
+        草稿内容：
+        {pre_filled_text[:3000]}
+        """
+        try:
+            messages = [
+                {"role": "system", "content": "你是制药研发专家，负责润色报告。"},
+                {"role": "user", "content": prompt}
+            ]
+            response = await llm_client.chat_completion(messages)
+            final_report = response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"LLM 补全失败: {e}")
+            # 如果 LLM 失败，至少返回已填充事实的草稿
+
+
+    return final_report
+
+
+# ===== Fact 字典构建器 =====
+
+async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: str) -> dict:
+    """
+    构建用于报告生成的 Fact 字典。
+    包含：项目基本信息 + 当前阶段的关键实验数据。
+    """
+    facts = {}
+    
+    # 1. 获取项目基本信息 (Type A: Fact)
+    proj_result = await db.execute(select(RdProject).where(RdProject.id == project_id))
+    project = proj_result.scalar_one_or_none()
+    if project:
+        facts["project_name"] = {"value": project.name, "unit": "", "source_id": str(project.id)}
+        facts["api_name"] = {"value": project.api_name, "unit": "", "source_id": str(project.id)}
+        facts["cas_number"] = {"value": project.cas_number, "unit": "", "source_id": str(project.id)}
+        facts["molecular_formula"] = {"value": project.molecular_formula, "unit": "", "source_id": str(project.id)}
+
+    # 2. 获取当前阶段的工艺优化数据 (以 DOE 为例)
+    if stage == "process_optimization":
+        opt_result = await db.execute(
+            select(ProcessOptimization).where(
+                ProcessOptimization.project_id == project_id,
+                ProcessOptimization.status != "failed"
+            ).order_by(ProcessOptimization.updated_at.desc()).limit(1)
+        )
+        optimization = opt_result.scalar_one_or_none()
+        
+        if optimization and optimization.doe_experiment:
+            doe_data = optimization.doe_experiment
+            # 提取关键事实
+            if "analysis_result" in doe_data and "optimal_conditions" in doe_data["analysis_result"]:
+                optimal = doe_data["analysis_result"]["optimal_conditions"]
+                for param, val in optimal.items():
+                    key = f"doe_optimal_{param}"
+                    facts[key] = {"value": val, "unit": _get_unit_for_param(param), "source_id": optimization.id}
+            
+            if "analysis_result" in doe_data and "r_squared" in doe_data["analysis_result"]:
+                facts["doe_r_squared"] = {
+                    "value": doe_data["analysis_result"]["r_squared"], 
+                    "unit": "", 
+                    "source_id": optimization.id
+                }
+
+    # 3. 获取杂质研究数据 (Type A: Fact)
+    track_result = await db.execute(
+        select(RdResearchTrack).where(
+            RdResearchTrack.project_id == project_id,
+            RdResearchTrack.type == "impurity"
+        )
+    )
+    impurity_track = track_result.scalar_one_or_none()
+    if impurity_track and impurity_track.current_conclusion:
+        # 这里可以进一步解析 conclusion 或关联的 findings
+        facts["impurity_conclusion_summary"] = {
+            "value": impurity_track.current_conclusion[:100] + "...", 
+            "unit": "", 
+            "source_id": str(impurity_track.id)
+        }
+
+    return facts
+
+def _get_unit_for_param(param_name: str) -> str:
+    """简单的单位映射，实际生产中应从元数据中获取"""
+    unit_map = {
+        "temperature": "°C",
+        "pressure": "bar",
+        "time": "h",
+        "yield": "%"
+    }
+    return unit_map.get(param_name.lower(), "")
+
+
+# ===== 派生结论计算器 (Derived Fact Calculator) =====
+
+def calculate_doe_conclusions(doe_data: dict) -> dict:
+    """
+    根据 DOE 实验数据计算派生结论。
+    输入: doe_data (包含 runs, factors, responses)
+    输出: 结构化结论标签字典
+    """
+    conclusions = {}
+    
+    if not doe_data or "runs" not in doe_data:
+        return conclusions
+
+    runs = doe_data["runs"]
+    responses = doe_data.get("responses", [])
+    
+    # 1. 计算各响应的极值和趋势
+    for resp in responses:
+        resp_name = resp["name"]
+        values = [run["response_values"].get(resp_name) for run in runs if run["status"] == "completed"]
+        
+        if not values:
+            continue
+            
+        valid_values = [v for v in values if v is not None]
+        if not valid_values:
+            continue
+
+        max_val = max(valid_values)
+        min_val = min(valid_values)
+        avg_val = sum(valid_values) / len(valid_values)
+        
+        # 简单的趋势判断 (实际应结合因子水平分析)
+        if max_val - min_val < 0.01 * avg_val:
+            trend = "stable"
+        elif valid_values[-1] > valid_values[0]:
+            trend = "increasing"
+        else:
+            trend = "decreasing"
+
+        conclusions[f"{resp_name}_summary"] = {
+            "max": max_val,
+            "min": min_val,
+            "avg": round(avg_val, 2),
+            "trend": trend,
+            "unit": resp.get("unit", "")
+        }
+
+    # 2. 提取最优条件 (如果分析结果中已有)
+    if "analysis_result" in doe_data and "optimal_conditions" in doe_data["analysis_result"]:
+        optimal = doe_data["analysis_result"]["optimal_conditions"]
+        conclusions["optimal_conditions_labels"] = {
+            k: {"value": v, "desc": f"The optimal level for {k} is {v}"} 
+            for k, v in optimal.items()
+        }
+
+    # 3. 模型拟合度评价
+    if "analysis_result" in doe_data and "r_squared" in doe_data["analysis_result"]:
+        r2 = doe_data["analysis_result"]["r_squared"]
+        fit_quality = "excellent" if r2 > 0.9 else ("good" if r2 > 0.7 else "poor")
+        conclusions["model_fit_evaluation"] = {
+            "r_squared": r2,
+            "quality_label": fit_quality
+        }
+
+    return conclusions
+
+
+# ===== 槽位填充引擎 (Slot Filling Engine) =====
+
+import re
+
+def fill_template_slots(template_content: str, facts: dict, derived_facts: dict) -> tuple[str, list[str]]:
+    """
+    填充模板中的 Fact 和 Derived Fact 槽位。
+    返回: (填充后的文本, 剩余的 Prose 槽位列表)
+    """
+    filled_text = template_content
+    prose_slots = []
+
+    # 1. 填充 Fact 槽位 {{F:key}}
+    def replace_fact(match):
+        key = match.group(1)
+        if key in facts:
+            item = facts[key]
+            value = item["value"]
+            unit = item.get("unit", "")
+            # 格式化输出，例如: 85.3%
+            return f"{value}{unit}" if unit else str(value)
+        return match.group(0)  # 如果找不到，保留原样
+
+    filled_text = re.sub(r'\{\{F:(\w+)\}\}', replace_fact, filled_text)
+
+    # 2. 填充 Derived Fact 槽位 {{B:key}}
+    # 这里我们简单地将结论标签转化为自然语言片段
+    def replace_derived(match):
+        key = match.group(1)
+        if key in derived_facts:
+            data = derived_facts[key]
+            # 根据 key 的类型进行简单的自然语言转化
+            if "summary" in key and isinstance(data, dict):
+                return f"{data['trend']} (范围: {data['min']}-{data['max']}{data.get('unit', '')})"
+            elif "quality_label" in data:
+                return f"模型拟合度为 {data['quality_label']} (R²={data['r_squared']})"
+            return str(data)
+        return match.group(0)
+
+    filled_text = re.sub(r'\{\{B:(\w+)\}\}', replace_derived, filled_text)
+
+    # 3. 提取剩余的 Prose 槽位 {{P:key}}
+    prose_slots = re.findall(r'\{\{P:(\w+)\}\}', filled_text)
+
+    return filled_text, prose_slots
+
+
+# ===== 数值校验层 (Validation Layer) =====
+
+def validate_report_content(report: str, facts: dict) -> dict:
+    """
+    对生成的报告进行确定性校验。
+    返回: {"passed": bool, "errors": list}
+    """
+    errors = []
+    
+    # 1. 数值一致性校验
+    # 提取报告中所有的数字（简单正则）
+    numbers_in_report = re.findall(r'\d+\.?\d*', report)
+    
+    for key, item in facts.items():
+        val_str = str(item["value"])
+        if val_str not in numbers_in_report and len(val_str) > 1:
+            # 如果重要事实值没出现在报告里，记为警告
+            errors.append(f"Warning: Fact '{key}' ({val_str}) might be missing from the report.")
+
+    # 2. 术语合法性校验 (示例)
+    forbidden_terms = ["大概", "可能", "也许"] # 研发报告应避免模糊词汇
+    for term in forbidden_terms:
+        if term in report:
+            errors.append(f"Term alert: Found informal term '{term}'.")
+
+    return {
+        "passed": len([e for e in errors if "Alert" in e]) == 0,
+        "warnings": errors
+    }

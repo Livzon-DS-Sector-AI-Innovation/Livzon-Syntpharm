@@ -173,17 +173,17 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
                   <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="DOE优化" value={doeExperiment ? '已完成' : '未进行'} valueStyle={{ fontSize: 16, color: doeExperiment ? '#52c41a' : '#999' }} />
+                        <Statistic title="DOE优化" value={doeExperiment ? '已完成' : '未进行'} styles={{ content: { fontSize: 16, color: doeExperiment ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="杂质研究" value={impurityStudy ? `${impurityStudy.impurities.length}种杂质` : '未进行'} valueStyle={{ fontSize: 16, color: impurityStudy ? '#52c41a' : '#999' }} />
+                        <Statistic title="杂质研究" value={impurityStudy ? `${impurityStudy.impurities.length}种杂质` : '未进行'} styles={{ content: { fontSize: 16, color: impurityStudy ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="晶型研究" value={crystalFormStudy ? `${crystalFormStudy.records.length}种晶型` : '未进行'} valueStyle={{ fontSize: 16, color: crystalFormStudy ? '#52c41a' : '#999' }} />
+                        <Statistic title="晶型研究" value={crystalFormStudy ? `${crystalFormStudy.records.length}种晶型` : '未进行'} styles={{ content: { fontSize: 16, color: crystalFormStudy ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                   </Row>
