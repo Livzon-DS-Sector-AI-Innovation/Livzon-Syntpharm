@@ -5,13 +5,13 @@ import uuid
 from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response, paginated_response
+from app.core.response import build_response, error_response, paginated_response, success_response
 from app.modules.research import service
 from app.modules.research.schemas import (
     RdDeliverableTemplateCreate,
@@ -59,6 +59,7 @@ from app.modules.research.schemas import (
     ResearchProjectResponse,
     ResearchProjectUpdate,
 )
+from app.modules.research.service import fill_template_slots, validate_report_content
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
 from app.shared.schemas import ApiResponse

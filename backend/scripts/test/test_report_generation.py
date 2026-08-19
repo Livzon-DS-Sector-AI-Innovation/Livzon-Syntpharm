@@ -9,7 +9,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from app.modules.research.service import (
-    build_fact_dictionary,
     calculate_doe_conclusions,
     fill_template_slots,
     validate_report_content
@@ -56,7 +55,7 @@ MOCK_TEMPLATE = """
 
 async def main():
     print("🚀 开始离线测试报告生成逻辑...")
-    
+
     # 1. 构建 Fact 字典 (模拟)
     print("\n[1] 构建 Fact 字典...")
     facts = {
@@ -78,11 +77,11 @@ async def main():
     # 3. 槽位填充
     print("\n[3] 执行槽位填充...")
     filled_text, prose_slots = fill_template_slots(MOCK_TEMPLATE, facts, derived_facts)
-    print(f"   ✅ 已填充 Fact/B 类槽位。")
+    print("   ✅ 已填充 Fact/B 类槽位。")
     print(f"   ⏳ 剩余 Prose 槽位待 AI 补全: {prose_slots}")
 
     # 4. 模拟 AI 补全 (这里用固定文本代替)
-    final_report = filled_text.replace("{{P:mechanism_discussion}}", 
+    final_report = filled_text.replace("{{P:mechanism_discussion}}",
         "本次实验通过响应面法确定了关键工艺参数。数据显示在 80°C 时反应效率最高，符合阿伦尼乌斯方程预期。")
 
     # 5. 校验
