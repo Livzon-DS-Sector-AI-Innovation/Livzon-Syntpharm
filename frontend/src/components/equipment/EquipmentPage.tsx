@@ -1,3 +1,4 @@
+import '../../styles/industrial-theme.css';
 'use client'
 
 import { useEffect, useCallback, useState } from 'react'

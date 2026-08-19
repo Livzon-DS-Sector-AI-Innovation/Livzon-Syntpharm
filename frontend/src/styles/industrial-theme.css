@@ -37,13 +37,3 @@
   color: var(--color-deep-steel);
   opacity: 0.7;
 }
-
-.equipment-action-button {
-  background-color: var(--color-machine-blue);
-  border-color: var(--color-machine-blue);
-}
-
-.equipment-warning-button {
-  background-color: var(--color-safety-orange);
-  border-color: var(--color-safety-orange);
-}
