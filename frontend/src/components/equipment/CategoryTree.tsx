@@ -78,18 +78,28 @@ function TreeNode({
 
   return (
     <div>
-      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
-        <Space>
-          <CategoryEditor 
-            mode="create" 
-            trigger={<Button type="primary" size="small" icon={<PlusOutlined />}>新建分类</Button>}
-            onSuccess={onRefresh || (() => {})}
-          />
-          <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
-            <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
-          </Tooltip>
-        </Space>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根分类
+        </Button>
+        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
       </div>
+      <CategoryEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
       {/* 节点行 */}
       <div
         role="button"
@@ -199,6 +209,8 @@ function TreeNode({
 // ==================== 分类树主组件 ====================
 
 export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
   const {
     selectedCategory,
@@ -268,18 +280,28 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
 
   return (
     <div>
-      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
-        <Space>
-          <CategoryEditor 
-            mode="create" 
-            trigger={<Button type="primary" size="small" icon={<PlusOutlined />}>新建分类</Button>}
-            onSuccess={onRefresh || (() => {})}
-          />
-          <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
-            <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
-          </Tooltip>
-        </Space>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根分类
+        </Button>
+        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
       </div>
+      <CategoryEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
       <div style={{ marginBottom: 12 }}>
         <Button
           type="primary"
@@ -289,6 +311,21 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
         >
           新增分类
         </Button>
+      </div>
+
+      {/* 顶部操作栏 */}
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根分类
+        </Button>
+        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
       </div>
 
       {/* 自定义树 */}
@@ -306,6 +343,17 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
           />
         ))}
       </div>
+
+      {/* 受控编辑器 */}
+      <CategoryEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
     </div>
   )
 }
