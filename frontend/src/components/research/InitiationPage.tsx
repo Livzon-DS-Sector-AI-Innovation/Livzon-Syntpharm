@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, InputNumber, DatePicker } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Modal, Tabs, Row, Col, InputNumber, DatePicker, Upload, Popconfirm } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, RobotOutlined, UploadOutlined } from '@ant-design/icons'
 import { fetchInitiations } from '@/lib/api/client/research/rd-project'
 import { deleteInitiation } from '@/actions/research/modules'
 import {
@@ -122,14 +122,7 @@ export function InitiationPage({ projectId }: Props) {
           commercial: values.ra_commercial,
           mitigation: values.ra_mitigation,
         },
-        review_status: values.review_status,
-        review_date: values.review_date?.format('YYYY-MM-DD') || null,
-        review_comments: values.review_comments,
-        review_score: values.review_score,
-        approval_status: values.approval_status,
-        approval_date: values.approval_date?.format('YYYY-MM-DD') || null,
-        approval_comments: values.approval_comments,
-        notes: values.notes,
+        domestic_filing_content: values.filing_content,
       }
 
       if (editingRecord) {
@@ -283,47 +276,20 @@ export function InitiationPage({ projectId }: Props) {
       ),
     },
     {
-      key: 'review',
-      label: '评审信息',
+      key: 'domestic_filing',
+      label: '国内申报信息',
       children: (
         <>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="review_status" label="评审状态">
-                <Select options={reviewStatusOptions} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="review_score" label="评审评分 (1-10)">
-                <InputNumber min={1} max={10} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="review_date" label="评审日期">
-            <DatePicker style={{ width: '100%' }} />
+          <Form.Item name="filing_content" label="申报内容详情">
+            <Input.TextArea rows={10} placeholder="在此填写详细的国内申报信息..." />
           </Form.Item>
-          <Form.Item name="review_comments" label="评审意见">
-            <Input.TextArea rows={4} placeholder="评审意见及建议" />
-          </Form.Item>
-        </>
-      ),
-    },
-    {
-      key: 'approval',
-      label: '批准信息',
-      children: (
-        <>
-          <Form.Item name="approval_status" label="批准状态">
-            <Select options={approvalStatusOptions} />
-          </Form.Item>
-          <Form.Item name="approval_date" label="批准日期">
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="approval_comments" label="批准意见">
-            <Input.TextArea rows={4} placeholder="批准意见" />
-          </Form.Item>
-          <Form.Item name="notes" label="备注">
-            <Input.TextArea rows={3} placeholder="其他备注" />
+          <Form.Item label="AI 辅助录入">
+            <Space>
+              <Button icon={<RobotOutlined />}>AI 智能识别</Button>
+              <Upload>
+                <Button icon={<UploadOutlined />}>上传文件</Button>
+              </Upload>
+            </Space>
           </Form.Item>
         </>
       ),

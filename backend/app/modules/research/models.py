@@ -16,6 +16,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -169,6 +170,14 @@ class ProcessOptimization(BaseModel):
     scale_up_study: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="公斤级放大数据")
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="开始日期")
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="结束日期")
+
+    # 研究项关联（新架构）
+    impurity_track_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_research_tracks.id"), nullable=True, comment="关联的杂质研究项ID"
+    )
+    crystal_track_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_research_tracks.id"), nullable=True, comment="关联的晶型研究项ID"
+    )
 
 
 class PilotWorkflow(BaseModel):
@@ -451,6 +460,7 @@ class RdResearchFinding(BaseModel):
     # 其他
     observations: Mapped[str | None] = mapped_column(Text, nullable=True, comment="实验现象/观察")
     attachments: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="附件列表")
+    filing_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="国内申报信息")
     version: Mapped[int] = mapped_column(Integer, default=1, comment="版本号")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
@@ -676,6 +686,7 @@ class RdInitiation(BaseModel):
     approval_comments: Mapped[str | None] = mapped_column(Text, nullable=True, comment="批准意见")
     # 其他
     attachments: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="附件列表")
+    filing_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="国内申报信息")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
 
@@ -722,3 +733,28 @@ class RdDeliverableTemplate(BaseModel):
         nullable=True,
         comment="创建者",
     )
+
+
+class RdReportTemplate(BaseModel):
+    """研发报告模板"""
+
+    __tablename__ = "rd_report_templates"
+    __table_args__ = {"schema": "research"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), comment="模板名称")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述")
+
+    # 核心内容：Markdown 格式
+    content_md: Mapped[str] = mapped_column(Text, comment="模板内容(Markdown)")
+
+    # 元数据：存储 YAML frontmatter 解析后的结果，方便前端展示变量列表
+    meta_info: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="模板元数据(info)")
+
+    category: Mapped[str] = mapped_column(
+        String(50), default="general", comment="分类：process_optimization, validation, etc."
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())

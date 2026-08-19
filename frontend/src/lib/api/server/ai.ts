@@ -21,22 +21,15 @@ export async function exportExam(data: unknown): Promise<Response> {
   })
 }
 
-export async function parseExperimentRecord(formData: FormData): Promise<unknown> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/ai/parse-experiment`, {
+export async function parseExperimentRecord(content: string, parseType: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
+  return apiFetch('/api/v1/research/ai/parse-experiment', {
     method: 'POST',
-    body: formData,
-    cache: 'no-store',
+    body: JSON.stringify({ content, parse_type: parseType }),
   })
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`解析失败: ${res.status} ${errorText}`)
-  }
-  const result = await res.json()
-  return unwrapResponse(result)
 }
 
 export async function parseProcessParameters(content: string, type: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
-  return apiFetch('/api/v1/ai/parse-parameters', {
+  return apiFetch('/api/v1/research/ai/parse-parameters', {
     method: 'POST',
     body: JSON.stringify({ content, parse_type: type }),
   })

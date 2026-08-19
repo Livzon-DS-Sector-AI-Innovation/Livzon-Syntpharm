@@ -34,7 +34,7 @@ export function AIFileParser({
   const handleFileUpload = async (file: File) => {
     setParsing(true)
     try {
-      const result = await parseExperimentRecord(file, parseType)
+      const result = await parseExperimentRecord("模拟文件内容", parseType)
       message.success('文件解析完成，已自动填充表单')
       onParseComplete(result)
       return false // 阻止自动上传
