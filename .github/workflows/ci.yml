@@ -180,7 +180,7 @@ jobs:
     - name: Save Docker image
       run: docker save frontend-production:latest | gzip > frontend-image.tar.gz
     - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: frontend-image
         path: frontend-image.tar.gz
@@ -191,7 +191,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Download Docker image artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: frontend-image
         path: .
@@ -216,7 +216,7 @@ jobs:
         CI: true
     - name: Upload E2E diagnostics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: e2e-diagnostics
         retention-days: 7
