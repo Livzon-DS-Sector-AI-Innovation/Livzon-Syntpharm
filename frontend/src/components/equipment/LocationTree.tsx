@@ -6,6 +6,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '
 import { Location } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteLocation } from '@/actions/equipment'
+import { LocationEditor } from './LocationEditor'
 
 interface LocationTreeProps {
   locations: Location[]
@@ -183,6 +184,7 @@ function TreeNode({
 // ==================== 位置树主组件 ====================
 
 export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
+  const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
   const {
     selectedLocation,
@@ -265,6 +267,21 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
         </Tooltip>
       </div>
 
+      {/* 顶部操作栏 */}
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根位置
+        </Button>
+        <Tooltip title="位置用于记录设备的物理坐标，便于巡检和应急响应。例如：A栋-1F-发酵区。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
+      </div>
+
       {/* 自定义树 */}
       <div style={{ marginLeft: -4 }}>
         {locations.map((loc) => (
@@ -279,6 +296,17 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
           />
         ))}
       </div>
+
+      {/* 受控编辑器 */}
+      <LocationEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
     </div>
   )
 }
