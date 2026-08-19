@@ -431,7 +431,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
               id: `factor-${Date.now()}-${name}`,
               name,
               symbol: name.substring(0, 1).toUpperCase(),
-              type: typeof value === 'number' ? 'continuous' : 'categorical',
+              type: typeof value === 'number' ? 'numeric' : 'categorical',
               levels: typeof value === 'number' ? { lower: value * 0.8, upper: value * 1.2 } : [String(value)],
               low_level: typeof value === 'number' ? value * 0.8 : String(value),
               high_level: typeof value === 'number' ? value * 1.2 : String(value),
