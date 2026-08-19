@@ -257,7 +257,11 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
             </div>
           }
           styles={{ description: { color: '#787671' } }}
-        />
+        >
+          <Button type="primary" onClick={() => openCategoryDrawer()}>
+            创建第一个分类
+          </Button>
+        </Empty>
       </div>
     )
   }

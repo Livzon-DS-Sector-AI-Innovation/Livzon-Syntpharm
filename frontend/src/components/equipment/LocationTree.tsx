@@ -240,14 +240,18 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
             </div>
           }
           styles={{ description: { color: '#787671' }}}
-        />
+        >
+          <Button type="primary" onClick={() => openLocationDrawer()}>
+            创建第一个位置
+          </Button>
+        </Empty>
       </div>
     )
   }
 
   return (
     <div>
-      <div style={{ marginBottom: 12 }}>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -256,6 +260,9 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
         >
           新增位置
         </Button>
+        <Tooltip title="位置用于记录设备的物理坐标，便于巡检和应急响应。例如：A栋-1F-发酵区。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help', flexShrink: 0 }} />
+        </Tooltip>
       </div>
 
       {/* 自定义树 */}

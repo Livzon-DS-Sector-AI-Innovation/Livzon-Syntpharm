@@ -271,7 +271,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
           </Descriptions.Item>
           <Descriptions.Item label="资产类别说明">{equipment.category_description || '-'}</Descriptions.Item>
           <Descriptions.Item label="数量">
-            {equipment.technical_params?.['数量'] ?? '-'}
+            {equipment.technical_params?.['数量'] != null ? String(equipment.technical_params['数量']) : '-'}
           </Descriptions.Item>
           <Descriptions.Item label="设备型号">{equipment.model || '-'}</Descriptions.Item>
           <Descriptions.Item label="设备规格">{equipment.specification || '-'}</Descriptions.Item>
