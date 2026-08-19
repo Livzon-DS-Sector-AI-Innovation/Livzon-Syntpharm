@@ -218,7 +218,7 @@ jobs:
           ${{ runner.os }}-playwright-
     - run: cd backend && pip install uv && uv sync --dev
     - name: Install Playwright browsers
-      run: cd frontend && timeout 180 pnpm exec playwright install --with-deps chromium || (echo "Playwright install failed, retrying without deps..." && cd frontend && pnpm exec playwright install chromium)
+      run: cd frontend && timeout 180 pnpm exec playwright install --with-deps chromium || (echo "Playwright install failed, retrying without deps..." && pnpm exec playwright install chromium)
       timeout-minutes: 5
     - run: bash scripts/ci.sh e2e
       env:
