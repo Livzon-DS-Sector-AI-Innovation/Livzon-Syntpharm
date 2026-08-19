@@ -1,9 +1,9 @@
 from uuid import UUID
+
 """研发项目 API 路由."""
 
 import logging
 import uuid
-from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
