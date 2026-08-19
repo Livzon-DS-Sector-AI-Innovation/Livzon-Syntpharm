@@ -183,7 +183,7 @@ export function EquipmentPage({
     <ConfigProvider theme={antdTheme} locale={zhCN}>
       <App>
         {/* 标题行 */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 16 }}>
           <h2
             style={{
               fontSize: 22, fontWeight: 600, color: '#1a1a1a',
@@ -197,7 +197,12 @@ export function EquipmentPage({
           </p>
         </div>
 
-        <div className="flex gap-4" style={{ height: 'calc(100vh - 210px)', minHeight: 400 }}>
+        {/* 统计概览 - 移到顶部 */}
+        <div style={{ marginBottom: 16 }}>
+          <StatsCards statistics={currentStats} />
+        </div>
+
+        <div className="flex gap-4" style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
           {/* 左侧：可折叠分类/位置树 */}
           {!sidebarCollapsed && (
             <div
@@ -230,7 +235,7 @@ export function EquipmentPage({
               overflow: 'hidden',
             }}
           >
-            {/* 折叠按钮 + 统计 + 标题 */}
+            {/* 折叠按钮 */}
             <div className="mb-3 flex items-center gap-3" style={{ flexShrink: 0 }}>
               <Button
                 type="text"
@@ -238,7 +243,6 @@ export function EquipmentPage({
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 style={{ color: '#5d5b54', flexShrink: 0 }}
               />
-              <StatsCards statistics={currentStats} compact />
             </div>
 
             {/* 表格区域 */}
