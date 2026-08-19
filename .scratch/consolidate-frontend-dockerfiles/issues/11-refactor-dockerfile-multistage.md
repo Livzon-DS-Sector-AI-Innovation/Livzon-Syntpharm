@@ -8,7 +8,7 @@ labels:
   - frontend
 created: 2026-08-18
 blocked_by: []
-spec: docs/specs/consolidate-frontend-dockerfiles.md
+spec: .scratch/consolidate-frontend-dockerfiles/spec.md
 ---
 
 # 11 — Refactor frontend Dockerfile to multi-stage build

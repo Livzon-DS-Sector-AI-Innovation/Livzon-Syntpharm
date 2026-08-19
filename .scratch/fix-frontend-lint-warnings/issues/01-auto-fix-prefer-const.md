@@ -8,7 +8,7 @@ labels:
 created: 2026-08-17
 completed: 2026-08-17
 blocked_by: []
-spec: docs/specs/fix-frontend-lint-warnings.md
+spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
 # 01 — Auto-fix prefer-const

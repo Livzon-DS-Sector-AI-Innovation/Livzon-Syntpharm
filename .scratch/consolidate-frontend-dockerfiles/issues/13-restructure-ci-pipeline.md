@@ -8,8 +8,8 @@ labels:
   - frontend
 created: 2026-08-18
 blocked_by:
-  - docs/tickets/12-update-compose-files.md
-spec: docs/specs/consolidate-frontend-dockerfiles.md
+  - .scratch/consolidate-frontend-dockerfiles/issues/12-update-compose-files.md
+spec: .scratch/consolidate-frontend-dockerfiles/spec.md
 ---
 
 # 13 — Restructure CI pipeline to use Docker for frontend build

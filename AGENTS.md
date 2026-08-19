@@ -587,3 +587,17 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 - `WATCHPACK_POLLING=true` — webpack 文件监听
 - `CHOKIDAR_USEPOLLING=true` — chokidar 文件监听
 
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout. `CONTEXT.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.

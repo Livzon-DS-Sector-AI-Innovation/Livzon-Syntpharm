@@ -8,8 +8,8 @@ labels:
   - frontend
 created: 2026-08-18
 blocked_by:
-  - docs/tickets/11-refactor-dockerfile-multistage.md
-spec: docs/specs/consolidate-frontend-dockerfiles.md
+  - .scratch/consolidate-frontend-dockerfiles/issues/11-refactor-dockerfile-multistage.md
+spec: .scratch/consolidate-frontend-dockerfiles/spec.md
 ---
 
 # 12 — Update docker-compose files for multi-stage architecture

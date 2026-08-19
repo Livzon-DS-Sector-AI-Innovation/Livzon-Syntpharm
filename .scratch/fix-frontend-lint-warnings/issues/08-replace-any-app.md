@@ -8,7 +8,7 @@ labels:
   - typescript
 created: 2026-08-17
 blocked_by: ["06-fix-hooks-app"]
-spec: docs/specs/fix-frontend-lint-warnings.md
+spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
 # 08 — Replace any types in src/app/
