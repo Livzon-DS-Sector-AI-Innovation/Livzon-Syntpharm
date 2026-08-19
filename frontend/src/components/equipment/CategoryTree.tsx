@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, Space, Popconfirm, Empty } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { App, Button, Space, Popconfirm, Empty, Tooltip } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { EquipmentCategory } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { CategoryEditor } from './CategoryEditor'
@@ -61,6 +61,7 @@ function TreeNode({
   onSelect,
   onEdit,
   onDelete,
+  onRefresh,
 }: {
   node: TreeNodeData
   level: number
@@ -68,6 +69,7 @@ function TreeNode({
   onSelect: (id: string) => void
   onEdit: (node: TreeNodeData) => void
   onDelete: (node: TreeNodeData) => void
+  onRefresh?: () => void
 }) {
   const [expanded, setExpanded] = useState(true)
   const [hovered, setHovered] = useState(false)
@@ -77,11 +79,16 @@ function TreeNode({
   return (
     <div>
       <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
-        <CategoryEditor 
-          mode="create" 
-          trigger={<Button type="dashed" size="small" icon={<PlusOutlined />}>新增根分类</Button>}
-          onSuccess={onRefresh}
-        />
+        <Space>
+          <CategoryEditor 
+            mode="create" 
+            trigger={<Button type="primary" size="small" icon={<PlusOutlined />}>新建分类</Button>}
+            onSuccess={onRefresh || (() => {})}
+          />
+          <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+            <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+          </Tooltip>
+        </Space>
       </div>
       {/* 节点行 */}
       <div
@@ -180,6 +187,7 @@ function TreeNode({
               onSelect={onSelect}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRefresh={onRefresh}
             />
           ))}
         </div>
@@ -239,7 +247,15 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
           </Button>
         </div>
         <Empty
-          description="暂无分类"
+          description={
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: 14 }}>暂无设备分类</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+                分类用于设备类型管理和统计分析。<br />
+                请先创建分类体系，以便对设备进行标准化管理。
+              </p>
+            </div>
+          }
           styles={{ description: { color: '#787671' } }}
         />
       </div>
@@ -249,11 +265,16 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
   return (
     <div>
       <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
-        <CategoryEditor 
-          mode="create" 
-          trigger={<Button type="dashed" size="small" icon={<PlusOutlined />}>新增根分类</Button>}
-          onSuccess={onRefresh}
-        />
+        <Space>
+          <CategoryEditor 
+            mode="create" 
+            trigger={<Button type="primary" size="small" icon={<PlusOutlined />}>新建分类</Button>}
+            onSuccess={onRefresh || (() => {})}
+          />
+          <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+            <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+          </Tooltip>
+        </Space>
       </div>
       <div style={{ marginBottom: 12 }}>
         <Button
@@ -277,6 +298,7 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
             onSelect={(id) => setSelectedCategory(id || null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRefresh={onRefresh}
           />
         ))}
       </div>
