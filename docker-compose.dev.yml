@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   backend:
     volumes:
@@ -9,9 +8,8 @@ services:
       \ 0.0.0.0 --port 8000\n\"\n"
   frontend:
     volumes:
-    - ./frontend:/app:ro
+    - ./frontend:/app
     - /app/node_modules
-    - frontend_dev_next:/app/.next
     environment:
     - WATCHPACK_POLLING=true
     - CHOKIDAR_USEPOLLING=true
@@ -20,5 +18,3 @@ services:
     build:
       context: ./frontend
       target: dev
-volumes:
-  frontend_dev_next: null
