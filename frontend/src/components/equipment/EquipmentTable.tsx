@@ -9,6 +9,7 @@ import { deleteEquipment } from '@/actions/equipment'
 import { statusPill, linkDanger, linkPrimary, linkWarning } from '@/components/equipment/shared-styles'
 import { EquipmentDetailDrawer } from './EquipmentDetailDrawer'
 import { EquipmentImportModal } from './EquipmentImportModal'
+import { StatusBadge } from './StatusBadge'
 import { ColumnConfigModal } from './ColumnConfigModal'
 
 const statusConfig: Record<EquipmentStatus, { color: string; bg: string }> = {
@@ -127,8 +128,8 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
       render: (v: string | null) => v || '-' },
     { title: '负责人', dataIndex: 'responsible_person_name', key: 'responsible', width: 100,
       render: (v: string | null) => v || '-' },
-    { title: '设备状态', dataIndex: 'status', key: 'status', width: 90,
-      render: (s: EquipmentStatus) => <span style={statusPillMap[s] || statusPill('#787671', '#f0eeec')}>{s}</span> },
+    { title: '设备状态', dataIndex: 'status', key: 'status', width: 100,
+      render: (s: EquipmentStatus) => <StatusBadge status={s} /> },
     { title: '资产类别说明', dataIndex: 'category_description', key: 'category_description', width: 140, ellipsis: true, render: (v: string | null) => v || '-' },
     { title: '型号', dataIndex: 'model', key: 'model', width: 140, ellipsis: true },
     { title: '制造商', dataIndex: 'manufacturer', key: 'manufacturer', width: 140, ellipsis: true },
