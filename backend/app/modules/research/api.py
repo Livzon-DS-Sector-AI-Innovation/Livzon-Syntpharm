@@ -1,9 +1,8 @@
-from uuid import UUID
-
 """研发项目 API 路由."""
 
 import logging
 import uuid
+from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -55,6 +54,7 @@ from app.modules.research.schemas import (
     RdStageRecordCreate,
     RdStageRecordResponse,
     RdStageRecordUpdate,
+    RdTrackConclusionVersionCreate,
     ResearchProjectCreate,
     ResearchProjectResponse,
     ResearchProjectUpdate,
@@ -2926,6 +2926,7 @@ async def get_track_detail(
 @router.post("/tracks/{track_id}/conclusion-versions", summary="发布新结论版本")
 async def create_conclusion_version_api(
     track_id: UUID,
+    data: RdTrackConclusionVersionCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -3502,9 +3503,9 @@ async def generate_research_report(
         # 4. 槽位填充
         # Type ignore for quick fix: facts and derived_facts structure matches internal logic
         filled_text, prose_slots = fill_template_slots(
-            template.template_content, 
+            template.template_content,
             facts,  # type: ignore[arg-type]
-            derived_facts  # type: ignore[arg-type]
+            derived_facts,  # type: ignore[arg-type]
         )
 
         # 5. AI 补全 Prose 部分 (简化版，实际应调用 LLM)
