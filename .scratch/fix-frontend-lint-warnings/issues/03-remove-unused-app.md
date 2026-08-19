@@ -1,30 +1,32 @@
 ---
-title: "Remove unused code in src/app/"
-status: done
+title: "Remove unused in src/app/"
+status: ready-for-agent
 labels:
-  - done
+  - ready-for-agent
   - frontend
   - lint
 created: 2026-08-17
-completed: 2026-08-17
-blocked_by: ["01-auto-fix-prefer-const"]
+updated: 2026-08-19
+blocked_by: []
 spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
-# 03 — Remove unused code in src/app/
+# 03 — Remove unused in src/app/
 
 ## What to build
 
-After this ticket, all 479 unused imports, variables, and type exports in `src/app/` are removed. The directory is clean of `no-unused-vars` warnings.
+After this ticket, all unused imports, variables, and type exports in `src/app/` are removed. The directory should have zero `@typescript-eslint/no-unused-vars` warnings.
 
 ## Acceptance criteria
 
-- [x] Remove all unused imports in `src/app/` (479 warnings)
-- [x] Remove unused variables or prefix with `_` if intentionally unused
-- [x] Remove unused type exports or prefix with `_`
-- [x] `pnpm lint` produces 2,815 warnings (down from 3,294)
-- [x] No runtime behavior changes — this is purely cleanup
+- [ ] Run `pnpm lint` and verify zero `@typescript-eslint/no-unused-vars` warnings in `src/app/`
+- [ ] Remove all unused imports, variables, and type exports
+- [ ] For unused function parameters, prefix with `_`
+- [ ] For unused type exports, verify they're not dynamically referenced before removing
+- [ ] No runtime behavior changes
 
 ## Notes
 
-For unused function parameters, prefix with `_` (e.g., `_id`, `_operator`). For unused type exports, verify they're not dynamically referenced before removing.
+**Status update (2026-08-19):** Despite being marked done, `src/app/` still has unused-vars warnings. This ticket needs to be completed.
+
+Current state: `src/app/` has 197 total warnings (mix of any and unused-vars).

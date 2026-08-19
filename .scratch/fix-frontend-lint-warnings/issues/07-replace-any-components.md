@@ -1,32 +1,35 @@
 ---
-title: "Replace any types in src/components/"
+title: "Replace any in src/components/"
 status: ready-for-agent
 labels:
   - ready-for-agent
   - frontend
   - lint
-  - typescript
 created: 2026-08-17
-blocked_by: ["05-fix-hooks-components"]
+updated: 2026-08-19
+blocked_by:
+  - 02-remove-unused-components
+  - 05-fix-hooks-components
 spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
-# 07 — Replace any types in src/components/
+# 07 — Replace any in src/components/
 
 ## What to build
 
-After this ticket, all 519 `any` types in `src/components/` are replaced with proper types. Component props, event handlers, and API response types use the OpenAPI-generated types from `lib/api/` and Ant Design's generic type parameters.
+After this ticket, all `@typescript-eslint/no-explicit-any` warnings in `src/components/` are resolved. All `any` types are replaced with proper types.
 
 ## Acceptance criteria
 
-- [ ] Replace all 519 `@typescript-eslint/no-explicit-any` warnings in `src/components/`
-- [ ] Use OpenAPI-generated types from `lib/api/server/` for API responses
-- [ ] Use Ant Design generic type parameters (e.g., `ColumnsType<RecordType>`, `FormInstance<Values>`) for Ant Design components
-- [ ] Use `unknown` + type guards for genuinely dynamic data
-- [ ] `pnpm lint` produces 2,036 warnings (down from 2,555)
-- [ ] TypeScript compilation succeeds with `pnpm typecheck`
-- [ ] Components render correctly with proper types
+- [ ] Run `pnpm lint` and verify zero `@typescript-eslint/no-explicit-any` warnings in `src/components/`
+- [ ] Replace `any` with proper types in component files
+- [ ] Use Ant Design generic type parameters where applicable (e.g., `ColumnsType<RecordType>`, `FormInstance<Values>`)
+- [ ] For event handlers, use proper event types (e.g., `React.ChangeEvent<HTMLInputElement>`)
+- [ ] For API responses, use generated types from `src/types/generated/`
+- [ ] No runtime behavior changes
 
 ## Notes
 
-This is the largest single batch. For table column definitions, use `ColumnsType<YourRecordType>`. For form handlers, use `FormInstance<YourFormValues>`. For event handlers, use the specific event types from React or the library.
+**Updated count (2026-08-19):** `src/components/` has 444 total warnings. The exact count of `any` warnings needs to be determined by running lint with a filter.
+
+**Blocked by:** Tickets 02 and 06 must complete first to avoid merge conflicts.
