@@ -1,33 +1,45 @@
 ---
-title: "Replace any types in remaining directories"
+title: "Replace any in remaining directories"
 status: ready-for-agent
 labels:
   - ready-for-agent
   - frontend
   - lint
-  - typescript
 created: 2026-08-17
-blocked_by: ["04-remove-unused-remaining"]
+updated: 2026-08-19
+blocked_by:
+  - 04-remove-unused-remaining
 spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
-# 09 — Replace any types in remaining directories
+# 09 — Replace any in remaining directories
 
 ## What to build
 
-After this ticket, all 754 `any` types in `src/lib/`, `src/actions/`, `src/types/`, `src/stores/`, and `e2e/` are replaced with proper types. Utility functions, server actions, type definitions, stores, and test helpers use proper TypeScript types.
+After this ticket, all `@typescript-eslint/no-explicit-any` warnings in `src/lib/`, `src/actions/`, `src/types/`, `src/stores/`, and `e2e/` are resolved. All `any` types are replaced with proper types.
 
 ## Acceptance criteria
 
-- [ ] Replace all 589 `any` warnings in `src/lib/` (utility functions, API helpers)
-- [ ] Replace all 126 `any` warnings in `src/actions/` (server action return types and parameters)
-- [ ] Replace all 35 `any` warnings in `src/types/` (type definitions)
-- [ ] Replace the 1 `any` warning in `src/stores/` (Zustand stores)
-- [ ] Replace the 3 `any` warnings in `e2e/` (test helpers)
-- [ ] `pnpm lint` produces 0 warnings (down from 3,054)
-- [ ] TypeScript compilation succeeds with `pnpm typecheck`
-- [ ] All modules work correctly with proper types
+- [ ] Run `pnpm lint` and verify zero `@typescript-eslint/no-explicit-any` warnings in:
+  - `src/lib/`
+  - `src/actions/`
+  - `src/types/`
+  - `src/stores/`
+  - `e2e/`
+- [ ] Replace `any` with proper types
+- [ ] For API functions, use proper request/response types
+- [ ] For utility functions, use proper parameter and return types
+- [ ] No runtime behavior changes
 
 ## Notes
 
-This is the final cleanup pass. For `src/types/`, some types may be unused — verify before replacing. For `src/stores/`, ensure Zustand store state and actions are properly typed. For `e2e/`, test helpers can use `unknown` with type assertions where needed.
+**Updated count (2026-08-19):** These directories have the following total warnings:
+- `src/lib/`: 44
+- `src/actions/`: 29
+- `src/types/`: 18
+- `src/stores/`: 5
+- `e2e/`: 2
+
+The exact count of `any` warnings needs to be determined by running lint with a filter.
+
+**Blocked by:** Ticket 04 must complete first to avoid merge conflicts.

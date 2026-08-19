@@ -1,40 +1,43 @@
 ---
-title: "Promote lint warnings to errors"
+title: "Promote lint rules to errors"
 status: ready-for-agent
 labels:
   - ready-for-agent
   - frontend
   - lint
-  - ci
 created: 2026-08-17
-blocked_by: ["07-replace-any-components", "08-replace-any-app", "09-replace-any-remaining"]
+updated: 2026-08-19
+blocked_by:
+  - 07-replace-any-components
+  - 08-replace-any-app
+  - 09-replace-any-remaining
 spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
-# 10 — Promote lint warnings to errors
+# 10 — Promote lint rules to errors
 
 ## What to build
 
-After this ticket, all ESLint rules that were previously set to `warn` are promoted to `error`. The CI now blocks on any lint violation, preventing future regressions. Running `pnpm lint` produces 0 warnings and 0 errors.
+After this ticket, all ESLint rules that were previously warnings are promoted to errors. This ensures CI blocks any future regressions.
 
 ## Acceptance criteria
 
-- [ ] Update `eslint.config.mjs` to change all `warn` rules to `error`:
-  - `@typescript-eslint/no-explicit-any`: warn → error
-  - `@typescript-eslint/no-unused-vars`: warn → error
-  - `react/no-unescaped-entities`: warn → error
-  - `react/jsx-key`: warn → error
-  - `prefer-const`: warn → error
-  - `react-hooks/rules-of-hooks`: warn → error
-  - `react-hooks/exhaustive-deps`: warn → error
-  - `react-hooks/set-state-in-effect`: warn → error
-  - `react-hooks/static-components`: warn → error
-  - `react-hooks/immutability`: warn → error
-  - `react-hooks/purity`: warn → error
-- [ ] `pnpm lint` produces 0 warnings and 0 errors
-- [ ] CI passes with the updated rules
-- [ ] Any future lint violation will now fail CI
+- [ ] Update `eslint.config.mjs` to promote rules from `warn` to `error`:
+  - `@typescript-eslint/no-explicit-any`
+  - `@typescript-eslint/no-unused-vars`
+  - `react-hooks/*` rules (except the false positives documented in the spec)
+- [ ] Run `pnpm lint` and verify zero warnings (all issues are now errors)
+- [ ] CI pipeline fails if any lint errors are present
+- [ ] No runtime behavior changes
 
 ## Notes
 
-This is the final step. Only proceed after all warnings are resolved. The goal is to prevent regression — any new `any` type, unused import, or hooks misuse will now block the PR.
+**Blocked by:** Tickets 07, 08, and 09 must complete first. All `any` types must be replaced before promoting the rule to error.
+
+**False positives to keep as warnings:**
+The following rules should remain as warnings (not promoted to errors) per the spec:
+- `react-hooks/set-state-in-effect` (222 warnings - legitimate data fetching patterns)
+- `react-hooks/exhaustive-deps` (176 warnings - complex dependency cases)
+- `react-hooks/immutability` (27 warnings - Ant Design Form API calls)
+
+These are documented as false positives in the spec and require significant refactoring to fix.
