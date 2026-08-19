@@ -3469,9 +3469,9 @@ async def generate_report(
 
 @router.post("/generate-report", summary="AI 生成研发报告")
 async def generate_research_report(
+    current_user: RequiredUser,
     project_id: UUID = Body(...),
     template_id: UUID = Body(...),
-    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """
