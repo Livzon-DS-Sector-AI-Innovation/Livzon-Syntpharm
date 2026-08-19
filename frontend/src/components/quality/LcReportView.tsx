@@ -134,7 +134,7 @@ export default function LcReportView({ report }: Props) {
             <Statistic
               title="整体判定"
               value={report.all_pass ? '全部合格' : '存在不合格'}
-              valueStyle={{ color: report.all_pass ? '#52c41a' : '#ff4d4f' }}
+              styles={{ content: { color: report.all_pass ? '#52c41a' : '#ff4d4f' } }}
               prefix={report.all_pass ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
             />
           </Card>
@@ -144,7 +144,7 @@ export default function LcReportView({ report }: Props) {
             <Statistic
               title="OOT 状态"
               value={report.has_oot ? '存在超趋势' : '无超趋势'}
-              valueStyle={{ color: report.has_oot ? '#faad14' : '#52c41a' }}
+              styles={{ content: { color: report.has_oot ? '#faad14' : '#52c41a' } }}
               prefix={report.has_oot ? <WarningOutlined /> : <CheckCircleOutlined />}
             />
           </Card>

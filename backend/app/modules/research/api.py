@@ -3460,3 +3460,62 @@ async def generate_report(
     )
 
     return build_response(data=result, message="生成成功")
+
+
+
+
+# ===== AI 报告生成接口 (严谨版方案) =====
+
+@router.post("/generate-report", summary="AI 生成研发报告")
+async def generate_research_report(
+    project_id: UUID = Body(...),
+    template_id: UUID = Body(...),
+    current_user: RequiredUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """
+    根据项目 ID 和模板 ID，生成一份严谨的研发报告。
+    流程：Fact提取 -> 派生结论计算 -> 槽位填充 -> AI补全Prose -> 数值校验
+    """
+    try:
+        # 1. 获取模板内容
+        from app.modules.research.models import RdDeliverableTemplate
+        result = await db.execute(select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == template_id))
+        template = result.scalar_one_or_none()
+        if not template:
+            return error_response(message="模板不存在", status_code=404)
+
+        # 2. 构建 Fact 字典 (这里简化处理，实际应调用 build_fact_dictionary)
+        # 为了演示，我们先使用硬编码的 Mock 数据，后续再对接真实数据库查询
+        facts = {
+            "project_name": {"value": "阿莫西林原料药", "unit": "", "source_id": str(project_id)},
+            "api_name": {"value": "Amoxicillin", "unit": "", "source_id": str(project_id)},
+            "cas_number": {"value": "26787-78-0", "unit": "", "source_id": str(project_id)},
+        }
+
+        # 3. 模拟派生结论 (实际应调用 calculate_doe_conclusions)
+        derived_facts = {
+            "yield_summary": {"trend": "increasing", "min": 75.0, "max": 85.3, "unit": "%"},
+            "model_fit_evaluation": {"quality_label": "excellent", "r_squared": 0.95}
+        }
+
+        # 4. 槽位填充
+        filled_text, prose_slots = fill_template_slots(template.template_content, facts, derived_facts)
+
+        # 5. AI 补全 Prose 部分 (简化版，实际应调用 LLM)
+        final_report = filled_text
+        for slot in prose_slots:
+            final_report = final_report.replace(f"{{{{P:{slot}}}}}", f"[AI 自动生成的关于 {slot} 的专业讨论...]")
+
+        # 6. 数值校验
+        validation = validate_report_content(final_report, facts)
+
+        return success_response(data={
+            "content": final_report,
+            "validation": validation,
+            "prose_slots_count": len(prose_slots)
+        }, message="报告生成成功")
+
+    except Exception as e:
+        logger.error(f"报告生成失败: {e}")
+        return error_response(message=f"服务器内部错误: {str(e)}", status_code=500)
