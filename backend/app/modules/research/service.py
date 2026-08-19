@@ -1,4 +1,5 @@
 """Research business workflows."""
+
 import logging
 import re
 import uuid
@@ -1275,17 +1276,14 @@ async def generate_report_with_ai(
 
 # ===== AI 报告生成 Service =====
 
+
 async def generate_deliverable_report(
-    db: AsyncSession,
-    project_id: uuid.UUID,
-    deliverable_template_id: uuid.UUID
+    db: AsyncSession, project_id: uuid.UUID, deliverable_template_id: uuid.UUID
 ) -> str:
     """根据交付物模板和项目数据生成报告 (MVP 严谨版)"""
 
     # 1. 获取模板
-    result = await db.execute(
-        select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == deliverable_template_id)
-    )
+    result = await db.execute(select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == deliverable_template_id))
     template = result.scalar_one_or_none()
     if not template or not template.template_content:
         raise ValueError("模板不存在或内容为空")
@@ -1296,9 +1294,7 @@ async def generate_deliverable_report(
     # 3. 计算派生结论 (Type B)
     # 这里以获取第一个工艺优化任务的 DOE 数据为例
     opt_result = await db.execute(
-        select(ProcessOptimization).where(
-            ProcessOptimization.project_id == project_id
-        ).limit(1)
+        select(ProcessOptimization).where(ProcessOptimization.project_id == project_id).limit(1)
     )
     optimization = opt_result.scalar_one_or_none()
     derived_facts = {}
@@ -1313,6 +1309,7 @@ async def generate_deliverable_report(
     final_report = pre_filled_text
     if prose_slots:
         from app.core.llm import llm_client
+
         prompt = f"""
         请根据以下已填充好事实数据的报告草稿，补全其中的逻辑连接和讨论部分。
         注意：不要修改任何已经存在的数字和事实描述。
@@ -1323,7 +1320,7 @@ async def generate_deliverable_report(
         try:
             messages = [
                 {"role": "system", "content": "你是制药研发专家，负责润色报告。"},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ]
             response = await llm_client.chat_completion(messages)
             final_report = response.choices[0].message.content
@@ -1331,11 +1328,11 @@ async def generate_deliverable_report(
             logger.error(f"LLM 补全失败: {e}")
             # 如果 LLM 失败，至少返回已填充事实的草稿
 
-
     return final_report
 
 
 # ===== Fact 字典构建器 =====
+
 
 async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: str) -> dict:
     """
@@ -1356,10 +1353,10 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
     # 2. 获取当前阶段的工艺优化数据 (以 DOE 为例)
     if stage == "process_optimization":
         opt_result = await db.execute(
-            select(ProcessOptimization).where(
-                ProcessOptimization.project_id == project_id,
-                ProcessOptimization.status != "failed"
-            ).order_by(ProcessOptimization.updated_at.desc()).limit(1)
+            select(ProcessOptimization)
+            .where(ProcessOptimization.project_id == project_id, ProcessOptimization.status != "failed")
+            .order_by(ProcessOptimization.updated_at.desc())
+            .limit(1)
         )
         optimization = opt_result.scalar_one_or_none()
 
@@ -1376,15 +1373,12 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
                 facts["doe_r_squared"] = {
                     "value": doe_data["analysis_result"]["r_squared"],
                     "unit": "",
-                    "source_id": optimization.id
+                    "source_id": optimization.id,
                 }
 
     # 3. 获取杂质研究数据 (Type A: Fact)
     track_result = await db.execute(
-        select(RdResearchTrack).where(
-            RdResearchTrack.project_id == project_id,
-            RdResearchTrack.type == "impurity"
-        )
+        select(RdResearchTrack).where(RdResearchTrack.project_id == project_id, RdResearchTrack.type == "impurity")
     )
     impurity_track = track_result.scalar_one_or_none()
     if impurity_track and impurity_track.current_conclusion:
@@ -1392,23 +1386,20 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
         facts["impurity_conclusion_summary"] = {
             "value": impurity_track.current_conclusion[:100] + "...",
             "unit": "",
-            "source_id": str(impurity_track.id)
+            "source_id": str(impurity_track.id),
         }
 
     return facts
 
+
 def _get_unit_for_param(param_name: str) -> str:
     """简单的单位映射，实际生产中应从元数据中获取"""
-    unit_map = {
-        "temperature": "°C",
-        "pressure": "bar",
-        "time": "h",
-        "yield": "%"
-    }
+    unit_map = {"temperature": "°C", "pressure": "bar", "time": "h", "yield": "%"}
     return unit_map.get(param_name.lower(), "")
 
 
 # ===== 派生结论计算器 (Derived Fact Calculator) =====
+
 
 def calculate_doe_conclusions(doe_data: dict) -> dict:
     """
@@ -1453,31 +1444,26 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
             "min": min_val,
             "avg": round(avg_val, 2),
             "trend": trend,
-            "unit": resp.get("unit", "")
+            "unit": resp.get("unit", ""),
         }
 
     # 2. 提取最优条件 (如果分析结果中已有)
     if "analysis_result" in doe_data and "optimal_conditions" in doe_data["analysis_result"]:
         optimal = doe_data["analysis_result"]["optimal_conditions"]
         conclusions["optimal_conditions_labels"] = {
-            k: {"value": v, "desc": f"The optimal level for {k} is {v}"}
-            for k, v in optimal.items()
+            k: {"value": v, "desc": f"The optimal level for {k} is {v}"} for k, v in optimal.items()
         }
 
     # 3. 模型拟合度评价
     if "analysis_result" in doe_data and "r_squared" in doe_data["analysis_result"]:
         r2 = doe_data["analysis_result"]["r_squared"]
         fit_quality = "excellent" if r2 > 0.9 else ("good" if r2 > 0.7 else "poor")
-        conclusions["model_fit_evaluation"] = {
-            "r_squared": r2,
-            "quality_label": fit_quality
-        }
+        conclusions["model_fit_evaluation"] = {"r_squared": r2, "quality_label": fit_quality}
 
     return conclusions
 
 
 # ===== 槽位填充引擎 (Slot Filling Engine) =====
-
 
 
 def fill_template_slots(template_content: str, facts: dict, derived_facts: dict) -> tuple[str, list[str]]:
@@ -1499,7 +1485,7 @@ def fill_template_slots(template_content: str, facts: dict, derived_facts: dict)
             return f"{value}{unit}" if unit else str(value)
         return match.group(0)  # 如果找不到，保留原样
 
-    filled_text = re.sub(r'\{\{F:(\w+)\}\}', replace_fact, filled_text)
+    filled_text = re.sub(r"\{\{F:(\w+)\}\}", replace_fact, filled_text)
 
     # 2. 填充 Derived Fact 槽位 {{B:key}}
     # 这里我们简单地将结论标签转化为自然语言片段
@@ -1515,15 +1501,16 @@ def fill_template_slots(template_content: str, facts: dict, derived_facts: dict)
             return str(data)
         return match.group(0)
 
-    filled_text = re.sub(r'\{\{B:(\w+)\}\}', replace_derived, filled_text)
+    filled_text = re.sub(r"\{\{B:(\w+)\}\}", replace_derived, filled_text)
 
     # 3. 提取剩余的 Prose 槽位 {{P:key}}
-    prose_slots = re.findall(r'\{\{P:(\w+)\}\}', filled_text)
+    prose_slots = re.findall(r"\{\{P:(\w+)\}\}", filled_text)
 
     return filled_text, prose_slots
 
 
 # ===== 数值校验层 (Validation Layer) =====
+
 
 def validate_report_content(report: str, facts: dict) -> dict:
     """
@@ -1534,7 +1521,7 @@ def validate_report_content(report: str, facts: dict) -> dict:
 
     # 1. 数值一致性校验
     # 提取报告中所有的数字（简单正则）
-    numbers_in_report = re.findall(r'\d+\.?\d*', report)
+    numbers_in_report = re.findall(r"\d+\.?\d*", report)
 
     for key, item in facts.items():
         val_str = str(item["value"])
@@ -1543,12 +1530,9 @@ def validate_report_content(report: str, facts: dict) -> dict:
             errors.append(f"Warning: Fact '{key}' ({val_str}) might be missing from the report.")
 
     # 2. 术语合法性校验 (示例)
-    forbidden_terms = ["大概", "可能", "也许"] # 研发报告应避免模糊词汇
+    forbidden_terms = ["大概", "可能", "也许"]  # 研发报告应避免模糊词汇
     for term in forbidden_terms:
         if term in report:
             errors.append(f"Term alert: Found informal term '{term}'.")
 
-    return {
-        "passed": len([e for e in errors if "Alert" in e]) == 0,
-        "warnings": errors
-    }
+    return {"passed": len([e for e in errors if "Alert" in e]) == 0, "warnings": errors}

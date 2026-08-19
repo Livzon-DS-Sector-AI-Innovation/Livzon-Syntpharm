@@ -171,20 +171,14 @@ class ProcessOptimization(BaseModel):
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="开始日期")
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="结束日期")
 
-
     # 研究项关联（新架构）
     impurity_track_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("research.rd_research_tracks.id"),
-        nullable=True,
-        comment="关联的杂质研究项ID"
+        UUID(as_uuid=True), ForeignKey("research.rd_research_tracks.id"), nullable=True, comment="关联的杂质研究项ID"
     )
     crystal_track_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("research.rd_research_tracks.id"),
-        nullable=True,
-        comment="关联的晶型研究项ID"
+        UUID(as_uuid=True), ForeignKey("research.rd_research_tracks.id"), nullable=True, comment="关联的晶型研究项ID"
     )
+
 
 class PilotWorkflow(BaseModel):
     """中试研究实例"""
@@ -758,8 +752,7 @@ class RdReportTemplate(BaseModel):
     meta_info: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="模板元数据(info)")
 
     category: Mapped[str] = mapped_column(
-        String(50), default="general",
-        comment="分类：process_optimization, validation, etc."
+        String(50), default="general", comment="分类：process_optimization, validation, etc."
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
 

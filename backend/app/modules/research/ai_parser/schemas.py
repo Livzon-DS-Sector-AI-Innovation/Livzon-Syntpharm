@@ -76,12 +76,16 @@ class ExperimentParseRequest(BaseModel):
     parse_type: str = Field(..., description="解析类型")
     file_name: str | None = Field(None, description="原始文件名(可选)")
 
-    @field_validator('parse_type')
+    @field_validator("parse_type")
     @classmethod
     def validate_parse_type(cls, v: str) -> str:
         valid_types = [
-            'lab_confirmation', 'scale_up', 'doe_experiment',
-            'impurity_analysis', 'crystal_form_analysis', 'route_design'
+            "lab_confirmation",
+            "scale_up",
+            "doe_experiment",
+            "impurity_analysis",
+            "crystal_form_analysis",
+            "route_design",
         ]
         if v not in valid_types:
             raise ValueError(f"parse_type必须是 {valid_types} 之一，当前值: {v}")
@@ -111,12 +115,16 @@ class ParameterParseRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=30000, description="工艺参数文本内容")
     parse_type: str = Field(..., description="解析类型")
 
-    @field_validator('parse_type')
+    @field_validator("parse_type")
     @classmethod
     def validate_parse_type(cls, v: str) -> str:
         valid_types = [
-            'lab_confirmation', 'scale_up', 'doe_experiment',
-            'impurity_analysis', 'crystal_form_analysis', 'route_design'
+            "lab_confirmation",
+            "scale_up",
+            "doe_experiment",
+            "impurity_analysis",
+            "crystal_form_analysis",
+            "route_design",
         ]
         if v not in valid_types:
             raise ValueError(f"parse_type必须是 {valid_types} 之一，当前值: {v}")

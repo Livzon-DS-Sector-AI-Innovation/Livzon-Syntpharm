@@ -1,39 +1,33 @@
 """
 离线测试报告生成核心逻辑
 """
+
 import asyncio
 import sys
 import os
 
 # 添加项目根目录到路径
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from app.modules.research.service import (
-    calculate_doe_conclusions,
-    fill_template_slots,
-    validate_report_content
-)
+from app.modules.research.service import calculate_doe_conclusions, fill_template_slots, validate_report_content
 
 # 模拟数据库查询返回的数据
 MOCK_PROJECT = {
     "id": "723537bc-f797-469e-9c93-d70301c74447",
     "name": "阿莫西林原料药工艺优化",
     "api_name": "Amoxicillin",
-    "cas_number": "26787-78-0"
+    "cas_number": "26787-78-0",
 }
 
 MOCK_DOE_DATA = {
     "runs": [
         {"status": "completed", "response_values": {"yield": 75.0}},
         {"status": "completed", "response_values": {"yield": 82.5}},
-        {"status": "completed", "response_values": {"yield": 85.3}}, # 峰值
+        {"status": "completed", "response_values": {"yield": 85.3}},  # 峰值
         {"status": "completed", "response_values": {"yield": 80.1}},
     ],
     "responses": [{"name": "yield", "unit": "%"}],
-    "analysis_result": {
-        "optimal_conditions": {"temperature": 80, "time": 4},
-        "r_squared": 0.95
-    }
+    "analysis_result": {"optimal_conditions": {"temperature": 80, "time": 4}, "r_squared": 0.95},
 }
 
 # 模拟模板内容
@@ -52,6 +46,7 @@ MOCK_TEMPLATE = """
 ## 3. AI 讨论区
 {{P:mechanism_discussion}}
 """
+
 
 async def main():
     print("🚀 开始离线测试报告生成逻辑...")
@@ -81,8 +76,10 @@ async def main():
     print(f"   ⏳ 剩余 Prose 槽位待 AI 补全: {prose_slots}")
 
     # 4. 模拟 AI 补全 (这里用固定文本代替)
-    final_report = filled_text.replace("{{P:mechanism_discussion}}",
-        "本次实验通过响应面法确定了关键工艺参数。数据显示在 80°C 时反应效率最高，符合阿伦尼乌斯方程预期。")
+    final_report = filled_text.replace(
+        "{{P:mechanism_discussion}}",
+        "本次实验通过响应面法确定了关键工艺参数。数据显示在 80°C 时反应效率最高，符合阿伦尼乌斯方程预期。",
+    )
 
     # 5. 校验
     print("\n[4] 运行数值校验...")
@@ -92,10 +89,11 @@ async def main():
     else:
         print(f"   ⚠️ 校验警告: {validation['warnings']}")
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("📄 生成的报告预览:")
-    print("="*50)
+    print("=" * 50)
     print(final_report)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
