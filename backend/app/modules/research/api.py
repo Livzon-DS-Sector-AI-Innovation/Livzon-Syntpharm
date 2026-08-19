@@ -3463,9 +3463,8 @@ async def generate_report(
     return build_response(data=result, message="生成成功")
 
 
-
-
 # ===== AI 报告生成接口 (严谨版方案) =====
+
 
 @router.post("/generate-report", summary="AI 生成研发报告")
 async def generate_research_report(
@@ -3481,6 +3480,7 @@ async def generate_research_report(
     try:
         # 1. 获取模板内容
         from app.modules.research.models import RdDeliverableTemplate
+
         result = await db.execute(select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == template_id))
         template = result.scalar_one_or_none()
         if not template:
@@ -3497,7 +3497,7 @@ async def generate_research_report(
         # 3. 模拟派生结论 (实际应调用 calculate_doe_conclusions)
         derived_facts = {
             "yield_summary": {"trend": "increasing", "min": 75.0, "max": 85.3, "unit": "%"},
-            "model_fit_evaluation": {"quality_label": "excellent", "r_squared": 0.95}
+            "model_fit_evaluation": {"quality_label": "excellent", "r_squared": 0.95},
         }
 
         # 4. 槽位填充
@@ -3511,11 +3511,10 @@ async def generate_research_report(
         # 6. 数值校验
         validation = validate_report_content(final_report, facts)
 
-        return success_response(data={
-            "content": final_report,
-            "validation": validation,
-            "prose_slots_count": len(prose_slots)
-        }, message="报告生成成功")
+        return success_response(
+            data={"content": final_report, "validation": validation, "prose_slots_count": len(prose_slots)},
+            message="报告生成成功",
+        )
 
     except Exception as e:
         logger.error(f"报告生成失败: {e}")

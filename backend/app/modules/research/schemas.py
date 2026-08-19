@@ -831,11 +831,13 @@ class RdReportGenerateResponse(BaseModel):
 
 # ===== Report Templates =====
 
+
 class RdReportTemplateCreate(BaseModel):
     name: str
     description: str | None = None
     content_md: str
     category: str = "general"
+
 
 class RdReportTemplateResponse(BaseModel):
     id: uuid.UUID

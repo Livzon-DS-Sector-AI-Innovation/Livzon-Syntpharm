@@ -24,10 +24,7 @@ def test_schemas():
     # 1. 测试实验记录解析请求
     print("\n📋 测试 ExperimentParseRequest:")
     try:
-        req = ExperimentParseRequest(
-            content="温度80°C，时间4小时",
-            parse_type="lab_confirmation"
-        )
+        req = ExperimentParseRequest(content="温度80°C，时间4小时", parse_type="lab_confirmation")
         print("  ✅ 创建成功")
         print(f"     content: {req.content[:20]}...")
         print(f"     parse_type: {req.parse_type}")
@@ -39,11 +36,7 @@ def test_schemas():
     print("\n📋 测试 LabConfirmationParsedData:")
     try:
         data = LabConfirmationParsedData(
-            temperature="80°C",
-            pressure="常压",
-            time="4小时",
-            yield_rate=85.0,
-            purity=98.5
+            temperature="80°C", pressure="常压", time="4小时", yield_rate=85.0, purity=98.5
         )
         print("  ✅ 创建成功")
         print(f"     温度: {data.temperature}")
@@ -56,11 +49,7 @@ def test_schemas():
     # 3. 测试放大生产数据结构
     print("\n📋 测试 ScaleUpParsedData:")
     try:
-        data = ScaleUpParsedData(
-            batch_size="100L",
-            equipment="反应釜R-101",
-            scale_factor=10.0
-        )
+        data = ScaleUpParsedData(batch_size="100L", equipment="反应釜R-101", scale_factor=10.0)
         print("  ✅ 创建成功")
         print(f"     批次规模: {data.batch_size}")
         print(f"     设备: {data.equipment}")
@@ -74,10 +63,7 @@ def test_schemas():
     try:
         lab_data = LabConfirmationParsedData(temperature="80°C")
         resp = ExperimentParseResponse(
-            parse_type="lab_confirmation",
-            confidence=0.92,
-            data=lab_data,
-            warnings=["数据不完整"]
+            parse_type="lab_confirmation", confidence=0.92, data=lab_data, warnings=["数据不完整"]
         )
         print("  ✅ 创建成功")
         print(f"     解析类型: {resp.parse_type}")
@@ -90,10 +76,7 @@ def test_schemas():
     # 5. 测试工艺参数解析请求
     print("\n📋 测试 ParameterParseRequest:")
     try:
-        req = ParameterParseRequest(
-            content="反应温度80°C，压力常压",
-            parse_type="lab_confirmation"
-        )
+        req = ParameterParseRequest(content="反应温度80°C，压力常压", parse_type="lab_confirmation")
         print("  ✅ 创建成功")
         print(f"     content: {req.content[:20]}...")
         print(f"     parse_type: {req.parse_type}")
@@ -105,9 +88,7 @@ def test_schemas():
     print("\n📋 测试 ParameterParseResponse:")
     try:
         resp = ParameterParseResponse(
-            parameters={"temperature": "80°C", "pressure": "常压"},
-            confidence=0.95,
-            warnings=[]
+            parameters={"temperature": "80°C", "pressure": "常压"}, confidence=0.95, warnings=[]
         )
         print("  ✅ 创建成功")
         print(f"     参数数: {len(resp.parameters)}")
