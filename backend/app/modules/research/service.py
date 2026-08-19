@@ -13,6 +13,7 @@ from app.core.exceptions import DuplicateException, NotFoundException
 
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
+from app.modules.research.models import RdProject, ProcessOptimization, RdDeliverableTemplate, RdResearchTrack
 from app.modules.research.models import (  # noqa: E402
     ProcessOptimization,
     RdDeliverableTemplate,

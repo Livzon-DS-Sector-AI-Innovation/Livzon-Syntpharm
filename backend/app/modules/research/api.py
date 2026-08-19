@@ -1,3 +1,4 @@
+from uuid import UUID
 """研发项目 API 路由."""
 
 import logging
