@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import (func, 
+from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
@@ -16,6 +16,7 @@ from sqlalchemy import (func,
     Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -170,7 +171,7 @@ class ProcessOptimization(BaseModel):
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="开始日期")
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="结束日期")
 
-    
+
     # 研究项关联（新架构）
     impurity_track_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -749,15 +750,18 @@ class RdReportTemplate(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), comment="模板名称")
     description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述")
-    
+
     # 核心内容：Markdown 格式
     content_md: Mapped[str] = mapped_column(Text, comment="模板内容(Markdown)")
-    
+
     # 元数据：存储 YAML frontmatter 解析后的结果，方便前端展示变量列表
     meta_info: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="模板元数据(info)")
-    
-    category: Mapped[str] = mapped_column(String(50), default="general", comment="分类：process_optimization, validation, etc.")
+
+    category: Mapped[str] = mapped_column(
+        String(50), default="general",
+        comment="分类：process_optimization, validation, etc."
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
-    
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())

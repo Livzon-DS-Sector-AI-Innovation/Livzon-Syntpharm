@@ -1,6 +1,6 @@
 """Research business workflows."""
-
 import logging
+import re
 import uuid
 from datetime import UTC, datetime
 from uuid import UUID
@@ -13,6 +13,8 @@ from app.core.exceptions import DuplicateException, NotFoundException
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
 from app.modules.research.models import (  # noqa: E402
+    ProcessOptimization,
+    RdDeliverableTemplate,
     RdExperimentLog,
     RdMilestone,
     RdPilotStudy,
@@ -1274,12 +1276,12 @@ async def generate_report_with_ai(
 # ===== AI 报告生成 Service =====
 
 async def generate_deliverable_report(
-    db: AsyncSession, 
-    project_id: uuid.UUID, 
+    db: AsyncSession,
+    project_id: uuid.UUID,
     deliverable_template_id: uuid.UUID
 ) -> str:
     """根据交付物模板和项目数据生成报告 (MVP 严谨版)"""
-    
+
     # 1. 获取模板
     result = await db.execute(
         select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == deliverable_template_id)
@@ -1314,7 +1316,7 @@ async def generate_deliverable_report(
         prompt = f"""
         请根据以下已填充好事实数据的报告草稿，补全其中的逻辑连接和讨论部分。
         注意：不要修改任何已经存在的数字和事实描述。
-        
+
         草稿内容：
         {pre_filled_text[:3000]}
         """
@@ -1341,7 +1343,7 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
     包含：项目基本信息 + 当前阶段的关键实验数据。
     """
     facts = {}
-    
+
     # 1. 获取项目基本信息 (Type A: Fact)
     proj_result = await db.execute(select(RdProject).where(RdProject.id == project_id))
     project = proj_result.scalar_one_or_none()
@@ -1360,7 +1362,7 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
             ).order_by(ProcessOptimization.updated_at.desc()).limit(1)
         )
         optimization = opt_result.scalar_one_or_none()
-        
+
         if optimization and optimization.doe_experiment:
             doe_data = optimization.doe_experiment
             # 提取关键事实
@@ -1369,11 +1371,11 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
                 for param, val in optimal.items():
                     key = f"doe_optimal_{param}"
                     facts[key] = {"value": val, "unit": _get_unit_for_param(param), "source_id": optimization.id}
-            
+
             if "analysis_result" in doe_data and "r_squared" in doe_data["analysis_result"]:
                 facts["doe_r_squared"] = {
-                    "value": doe_data["analysis_result"]["r_squared"], 
-                    "unit": "", 
+                    "value": doe_data["analysis_result"]["r_squared"],
+                    "unit": "",
                     "source_id": optimization.id
                 }
 
@@ -1388,8 +1390,8 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
     if impurity_track and impurity_track.current_conclusion:
         # 这里可以进一步解析 conclusion 或关联的 findings
         facts["impurity_conclusion_summary"] = {
-            "value": impurity_track.current_conclusion[:100] + "...", 
-            "unit": "", 
+            "value": impurity_track.current_conclusion[:100] + "...",
+            "unit": "",
             "source_id": str(impurity_track.id)
         }
 
@@ -1415,21 +1417,21 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
     输出: 结构化结论标签字典
     """
     conclusions = {}
-    
+
     if not doe_data or "runs" not in doe_data:
         return conclusions
 
     runs = doe_data["runs"]
     responses = doe_data.get("responses", [])
-    
+
     # 1. 计算各响应的极值和趋势
     for resp in responses:
         resp_name = resp["name"]
         values = [run["response_values"].get(resp_name) for run in runs if run["status"] == "completed"]
-        
+
         if not values:
             continue
-            
+
         valid_values = [v for v in values if v is not None]
         if not valid_values:
             continue
@@ -1437,7 +1439,7 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
         max_val = max(valid_values)
         min_val = min(valid_values)
         avg_val = sum(valid_values) / len(valid_values)
-        
+
         # 简单的趋势判断 (实际应结合因子水平分析)
         if max_val - min_val < 0.01 * avg_val:
             trend = "stable"
@@ -1458,7 +1460,7 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
     if "analysis_result" in doe_data and "optimal_conditions" in doe_data["analysis_result"]:
         optimal = doe_data["analysis_result"]["optimal_conditions"]
         conclusions["optimal_conditions_labels"] = {
-            k: {"value": v, "desc": f"The optimal level for {k} is {v}"} 
+            k: {"value": v, "desc": f"The optimal level for {k} is {v}"}
             for k, v in optimal.items()
         }
 
@@ -1476,7 +1478,7 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
 
 # ===== 槽位填充引擎 (Slot Filling Engine) =====
 
-import re
+
 
 def fill_template_slots(template_content: str, facts: dict, derived_facts: dict) -> tuple[str, list[str]]:
     """
@@ -1529,11 +1531,11 @@ def validate_report_content(report: str, facts: dict) -> dict:
     返回: {"passed": bool, "errors": list}
     """
     errors = []
-    
+
     # 1. 数值一致性校验
     # 提取报告中所有的数字（简单正则）
     numbers_in_report = re.findall(r'\d+\.?\d*', report)
-    
+
     for key, item in facts.items():
         val_str = str(item["value"])
         if val_str not in numbers_in_report and len(val_str) > 1:

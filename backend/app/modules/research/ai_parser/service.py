@@ -1,19 +1,18 @@
 """AI Parser service for experiment record parsing."""
 
 import logging
-from typing import Any
 
 from app.core.llm import llm_client
-from app.core.llm.exceptions import LLMProviderError, LLMOutputError
+from app.core.llm.exceptions import LLMOutputError, LLMProviderError
 from app.modules.research.ai_parser.schemas import (
+    CrystalFormParsedData,
+    DOEExperimentParsedData,
     ExperimentParseResponse,
+    ImpurityParsedData,
     LabConfirmationParsedData,
     ParameterParseResponse,
-    ScaleUpParsedData,
-    DOEExperimentParsedData,
-    ImpurityParsedData,
-    CrystalFormParsedData,
     RouteDesignParsedData,
+    ScaleUpParsedData,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,7 +84,7 @@ async def parse_experiment_record(content: str, parse_type: str) -> ExperimentPa
             {"role": "user", "content": prompt},
         ]
         result = await llm_client.chat_json(messages)
-        
+
         confidence = result.get("confidence", 0.5)
         data = result.get("data", {})
         warnings = result.get("warnings", [])
@@ -99,7 +98,7 @@ async def parse_experiment_record(content: str, parse_type: str) -> ExperimentPa
             "crystal_form_analysis": CrystalFormParsedData,
             "route_design": RouteDesignParsedData,
         }
-        
+
         model_class = data_models.get(parse_type, LabConfirmationParsedData)
         parsed_data = model_class(**data)
 
@@ -121,7 +120,7 @@ async def parse_process_parameters(content: str, parse_type: str) -> ParameterPa
         raise ValueError(f"无效的解析类型: {parse_type}")
 
     prompt = f"请从以下文本中提取{parse_type}相关的工艺参数: {content[:3000]}。返回 JSON: {{parameters: {{}}, confidence: 0-1, warnings: []}}"
-    
+
     try:
         messages = [{"role": "user", "content": prompt}]
         result = await llm_client.chat_json(messages)

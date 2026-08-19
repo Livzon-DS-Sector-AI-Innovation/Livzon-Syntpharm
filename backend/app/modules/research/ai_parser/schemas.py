@@ -80,7 +80,7 @@ class ExperimentParseRequest(BaseModel):
     @classmethod
     def validate_parse_type(cls, v: str) -> str:
         valid_types = [
-            'lab_confirmation', 'scale_up', 'doe_experiment', 
+            'lab_confirmation', 'scale_up', 'doe_experiment',
             'impurity_analysis', 'crystal_form_analysis', 'route_design'
         ]
         if v not in valid_types:
@@ -93,7 +93,14 @@ class ExperimentParseResponse(BaseModel):
 
     parse_type: str = Field(..., description="解析类型")
     confidence: float = Field(..., ge=0.0, le=1.0, description="置信度(0-1)")
-    data: LabConfirmationParsedData | ScaleUpParsedData | DOEExperimentParsedData | ImpurityParsedData | CrystalFormParsedData | RouteDesignParsedData = Field(..., description="解析出的结构化数据")
+    data: (
+        LabConfirmationParsedData
+        | ScaleUpParsedData
+        | DOEExperimentParsedData
+        | ImpurityParsedData
+        | CrystalFormParsedData
+        | RouteDesignParsedData
+    ) = Field(..., description="解析出的结构化数据")
     warnings: list[str] = Field(default_factory=list, description="警告信息列表")
     raw_llm_output: dict[str, Any] | None = Field(None, description="LLM原始输出(调试用)")
 
@@ -108,7 +115,7 @@ class ParameterParseRequest(BaseModel):
     @classmethod
     def validate_parse_type(cls, v: str) -> str:
         valid_types = [
-            'lab_confirmation', 'scale_up', 'doe_experiment', 
+            'lab_confirmation', 'scale_up', 'doe_experiment',
             'impurity_analysis', 'crystal_form_analysis', 'route_design'
         ]
         if v not in valid_types:
