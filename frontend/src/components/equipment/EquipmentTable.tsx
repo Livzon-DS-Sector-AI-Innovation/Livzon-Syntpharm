@@ -2,13 +2,14 @@
 
 import { useCallback, useState, useEffect, useRef, type CSSProperties } from 'react'
 import { App, Table, Space, Input, Select, Button } from 'antd'
-import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutlined, EyeOutlined, ImportOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutlined, EyeOutlined, ImportOutlined, SettingOutlined } from '@ant-design/icons'
 import { Equipment, EquipmentStatus } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteEquipment } from '@/actions/equipment'
 import { statusPill, linkDanger, linkPrimary, linkWarning } from '@/components/equipment/shared-styles'
 import { EquipmentDetailDrawer } from './EquipmentDetailDrawer'
 import { EquipmentImportModal } from './EquipmentImportModal'
+import { ColumnConfigModal } from './ColumnConfigModal'
 
 const statusConfig: Record<EquipmentStatus, { color: string; bg: string }> = {
   '在用':   { color: '#1aae39', bg: '#d9f3e1' },
@@ -54,6 +55,8 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [columnConfigOpen, setColumnConfigOpen] = useState(false)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([])
 
   // 动态计算 scroll.y，使表头和筛选栏固定，仅表格数据行滚动
   const rootRef = useRef<HTMLDivElement>(null)
@@ -73,6 +76,27 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
     observer.observe(tableWrap)
     return () => observer.disconnect()
   }, [])
+  // Load column config from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('equipment_visible_columns')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setVisibleColumns(parsed)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load column config:', e)
+    }
+    // Default visible columns
+    setVisibleColumns([
+      'asset_no', 'name', 'location_text', 'department', 
+      'responsible', 'status', 'commissioning_date'
+    ])
+  }, [])
+
 
 
   const handleDelete = useCallback((record: Equipment) => {
@@ -137,6 +161,14 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
     },
   ]
 
+  // Filter columns based on visibleColumns
+  const filteredColumns = columns.filter(col => {
+    // Always show action column
+    if (col.key === 'action') return true
+    // Show if in visibleColumns or if visibleColumns is empty (show all)
+    return visibleColumns.length === 0 || visibleColumns.includes(col.key as string)
+  })
+
   return (
     <div ref={rootRef} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div ref={filterRef} style={{ marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0 }}>
@@ -153,12 +185,13 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
         <Input placeholder="搜索设备编号或名称" prefix={<SearchOutlined style={{ color: '#a4a097' }} />}
           style={{ width: 240 }} value={keyword} onChange={(e) => setKeyword(e.target.value)} allowClear />
         <div style={{ flex: 1 }} />
+        <Button icon={<SettingOutlined />} onClick={() => setColumnConfigOpen(true)}>列配置</Button>
         <Button icon={<ImportOutlined />} onClick={() => setImportOpen(true)}>导入</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openEquipmentDrawer()}>新增设备</Button>
       </div>
       <div ref={tableWrapRef} style={{ flex: 1, minHeight: 0 }}>
         <Table
-          columns={columns} dataSource={equipments} rowKey="id" size="small"
+          columns={filteredColumns} dataSource={equipments} rowKey="id" size="small"
           loading={loading} scroll={{ x: 'max-content', y: scrollY || undefined }}
           pagination={{
             current: localPage,
@@ -185,6 +218,15 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onSuccess={() => { setImportOpen(false); onPageChange(1, localPageSize) }}
+      />
+      <ColumnConfigModal
+        open={columnConfigOpen}
+        onClose={() => setColumnConfigOpen(false)}
+        onSave={(cols) => {
+          setVisibleColumns(cols)
+          // Force table re-render
+          setLocalPage(p => p)
+        }}
       />
     </div>
   )
