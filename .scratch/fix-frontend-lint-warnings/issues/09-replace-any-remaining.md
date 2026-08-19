@@ -8,7 +8,7 @@ labels:
   - typescript
 created: 2026-08-17
 blocked_by: ["04-remove-unused-remaining"]
-spec: docs/specs/fix-frontend-lint-warnings.md
+spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
 # 09 — Replace any types in remaining directories

@@ -8,7 +8,7 @@ labels:
   - ci
 created: 2026-08-17
 blocked_by: ["07-replace-any-components", "08-replace-any-app", "09-replace-any-remaining"]
-spec: docs/specs/fix-frontend-lint-warnings.md
+spec: .scratch/fix-frontend-lint-warnings/spec.md
 ---
 
 # 10 — Promote lint warnings to errors

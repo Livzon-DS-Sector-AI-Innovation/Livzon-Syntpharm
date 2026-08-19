@@ -7,8 +7,8 @@ labels:
   - infrastructure
 created: 2026-08-18
 blocked_by:
-  - docs/tickets/13-restructure-ci-pipeline.md
-spec: docs/specs/consolidate-frontend-dockerfiles.md
+  - .scratch/consolidate-frontend-dockerfiles/issues/13-restructure-ci-pipeline.md
+spec: .scratch/consolidate-frontend-dockerfiles/spec.md
 ---
 
 # 14 — Clean up legacy files and update documentation
