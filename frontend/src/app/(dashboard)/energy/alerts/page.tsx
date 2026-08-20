@@ -79,7 +79,7 @@ const ProcessModal = ({
 
 export default function AlertsPage() {
   const { message } = App.useApp()
-  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { openAlertConfigDrawer } = useEnergyStore()
   
   // 预警规则状态
   const [rules, setRules] = useState<AlertRule[]>([])
@@ -165,7 +165,7 @@ export default function AlertsPage() {
       await deleteAlertRule(id)
       message.success('删除成功')
       fetchRules()
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -219,7 +219,7 @@ export default function AlertsPage() {
         message.success(`数据导入成功！新增 ${result.total_created} 条，更新 ${result.total_updated} 条，无新增预警`)
       }
       fetchRecords()
-    } catch (error) {
+    } catch (_error) {
       message.error('数据导入失败')
     } finally {
       setSyncLoading(false)

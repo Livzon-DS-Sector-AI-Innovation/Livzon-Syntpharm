@@ -95,7 +95,7 @@ export default function AIAnalysisPage() {
       })
       setProductionItems(result.items)
       message.success('同步成功')
-    } catch (error) {
+    } catch (_error) {
       message.error('同步失败')
     } finally {
       setSyncing(false)
