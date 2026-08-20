@@ -43,6 +43,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const [splitLoading, setSplitLoading] = useState(false)
   const [splitAsset, setSplitAsset] = useState<ChapterAsset | null>(null)
   const [splitPages, setSplitPages] = useState<PageSplitInfo[]>([])
+  const [selectedSplits, setSelectedSplits] = useState<Map<number, string>>(new Map())
   const [splitInserting, setSplitInserting] = useState(false)
 
   // Asset selection modal (when multiple assets match a category)
@@ -277,6 +278,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
     setSplitAsset(asset)
     setSplitLoading(true)
     setSplitModalOpen(true)
+    setSelectedSplits(new Map()) // 重置选择状态
     try {
       const slots = imageFields.map(f => f.field_name)
       const result = await splitPreview(asset.id, slots)
@@ -288,35 +290,68 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
     }
   }
 
-  const handleInsertPage = async (page: PageSplitInfo, slotName: string) => {
+  const handleSelectPage = (page: PageSplitInfo, slot: string) => {
+    setSelectedSplits(prev => {
+      const next = new Map(prev)
+      next.set(page.page_number, slot)
+      return next
+    })
+  }
+
+  const handleConfirmInsert = async () => {
     if (!splitAsset) return
     setSplitInserting(true)
     try {
-      await splitConfirmAndInsert(chapterId, [{
-        split_id: `${splitAsset.id}_${page.page_number}`,
-        appendix_slot: slotName,
-        asset_id: splitAsset.id,
-        page_number: page.page_number,
-      }])
-      message.success(`已插入第 ${page.page_number} 页到 ${slotName}`)
-      
+      const payload = Array.from(selectedSplits.entries()).map(([pageNum, slot]) => {
+        const page = splitPages.find(p => p.page_number === pageNum)
+        return {
+          split_id: page?.split_id || '',
+          appendix_slot: slot,
+          asset_id: splitAsset.id,
+          page_number: pageNum,
+        }
+      })
+
+      const result = await splitConfirmAndInsert(chapterId, payload)
+
+      // 【修复】根据 selectedSplits 映射关系更新 editedFields 状态，防止触发后端兜底逻辑
+      const details = result.details || []
+      details.forEach(detail => {
+        if (detail.success) {
+          const slotName = selectedSplits.get(detail.page_number)
+          if (slotName) {
+            setEditedFields(prev => {
+              const next = [...prev]
+              const fieldIndex = next.findIndex(f => f.field_name === slotName)
+              if (fieldIndex !== -1) {
+                next[fieldIndex] = {
+                  ...next[fieldIndex],
+                  value: `已插入: ${splitAsset.original_filename} 第${detail.page_number}页`,
+                  source: `素材: ${splitAsset.original_filename}`
+                }
+              }
+              return next
+            })
+          }
+        }
+      })
+
+      // 处理逐页明细消息
+      const failedDetails = details.filter(d => !d.success)
+      if (result.inserted_count > 0 && failedDetails.length === 0) {
+        message.success(`插入成功: ${result.inserted_count} 页`)
+      } else if (result.inserted_count > 0) {
+        const reasons = failedDetails.map(d => `第${d.page_number}页: ${d.reason}`).join('; ')
+        message.warning(`部分成功: ${result.inserted_count} 页插入, ${failedDetails.length} 页失败。原因: ${reasons}`)
+      } else {
+        const reasons = failedDetails.map(d => `第${d.page_number}页: ${d.reason}`).join('; ')
+        message.error(`插入失败: ${reasons}`)
+      }
+
       // Close the split modal
       setSplitModalOpen(false)
-      
-      // Update the field value to show which page was inserted
-      const fieldIndex = editedFields.findIndex(f => f.field_name === slotName)
-      if (fieldIndex !== -1) {
-        setEditedFields(prev => {
-          const next = [...prev]
-          next[fieldIndex] = { 
-            ...next[fieldIndex], 
-            value: `已插入: ${splitAsset.original_filename} 第${page.page_number}页`,
-            source: `素材: ${splitAsset.original_filename}`
-          }
-          return next
-        })
-      }
-      
+      setSelectedSplits(new Map())
+
       // Trigger refresh
       onAssetsChange()
     } catch (err: any) {
@@ -522,7 +557,18 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         title={`页面拆分 - ${splitAsset?.original_filename}`}
         open={splitModalOpen}
         onCancel={() => setSplitModalOpen(false)}
-        footer={null}
+        footer={[
+          <Button key="cancel" onClick={() => setSplitModalOpen(false)}>取消</Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            loading={splitInserting}
+            disabled={selectedSplits.size === 0}
+            onClick={handleConfirmInsert}
+          >
+            确认插入 ({selectedSplits.size} 页)
+          </Button>
+        ]}
         width={600}
       >
         {splitLoading ? (
@@ -544,14 +590,15 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
                     size="small"
                     placeholder="插入到..."
                     style={{ width: 180 }}
-                    onChange={(slot) => handleInsertPage(page, slot)}
+                    onChange={(slot) => handleSelectPage(page, slot)}
+                    value={selectedSplits.get(page.page_number)}
                     disabled={splitInserting}
                     optionLabelProp="label"
                   >
                     {(imageFields || []).map(f => (
                       <Select.Option 
                         key={f.field_name} 
-                        value={f.value || f.field_name}
+                        value={f.field_name}
                         label={`${f.field_name} → ${f.value || '无位置'}`}
                       >
                         <div className="flex justify-between items-center">
