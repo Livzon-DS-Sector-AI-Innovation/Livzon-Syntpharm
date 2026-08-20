@@ -28,6 +28,7 @@ const statusPillMap: Record<EquipmentStatus, React.CSSProperties> = Object.fromE
 const statusOptions = Object.keys(statusConfig).map(value => ({ label: value, value }))
 
 interface EquipmentTableProps {
+  onRefreshStatistics?: () => void
   loading?: boolean
   onPageChange: (page: number, pageSize: number) => void
   /** 变化时重置分页到第一页 */
@@ -35,7 +36,7 @@ interface EquipmentTableProps {
 }
 
 
-export function EquipmentTable({ loading = false, onPageChange, resetKey }: EquipmentTableProps) {
+export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefreshStatistics }: EquipmentTableProps) {
   const { message, modal } = App.useApp()
   const {
     equipments, total,
@@ -121,6 +122,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
           message.success(`成功删除 ${selectedRowKeys.length} 台设备`)
           setSelectedRowKeys([])
           onPageChange(localPage, localPageSize)
+          onRefreshStatistics?.()
         } catch (error) {
           message.error('批量删除失败')
         }
@@ -141,6 +143,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
           await deleteEquipment(record.id)
           message.success('删除设备成功')
           onPageChange(localPage, localPageSize)
+          onRefreshStatistics?.()
         } catch (error: any) {
           message.error(error?.message || '删除设备失败')
         }
