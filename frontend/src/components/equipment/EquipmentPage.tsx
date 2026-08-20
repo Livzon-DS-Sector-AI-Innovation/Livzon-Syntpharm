@@ -126,7 +126,7 @@ export function EquipmentPage({
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
 
   // 单独刷新统计（仅 mount 或需要时使用）
-  const _refreshStatistics = useCallback(async () => {
+  const refreshStatistics = useCallback(async () => {
     try {
       const stats = await fetchEquipmentStatisticsClient()
       setStatistics(stats)
@@ -255,7 +255,8 @@ export function EquipmentPage({
         </div>
 
         {/* 抽屉组件 */}
-        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1) }} /><LocationDrawer onRefresh={refreshCategoriesAndLocations} />
+        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1); refreshStatistics(); }} />
+        <LocationDrawer onRefresh={() => { refreshCategoriesAndLocations(); refreshStatistics(); }} />
         <RepairDrawer
           equipments={equipments.map(e => ({
             id: e.id, asset_no: e.asset_no, name: e.name,
