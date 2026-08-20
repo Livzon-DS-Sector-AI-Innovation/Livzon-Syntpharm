@@ -66,3 +66,4 @@ src/types/generated/openapi.json
 playwright-report/
 test-results/
 /.next-e2e/
+.pnpm-store/
