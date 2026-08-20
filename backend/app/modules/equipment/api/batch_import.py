@@ -133,6 +133,9 @@ async def map_department_name_v3(excel_dept: str, db: AsyncSession) -> tuple[str
 def parse_excel_date(value: Any) -> date | None:
     if not value:
         return None
+    # 处理 datetime 对象（openpyxl 读取 Excel 日期单元格时返回）
+    if isinstance(value, datetime):
+        return value.date()
     if isinstance(value, (int, float)):
         from datetime import timedelta
         base_date = date(1899, 12, 30)
