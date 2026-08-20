@@ -7,7 +7,6 @@ import { Location } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteLocation } from '@/actions/equipment'
 import { LocationEditor } from './LocationEditor'
-
 interface LocationTreeProps {
   locations: Location[]
   onRefresh?: () => void

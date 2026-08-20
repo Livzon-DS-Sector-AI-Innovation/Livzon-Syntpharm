@@ -1,6 +1,6 @@
-import '../../styles/industrial-theme.css';
 'use client'
 
+import '../../styles/industrial-theme.css';
 import { useEffect, useCallback, useState } from 'react'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
