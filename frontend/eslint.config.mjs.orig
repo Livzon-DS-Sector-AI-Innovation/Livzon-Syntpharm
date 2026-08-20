@@ -15,7 +15,6 @@ const config = [
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
         },
       ],
       "react/no-unescaped-entities": "warn",
