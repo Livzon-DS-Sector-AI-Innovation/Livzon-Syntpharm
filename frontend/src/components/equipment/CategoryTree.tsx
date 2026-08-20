@@ -210,7 +210,6 @@ function TreeNode({
 
 export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
   const [editorOpen, setEditorOpen] = useState(false)
-  const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
   const {
     selectedCategory,
