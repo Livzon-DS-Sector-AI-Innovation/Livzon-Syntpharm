@@ -26,7 +26,7 @@
 
 ## 环境要求
 
-- Ubuntu 22.04+（或其他支持 Docker 的 Linux 发行版）
+- Ubuntu 20+（或其他支持 Docker 的 Linux 发行版）
 - Docker + Docker Compose
 - Git
 
