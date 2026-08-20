@@ -324,7 +324,7 @@ export const fetchDepartmentsClient = fetchDepartments
  * 批量删除设备
  */
 export async function batchDeleteEquipments(ids: string[]): Promise<any> {
-  const response = await fetch('/api/equipment/equipments/batch-delete', {
+  const response = await fetch(`${API_BASE}/equipment/equipments/batch-delete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids }),
