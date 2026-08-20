@@ -66,6 +66,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
           description: editingEquipment.description ?? undefined,
           department_id: editingEquipment.department_id ?? undefined,
           responsible_person_id: editingEquipment.responsible_person_id ?? undefined,
+          quantity: (editingEquipment.technical_params as Record<string, unknown>)?.['数量'] ?? 1,
         })
       } else {
         form.resetFields()
@@ -78,19 +79,24 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
     try {
       const values = await form.validateFields()
       setSubmitting(true)
+      const { quantity, ...restValues } = values
+      const technicalParams = editingEquipment?.technical_params || {}
       const submitData = {
-        ...values,
-        production_date: values.production_date
-          ? values.production_date.format('YYYY-MM-DD')
+        ...restValues,
+        technical_params: {
+          ...technicalParams,
+          '数量': quantity ?? 1,
+        },
+        production_date: restValues.production_date
+          ? restValues.production_date.format('YYYY-MM-DD')
           : undefined,
-        commissioning_date: values.commissioning_date
-          ? values.commissioning_date.format('YYYY-MM-DD')
+        commissioning_date: restValues.commissioning_date
+          ? restValues.commissioning_date.format('YYYY-MM-DD')
           : undefined,
-        scrap_time: values.scrap_time
-          ? values.scrap_time.format('YYYY-MM-DD')
+        scrap_time: restValues.scrap_time
+          ? restValues.scrap_time.format('YYYY-MM-DD')
           : undefined,
       }
-
       if (editingEquipment) {
         await updateEquipment(editingEquipment.id, submitData)
         message.success('更新设备成功')
@@ -223,6 +229,15 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
             style={{ width: '100%' }}
             min={0}
             precision={2}
+          />
+        </Form.Item>
+        <Form.Item name="quantity" label="数量">
+          <InputNumber
+            placeholder="请输入数量"
+            style={{ width: '100%' }}
+            min={1}
+            precision={0}
+            defaultValue={1}
           />
         </Form.Item>
         <Form.Item name="scrap_status" label="报废状态">

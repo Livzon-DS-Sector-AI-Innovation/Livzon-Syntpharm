@@ -268,3 +268,15 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
 async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
     """获取可选部门列表（含负责人），供下拉使用"""
     return await repo.get_departments_for_select(db)
+
+
+async def batch_delete_equipments(db: AsyncSession, ids: list[uuid.UUID]) -> int:
+    """批量删除设备（软删除）"""
+    deleted_count = 0
+    for eid in ids:
+        equipment = await get_equipment_by_id(db, eid)
+        if equipment and not equipment.is_deleted:
+            equipment.is_deleted = True
+            deleted_count += 1
+    await db.commit()
+    return deleted_count
