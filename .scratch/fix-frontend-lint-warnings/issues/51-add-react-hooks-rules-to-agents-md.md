@@ -1,6 +1,6 @@
-# 51 — Add React Hooks rules to AGENTS.md and update audit plan
+# 51 — Add React Hooks rules to AGENTS.md, create examples, and update audit plan
 
-**What to build:** Add comprehensive React Hooks and React Compiler guidelines to AGENTS.md, and update the audit plan to verify compliance. This ensures developers write React Compiler-compatible code from the start.
+**What to build:** Add React Hooks and React Compiler guidelines to AGENTS.md with a reference to detailed examples in `examples/react-hooks-pattern.md`, and update the audit plan to verify compliance. This ensures developers write React Compiler-compatible code from the start.
 
 **Blocked by:** None — can start immediately
 
@@ -10,69 +10,40 @@
 
 Add a new section "## React Hooks 与 React Compiler" under the "前端 — Next.js / TypeScript" section, positioned after "## 类型系统" and before "## 禁止修改的文件".
 
-The section should cover:
+The section should:
+- State that React Compiler is enabled (`reactCompiler: true`)
+- List the 5 key rules concisely:
+  1. 数据获取: 使用 React Query，禁止 useEffect + setState
+  2. 派生状态: 使用 useMemo，禁止 useEffect + setState
+  3. useEffect 依赖: 必须完整，禁止省略或抑制
+  4. 不可变状态: 禁止直接修改，使用展开运算符
+  5. 依赖稳定化: 使用 useCallback/useRef
+- Reference `examples/react-hooks-pattern.md` for detailed examples and explanations
 
-### 1. React Compiler 启用说明
-- State that React Compiler is enabled (`reactCompiler: true` in next.config.ts)
-- Explain that this requires specific coding patterns for automatic optimization
+## Examples File
 
-### 2. 数据获取规则
-- **禁止**: 在 `useEffect` 中调用 `setState` 来获取数据
-- **必须**: 使用 React Query 的 `useQuery` 和 `useMutation`
-- 原因: React Compiler 无法优化包含 `setState` 的 effect
-- 提供正确示例:
-  ```typescript
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['users', userId],
-    queryFn: () => fetchUser(userId),
-  })
-  ```
-- 提供错误示例:
-  ```typescript
-  const [data, setData] = useState(null)
-  useEffect(() => {
-    fetchUser(userId).then(setData)
-  }, [userId])
-  ```
+Create `examples/react-hooks-pattern.md` with:
 
-### 3. 派生状态规则
-- **禁止**: 使用 `useEffect` + `setState` 计算派生状态
-- **必须**: 使用 `useMemo`
-- 提供正确示例:
-  ```typescript
-  const filteredItems = useMemo(
-    () => items.filter(item => item.active),
-    [items]
-  )
-  ```
-- 提供错误示例:
-  ```typescript
-  const [filteredItems, setFilteredItems] = useState([])
-  useEffect(() => {
-    setFilteredItems(items.filter(item => item.active))
-  }, [items])
-  ```
+### 1. 数据获取模式
+- 正确示例: useQuery with queryKey and queryFn
+- 错误示例: useEffect + setState for data fetching
+- 原因说明: React Compiler 无法优化包含 setState 的 effect
 
-### 4. useEffect 依赖规则
-- 依赖数组**必须**包含所有在 effect 内部使用的变量
-- **禁止**: 省略依赖
-- **禁止**: 使用 `// eslint-disable-next-line react-hooks/exhaustive-deps` 抑制警告
-- 如果依赖变化太频繁，使用 `useCallback` 或 `useRef` 稳定化
+### 2. 派生状态模式
+- 正确示例: useMemo for computed values
+- 错误示例: useEffect + setState for derived state
+- 原因说明: 派生状态应该在渲染期间计算
 
-### 5. 不可变状态更新规则
-- **禁止**: 直接修改状态（如 `items.push(newItem)`、`user.name = newName`）
-- **必须**: 使用不可变更新模式
-- 提供正确示例:
-  ```typescript
-  setItems([...items, newItem])
-  setUser({ ...user, name: newName })
-  ```
-- 提供错误示例:
-  ```typescript
-  items.push(newItem)
-  user.name = newName
-  ```
-- 原因: React Compiler 依赖不可变性来检测状态变化并优化重新渲染
+### 3. useEffect 依赖管理
+- 正确示例: complete dependency array
+- 错误示例: missing dependencies
+- 稳定化模式: useCallback and useRef examples
+- 原因说明: 完整的依赖数组确保 effect 在正确时机运行
+
+### 4. 不可变状态更新
+- 正确示例: spread operator for arrays and objects
+- 错误示例: direct mutation (push, property assignment)
+- 原因说明: React Compiler 依赖不可变性检测变化
 
 ## Audit Plan Updates
 
@@ -84,7 +55,7 @@ The audit category should include:
 Full audit
 
 ### Rules (from AGENTS.md)
-Reference the 5 rules added to AGENTS.md (数据获取, 派生状态, useEffect 依赖, 不可变状态更新)
+Reference the 5 rules added to AGENTS.md
 
 ### Directories to inspect
 - `frontend/src/app/`
@@ -106,7 +77,9 @@ Standard audit output format with findings table
 
 - [ ] Section added to AGENTS.md under "前端 — Next.js / TypeScript"
 - [ ] Section positioned after "## 类型系统" and before "## 禁止修改的文件"
-- [ ] All 5 subsections included with correct/incorrect examples
+- [ ] AGENTS.md section references `examples/react-hooks-pattern.md`
+- [ ] `examples/react-hooks-pattern.md` created with all 4 pattern categories
+- [ ] Each pattern includes correct/incorrect examples and explanations
 - [ ] New audit category 16 added to docs/ai-audit-plan.md
 - [ ] Audit category includes all 6 questions
 - [ ] `tsc --noEmit` passes
