@@ -574,7 +574,7 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 三种 docker-compose 配置：
 - `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
-- `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新，支持跨平台文件监听）
+- `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新）
 - `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
 
 开发时**必须**使用：
@@ -582,11 +582,6 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
-
-开发环境通过轮询实现跨平台文件监听（macOS/Windows Docker Desktop 需要）：
-- `WATCHPACK_POLLING=true` — webpack 文件监听
-- `CHOKIDAR_USEPOLLING=true` — chokidar 文件监听
-
 
 ## Agent skills
 
