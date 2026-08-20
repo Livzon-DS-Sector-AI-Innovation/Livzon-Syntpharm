@@ -198,12 +198,6 @@ function WorkspaceContent() {
     )
   }
 
-  const renderBorderBar = (doc: RegulatoryDocument) => {
-    const level = getImpactLevel(doc)
-    if (level === 'high') return 'border-l-[3px] border-l-red-500'
-    if (level === 'medium') return 'border-l-[3px] border-l-amber-400'
-    return 'border-l-[3px] border-l-transparent'
-  }
 
   const renderDocRow = (doc: RegulatoryDocument) => {
     const level = getImpactLevel(doc)
