@@ -1010,7 +1010,6 @@ Full audit
   ```bash
   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
   ```
-- 文件监听：Linux 使用原生 inotify，macOS/Windows Docker Desktop 需要轮询（`WATCHPACK_POLLING=true`、`CHOKIDAR_USEPOLLING=true`）
 
 **基础设施文件审批**（见 AGENTS.md "仓库通用规则" 章节）:
 - 以下文件修改前**必须**获得批准：
@@ -1035,10 +1034,9 @@ Full audit
 3. Does `docker-compose.dev.yml` specify `target: dev` for the frontend service?
 4. Does `docker-compose.ci.yml` specify `target: runtime` for the ci-build service?
 5. Are the docker-compose files consistent (service names, port mappings, volume mounts)?
-6. Does `docker-compose.dev.yml` include polling environment variables for cross-platform file watching?
-7. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
-8. Is `frontend/Dockerfile.dev` deleted (should not exist after consolidation)?
-9. Are all Dockerfile and docker-compose changes documented with approval in the PR?
+6. Are there any hardcoded sensitive values in Docker or nginx configuration that should be environment variables?
+7. Is `frontend/Dockerfile.dev` deleted (should not exist after consolidation)?
+8. Are all Dockerfile and docker-compose changes documented with approval in the PR?
 
 ### Output format
 
