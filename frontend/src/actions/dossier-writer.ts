@@ -24,6 +24,11 @@ import { apiFetch, unwrapResponse } from '@/lib/api/server/base'
 type SplitConfirmData = components['schemas']['SplitConfirmData']
 type AssetCategoryUpdateData = components['schemas']['AssetCategoryUpdateData']
 type AssetUsageToggleData = components['schemas']['AssetUsageToggleData']
+
+// 扩展生成的 SplitConfirmData，补充逐页明细（后端 SplitConfirmResponse.details）
+type SplitConfirmResult = SplitConfirmData & {
+  details?: { page_number: number; success: boolean; reason?: string | null }[]
+}
 import {
   uploadTemplatesApi,
   uploadChapterAssetApi,
@@ -149,6 +154,7 @@ export async function splitPreview(
   const result = unwrapResponse(await apiFetch<{code: number; data: PageSplitPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
     method: 'POST',
     body: JSON.stringify({ available_appendix_slots: availableAppendixSlots }),
+    signal: AbortSignal.timeout(600000), // 拆分预览含 OCR，需要 10 分钟超时
   }))
   return result
 }
@@ -161,8 +167,8 @@ export async function splitConfirmAndInsert(
     asset_id: string
     page_number: number
   }>
-): Promise<SplitConfirmData> {
-  const result = unwrapResponse(await apiFetch<{code: number; data: SplitConfirmData; message?: string; meta?: unknown}>(
+): Promise<SplitConfirmResult> {
+  const result = unwrapResponse(await apiFetch<{code: number; data: SplitConfirmResult; message?: string; meta?: unknown}>(
     `/api/v1/registration/dossier-writer/chapters/${chapterId}/split-confirm`,
     {
       method: 'POST',
