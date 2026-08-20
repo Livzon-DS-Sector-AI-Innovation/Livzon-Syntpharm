@@ -320,3 +320,14 @@ export const fetchInspectionTemplatesClient = fetchInspectionTemplates
 export const fetchInspectionTemplateByIdClient = fetchInspectionTemplateById
 export const fetchWorkOrderMaterialsClient = fetchWorkOrderMaterials
 export const fetchDepartmentsClient = fetchDepartments
+/**
+ * 批量删除设备
+ */
+export async function batchDeleteEquipments(ids: string[]): Promise<any> {
+  const response = await fetch('/api/equipment/equipments/batch-delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  })
+  return response.json()
+}

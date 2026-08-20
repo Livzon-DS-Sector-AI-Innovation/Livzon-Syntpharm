@@ -12,6 +12,7 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment import service
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.schemas import (
+    BatchDeleteRequest,
     EquipmentCategoryCreate,
     EquipmentCategoryResponse,
     EquipmentCategoryTree,
@@ -264,3 +265,14 @@ async def delete_equipment(
     """删除设备"""
     await service.delete_equipment(db, equipment_id)
     return build_response(message="删除成功")
+
+
+@router.post("/equipments/batch-delete", summary="批量删除设备")
+async def batch_delete_equipments(
+    data: BatchDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = None,
+) -> ApiResponse:
+    """批量删除设备"""
+    deleted_count = await service.batch_delete_equipments(db, data.ids)
+    return build_response(message=f"成功删除 {deleted_count} 台设备")

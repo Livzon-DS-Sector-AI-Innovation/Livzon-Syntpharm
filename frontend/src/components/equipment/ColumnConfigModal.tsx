@@ -73,6 +73,14 @@ export function ColumnConfigModal({ open, onClose, onSave }: ColumnConfigModalPr
     onClose()
   }
 
+  const handleSelectAll = () => {
+    setSelectedKeys(ALL_COLUMNS.map(col => col.key))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedKeys([])
+  }
+
   const handleReset = () => {
     const defaults = ALL_COLUMNS.filter(col => col.defaultVisible).map(col => col.key)
     setSelectedKeys(defaults)
@@ -101,6 +109,14 @@ export function ColumnConfigModal({ open, onClose, onSave }: ColumnConfigModalPr
       ]}
       width={600}
     >
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+        <Button size="small" onClick={handleSelectAll}>
+          全选
+        </Button>
+        <Button size="small" onClick={handleDeselectAll}>
+          取消全选
+        </Button>
+      </div>
       <div style={{ maxHeight: 400, overflowY: 'auto' }}>
         <Checkbox.Group
           style={{ display: 'flex', flexDirection: 'column', gap: 8 }}

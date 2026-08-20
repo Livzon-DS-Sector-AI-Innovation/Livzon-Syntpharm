@@ -214,3 +214,8 @@ class EquipmentStatistics(BaseModel):
     by_status: dict[str, int]
     by_category: dict[str, int]
     by_location: dict[str, int]
+
+
+class BatchDeleteRequest(BaseModel):
+    """批量删除请求"""
+    ids: list[uuid.UUID] = Field(..., min_length=1, description="设备ID列表")

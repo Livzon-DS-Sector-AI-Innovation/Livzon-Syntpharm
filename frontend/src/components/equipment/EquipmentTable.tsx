@@ -6,6 +6,7 @@ import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutline
 import { Equipment, EquipmentStatus } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteEquipment } from '@/actions/equipment'
+import { batchDeleteEquipments } from '@/lib/api/client/equipment'
 import { statusPill, linkDanger, linkPrimary, linkWarning } from '@/components/equipment/shared-styles'
 import { EquipmentDetailDrawer } from './EquipmentDetailDrawer'
 import { EquipmentImportModal } from './EquipmentImportModal'
@@ -53,6 +54,8 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
     setLocalPage(1)
   }, [resetKey])
 
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(null)
   const [importOpen, setImportOpen] = useState(false)
@@ -97,6 +100,34 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
       'responsible', 'status', 'commissioning_date'
     ])
   }, [])
+
+  // 多选配置
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys as string[]),
+  }
+
+  // 批量删除处理
+  const handleBatchDelete = () => {
+    modal.confirm({
+      title: `确认删除 ${selectedRowKeys.length} 台设备？`,
+      content: '此操作不可恢复，请谨慎操作',
+      okText: '确认删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await batchDeleteEquipments(selectedRowKeys)
+          message.success(`成功删除 ${selectedRowKeys.length} 台设备`)
+          setSelectedRowKeys([])
+          onPageChange(localPage, localPageSize)
+        } catch (error) {
+          message.error('批量删除失败')
+        }
+      },
+    })
+  }
+
 
 
 
@@ -191,7 +222,37 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey }: Equi
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openEquipmentDrawer()}>新增设备</Button>
       </div>
       <div ref={tableWrapRef} style={{ flex: 1, minHeight: 0 }}>
-        <Table
+        {/* 批量操作栏 */}
+      {selectedRowKeys.length > 0 && (
+        <div style={{ 
+          marginBottom: 12, 
+          padding: '8px 12px',
+          background: '#f5f5f5',
+          borderRadius: 6,
+          display: 'flex', 
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #e0e0e0'
+        }}>
+          <span style={{ 
+            fontSize: 14, 
+            color: '#595959',
+            fontWeight: 500 
+          }}>
+            已选择 <strong style={{ color: '#1a1a1a' }}>{selectedRowKeys.length}</strong> 项
+          </span>
+          <div style={{ flex: 1 }} />
+          <Button size="small" onClick={() => setSelectedRowKeys([])}>
+            取消选择
+          </Button>
+          <Button size="small" danger onClick={handleBatchDelete}>
+            批量删除
+          </Button>
+        </div>
+      )}
+
+      <Table
+        rowSelection={rowSelection}
           columns={filteredColumns} dataSource={equipments} rowKey="id" size="small"
           loading={loading} scroll={{ x: 'max-content', y: scrollY || undefined }}
           pagination={{
