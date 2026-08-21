@@ -70,7 +70,7 @@ import {
 } from '@/actions/quality'
 
 const { RangePicker } = DatePicker
-const { Text } = Typography
+const { Text: _Text } = Typography
 const { TextArea } = Input
 
 // 初始筛选条件

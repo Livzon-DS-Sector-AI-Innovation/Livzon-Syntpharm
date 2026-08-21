@@ -44,7 +44,6 @@ import {
   DisconnectOutlined,
   FilterOutlined,
   FileExcelOutlined,
-  SettingOutlined,
   PlusCircleOutlined,
   MinusCircleOutlined,
   ExperimentOutlined,

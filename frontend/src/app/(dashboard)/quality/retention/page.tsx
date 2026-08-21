@@ -15,7 +15,6 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  HistoryOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -28,7 +27,7 @@ import {
 } from '@/types/sampling'
 import { getRetentionLedger } from '@/actions/quality'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 // 初始筛选条件
 const initialFilters: RetentionLedgerFilter = {

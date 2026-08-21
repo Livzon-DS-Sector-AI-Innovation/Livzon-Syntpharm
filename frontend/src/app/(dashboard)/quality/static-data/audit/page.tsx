@@ -14,7 +14,6 @@ import {
   Tag,
   Typography,
   message,
-  Spin,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined, EyeOutlined, SyncOutlined, ExportOutlined } from '@ant-design/icons'
@@ -67,7 +66,7 @@ export default function AuditLogPage() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
   const [detailRecord, setDetailRecord] = useState<AuditLogItem | null>(null)
-  const [_detailLoading, setDetailLoading] = useState(false)
+  const [_detailLoading, _setDetailLoading] = useState(false)
 
   // 加载模块列表
   useEffect(() => {

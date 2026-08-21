@@ -23,7 +23,6 @@ import {
   PlusOutlined,
   SearchOutlined,
   EditOutlined,
-  DeleteOutlined,
   HistoryOutlined,
   CopyOutlined,
   SendOutlined,
@@ -39,7 +38,6 @@ import {
   MaterialCategory,
   Pharmacopeia,
   LimitType,
-  ItemCategory,
 } from '@/types/quality'
 import {
   STANDARD_STATUS_OPTIONS,
@@ -176,7 +174,7 @@ export default function InspectionStandardsPage() {
     setDetailModalVisible(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const _handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个检验标准吗？',

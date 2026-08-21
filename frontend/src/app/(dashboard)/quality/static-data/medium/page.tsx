@@ -18,7 +18,6 @@ import {
   Segmented,
   Pagination,
   Tooltip,
-  Progress,
   Space,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -26,7 +25,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
   ExperimentOutlined,
