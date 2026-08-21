@@ -9,9 +9,7 @@ import {
   Select,
   Tag,
   Drawer,
-  Modal,
   Form,
-  InputNumber,
   message,
   Popconfirm,
   Card,
@@ -257,7 +255,7 @@ export default function QualityReagentPage() {
     loadData()
   }
 
-  const handleReset = () => {
+  const _handleReset = () => {
     setFilters(initialFilters)
     setPage(1)
     loadData()
@@ -272,7 +270,7 @@ export default function QualityReagentPage() {
         status: filters.status,
       })
       message.success('导出成功')
-    } catch (error) {
+    } catch (_error) {
       message.error('导出失败')
     }
   }
@@ -322,7 +320,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -336,7 +334,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -350,7 +348,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '删除失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -366,15 +364,15 @@ export default function QualityReagentPage() {
     try {
       const response = await recognizeReagentLabel(files)
       if (response.code === 200 && response.data) {
-        const formInstance = form === 'create' ? createForm : editForm
+        const _formInstance = form === 'create' ? createForm : editForm
         const data = response.data
         if (data.reagent_name) {
-          formInstance.setFieldValue('reagent_name', data.reagent_name)
+          _formInstance.setFieldValue('reagent_name', data.reagent_name)
           const reagentNo = findReagentNo(data.reagent_name)
-          if (reagentNo) formInstance.setFieldValue('reagent_no', reagentNo)
+          if (reagentNo) _formInstance.setFieldValue('reagent_no', reagentNo)
         }
-        if (data.lot_no) formInstance.setFieldValue('lot_no', data.lot_no)
-        if (data.manufacturer) formInstance.setFieldValue('manufacturer', data.manufacturer)
+        if (data.lot_no) _formInstance.setFieldValue('lot_no', data.lot_no)
+        if (data.manufacturer) _formInstance.setFieldValue('manufacturer', data.manufacturer)
         if (data.content) formInstance.setFieldValue('content', data.content)
         if (data.production_date) {
           formInstance.setFieldValue('production_date', dayjs(data.production_date))
@@ -404,7 +402,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || 'AI识别失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('AI识别失败，请重试')
     } finally {
       setAiLoading(false)
@@ -581,7 +579,7 @@ export default function QualityReagentPage() {
 
   // 表单内容（新建/编辑共用）
   const renderFormContent = (formType: 'create' | 'edit') => {
-    const formInstance = formType === 'create' ? createForm : editForm
+    const _formInstance = formType === 'create' ? createForm : editForm
     const fileList = formType === 'create' ? createFileList : editFileList
     const handleFileChange = formType === 'create' ? handleCreateFileChange : handleEditFileChange
 

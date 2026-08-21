@@ -46,23 +46,12 @@ import {
   MaterialStandard,
   ProductStandard,
   HplcReference,
-  ApiResponse,
   EQ_STATUS_OPTIONS,
   STANDARD_STATUS_OPTIONS,
   CHROM_COLUMN_STATUS_OPTIONS,
   HPLC_REF_STATUS_OPTIONS,
 } from '@/types/static-data'
 import {
-  listStorageCondition,
-  listUnit,
-  listTestItem,
-  listEquipment,
-  listChromColumn,
-  listMedium,
-  listReagent,
-  listStandardMaterial,
-  listMaterialStandard,
-  listProductStandard,
   deleteStorageCondition,
   deleteUnit,
   deleteTestItem,
@@ -110,7 +99,7 @@ interface ListPageProps {
   importModule?: string
 }
 
-function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule }: ListPageProps) {
+function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, _importModule }: ListPageProps) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)

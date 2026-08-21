@@ -12,36 +12,26 @@ import {
   Tag,
   message,
   Spin,
-  Row,
-  Col,
   Modal,
-  Form,
   Upload,
   Image,
   Popconfirm,
-  Dropdown,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   SaveOutlined,
-  EditOutlined,
   DeleteOutlined,
   ScanOutlined,
   UploadOutlined,
   DownloadOutlined,
   FileWordOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons'
-import type { MenuProps } from 'antd'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
   getInspectionTable,
-  addTableRow,
-  updateTableRow,
-  deleteTableRow,
   batchSaveTableRows,
   recognizeImage,
   recognizeMultipleImagesV3,

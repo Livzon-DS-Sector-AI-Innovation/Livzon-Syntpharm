@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {Card, Descriptions, Tag, Button, Space, Typography, Divider, Timeline, message} from 'antd'
+import {Tag, Button, Typography, Timeline, message} from 'antd'
 import {
-  ArrowLeftOutlined, EditOutlined, UploadOutlined, CheckCircleOutlined,
+  ArrowLeftOutlined, EditOutlined,
   FileTextOutlined, TeamOutlined, UserOutlined, FileProtectOutlined,
-  InfoCircleOutlined, AlertOutlined, ToolOutlined, SafetyOutlined, SettingOutlined,
+  InfoCircleOutlined, ToolOutlined, SafetyOutlined,
 } from '@ant-design/icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
@@ -83,7 +83,7 @@ export default function DeviationProgressPage() {
       } else {
         message.error(result.message || '加载失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载失败')
     } finally {
       setLoading(false)
