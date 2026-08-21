@@ -7,9 +7,9 @@ import {
 } from 'antd'
 import {
   SaveOutlined, UploadOutlined, PlusOutlined,
-  FileTextOutlined, TeamOutlined, CheckCircleOutlined,
+  FileTextOutlined, CheckCircleOutlined,
   UserOutlined, InfoCircleOutlined, AlertOutlined,
-  ToolOutlined, SafetyOutlined, PaperClipOutlined,
+  ToolOutlined, PaperClipOutlined,
   SettingOutlined, ArrowRightOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -17,7 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createDeviationFlow, updateDeviationFlow, submitDeviationFlow } from '@/actions/deviation'
 import '../deviation-style.css'
 
-const { Title, Text } = Typography
+const { Title: _Title, Text } = Typography
 const { TextArea } = Input
 
 const API_BASE = '/api/v1'
@@ -173,7 +173,7 @@ export default function DeviationCreatePage() {
         }
         loadAttachments(id)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     }
   }
@@ -213,7 +213,7 @@ export default function DeviationCreatePage() {
       } else {
         message.error(result.message || '上传失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('上传失败，请重试')
     } finally {
       setUploading(false)

@@ -1,5 +1,5 @@
 'use client'
-import {createDeviationTemplate, deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
+import {deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
 
 import { useState, useEffect } from 'react'
 import {
@@ -18,7 +18,6 @@ import {
   Alert,
 } from 'antd'
 import {
-  SearchOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -39,14 +38,9 @@ interface Template {
   create_time: string
 }
 
-interface TemplateFormData {
-  name: string
-  description: string
-  is_active: boolean
-}
 
 export default function TemplateManagementPage() {
-  const [form] = Form.useForm()
+  const [_form] = Form.useForm()
   const [modalForm] = Form.useForm()
   const [data, setData] = useState<Template[]>([])
   const [loading, setLoading] = useState(false)
@@ -179,7 +173,7 @@ export default function TemplateManagementPage() {
 
     setUploading(true)
     try {
-      const formData = new FormData()
+      const _formData = new FormData()
       await uploadDeviationTemplate(file.originFileObj as File)
 
       message.success('模板文件上传成功')
