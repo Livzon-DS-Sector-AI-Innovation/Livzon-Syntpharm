@@ -679,7 +679,7 @@ class AIFillService:
             file_path = Path(asset.file_path)
 
             # 转换指定页为图片
-            img_path = self.extractor.pdf_page_to_image(file_path, page_number)  # type: ignore[arg-type]
+            img_path = self.extractor.pdf_page_to_image(file_path, page_number)
             if not img_path:
                 details.append(
                     PageInsertDetail(
