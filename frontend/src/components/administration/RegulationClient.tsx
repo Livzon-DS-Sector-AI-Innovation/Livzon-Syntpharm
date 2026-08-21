@@ -53,7 +53,7 @@ export default function RegulationClient() {
   const {
     regulations,
     loading,
-    total,
+    total: _total,
     keyword,
     setKeyword,
     loadRegulations,
