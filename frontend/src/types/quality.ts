@@ -1,4 +1,3 @@
-import type { components } from '@/types/generated/schema'
 
 // Quality management types (from shared/api.interface.ts)
 

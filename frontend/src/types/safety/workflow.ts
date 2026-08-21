@@ -1,4 +1,3 @@
-import type { components } from '@/types/generated/schema'
 
 export interface AIWorkflowConfig {
   id: string
