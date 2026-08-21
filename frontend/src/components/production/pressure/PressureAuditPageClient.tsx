@@ -22,7 +22,6 @@ import {
   CheckOutlined,
   CloseOutlined,
   ReloadOutlined,
-  SearchOutlined
 } from '@ant-design/icons'
 import {
   getPressureRecords,

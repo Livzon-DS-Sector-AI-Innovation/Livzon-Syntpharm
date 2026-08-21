@@ -12,7 +12,6 @@ import {
   Space,
   Spin,
   App,
-  Tag,
   Steps,
 } from 'antd'
 import {SendOutlined, CameraOutlined} from '@ant-design/icons'

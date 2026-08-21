@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Table,
   Button,
   Space,
   Select,
@@ -15,7 +14,6 @@ import {
   InputNumber,
   Alert,
   Switch,
-  Divider,
   App,
 } from 'antd'
 import {
@@ -25,7 +23,7 @@ import {
 } from '@ant-design/icons'
 import { useProductionStore } from '@/stores/production'
 import { getBatches, getMaterialBalance, calculateMaterialBalance } from '@/actions/production'
-import type { Batch, MaterialBalance } from '@/types/production'
+import type { Batch } from '@/types/production'
 
 const { Text, Title } = Typography
 
