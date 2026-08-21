@@ -17,12 +17,6 @@ const statusOptions: { label: string; value: EquipmentStatus }[] = [
   { label: '报废', value: '报废' },
 ]
 
-interface StaffOption {
-  id: string
-  name: string
-  employee_no: string | null
-  department: string | null
-}
 
 interface EquipmentDrawerProps {
   onRefresh?: () => void

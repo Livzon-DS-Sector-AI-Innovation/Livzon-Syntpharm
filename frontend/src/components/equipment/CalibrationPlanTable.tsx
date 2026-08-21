@@ -8,7 +8,7 @@ import { CalibrationPlan } from '@/types/equipment/generated-bridge'
 import { CalibrationPlanStatus, CalibrationType } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteCalibrationPlan } from '@/actions/equipment'
-import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared-styles'
+import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared-styles'
 
 const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,
@@ -21,7 +21,7 @@ const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
 
 interface Props { onRefresh?: () => void; onRecordRefresh?: () => void }
 
-export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
+export function CalibrationPlanTable({ onRefresh, onRecordRefresh: _onRecordRefresh }: Props) {
   const { message, modal } = App.useApp()
   const {
     calibrationPlans, calibrationPlanTotal, calibrationPlanPage, calibrationPlanPageSize,

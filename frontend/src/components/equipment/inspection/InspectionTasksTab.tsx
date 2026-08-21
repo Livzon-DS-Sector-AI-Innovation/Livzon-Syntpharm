@@ -28,7 +28,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 
 const ALL_STATUSES: InspectionTaskStatus[] = ['待执行', '执行中', '已完成']
 
-export function InspectionTasksTab({ templates, equipments: allEquipments }: Props) {
+export function InspectionTasksTab({ templates: _templates, equipments: allEquipments }: Props) {
   const { message, modal } = App.useApp()
   const {
     tasks, tasksTotal, tasksPage, tasksPageSize, tasksLoading, tasksStatusFilter, tasksRefreshKey,

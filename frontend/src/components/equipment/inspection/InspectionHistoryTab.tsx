@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useCallback, useMemo, useState } from 'react'
-import {App, Button, Table, DatePicker, Input} from 'antd'
+import {App, Table, DatePicker, Input} from 'antd'
 import { EyeOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { useInspectionStore } from '@/stores/inspection'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import {statusPill, pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared-styles'
+import {pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionOverallResult } from '@/types/inspection'
 import type { Personnel } from '@/types/equipment-personnel'
 
