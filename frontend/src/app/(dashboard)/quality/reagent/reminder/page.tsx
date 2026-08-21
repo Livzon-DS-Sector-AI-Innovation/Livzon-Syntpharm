@@ -34,15 +34,6 @@ import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemR
 
 const { Title: _Title, Text } = Typography
 
-interface ReminderConfig {
-  feishu_app_id?: string
-  feishu_app_secret?: string
-  feishu_chat_id?: string
-  low_stock_threshold: number
-  is_enabled: boolean
-  last_remind_time?: string
-  last_remind_content?: string
-}
 
 interface LowStockItem {
   reagent_name: string
