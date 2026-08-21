@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
+import {Card, Button, Space, Tag, Table, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, ExperimentOutlined, BarChartOutlined, TableOutlined, SettingOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import 'echarts-gl'
@@ -525,7 +525,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                       <Button type="link" icon={<PlusOutlined />} onClick={addFactor} size="small">添加因素</Button>
                     </div>
                     <div style={{ fontSize: 12, color: '#666', marginBottom: 8, padding: '4px 8px', background: '#f0f0f0', borderRadius: 4 }}>
-                      调试：{factors.map((f, i) => `${f.name}(${f.symbol}): ${JSON.stringify(f.levels)}`).join(' | ')}
+                      调试：{factors.map((f, _i) => `${f.name}(${f.symbol}): ${JSON.stringify(f.levels)}`).join(' | ')}
                     </div>
                     {factors.map((factor, idx) => (
                       <Card key={idx} size="small" style={{ marginBottom: 8, backgroundColor: '#fafafa' }}>

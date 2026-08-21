@@ -5,7 +5,7 @@ import { App, Card, Table, Tag, Button, Input, Select, Space, Modal, Form, DateP
 import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import {
-  RdProject, RdProjectStage, RdProjectStatus, RdProjectPriority,
+  RdProject,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'

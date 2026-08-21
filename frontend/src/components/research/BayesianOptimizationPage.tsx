@@ -11,13 +11,10 @@ import { App,
   Typography,
   Select,
   InputNumber,
-  Form,
   Divider,
   Input,
   Tabs,
-  Checkbox
 } from 'antd'
-import type { UploadFile } from 'antd/es/upload'
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -59,7 +56,7 @@ export function BayesianOptimizationPage() {
     { column: '', mode: 'max' },
   ])
   const [batchSize, setBatchSize] = useState(5)
-  const [savePrediction, setSavePrediction] = useState(false)
+  const [savePrediction, _setSavePrediction] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultData, setResultData] = useState<ResultRow[]>([])
   const [resultColumns, setResultColumns] = useState<string[]>([])

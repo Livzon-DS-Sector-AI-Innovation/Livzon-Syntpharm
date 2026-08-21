@@ -167,7 +167,7 @@ export function PilotWorkflowList({ initialData }: Props) {
             placeholder="状态筛选"
             allowClear
             style={{ width: 120 }}
-            onChange={(v) => loadData(1, undefined)}
+            onChange={(_v) => loadData(1, undefined)}
             options={[
               { value: 'pending', label: '待启动' },
               { value: 'running', label: '执行中' },

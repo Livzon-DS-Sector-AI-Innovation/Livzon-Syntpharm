@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Space} from 'antd'
-import {PlusOutlined, EditOutlined, ArrowRightOutlined} from '@ant-design/icons'
+import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker} from 'antd'
+import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
 import {
-  RdProject, RdMilestone, RdStageRecord, RdResearchTrack, RdResearchFinding,
+  RdProject, RdMilestone, RdStageRecord,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-project'
@@ -12,7 +12,7 @@ import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
 import dayjs from 'dayjs'
-import {createMilestone, updateMilestone, createStage, doTransition} from '@/actions/research/rd-project'
+import {createMilestone, doTransition} from '@/actions/research/rd-project'
 
 interface Props { project: RdProject }
 
