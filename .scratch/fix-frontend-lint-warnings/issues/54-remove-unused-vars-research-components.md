@@ -4,12 +4,21 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 ## Acceptance Criteria
 
-- [ ] All unused imports removed from research components
-- [ ] All unused variables removed from research components
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in research components
-- [ ] No functional changes to research features
+- [x] All unused imports removed from research components
+- [x] All unused variables removed from research components
+- [x] `tsc --noEmit` passes with no errors
+- [x] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in research components
+- [x] No functional changes to research features
+
+## Summary
+
+Fixed 42 unused vars across 17 files in src/components/research/:
+- Removed unused imports (icons, types, components)
+- Prefixed unused props/params with _ in destructuring
+- Removed unused interfaces and type imports
+
+All research components now have zero unused vars warnings.
