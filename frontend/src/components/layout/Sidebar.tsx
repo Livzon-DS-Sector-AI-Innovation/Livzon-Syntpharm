@@ -179,7 +179,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const searchParams = useSearchParams()
   const { collapsed } = useSidebarStore()
   const router = useRouter()
-  const { user: currentUser } = usePermission()
+  const { user: _currentUser } = usePermission()
   const moduleKey = pathname.split("/")[1] || "production"
   const currentModule = getModuleByKey(moduleKey)
   const [_user, setUser] = useState<User | null>(null)

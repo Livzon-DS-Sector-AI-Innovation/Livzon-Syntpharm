@@ -3,7 +3,7 @@
 "use client"
 
 import {useState, useCallback} from 'react'
-import {App, Card, Button, Input, Space, Tag, List, Upload, Typography} from 'antd'
+import {App, Card, Button, Input, Space, List, Typography} from 'antd'
 import {SaveOutlined, EditOutlined, HistoryOutlined, ArrowLeftOutlined, EyeOutlined, FileTextOutlined} from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { ReportVersion, InvestigationRecord } from '@/types/quality'
