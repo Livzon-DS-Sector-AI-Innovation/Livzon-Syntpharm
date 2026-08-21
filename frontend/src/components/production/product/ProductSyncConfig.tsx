@@ -8,9 +8,7 @@ import {
   createSyncConfig,
   updateSyncConfig,
   deleteSyncConfig,
-  pushToFeishu,
   pullFromFeishu,
-  bidirectionalSync,
 } from '@/actions/product-output'
 
 interface ProductSyncConfigProps {

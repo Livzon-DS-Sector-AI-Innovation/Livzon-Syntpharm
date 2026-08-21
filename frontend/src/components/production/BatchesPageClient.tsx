@@ -14,7 +14,6 @@ import {
   Card,
   Row,
   Col,
-  DatePicker,
   Typography,
   Tooltip,
   App,
@@ -27,7 +26,6 @@ import {
   DeleteOutlined,
   PlayCircleOutlined,
   CheckCircleOutlined,
-  StopOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
 import { useProductionStore } from '@/stores/production'
@@ -45,7 +43,7 @@ import type {
 } from '@/types/production'
 import { BatchStatus as BatchStatusEnum, BATCH_STATUS_OPTIONS } from '@/types/production'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 // Helper to get status color
 const getStatusColor = (status: BatchStatus) => {
