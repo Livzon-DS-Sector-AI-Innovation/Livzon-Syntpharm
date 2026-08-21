@@ -99,7 +99,7 @@ interface ListPageProps {
   importModule?: string
 }
 
-function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, _importModule }: ListPageProps) {
+function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule: _importModule }: ListPageProps) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)

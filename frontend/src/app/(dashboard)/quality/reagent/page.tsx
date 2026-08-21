@@ -373,29 +373,29 @@ export default function QualityReagentPage() {
         }
         if (data.lot_no) _formInstance.setFieldValue('lot_no', data.lot_no)
         if (data.manufacturer) _formInstance.setFieldValue('manufacturer', data.manufacturer)
-        if (data.content) formInstance.setFieldValue('content', data.content)
+        if (data.content) _formInstance.setFieldValue('content', data.content)
         if (data.production_date) {
-          formInstance.setFieldValue('production_date', dayjs(data.production_date))
+          _formInstance.setFieldValue('production_date', dayjs(data.production_date))
           if (data.expiration_date) {
-            formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
+            _formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
           } else {
-            formInstance.setFieldValue('expiration_date', dayjs(data.production_date).add(3, 'year'))
+            _formInstance.setFieldValue('expiration_date', dayjs(data.production_date).add(3, 'year'))
           }
         } else if (data.expiration_date) {
-          formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
+          _formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
         }
         if (data.specification) {
-          formInstance.setFieldValue('specification', data.specification)
+          _formInstance.setFieldValue('specification', data.specification)
           const specMatch = data.specification.match(/^(\d+(?:\.\d+)?)\s*(g|kg|ml|l|litre|liter|mg)$/i)
           if (specMatch) {
             const value = parseFloat(specMatch[1])
             const unitLower = specMatch[2].toLowerCase()
-            formInstance.setFieldValue('quantity', value)
+            _formInstance.setFieldValue('quantity', value)
             const unitMap: Record<string, string> = {
               'g': 'g', 'kg': 'kg', 'mg': 'mg',
               'ml': 'ml', 'l': 'L', 'litre': 'L', 'liter': 'L'
             }
-            formInstance.setFieldValue('unit', unitMap[unitLower] || unitLower.toUpperCase())
+            _formInstance.setFieldValue('unit', unitMap[unitLower] || unitLower.toUpperCase())
           }
         }
         message.success(`AI识别完成，置信度: ${(data.confidence * 100).toFixed(0)}%`)
