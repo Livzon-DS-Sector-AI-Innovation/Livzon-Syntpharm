@@ -3,13 +3,11 @@
 import { useState, useCallback } from 'react'
 import { Button, Input, Select, Space, Tooltip, App } from 'antd'
 import {
-  SearchOutlined,
   ReloadOutlined,
   ExpandOutlined,
   ExportOutlined,
 } from '@ant-design/icons'
 import { Panel } from '@xyflow/react'
-import type { GraphNode } from '@/types/safety'
 import { searchGraphNodes } from '@/actions/safety/knowledge-graph'
 import { useKnowledgeGraphStore } from '@/stores/safety/knowledgeGraphStore'
 import { NODE_TYPE_OPTIONS, RELATION_TYPE_OPTIONS } from './GraphConstants'

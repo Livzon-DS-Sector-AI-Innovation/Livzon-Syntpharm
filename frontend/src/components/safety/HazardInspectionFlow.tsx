@@ -88,7 +88,7 @@ function StatusPill({
 }
 
 /** 阶段编号圆点 */
-function StageDot({ num, active }: { num: number; active: boolean }) {
+function _StageDot({ num, active }: { num: number; active: boolean }) {
   return (
     <div
       style={{
@@ -112,7 +112,7 @@ function StageDot({ num, active }: { num: number; active: boolean }) {
 }
 
 /** 阶段连接竖线 */
-function StageConnector() {
+function _StageConnector() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
       <div style={{ width: 2, height: 20, background: '#ede9e4', borderRadius: 1 }} />

@@ -42,7 +42,7 @@ import BatchProgressPanel from './BatchProgressPanel'
 
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 // ── AI 进度颜色配置 ──
 const PROGRESS_COLOR_CONFIG: Record<string, { color: string; bg: string }> = {
@@ -113,7 +113,7 @@ export default function WorkflowListPanel() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [progressFilter, setProgressFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
-  const { message, modal } = App.useApp()
+  const { message: _message, modal } = App.useApp()
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()

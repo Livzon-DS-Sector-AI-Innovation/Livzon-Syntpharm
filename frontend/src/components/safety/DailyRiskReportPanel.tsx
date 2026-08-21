@@ -45,7 +45,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 const { TextArea } = Input
 
 export default function DailyRiskReportPanel() {

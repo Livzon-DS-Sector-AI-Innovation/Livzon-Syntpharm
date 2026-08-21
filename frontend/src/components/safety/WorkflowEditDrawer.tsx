@@ -15,8 +15,6 @@ import {
   App,
 } from 'antd'
 import {
-  PlusOutlined,
-  DeleteOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons'
 import type { AIWorkflowConfig, WorkflowStepItem, ReferenceDocsValue } from '@/types/safety'
@@ -24,7 +22,7 @@ import { TRIGGER_EVENT_OPTIONS } from '@/types/safety'
 import { updateAIWorkflowConfig, createAIWorkflowConfig } from '@/actions/safety'
 import ReferenceDocsEditor from './ReferenceDocsEditor'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 const { TextArea } = Input
 
 interface Props {
@@ -80,7 +78,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
       // Strip prompt_template for clean 4-field storage
       const cleanScripts = (values.script_configs || []).map(
         (s: WorkflowStepItem & { prompt_template?: string }, i: number) => {
-          const { prompt_template, ...rest } = s
+          const { prompt_template: _prompt_template, ...rest } = s
           // 合并预设的 expected_keys（表单中不展示，从原始数据回填）
           return {
             ...rest,
@@ -258,7 +256,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
           </div>
 
           <Form.List name="script_configs">
-            {(fields, { add }) => (
+            {(fields, { add: _add }) => (
               <>
                 <Collapse
                   activeKey={activeScriptKeys}
@@ -268,7 +266,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                   )}
                   style={{ background: 'transparent' }}
                   expandIconPlacement="end"
-                  items={fields.map(({ key, name, ...restField }) => {
+                  items={fields.map(({ key: _key, name, ...restField }) => {
                     const scriptNum = name + 1
                     const formValues = form.getFieldValue('script_configs') || []
                     const _scriptData = formValues[name] || {}

@@ -16,7 +16,6 @@ import {
   DatePicker,
   Flex,
   Upload,
-  Avatar,
 } from 'antd'
 import {
   ArrowLeftOutlined,
@@ -419,7 +418,7 @@ export function HazardDetailPageClient() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
-  const { message, modal } = App.useApp()
+  const { message, modal: _modal } = App.useApp()
 
   const [record, setRecord] = useState<HazardReport | null>(null)
   const [loading, setLoading] = useState(true)

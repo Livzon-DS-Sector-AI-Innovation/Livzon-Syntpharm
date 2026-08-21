@@ -13,12 +13,10 @@ import {
   Typography,
   Space,
   Tag,
-  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
   Tabs,
-  InputNumber,
   Tooltip,
   Badge,
   Timeline,
@@ -36,8 +34,6 @@ import {
   RocketOutlined,
   LockOutlined,
   MinusCircleOutlined,
-  ExclamationCircleOutlined,
-  SwapOutlined,
 } from '@ant-design/icons'
 import {
   getEhsChanges,
@@ -79,7 +75,7 @@ import type {
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
-const { RangePicker } = DatePicker
+const { RangePicker: _RangePicker } = DatePicker
 
 // Status tag colors
 const statusColorMap: Record<string, string> = {
@@ -865,10 +861,10 @@ function ApprovalChainTab({ change }: { change: EhsChange }) {
   )
 }
 
+function ActionItemsTab({ change, onRefresh }: { change: EhsChange; onRefresh: () => void }) {
 
 // ── Tab: Action Items ──
 
-function ActionItemsTab({ change, onRefresh }: { change: EhsChange; onRefresh: () => void }) {
   const { message } = App.useApp()
   const items = change.action_items || []
 

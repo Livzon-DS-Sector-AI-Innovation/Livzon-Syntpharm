@@ -8,8 +8,6 @@ import {
   FileTextOutlined,
   ThunderboltOutlined,
   RobotOutlined,
-  ExportOutlined,
-  SafetyCertificateOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import type { AIWorkflowConfig } from '@/types/safety'
