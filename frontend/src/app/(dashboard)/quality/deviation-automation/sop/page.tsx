@@ -1,5 +1,5 @@
 'use client'
-import {createSopTemplate, createSopFromTemplate, updateSopTemplate, deleteSopTemplate, deleteSopRule, updateSopRuleStatus, createSopRule, uploadSopRule, aiParseSopRule} from '@/actions/quality'
+import {deleteSopRule, updateSopRuleStatus, createSopRule, uploadSopRule, aiParseSopRule} from '@/actions/quality'
 
 import { useState, useRef } from 'react'
 import {
@@ -47,14 +47,6 @@ interface SopRule {
   update_time: string
 }
 
-interface SopRuleFormData {
-  sop_code: string
-  sop_full_name: string
-  sop_version: string
-  business_tag: string
-  standard_limit: string
-  standard_sentence: string
-}
 
 const statusOptions = [
   { label: '生效', value: 1 },
