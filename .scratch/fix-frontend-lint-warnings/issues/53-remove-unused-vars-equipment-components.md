@@ -4,12 +4,21 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 ## Acceptance Criteria
 
-- [ ] All unused imports removed from equipment components
-- [ ] All unused variables removed from equipment components
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in equipment components
-- [ ] No functional changes to equipment features
+- [x] All unused imports removed from equipment components
+- [x] All unused variables removed from equipment components
+- [x] `tsc --noEmit` passes with no errors
+- [x] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in equipment components
+- [x] No functional changes to equipment features
+
+## Summary
+
+Fixed 46 unused vars across 36 files in src/components/equipment/:
+- Removed unused imports (icons, types, components)
+- Prefixed unused props/params with _ in destructuring
+- Removed unused interfaces (StaffOption)
+
+All equipment components now have zero unused vars warnings.
