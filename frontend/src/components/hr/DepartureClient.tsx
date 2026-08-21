@@ -6,7 +6,6 @@ import type { ColumnsType } from 'antd/es/table'
 import { PlusOutlined } from "@ant-design/icons"
 import {
   SearchOutlined,
-  SyncOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
 import { fetchDepartments } from '@/lib/api/client/hr'

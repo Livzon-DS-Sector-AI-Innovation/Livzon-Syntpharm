@@ -10,9 +10,8 @@ import {
 import { Candidate } from '@/types/hr'
 import { fetchCandidates } from '@/lib/api/client/hr'
 import {
-  syncCandidatesFromFeishuAction,
   deleteCandidateAction,
-  syncCandidateToFeishuAction } from '@/actions/hr'
+} from '@/actions/hr'
 import CandidateListView from './CandidateListView'
 import CandidateCardView from './CandidateCardView'
 import CreateCandidateModal from './CreateCandidateModal'

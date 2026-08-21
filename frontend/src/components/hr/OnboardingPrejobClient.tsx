@@ -8,7 +8,6 @@ const LABEL = { border: "1px solid #000", padding: "4px", backgroundColor: "#f0f
 import { useEffect, useState } from 'react'
 import { App, Radio, Button, Card, Select, Space, } from 'antd'
 import {
-  FileTextOutlined,
   PrinterOutlined,
   DownloadOutlined
 } from '@ant-design/icons'
@@ -16,7 +15,6 @@ import { Employee } from '@/types/hr'
 import {
   fetchEmployees,
   fetchNewEmployees,
-  fetchOnboardingTrainingRecord,
   fetchPrejobTrainingPlan,
   fetchOnboardingEvaluationByEmployeeId,
   fetchOnboardingRecords
@@ -84,7 +82,7 @@ export default function OnboardingPrejobClient() {
       })
   }, [factory])
 
-  const handleSearch = async (keyword: string) => {
+  const _handleSearch = async (keyword: string) => {
     if (!keyword || keyword.length < 1) return
     setLoading(true)
     try {
@@ -210,7 +208,7 @@ export default function OnboardingPrejobClient() {
     window.print()
   }
 
-  const prejobContents = selectedEmployee
+  const _prejobContents = selectedEmployee
     ? DEPT_CONTENT_MAP[selectedEmployee.department || ''] || []
     : []
 

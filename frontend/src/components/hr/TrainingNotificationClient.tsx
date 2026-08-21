@@ -9,7 +9,6 @@ import { App,
   DatePicker,
   Form,
   Input,
-  Modal,
   Select,
   Space,
   TimePicker
@@ -242,7 +241,7 @@ export default function TrainingNotificationClient() {
     }
   }
 
-  const handleExportEvaluation = async () => {
+  const _handleExportEvaluation = async () => {
     const values = await form.validateFields()
     setSubmittingEval(true)
     try {
@@ -471,11 +470,11 @@ export default function TrainingNotificationClient() {
   const previewNames: string[] = formValues?.employee_names || []
 
   const dateStr = dateValue ? dateValue.format('YYYY年MM月DD日') : '____年__月__日'
-  const timeStr =
+  const _timeStr =
     timeValue
       ? `${dayjs(timeValue[0]).format('HH:mm')} ~ ${dayjs(timeValue[1]).format('HH:mm')}`
       : ''
-  const issueDateStr = issueDateValue
+  const _issueDateStr = issueDateValue
     ? issueDateValue.format('YYYY年MM月DD日')
     : dateStr
   const topicStr = [subjectValue, contentValue].filter(Boolean).join(' ')

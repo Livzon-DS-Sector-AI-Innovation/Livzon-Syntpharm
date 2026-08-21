@@ -118,7 +118,7 @@ export default function TrainingSessionDetailModal({
     }
   }, [open, record, form])
 
-  const loadEmployees = async (
+  const _loadEmployees = async (
     depts: string[],
     factoryOverride: 'old' | 'new' = factory,
     preselectNames: string[] = []
