@@ -437,13 +437,22 @@ class AIFillService:
                 else:
                     # 未手动插入，尝试自动插入
                     success = await self._auto_insert_image(doc, field_name, field_data, chapter, chapter_assets)
-                    fill_results.append(
-                        {
-                            "field_name": field_name,
-                            "status": "filled" if success else "skipped",
-                            "message": "图片已自动插入" if success else "未插入（请通过选择页手动插入）",
-                        }
-                    )
+                    if success:
+                        fill_results.append(
+                            {
+                                "field_name": field_name,
+                                "status": "filled",
+                                "message": "图片已自动插入，请核对",
+                            }
+                        )
+                    else:
+                        fill_results.append(
+                            {
+                                "field_name": field_name,
+                                "status": "skipped",
+                                "message": "图片未插入：多页素材，请在 AI 面板人工选页",
+                            }
+                        )
                 continue
 
             if value is None:
@@ -1049,6 +1058,32 @@ class AIFillService:
 
         return False
 
+    def _get_asset_page_count(self, file_path: Path) -> int | None:
+        """获取素材页数，失败返回 None
+
+        - 图片文件（jpg/png 等）天然视为单页
+        - PDF 文件使用 pdfplumber 快速数页（不触发 OCR）
+        - 其他类型或失败返回 None
+        """
+        suffix = file_path.suffix.lower()
+
+        # 图片文件天然视为单页
+        if suffix in (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"):
+            return 1
+
+        # PDF 文件通过 pdfplumber 快速数页
+        if suffix == ".pdf":
+            try:
+                import pdfplumber
+
+                with pdfplumber.open(str(file_path)) as pdf:
+                    return len(pdf.pages)
+            except Exception:
+                return None
+
+        # 其他类型不支持
+        return None
+
     async def _auto_insert_image(
         self,
         doc: Document,  # type: ignore[valid-type]
@@ -1124,18 +1159,28 @@ class AIFillService:
             logger.warning(f"[ImageInsert] {field_name}: no matching asset found (source_category={source_category})")
             return False
 
-        # 4. 转换素材的第一页为图片
+        # 4. 判断素材页数，决定是否自动插入
         file_path = Path(target_asset.file_path)
         if not file_path.exists():
             logger.warning(f"[ImageInsert] {field_name}: file not found {file_path}")
             return False
 
-        img_path = self.extractor.pdf_page_to_image(file_path, 1)
-        if not img_path:
-            logger.warning(f"[ImageInsert] {field_name}: failed to convert to image (only PDF supported)")
+        page_count = self._get_asset_page_count(file_path)
+
+        if page_count is None or page_count > 1:
+            # 页数判断失败或多页素材，不自动插入
+            logger.info(f"[ImageInsert] {field_name}: skip auto-insert (page_count={page_count})")
             return False
 
-        # 5. 在文档中查找附录位置并插入图片
+        # 单页素材，转换为图片
+        img_path = self.extractor.pdf_page_to_image(file_path, 1)
+        if not img_path:
+            # pdf_page_to_image 只支持 PDF，如果是图片文件直接使用原路径
+            if file_path.suffix.lower() in (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"):
+                img_path = file_path
+            else:
+                logger.warning(f"[ImageInsert] {field_name}: failed to convert to image")
+                return False
         appendix_slot = field_data.get("value", "")
         if not appendix_slot or appendix_slot == "待插入":
             appendix_slot = field_name.replace("图片", "")
