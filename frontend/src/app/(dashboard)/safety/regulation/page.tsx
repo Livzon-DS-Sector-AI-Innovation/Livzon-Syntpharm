@@ -13,7 +13,6 @@ import {
   Form,
   Upload,
   Drawer,
-  Card,
   Typography,
   Tabs,
   Divider,
@@ -71,8 +70,6 @@ import {
   statusPill,
   pillSuccess,
   pillWarning,
-  pillError,
-  pillNeutral,
   pillInfo,
   pillPurple,
   pillDefault,
@@ -149,7 +146,6 @@ export default function RegulationPage() {
     setRevisionTotal,
     setRevisionQueryParams,
     addRevision,
-    updateRevision: updateRevisionInStore,
     removeRevision,
   } = useSafetyStore()
 
@@ -257,9 +253,6 @@ export default function RegulationPage() {
 
   // ── SOP Generator Handlers ──
 
-  const handleOpenGenerator = () => {
-    setGeneratorModalOpen(true)
-  }
 
   const handleSopGenerated = (result: {
     regulation_id: string

@@ -46,7 +46,6 @@ import type {
   ConfirmCheckRequest,
 } from '@/types/safety'
 import {
-  CheckType as CheckTypeEnum,
   CHECK_TYPE_OPTIONS,
   CHECK_STATUS_OPTIONS,
   CHECK_RESULT_OPTIONS,

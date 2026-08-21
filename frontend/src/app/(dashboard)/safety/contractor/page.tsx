@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Table, Button, Space, Input, Select, Modal, Form, DatePicker, InputNumber, message, Tag, Card, Row, Col, Typography, Tabs,
+  Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -36,7 +36,7 @@ export default function ContractorPage() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [trainingFilter, setTrainingFilter] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
-  const [_tab, setTab] = useState('list')
+  const [_tab] = useState('list')
 
   const loadData = async () => {
     setLoading(true)
