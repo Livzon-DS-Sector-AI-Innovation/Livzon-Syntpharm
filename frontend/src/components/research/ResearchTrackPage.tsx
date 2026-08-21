@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker, InputNumber} from 'antd'
+import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, HistoryOutlined, ExperimentOutlined, FileTextOutlined, DownloadOutlined } from '@ant-design/icons'
 import {fetchTracks, fetchTrackDetail} from '@/lib/api/client/research/rd-project'
 import { publishConclusionVersion } from '@/actions/research/rd-project'
 import { deleteTrack, deleteFinding } from '@/actions/research/modules'
 import {
-  RdResearchTrack, RdResearchFinding, RdTrackConclusionVersion,
+  RdResearchTrack, RdResearchFinding,
   RdTrackType, RdTrackStatus, RdFindingType, RdFindingConfidence,
   TRACK_TYPE_LABELS, STAGE_LABELS,
 } from '@/types/research/rd-project'
@@ -63,7 +63,7 @@ const typeColorMap: Record<string, string> = {
 }
 
 export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
-  const { message: msgApi, modal } = App.useApp()
+  const { message: msgApi, modal: _modal } = App.useApp()
   const [tracks, setTracks] = useState<RdResearchTrack[]>([])
   const [loading, setLoading] = useState(false)
   

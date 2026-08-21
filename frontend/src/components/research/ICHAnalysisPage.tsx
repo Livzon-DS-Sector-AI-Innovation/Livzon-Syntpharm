@@ -31,7 +31,7 @@ import { TestingRecommendations } from './TestingRecommendations'
 import { analyzeICHFile, deleteICHRecord } from '@/actions/research'
 
 const { Text } = Typography
-const { Option } = Select
+const { Option: _Option } = Select
 
 interface ElementResult {
   symbol: string
@@ -162,8 +162,8 @@ export function ICHAnalysisPage() {
         setHistoryTotal(data.meta?.total || 0)
         setHistoryPage(page)
       }
-    } catch (error) {
-      console.error('加载分析历史失败', error)
+    } catch (_error) {
+      console.error('加载分析历史失败', _error)
     } finally {
       setHistoryLoading(false)
     }
@@ -202,7 +202,7 @@ export function ICHAnalysisPage() {
           q3c: data.data.q3c_result,
         })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载记录失败')
     } finally {
       setLoading(false)
@@ -218,7 +218,7 @@ export function ICHAnalysisPage() {
         if (result?.id === recordId) setResult(null)
         loadHistory(historyPage)
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }

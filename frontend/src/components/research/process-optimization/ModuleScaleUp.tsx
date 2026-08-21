@@ -14,7 +14,7 @@ interface ModuleScaleUpProps {
   onComplete: (study: ScaleUpStudy) => void
 }
 
-export function ModuleScaleUp({ optimizationId, doeExperiment, labConfirmationStudy, initialData, onComplete }: ModuleScaleUpProps) {
+export function ModuleScaleUp({ optimizationId, doeExperiment: _doeExperiment, labConfirmationStudy, initialData, onComplete }: ModuleScaleUpProps) {
   const { message } = App.useApp()
   const [activeTab, setActiveTab] = useState('plan')
   const [targetScale, setTargetScale] = useState(initialData?.target_scale_kg || 5)

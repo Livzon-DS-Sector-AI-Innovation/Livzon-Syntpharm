@@ -17,7 +17,7 @@ interface ModuleLabConfirmationProps {
 export function ModuleLabConfirmation({
   optimizationId,
   doeExperiment,
-  qualityStandardSet,
+  qualityStandardSet: _qualityStandardSet,
   initialData,
   onComplete,
 }: ModuleLabConfirmationProps) {
