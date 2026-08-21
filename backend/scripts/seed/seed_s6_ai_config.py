@@ -123,7 +123,9 @@ FIELD_CONFIGS = [
         "field_type": "table",
         "location_type": "table",
         "location_hint": "包装材料质量标准章节中的检验项目表格",
-        "extraction_prompt": "从包材质量标准文档中提取完整的检验项目表格，包含序号、检验项目、企业内控标准等列，返回二维数组格式",
+        "extraction_prompt": (
+            "从包材质量标准文档中提取完整的检验项目表格，包含序号、检验项目、企业内控标准等列，返回二维数组格式"
+        ),
         "source_type": "asset_extract",
         "source_category": "包材质量标准",
         "appendix_slot": None,
