@@ -48,9 +48,9 @@ import {
   closeEhsChange,
   cancelEhsChange,
   addRiskAssessment,
-  updateActionItem,
   updatePSSRChecklist,
   submitVerification,
+  updateActionItem,
 } from '@/actions/safety'
 import {
   CHANGE_TYPE_OPTIONS,
@@ -67,10 +67,6 @@ import {
 import type {
   EhsChange,
   EhsChangeFormData,
-  RiskAssessmentItem,
-  ApprovalChainItem,
-  ActionItem,
-  PSSRChecklistItem,
 } from '@/types/safety'
 
 const { Title, Text, Paragraph } = Typography
