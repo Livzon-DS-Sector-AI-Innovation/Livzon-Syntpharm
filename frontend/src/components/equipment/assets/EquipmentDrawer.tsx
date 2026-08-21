@@ -48,12 +48,6 @@ function flattenLocations(locations: Location[], prefix = ''): { label: string; 
   return result
 }
 
-interface StaffOption {
-  id: string
-  name: string
-  employee_no: string | null
-  department: string | null
-}
 
 interface EquipmentDrawerProps {
   onRefresh?: () => void

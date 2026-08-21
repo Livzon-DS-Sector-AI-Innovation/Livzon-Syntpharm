@@ -8,7 +8,7 @@ import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment'
 import type { InspectionTask } from '@/types/inspection'
 import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/client/equipment'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
-import {monoFont, pillNeutral, pillSuccess, pillWarning, pillError, statusPill} from '@/components/equipment/shared-styles'
+import {monoFont, pillNeutral, pillSuccess, pillError, statusPill} from '@/components/equipment/shared-styles'
 import type { EquipmentStatus } from '@/types/equipment'
 
 interface EquipmentDetailDrawerProps {
@@ -54,7 +54,7 @@ const EQUIP_STATUS_MAP: Record<EquipmentStatus, React.CSSProperties> = {
 
 
 
-export function EquipmentDetailDrawer({ open, equipment, categoryName, locationName, onClose }: EquipmentDetailDrawerProps) {
+export function EquipmentDetailDrawer({ open, equipment, categoryName: _categoryName, locationName, onClose }: EquipmentDetailDrawerProps) {
   const { message } = App.useApp()
   const [activeTab, setActiveTab] = useState<'plans' | 'history' | 'orders'>('plans')
 

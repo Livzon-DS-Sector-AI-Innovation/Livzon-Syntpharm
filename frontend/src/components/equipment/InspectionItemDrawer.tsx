@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {App, Drawer, Table, Form, Input, InputNumber, Typography, Empty, Popconfirm} from 'antd'
-import {PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, OrderedListOutlined} from '@ant-design/icons'
+import {PlusOutlined, EditOutlined, DeleteOutlined, OrderedListOutlined} from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplateItem, updateInspectionTemplateItem, deleteInspectionTemplateItem } from '@/actions/equipment'

@@ -10,7 +10,7 @@ import { PersonnelTable } from './PersonnelTable'
 import { RoleManagePanel } from './RoleManagePanel'
 import { PersonnelDrawer } from './PersonnelDrawer'
 import { PersonnelCategoryDrawer } from './PersonnelCategoryDrawer'
-import type { EquipmentRole, Personnel } from '@/types/equipment-personnel'
+import type { Personnel } from '@/types/equipment-personnel'
 
 export function PersonnelPage() {
   const { message } = App.useApp()

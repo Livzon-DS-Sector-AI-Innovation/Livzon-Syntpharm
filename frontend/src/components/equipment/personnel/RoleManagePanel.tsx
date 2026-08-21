@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import {
-  App, Button, Modal, Form, Input, Select, Switch, Popconfirm, Tag, Empty, Typography,
+  App, Button, Modal, Form, Input, Select, Switch, Popconfirm, Tag, Typography,
 } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { useQueryClient } from '@tanstack/react-query'
 import { createRole, updateRole, deleteRole } from '@/actions/equipment'
-import type { EquipmentRole, CreateRoleInput, UpdateRoleInput } from '@/types/equipment'
+import type { EquipmentRole, UpdateRoleInput } from '@/types/equipment'
 
 const { Text } = Typography
 

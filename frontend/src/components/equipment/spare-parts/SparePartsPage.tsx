@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import {App, ConfigProvider, Button} from 'antd'
+import {App, ConfigProvider} from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { SparePart, StockWarning } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
@@ -25,7 +25,7 @@ export function SparePartsPage({
   const {
     sparePartPage, sparePartPageSize, sparePartKeyword,
     setSpareParts, setSparePartTotal, setSparePartLoading, setStockWarnings,
-    openSparePartDrawer,
+    openSparePartDrawer: _openSparePartDrawer,
   } = useEquipmentStore()
 
   useEffect(() => {

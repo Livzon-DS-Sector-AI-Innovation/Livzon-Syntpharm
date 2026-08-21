@@ -7,7 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { CalibrationPlan, CalibrationPlanStatus, CalibrationType } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteCalibrationPlan } from '@/actions/equipment'
-import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared/shared-styles'
+import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared/shared-styles'
 
 
 const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
@@ -17,7 +17,7 @@ const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
 
 interface Props { onRefresh?: () => void; onRecordRefresh?: () => void }
 
-export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
+export function CalibrationPlanTable({ onRefresh, onRecordRefresh: _onRecordRefresh }: Props) {
   const { message, modal } = App.useApp()
   const {
     calibrationPlans, calibrationPlanTotal, calibrationPlanPage, calibrationPlanPageSize,

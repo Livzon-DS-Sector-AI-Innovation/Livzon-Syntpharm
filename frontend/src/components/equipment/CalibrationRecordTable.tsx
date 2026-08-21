@@ -9,7 +9,7 @@ import {pillSuccess, pillError, pillPurple, pillWarning} from '@/components/equi
 
 interface Props { onRefresh?: () => void }
 
-export function CalibrationRecordTable({ onRefresh }: Props) {
+export function CalibrationRecordTable({ onRefresh: _onRefresh }: Props) {
   const {
     calibrationRecords, calibrationRecordTotal, calibrationRecordPage, calibrationRecordPageSize,
     calibrationRecordLoading, setCalibrationRecordPage, setCalibrationRecordPageSize,

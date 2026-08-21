@@ -18,7 +18,7 @@ const statusMap: Record<MaintenancePlanStatus, React.CSSProperties> = {
 
 interface Props { onRefresh?: () => void; equipments: { id: string; name: string; asset_no: string }[] }
 
-export function MaintenancePlanTable({ onRefresh, equipments }: Props) {
+export function MaintenancePlanTable({ onRefresh, equipments: _equipments }: Props) {
   const { message, modal } = App.useApp()
   const {
     maintenancePlans, maintenancePlanTotal, maintenancePlanPage, maintenancePlanPageSize,

@@ -11,7 +11,7 @@ import { pillSuccess, pillNeutral, linkPrimary, linkDanger, linkPurple } from '@
 
 interface Props { onRefresh?: () => void; categories: { id: string; name: string }[] }
 
-export function InspectionTemplateTable({ onRefresh, categories }: Props) {
+export function InspectionTemplateTable({ onRefresh, categories: _categories }: Props) {
   const { message, modal } = App.useApp()
   const {
     inspectionTemplates, inspectionTemplateTotal, inspectionTemplatePage, inspectionTemplatePageSize,
