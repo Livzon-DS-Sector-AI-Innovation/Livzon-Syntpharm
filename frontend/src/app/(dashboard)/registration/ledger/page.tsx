@@ -12,8 +12,6 @@ import {
   fetchCoppCertificates, exportCoppCertificates,
   fetchWcCertificates, exportWcCertificates,
   fetchReviewingDrugs,
-  type DomesticApproval, type OverseasApproval, type InternationalReview,
-  type CoppCertificate, type WcCertificate, type ReviewingDrug,
 } from '@/lib/api/client/registration-ledger'
 import {
   createDomesticApproval, importDomesticApprovals,
