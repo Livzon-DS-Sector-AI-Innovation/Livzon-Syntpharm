@@ -16,12 +16,10 @@ import {
   List,
   Divider,
   message,
-  Popconfirm,
   Tooltip,
   Empty,
 } from 'antd'
 import {
-  SearchOutlined,
   EyeOutlined,
   ExportOutlined,
   ReloadOutlined,
@@ -29,7 +27,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   WarningOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons'
 import { getCheckRecords, getCheckRecordDetail, exportCheckReport } from '@/actions/sop-ai'
 import {
@@ -37,7 +34,6 @@ import {
   CheckMainDetail,
   CheckProblem,
   CheckRecordFilter,
-  RiskLevel,
   CheckStatus,
 } from '@/types/sop-ai'
 import dayjs from 'dayjs'
@@ -107,7 +103,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
   }
 
   // 获取风险标签颜色
-  const getRiskTagColor = (level?: number) => {
+  const _getRiskTagColor = (level?: number) => {
     if (level && level > 0) return 'red'
     return 'default'
   }

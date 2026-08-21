@@ -28,7 +28,6 @@ import {
   ArrowLeftOutlined,
   DownloadOutlined,
   CheckCircleOutlined,
-  ReloadOutlined,
   FileSearchOutlined,
   ExclamationCircleOutlined,
   SafetyOutlined,
@@ -40,7 +39,6 @@ import {
   CheckProblem,
   CheckMainDetail,
   RiskLevel,
-  HandleStatus,
   HANDLE_STATUS_OPTIONS,
   CheckItemType,
 } from '@/types/doc-check'
@@ -156,7 +154,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       } else {
         message.error(data.message || '处理失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('处理失败')
     }
   }
@@ -180,7 +178,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       } else {
         message.error({ content: data.message || '生成失败', key: 'export' })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error({ content: '生成失败', key: 'export' })
     }
   }
@@ -206,7 +204,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       } else {
         message.error(data.message || '确认失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('确认失败')
     }
   }

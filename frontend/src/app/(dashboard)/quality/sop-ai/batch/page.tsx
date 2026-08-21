@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Card,
   Form,
@@ -16,12 +16,8 @@ import {
   Progress,
   Spin,
   Result,
-  Empty,
 } from 'antd'
 import {
-  UploadOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
   FileTextOutlined,
   RobotOutlined,
   InboxOutlined,
