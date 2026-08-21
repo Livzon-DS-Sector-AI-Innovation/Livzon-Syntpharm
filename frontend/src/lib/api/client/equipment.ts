@@ -56,8 +56,26 @@ export async function fetchEquipments(filters: EquipmentFilters = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-export async function fetchEquipmentStatistics(): Promise<EquipmentStatistics> {
-  return apiGet(`${API_BASE}/equipment/equipments/statistics`)
+export interface EquipmentStatisticsFilters {
+  category_id?: string
+  location_id?: string
+  department_id?: string
+  status?: string
+}
+
+export async function fetchEquipmentStatistics(filters: EquipmentStatisticsFilters = {}): Promise<EquipmentStatistics> {
+  const params = new URLSearchParams()
+  if (filters.category_id) params.append('category_id', filters.category_id)
+  if (filters.location_id) params.append('location_id', filters.location_id)
+  if (filters.department_id) params.append('department_id', filters.department_id)
+  if (filters.status) params.append('status', filters.status)
+
+  const queryString = params.toString()
+  const url = queryString
+    ? `${API_BASE}/equipment/equipments/statistics?${queryString}`
+    : `${API_BASE}/equipment/equipments/statistics`
+
+  return apiGet(url)
 }
 
 // ═══════════════════════════════════════════════════════════

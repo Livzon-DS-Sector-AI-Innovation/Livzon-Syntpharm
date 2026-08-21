@@ -125,13 +125,18 @@ export function EquipmentPage({
     }
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
 
-  // 单独刷新统计（仅 mount 或需要时使用）
+  // 单独刷新统计（根据当前筛选条件）
   const refreshStatistics = useCallback(async () => {
     try {
-      const stats = await fetchEquipmentStatisticsClient()
+      const stats = await fetchEquipmentStatisticsClient({
+        category_id: selectedCategory || undefined,
+        location_id: selectedLocation || undefined,
+        department_id: departmentFilter || undefined,
+        status: statusFilter || undefined,
+      })
       setStatistics(stats)
     } catch { /* 静默 */ }
-  }, [setStatistics])
+  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, setStatistics])
 
   // 刷新分类和位置树
   const refreshCategoriesAndLocations = useCallback(async () => {
