@@ -44,7 +44,6 @@ import {
   updateTrainingRecord,
   deleteTrainingRecord,
   getTrainingCertificates,
-  getExpiringCertificates,
 } from '@/actions/safety'
 import type {
   SafetyTraining,
@@ -63,7 +62,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 export function SafetyTrainingPageClient() {
   const { message, modal } = App.useApp()

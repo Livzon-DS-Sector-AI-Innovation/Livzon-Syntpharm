@@ -26,7 +26,6 @@ import {
   DeleteOutlined,
   SendOutlined,
   InboxOutlined,
-  FileTextOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
 import { useSafetyStore } from '@/stores/safety'
@@ -48,7 +47,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 export function KnowledgeBasePageClient() {
   const { message, modal } = App.useApp()

@@ -28,8 +28,7 @@ import {
 import type { SpecialOperationReport, SpecialOperationReportFormData } from '@/types/safety'
 
 import {
-  T, OP_TYPE_CONFIG, OP_LEVEL_LABELS, OP_LEVEL_OPTIONS,
-  STATUS_CONFIG, STATUS_OPTIONS,
+  STATUS_CONFIG, STATUS_OPTIONS, T, OP_TYPE_CONFIG, OP_LEVEL_OPTIONS,
 } from './SpecialOpsConstants'
 
 const { Text } = Typography

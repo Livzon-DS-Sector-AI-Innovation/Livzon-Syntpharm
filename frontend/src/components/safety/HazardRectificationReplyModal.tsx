@@ -12,7 +12,7 @@ const { TextArea } = Input
 const { Dragger } = Upload
 
 // ── 图片后端基础 URL ──
-const BACKEND_HOST = ''
+const _BACKEND_HOST = ''
   .replace(/\/api\/v1$/, '')
 
 interface Props {

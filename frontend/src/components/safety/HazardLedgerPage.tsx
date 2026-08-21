@@ -6,12 +6,8 @@ import {
   Table,
   Button,
   Input,
-  Select,
   message,
   Typography,
-  Modal,
-  Descriptions,
-  Alert,
   App,
   Space,
   Checkbox,
@@ -24,8 +20,6 @@ import {
   PlayCircleOutlined,
   CheckCircleOutlined,
   SafetyCertificateOutlined,
-  RobotOutlined,
-  AuditOutlined,
   CloseCircleOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -472,7 +466,7 @@ export default function HazardLedgerPage() {
     }
   }
 
-  const getLevelColor = (level: HazardLevel) => {
+  const _getLevelColor = (level: HazardLevel) => {
     const option = HAZARD_LEVEL_OPTIONS.find((o) => o.value === level)
     return option?.color || 'default'
   }
@@ -528,7 +522,7 @@ export default function HazardLedgerPage() {
 
   // ── 操作按钮渲染（状态操作 + 删除）──
   const renderAction = (record: HazardReport) => {
-    const deleteButton = (
+    const _deleteButton = (
       <span
         role="button"
         onClick={() => handleDeleteRecord(record)}

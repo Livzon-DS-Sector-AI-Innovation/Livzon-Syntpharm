@@ -47,7 +47,7 @@ interface Props {
 
 export default function PptGeneratorPanel({
   articleId,
-  articleTitle,
+  articleTitle: _articleTitle,
   hasContent,
 }: Props) {
   const [template, setTemplate] = useState<string>('training')

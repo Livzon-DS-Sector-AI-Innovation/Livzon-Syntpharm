@@ -8,10 +8,9 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  SearchOutlined, ExportOutlined, EyeOutlined, FilterOutlined,
   SafetyCertificateOutlined,
   EnvironmentOutlined, ClockCircleOutlined, RobotOutlined,
-  AlertOutlined,
+  AlertOutlined, EyeOutlined, ExportOutlined, SearchOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -28,7 +27,7 @@ import {
   STATUS_CONFIG, RISK_LEVEL_OPTIONS, OP_TYPE_KEYS,
 } from './SpecialOpsConstants'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 const { RangePicker } = DatePicker
 
 // ═══════════════════════════════════════════════════════════

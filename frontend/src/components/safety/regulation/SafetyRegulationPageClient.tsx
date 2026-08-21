@@ -13,7 +13,6 @@ import {
   Upload,
   Drawer,
   message,
-  Card,
   Typography,
   Tabs,
   Divider,
@@ -70,8 +69,8 @@ import {
   statusPill,
   pillSuccess,
   pillWarning,
-  pillError,
-  pillNeutral,
+  pillError as _pillError,
+  pillNeutral as _pillNeutral,
   pillInfo,
   pillPurple,
   pillDefault,
@@ -148,7 +147,7 @@ export function SafetyRegulationPageClient() {
     setRevisionTotal,
     setRevisionQueryParams,
     addRevision,
-    updateRevision: updateRevisionInStore,
+    updateRevision: _updateRevisionInStore,
     removeRevision,
   } = useSafetyStore()
 
@@ -256,7 +255,7 @@ export function SafetyRegulationPageClient() {
 
   // ── SOP Generator Handlers ──
 
-  const handleOpenGenerator = () => {
+  const _handleOpenGenerator = () => {
     setGeneratorModalOpen(true)
   }
 
@@ -960,7 +959,6 @@ export function SafetyRegulationPageClient() {
         </p>
       </div>
 
-      {/* Content Card */}
       <div
         style={{
           background: '#ffffff',

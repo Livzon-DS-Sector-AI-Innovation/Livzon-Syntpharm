@@ -31,7 +31,6 @@ import {
   updateScheduledTask,
   getDataSourceOptions,
   getFeishuChats,
-  previewCard
 } from '@/actions/safety'
 import CronInput from './CronInput'
 import CardTemplateEditor from './CardTemplateEditor'

@@ -41,7 +41,6 @@ import type { HazardIdentification } from '@/types/safety'
 import {
   AI_NODE_PROGRESS_OPTIONS,
   OVERALL_STATUS_OPTIONS_HI,
-  REVIEW_STATUS_OPTIONS,
   RISK_LEVEL_OPTIONS,
   RECOMMENDATION_PRIORITY_OPTIONS,
 } from '@/types/safety'
