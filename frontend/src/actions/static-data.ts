@@ -3,7 +3,6 @@
 import type {
   ApiResponse,
   PageParams,
-  DictOption,
   WarningsResponse,
   AuditLogItem,
   UploadResponse,

@@ -3,19 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
-  ApiResponse,
-  AuditStats,
   BatchManualEntryRequest,
-  BatchManualEntryResponse,
   CreateOcrRecordRequest,
-  DashboardStats,
   DeleteMergedRowRequest,
-  MergedPressureRow,
-  NotificationListResponse,
-  OcrSubmitResponse,
-  OcrTask,
-  PointMapping,
-  PressureRecord,
   UpdateMergedRowRequest,
 } from '@/types/pressure'
 import {

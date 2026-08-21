@@ -17,13 +17,6 @@ import {
   refreshFeishuApi,
 } from '@/lib/api/server/equipment'
 
-async function wrapApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
-  try {
-    return await fn()
-  } catch {
-    return null
-  }
-}
 
 // ── 角色 Actions ──
 

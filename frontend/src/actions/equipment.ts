@@ -3,9 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
 import type { components } from '@/types/generated/schema'
-type CreateRoleInput = components['schemas']['RoleCreate']
-type UpdateRoleInput = components['schemas']['RoleUpdate']
-type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
 type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
 type CreateEquipmentInput = components['schemas']['EquipmentCreate']
