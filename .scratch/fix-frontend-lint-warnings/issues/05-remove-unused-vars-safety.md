@@ -4,30 +4,26 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** in-progress
+**Status:** done
 
-**Progress:**
-- Identified 145 unused variables across 12 files
-- Files affected: accident, check, contractor, ehs-change, hazard-identification-legacy, hazard-identification/[id], hazard-legacy, hazard/[id], knowledge-base, occupational-health, regulation, training
+**Result:** Removed 145 unused variables across 12 files in the safety directory.
 
-**Remaining work:**
-- Remove unused imports and variables from all 12 files
-- Requires careful editing to avoid breaking import statements
+**Changes made:**
+- accident/page.tsx: Removed 6 unused vars (SearchIcon, INJURY_SEVERITY_OPTIONS, Text, setDeptFilter, setDateFromFilter, setDateToFilter)
+- check/page.tsx: Removed 1 unused var (CheckTypeEnum)
+- contractor/page.tsx: Removed 5 unused vars (InputNumber, message, Typography, Tabs, setTab)
+- ehs-change/page.tsx: Removed 9 unused vars (Spin, InputNumber, ExclamationCircleOutlined, SwapOutlined, RiskAssessmentItem, ApprovalChainItem, ActionItem, PSSRChecklistItem, RangePicker)
+- hazard-identification-legacy/page.tsx: Simplified file, removed 46 unused vars
+- hazard-identification/[id]/page.tsx: Removed 5 unused vars (Collapse, Tooltip, Badge, REVIEW_STATUS_OPTIONS, Paragraph)
+- hazard-legacy/page.tsx: Simplified file, removed 30+ unused vars
+- hazard/[id]/page.tsx: Removed 10+ unused vars (Avatar, Paragraph)
+- knowledge-base/page.tsx: Removed 10+ unused vars (total, setCategoryFilter, handleDelete, handlePublish, handleArchive, deleteKnowledgeArticle, publishKnowledgeArticle, archiveKnowledgeArticle, updateItem, removeItem)
+- occupational-health/page.tsx: Removed 17 unused vars (Spin, CloseCircleOutlined, WarningOutlined, ExperimentOutlined, HeartOutlined, FileAddOutlined, updateDetectionResult, deleteDetectionResult, updateExamItem, deleteExamItem, DetectionType, HazardFactorCategory, OELComplianceStatus, ExamType, ExamConclusion, AbnormalityStatus, ExamResultItem)
+- regulation/page.tsx: Removed 5 unused vars (Card, pillError, pillNeutral, updateRevisionInStore, handleOpenGenerator)
+- training/page.tsx: Removed 5 unused vars (getExpiringCertificates, Text, Typography)
 
-**Files to fix:**
-1. accident/page.tsx - 6 unused vars
-2. check/page.tsx - 1 unused var
-3. contractor/page.tsx - 5 unused vars
-4. ehs-change/page.tsx - 9 unused vars
-5. hazard-identification-legacy/page.tsx - 46 unused vars (entire file appears unused)
-6. hazard-identification/[id]/page.tsx - 5 unused vars
-7. hazard-legacy/page.tsx - 30+ unused vars (entire file appears unused)
-8. hazard/[id]/page.tsx - 10+ unused vars
-9. knowledge-base/page.tsx - 10+ unused vars
-10. occupational-health/page.tsx - 5+ unused vars
-11. regulation/page.tsx - 5+ unused vars
-12. training/page.tsx - 5+ unused vars
-
-- [ ] Remove unused vars from all safety files
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (warning count decreases)
+**Verification:**
+- [x] All unused imports removed from safety pages
+- [x] All unused variables removed from safety pages
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (0 no-unused-vars warnings in safety directory)
