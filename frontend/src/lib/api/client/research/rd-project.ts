@@ -1,15 +1,4 @@
-import type { components } from '@/types/generated/schema'
 
-type RdExperimentLogCreate = Omit<components['schemas']['RdExperimentLogCreate'], 'project_id'>
-type RdExperimentLogUpdate = components['schemas']['RdExperimentLogUpdate']
-type RdReportCreate = Omit<components['schemas']['RdReportCreate'], 'project_id'>
-type RdReportUpdate = components['schemas']['RdReportUpdate']
-type RdPilotStudyCreate = Omit<components['schemas']['RdPilotStudyCreate'], 'project_id'>
-type RdPilotStudyUpdate = components['schemas']['RdPilotStudyUpdate']
-type RdProcessValidationCreate = Omit<components['schemas']['RdProcessValidationCreate'], 'project_id'>
-type RdProcessValidationUpdate = components['schemas']['RdProcessValidationUpdate']
-type RdRegistrationFilingCreate = Omit<components['schemas']['RdRegistrationFilingCreate'], 'project_id'>
-type RdRegistrationFilingUpdate = components['schemas']['RdRegistrationFilingUpdate']
 
 import {
   RdProject,
@@ -25,7 +14,6 @@ import {
   RdReport,
   RdInitiation,
   StageTransitionCheck,
-  StageTransitionResult,
   RdDeliverableTemplate,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
@@ -113,8 +101,6 @@ export async function fetchReports(projectId: string): Promise<RdReport[]> {
   return result || []
 }
 
-type RdInitiationCreate = Omit<RdInitiation, 'id' | 'created_at' | 'updated_at'>
-type RdInitiationUpdate = Partial<Omit<RdInitiation, 'id' | 'project_id' | 'created_at' | 'updated_at'>>
 
 export async function fetchInitiations(projectId: string): Promise<RdInitiation[]> {
   const result = await apiGet<RdInitiation[]>(`${API_BASE}/research/initiations?project_id=${projectId}`)

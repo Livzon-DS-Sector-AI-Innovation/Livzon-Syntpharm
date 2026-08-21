@@ -3,7 +3,6 @@ import {
   ReportCreate,
   ReportUpdate,
   ReportItemsBatchSave,
-  TemplateCreate,
   TemplateUpdate,
 } from '@/types/material-report'
 
