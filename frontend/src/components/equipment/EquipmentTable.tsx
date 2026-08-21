@@ -29,6 +29,7 @@ const statusOptions = Object.keys(statusConfig).map(value => ({ label: value, va
 
 interface EquipmentTableProps {
   onRefreshStatistics?: () => void
+  onRefresh?: () => void
   loading?: boolean
   onPageChange: (page: number, pageSize: number) => void
   /** 变化时重置分页到第一页 */
@@ -36,7 +37,7 @@ interface EquipmentTableProps {
 }
 
 
-export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefreshStatistics }: EquipmentTableProps) {
+export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefreshStatistics, onRefresh }: EquipmentTableProps) {
   const { message, modal } = App.useApp()
   const {
     equipments, total,
@@ -142,7 +143,12 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
         try {
           await deleteEquipment(record.id)
           message.success('删除设备成功')
-          onPageChange(localPage, localPageSize)
+          // 优先使用 onRefresh（包含最新筛选状态），否则回退到 onPageChange
+          if (onRefresh) {
+            onRefresh()
+          } else {
+            onPageChange(localPage, localPageSize)
+          }
           onRefreshStatistics?.()
         } catch (error: any) {
           message.error(error?.message || '删除设备失败')

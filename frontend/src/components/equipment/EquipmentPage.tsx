@@ -259,7 +259,13 @@ export function EquipmentPage({
 
             {/* 表格区域 */}
             <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-              <EquipmentTable loading={loading} resetKey={resetKey} onPageChange={(p, ps) => fetchData(p, ps)} onRefreshStatistics={refreshStatistics} />
+              <EquipmentTable 
+                loading={loading} 
+                resetKey={resetKey} 
+                onPageChange={fetchData} 
+                onRefresh={() => fetchData(1, 20)} 
+                onRefreshStatistics={refreshStatistics} 
+              />
             </div>
           </div>
         </div>
