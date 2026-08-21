@@ -99,7 +99,7 @@ export default function EditInstrumentPage() {
           warning_days: rule.warning_days,
         })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
       router.push('/quality/instrument/list')
     } finally {
@@ -151,7 +151,7 @@ export default function EditInstrumentPage() {
 
       message.success('更新成功')
       router.push('/quality/instrument/list')
-    } catch (error) {
+    } catch (_error) {
       message.error('更新失败')
     } finally {
       setLoading(false)

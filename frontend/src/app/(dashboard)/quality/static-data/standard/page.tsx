@@ -25,7 +25,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
   TrophyOutlined,
@@ -156,7 +155,7 @@ export default function StandardPage() {
     setPage(1)
   }
 
-  const handleReset = () => {
+  const _handleReset = () => {
     setSearchText('')
     setTypeFilter('all')
     setStatusFilter('all')

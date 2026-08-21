@@ -6,12 +6,10 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
-  Card,
   Button,
   Tag,
   Spin,
   Empty,
-  Progress,
 } from 'antd'
 import {
   ReloadOutlined,

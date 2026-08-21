@@ -111,7 +111,7 @@ export default function ReminderSettingsPage() {
         message.success('配置已保存')
       }
       loadConfigs()
-    } catch (error) {
+    } catch (_error) {
       message.error('保存失败')
     } finally {
       setSubmitLoading(false)

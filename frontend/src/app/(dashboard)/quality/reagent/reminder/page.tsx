@@ -14,7 +14,6 @@ import {
   Tag,
   Divider,
   Typography,
-  Popconfirm,
   Row,
   Col,
   Alert,
@@ -33,7 +32,7 @@ import {
 } from '@ant-design/icons'
 import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemReminder } from '@/actions/quality-reagent'
 
-const { Title, Text } = Typography
+const { Title: _Title, Text } = Typography
 
 interface ReminderConfig {
   feishu_app_id?: string

@@ -613,7 +613,7 @@ export default function MobileReagentCreatePage() {
       } else {
         message.error(response.message || 'AI识别失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('AI识别失败，请重试')
     } finally {
       setAiLoading(false)

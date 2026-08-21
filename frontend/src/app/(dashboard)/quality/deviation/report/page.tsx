@@ -10,7 +10,6 @@ import {
   Spin,
   Divider,
   Tooltip,
-  Dropdown,
   Modal,
   Input,
 } from 'antd'
@@ -22,9 +21,7 @@ import {
   EditOutlined,
   RobotOutlined,
   CheckOutlined,
-  CloseOutlined,
 } from '@ant-design/icons'
-import type { MenuProps } from 'antd'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Table } from '@tiptap/extension-table'

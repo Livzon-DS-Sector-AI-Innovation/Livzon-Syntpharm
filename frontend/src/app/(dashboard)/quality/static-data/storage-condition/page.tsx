@@ -24,7 +24,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
   DatabaseOutlined,
@@ -114,7 +113,7 @@ export default function StorageConditionPage() {
         disabled: disabledCount,
         withTemp: withTempCount,
       })
-    } catch (e) {
+    } catch (_e) {
       // 忽略统计错误
     }
   }, [])
@@ -421,7 +420,7 @@ export default function StorageConditionPage() {
           <div className="sc-card-grid">
             {data.map((record, index) => {
               const meta = STATUS_META[record.status]
-              const hasTemp =
+              const _hasTemp =
                 (record.temp_min !== null && record.temp_min !== undefined) ||
                 (record.temp_max !== null && record.temp_max !== undefined)
               return (
