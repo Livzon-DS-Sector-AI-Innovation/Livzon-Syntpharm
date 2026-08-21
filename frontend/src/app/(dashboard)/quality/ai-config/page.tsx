@@ -114,7 +114,7 @@ export default function AiConfigPage() {
     form.setFieldsValue(defaultConfig)
     try {
       await resetAIConfig(defaultConfig)
-    } catch (error) {
+    } catch (_error) {
       console.log('重置后端配置失败')
     }
     message.success('已重置为默认配置')
@@ -140,7 +140,7 @@ export default function AiConfigPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       message.success('API连接测试成功')
-    } catch (error) {
+    } catch (_error) {
       message.error('API连接测试失败，请检查配置')
     } finally {
       setTestLoading(false)

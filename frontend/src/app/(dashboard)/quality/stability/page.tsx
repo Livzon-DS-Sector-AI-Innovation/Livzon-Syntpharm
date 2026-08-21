@@ -18,7 +18,6 @@ import {
   Row,
   Col,
   Divider,
-  Typography,
   Descriptions,
   Tabs,
 } from 'antd'
@@ -44,20 +43,9 @@ import {
   StabilityStudyType,
   StabilityStudyTypeLabels,
   StabilitySampleNode,
-  StabilitySampleNodeCreate,
   SampleNodeStatus,
   SampleNodeStatusLabels,
   SampleNodeStatusColors,
-  StabilityInspection,
-  StabilityInspectionCreate,
-  StabilityInspectionItemCreate,
-  StabilityInspectionStatus,
-  StabilityInspectionStatusLabels,
-  StabilityInspectionStatusColors,
-  StabilityInspectionConclusion,
-  StabilityInspectionConclusionLabels,
-  StabilityItemResult,
-  StabilityItemResultLabels,
 } from '@/types/stability'
 import {
   getStabilityStudies,
@@ -68,15 +56,9 @@ import {
   submitStabilityStudy,
   approveStabilityStudy,
   getStabilityStudySampleNodes,
-  getStabilityInspections,
-  getStabilityInspection,
-  createStabilityInspection,
-  updateStabilityInspection,
-  submitStabilityInspection,
 } from '@/actions/quality'
 
 const { RangePicker } = DatePicker
-const { Text } = Typography
 const { TextArea } = Input
 
 // 初始筛选条件

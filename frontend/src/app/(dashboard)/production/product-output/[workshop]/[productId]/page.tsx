@@ -91,7 +91,7 @@ export default function ProductOutputRecordsPage() {
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [_lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  const [_lastSyncAt, _setLastSyncAt] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 
