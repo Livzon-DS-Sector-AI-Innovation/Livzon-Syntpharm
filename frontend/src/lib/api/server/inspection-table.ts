@@ -1,5 +1,5 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { ColumnConfig, CreateTableRequest, UpdateTableRequest, RecognizeResult } from '@/types/inspection-table'
+import type { CreateTableRequest, UpdateTableRequest, RecognizeResult } from '@/types/inspection-table'
 
 async function apiFetchFormData<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`, {

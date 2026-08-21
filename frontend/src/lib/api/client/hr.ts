@@ -662,7 +662,7 @@ export async function fetchTrainingSelectTaskResult(token: string): Promise<Gene
   return res.json()
 }
 
-export async function fetchTrainingSelectTasks(sessionId?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingSelectTasks(_sessionId?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-select-tasks`, {
     cache: 'no-store',
   })
@@ -705,7 +705,7 @@ export async function fetchTrainingSessionSelectTasks(sessionId: string): Promis
 
 // ─── Training Team & Specialist APIs ───
 
-export async function fetchTrainingTeams(factory?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingTeams(_factory?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-teams`, {
     cache: 'no-store',
   })
@@ -713,7 +713,7 @@ export async function fetchTrainingTeams(factory?: string): Promise<GenericDataL
   return res.json()
 }
 
-export async function fetchTrainingSpecialists(factory?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingSpecialists(_factory?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-specialists`, {
     cache: 'no-store',
   })

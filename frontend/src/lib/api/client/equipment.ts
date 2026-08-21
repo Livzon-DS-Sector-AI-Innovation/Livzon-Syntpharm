@@ -3,7 +3,7 @@ import {
   EquipmentCategory, Location, EquipmentFilters, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
   CalibrationPlanFilters, CalibrationPlanListResponse, CalibrationPlan,
-  CalibrationRecordFilters, CalibrationRecordListResponse, CalibrationRecord,
+  CalibrationRecordFilters, CalibrationRecordListResponse,
   SparePartFilters, SparePartListResponse, SparePart, StockWarning, SparePartStockResponse,
   MaintenancePlanFilters, MaintenancePlanListResponse, MaintenancePlan,
   InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate, InspectionTemplateItem,
@@ -265,7 +265,7 @@ export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfi
     || { emergency: 15, high: 30, medium: 60, low: 120 }
 }
 
-export async function fetchPersonnelList(params?: any): Promise<Personnel[]> {
+export async function fetchPersonnelList(_params?: any): Promise<Personnel[]> {
   return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?page_size=1000`) || []
 }
 

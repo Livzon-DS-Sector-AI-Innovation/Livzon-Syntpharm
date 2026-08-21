@@ -1,11 +1,8 @@
 import type { components } from '@/types/generated/schema'
 import type {
   Drug,
-  DrugNode,
   Holiday,
   ReviewNodeConfig,
-  DashboardProjectItem,
-  DashboardCertificateItem,
   DashboardSummary,
 } from '@/types/registration'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
