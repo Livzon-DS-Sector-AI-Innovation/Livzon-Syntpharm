@@ -230,6 +230,7 @@ class SplitPreviewRequest(BaseModel):
 class PageSplitItem(BaseModel):
     """页拆分项"""
 
+    split_id: str | None = None
     page_number: int
     page_type: str
     content_summary: str
@@ -256,6 +257,14 @@ class SplitPreviewResponse(BaseModel):
 # ====== Split Confirm ======
 
 
+class PageInsertDetail(BaseModel):
+    """逐页插入明细"""
+
+    page_number: int
+    success: bool
+    reason: str | None = None
+
+
 class SplitConfirmRequest(BaseModel):
     """AI 拆分确认请求"""
 
@@ -268,6 +277,7 @@ class SplitConfirmData(BaseModel):
     success: bool
     message: str
     inserted_count: int
+    details: list[PageInsertDetail] = []
 
 
 class SplitConfirmResponse(BaseModel):

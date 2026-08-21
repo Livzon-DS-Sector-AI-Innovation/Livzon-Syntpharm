@@ -19,6 +19,7 @@ from .ai_prompts import (
 from .asset_text_extractor import AssetTextExtractor
 from .field_models import AssetCategory, AssetPageSplit, FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
+from .schemas import PageInsertDetail
 
 logger = logging.getLogger(__name__)
 
@@ -557,6 +558,7 @@ class AIFillService:
         pages = parsed_result.get("pages", [])
 
         # 保存拆分结果到数据库
+        saved_splits = []
         for page_info in pages:
             split = AssetPageSplit(
                 asset_id=asset.id,
@@ -570,13 +572,27 @@ class AIFillService:
                 status="pending",
             )
             self.db.add(split)
+            saved_splits.append(split)
 
         await self.db.commit()
+
+        # 构建响应时带上 split_id
+        response_pages = []
+        for i, page_info in enumerate(pages):
+            response_pages.append(
+                {
+                    "split_id": str(saved_splits[i].id),
+                    "page_number": page_info.get("page_number"),
+                    "page_type": page_info.get("page_type"),
+                    "content_summary": page_info.get("content_summary"),
+                    "appendix_slot": page_info.get("appendix_slot"),
+                }
+            )
 
         return {
             "success": True,
             "message": f"拆分完成: {len(pages)} 页",
-            "pages": pages,
+            "pages": response_pages,
             "page_count": extracted.get("page_count", 0),
         }
 
@@ -598,6 +614,7 @@ class AIFillService:
 
         doc = Document(str(working_path))
         inserted = 0
+        details: list[PageInsertDetail] = []
 
         for split_data in splits:
             split_id = split_data.get("split_id")
@@ -605,12 +622,49 @@ class AIFillService:
             asset_id = split_data.get("asset_id")
             page_number = split_data.get("page_number")
 
+            # 检查必要参数
+            if not page_number:
+                details.append(
+                    PageInsertDetail(
+                        page_number=0,
+                        success=False,
+                        reason="缺少 page_number",
+                    )
+                )
+                continue
+
             if not appendix_slot or not asset_id:
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=False,
+                        reason="缺少必要参数（appendix_slot 或 asset_id）",
+                    )
+                )
                 continue
 
             # 获取素材文件路径
-            asset = await self.db.get(ChapterAsset, uuid.UUID(asset_id))
+            try:
+                asset_uuid = uuid.UUID(asset_id)
+            except ValueError:
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=False,
+                        reason=f"无效的 asset_id: {asset_id}",
+                    )
+                )
+                continue
+
+            asset = await self.db.get(ChapterAsset, asset_uuid)
             if not asset:
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=False,
+                        reason=f"素材不存在: {asset_id}",
+                    )
+                )
                 continue
 
             file_path = Path(asset.file_path)
@@ -618,12 +672,59 @@ class AIFillService:
             # 转换指定页为图片
             img_path = self.extractor.pdf_page_to_image(file_path, page_number)  # type: ignore[arg-type]
             if not img_path:
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=False,
+                        reason=f"PDF 第 {page_number} 页转图失败",
+                    )
+                )
                 continue
 
+            # 锚点翻译：通过 field_mappings 将字段名转换为实际的附录位置
+            actual_anchor = appendix_slot
+            if chapter.chapter_code:
+                stmt = select(FieldMapping).where(
+                    FieldMapping.chapter_code == chapter.chapter_code,
+                    FieldMapping.field_name == appendix_slot,
+                    ~FieldMapping.is_deleted,
+                )
+                result = await self.db.execute(stmt)
+                mapping = result.scalar_one_or_none()
+
+                if mapping:
+                    if mapping.location_type == "appendix":
+                        actual_anchor = mapping.appendix_slot or appendix_slot
+                    elif mapping.location_type == "inline_image":
+                        details.append(
+                            PageInsertDetail(
+                                page_number=page_number,
+                                success=False,
+                                reason="该字段为正文插图（inline_image），批次二支持",
+                            )
+                        )
+                        continue
+                # 未命中则回退用原值
+
             # 在模板中找到附录位置并插入图片
-            success = self._insert_image_at_appendix(doc, appendix_slot, img_path)
+            success = self._insert_image_at_appendix(doc, actual_anchor, img_path)
             if success:
                 inserted += 1
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=True,
+                        reason=None,
+                    )
+                )
+            else:
+                details.append(
+                    PageInsertDetail(
+                        page_number=page_number,
+                        success=False,
+                        reason=f"未在模板中找到锚点位置: {actual_anchor}",
+                    )
+                )
 
             # 更新拆分记录（仅在 split_id 是有效 UUID 时）
             if split_id:
@@ -652,6 +753,7 @@ class AIFillService:
             "success": True,
             "message": f"图片插入完成: {inserted}/{len(splits)}",
             "inserted_count": inserted,
+            "details": [d.model_dump() for d in details],
         }
 
     def _filter_assets_by_category(
