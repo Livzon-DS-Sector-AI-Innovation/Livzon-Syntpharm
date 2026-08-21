@@ -10,9 +10,9 @@ import {
   PlusOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined,
   EditOutlined, BarChartOutlined, BarsOutlined,
 } from '@ant-design/icons'
-import dayjs, { Dayjs } from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import {
-  Drug, DrugCreate, DrugUpdate, ReviewNodeConfig,
+  Drug, ReviewNodeConfig,
   fetchDrugs, fetchReviewNodes,
 } from '@/lib/api/client/registration'
 import { createDrug, updateDrug, deleteDrug } from '@/actions/registration'

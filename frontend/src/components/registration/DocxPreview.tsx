@@ -13,7 +13,7 @@ interface DocxPreviewProps {
 }
 
 export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }: DocxPreviewProps) {
-  const { message } = App.useApp()
+  const { message: _message } = App.useApp()
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
