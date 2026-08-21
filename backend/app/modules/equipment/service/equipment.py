@@ -260,9 +260,15 @@ async def delete_equipment(
     return True
 
 
-async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
-    """获取设备统计"""
-    return await repo.get_equipment_statistics(db)
+async def get_equipment_statistics(
+    db: AsyncSession,
+    category_id: uuid.UUID | None = None,
+    location_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """获取设备统计（支持筛选）"""
+    return await repo.get_equipment_statistics(db, category_id, location_id, department_id, status)
 
 
 async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:

@@ -557,18 +557,44 @@ async def get_max_equipment_no_by_category(
     return result.scalar_one_or_none()
 
 
-async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
-    """获取设备统计"""
+async def get_equipment_statistics(
+    db: AsyncSession,
+    category_id: uuid.UUID | None = None,
+    location_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """获取设备统计（支持筛选）"""
+    # 构建基础查询条件
+    base_filter = Equipment.is_deleted == False  # noqa: E712
+    
+    # 添加筛选条件
+    if category_id:
+        category_ids = await _get_category_child_ids(db, category_id)
+        base_filter = base_filter & Equipment.id.in_(
+            select(EquipmentCategoryLink.equipment_id).where(
+                EquipmentCategoryLink.category_id.in_(category_ids),
+                EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+            )
+        )
+    if location_id:
+        location_ids = await _get_location_child_ids(db, location_id)
+        base_filter = base_filter & Equipment.location_id.in_(location_ids)
+    if department_id:
+        base_filter = base_filter & (Equipment.department_id == department_id)
+    if status:
+        base_filter = base_filter & (Equipment.status == status)
+
     # 总数
     total_result = await db.execute(
-        select(func.count()).where(Equipment.is_deleted == False)  # noqa: E712
+        select(func.count()).where(base_filter)
     )
     total = total_result.scalar() or 0
 
     # 按状态统计
     status_result = await db.execute(
         select(Equipment.status, func.count())
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(base_filter)
         .group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
@@ -576,7 +602,7 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
     # 按分类统计（A/B/C）
     class_result = await db.execute(
         select(Equipment.equipment_class, func.count())
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(base_filter)
         .group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
@@ -585,7 +611,7 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
     location_result = await db.execute(
         select(Location.name, func.count())
         .join(Equipment, Equipment.location_id == Location.id)
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(base_filter)
         .group_by(Location.name)
     )
     by_location = {row[0]: row[1] for row in location_result.all()}

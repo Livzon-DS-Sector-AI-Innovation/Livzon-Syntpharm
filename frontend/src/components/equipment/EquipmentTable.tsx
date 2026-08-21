@@ -133,7 +133,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
 
 
 
-  const handleDelete = useCallback((record: Equipment) => {
+  const handleDelete = (record: Equipment) => {
     modal.confirm({
       title: '确认删除', content: `确定要删除设备 "${record.name}" 吗？`,
       okText: '确认', cancelText: '取消',
@@ -149,7 +149,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
         }
       },
     })
-  }, [modal, message, onPageChange, localPage, localPageSize])
+  }
 
   const columns = [
     { title: '资产编号', dataIndex: 'asset_no', key: 'asset_no', width: 140, fixed: 'start' as const },

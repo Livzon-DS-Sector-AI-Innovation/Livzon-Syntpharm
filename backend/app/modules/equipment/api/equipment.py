@@ -227,10 +227,14 @@ async def get_equipments(
 
 @router.get("/equipments/statistics", summary="获取设备统计")
 async def get_equipment_statistics(
+    category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
+    location_id: uuid.UUID | None = Query(None, description="设备位置ID"),
+    department_id: uuid.UUID | None = Query(None, description="归属部门ID"),
+    status: str | None = Query(None, description="设备状态"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """获取设备统计"""
-    stats = await service.get_equipment_statistics(db)
+    """获取设备统计（支持筛选）"""
+    stats = await service.get_equipment_statistics(db, category_id, location_id, department_id, status)
     return build_response(data=EquipmentStatistics(**stats))
 
 
