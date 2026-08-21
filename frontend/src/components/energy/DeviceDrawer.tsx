@@ -12,14 +12,11 @@ import {
   Button,
   Space,
   Spin,
-  Tag,
 } from 'antd'
 import {
   ApiOutlined,
   EnvironmentOutlined,
-  ClockCircleOutlined,
   SettingOutlined,
-  NumberOutlined,
 } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
 import {

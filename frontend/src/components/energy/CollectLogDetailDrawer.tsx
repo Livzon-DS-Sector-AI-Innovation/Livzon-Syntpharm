@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Drawer, Table, Spin, Empty, App, Button } from 'antd'
 import {
-  ClockCircleOutlined,
   InfoCircleOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons'

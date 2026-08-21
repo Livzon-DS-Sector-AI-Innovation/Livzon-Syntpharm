@@ -37,7 +37,7 @@ export function AlertRecordTable({
   page,
   pageSize,
   onPageChange,
-  onRefresh,
+  onRefresh: _onRefresh,
   onProcess,
 }: AlertRecordTableProps) {
   const columns: TableColumnsType<AlertRecord> = [

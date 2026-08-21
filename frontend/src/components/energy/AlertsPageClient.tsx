@@ -49,7 +49,7 @@ export function AlertsPageClient() {
       await deleteAlertRule(id)
       message.success('删除成功')
       fetchData()
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
