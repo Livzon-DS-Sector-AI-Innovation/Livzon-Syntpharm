@@ -138,6 +138,11 @@ export function EquipmentPage({
     } catch { /* 静默 */ }
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, setStatistics])
 
+  // 筛选条件变化时自动刷新统计
+  useEffect(() => {
+    refreshStatistics()
+  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, refreshStatistics])
+
   // 刷新分类和位置树
   const refreshCategoriesAndLocations = useCallback(async () => {
     try {
