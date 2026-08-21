@@ -1,5 +1,5 @@
 'use client'
-import {updateDeviationTask, updateDeviationTaskFields, updateAIResult, generateStandard} from '@/actions/quality'
+import {updateAIResult, generateStandard} from '@/actions/quality'
 
 import { useState, useEffect, useRef } from 'react'
 import { use } from 'react'
@@ -10,10 +10,8 @@ import {
   Tabs,
   message,
   Spin,
-  Divider,
   Descriptions,
   Tag,
-  Alert,
 } from 'antd'
 import {
   DownloadOutlined,

@@ -12,16 +12,13 @@ import {
   Modal,
   Form,
   Popconfirm,
-  Spin,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   PlusOutlined,
-  SearchOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
-  TableOutlined,
 } from '@ant-design/icons'
 import Link from 'next/link'
 import dayjs from 'dayjs'
@@ -43,7 +40,7 @@ export default function InspectionTableListPage() {
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [selectedTable, setSelectedTable] = useState<TableListItem | null>(null)
-  const [_columnsModalVisible, setColumnsModalVisible] = useState(false)
+  const [_columnsModalVisible, _setColumnsModalVisible] = useState(false)
   const [columns, setColumns] = useState<ColumnConfig[]>([])
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()

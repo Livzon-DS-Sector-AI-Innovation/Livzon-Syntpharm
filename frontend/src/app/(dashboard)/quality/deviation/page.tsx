@@ -18,7 +18,6 @@ import {
   Statistic,
   message,
   Popconfirm,
-  Divider,
   Alert,
   Tooltip,
   Spin,
@@ -30,7 +29,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   CheckOutlined,
-  CloseOutlined,
   LockOutlined,
   UnlockOutlined,
   FileTextOutlined,
@@ -700,7 +698,7 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
   }
 
   // AI影响评估
-  const handleAIImpactAssessment = async () => {
+  const _handleAIImpactAssessment = async () => {
     const values = form.getFieldsValue()
     if (!values.deviation_id) {
       message.warning('请先选择偏差')
@@ -1491,7 +1489,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
     try {
       const result = await deviationActions.getDeviationById(record.id)
       if (result.code === 200 && result.data) {
-        const deviation = result.data.deviation
+        const _deviation = result.data.deviation
         const correction = result.data.correction
         // 填充表单
         form.setFieldsValue({

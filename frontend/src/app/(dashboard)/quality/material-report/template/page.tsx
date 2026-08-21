@@ -17,12 +17,10 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  PlusOutlined,
   UploadOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  FileWordOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -32,7 +30,7 @@ import {
   previewTemplate,
   updateTemplate,
 } from '@/actions/material-report'
-import type { TemplateListItem, TemplateResponse } from '@/types/material-report'
+import type { TemplateListItem } from '@/types/material-report'
 import type { UploadProps } from 'antd'
 
 export default function TemplateListPage() {
@@ -129,7 +127,7 @@ export default function TemplateListPage() {
     try {
       const result = await previewTemplate(template.id)
       setPreviewData(result.data)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取模板预览失败')
     } finally {
       setPreviewLoading(false)
