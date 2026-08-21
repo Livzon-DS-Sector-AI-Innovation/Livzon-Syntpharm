@@ -3,9 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import {
   CheckConfig,
-  CheckProgress,
   CheckMain,
-  CheckMainDetail,
   CheckProblem,
   HandleStatus,
   UploadFileRequest,
@@ -242,16 +240,16 @@ export async function exportCheckReport(
 }
 
 export async function confirmCheck(
-  id: string,
-  operator?: string
+  _id: string,
+  _operator?: string
 ): Promise<{ success: boolean }> {
   revalidatePath('/quality/doc-check')
   return { success: true }
 }
 
 export async function cancelCheck(
-  taskId: string,
-  operator?: string
+  _taskId: string,
+  _operator?: string
 ): Promise<{ success: boolean }> {
   revalidatePath('/quality/doc-check')
   return { success: true }

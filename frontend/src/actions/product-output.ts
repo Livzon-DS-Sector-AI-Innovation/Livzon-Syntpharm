@@ -3,10 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
-  ProductOutput,
   ProductOutputFormData,
   ProductOutputQueryParams,
-  SummaryData,
 } from '@/types/product-output'
 import {
   getProductOutputs as getProductOutputsApi,
@@ -154,7 +152,6 @@ import {
   fetchAnnualReview as fetchAnnualReviewApi,
   fetchExportAnnualReview as fetchExportAnnualReviewApi,
 } from '@/lib/api/server/product-output'
-import type { AnnualReviewData } from '@/types/product-output'
 
 export async function fetchAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()

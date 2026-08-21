@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { ColumnConfig, CreateTableRequest, UpdateTableRequest } from '@/types/inspection-table'
+import type { CreateTableRequest, UpdateTableRequest } from '@/types/inspection-table'
 import {
   getInspectionTables as fetchInspectionTables,
   getInspectionTable as fetchInspectionTable,
