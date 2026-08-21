@@ -14,12 +14,10 @@ import {
   Typography,
   Space,
   Tag,
-  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
   Tabs,
-  InputNumber,
   message,
   Tooltip,
   Badge,
@@ -37,8 +35,6 @@ import {
   RocketOutlined,
   LockOutlined,
   MinusCircleOutlined,
-  ExclamationCircleOutlined,
-  SwapOutlined,
 } from '@ant-design/icons'
 import {
   getEhsChanges,
@@ -72,15 +68,10 @@ import {
 import type {
   EhsChange,
   EhsChangeFormData,
-  RiskAssessmentItem,
-  ApprovalChainItem,
-  ActionItem,
-  PSSRChecklistItem,
 } from '@/types/safety'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
-const { RangePicker } = DatePicker
 
 // Status tag colors
 const statusColorMap: Record<string, string> = {

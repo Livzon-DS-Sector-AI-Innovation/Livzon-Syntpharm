@@ -17,13 +17,11 @@ import {
   DatePicker,
   Flex,
   Upload,
-  Avatar,
   Tag,
   Radio,
   Timeline,
 } from 'antd'
 
-const { Paragraph } = Typography
 import {
   ArrowLeftOutlined,
   CheckCircleOutlined,

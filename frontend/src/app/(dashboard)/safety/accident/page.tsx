@@ -17,7 +17,6 @@ import {
   Card,
   Row,
   Col,
-  Typography,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -25,7 +24,6 @@ import {
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined as SearchIcon,
   AuditOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -52,11 +50,9 @@ import {
   ACCIDENT_TYPE_OPTIONS,
   ACCIDENT_LEVEL_OPTIONS,
   ACCIDENT_STATUS_OPTIONS,
-  INJURY_SEVERITY_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
 
 export default function AccidentPage() {
   const [form] = Form.useForm()
@@ -73,9 +69,9 @@ export default function AccidentPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
-  const [deptFilter, setDeptFilter] = useState<string | undefined>()
-  const [dateFromFilter, setDateFromFilter] = useState<string | undefined>()
-  const [dateToFilter, setDateToFilter] = useState<string | undefined>()
+  const [deptFilter] = useState<string | undefined>()
+  const [dateFromFilter] = useState<string | undefined>()
+  const [dateToFilter] = useState<string | undefined>()
 
   const {
     accidents,

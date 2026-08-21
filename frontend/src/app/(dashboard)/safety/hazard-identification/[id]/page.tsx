@@ -19,9 +19,6 @@ import {
   Row,
   Col,
   Statistic,
-  Collapse,
-  Tooltip,
-  Badge,
   Progress,
 } from 'antd'
 import {
@@ -50,7 +47,6 @@ import type { HazardIdentification } from '@/types/safety'
 import {
   AI_NODE_PROGRESS_OPTIONS,
   OVERALL_STATUS_OPTIONS_HI,
-  REVIEW_STATUS_OPTIONS,
   RISK_LEVEL_OPTIONS,
   RECOMMENDATION_PRIORITY_OPTIONS,
 } from '@/types/safety'
@@ -73,7 +69,7 @@ const HAZARD_IDENTIFICATION_STEPS: WorkflowStepInfo[] = [
   { num: 7, title: '措施后风险评价', desc: 'AI评价建议措施实施后的风险水平', expected_keys: ['l_post', 'e_post', 'c_post', 'd_post', 'post_risk_level', 'post_risk_label'] },
 ]
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
 // ── 本地样式辅助函数（与隐患台账对齐）──
 const statusPill = (color: string, bg: string): React.CSSProperties => ({

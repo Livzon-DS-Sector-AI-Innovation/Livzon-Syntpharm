@@ -17,7 +17,6 @@ import {
   Card,
   Row,
   Col,
-  Typography,
   Tabs,
   Switch,
 } from 'antd'
@@ -45,7 +44,6 @@ import {
   updateTrainingRecord,
   deleteTrainingRecord,
   getTrainingCertificates,
-  getExpiringCertificates,
 } from '@/actions/safety'
 import type {
   SafetyTraining,
@@ -63,8 +61,6 @@ import {
   CERTIFICATE_STATUS_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
-
-const { Text } = Typography
 
 export default function TrainingPage() {
   const [form] = Form.useForm()

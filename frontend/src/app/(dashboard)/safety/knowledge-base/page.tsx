@@ -12,9 +12,6 @@ import {
 } from '@ant-design/icons'
 import {
   getKnowledgeArticles,
-  deleteKnowledgeArticle,
-  publishKnowledgeArticle,
-  archiveKnowledgeArticle,
   createNewArticleVersion,
   semanticSearchArticles,
   generateKnowledgeCard,
@@ -39,7 +36,6 @@ export default function KnowledgeBasePage() {
   // ── Store ──────────────────────────────────────────
   const {
     items,
-    total,
     queryParams,
     loading,
     selectedRowKeys,
@@ -47,15 +43,13 @@ export default function KnowledgeBasePage() {
     setTotal,
     setQueryParams,
     setLoading,
-    updateItem,
-    removeItem,
     setSelectedRowKeys,
   } = useKnowledgeStore()
 
   // ── Local state ────────────────────────────────────
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
+  const [categoryFilter] = useState<string | undefined>()
   const [cardStatusFilter, setCardStatusFilter] = useState<string | undefined>()
   const [smartSearch, setSmartSearch] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -182,41 +176,6 @@ export default function KnowledgeBasePage() {
     setDetailOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除该知识文档吗？',
-      onOk: async () => {
-        const response = await deleteKnowledgeArticle(id)
-        if (response.code === 200) {
-          message.success('删除成功')
-          removeItem(id)
-        } else {
-          message.error(response.message || '删除失败')
-        }
-      },
-    })
-  }
-
-  const handlePublish = async (id: string) => {
-    const response = await publishKnowledgeArticle(id)
-    if (response.code === 200) {
-      message.success('发布成功')
-      updateItem(id, response.data)
-    } else {
-      message.error(response.message || '发布失败')
-    }
-  }
-
-  const handleArchive = async (id: string) => {
-    const response = await archiveKnowledgeArticle(id)
-    if (response.code === 200) {
-      message.success('已归档')
-      updateItem(id, response.data)
-    } else {
-      message.error(response.message || '归档失败')
-    }
-  }
 
   const handleNewVersion = async (article: SafetyKnowledgeArticle) => {
     const response = await createNewArticleVersion(article.id)
