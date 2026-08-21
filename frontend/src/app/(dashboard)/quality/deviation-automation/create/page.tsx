@@ -1,5 +1,5 @@
 'use client'
-import {createDeviationTask, generateDeviationReport, submitDeviationApproval, triggerAIProcess, uploadDeviationFileWithTask} from '@/actions/quality'
+import {createDeviationTask, triggerAIProcess, uploadDeviationFileWithTask} from '@/actions/quality'
 
 import { useState } from 'react'
 import {
@@ -11,7 +11,6 @@ import {
   Space,
   Upload,
   message,
-  Spin,
   Modal,
   Table,
   Tag,
@@ -21,7 +20,6 @@ import {
   ReloadOutlined,
   RobotOutlined,
   DownloadOutlined,
-  FileWordOutlined,
 } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import type { ColumnsType } from 'antd/es/table'
