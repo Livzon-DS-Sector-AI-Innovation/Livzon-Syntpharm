@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  App, Card, Tree, Button, Space, Tag, Upload, Spin, Empty, Descriptions,
-  Divider, Popconfirm, Breadcrumb, Typography, Tabs, Modal, Select, Checkbox,
+  App, Tree, Button, Space, Tag, Upload, Spin, Empty, Descriptions,
+  Popconfirm, Typography, Tabs, Modal, Select, Checkbox,
 } from 'antd'
 import {
   ArrowLeftOutlined, FileWordOutlined, UploadOutlined, DeleteOutlined,
-  DownloadOutlined, FolderOutlined, FileOutlined, ReloadOutlined,
-  EyeOutlined, CheckCircleOutlined, ThunderboltOutlined,
+  ReloadOutlined,
+  ThunderboltOutlined,
   WarningOutlined, NodeIndexOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -24,7 +24,7 @@ import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
 
-const { Text, Title, Paragraph } = Typography
+const { Text: _Text, Title: _Title, Paragraph: _Paragraph } = Typography
 
 // M3 标准目录结构（固定）
 const _M3_STRUCTURE = [
@@ -294,7 +294,7 @@ export function DossierWriterDetailPageClient() {
     if (!files || files.length === 0) return
     setParsing(true)
     try {
-      const fileArray = Array.from(files)
+      const _fileArray = Array.from(files)
       const result: UploadResponse = await uploadTemplates(dossierId, files)
       if (result.success_count > 0) {
         message.success(`上传成功 ${result.success_count} 个文件，已自动匹配 ${result.matched_count || 0} 个章节`)

@@ -2,12 +2,12 @@
 
 import {useState, useEffect} from 'react'
 import {
-  App, Button, Tag, Select, Table, InputNumber, Input, Space, Alert,
-  Badge, Popconfirm, Empty, Spin, Card, Modal, Typography,
+  App, Button, Tag, Select, Input, Space, Alert,
+  Badge, Empty, Spin, Card, Modal, Typography,
 } from 'antd'
 import {
   ThunderboltOutlined, CheckOutlined, EditOutlined,
-  ReloadOutlined, EyeOutlined, FileImageOutlined,
+  ReloadOutlined, FileImageOutlined,
 } from '@ant-design/icons'
 import type { ChapterAsset, AssetCategory } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
@@ -121,7 +121,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }
 
   // Build category name map from assets
-  const getCategoryName = (asset: ChapterAsset): string | undefined => {
+  const _getCategoryName = (asset: ChapterAsset): string | undefined => {
     if (!asset.category_id) return undefined
     const cat = categories.find(c => c.id === asset.category_id)
     return cat?.category_name

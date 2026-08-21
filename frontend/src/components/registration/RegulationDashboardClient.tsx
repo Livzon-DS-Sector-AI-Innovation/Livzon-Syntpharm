@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Row, Col, Tag, Button, Space, App, Spin, Badge } from 'antd'
 import {
-  FileTextOutlined, AlertOutlined, ClockCircleOutlined,
   CheckCircleOutlined, ArrowRightOutlined, SyncOutlined, CalendarOutlined,
-  DownOutlined, UpOutlined,
+  DownOutlined, UpOutlined, FileTextOutlined, AlertOutlined,
 } from '@ant-design/icons'
 import dynamic from 'next/dynamic'
 import dayjs from 'dayjs'

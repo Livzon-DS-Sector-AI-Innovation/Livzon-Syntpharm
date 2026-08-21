@@ -1,11 +1,9 @@
 'use client'
 
- 'use client'
 
 import { useState, useCallback, useEffect, type JSX } from 'react'
 import {
-  Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty,
-  Typography, Spin,
+  Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
 } from 'antd'
 import {
   ArrowLeftOutlined, UploadOutlined, PlayCircleOutlined, FileTextOutlined,

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import {Table, Button, Space, Tag, App, Modal, Input} from 'antd'
 import {
-  PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined, ExportOutlined,
+  PlusOutlined, EyeOutlined, DeleteOutlined, ExportOutlined,
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
@@ -23,7 +23,7 @@ export default function ValidationAuditListClient({ initialTasks, initialTotal }
   const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
   const [total, setTotal] = useState(initialTotal)
-  const [loading, setLoading] = useState(false)
+  const [loading, _setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
