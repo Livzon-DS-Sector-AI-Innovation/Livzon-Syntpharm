@@ -155,7 +155,7 @@ export default function CalibrationRecordsPage() {
       const response = await getCalibrationRecords(params)
       setData(response.items || [])
       setTotal(response.total || 0)
-    } catch (error) {
+    } catch (_error) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
@@ -207,7 +207,7 @@ export default function CalibrationRecordsPage() {
         valid_period: valid_period,
       })
       setEditDrawerVisible(true)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -217,7 +217,7 @@ export default function CalibrationRecordsPage() {
       await deleteCalibrationRecord(id)
       message.success('删除成功')
       loadData()
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -254,7 +254,7 @@ export default function CalibrationRecordsPage() {
       message.success('创建成功')
       setCreateDrawerVisible(false)
       loadData()
-    } catch (error) {
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setSubmitLoading(false)
@@ -289,7 +289,7 @@ export default function CalibrationRecordsPage() {
       message.success('更新成功')
       setEditDrawerVisible(false)
       loadData()
-    } catch (error) {
+    } catch (_error) {
       message.error('更新失败')
     } finally {
       setSubmitLoading(false)

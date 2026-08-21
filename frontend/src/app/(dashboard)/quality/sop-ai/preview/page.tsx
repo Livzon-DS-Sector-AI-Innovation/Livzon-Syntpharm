@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Card,
   Form,
@@ -10,10 +10,8 @@ import {
   message,
   Space,
   Divider,
-  Alert,
   Spin,
   Result,
-  Steps,
   Tag,
   List,
   Typography,
@@ -23,9 +21,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   WarningOutlined,
-  FileTextOutlined,
   RobotOutlined,
-  EyeOutlined,
 } from '@ant-design/icons'
 import { singleCheck } from '@/actions/sop-ai'
 import { CheckTaskResponse, CheckProblem, RiskLevel } from '@/types/sop-ai'
