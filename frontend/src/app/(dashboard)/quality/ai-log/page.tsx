@@ -35,7 +35,6 @@ import { getAiLogs } from '@/actions/quality'
 import { AiLogItem, AiLogFilter } from '@/types/quality'
 
 const { RangePicker } = DatePicker
-const { TextArea } = Input
 const { Text } = Typography
 
 // 操作类型映射
