@@ -29,10 +29,7 @@ import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, PaperCli
 import {uploadFile as uploadFileApi} from '@/actions/static-data'
 import dayjs from 'dayjs'
 import {
-  EQ_STATUS_OPTIONS,
   STANDARD_STATUS_OPTIONS,
-  CHROM_COLUMN_STATUS_OPTIONS,
-  STD_TYPE_OPTIONS,
   MATERIAL_TYPE_OPTIONS,
   STANDARD_SOURCE_OPTIONS,
   LIMIT_TYPE_OPTIONS,
@@ -46,7 +43,6 @@ import {
   getChromColumn,
   getMedium,
   getReagent,
-  getStandardMaterial,
   getMaterialStandard,
   getProductStandard,
   createStorageCondition,
@@ -56,7 +52,6 @@ import {
   createChromColumn,
   createMedium,
   createReagent,
-  createStandardMaterial,
   createMaterialStandard,
   createProductStandard,
   updateStorageCondition,
@@ -66,7 +61,6 @@ import {
   updateChromColumn,
   updateMedium,
   updateReagent,
-  updateStandardMaterial,
   updateMaterialStandard,
   updateProductStandard,
   getHplcReference,
@@ -132,7 +126,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [chromColumnStatusOptions, setChromColumnStatusOptions] = useState<{ label: string; value: string }[]>([])
   const [unitOptions, setUnitOptions] = useState<{ label: string; value: string }[]>([])
   // 设备管理员选项（待接入人员模块后替换为真实API）
-  const [managerOptions, setManagerOptions] = useState<{ label: string; value: string }[]>([
+  const [managerOptions, _setManagerOptions] = useState<{ label: string; value: string }[]>([
     { label: '张三', value: '1' },
     { label: '李四', value: '2' },
     { label: '王五', value: '3' },
@@ -263,7 +257,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       // 质量标准附带 items
       if (isStdWithItems) {
         processed.items = items.map(it => {
-          const { key, ...rest } = it
+          const { key: _key, ...rest } = it
           return rest
         })
       }

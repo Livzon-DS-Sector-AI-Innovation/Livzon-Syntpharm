@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  Card,
   Table,
   Button,
   Space,
@@ -15,7 +14,6 @@ import {
   Modal,
   Form,
   DatePicker,
-  Descriptions,
   Typography,
   Row,
   Col,
@@ -47,7 +45,6 @@ import {
   getCalibrationRules,
   getCalibrationRecords,
   createCalibrationRecord,
-  getCalibrationRule,
   createInstrument,
   createCalibrationRule,
   recognizeInstrumentLabel,
@@ -184,7 +181,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
       setCreateModalVisible(false)
       loadCalibrationData(record.instrument.id)
       onRefresh?.()
-    } catch (error) {
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setSubmitLoading(false)
@@ -519,7 +516,7 @@ export default function InstrumentListPage() {
   const [recognizing, setRecognizing] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [recognizedData, setRecognizedData] = useState<AIRecognizedInstrumentInfo | null>(null)
-  const [recognitionError, setRecognitionError] = useState<string | null>(null)
+  const [_recognitionError, setRecognitionError] = useState<string | null>(null)
 
   const [filters, setFilters] = useState<{
     instrument_no?: string
@@ -696,7 +693,7 @@ export default function InstrumentListPage() {
       ruleForm.resetFields()
       handleResetRecognition()
       loadData()
-    } catch (error) {
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setCreateLoading(false)

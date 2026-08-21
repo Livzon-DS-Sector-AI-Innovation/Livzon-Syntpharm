@@ -7,7 +7,6 @@ import {
   Form,
   Input,
   Select,
-  DatePicker,
   Button,
   message,
   Table,
@@ -20,11 +19,9 @@ import {
   Col,
   Upload,
   Image,
-  Popconfirm,
   Divider,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { UploadProps } from 'antd'
 import {
   SaveOutlined,
   ArrowLeftOutlined,
@@ -32,8 +29,6 @@ import {
   EditOutlined,
   PlusOutlined,
   DeleteOutlined,
-  UploadOutlined,
-  ScanOutlined,
   EyeOutlined,
   CameraOutlined,
 } from '@ant-design/icons'
@@ -266,7 +261,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       document.body.removeChild(a)
 
       message.success('报告单已生成并下载')
-    } catch (error) {
+    } catch (_error) {
       message.error('生成报告单失败')
     } finally {
       setSaving(false)

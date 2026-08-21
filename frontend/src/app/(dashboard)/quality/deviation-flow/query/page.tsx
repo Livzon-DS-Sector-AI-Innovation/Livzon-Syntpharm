@@ -1,17 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Space, Input, Select, Tag, Typography, Modal, message, Empty, Spin } from 'antd'
+import { Button, Space, Input, Select, Tag, Modal, message, Empty, Spin } from 'antd'
 import {
   SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, PlusOutlined,
   DeleteOutlined, AppstoreOutlined, TableOutlined, FileTextOutlined,
-  ClockCircleOutlined, ArrowRightOutlined, ExclamationCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import '../deviation-style.css'
 
-const { Text } = Typography
 
 const API_BASE = '/api/v1'
 
@@ -55,7 +54,7 @@ export default function DeviationQueryPage() {
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, _setPageSize] = useState(20)
   const [isMobile, setIsMobile] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table')
 
@@ -144,14 +143,14 @@ export default function DeviationQueryPage() {
           } else {
             message.error(result.message || '删除失败')
           }
-        } catch (error) {
+        } catch (_error) {
           message.error('删除失败')
         }
       },
     })
   }
 
-  const columns = [
+  const _columns = [
     {
       title: '偏差编号',
       dataIndex: 'deviation_no',
