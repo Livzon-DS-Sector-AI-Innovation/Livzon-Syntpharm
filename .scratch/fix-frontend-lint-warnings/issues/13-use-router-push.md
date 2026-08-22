@@ -4,9 +4,21 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `window.location` assignments replaced with `router.push`
-- [ ] Navigation behavior preserved
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @next/next/no-location-assign warnings)
+## Acceptance Criteria
+
+- [x] All `window.location` assignments replaced with `router.push`
+- [x] Navigation behavior preserved
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @next/next/no-location-assign warnings)
+
+## Summary
+
+Fixed 5 @next/next/no-location-assign warnings across 4 files:
+- AnnualPlanListClient.tsx: added useRouter, replaced navigation after plan creation
+- TrainingLedgerClient.tsx: added useRouter, replaced navigation on employee select
+- TrainingLedgerNewClient.tsx: added useRouter, replaced 2 navigation instances
+- TrainingSelectTasksClient.tsx: added useRouter, replaced navigation after token import
+
+All navigation now uses Next.js router for proper client-side routing.
