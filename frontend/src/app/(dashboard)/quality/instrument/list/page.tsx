@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Table,
@@ -1120,12 +1121,14 @@ export default function InstrumentListPage() {
                     重新上传
                   </Button>
                 </div>
-                <img
+                <Image
                   src={previewUrl}
                   alt="设备标签预览"
+                  width={300}
+                  height={150}
                   style={{
                     maxWidth: '100%',
-                    maxHeight: 150,
+                    height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
                     margin: '0 auto',
