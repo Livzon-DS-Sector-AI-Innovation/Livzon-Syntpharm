@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { App,
   Button,
   Card,
@@ -39,6 +40,7 @@ const METHOD_OPTIONS = ['面授', '函授', '远程教育', '自学', '其他']
 export default function TrainingLedgerClient({
   employeeNumber
 }: TrainingLedgerClientProps) {
+  const router = useRouter()
   const { message } = App.useApp()
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [records, setRecords] = useState<TrainingLedgerRecord[]>([])
@@ -235,7 +237,7 @@ export default function TrainingLedgerClient({
           style={{ width: 320 }}
           filterOption={false}
           onSearch={handleEmployeeSearch}
-          onChange={(val) => { window.location.href = `/hr/training/ledger?employee_number=${val}` }}
+          onChange={(val) => { router.push(`/hr/training/ledger?employee_number=${val}`) }}
           notFoundContent={searching ? '搜索中...' : null}
           options={searchOptions}
           allowClear

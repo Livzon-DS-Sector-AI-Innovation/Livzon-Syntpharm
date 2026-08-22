@@ -5,6 +5,7 @@ import { Button, Card, Table, Tag, Space, Modal, Input, message } from 'antd'
 import {ReloadOutlined, ImportOutlined, CopyOutlined} from '@ant-design/icons'
 import { fetchTrainingSelectTasks, fetchTrainingSelectTaskResult } from '@/lib/api/client/hr'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface TaskItem {
   token: string
@@ -26,6 +27,7 @@ interface TrainingSelectTasksClientProps {
 }
 
 export default function TrainingSelectTasksClient({ initialTasks }: TrainingSelectTasksClientProps) {
+  const router = useRouter()
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
   const [loading, setLoading] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
@@ -57,7 +59,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       }
       // 跳转到培训通知页面，带 token 参数
       const url = `/hr/training/notification?token=${tokenInput.trim()}`
-      window.location.href = url
+      router.push(url)
     } catch (err: any) {
       message.error(err.message || '导入失败')
     }

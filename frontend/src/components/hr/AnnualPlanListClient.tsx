@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import {App, Button, Card, Row, Col, Popconfirm, Spin, Modal, Form, Select, Upload} from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, UploadOutlined } from '@ant-design/icons'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AnnualTrainingPlan } from '@/types/hr'
 import { fetchAnnualTrainingPlans, fetchDepartments } from '@/lib/api/client/hr'
 import { createAnnualTrainingPlan, deleteAnnualTrainingPlan } from '@/actions/hr'
@@ -12,6 +13,7 @@ import { createAnnualTrainingPlan, deleteAnnualTrainingPlan } from '@/actions/hr
 const YEAR_OPTIONS = [2024, 2025, 2026, 2027, 2028]
 
 export default function AnnualPlanListClient() {
+  const router = useRouter()
   const { message } = App.useApp()
 
   const [plans, setPlans] = useState<AnnualTrainingPlan[]>([])
@@ -79,7 +81,7 @@ export default function AnnualPlanListClient() {
       form.resetFields()
       const planId = res.data?.id
       if (planId) {
-        window.location.href = `/hr/training/annual-plan?id=${planId}`
+        router.push(`/hr/training/annual-plan?id=${planId}`)
       } else {
         loadPlans()
       }
