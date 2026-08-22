@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import {
   Drawer,
@@ -203,7 +204,7 @@ export default function KnowledgeDetailDrawer({
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) {
       return (
         <div style={{ textAlign: 'center' }}>
-          <img src={url} alt={name} style={{ maxWidth: '100%', maxHeight: 500 }} />
+          <Image src={url} alt={name} width={500} height={500} style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain' }} />
         </div>
       )
     }

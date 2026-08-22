@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import Image from 'next/image'
 import { App, Progress, Typography } from 'antd'
 import { ArrowLeftOutlined, CheckOutlined, CameraOutlined, AimOutlined, RobotOutlined, EnvironmentOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
@@ -323,7 +324,7 @@ function EquipmentCheckCard({ equipmentId, equipmentName, equipmentNo, templateI
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {photos.map((f, i) => (
                 <div key={i} style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: `1px solid ${C.hairline}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                  <img src={photoUrls[i]} alt={`${equipmentName}-${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={photoUrls[i]} alt={`${equipmentName}-${i + 1}`} width={80} height={80} style={{ objectFit: 'cover' }} />
                   {!disabled && (
                     <span role="button" onClick={() => onRemovePhoto(i)} style={{ position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: 9, background: 'rgba(224,49,49,0.88)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 10, fontWeight: 600, lineHeight: 1 }}>✕</span>
                   )}
