@@ -1,4 +1,18 @@
-import type { EnergyOverviewData, CollectLogDetail } from '@/types/energy'
+import type { 
+  EnergyOverviewData, 
+  CollectLogDetail,
+  EnergyPlatform,
+  AlertRule,
+  AlertRecord,
+  EnergyMonthlyRecord,
+  EnergyWorkshop,
+  MonthlySummary,
+  RuleQueryParams,
+  RecordQueryParams,
+  MonthlyRecordQueryParams,
+  WorkshopQueryParams,
+  PaginatedResponse
+} from '@/types/energy'
 import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
@@ -30,45 +44,45 @@ export async function fetchCollectLogDetailClient(logId: string): Promise<Collec
   return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect-logs/${logId}`)
 }
 
-export async function fetchPlatformsClient(): Promise<any[]> {
-  return apiGet<any[]>(`${API_BASE}/energy/platforms`)
+export async function fetchPlatformsClient(): Promise<EnergyPlatform[]> {
+  return apiGet<EnergyPlatform[]>(`${API_BASE}/energy/platforms`)
 }
 
 // ═══════════════════════════════════════════════════════════
 //  预警规则
 // ═══════════════════════════════════════════════════════════
 
-export async function fetchAlertRules(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const query = buildQueryString(params)
-  return apiFetchPaginated<any>(`${API_BASE}/energy/alerts/rules${query}`)
+export async function fetchAlertRules(params?: RuleQueryParams): Promise<PaginatedResponse<AlertRule>> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiFetchPaginated<AlertRule>(`${API_BASE}/energy/alerts/rules${query}`)
 }
 
 // ═══════════════════════════════════════════════════════════
 //  预警记录
 // ═══════════════════════════════════════════════════════════
 
-export async function fetchAlertRecords(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const query = buildQueryString(params)
-  return apiFetchPaginated<any>(`${API_BASE}/energy/alerts/records${query}`)
+export async function fetchAlertRecords(params?: RecordQueryParams): Promise<PaginatedResponse<AlertRecord>> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiFetchPaginated<AlertRecord>(`${API_BASE}/energy/alerts/records${query}`)
 }
 
 // ═══════════════════════════════════════════════════════════
 //  月度记录
 // ═══════════════════════════════════════════════════════════
 
-export async function fetchMonthlyRecordsClient(params?: any): Promise<{ items: any[]; total: number; page: number; page_size: number }> {
-  const query = buildQueryString(params)
-  return apiFetchPaginated<any>(`${API_BASE}/energy/monthly${query}`)
+export async function fetchMonthlyRecordsClient(params?: MonthlyRecordQueryParams): Promise<PaginatedResponse<EnergyMonthlyRecord>> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiFetchPaginated<EnergyMonthlyRecord>(`${API_BASE}/energy/monthly${query}`)
 }
 
-export async function fetchWorkshopsClient(params?: any): Promise<any[]> {
-  const query = buildQueryString(params)
-  return apiGet<any[]>(`${API_BASE}/energy/workshops${query}`)
+export async function fetchWorkshopsClient(params?: WorkshopQueryParams): Promise<EnergyWorkshop[]> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiGet<EnergyWorkshop[]>(`${API_BASE}/energy/workshops${query}`)
 }
 
-export async function fetchMonthlySummaryClient(params?: any): Promise<any> {
-  const query = buildQueryString(params)
-  return apiGet<any>(`${API_BASE}/energy/monthly/summary${query}`)
+export async function fetchMonthlySummaryClient(params?: MonthlyRecordQueryParams): Promise<MonthlySummary> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiGet<MonthlySummary>(`${API_BASE}/energy/monthly/summary${query}`)
 }
 
 // ═══════════════════════════════════════════════════════════
