@@ -897,7 +897,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                           </Card>
                         ) : (
                           <div style={{ padding: '20px', textAlign: 'center', color: '#999', background: '#fafafa', borderRadius: '4px' }}>
-                            点击"AI生成CPP评估"按钮，基于DOE分析结果自动生成关键工艺参数评估
+                            点击&quot;AI生成CPP评估&quot;按钮，基于DOE分析结果自动生成关键工艺参数评估
                           </div>
                         )}
                       </div>

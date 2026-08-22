@@ -351,7 +351,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                             {...restField}
                             name={[name, 'output_format']}
                             label={<span style={{ fontSize: 12, fontWeight: 600, color: '#37352f' }}>📤 输出格式</span>}
-                            help={<span style={{ fontSize: 11, color: '#bbb8b1' }}>描述你希望 AI 输出的内容格式，如"输出为标准 PDF"、"按标准分点输出"、"输出 JSON 结构化数据"等</span>}
+                            help={<span style={{ fontSize: 11, color: '#bbb8b1' }}>描述你希望 AI 输出的内容格式，如&quot;输出为标准 PDF&quot;、&quot;按标准分点输出&quot;、&quot;输出 JSON 结构化数据&quot;等</span>}
                             style={{ marginBottom: 0 }}
                           >
                             <TextArea

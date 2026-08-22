@@ -87,7 +87,7 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
           title: '最终确认',
           content: (
             <div>
-              <p>请输入项目名称 <strong>"{project.name}"</strong> 以确认删除：</p>
+              <p>请输入项目名称 <strong>&quot;{project.name}&quot;</strong> 以确认删除：</p>
               <input
                 id="delete-confirm-input"
                 type="text"
