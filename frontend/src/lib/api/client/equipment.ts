@@ -293,7 +293,7 @@ export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfi
     || { emergency: 15, high: 30, medium: 60, low: 120 }
 }
 
-export async function fetchPersonnelList(_params?: any): Promise<Personnel[]> {
+export async function fetchPersonnelList(_params?: Record<string, unknown>): Promise<Personnel[]> {
   return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?page_size=1000`) || []
 }
 
