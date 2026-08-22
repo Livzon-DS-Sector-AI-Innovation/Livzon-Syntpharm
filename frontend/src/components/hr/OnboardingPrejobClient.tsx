@@ -179,7 +179,10 @@ export default function OnboardingPrejobClient() {
     }
     setDownloadingEval(true)
     try {
-      await fetchOnboardingEvaluationByEmployeeId,
+      await fetchOnboardingEvaluationByEmployeeId(
+        selectedEmployee.id,
+        selectedEmployee.name
+      )
       fetchOnboardingRecords({
         employee_id: selectedEmployee.id,
         department: selectedEmployee.name,
