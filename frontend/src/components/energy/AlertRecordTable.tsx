@@ -124,7 +124,7 @@ export function AlertRecordTable({
       description={
         <div style={{ color: '#999', fontSize: 14 }}>
           <p>暂无预警记录</p>
-          <p style={{ fontSize: 12 }}>请点击"导入数据"从飞书表格导入数据，系统将自动检查并生成预警记录</p>
+          <p style={{ fontSize: 12 }}>请点击&quot;导入数据&quot;从飞书表格导入数据，系统将自动检查并生成预警记录</p>
         </div>
       }
     />

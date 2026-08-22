@@ -70,7 +70,7 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
           title: '最终确认',
           content: (
             <div>
-              <p>请输入项目名称 <strong>"{record.name}"</strong> 以确认删除：</p>
+              <p>请输入项目名称 <strong>&quot;{record.name}&quot;</strong> 以确认删除：</p>
               <input 
                 id="delete-confirm-input" 
                 type="text" 

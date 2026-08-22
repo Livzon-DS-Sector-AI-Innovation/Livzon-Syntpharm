@@ -1357,7 +1357,7 @@ export default function HplcReferencePage() {
               </div>
               <ul style={{ fontSize: 12, color: '#78350f', paddingLeft: 16, margin: 0 }}>
                 <li>领用将按 mg/g 扣减剩余量</li>
-                <li>剩余量低于复标阈值时将自动标记为"需复标"</li>
+                <li>剩余量低于复标阈值时将自动标记为&quot;需复标&quot;</li>
                 <li>每次领用都会记录到领用历史中</li>
               </ul>
             </div>

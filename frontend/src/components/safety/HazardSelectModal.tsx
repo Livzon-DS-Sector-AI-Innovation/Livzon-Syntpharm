@@ -103,7 +103,7 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
       </div>
 
       <div style={{ color: '#787671', fontSize: 13, marginBottom: 12 }}>
-        仅列出风险等级为"重大风险(level_1)"和"较大风险(level_2)"的已完成危险源辨识项
+        仅列出风险等级为&quot;重大风险(level_1)&quot;和&quot;较大风险(level_2)&quot;的已完成危险源辨识项
       </div>
 
       <Table

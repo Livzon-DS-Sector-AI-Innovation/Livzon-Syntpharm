@@ -147,7 +147,7 @@ export default function HazardAIResultPanel({
         </div>
       </div>
       <Text type="secondary" style={{ display: 'block', marginBottom: 20, fontSize: 13, color: '#5d5b54' }}>
-        请审核 AI 生成的隐患识别结果和整改建议，可点击"修改"进行人工调整
+        请审核 AI 生成的隐患识别结果和整改建议，可点击&quot;修改&quot;进行人工调整
       </Text>
 
       {hasAIError && (
