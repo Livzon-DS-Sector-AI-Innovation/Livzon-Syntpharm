@@ -182,6 +182,7 @@ export function AttachmentPreview({
                 <List.Item
                   actions={[
                     <Button
+                      key="delete"
                       type="text"
                       size="small"
                       danger

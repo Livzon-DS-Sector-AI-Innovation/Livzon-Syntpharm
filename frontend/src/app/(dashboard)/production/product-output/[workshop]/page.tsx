@@ -346,6 +346,7 @@ export default function WorkshopProductsPage() {
                   className="h-full"
                   actions={[
                     <Button
+                      key="delete"
                       type="link"
                       danger
                       onClick={(e) => {
