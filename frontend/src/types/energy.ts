@@ -328,3 +328,21 @@ export interface FeishuImportResult {
   records_skipped: number
   errors: string[]
 }
+
+// ── 平台管理 ──
+
+// 平台
+export interface EnergyPlatform {
+  code: string
+  name: string
+}
+
+// ── 月度汇总 ──
+
+// 月度汇总
+export interface MonthlySummary {
+  [key: string]: {
+    total_value: number
+    unit: string
+  }
+}
