@@ -497,7 +497,7 @@ export default function QualityReagentPage() {
         if (!urls || urls.length === 0) return <div className="reagent-card-image"><PictureOutlined style={{ fontSize: 24, color: '#9ca3af' }} /></div>
         return (
           <Image.PreviewGroup items={urls}>
-            <Image src={urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} placeholder={<PictureOutlined style={{ fontSize: 24 }} />} />
+            <Image alt="试剂图片" src={urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} placeholder={<PictureOutlined style={{ fontSize: 24 }} />} />
           </Image.PreviewGroup>
         )
       },
@@ -533,7 +533,7 @@ export default function QualityReagentPage() {
       <div className="reagent-card-header">
         <div className="reagent-card-image">
           {item.reagent_label_urls && item.reagent_label_urls.length > 0
-            ? <Image src={item.reagent_label_urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} preview={false} />
+            ? <Image alt="试剂标签" src={item.reagent_label_urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} preview={false} />
             : <PictureOutlined style={{ fontSize: 24, color: '#9ca3af' }} />
           }
         </div>
@@ -855,7 +855,7 @@ export default function QualityReagentPage() {
               <div className="reagent-drawer-image">
                 {viewRecord.reagent_label_urls && viewRecord.reagent_label_urls.length > 0
                   ? <Image.PreviewGroup items={viewRecord.reagent_label_urls}>
-                      <Image src={viewRecord.reagent_label_urls[0]} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 12 }} />
+                      <Image alt="试剂标签预览" src={viewRecord.reagent_label_urls[0]} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 12 }} />
                     </Image.PreviewGroup>
                   : <PictureOutlined style={{ fontSize: 40, color: '#9ca3af' }} />
                 }

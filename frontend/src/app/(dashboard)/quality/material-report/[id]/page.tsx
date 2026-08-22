@@ -485,7 +485,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
             <Space wrap size="small">
               {reportImages.map((img) => (
                 <div key={img.id} style={{ position: 'relative' }}>
-                  <Image
+                  <Image alt="报告图片"
                     src={`/uploads/${img.image_url}`}
                     width={80}
                     height={80}
@@ -516,7 +516,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         footer={null}
         width={800}
       >
-        <Image src={previewImage} style={{ width: '100%' }} />
+        <Image alt="预览图片" src={previewImage} style={{ width: '100%' }} />
         {previewAIResult && (
           <>
             <Divider>AI识别结果</Divider>
