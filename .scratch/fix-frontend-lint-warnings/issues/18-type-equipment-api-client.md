@@ -4,9 +4,18 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in equipment API client
-- [ ] Types sourced from `@/types/equipment` or `@/types/generated/schema`
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in equipment API)
+## Acceptance Criteria
+
+- [x] All `any` types replaced with proper types in equipment API client
+- [x] Types sourced from `@/types/equipment` or `@/types/generated/schema`
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in equipment API)
+
+## Summary
+
+Fixed 1 @typescript-eslint/no-explicit-any warning:
+- fetchPersonnelList: params `any` → `Record<string, unknown>`
+
+Equipment API client is now fully typed.
