@@ -77,19 +77,18 @@ export async function updateCheck(id: string, data: Partial<SafetyCheckFormData>
   revalidatePath('/safety/check')
   return response as ApiResponse<SafetyCheck>
 }
-
-export async function submitCheck(id: string): Promise<ApiResponse<unknown>> {
+export async function submitCheck(id: string): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitCheck(id, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<unknown>
+  return response as ApiResponse<SafetyCheck>
 }
 
-export async function reviewCheck(id: string, result: string): Promise<ApiResponse<unknown>> {
+export async function reviewCheck(id: string, result: string): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reviewCheck(id, result, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<unknown>
+  return response as ApiResponse<SafetyCheck>
 }
 
 export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
