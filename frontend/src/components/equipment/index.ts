@@ -59,7 +59,6 @@ export { InspectionRouteEquipmentDrawer } from './inspection/InspectionRouteEqui
 export { InspectionDetailDrawer } from './inspection/InspectionDetailDrawer'
 
 // personnel components
-export { PersonnelQueryProvider } from './PersonnelQueryProvider'
 export { PersonnelPage } from './PersonnelPage'
 export { PersonnelTable } from './PersonnelTable'
 export { PersonnelDrawer } from './PersonnelDrawer'
