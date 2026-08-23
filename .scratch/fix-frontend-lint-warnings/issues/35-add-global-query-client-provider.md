@@ -4,11 +4,11 @@
 
 **Blocked by:** Tickets 01-34 (reduce noise first)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Global QueryClientProvider added at app level
-- [ ] QueryClient configured with appropriate defaults
-- [ ] All pages can use useQuery/useMutation
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes
-- [ ] Existing equipment/personnel QueryProvider removed or refactored to use global provider
+- [x] Global QueryClientProvider added at app level
+- [x] QueryClient configured with appropriate defaults
+- [x] All pages can use useQuery/useMutation
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes
+- [x] Existing equipment/personnel QueryProvider removed or refactored to use global provider
