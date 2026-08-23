@@ -23,10 +23,16 @@ Added explicit return types to 7 safety check action functions:
 - getCheck: Promise<ApiResponse<SafetyCheck>>
 - createCheck: Promise<ApiResponse<SafetyCheck>>
 - updateCheck: Promise<ApiResponse<SafetyCheck>>
-- submitCheck: Promise<ApiResponse<unknown>>
-- reviewCheck: Promise<ApiResponse<unknown>>
+- submitCheck: Promise<ApiResponse<SafetyCheck>>
+- reviewCheck: Promise<ApiResponse<SafetyCheck>>
 - deleteCheck: Promise<ApiResponse<null>>
 
 All functions now properly await the server API response before casting to the specific ApiResponse type, eliminating the previous Promise casting issues.
 
-Commit: 865f67f
+## Bug Fix
+
+Initially typed submitCheck and reviewCheck as returning `ApiResponse<unknown>`, which caused TypeScript errors (TS2345) in components that passed `response.data` to functions expecting `Partial<SafetyCheck>`. Fixed by changing the return types to `ApiResponse<SafetyCheck>`, which correctly reflects that the backend returns the updated SafetyCheck object after submit/review operations.
+
+Commits:
+- 865f67f: Initial typing of safety check actions
+- 40aafa6: Correct return types for submitCheck and reviewCheck
