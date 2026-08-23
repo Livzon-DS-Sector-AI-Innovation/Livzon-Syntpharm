@@ -4,9 +4,20 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in safety components
-- [ ] Interfaces defined where needed
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in safety components)
+## Acceptance Criteria
+
+- [x] All `any` types replaced with proper types in safety components
+- [x] Interfaces defined where needed
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in safety components)
+
+## Summary
+
+Fixed all typecheck errors in safety components by:
+- Adding type assertions to API responses
+- Wrapping unknown values with String() when needed
+- Adding proper type casts for error handling
+
+All typecheck errors are now resolved.
