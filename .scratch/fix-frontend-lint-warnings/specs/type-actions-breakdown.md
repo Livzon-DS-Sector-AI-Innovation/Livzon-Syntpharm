@@ -2,152 +2,201 @@
 
 ## Problem Statement
 
-Ticket 34 has 843 `@typescript-eslint/no-explicit-any` warnings in `src/actions/` files. These warnings exist because action functions use `as any` type assertions to bypass type checking when calling server API functions that return `any`.
-
-The warnings are distributed across 38 files, with the largest being:
-- safety/index.ts: 305 warnings
-- hr.ts: 83 warnings  
-- equipment.ts: 57 warnings
-- equipment/equipment.ts: 42 warnings
-- energy.ts: 40 warnings
+As a developer working on the Livzon-Syntpharm frontend, I'm facing 843 TypeScript lint warnings in the action files. These warnings indicate that our server actions are using `any` types, which defeats the purpose of TypeScript's type safety. The warnings are concentrated in 38 files, with the safety domain alone accounting for 305 warnings. This makes the codebase harder to maintain, increases the risk of runtime errors, and prevents IDEs from providing proper autocomplete and type checking when consuming these actions in components.
 
 ## Solution
 
-Break down ticket 34 into 39 smaller tickets (plus ticket 34 as parent), each focusing on a specific domain or module. Each ticket will:
+Break down the work into 39 smaller, domain-focused tickets (plus one parent ticket) that each type a specific subset of action functions. Each ticket will add explicit return types to action functions, remove `as any` type assertions, and ensure components receive properly typed data. This incremental approach allows us to make steady progress without breaking the build, with each ticket independently testable and mergeable.
 
-1. Define proper return types for action functions in that domain
-2. Remove `as any` type assertions
-3. Ensure components consuming those actions receive properly typed data
-4. Pass `tsc --noEmit` and have zero `@typescript-eslint/no-explicit-any` warnings in the targeted files
+## User Stories
+
+1. As a developer, I want action functions to have explicit return types, so that I can understand what data structure each action returns without guessing.
+
+2. As a developer, I want to remove `as any` type assertions from safety check actions, so that safety check components receive properly typed data and get IDE autocomplete support.
+
+3. As a developer, I want to remove `as any` type assertions from safety hazard actions, so that hazard inspection workflows have type-safe data flow.
+
+4. As a developer, I want to remove `as any` type assertions from safety accident actions, so that accident reporting forms have proper type checking.
+
+5. As a developer, I want to remove `as any` type assertions from safety contractor actions, so that contractor management features are type-safe.
+
+6. As a developer, I want to remove `as any` type assertions from safety training actions, so that training record management has proper types.
+
+7. As a developer, I want to remove `as any` type assertions from safety regulation actions, so that regulation tracking is type-safe.
+
+8. As a developer, I want to remove `as any` type assertions from safety knowledge base actions, so that knowledge article management has proper types.
+
+9. As a developer, I want to remove `as any` type assertions from safety special operations actions, so that special operation permits and personnel tracking are type-safe.
+
+10. As a developer, I want to remove `as any` type assertions from safety EHS change actions, so that EHS change management has proper type checking.
+
+11. As a developer, I want to remove `as any` type assertions from safety occupational health actions, so that occupational health monitoring is type-safe.
+
+12. As a developer, I want to remove `as any` type assertions from safety daily risk report actions, so that daily risk reporting has proper types.
+
+13. As a developer, I want to remove `as any` type assertions from safety helper functions, so that utility functions used across safety features are type-safe.
+
+14. As a developer, I want to remove `as any` type assertions from HR employee actions, so that employee management features have proper type checking.
+
+15. As a developer, I want to remove `as any` type assertions from HR training actions, so that HR training record management is type-safe.
+
+16. As a developer, I want to remove `as any` type assertions from HR annual training plan actions, so that annual training planning has proper types.
+
+17. As a developer, I want to remove `as any` type assertions from equipment main actions, so that equipment management features are type-safe.
+
+18. As a developer, I want to remove `as any` type assertions from equipment inspection actions, so that equipment inspection workflows have proper type checking.
+
+19. As a developer, I want to remove `as any` type assertions from equipment personnel actions, so that equipment personnel assignment is type-safe.
+
+20. As a developer, I want to remove `as any` type assertions from energy device actions, so that energy device management has proper types.
+
+21. As a developer, I want to remove `as any` type assertions from energy alert actions, so that energy alert configuration is type-safe.
+
+22. As a developer, I want to remove `as any` type assertions from research project actions, so that research project management has proper type checking.
+
+23. As a developer, I want to remove `as any` type assertions from research module actions, so that research module configuration is type-safe.
+
+24. As a developer, I want to remove `as any` type assertions from research deliverable actions, so that research deliverable tracking has proper types.
+
+25. As a developer, I want to remove `as any` type assertions from quality main actions, so that quality management features are type-safe.
+
+26. As a developer, I want to remove `as any` type assertions from quality CPV actions, so that CPV (Critical Process Variable) management has proper type checking.
+
+27. As a developer, I want to remove `as any` type assertions from quality inspection table actions, so that inspection table recognition is type-safe.
+
+28. As a developer, I want to remove `as any` type assertions from quality doc-check actions, so that document checking workflows have proper types.
+
+29. As a developer, I want to remove `as any` type assertions from registration main actions, so that registration management features are type-safe.
+
+30. As a developer, I want to remove `as any` type assertions from registration ledger actions, so that registration ledger tracking has proper type checking.
+
+31. As a developer, I want to remove `as any` type assertions from regulatory tracker actions, so that regulatory document tracking is type-safe.
+
+32. As a developer, I want to remove `as any` type assertions from deviation actions, so that deviation management has proper types.
+
+33. As a developer, I want to remove `as any` type assertions from material-report actions, so that material report generation is type-safe.
+
+34. As a developer, I want to remove `as any` type assertions from static-data actions, so that static data management has proper type checking.
+
+35. As a developer, I want to remove `as any` type assertions from validation-audit actions, so that validation audit tracking is type-safe.
+
+36. As a developer, I want to remove `as any` type assertions from product actions, so that product management features have proper types.
+
+37. As a developer, I want to remove `as any` type assertions from administration actions, so that system administration features are type-safe.
+
+38. As a developer, I want to remove `as any` type assertions from dossier-writer actions, so that dossier writing workflows have proper type checking.
+
+39. As a developer, I want to remove `as any` type assertions from equipment-personnel actions, so that equipment-personnel assignment is type-safe.
+
+40. As a developer, I want to remove `as any` type assertions from small utility actions, so that utility functions across the system are type-safe.
+
+41. As a developer, I want each ticket to be independently mergeable, so that I can make incremental progress without breaking the build.
+
+42. As a developer, I want to reuse existing type definitions, so that I don't duplicate type definitions across the codebase.
+
+43. As a developer, I want components to automatically receive proper types from actions, so that I get IDE autocomplete and type checking when consuming actions.
+
+44. As a developer, I want the type boundary to be at the action level, so that server API functions can remain untyped for now while still providing type safety to components.
 
 ## Implementation Decisions
 
 ### Ticket Breakdown Strategy
 
-**Large files (>20 warnings)**: Split by function category within the domain
-- Safety (306 warnings): Split into 12 tickets by entity type (checks, hazards, accidents, contractors, training, regulations, knowledge, special operations, EHS changes, occupational health, daily risk reports, helpers)
-- HR (83 warnings): Split into 3 tickets by function area (employees, training, annual training plans)
-- Equipment (121 warnings): Split into 3 tickets by sub-module (main, inspection, personnel)
-- Energy (40 warnings): Split into 2 tickets (devices, alerts)
-- Research (85 warnings): Split into 3 tickets (projects, modules, deliverables)
-- Quality (51 warnings): Split into 4 tickets (main, CPV, inspection table, doc-check)
-- Registration (31 warnings): Split into 3 tickets (main, ledger, regulatory tracker)
+The work is broken down by domain and file size:
 
-**Medium files (8-20 warnings)**: One ticket per file
-- deviation.ts (20 warnings)
-- material-report.ts (14 warnings)
-- static-data.ts (22 warnings)
-- validation-audit.ts (9 warnings)
-- product actions (15 warnings across 3 files)
-- administration.ts (8 warnings)
-- dossier-writer.ts (7 warnings)
-- equipment-personnel.ts (8 warnings)
+- **Large files (>20 warnings)**: Split by function category within the domain. The safety domain (306 warnings) is split into 12 tickets by entity type. HR (83 warnings), equipment (121 warnings), energy (40 warnings), research (85 warnings), quality (51 warnings), and registration (31 warnings) are split into 2-4 tickets each by sub-module or function area.
 
-**Small files (1-7 warnings)**: Group by domain
-- Small utility actions (16 warnings across 8 files: admin, environment, identity, pressure, ai-parse, instrument, procurement, users)
+- **Medium files (8-20 warnings)**: One ticket per file for deviation, material-report, static-data, validation-audit, administration, dossier-writer, and equipment-personnel.
 
-### Implementation Pattern
+- **Small files (1-7 warnings)**: Grouped into a single ticket for small utility actions across 8 files.
 
-For each action function:
+### Type Boundary Pattern
 
-```typescript
-// Before
-export async function getChecks(params: SafetyCheckQueryParams = {}) {
-  const authHeaders = await getAuthHeaders()
-  return safetyApi.getChecks(params, authHeaders) as any as any
-}
+Each action function will be updated to:
+1. Add an explicit return type annotation using existing types from the type definitions directory
+2. Replace `as any` type assertions with `as <SpecificType>` assertions where needed
+3. Use the API response envelope type to wrap the domain-specific data type
 
-// After
-export async function getChecks(
-  params: SafetyCheckQueryParams = {}
-): Promise<ApiResponse<SafetyCheck[]>> {
-  const authHeaders = await getAuthHeaders()
-  return safetyApi.getChecks(params, authHeaders) as ApiResponse<SafetyCheck[]>
-}
-```
+The action layer serves as the type boundary: server API functions continue to return untyped data, but action functions provide explicit types to consuming components. This allows components to receive properly typed data without requiring changes to the server API layer.
 
-Key points:
-- Use existing types from `src/types/` directory
-- Server API functions still return `any` (ticket 59 will fix this later)
-- Action functions provide the type boundary with explicit return types
-- Components automatically receive proper types
+### Type Reuse Strategy
 
-### Testing Decisions
+All type definitions will be reused from the existing type definitions directory. No new type definitions will be created. Each action function's return type will reference existing domain types (e.g., SafetyCheck, Equipment, Employee, etc.) wrapped in the standard API response envelope.
 
-- Run `tsc --noEmit` after each ticket to ensure no type errors
-- Run `pnpm eslint` on modified files to verify zero `any` warnings
-- Manual smoke test: verify affected pages still load and function correctly
-- No unit tests needed (type-only changes, no logic changes)
+### Incremental Merge Strategy
 
-## Ticket List
+Each ticket is designed to be independently mergeable:
+- No cross-ticket dependencies
+- Each ticket passes type checking after completion
+- Each ticket removes warnings from its targeted scope
+- Components consuming the typed actions automatically benefit from the improved types
 
-**Parent**: Ticket 34 — Type all action files (843 warnings)
+## Testing Decisions
 
-**Safety Domain (12 tickets)**:
-- Ticket 34.1: Type safety check actions
-- Ticket 34.2: Type safety hazard actions
-- Ticket 34.3: Type safety accident actions
-- Ticket 34.4: Type safety contractor actions
-- Ticket 34.5: Type safety training actions
-- Ticket 34.6: Type safety regulation actions
-- Ticket 34.7: Type safety knowledge base actions
-- Ticket 34.8: Type safety special operations actions
-- Ticket 34.9: Type safety EHS change actions
-- Ticket 34.10: Type safety occupational health actions
-- Ticket 34.11: Type safety daily risk report actions
-- Ticket 34.12: Type safety helper functions
+### What Makes a Good Test
 
-**HR Domain (3 tickets)**:
-- Ticket 34.13: Type HR employee actions
-- Ticket 34.14: Type HR training actions
-- Ticket 34.15: Type HR annual training plan actions
+Since this is a type-only refactoring with no logic changes, testing focuses on:
+1. **Type checking**: `tsc --noEmit` must pass after each ticket
+2. **Lint verification**: `pnpm eslint` on modified files must show zero `@typescript-eslint/no-explicit-any` warnings in the targeted scope
+3. **Manual smoke test**: Verify that affected pages still load and function correctly (no runtime behavior changes expected)
 
-**Equipment Domain (3 tickets)**:
-- Ticket 34.16: Type equipment main actions
-- Ticket 34.17: Type equipment inspection actions
-- Ticket 34.18: Type equipment personnel actions
+### Which Modules Will Be Tested
 
-**Energy Domain (2 tickets)**:
-- Ticket 34.19: Type energy device actions
-- Ticket 34.20: Type energy alert actions
+Each ticket tests its own scope:
+- The modified action functions
+- Components that consume those actions (implicitly, through type checking)
+- The overall build (through `tsc --noEmit`)
 
-**Research Domain (3 tickets)**:
-- Ticket 34.21: Type research project actions
-- Ticket 34.22: Type research module actions
-- Ticket 34.23: Type research deliverable actions
+### Prior Art
 
-**Quality Domain (4 tickets)**:
-- Ticket 34.24: Type quality main actions
-- Ticket 34.25: Type quality CPV actions
-- Ticket 34.26: Type quality inspection table actions
-- Ticket 34.27: Type quality doc-check actions
+This approach follows the pattern established in tickets 17-26, where API client files were typed incrementally by domain. Each ticket in that series:
+- Added explicit return types to API functions
+- Removed `as any` assertions
+- Passed type checking
+- Was independently mergeable
 
-**Registration Domain (3 tickets)**:
-- Ticket 34.28: Type registration main actions
-- Ticket 34.29: Type registration ledger actions
-- Ticket 34.30: Type regulatory tracker actions
-
-**Other Domains (9 tickets)**:
-- Ticket 34.31: Type deviation actions
-- Ticket 34.32: Type material-report actions
-- Ticket 34.33: Type static-data actions
-- Ticket 34.34: Type validation-audit actions
-- Ticket 34.35: Type product actions (product.ts, product-output.ts, product-sync.ts)
-- Ticket 34.36: Type administration actions
-- Ticket 34.37: Type dossier-writer actions
-- Ticket 34.38: Type equipment-personnel actions
-- Ticket 34.39: Type small utility actions (admin, environment, identity, pressure, ai-parse, instrument, procurement, users)
+The action typing work extends this pattern one layer up the stack, from API clients to server actions.
 
 ## Out of Scope
 
-- Typing server API base functions (ticket 59)
-- Adding runtime validation or type guards
-- Refactoring action function signatures (only adding return types)
-- Creating new type definitions (reuse existing types from src/types/)
+- **Typing server API base functions**: This is covered by ticket 59, which will type the foundational `apiFetch` and `apiFetchFormData` functions. That work is separate because it affects 770+ call sites across the entire codebase.
+
+- **Adding runtime validation or type guards**: This spec focuses on compile-time type safety only. Runtime validation would be a separate enhancement.
+
+- **Refactoring action function signatures**: We're only adding return types and removing `as any` assertions. Function parameters and internal logic remain unchanged.
+
+- **Creating new type definitions**: All types already exist in the type definitions directory. We're reusing them, not creating new ones.
+
+- **Typing components**: Components will automatically benefit from the improved action types. Explicit component typing is not part of this spec.
 
 ## Further Notes
 
-- This breakdown allows incremental progress without breaking the build
-- Each ticket is independently testable and mergeable
-- Total of 40 tickets (1 parent + 39 children)
-- Estimated effort: 15-30 minutes per ticket
+### Ticket Structure
+
+- **Parent ticket**: Ticket 34 (Type all action files)
+- **Child tickets**: 34.1 through 34.39 (39 tickets total)
+- **Total work units**: 40 tickets (1 parent + 39 children)
+
+### Estimated Effort
+
+Each child ticket is estimated at 15-30 minutes of work, depending on:
+- Number of functions in the scope
+- Complexity of the return types
+- Number of components consuming the actions
+
+### Progress Tracking
+
+The parent ticket (34) tracks overall completion. Each child ticket is marked complete when:
+- All targeted functions have explicit return types
+- All `as any` assertions are removed from the scope
+- Type checking passes
+- Lint passes on modified files
+
+### Relationship to Ticket 59
+
+Ticket 59 (typing server API base functions) is a prerequisite for full type safety across the codebase. However, this spec's work can proceed independently because:
+- Action functions provide the type boundary
+- Components receive types from actions, not directly from server APIs
+- Server API functions can remain untyped while actions provide types to components
+
+Once ticket 59 is complete, the type assertions in actions can be simplified, but that's an optional cleanup, not a requirement.
