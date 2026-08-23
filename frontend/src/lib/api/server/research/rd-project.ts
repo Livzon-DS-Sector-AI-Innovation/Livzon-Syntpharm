@@ -1,6 +1,6 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
-export async function fetchRdProjects(params: any = {}) {
+export async function fetchRdProjects(params: Record<string, unknown> = {}) {
   const qs = new URLSearchParams()
   if (params.stage) qs.set('stage', params.stage)
   if (params.status) qs.set('status', params.status)

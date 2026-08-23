@@ -85,11 +85,11 @@ export async function createPilotStudyDirect(data: {
   batch_no?: string
   batch_size?: number
   status?: string
-  material_balance?: Record<string, any>
-  equipment_selection?: Record<string, any>
-  engineering_calc?: Record<string, any>
-  ehs_assessment?: Record<string, any>
-  scale_up_effect?: Record<string, any>
+  material_balance?: Record<string, unknown>
+  equipment_selection?: Record<string, unknown>
+  engineering_calc?: Record<string, unknown>
+  ehs_assessment?: Record<string, unknown>
+  scale_up_effect?: Record<string, unknown>
   notes?: string
 }) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies`, {
@@ -102,11 +102,11 @@ export async function updatePilotStudyDirect(id: string, data: {
   batch_no?: string
   batch_size?: number
   status?: string
-  material_balance?: Record<string, any>
-  equipment_selection?: Record<string, any>
-  engineering_calc?: Record<string, any>
-  ehs_assessment?: Record<string, any>
-  scale_up_effect?: Record<string, any>
+  material_balance?: Record<string, unknown>
+  equipment_selection?: Record<string, unknown>
+  engineering_calc?: Record<string, unknown>
+  ehs_assessment?: Record<string, unknown>
+  scale_up_effect?: Record<string, unknown>
   notes?: string
 }) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies/${id}`, {
@@ -132,9 +132,9 @@ export async function deletePilotStudyDirect(id: string) {
 export async function createValidationDirect(data: {
   project_id: string
   status?: string
-  validation_protocol?: Record<string, any>
-  validation_batches?: Record<string, any>
-  statistical_analysis?: Record<string, any>
+  validation_protocol?: Record<string, unknown>
+  validation_batches?: Record<string, unknown>
+  statistical_analysis?: Record<string, unknown>
   validation_conclusion?: string
   notes?: string
 }) {
@@ -146,9 +146,9 @@ export async function createValidationDirect(data: {
 
 export async function updateValidationDirect(id: string, data: {
   status?: string
-  validation_protocol?: Record<string, any>
-  validation_batches?: Record<string, any>
-  statistical_analysis?: Record<string, any>
+  validation_protocol?: Record<string, unknown>
+  validation_batches?: Record<string, unknown>
+  statistical_analysis?: Record<string, unknown>
   validation_conclusion?: string
   notes?: string
 }) {
@@ -174,9 +174,9 @@ export async function deleteValidationDirect(id: string) {
 export async function createFilingDirect(data: {
   project_id: string
   status?: string
-  ctd_structure?: Record<string, any>
-  filing_progress?: Record<string, any>
-  supplementary_docs?: Record<string, any>
+  ctd_structure?: Record<string, unknown>
+  filing_progress?: Record<string, unknown>
+  supplementary_docs?: Record<string, unknown>
   notes?: string
 }) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings`, {
@@ -187,9 +187,9 @@ export async function createFilingDirect(data: {
 
 export async function updateFilingDirect(id: string, data: {
   status?: string
-  ctd_structure?: Record<string, any>
-  filing_progress?: Record<string, any>
-  supplementary_docs?: Record<string, any>
+  ctd_structure?: Record<string, unknown>
+  filing_progress?: Record<string, unknown>
+  supplementary_docs?: Record<string, unknown>
   notes?: string
 }) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings/${id}`, {
@@ -322,14 +322,14 @@ export async function deleteRoute(id: string) {
 
 // ===== rd-project.ts - Projects =====
 
-export async function createRdProject(data: any) {
+export async function createRdProject(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateRdProject(id: string, data: any) {
+export async function updateRdProject(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-projects/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -349,14 +349,14 @@ export async function deleteRdProject(id: string) {
 
 // ===== rd-project.ts - Milestones =====
 
-export async function createMilestone(projectId: string, data: any) {
+export async function createMilestone(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/milestones`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateMilestone(id: string, data: any) {
+export async function updateMilestone(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/milestones/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -365,14 +365,14 @@ export async function updateMilestone(id: string, data: any) {
 
 // ===== rd-project.ts - Stages =====
 
-export async function createStage(projectId: string, data: any) {
+export async function createStage(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/stages`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateStage(id: string, data: any) {
+export async function updateStage(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/stages/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -381,14 +381,14 @@ export async function updateStage(id: string, data: any) {
 
 // ===== rd-project.ts - Tracks =====
 
-export async function createTrack(projectId: string, data: any) {
+export async function createTrack(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/tracks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateTrack(id: string, data: any) {
+export async function updateTrack(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/tracks/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -397,14 +397,14 @@ export async function updateTrack(id: string, data: any) {
 
 // ===== rd-project.ts - Findings =====
 
-export async function createFinding(trackId: string, data: any) {
+export async function createFinding(trackId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/tracks/${trackId}/findings`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateFinding(id: string, data: any) {
+export async function updateFinding(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/findings/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -502,14 +502,14 @@ export async function updateReport(id: string, data: RdReportUpdate) {
 
 // ===== rd-project.ts - Initiations =====
 
-export async function createInitiation(projectId: string, data: any) {
+export async function createInitiation(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/initiations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateInitiation(id: string, data: any) {
+export async function updateInitiation(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/initiations/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -518,14 +518,14 @@ export async function updateInitiation(id: string, data: any) {
 
 // ===== rd-project.ts - Deliverable Templates =====
 
-export async function createDeliverableTemplate(data: any) {
+export async function createDeliverableTemplate(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateDeliverableTemplate(id: string, data: any) {
+export async function updateDeliverableTemplate(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -545,14 +545,14 @@ export async function deleteDeliverableTemplate(id: string) {
 
 // ===== rd-project.ts - Stage Deliverables =====
 
-export async function createStageDeliverable(projectId: string, data: any) {
+export async function createStageDeliverable(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/stage-deliverables`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateStageDeliverable(id: string, data: any) {
+export async function updateStageDeliverable(id: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/stage-deliverables/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -600,14 +600,14 @@ export async function generateReport(data: {
 
 // ===== research.ts - Projects =====
 
-export async function createResearchProject(data: any) {
+export async function createResearchProject(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateResearchProject(projectId: string, data: any) {
+export async function updateResearchProject(projectId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -627,7 +627,7 @@ export async function deleteResearchProject(projectId: string) {
 
 // ===== research.ts - Pilot Workflow =====
 
-export async function createPilotWorkflow(data: any) {
+export async function createPilotWorkflow(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -663,7 +663,7 @@ export async function deletePilotWorkflow(workflowId: string) {
 
 // ===== research.ts - Fetch functions =====
 
-export async function fetchResearchProjects(params: any = {}) {
+export async function fetchResearchProjects(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
   if (params.keyword) searchParams.set('keyword', params.keyword)
   if (params.status) searchParams.set('status', params.status)
@@ -672,7 +672,7 @@ export async function fetchResearchProjects(params: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects?${searchParams.toString()}`)
 }
 
-export async function fetchRoutes(params: any = {}) {
+export async function fetchRoutes(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
   if (params.project_id) searchParams.set('project_id', params.project_id)
   if (params.status) searchParams.set('status', params.status)
@@ -682,7 +682,7 @@ export async function fetchRoutes(params: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/routes?${searchParams.toString()}`)
 }
 
-export async function fetchPilotWorkflows(params: any = {}) {
+export async function fetchPilotWorkflows(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
   if (params.status) searchParams.set('status', params.status)
   if (params.keyword) searchParams.set('keyword', params.keyword)
