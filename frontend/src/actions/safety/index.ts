@@ -18,6 +18,7 @@ import type {
   RegulationRevision,
   RegulationRevisionFormData,
   RegulationRevisionQueryParams,
+  SafetyCheck,
   SafetyCheckFormData,
   SafetyCheckQueryParams,
   SafetyKnowledgeArticleFormData,
@@ -51,49 +52,51 @@ import type {
 
 // ============ SafetyCheck Actions ============
 
-export async function getChecks(params: SafetyCheckQueryParams = {}) {
+export async function getChecks(params: SafetyCheckQueryParams = {}): Promise<ApiResponse<SafetyCheck[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getChecks(params as Record<string, unknown>, authHeaders) as any as any
+  const result = await safetyApi.getChecks(params as Record<string, unknown>, authHeaders)
+  return result as ApiResponse<SafetyCheck[]>
 }
 
-export async function getCheck(id: string) {
+export async function getCheck(id: string): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getCheck(id, authHeaders) as any as any
+  const result = await safetyApi.getCheck(id, authHeaders)
+  return result as ApiResponse<SafetyCheck>
 }
 
-export async function createCheck(data: SafetyCheckFormData) {
+export async function createCheck(data: SafetyCheckFormData): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createCheck(data, authHeaders)
   revalidatePath('/safety/check')
-  return response as any
+  return response as ApiResponse<SafetyCheck>
 }
 
-export async function updateCheck(id: string, data: Partial<SafetyCheckFormData>) {
+export async function updateCheck(id: string, data: Partial<SafetyCheckFormData>): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateCheck(id, data, authHeaders)
   revalidatePath('/safety/check')
-  return response as any
+  return response as ApiResponse<SafetyCheck>
 }
 
-export async function submitCheck(id: string) {
+export async function submitCheck(id: string): Promise<ApiResponse<unknown>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitCheck(id, authHeaders)
   revalidatePath('/safety/check')
-  return response as any
+  return response as ApiResponse<unknown>
 }
 
-export async function reviewCheck(id: string, result: string) {
+export async function reviewCheck(id: string, result: string): Promise<ApiResponse<unknown>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reviewCheck(id, result, authHeaders)
   revalidatePath('/safety/check')
-  return response as any
+  return response as ApiResponse<unknown>
 }
 
-export async function deleteCheck(id: string) {
+export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteCheck(id, authHeaders)
   revalidatePath('/safety/check')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ HazardReport Actions ============
