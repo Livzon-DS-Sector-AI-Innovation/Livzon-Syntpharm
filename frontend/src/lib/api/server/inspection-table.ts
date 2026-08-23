@@ -78,7 +78,7 @@ export async function deleteTableRow(tableId: string, rowId: number) {
   })
 }
 
-export async function batchSaveTableRows(tableId: string, rows: Record<string, any>[]) {
+export async function batchSaveTableRows(tableId: string, rows: Record<string, unknown>[]) {
   return apiFetch(`/api/v1/quality/inspection-table/${tableId}/rows/batch`, {
     method: 'POST',
     body: JSON.stringify({ rows }),
