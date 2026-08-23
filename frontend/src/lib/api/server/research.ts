@@ -665,8 +665,8 @@ export async function deletePilotWorkflow(workflowId: string) {
 
 export async function fetchResearchProjects(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
-  if (params.keyword) searchParams.set('keyword', params.keyword)
-  if (params.status) searchParams.set('status', params.status)
+  if (params.keyword) searchParams.set('keyword', String(params.keyword))
+  if (params.status) searchParams.set('status', String(params.status))
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects?${searchParams.toString()}`)
@@ -674,9 +674,9 @@ export async function fetchResearchProjects(params: Record<string, unknown> = {}
 
 export async function fetchRoutes(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
-  if (params.project_id) searchParams.set('project_id', params.project_id)
-  if (params.status) searchParams.set('status', params.status)
-  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.project_id) searchParams.set('project_id', String(params.project_id))
+  if (params.status) searchParams.set('status', String(params.status))
+  if (params.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/routes?${searchParams.toString()}`)
@@ -684,8 +684,8 @@ export async function fetchRoutes(params: Record<string, unknown> = {}) {
 
 export async function fetchPilotWorkflows(params: Record<string, unknown> = {}) {
   const searchParams = new URLSearchParams()
-  if (params.status) searchParams.set('status', params.status)
-  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.status) searchParams.set('status', String(params.status))
+  if (params.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params.page || 1))
   searchParams.set('page_size', String(params.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow?${searchParams.toString()}`)

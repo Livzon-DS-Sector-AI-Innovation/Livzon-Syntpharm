@@ -9,7 +9,7 @@ import { apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const result = await baseApiFetch<T>(url, options)
-  return (result as Record<string, unknown>).data ?? (result as T)
+  return ((result as Record<string, unknown>).data ?? result) as T
 }
 
 export async function fetchModuleInfo(): Promise<{ code: string; name: string; description: string }> {

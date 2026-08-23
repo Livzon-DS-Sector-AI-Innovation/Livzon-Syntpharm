@@ -15,11 +15,11 @@ export async function markDocumentRead(id: string): Promise<void> {
 export async function fetchAIAnalysis(docId: string): Promise<any> {
   const result = await fetchAIAnalysisApi(docId)
   revalidatePath('/regulatory-tracker')
-  return result
+  return result as any
 }
 
 export async function fetchAIBatchAnalysis(docIds: string[]): Promise<any> {
   const result = await fetchAIBatchAnalysisApi(docIds)
   revalidatePath('/regulatory-tracker')
-  return result
+  return result as any
 }

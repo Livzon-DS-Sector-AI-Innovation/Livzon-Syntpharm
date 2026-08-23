@@ -496,7 +496,7 @@ export async function createDeviation(data: CreateDeviationRequest) {
   const result = await QualityServer.createDeviation(data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
-  return result
+  return result as any
 }
 
 export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
@@ -504,7 +504,7 @@ export async function updateDeviation(deviationId: string, data: UpdateDeviation
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 export async function deleteDeviation(deviationId: string) {
@@ -519,7 +519,7 @@ export async function createCapa(data: CreateCapaRequest) {
   const result = await QualityServer.createCapa(data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
-  return result
+  return result as any
 }
 
 export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
@@ -527,7 +527,7 @@ export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function deleteCapa(capaId: string) {
@@ -543,14 +543,14 @@ export async function createDepartmentContact(data: CreateDepartmentContactReque
   const result = await QualityServer.createDepartmentContact(data)
   revalidatePath('/quality')
   revalidatePath('/quality/department-contacts')
-  return result
+  return result as any
 }
 
 export async function updateDepartmentContact(contactId: string, data: UpdateDepartmentContactRequest) {
   const result = await QualityServer.updateDepartmentContact(contactId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/department-contacts')
-  return result
+  return result as any
 }
 
 export async function deleteDepartmentContact(contactId: string) {
@@ -591,7 +591,7 @@ export async function submitCapa(capaId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function approveCapa(capaId: string, data: unknown) {
@@ -600,7 +600,7 @@ export async function approveCapa(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function resubmitCapa(capaId: string) {
@@ -608,7 +608,7 @@ export async function resubmitCapa(capaId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function addExecutionTrack(capaId: string, data: unknown) {
@@ -617,7 +617,7 @@ export async function addExecutionTrack(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function deleteExecutionTrack(capaId: string, trackId: string) {
@@ -633,7 +633,7 @@ export async function confirmExecution(capaId: string, data: unknown = {}) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function submitEvaluation(capaId: string, data: unknown) {
@@ -642,7 +642,7 @@ export async function submitEvaluation(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function completeCapaPart(capaId: string, data: unknown) {
@@ -651,7 +651,7 @@ export async function completeCapaPart(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 export async function confirmDeptHead(capaId: string, data: unknown) {
@@ -660,7 +660,7 @@ export async function confirmDeptHead(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result
+  return result as any
 }
 
 // ============ Additional Deviation Actions ============
@@ -670,7 +670,7 @@ export async function submitDeviation(deviationId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 export async function submitInvestigation(deviationId: string, data: unknown) {
@@ -679,7 +679,7 @@ export async function submitInvestigation(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 export async function submitReview(deviationId: string, data: unknown) {
@@ -688,7 +688,7 @@ export async function submitReview(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 export async function submitFinalCode(deviationId: string, data: unknown) {
@@ -697,7 +697,7 @@ export async function submitFinalCode(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 export async function resubmitDeviation(deviationId: string) {
@@ -705,7 +705,7 @@ export async function resubmitDeviation(deviationId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
+  return result as any
 }
 
 // ============ AI Config Actions ============

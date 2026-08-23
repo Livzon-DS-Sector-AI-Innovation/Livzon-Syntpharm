@@ -24,21 +24,21 @@ export async function createRole(data: CreateRoleInput) {
   const authHeaders = await getAuthHeaders()
   const result = await createPersonnelRoleApiTyped(data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function updateRole(id: string, data: UpdateRoleInput) {
   const authHeaders = await getAuthHeaders()
   const result = await updatePersonnelRoleApiTyped(id, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function deleteRole(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await deletePersonnelRoleApi(id, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 // ── 人员 Actions ──
@@ -47,14 +47,14 @@ export async function addPersonnel(data: AddPersonnelInput) {
   const authHeaders = await getAuthHeaders()
   const result = await addPersonnelApiTyped(data as any, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function deletePersonnel(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await deletePersonnelApi(id, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function assignRoles(
@@ -63,7 +63,7 @@ export async function assignRoles(
   const authHeaders = await getAuthHeaders()
   const result = await assignRolesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function assignCategories(
@@ -72,12 +72,12 @@ export async function assignCategories(
   const authHeaders = await getAuthHeaders()
   const result = await assignCategoriesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }
 
 export async function refreshFeishu() {
   const authHeaders = await getAuthHeaders()
   const result = await refreshFeishuApi(authHeaders)
   revalidatePath('/equipment/personnel')
-  return result
+  return result as any
 }

@@ -56,11 +56,11 @@ import {
 } from '@/lib/api/server/instrument'
 
 export async function getInstruments(params: InstrumentFilter = {}) {
-  return fetchInstruments(params)
+  return fetchInstruments(params) as any
 }
 
 export async function getInstrument(id: string) {
-  return fetchInstrument(id)
+  return fetchInstrument(id) as any
 }
 
 export async function createInstrument(data: InstrumentCreate) {

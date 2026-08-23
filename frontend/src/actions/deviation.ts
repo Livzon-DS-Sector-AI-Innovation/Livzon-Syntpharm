@@ -47,19 +47,19 @@ import {
 export async function createDeviationFlow(data: Record<string, unknown>) {
   const result = await createDeviationFlowApi(data)
   revalidatePath('/quality/deviation-flow')
-  return result
+  return result as any
 }
 
 export async function updateDeviationFlow(id: string, data: Record<string, unknown>) {
   const result = await updateDeviationFlowApi(id, data)
   revalidatePath('/quality/deviation-flow')
-  return result
+  return result as any
 }
 
 export async function submitDeviationFlow(id: string, targetStatus: string) {
   const result = await submitDeviationFlowApi(id, targetStatus)
   revalidatePath('/quality/deviation-flow')
-  return result
+  return result as any
 }
 
 export async function uploadDeviationAttachment(deviationId: string, file: File) {
@@ -73,25 +73,25 @@ export async function uploadDeviationAttachment(deviationId: string, file: File)
 export async function saveDeviationSetting(url: string, method: string, values: Record<string, unknown>) {
   const result = await saveDeviationSettingApi(url, method, values)
   revalidatePath('/quality/deviation-flow/settings')
-  return result
+  return result as any
 }
 
 export async function deleteDeviationSetting(url: string) {
   const result = await deleteDeviationSettingApi(url)
   revalidatePath('/quality/deviation-flow/settings')
-  return result
+  return result as any
 }
 
 export async function toggleDeviationSetting(url: string) {
   const result = await toggleDeviationSettingApi(url)
   revalidatePath('/quality/deviation-flow/settings')
-  return result
+  return result as any
 }
 
 export async function setDefaultDeviationTemplate(templateId: string) {
   const result = await setDefaultDeviationTemplateApi(templateId)
   revalidatePath('/quality/deviation-flow/settings')
-  return result
+  return result as any
 }
 
 export async function getDeviations(params?: {
@@ -118,7 +118,7 @@ export async function createDeviation(data: DeviationCreate) {
   }
   const result = await createDeviationApi(processedData)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function updateDeviation(id: string, data: DeviationUpdate) {
@@ -130,37 +130,37 @@ export async function updateDeviation(id: string, data: DeviationUpdate) {
   }
   const result = await updateDeviationApi(id, processedData)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function deleteDeviation(id: string) {
   const result = await deleteDeviationApi(id)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function submitDeviation(id: string) {
   const result = await submitDeviationApi(id)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function approveDeviation(id: string, data: { approved: boolean; comment?: string }) {
   const result = await approveDeviationApi(id, data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function lockBatch(id: string, data: { reason: string }) {
   const result = await lockBatchApi(id, data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function unlockBatch(id: string) {
   const result = await unlockBatchApi(id)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 // ============ 偏差调查 ============
@@ -172,13 +172,13 @@ export async function getInvestigations(params?: { deviation_id?: string; page?:
 export async function createInvestigation(data: InvestigationCreate) {
   const result = await createInvestigationApi(data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function updateInvestigation(id: string, data: Partial<InvestigationCreate>) {
   const result = await updateInvestigationApi(id, data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 // ============ 偏差整改 ============
@@ -190,13 +190,13 @@ export async function getCorrections(params?: { deviation_id?: string; status?: 
 export async function createCorrection(data: CorrectionCreate) {
   const result = await createCorrectionApi(data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function updateCorrection(id: string, data: Partial<CorrectionCreate>) {
   const result = await updateCorrectionApi(id, data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 // ============ 偏差关闭 ============
@@ -208,13 +208,13 @@ export async function getClosings(params?: { deviation_id?: string; page?: numbe
 export async function createClosing(data: ClosingCreate) {
   const result = await createClosingApi(data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 export async function updateClosing(id: string, data: Partial<ClosingCreate>) {
   const result = await updateClosingApi(id, data)
   revalidatePath('/quality/deviation')
-  return result
+  return result as any
 }
 
 // ============ 统计 ============

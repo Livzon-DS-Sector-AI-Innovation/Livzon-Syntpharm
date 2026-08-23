@@ -116,5 +116,5 @@ export async function importSupplierTable(
   const headers = await getAuthHeaders()
   const result = await importSupplierTableServer(headers, formData)
   revalidatePath('/procurement/supplier')
-  return result
+  return result as any
 }

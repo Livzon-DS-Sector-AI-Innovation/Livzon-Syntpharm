@@ -146,31 +146,31 @@ export async function fetchEmployeesAction(
     page_size?: number
   }
 ): Promise<EmployeeListResponse> {
-  return fetchEmployeesApi(params)
+  return fetchEmployeesApi(params) as any
 }
 
 export async function createEmployee(data: EmployeeCreateInput) {
   const res = await createEmployeeApi(data)
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 export async function updateEmployee(id: string, data: EmployeeUpdateInput) {
   const res = await updateEmployeeApi(id, data)
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 export async function deleteEmployee(id: string) {
   const res = await deleteEmployeeApi(id)
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 export async function uploadEmployeesAction(formData: FormData) {
   const res = await uploadEmployeesApi(formData)
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 // ─── Feishu Sync Actions ───
@@ -178,13 +178,13 @@ export async function uploadEmployeesAction(formData: FormData) {
 export async function syncFromFeishuAction() {
   const res = await syncFromFeishuApi()
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 export async function syncToFeishuAction(id: string) {
   const res = await syncToFeishuApi(id)
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 // ─── Department Actions ───
@@ -196,25 +196,25 @@ export async function fetchDepartmentsAction(
     page_size?: number
   }
 ): Promise<DepartmentListResponse> {
-  return fetchDepartmentsApi(params)
+  return fetchDepartmentsApi(params) as any
 }
 
 export async function createDepartment(data: DepartmentCreateInput) {
   const res = await createDepartmentApi(data)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 export async function updateDepartment(id: string, data: DepartmentUpdateInput) {
   const res = await updateDepartmentApi(id, data)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 export async function deleteDepartment(id: string) {
   const res = await deleteDepartmentApi(id)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 // ─── Team Actions ───
@@ -227,25 +227,25 @@ export async function fetchTeamsAction(
     page_size?: number
   }
 ): Promise<TeamListResponse> {
-  return fetchTeamsApi(params)
+  return fetchTeamsApi(params) as any
 }
 
 export async function createTeam(data: TeamCreateInput) {
   const res = await createTeamApi(data)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 export async function updateTeam(id: string, data: TeamUpdateInput) {
   const res = await updateTeamApi(id, data)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 export async function deleteTeam(id: string) {
   const res = await deleteTeamApi(id)
   revalidatePath('/hr/departments')
-  return res
+  return res as any
 }
 
 // ─── OffboardingRecord Actions ───
@@ -258,26 +258,26 @@ export async function fetchOffboardingRecordsAction(
     page_size?: number
   }
 ): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsApi(params)
+  return fetchOffboardingRecordsApi(params) as any
 }
 
 export async function createOffboardingRecord(data: OffboardingRecordCreateInput) {
   const res = await createOffboardingRecordApi(data)
   revalidatePath('/hr/offboarding')
   revalidatePath('/hr/profile')
-  return res
+  return res as any
 }
 
 export async function updateOffboardingRecord(id: string, data: OffboardingRecordUpdateInput) {
   const res = await updateOffboardingRecordApi(id, data)
   revalidatePath('/hr/offboarding')
-  return res
+  return res as any
 }
 
 export async function deleteOffboardingRecord(id: string) {
   const res = await deleteOffboardingRecordApi(id)
   revalidatePath('/hr/offboarding')
-  return res
+  return res as any
 }
 
 // ─── Annual Training Plan Actions ───
@@ -285,25 +285,25 @@ export async function deleteOffboardingRecord(id: string) {
 export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
   const res = await createAnnualTrainingPlanApi(data)
   revalidatePath('/hr/training/annual-plan')
-  return res
+  return res as any
 }
 
 export async function deleteAnnualTrainingPlan(id: string) {
   const res = await deleteAnnualTrainingPlanApi(id)
   revalidatePath('/hr/training/annual-plan')
-  return res
+  return res as any
 }
 
 export async function deleteAnnualPlanItem(planId: string, itemId: string) {
   const res = await deleteAnnualPlanItemApi(planId, itemId)
   revalidatePath('/hr/training/annual-plan')
-  return res
+  return res as any
 }
 
 export async function batchUpdatePlanItems(planId: string, data: { items: unknown[] }) {
   const res = await batchUpdatePlanItemsApi(planId, data)
   revalidatePath('/hr/training/annual-plan')
-  return res
+  return res as any
 }
 
 // ─── STUB: Candidate/Recruitment Actions (not yet implemented) ───
@@ -354,7 +354,7 @@ export async function fetchEmployees(
     page_size?: number
   }
 ): Promise<EmployeeListResponse> {
-  return fetchEmployeesAction(params)
+  return fetchEmployeesAction(params) as any
 }
 
 export async function fetchDepartments(
@@ -364,7 +364,7 @@ export async function fetchDepartments(
     page_size?: number
   }
 ): Promise<DepartmentListResponse> {
-  return fetchDepartmentsAction(params)
+  return fetchDepartmentsAction(params) as any
 }
 
 export async function fetchOffboardingRecords(
@@ -375,7 +375,7 @@ export async function fetchOffboardingRecords(
     page_size?: number
   }
 ): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsAction(params)
+  return fetchOffboardingRecordsAction(params) as any
 }
 
 export async function fetchTeams(
@@ -386,7 +386,7 @@ export async function fetchTeams(
     page_size?: number
   }
 ): Promise<TeamListResponse> {
-  return fetchTeamsApi(params)
+  return fetchTeamsApi(params) as any
 }
 
 export async function fetchOnboardingRecords(
@@ -400,7 +400,7 @@ export async function fetchOnboardingRecords(
     page_size?: number
   }
 ): Promise<any> {
-  return fetchOnboardingRecordsApi(params)
+  return fetchOnboardingRecordsApi(params) as any
 }
 
 export async function fetchDepartureRecords(
@@ -412,15 +412,15 @@ export async function fetchDepartureRecords(
     page_size?: number
   }
 ): Promise<any> {
-  return fetchDepartureRecordsApi(params)
+  return fetchDepartureRecordsApi(params) as any
 }
 
 export async function fetchEmployeeById(id: string): Promise<any> {
-  return fetchEmployeeByIdApi(id)
+  return fetchEmployeeByIdApi(id) as any
 }
 
 export async function fetchCandidateById(id: string): Promise<any> {
-  return fetchCandidateByIdApi(id)
+  return fetchCandidateByIdApi(id) as any
 }
 
 export async function fetchCandidates(params: any = {}): Promise<any> {
@@ -428,49 +428,49 @@ export async function fetchCandidates(params: any = {}): Promise<any> {
 }
 
 export async function fetchNewEmployees(params: any = {}): Promise<EmployeeListResponse> {
-  return fetchNewEmployeesApi(params)
+  return fetchNewEmployeesApi(params) as any
 }
 
 export async function fetchNewDepartments(params: any = {}): Promise<DepartmentListResponse> {
-  return fetchNewDepartmentsApi(params)
+  return fetchNewDepartmentsApi(params) as any
 }
 
 export async function fetchNewOnboardingRecords(params: any = {}): Promise<any> {
-  return fetchNewOnboardingRecordsApi(params)
+  return fetchNewOnboardingRecordsApi(params) as any
 }
 
 export async function fetchNewDepartureRecords(params: any = {}): Promise<any> {
-  return fetchNewDepartureRecordsApi(params)
+  return fetchNewDepartureRecordsApi(params) as any
 }
 
 export async function fetchNewOffboardingRecords(params: any = {}): Promise<any> {
-  return fetchNewOffboardingRecordsApi(params)
+  return fetchNewOffboardingRecordsApi(params) as any
 }
 
 export async function fetchAnnualTrainingPlanById(id: string): Promise<any> {
-  return fetchAnnualTrainingPlanByIdApi(id)
+  return fetchAnnualTrainingPlanByIdApi(id) as any
 }
 
 export async function fetchPlanItems(id: string): Promise<any> {
-  return fetchPlanItemsApi(id)
+  return fetchPlanItemsApi(id) as any
 }
 
 export async function fetchTrainingRecords(params: any = {}): Promise<any> {
-  return fetchTrainingRecordsApi(params)
+  return fetchTrainingRecordsApi(params) as any
 }
 
 export async function fetchTrainingPlans(params: any = {}): Promise<any> {
-  return fetchTrainingPlansApi(params)
+  return fetchTrainingPlansApi(params) as any
 }
 
 export async function fetchEmployeeByNumber(employeeNumber: string): Promise<any> {
-  return fetchEmployeeByNumberApi(employeeNumber)
+  return fetchEmployeeByNumberApi(employeeNumber) as any
 }
 
 export async function syncTrainingSpecialistsFeishuOpenIds() {
   const res = await syncTrainingSpecialistsFeishuOpenIdsApi()
   revalidatePath('/hr/training/specialists')
-  return res
+  return res as any
 }
 
 // ─── 飞书同步 Actions (from lib/api/hr.ts) ───
@@ -565,7 +565,7 @@ export async function createDepartureRecord(data: unknown) {
   const _validated = parse(DepartureRecordSchema, data)
   const res = await createDepartureRecordApi(data)
   revalidatePath('/hr')
-  return res
+  return res as any
 }
 
 export async function uploadAnnualTrainingPlan(file: File) {
@@ -573,7 +573,7 @@ export async function uploadAnnualTrainingPlan(file: File) {
   fd.append('file', file)
   const res = await uploadAnnualTrainingPlanApi(fd)
   revalidatePath('/hr')
-  return res
+  return res as any
 }
 
 export async function uploadTrainers(file: File) {
@@ -581,7 +581,7 @@ export async function uploadTrainers(file: File) {
   fd.append('file', file)
   const res = await uploadTrainersApi(fd)
   revalidatePath('/hr/training/trainers')
-  return res
+  return res as any
 }
 
 export async function uploadSopCatalog(file: File) {
@@ -589,7 +589,7 @@ export async function uploadSopCatalog(file: File) {
   fd.append('file', file)
   const res = await uploadSopCatalogApi(fd)
   revalidatePath('/hr/training/sop-catalog')
-  return res
+  return res as any
 }
 
 // ─── TrainingSession Actions ───
@@ -605,57 +605,57 @@ export async function fetchTrainingSessionsAction(
     page_size?: number
   }
 ): Promise<TrainingSessionListResponse> {
-  return fetchTrainingSessionsApi(params)
+  return fetchTrainingSessionsApi(params) as any
 }
 
 export async function createTrainingSession(data: TrainingSessionCreateInput) {
   const res = await createTrainingSessionApi(data)
   revalidatePath('/hr/training/records')
-  return res
+  return res as any
 }
 
 export async function updateTrainingSession(id: string, data: TrainingSessionUpdateInput) {
   const res = await updateTrainingSessionApi(id, data)
   revalidatePath('/hr/training/records')
-  return res
+  return res as any
 }
 
 export async function deleteTrainingSession(id: string) {
   const res = await deleteTrainingSessionApi(id)
   revalidatePath('/hr/training/records')
-  return res
+  return res as any
 }
 
 export async function updateTrainingSessionStatus(id: string, status: string) {
   const res = await updateTrainingSessionStatusApi(id, status)
   revalidatePath('/hr/training/records')
-  return res
+  return res as any
 }
 
 export async function fetchTrainingSessionByIdAction(id: string): Promise<TrainingSessionResponse> {
-  return fetchTrainingSessionByIdApi(id)
+  return fetchTrainingSessionByIdApi(id) as any
 }
 
 export async function sendTrainingSessionSelectTasksAction(id: string): Promise<{ code: number; message: string; data: SelectTask[] }> {
   const res = await sendTrainingSessionSelectTasksApi(id)
   revalidatePath('/hr/training/records')
-  return res
+  return res as any
 }
 
 export async function fetchTrainingSessionSelectTasksAction(id: string): Promise<{ code: number; message: string; data: SelectTask[] }> {
-  return fetchTrainingSessionSelectTasksApi(id)
+  return fetchTrainingSessionSelectTasksApi(id) as any
 }
 
 export async function sendTrainingSelectTaskAction(data: unknown) {
   const res = await sendTrainingSelectTaskApi(data)
   revalidatePath('/hr/training')
-  return res
+  return res as any
 }
 
 export async function savePrejobTemplateAction(department: string, factory: 'old' | 'new', items: unknown[]) {
   const res = await savePrejobTemplateApi({ department, factory, items })
   revalidatePath('/hr/training/prejob')
-  return res
+  return res as any
 }
 
 export async function generatePrejobTrainingPlanAction(
@@ -675,35 +675,35 @@ export async function submitTrainingSelectTaskAction(
 ) {
   const res = await submitTrainingSelectTaskApi(token, data)
   revalidatePath('/hr/training')
-  return res
+  return res as any
 }
 
 export async function createTrainingTeamAction(data: unknown) {
   const res = await createTrainingTeamApi(data)
   revalidatePath('/hr/training/team')
-  return res
+  return res as any
 }
 
 export async function updateTrainingTeamAction(id: string, data: unknown) {
   const res = await updateTrainingTeamApi(id, data)
   revalidatePath('/hr/training/team')
-  return res
+  return res as any
 }
 
 export async function deleteTrainingTeamAction(id: string) {
   const res = await deleteTrainingTeamApi(id)
   revalidatePath('/hr/training/team')
-  return res
+  return res as any
 }
 
 export async function upsertTrainingSpecialistAction(data: unknown) {
   const res = await upsertTrainingSpecialistApi(data)
   revalidatePath('/hr/training/specialists')
-  return res
+  return res as any
 }
 
 export async function deleteTrainingSpecialistAction(id: string) {
   const res = await deleteTrainingSpecialistApi(id)
   revalidatePath('/hr/training/specialists')
-  return res
+  return res as any
 }

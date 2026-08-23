@@ -53,7 +53,7 @@ export default function KnowledgeBasePicker({ open, onClose, onSelect, excludeId
         category: category || undefined
       })
       if (res.code === 200 && res.data) {
-        setArticles(res.data.filter((a) => !excludeIds.includes(a.id)))
+        setArticles((res.data as any[]).filter((a: any) => !excludeIds.includes(a.id)))
       }
     } catch {
       message.error('获取知识库文章失败')

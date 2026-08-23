@@ -64,7 +64,7 @@ export async function generateAuthorizationLetter(
 export async function deleteAuthorizationLetter(id: string) {
   const result = await deleteAuthorizationLetterApi(id)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function generateSupplementaryReply(
@@ -110,7 +110,7 @@ export async function generateSupplementaryReply(
 export async function deleteSupplementaryReplyAction(id: string) {
   const result = await deleteSupplementaryReplyApi(id)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function generateReferenceStandard(
@@ -169,41 +169,41 @@ export async function generateReferenceStandard(
 export async function deleteReferenceStandardAction(id: string) {
   const result = await deleteReferenceStandardApi(id)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function fetchAuthorizationLettersServer(params: { page: number; page_size: number }) {
-  return fetchAuthorizationLettersApi(params)
+  return fetchAuthorizationLettersApi(params) as any
 }
 
 export async function fetchProductsServer() {
-  return fetchRegistrationProductsApi()
+  return fetchRegistrationProductsApi() as any
 }
 
 export async function fetchReferenceStandardsServer(params: { page: number; page_size: number }) {
-  return fetchReferenceStandardsApi(params)
+  return fetchReferenceStandardsApi(params) as any
 }
 
 export async function fetchSupplementaryRepliesServer(params: { page: number; page_size: number }) {
-  return fetchSupplementaryRepliesApi(params)
+  return fetchSupplementaryRepliesApi(params) as any
 }
 
 export async function createDrug(data: DrugCreate) {
   const result = await createDrugApi(data)
   revalidatePath('/registration/review')
-  return result
+  return result as any
 }
 
 export async function updateDrug(id: string, data: DrugUpdate) {
   const result = await updateDrugApi(id, data)
   revalidatePath('/registration/review')
-  return result
+  return result as any
 }
 
 export async function deleteDrug(id: string) {
   const result = await deleteDrugApi(id)
   revalidatePath('/registration/review')
-  return result
+  return result as any
 }
 
 export async function parseCOA(file: File): Promise<any> {
@@ -213,17 +213,17 @@ export async function parseCOA(file: File): Promise<any> {
 export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {
   const result = await createRegistrationProjectApi(data)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function updateRegistrationProject(id: string, data: components['schemas']['ProjectUpdate']) {
   const result = await updateRegistrationProjectApi(id, data)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function deleteRegistrationProject(id: string) {
   const result = await deleteRegistrationProjectApi(id)
   revalidatePath('/registration')
-  return result
+  return result as any
 }

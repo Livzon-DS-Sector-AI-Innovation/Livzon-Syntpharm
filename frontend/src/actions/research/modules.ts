@@ -34,7 +34,7 @@ export async function createPilotStudy(data: {
 }) {
   const result = await createPilotStudyDirect(data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function updatePilotStudy(id: string, data: {
@@ -50,7 +50,7 @@ export async function updatePilotStudy(id: string, data: {
 }) {
   const result = await updatePilotStudyDirect(id, data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function deletePilotStudy(id: string) {
@@ -71,7 +71,7 @@ export async function createValidation(data: {
 }) {
   const result = await createValidationDirect(data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function updateValidation(id: string, data: {
@@ -84,7 +84,7 @@ export async function updateValidation(id: string, data: {
 }) {
   const result = await updateValidationDirect(id, data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function deleteValidation(id: string) {
@@ -104,7 +104,7 @@ export async function createFiling(data: {
 }) {
   const result = await createFilingDirect(data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function updateFiling(id: string, data: {
@@ -116,7 +116,7 @@ export async function updateFiling(id: string, data: {
 }) {
   const result = await updateFilingDirect(id, data)
   revalidatePath('/research/projects')
-  return result
+  return result as any
 }
 
 export async function deleteFiling(id: string) {
