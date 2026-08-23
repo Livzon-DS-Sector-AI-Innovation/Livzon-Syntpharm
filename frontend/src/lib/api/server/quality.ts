@@ -565,7 +565,17 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI 交互日志 Actions ============
 
-export async function getAiLogs(params: any = {}) {
+interface AiLogParams {
+  page?: number
+  page_size?: number
+  operate_type?: string
+  operator?: string
+  start_date?: string
+  end_date?: string
+  keyword?: string
+}
+
+export async function getAiLogs(params: AiLogParams = {}) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -901,7 +911,7 @@ export async function triggerAIProcess(taskId: number) {
   })
 }
 
-export async function updateAIResult(taskId: number, aiResult: any) {
+export async function updateAIResult(taskId: number, aiResult: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
     method: 'PUT',
     body: JSON.stringify({ ai_result: aiResult }),

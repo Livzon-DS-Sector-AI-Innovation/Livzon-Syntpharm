@@ -58,14 +58,14 @@ export async function deleteInspectionTable(id: string) {
   })
 }
 
-export async function addTableRow(tableId: string, rowData: Record<string, any>) {
+export async function addTableRow(tableId: string, rowData: Record<string, unknown>) {
   return apiFetch(`/api/v1/quality/inspection-table/${tableId}/rows`, {
     method: 'POST',
     body: JSON.stringify({ row_data: rowData }),
   })
 }
 
-export async function updateTableRow(tableId: string, rowId: number, rowData: Record<string, any>) {
+export async function updateTableRow(tableId: string, rowId: number, rowData: Record<string, unknown>) {
   return apiFetch(`/api/v1/quality/inspection-table/${tableId}/rows/${rowId}`, {
     method: 'PUT',
     body: JSON.stringify({ row_data: rowData }),
