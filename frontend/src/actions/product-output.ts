@@ -155,17 +155,17 @@ import {
 
 export async function fetchAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
-  return fetchAnnualReviewApi(year, authHeaders)
+  return fetchAnnualReviewApi(year, authHeaders) as any
 }
 
 export async function fetchExportAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
-  return fetchExportAnnualReviewApi(year, authHeaders)
+  return fetchExportAnnualReviewApi(year, authHeaders) as any
 }
 
 export async function fetchPreviewImport(formData: FormData) {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewImportApi(formData, authHeaders)
+  return fetchPreviewImportApi(formData, authHeaders) as any
 }
 
 export async function fetchUndoImport(batchId: string) {

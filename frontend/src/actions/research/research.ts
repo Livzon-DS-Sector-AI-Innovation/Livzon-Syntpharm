@@ -27,13 +27,13 @@ import {
 export async function createResearchProject(data: ResearchProjectCreate) {
   const result = await createResearchProjectApi(data)
   revalidatePath('/research')
-  return result
+  return result as any
 }
 
 export async function updateResearchProject(projectId: string, data: ResearchProjectUpdate) {
   const result = await updateResearchProjectApi(projectId, data)
   revalidatePath('/research')
-  return result
+  return result as any
 }
 
 export async function deleteResearchProject(projectId: string) {
@@ -53,21 +53,21 @@ export async function createPilotWorkflow(data: {
 }) {
   const result = await createPilotWorkflowApi(data)
   revalidatePath('/research/pilot-workflow')
-  return result
+  return result as any
 }
 
 export async function startPilotWorkflow(workflowId: string) {
   const result = await startPilotWorkflowApi(workflowId)
   revalidatePath(`/research/pilot-workflow/${workflowId}`)
   revalidatePath('/research/pilot-workflow')
-  return result
+  return result as any
 }
 
 export async function approvePilotWorkflowStep(workflowId: string) {
   const result = await approvePilotWorkflowStepApi(workflowId)
   revalidatePath(`/research/pilot-workflow/${workflowId}`)
   revalidatePath('/research/pilot-workflow')
-  return result
+  return result as any
 }
 
 export async function uploadPilotWorkflowDocument(workflowId: string, file: File) {
@@ -75,7 +75,7 @@ export async function uploadPilotWorkflowDocument(workflowId: string, file: File
   formData.append('file', file)
   const result = await uploadPilotWorkflowDocumentApi(workflowId, formData)
   revalidatePath(`/research/pilot-workflow/${workflowId}`)
-  return result
+  return result as any
 }
 
 export async function deletePilotWorkflow(workflowId: string) {
@@ -86,11 +86,11 @@ export async function deletePilotWorkflow(workflowId: string) {
 // ─── Server-side fetch functions (for Server Components) ───
 
 export async function fetchResearchProjects(params: any = {}): Promise<any> {
-  return fetchResearchProjectsApi(params)
+  return fetchResearchProjectsApi(params) as any
 }
 
 export async function fetchRoutes(params: any = {}): Promise<any> {
-  return fetchRoutesApi(params)
+  return fetchRoutesApi(params) as any
 }
 
 export async function fetchPilotWorkflows(params: any = {}): Promise<any> {
@@ -114,13 +114,13 @@ export async function analyzeICHFile(file: File): Promise<any> {
   formData.append('file', file)
   const result = await analyzeICHFileApi(formData)
   revalidatePath('/research')
-  return result
+  return result as any
 }
 
 export async function deleteICHRecord(recordId: string): Promise<any> {
   const result = await deleteICHRecordApi(recordId)
   revalidatePath('/research')
-  return result
+  return result as any
 }
 
 // ── EDBO+ 贝叶斯优化 ──
@@ -155,11 +155,11 @@ export async function generateReactionScope(
     optimization_error?: string;
   }> {
   const result = await generateReactionScopeApi({ components, objectives, batch_size: batchSize })
-  return result
+  return result as any
 }
 
 export async function fetchResearchProject(projectId: string): Promise<any> {
-  return fetchResearchProjectApi(projectId)
+  return fetchResearchProjectApi(projectId) as any
 }
 
 // ─── Literature Analysis Actions ───
@@ -169,5 +169,5 @@ export async function analyzeLiterature(file: File): Promise<any> {
   formData.append('file', file)
   const result = await analyzeLiteratureApi(formData)
   revalidatePath('/research')
-  return result
+  return result as any
 }

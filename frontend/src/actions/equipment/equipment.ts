@@ -79,21 +79,21 @@ export async function createCategory(data: CreateCategoryInput): Promise<ActionR
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createCategoryApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateCategory(id: string, data: UpdateCategoryInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateCategoryApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteCategoryApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // 位置管理
@@ -101,21 +101,21 @@ export async function createLocation(data: CreateLocationInput): Promise<ActionR
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createLocationApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateLocation(id: string, data: UpdateLocationInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateLocationApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteLocation(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteLocationApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // 设备管理
@@ -123,21 +123,21 @@ export async function createEquipment(data: CreateEquipmentInput): Promise<Actio
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createEquipmentApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateEquipment(id: string, data: UpdateEquipmentInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateEquipmentApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteEquipment(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteEquipmentApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 故障代码 ====================
@@ -147,21 +147,21 @@ export async function createFailureCode(path: FailureCodePath, data: CreateFailu
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createFailureCodeApi(path, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateFailureCode(path: FailureCodePath, id: string, data: UpdateFailureCodeInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateFailureCodeApi(path, id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteFailureCode(path: FailureCodePath, id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteFailureCodeApi(path, id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 维修工单 ====================
@@ -169,49 +169,49 @@ export async function createWorkOrder(data: CreateWorkOrderInput): Promise<Actio
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createWorkOrderApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateWorkOrder(id: string, data: UpdateWorkOrderInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateWorkOrderApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function assignWorkOrder(id: string, data: AssignWorkOrderInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => assignWorkOrderApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function startWorkOrder(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => startWorkOrderApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function completeWorkOrder(id: string, data: CompleteWorkOrderInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => completeWorkOrderApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function verifyWorkOrder(id: string, data: VerifyWorkOrderInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => verifyWorkOrderApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function closeWorkOrder(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => closeWorkOrderApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 校准计划 ====================
@@ -219,21 +219,21 @@ export async function createCalibrationPlan(data: CreateCalibrationPlanInput): P
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createCalibrationPlanApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateCalibrationPlan(id: string, data: UpdateCalibrationPlanInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateCalibrationPlanApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteCalibrationPlan(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteCalibrationPlanApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 校准记录 ====================
@@ -241,7 +241,7 @@ export async function createCalibrationRecord(data: CreateCalibrationRecordInput
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createCalibrationRecordApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 备件管理 ====================
@@ -249,35 +249,35 @@ export async function createSparePart(data: CreateSparePartInput): Promise<Actio
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createSparePartApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateSparePart(id: string, data: UpdateSparePartInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateSparePartApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteSparePart(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteSparePartApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function stockInbound(sparePartId: string, data: StockInboundInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => stockInboundApi(sparePartId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function stockAdjust(sparePartId: string, data: StockAdjustInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => stockAdjustApi(sparePartId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 维护计划 ====================
@@ -285,21 +285,21 @@ export async function createMaintenancePlan(data: CreateMaintenancePlanInput): P
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createMaintenancePlanApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateMaintenancePlan(id: string, data: UpdateMaintenancePlanInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateMaintenancePlanApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteMaintenancePlan(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteMaintenancePlanApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 巡检模板 ====================
@@ -307,49 +307,49 @@ export async function createInspectionTemplate(data: CreateInspectionTemplateInp
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createInspectionTemplateApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateInspectionTemplate(id: string, data: UpdateInspectionTemplateInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateInspectionTemplateApi(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteInspectionTemplate(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteInspectionTemplateApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function createInspectionTemplateItem(templateId: string, data: CreateInspectionTemplateItemInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createInspectionTemplateItemApi(templateId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function updateInspectionTemplateItem(itemId: string, data: UpdateInspectionTemplateItemInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateInspectionTemplateItemApi(itemId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function deleteInspectionTemplateItem(itemId: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteInspectionTemplateItemApi(itemId, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 export async function completeInspection(workOrderId: string, data: InspectionCompleteInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => completeInspectionApi(workOrderId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 工单物料领用 ====================
@@ -357,7 +357,7 @@ export async function consumeMaterials(workOrderId: string, data: MaterialConsum
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => consumeMaterialsApi(workOrderId, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 工单图片 ====================
@@ -379,7 +379,7 @@ export async function deleteWorkOrderImage(workOrderId: string, imageId: string)
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteWorkOrderImageApi(workOrderId, imageId, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 抢单 ====================
@@ -387,7 +387,7 @@ export async function claimWorkOrder(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => claimWorkOrderApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== 配置 ====================
@@ -395,7 +395,7 @@ export async function updateClaimTimeoutConfig(data: { emergency?: number; high?
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateClaimTimeoutConfigApi(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
-  return result
+  return result as any
 }
 
 // ==================== Excel 导入 ====================

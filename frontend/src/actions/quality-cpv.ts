@@ -27,13 +27,13 @@ import {
 export async function createCpvProduct(data: CreateCpvProductInput): Promise<CpvProduct> {
   const result = await createCpvProductApi(data)
   revalidatePath('/quality/cpv')
-  return result
+  return result as any
 }
 
 export async function updateCpvProduct(productId: string, data: UpdateCpvProductInput): Promise<CpvProduct> {
   const result = await updateCpvProductApi(productId, data)
   revalidatePath('/quality/cpv')
-  return result
+  return result as any
 }
 
 export async function deleteCpvProduct(productId: string): Promise<void> {
@@ -44,13 +44,13 @@ export async function deleteCpvProduct(productId: string): Promise<void> {
 export async function createCpvParameter(productId: string, data: CreateCpvParameterInput): Promise<CpvParameter> {
   const result = await createCpvParameterApi(productId, data)
   revalidatePath('/quality/cpv')
-  return result
+  return result as any
 }
 
 export async function updateCpvParameter(parameterId: string, data: Partial<CreateCpvParameterInput>): Promise<CpvParameter> {
   const result = await updateCpvParameterApi(parameterId, data)
   revalidatePath('/quality/cpv')
-  return result
+  return result as any
 }
 
 export async function deleteCpvParameter(parameterId: string): Promise<void> {
@@ -81,17 +81,17 @@ export async function confirmCpvImport(
   formData.append('file', file)
   const result = await confirmCpvImportApi(formData, productId, dataType, importMode, fileName, skipErrors)
   revalidatePath('/quality/cpv')
-  return result
+  return result as any
 }
 
 export async function fetchCpvProductsServer(params?: { page?: number; page_size?: number }) {
-  return fetchCpvProductsApi(params)
+  return fetchCpvProductsApi(params) as any
 }
 
 export async function fetchCpvProductServer(productId: string) {
-  return fetchCpvProductApi(productId)
+  return fetchCpvProductApi(productId) as any
 }
 
 export async function fetchCpvParametersServer(productId: string, type: 'CPP' | 'CQA') {
-  return fetchCpvParametersApi(productId, type)
+  return fetchCpvParametersApi(productId, type) as any
 }

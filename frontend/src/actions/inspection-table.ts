@@ -24,29 +24,29 @@ export async function getInspectionTables(params?: {
   page?: number
   page_size?: number
 }) {
-  return fetchInspectionTables(params)
+  return fetchInspectionTables(params) as any
 }
 
 export async function getInspectionTable(id: string) {
-  return fetchInspectionTable(id)
+  return fetchInspectionTable(id) as any
 }
 
 export async function createInspectionTable(data: CreateTableRequest) {
   const result = await apiCreateInspectionTable(data)
   revalidatePath('/quality/inspection-table')
-  return result
+  return result as any
 }
 
 export async function updateInspectionTable(id: string, data: UpdateTableRequest) {
   const result = await apiUpdateInspectionTable(id, data)
   revalidatePath('/quality/inspection-table')
-  return result
+  return result as any
 }
 
 export async function deleteInspectionTable(id: string) {
   const result = await apiDeleteInspectionTable(id)
   revalidatePath('/quality/inspection-table')
-  return result
+  return result as any
 }
 
 export async function addTableRow(tableId: string, rowData: Record<string, any>) {

@@ -36,11 +36,11 @@ export async function getReports(params?: {
   page?: number
   page_size?: number
 }) {
-  return fetchReports(params)
+  return fetchReports(params) as any
 }
 
 export async function getReportById(id: string) {
-  return fetchReportById(id)
+  return fetchReportById(id) as any
 }
 
 export async function createReport(data: ReportCreate) {
@@ -52,7 +52,7 @@ export async function createReport(data: ReportCreate) {
   }
   const result = await apiCreateReport(processedData)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function updateReport(id: string, data: ReportUpdate) {
@@ -64,19 +64,19 @@ export async function updateReport(id: string, data: ReportUpdate) {
   }
   const result = await apiUpdateReport(id, processedData)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function deleteReport(id: string) {
   const result = await apiDeleteReport(id)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function saveReportItems(id: string, data: ReportItemsBatchSave) {
   const result = await apiSaveReportItems(id, data)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function generateReport(id: string) {
@@ -86,7 +86,7 @@ export async function generateReport(id: string) {
 export async function submitReport(id: string) {
   const result = await apiSubmitReport(id)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function getReportStatistics() {
@@ -114,19 +114,19 @@ export async function uploadTemplate(
 ) {
   const result = await apiUploadTemplate(file, templateName, templateDescription, fieldMapping, tableFields)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function updateTemplate(id: string, data: TemplateUpdate) {
   const result = await apiUpdateTemplate(id, data)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function deleteTemplate(id: string) {
   const result = await apiDeleteTemplate(id)
   revalidatePath('/quality/material-report')
-  return result
+  return result as any
 }
 
 export async function previewTemplate(id: string) {

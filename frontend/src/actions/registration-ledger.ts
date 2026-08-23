@@ -41,7 +41,7 @@ export async function createDomesticApproval(data: unknown) {
   const validated = parse(DomesticApprovalSchema, data)
   const result = await createDomesticApprovalApi(validated)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function importDomesticApprovals(file: File) {
@@ -49,14 +49,14 @@ export async function importDomesticApprovals(file: File) {
   formData.append('file', file)
   const result = await importDomesticApprovalsApi(formData)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function createOverseasApproval(data: unknown) {
   const validated = parse(OverseasApprovalSchema, data)
   const result = await createOverseasApprovalApi(validated)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function importOverseasApprovals(file: File) {
@@ -64,14 +64,14 @@ export async function importOverseasApprovals(file: File) {
   formData.append('file', file)
   const result = await importOverseasApprovalsApi(formData)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function createInternationalReview(data: unknown) {
   const validated = parse(InternationalReviewSchema, data)
   const result = await createInternationalReviewApi(validated)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function importInternationalReviews(file: File) {
@@ -79,14 +79,14 @@ export async function importInternationalReviews(file: File) {
   formData.append('file', file)
   const result = await importInternationalReviewsApi(formData)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function createCoppCertificate(data: unknown) {
   const validated = parse(CoppCertificateSchema, data)
   const result = await createCoppCertificateApi(validated)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function importCoppCertificates(file: File) {
@@ -94,14 +94,14 @@ export async function importCoppCertificates(file: File) {
   formData.append('file', file)
   const result = await importCoppCertificatesApi(formData)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function createWcCertificate(data: unknown) {
   const validated = parse(WcCertificateSchema, data)
   const result = await createWcCertificateApi(validated)
   revalidatePath('/registration')
-  return result
+  return result as any
 }
 
 export async function importWcCertificates(file: File) {
@@ -109,5 +109,5 @@ export async function importWcCertificates(file: File) {
   formData.append('file', file)
   const result = await importWcCertificatesApi(formData)
   revalidatePath('/registration')
-  return result
+  return result as any
 }

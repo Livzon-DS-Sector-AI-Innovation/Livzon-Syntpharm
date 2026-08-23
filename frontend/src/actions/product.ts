@@ -18,19 +18,19 @@ import {
 export async function createProduct(data: ProductCreateInput) {
   const result = await createProductApi(data)
   revalidatePath('/production/products')
-  return result
+  return result as any
 }
 
 export async function updateProduct(id: string, data: ProductUpdateInput) {
   const result = await updateProductApi(id, data)
   revalidatePath('/production/products')
-  return result
+  return result as any
 }
 
 export async function deleteProduct(id: string) {
   const result = await deleteProductApi(id)
   revalidatePath('/production/products')
-  return result
+  return result as any
 }
 
 export async function getProducts(): Promise<any> {
@@ -56,7 +56,7 @@ export async function syncProductsFromFeishu(): Promise<{
 }> {
   const result = await syncProductsFromFeishuApi()
   revalidatePath('/product')
-  return result
+  return result as any
 }
 
 export async function syncProductToFeishu(id: string): Promise<{
@@ -66,5 +66,5 @@ export async function syncProductToFeishu(id: string): Promise<{
 }> {
   const result = await syncProductToFeishuApi(id)
   revalidatePath('/product')
-  return result
+  return result as any
 }

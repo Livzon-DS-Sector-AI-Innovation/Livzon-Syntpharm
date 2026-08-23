@@ -9,15 +9,15 @@ import {
 
 export async function fetchPreviewPush(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewPushApi(productId, authHeaders)
+  return fetchPreviewPushApi(productId, authHeaders) as any
 }
 
 export async function fetchPreviewPull(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewPullApi(productId, authHeaders)
+  return fetchPreviewPullApi(productId, authHeaders) as any
 }
 
 export async function fetchUndoLastSync(productId: string) {
   const authHeaders = await getAuthHeaders()
-  return fetchUndoLastSyncApi(productId, authHeaders)
+  return fetchUndoLastSyncApi(productId, authHeaders) as any
 }

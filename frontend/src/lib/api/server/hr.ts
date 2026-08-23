@@ -32,9 +32,9 @@ export async function fetchEmployeesApi(params?: {
   page_size?: number
 }) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.status) searchParams.set('status', params.status)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.status) searchParams.set('status', String(params.status))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees?${searchParams.toString()}`)
@@ -82,7 +82,7 @@ export async function fetchDepartmentsApi(params?: {
   page_size?: number
 }) {
   const searchParams = new URLSearchParams()
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments?${searchParams.toString()}`)
@@ -115,8 +115,8 @@ export async function fetchTeamsApi(params?: {
   page_size?: number
 }) {
   const searchParams = new URLSearchParams()
-  if (params?.department_id) searchParams.set('department_id', params.department_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department_id) searchParams.set('department_id', String(params.department_id))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams?${searchParams.toString()}`)
@@ -149,8 +149,8 @@ export async function fetchOffboardingRecordsApi(params?: {
   page_size?: number
 }) {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records?${searchParams.toString()}`)
@@ -204,11 +204,11 @@ export async function batchUpdatePlanItemsApi(planId: string, data: unknown) {
 
 export async function fetchOnboardingRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.position) searchParams.set('position', params.position)
-  if (params?.is_employed) searchParams.set('is_employed', params.is_employed)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.position) searchParams.set('position', String(params.position))
+  if (params?.is_employed) searchParams.set('is_employed', String(params.is_employed))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records?${searchParams.toString()}`)
@@ -216,9 +216,9 @@ export async function fetchOnboardingRecordsApi(params?: Record<string, unknown>
 
 export async function fetchDepartureRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records?${searchParams.toString()}`)
@@ -234,8 +234,8 @@ export async function fetchCandidateByIdApi(id: string) {
 
 export async function fetchCandidatesApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  if (params?.status) searchParams.set('status', params.status)
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
+  if (params?.status) searchParams.set('status', String(params.status))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/candidates?${searchParams.toString()}`)
@@ -243,9 +243,9 @@ export async function fetchCandidatesApi(params?: Record<string, unknown>) {
 
 export async function fetchNewEmployeesApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.status) searchParams.set('status', params.status)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.status) searchParams.set('status', String(params.status))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/employees?${searchParams.toString()}`)
@@ -253,7 +253,7 @@ export async function fetchNewEmployeesApi(params?: Record<string, unknown>) {
 
 export async function fetchNewDepartmentsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/departments?${searchParams.toString()}`)
@@ -261,9 +261,9 @@ export async function fetchNewDepartmentsApi(params?: Record<string, unknown>) {
 
 export async function fetchNewOnboardingRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.position) searchParams.set('position', params.position)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.position) searchParams.set('position', String(params.position))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/onboarding-records?${searchParams.toString()}`)
@@ -271,9 +271,9 @@ export async function fetchNewOnboardingRecordsApi(params?: Record<string, unkno
 
 export async function fetchNewDepartureRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/departure-records?${searchParams.toString()}`)
@@ -281,9 +281,9 @@ export async function fetchNewDepartureRecordsApi(params?: Record<string, unknow
 
 export async function fetchNewOffboardingRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/offboarding-records?${searchParams.toString()}`)
@@ -299,9 +299,9 @@ export async function fetchPlanItemsApi(id: string) {
 
 export async function fetchTrainingRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
-  if (params?.training_type) searchParams.set('training_type', params.training_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
+  if (params?.training_type) searchParams.set('training_type', String(params.training_type))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-records?${searchParams.toString()}`)
@@ -309,8 +309,8 @@ export async function fetchTrainingRecordsApi(params?: Record<string, unknown>) 
 
 export async function fetchTrainingPlansApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.year) searchParams.set('year', params.year)
-  if (params?.department) searchParams.set('department', params.department)
+  if (params?.year) searchParams.set('year', String(params.year))
+  if (params?.department) searchParams.set('department', String(params.department))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-plans?${searchParams.toString()}`)
@@ -436,11 +436,11 @@ export async function fetchTrainingSessionsApi(params?: {
   page_size?: number
 }) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  if (params?.status) searchParams.set('status', params.status)
-  if (params?.date_from) searchParams.set('date_from', params.date_from)
-  if (params?.date_to) searchParams.set('date_to', params.date_to)
+  if (params?.department) searchParams.set('department', String(params.department))
+  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
+  if (params?.status) searchParams.set('status', String(params.status))
+  if (params?.date_from) searchParams.set('date_from', String(params.date_from))
+  if (params?.date_to) searchParams.set('date_to', String(params.date_to))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions?${searchParams.toString()}`)
@@ -500,9 +500,9 @@ export async function fetchTrainingSelectTask(token: string) {
 
 export async function fetchSopCatalog(params?: Record<string, unknown>) {
   const sp = new URLSearchParams()
-  if (params?.department) sp.set('department', params.department)
-  if (params?.category) sp.set('category', params.category)
-  if (params?.keyword) sp.set('keyword', params.keyword)
+  if (params?.department) sp.set('department', String(params.department))
+  if (params?.category) sp.set('category', String(params.category))
+  if (params?.keyword) sp.set('keyword', String(params.keyword))
   if (params?.page) sp.set('page', String(params.page))
   if (params?.page_size) sp.set('page_size', String(params.page_size))
   const qs = sp.toString()

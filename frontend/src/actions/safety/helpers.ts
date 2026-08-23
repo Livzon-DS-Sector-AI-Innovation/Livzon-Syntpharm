@@ -16,5 +16,5 @@ export async function uploadPhoto(endpoint: string, file: File) {
   const authHeaders = await getAuthHeaders()
   const result = await uploadHazardPhoto(`/api/v1${endpoint}`, file, authHeaders)
   revalidatePath('/safety/hazard')
-  return result
+  return result as any
 }

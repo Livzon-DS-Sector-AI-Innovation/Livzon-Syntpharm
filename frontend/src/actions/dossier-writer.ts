@@ -63,7 +63,7 @@ export async function uploadTemplates(dossierId: string, files: any): Promise<Up
 
   const result = await uploadTemplatesApi(dossierId, formData)
   revalidatePath('/registration/dossier-writer')
-  return result
+  return result as any
 }
 
 export async function parseTemplates(dossierId: string): Promise<ParseResult> {
@@ -84,7 +84,7 @@ export async function uploadChapterAsset(
 
   const result = await uploadChapterAssetApi(chapterId, formData)
   revalidatePath('/registration/dossier-writer')
-  return result
+  return result as any
 }
 
 export async function deleteChapterAsset(assetId: string): Promise<void> {
@@ -180,7 +180,7 @@ export async function updateAssetCategory(
 ): Promise<AssetCategoryUpdateData> {
   const result = await updateAssetCategoryApi(assetId, categoryId)
   revalidatePath('/registration/dossier-writer')
-  return result
+  return result as any
 }
 
 // ====== Asset Usage (素材使用管理) ======

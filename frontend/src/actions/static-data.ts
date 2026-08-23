@@ -376,7 +376,7 @@ export async function getAuditModules(): Promise<ApiResponse<{ module_type: stri
 export async function uploadFile(file: File): Promise<ApiResponse<UploadResponse>> {
   const formData = new FormData()
   formData.append('file', file)
-  return uploadFileServer(formData)
+  return (await uploadFileServer(formData)) as ApiResponse<UploadResponse>
 }
 
 export async function getDownloadUrl(filename: string): Promise<string> {
@@ -392,7 +392,7 @@ export async function downloadExcelTemplate(moduleType: string): Promise<Blob> {
 export async function importExcel(moduleType: string, file: File): Promise<ApiResponse<{ success: number; failed: number; errors: string[] }>> {
   const formData = new FormData()
   formData.append('file', file)
-  return importExcelServer(moduleType, formData)
+  return (await importExcelServer(moduleType, formData)) as ApiResponse<{ success: number; failed: number; errors: string[] }>
 }
 
 export async function exportExcel(params: {

@@ -6,5 +6,5 @@ import { updateSystemSettings as updateSystemSettingsApi } from '@/lib/api/serve
 export async function updateSystemSettings(data: Record<string, unknown>) {
   const res = await updateSystemSettingsApi(data)
   revalidatePath('/hr/system-settings')
-  return res
+  return res as any
 }

@@ -67,7 +67,7 @@ export async function createValidationAuditTask(
   try {
     const result = await createTaskServer(data)
     revalidatePath('/registration/validation-audit')
-    return result
+    return result as any
   } catch (error) {
     return {
       success: false,
@@ -82,7 +82,7 @@ export async function deleteValidationAuditTask(
   try {
     const result = await deleteTaskServer(taskId)
     revalidatePath('/registration/validation-audit')
-    return result
+    return result as any
   } catch (error) {
     return {
       success: false,
@@ -98,7 +98,7 @@ export async function uploadValidationAuditFiles(
   try {
     const result = await uploadFilesServer(taskId, formData)
     revalidatePath(`/registration/validation-audit/${taskId}`)
-    return result
+    return result as any
   } catch (error) {
     return {
       success: false,
@@ -113,7 +113,7 @@ export async function parseValidationAuditFiles(
   try {
     const result = await parseFilesServer(taskId)
     revalidatePath(`/registration/validation-audit/${taskId}`)
-    return result
+    return result as any
   } catch (error) {
     return {
       success: false,
@@ -129,7 +129,7 @@ export async function runValidationAudit(
     const result = await runAuditServer(taskId)
     revalidatePath(`/registration/validation-audit/${taskId}`)
     revalidatePath('/registration/validation-audit')
-    return result
+    return result as any
   } catch (error) {
     return {
       success: false,

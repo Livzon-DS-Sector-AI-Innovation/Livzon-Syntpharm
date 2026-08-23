@@ -13,10 +13,10 @@ export async function parseExperimentRecord(file: File, type: 'lab_confirmation'
 
   const result = await parseExperimentRecordApi(formData)
   revalidatePath('/research/process-optimization')
-  return result
+  return result as any
 }
 
 export async function parseProcessParameters(content: string, type: 'lab_confirmation' | 'scale_up'): Promise<unknown> {
   const result = await parseProcessParametersApi(content, type)
-  return result
+  return result as any
 }

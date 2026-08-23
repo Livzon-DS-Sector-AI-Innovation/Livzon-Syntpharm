@@ -309,7 +309,7 @@ export async function uploadWorkOrderImagesApi(workOrderId: string, formData: Fo
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message || '上传失败')
+    throw new Error(String((err as Record<string, unknown>).message) || '上传失败')
   }
   const json = await res.json()
   return unwrapResponse(json)
@@ -354,7 +354,7 @@ export async function importEquipmentsApi(formData: FormData, headers: Record<st
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message || '导入失败')
+    throw new Error(String((err as Record<string, unknown>).message) || '导入失败')
   }
   const json = await res.json()
   return unwrapResponse(json)
@@ -514,7 +514,7 @@ export async function uploadInspectionPhotoApi(taskId: string, equipmentId: stri
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message || '上传失败')
+    throw new Error(String((err as Record<string, unknown>).message) || '上传失败')
   }
   const json = await res.json()
   return unwrapResponse(json)
@@ -543,7 +543,7 @@ export async function uploadTaskPhotoApi(taskId: string, formData: FormData, hea
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error((err as Record<string, unknown>).message || '上传失败')
+    throw new Error(String((err as Record<string, unknown>).message) || '上传失败')
   }
   const json = await res.json()
   return unwrapResponse(json)
@@ -922,11 +922,11 @@ export async function fetchLocationTree() {
 
 export async function fetchEquipments(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.category_id) params.append('category_id', filters.category_id)
-  if (filters.location_id) params.append('location_id', filters.location_id)
-  if (filters.department_id) params.append('department_id', filters.department_id)
-  if (filters.status) params.append('status', filters.status)
-  if (filters.keyword) params.append('keyword', filters.keyword)
+  if (filters.category_id) params.append('category_id', String(filters.category_id))
+  if (filters.location_id) params.append('location_id', String(filters.location_id))
+  if (filters.department_id) params.append('department_id', String(filters.department_id))
+  if (filters.status) params.append('status', String(filters.status))
+  if (filters.keyword) params.append('keyword', String(filters.keyword))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -943,7 +943,7 @@ export async function fetchDepartments() {
 
 export async function fetchInspectionTemplates(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
+  if (filters.equipment_id) params.append('equipment_id', String(filters.equipment_id))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -952,11 +952,11 @@ export async function fetchInspectionTemplates(filters: Record<string, unknown> 
 
 export async function fetchWorkOrders(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.status) params.append('status', filters.status)
-  if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
-  if (filters.priority) params.append('priority', filters.priority)
-  if (filters.order_type) params.append('order_type', filters.order_type)
-  if (filters.keyword) params.append('keyword', filters.keyword)
+  if (filters.status) params.append('status', String(filters.status))
+  if (filters.equipment_id) params.append('equipment_id', String(filters.equipment_id))
+  if (filters.priority) params.append('priority', String(filters.priority))
+  if (filters.order_type) params.append('order_type', String(filters.order_type))
+  if (filters.keyword) params.append('keyword', String(filters.keyword))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -976,8 +976,8 @@ export async function fetchFailureCodes(type: string) {
 
 export async function fetchCalibrationPlans(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
-  if (filters.status) params.append('status', filters.status)
+  if (filters.equipment_id) params.append('equipment_id', String(filters.equipment_id))
+  if (filters.status) params.append('status', String(filters.status))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -986,8 +986,8 @@ export async function fetchCalibrationPlans(filters: Record<string, unknown> = {
 
 export async function fetchCalibrationRecords(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
-  if (filters.plan_id) params.append('plan_id', filters.plan_id)
+  if (filters.equipment_id) params.append('equipment_id', String(filters.equipment_id))
+  if (filters.plan_id) params.append('plan_id', String(filters.plan_id))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -996,8 +996,8 @@ export async function fetchCalibrationRecords(filters: Record<string, unknown> =
 
 export async function fetchMaintenancePlans(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
-  if (filters.status) params.append('status', filters.status)
+  if (filters.equipment_id) params.append('equipment_id', String(filters.equipment_id))
+  if (filters.status) params.append('status', String(filters.status))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
@@ -1013,9 +1013,9 @@ export async function fetchOverdueMaintenancePlans(days?: number) {
 
 export async function fetchSpareParts(filters: Record<string, unknown> = {}) {
   const params = new URLSearchParams()
-  if (filters.category) params.append('category', filters.category)
-  if (filters.keyword) params.append('keyword', filters.keyword)
-  if (filters.is_active !== undefined) params.append('is_active', filters.is_active.toString())
+  if (filters.category) params.append('category', String(filters.category))
+  if (filters.keyword) params.append('keyword', String(filters.keyword))
+  if (filters.is_active !== undefined && filters.is_active !== null) params.append('is_active', String(filters.is_active))
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.page_size) params.append('page_size', filters.page_size.toString())
   const qs = params.toString()
