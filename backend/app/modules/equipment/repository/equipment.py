@@ -638,9 +638,7 @@ async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dic
     if not dept:
         return None
     row = {"id": dept.id, "name": dept.name}
-    if row is None:
-        return None
-    d = dict(row._mapping)
+    d = dict(row)
     d["leader_user_id"] = None
     d["leader_id"] = None
     d["leader_name"] = None

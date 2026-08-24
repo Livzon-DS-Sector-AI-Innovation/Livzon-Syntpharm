@@ -195,7 +195,8 @@ async def get_department_by_name(session: AsyncSession, name: str) -> HrDepartme
     from app.modules.hr.repository import DepartmentRepository
 
     repo = DepartmentRepository(session)
-    return await repo.get_by_name(name)
+    result = await repo.get_by_name(name)
+    return result if result is None or isinstance(result, HrDepartment) else None
 
 
 async def list_all_departments(session: AsyncSession) -> list[HrDepartment]:

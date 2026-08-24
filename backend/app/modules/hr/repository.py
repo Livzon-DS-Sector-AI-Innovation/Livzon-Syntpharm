@@ -337,6 +337,12 @@ class DepartmentRepository:
         await self.session.refresh(department)
         return department
 
+    async def get_by_name(self, name: str) -> HrDepartment | None:
+        result = await self.session.execute(
+            select(HrDepartment).where(HrDepartment.name == name, HrDepartment.is_deleted.is_(False))
+        )
+        return result.scalar_one_or_none()
+
     async def soft_delete(self, department: HrDepartment) -> None:
         department.is_deleted = True
         await self.session.flush()
