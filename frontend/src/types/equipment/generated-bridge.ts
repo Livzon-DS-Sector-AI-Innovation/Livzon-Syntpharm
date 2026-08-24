@@ -531,7 +531,7 @@ export type StockWarning = StockWarningResponse
  * Inspection record item
  */
 export interface InspectionRecordItemResponse {
-  item_id: string
+  template_item_id: string
   result: string
   actual_value?: string
   remark?: string
