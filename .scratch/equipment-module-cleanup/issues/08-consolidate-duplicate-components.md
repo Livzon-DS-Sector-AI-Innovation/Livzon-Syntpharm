@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] CategoryDrawer has single canonical location
-- [ ] LocationDrawer has single canonical location
-- [ ] EquipmentDrawer has single canonical location
-- [ ] All imports updated to use canonical locations
-- [ ] Duplicate component files removed
-- [ ] No broken imports
+- [x] CategoryDrawer has single canonical location
+- [x] LocationDrawer has single canonical location
+- [x] EquipmentDrawer has single canonical location
+- [x] All imports updated to use canonical locations
+- [x] Duplicate component files removed
+- [x] No broken imports

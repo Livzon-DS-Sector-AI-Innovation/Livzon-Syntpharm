@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Backend Dockerfile includes HEALTHCHECK instruction
-- [ ] Health check uses /health/live endpoint
-- [ ] Health check has appropriate interval, timeout, and retry settings
-- [ ] Health check works in containerized environment
-- [ ] Docker reports container health status correctly
+- [x] Backend Dockerfile includes HEALTHCHECK instruction
+- [x] Health check uses /health/live endpoint
+- [x] Health check has appropriate interval, timeout, and retry settings
+- [x] Health check works in containerized environment
+- [x] Docker reports container health status correctly
