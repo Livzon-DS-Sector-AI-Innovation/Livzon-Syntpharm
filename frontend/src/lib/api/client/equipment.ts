@@ -1,6 +1,6 @@
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
-import type { Personnel } from '@/types/equipment/generated-bridge'
+import type { Personnel } from '@/types/equipment-personnel'
 import {
   EquipmentCategory, Location, EquipmentFilters, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
