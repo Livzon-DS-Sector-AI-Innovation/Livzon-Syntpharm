@@ -1,12 +1,13 @@
 """Integration tests for equipment import v3 API endpoints."""
 
-import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
-from app.modules.equipment.api.batch_import import batch_import, preview_import
+from app.core.database import get_db
+from app.main import app
 
 
 class MockDB:
@@ -35,6 +36,8 @@ class MockDB:
 @pytest.mark.asyncio
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
+    app.dependency_overrides[get_db] = lambda: db
+
     data = [
         {
             "资产编号": "TEST001",
@@ -47,8 +50,11 @@ async def test_preview_returns_inferred_fields() -> None:
         }
     ]
 
-    result = await preview_import(data, db)  # type: ignore[arg-type]
-    result_data = json.loads(result.body)  # type: ignore[arg-type]
+    async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post("/api/v1/equipment/equipments/import/preview", json=data)
+
+    assert response.status_code == 200
+    result_data = response.json()
     item = result_data["data"]["items"][0]
 
     assert item["equipment_class"] == "A"
@@ -57,20 +63,29 @@ async def test_preview_returns_inferred_fields() -> None:
     assert item["technical_params"]["数量"] == 2
     assert item["department_name"] == "质量控制部"
 
+    app.dependency_overrides.clear()
+
 
 @pytest.mark.asyncio
 async def test_batch_import_handles_null_department() -> None:
     db = MockDB()
+    app.dependency_overrides[get_db] = lambda: db
+
     data = [{"资产编号": "TEST002", "资产说明": "未知部门设备", "实物所在部门": "火星分部", "当前成本": 5000}]
 
     with patch("app.modules.equipment.api.batch_import.repo") as mock_repo:
         mock_repo.get_equipment_by_asset_no = AsyncMock(return_value=None)
         mock_repo.create_equipment = AsyncMock()
 
-        result = await batch_import(data, db)  # type: ignore[arg-type]
-        result_data = json.loads(result.body)  # type: ignore[arg-type]
+        async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.post("/api/v1/equipment/equipments/import/batch", json=data)
+
+        assert response.status_code == 200
+        result_data = response.json()
 
         assert result_data["data"]["created_count"] == 1
         call_args = mock_repo.create_equipment.call_args[0][1]
         assert call_args["department_id"] is None
         assert call_args["technical_params"] is None  # No quantity provided
+
+    app.dependency_overrides.clear()
