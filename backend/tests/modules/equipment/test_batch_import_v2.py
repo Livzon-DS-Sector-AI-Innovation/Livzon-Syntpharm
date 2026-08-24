@@ -1,9 +1,45 @@
 """设备导入 v2 功能测试 (TDD)."""
 
+from typing import Any
+from unittest.mock import MagicMock
+
 import pytest
 
-from app.core.database import async_session_factory
 from app.modules.equipment.api.batch_import import DEPT_MAPPING_V3, map_department_name_v3
+
+
+def _extract_param_values(stmt: Any) -> str:
+    """Extract all parameter values from a SQLAlchemy statement as a string for matching."""
+    try:
+        compiled = stmt.compile(compile_kwargs={"literal_binds": True})
+        return str(compiled)
+    except Exception:
+        return str(stmt)
+
+
+class MockDB:
+    def __init__(self, departments: dict[str, str] | None = None) -> None:
+        self.executed_sql: list[str] = []
+        self.departments = departments or {
+            "质量控制部": "uuid-quality-control",
+            "201车间": "uuid-201-workshop",
+            "溶剂回收车间": "uuid-solvent",
+        }
+
+    async def execute(self, stmt: Any) -> MagicMock:
+        self.executed_sql.append(str(stmt))
+        mock_result = MagicMock()
+        sql_str = _extract_param_values(stmt)
+
+        # Find which department is being looked up
+        found_id = None
+        for dept_name, dept_id in self.departments.items():
+            if dept_name in sql_str:
+                found_id = dept_id
+                break
+
+        mock_result.scalar_one_or_none.return_value = found_id
+        return mock_result
 
 
 def test_dept_mapping_v2_coverage() -> None:
@@ -17,33 +53,33 @@ def test_dept_mapping_v2_coverage() -> None:
 @pytest.mark.asyncio
 async def test_map_department_strict_alias() -> None:
     """测试别名映射逻辑"""
-    async with async_session_factory() as db:
-        name, dept_id = await map_department_name_v3("检验室", db)
-        assert name == "质量控制部"
-        assert dept_id is not None
+    db = MockDB()
+    name, dept_id = await map_department_name_v3("检验室", db)  # type: ignore[arg-type]
+    assert name == "质量控制部"
+    assert dept_id is not None
 
 
 @pytest.mark.asyncio
 async def test_map_department_strict_workshop() -> None:
     """测试车间编号映射"""
-    async with async_session_factory() as db:
-        name, dept_id = await map_department_name_v3("头孢合成一车间", db)
-        assert name == "201车间"
-        assert dept_id is not None
+    db = MockDB()
+    name, dept_id = await map_department_name_v3("头孢合成一车间", db)  # type: ignore[arg-type]
+    assert name == "201车间"
+    assert dept_id is not None
 
 
 @pytest.mark.asyncio
 async def test_map_department_strict_special_format() -> None:
     """测试溶剂回收车间特殊格式归口"""
-    async with async_session_factory() as db:
-        name, dept_id = await map_department_name_v3("溶剂回收车间-404岗", db)
-        assert name == "溶剂回收车间"
-        assert dept_id is not None
+    db = MockDB()
+    name, dept_id = await map_department_name_v3("溶剂回收车间-404岗", db)  # type: ignore[arg-type]
+    assert name == "溶剂回收车间"
+    assert dept_id is not None
 
 
 @pytest.mark.asyncio
 async def test_map_department_strict_nonexistent() -> None:
     """测试不存在的部门返回 None"""
-    async with async_session_factory() as db:
-        name, dept_id = await map_department_name_v3("银河系漫游指南部", db)
-        assert dept_id is None
+    db = MockDB()
+    name, dept_id = await map_department_name_v3("银河系漫游指南部", db)  # type: ignore[arg-type]
+    assert dept_id is None

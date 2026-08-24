@@ -99,7 +99,7 @@ class TestSequenceMatcher:
     def test_similar_strings(self) -> None:
         """测试相似字符串的相似度."""
         score = SequenceMatcher(None, "设备工程不", "设备工程部").ratio()
-        assert score > 0.8
+        assert score >= 0.8
 
     def test_different_strings(self) -> None:
         """测试不同字符串的相似度."""

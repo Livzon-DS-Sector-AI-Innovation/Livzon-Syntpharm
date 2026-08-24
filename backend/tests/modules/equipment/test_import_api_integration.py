@@ -15,6 +15,15 @@ from app.core.database import get_db
 app_instance = cast(FastAPI, app_main.app)
 
 
+def _extract_param_values(stmt: Any) -> str:
+    """Extract all parameter values from a SQLAlchemy statement as a string for matching."""
+    try:
+        compiled = stmt.compile(compile_kwargs={"literal_binds": True})
+        return str(compiled)
+    except Exception:
+        return str(stmt)
+
+
 class MockDB:
     def __init__(self) -> None:
         self.executed_sql: list[str] = []
@@ -23,9 +32,11 @@ class MockDB:
     async def execute(self, stmt: Any) -> MagicMock:
         self.executed_sql.append(str(stmt))
         mock_result = MagicMock()
-        if "质量控制部" in str(stmt):
+        sql_str = _extract_param_values(stmt)
+
+        if "质量控制部" in sql_str:
             mock_result.scalar_one_or_none.return_value = "uuid-quality"
-        elif "溶剂回收车间" in str(stmt):
+        elif "溶剂回收车间" in sql_str:
             mock_result.scalar_one_or_none.return_value = "uuid-solvent"
         else:
             mock_result.scalar_one_or_none.return_value = None
