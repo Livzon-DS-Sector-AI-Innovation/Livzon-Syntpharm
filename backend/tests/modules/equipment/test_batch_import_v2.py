@@ -6,7 +6,7 @@ from app.core.database import async_session_factory
 from app.modules.equipment.api.batch_import import DEPT_MAPPING_V2, map_department_name_strict
 
 
-def test_dept_mapping_v2_coverage():
+def test_dept_mapping_v2_coverage() -> None:
     """测试映射表是否包含关键别名"""
     assert "检验室" in DEPT_MAPPING_V2
     assert DEPT_MAPPING_V2["检验室"] == "质量控制部"
@@ -15,7 +15,7 @@ def test_dept_mapping_v2_coverage():
 
 
 @pytest.mark.asyncio
-async def test_map_department_strict_alias():
+async def test_map_department_strict_alias() -> None:
     """测试别名映射逻辑"""
     async with async_session_factory() as db:
         name, dept_id = await map_department_name_strict("检验室", db)
@@ -24,7 +24,7 @@ async def test_map_department_strict_alias():
 
 
 @pytest.mark.asyncio
-async def test_map_department_strict_workshop():
+async def test_map_department_strict_workshop() -> None:
     """测试车间编号映射"""
     async with async_session_factory() as db:
         name, dept_id = await map_department_name_strict("头孢合成一车间", db)
@@ -33,7 +33,7 @@ async def test_map_department_strict_workshop():
 
 
 @pytest.mark.asyncio
-async def test_map_department_strict_special_format():
+async def test_map_department_strict_special_format() -> None:
     """测试溶剂回收车间特殊格式归口"""
     async with async_session_factory() as db:
         name, dept_id = await map_department_name_strict("溶剂回收车间-404岗", db)
@@ -42,7 +42,7 @@ async def test_map_department_strict_special_format():
 
 
 @pytest.mark.asyncio
-async def test_map_department_strict_nonexistent():
+async def test_map_department_strict_nonexistent() -> None:
     """测试不存在的部门返回 None"""
     async with async_session_factory() as db:
         name, dept_id = await map_department_name_strict("银河系漫游指南部", db)

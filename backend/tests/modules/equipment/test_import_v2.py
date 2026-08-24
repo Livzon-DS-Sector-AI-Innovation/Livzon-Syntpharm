@@ -7,7 +7,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_download_template_endpoint_exists():
+def test_download_template_endpoint_exists() -> None:
     """测试模板下载接口是否存在并返回成功状态码"""
     response = client.get("/api/v1/equipment/equipments/import/template")
     assert response.status_code == 200
@@ -16,7 +16,7 @@ def test_download_template_endpoint_exists():
     assert "data" in data  # 应该包含 Base64 数据
 
 
-def test_import_preview_endpoint_path():
+def test_import_preview_endpoint_path() -> None:
     """测试预览接口的路径是否正确（包含 /equipments/）"""
     # 发送一个空的列表进行探测
     response = client.post("/api/v1/equipment/equipments/import/preview", json=[])

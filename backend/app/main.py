@@ -259,6 +259,8 @@ app = FastAPI(
     redoc_url="/redoc" if not settings.is_production else None,
 )
 
+__all__ = ["app"]
+
 allow_origins = [settings.FRONTEND_URL] if settings.FRONTEND_URL else ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,

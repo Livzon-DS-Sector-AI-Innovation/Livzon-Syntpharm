@@ -7,6 +7,7 @@ from datetime import date, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -183,8 +184,28 @@ def infer_status(scrap_status: str | None) -> str:
         return "在用"
 
 
+def fuzzy_match_department(dept_name: str, departments: list[str], threshold: float = 0.8) -> str | None:
+    """模糊匹配部门名称."""
+    from difflib import SequenceMatcher
+
+    if not dept_name or not departments:
+        return None
+
+    best_match = None
+    best_score = 0.0
+    for dept in departments:
+        score = SequenceMatcher(None, dept_name, dept).ratio()
+        if score > best_score:
+            best_score = score
+            best_match = dept
+
+    if best_score >= threshold:
+        return best_match
+    return None
+
+
 @router.get("/template", summary="下载导入模板")
-async def download_template():
+async def download_template() -> JSONResponse:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
@@ -203,7 +224,7 @@ async def download_template():
 
 
 @router.post("/preview", summary="预览导入数据")
-async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(get_db)):
+async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(get_db)) -> JSONResponse:
     results = []
     for idx, row in enumerate(data):
         asset_no = get_column_value(row, "资产编号")
@@ -272,7 +293,7 @@ async def batch_import(
     data: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = None,
-):
+) -> JSONResponse:
     created = 0
     skipped = 0
     errors = []
@@ -352,7 +373,7 @@ async def batch_import(
 
 
 @router.post("/", summary="上传Excel文件并解析")
-async def import_excel(file: UploadFile = File(...)) -> dict[str, Any]:
+async def import_excel(file: UploadFile = File(...)) -> JSONResponse:
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook

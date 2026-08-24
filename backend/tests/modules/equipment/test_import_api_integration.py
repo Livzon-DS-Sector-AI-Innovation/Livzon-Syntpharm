@@ -8,11 +8,11 @@ from app.modules.equipment.api.batch_import import batch_import, preview_import
 
 
 class MockDB:
-    def __init__(self):
+    def __init__(self) -> None:
         self.executed_sql = []
         self.committed = False
 
-    async def execute(self, stmt):
+    async def execute(self, stmt) -> None:
         self.executed_sql.append(str(stmt))
         mock_result = MagicMock()
         if "质量控制部" in str(stmt):
@@ -23,15 +23,15 @@ class MockDB:
             mock_result.scalar_one_or_none.return_value = None
         return mock_result
 
-    async def commit(self):
+    async def commit(self) -> None:
         self.committed = True
 
-    async def rollback(self):
+    async def rollback(self) -> None:
         pass
 
 
 @pytest.mark.asyncio
-async def test_preview_returns_inferred_fields():
+async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
     data = [
         {
@@ -56,7 +56,7 @@ async def test_preview_returns_inferred_fields():
 
 
 @pytest.mark.asyncio
-async def test_batch_import_handles_null_department():
+async def test_batch_import_handles_null_department() -> None:
     db = MockDB()
     data = [{"资产编号": "TEST002", "资产说明": "未知部门设备", "实物所在部门": "火星分部", "当前成本": 5000}]
 
