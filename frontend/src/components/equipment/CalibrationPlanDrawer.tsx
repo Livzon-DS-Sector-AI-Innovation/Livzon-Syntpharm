@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createCalibrationPlan, updateCalibrationPlan } from '@/actions/equipment'
 import { CreateCalibrationPlanInput, UpdateCalibrationPlanInput } from '@/types/equipment'
-import { Equipment } from '@/types/equipment'
+import { Equipment } from '@/types/equipment/generated-bridge'
 
 const { TextArea } = Input
 
