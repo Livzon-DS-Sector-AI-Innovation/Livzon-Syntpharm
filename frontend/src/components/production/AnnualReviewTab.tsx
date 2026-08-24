@@ -126,7 +126,7 @@ export default function AnnualReviewTab({ year }: Props) {
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const p = params[0]
-        const item = workshop_ranking.find((w) => w.workshop === p.name)
+        const item = workshop_ranking.find((w: any) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
