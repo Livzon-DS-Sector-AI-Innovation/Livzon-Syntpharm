@@ -4,10 +4,10 @@
 
 **Blocked by:** 04: Create HR public API for department lookup
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Equipment module imports departments through HR public API
-- [ ] No direct imports of HrDepartment model in equipment module
-- [ ] Department lookup uses get_department_by_name() function
-- [ ] All existing functionality preserved
-- [ ] Tests verify department lookup works correctly
+- [x] Equipment module imports departments through HR public API
+- [x] No direct imports of HrDepartment model in equipment module
+- [x] Department lookup uses get_department_by_name() function
+- [x] All existing functionality preserved
+- [x] Tests verify department lookup works correctly
