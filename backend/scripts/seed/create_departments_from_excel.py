@@ -115,7 +115,7 @@ for idx, name in enumerate(all_depts, 1):
     )
 
 # 保存文件
-output_path = Path("/home/zhuangweizi/Livzon-Syntpharm/backend/seed/departments.json")
+output_path = Path(__file__).parent / "departments.json"
 output_path.parent.mkdir(exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as f:
