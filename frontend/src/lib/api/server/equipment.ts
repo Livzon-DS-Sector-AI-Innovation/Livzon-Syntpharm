@@ -1026,3 +1026,10 @@ export async function fetchSpareParts(filters: any = {}) {
 export async function fetchStockWarnings() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/stock/warnings`)
 }
+export async function batchDeleteEquipmentsApi(ids: string[], headers: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/batch-delete`, {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+    headers,
+  })
+}

@@ -40,7 +40,7 @@ import type {
 import {
   createCategoryApi, updateCategoryApi, deleteCategoryApi,
   createLocationApi, updateLocationApi, deleteLocationApi,
-  createEquipmentApi, updateEquipmentApi, deleteEquipmentApi,
+  createEquipmentApi, updateEquipmentApi, deleteEquipmentApi, batchDeleteEquipmentsApi,
   createFailureCodeApi, updateFailureCodeApi, deleteFailureCodeApi,
   createWorkOrderApi, updateWorkOrderApi, assignWorkOrderApi,
   startWorkOrderApi, completeWorkOrderApi, verifyWorkOrderApi, closeWorkOrderApi,
@@ -404,6 +404,12 @@ export async function previewEquipmentImport(data: any) {
 
 export async function batchImportEquipment(data: any) {
   const result = await batchImportEquipmentApi(data, await authHeaders())
+  revalidatePath('/equipment')
+  return result
+}
+
+export async function batchDeleteEquipments(ids: string[]) {
+  const result = await batchDeleteEquipmentsApi(ids, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
