@@ -18,6 +18,16 @@ from app.modules.equipment.schemas import (
     LocationUpdate,
 )
 
+from .validation import (
+    validate_asset_no_unique,
+    validate_categories_exist,
+    validate_category_exists,
+    validate_equipment_exists,
+    validate_location_exists,
+    validate_unique_category_code,
+    validate_unique_location_code,
+)
+
 
 # ==================== 设备分类 ====================
 async def create_equipment_category(
@@ -25,10 +35,7 @@ async def create_equipment_category(
     data: EquipmentCategoryCreate,
 ) -> EquipmentCategory:
     """创建设备分类"""
-    # 检查编码是否重复
-    if await repo.exists_category_by_code(db, data.code):
-        raise DuplicateException("分类代码", data.code)
-
+    await validate_unique_category_code(db, data.code)
     return await repo.create_equipment_category(db, data.model_dump())
 
 
@@ -62,8 +69,8 @@ async def update_equipment_category(
     data: EquipmentCategoryUpdate,
 ) -> EquipmentCategory:
     """更新设备分类"""
-    if data.code is not None and await repo.exists_category_by_code(db, data.code, exclude_id=category_id):
-        raise DuplicateException("分类代码", data.code)
+    if data.code is not None:
+        await validate_unique_category_code(db, data.code, exclude_id=category_id)
 
     category = await repo.update_equipment_category(db, category_id, data.model_dump(exclude_unset=True))
     if not category:
@@ -76,7 +83,7 @@ async def delete_equipment_category(
     category_id: uuid.UUID,
 ) -> bool:
     """删除设备分类"""
-    await get_equipment_category_by_id(db, category_id)
+    await validate_category_exists(db, category_id)
 
     children = await repo.get_equipment_categories(db, parent_id=category_id)
     if children:
@@ -95,10 +102,7 @@ async def create_location(
     data: LocationCreate,
 ) -> Location:
     """创建位置"""
-    # 检查编码是否重复
-    if await repo.exists_location_by_code(db, data.code):
-        raise DuplicateException("位置代码", data.code)
-
+    await validate_unique_location_code(db, data.code)
     return await repo.create_location(db, data.model_dump())
 
 
@@ -132,8 +136,8 @@ async def update_location(
     data: LocationUpdate,
 ) -> Location:
     """更新位置"""
-    if data.code is not None and await repo.exists_location_by_code(db, data.code, exclude_id=location_id):
-        raise DuplicateException("位置代码", data.code)
+    if data.code is not None:
+        await validate_unique_location_code(db, data.code, exclude_id=location_id)
 
     location = await repo.update_location(db, location_id, data.model_dump(exclude_unset=True))
     if not location:
@@ -146,7 +150,7 @@ async def delete_location(
     location_id: uuid.UUID,
 ) -> bool:
     """删除位置"""
-    await get_location_by_id(db, location_id)
+    await validate_location_exists(db, location_id)
 
     children = await repo.get_locations(db, parent_id=location_id)
     if children:
@@ -181,17 +185,15 @@ async def create_equipment(
 ) -> Equipment:
     """创建设备"""
     # 校验资产编号唯一性
-    existing = await repo.get_equipment_by_asset_no(db, data.asset_no)
-    if existing:
-        raise DuplicateException("资产编号", data.asset_no)
+    await validate_asset_no_unique(db, data.asset_no)
 
     # 验证分类（如果提供了）
     if data.category_ids:
-        for cid in data.category_ids:
-            await get_equipment_category_by_id(db, cid)
+        await validate_categories_exist(db, data.category_ids)
+
     # 验证位置（如果提供了）
     if data.location_id:
-        await get_location_by_id(db, data.location_id)
+        await validate_location_exists(db, data.location_id)
 
     equipment_data = data.model_dump()
 
@@ -232,13 +234,13 @@ async def update_equipment(
     data: EquipmentUpdate,
 ) -> Equipment:
     """更新设备"""
-    await get_equipment_by_id(db, equipment_id)
+    await validate_equipment_exists(db, equipment_id)
 
     if data.category_ids:
-        for cid in data.category_ids:
-            await get_equipment_category_by_id(db, cid)
+        await validate_categories_exist(db, data.category_ids)
+
     if data.location_id is not None:
-        await get_location_by_id(db, data.location_id)
+        await validate_location_exists(db, data.location_id)
 
     update_data = data.model_dump(exclude_unset=True)
 

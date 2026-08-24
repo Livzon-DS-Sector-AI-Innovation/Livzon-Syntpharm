@@ -9,6 +9,7 @@ import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/t
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
+<<<<<<< HEAD:frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx
 import { StatsCards } from '@/components/equipment/StatsCards'
 import { EquipmentTable } from '@/components/equipment/EquipmentTable'
 import { CategoryTree } from '@/components/equipment/CategoryTree'
@@ -16,6 +17,15 @@ import { LocationTree } from '@/components/equipment/LocationTree'
 import { EquipmentDrawer } from '@/components/equipment/EquipmentDrawer'
 import { LocationDrawer } from '@/components/equipment/LocationDrawer'
 import { RepairDrawer } from '@/components/equipment/RepairDrawer'
+import { StatsCards } from './StatsCards'
+import { EquipmentTable } from './EquipmentTable'
+import { CategoryTree } from './CategoryTree'
+import { LocationTree } from './LocationTree'
+import { EquipmentDrawer } from './EquipmentDrawer'
+import { LocationDrawer } from './LocationDrawer'
+import { RepairDrawer } from './RepairDrawer'
+import { FilterSummary } from './FilterSummary'
+>>>>>>> 090aac34 (feat(equipment): 修复筛选失效并添加筛选摘要组件):frontend/src/components/equipment/EquipmentPage.tsx
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
@@ -48,6 +58,7 @@ export function EquipmentPage({
     departmentFilter,
     departments,
     keyword,
+    total,
     loading,
     setSelectedCategory,
     setSelectedLocation,
@@ -62,15 +73,20 @@ export function EquipmentPage({
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  const [initialized, setInitialized] = useState(false)
 
-  // 初始化 store 数据（包含 SSR 数据）
+
+  // 初始化 store 数据（包含 SSR 数据）- 只在首次加载时执行
   useEffect(() => {
-    setCategories(initialCategories)
-    setLocations(initialLocations)
-    setEquipments(initialEquipments)
-    setTotal(initialTotal)
-    setStatistics(initialStatistics)
-  }, [initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
+    if (!initialized) {
+      setCategories(initialCategories)
+      setLocations(initialLocations)
+      setEquipments(initialEquipments)
+      setTotal(initialTotal)
+      setStatistics(initialStatistics)
+      setInitialized(true)
+    }
+  }, [initialized, initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
 
   // 初始化部门列表（服务端数据）
   useEffect(() => {
@@ -213,6 +229,18 @@ export function EquipmentPage({
         <div style={{ marginBottom: 16 }}>
           <StatsCards statistics={currentStats} />
         </div>
+
+        {/* 筛选摘要 */}
+        <FilterSummary
+          selectedLocation={selectedLocation}
+          selectedCategory={selectedCategory}
+          departmentFilter={departmentFilter}
+          statusFilter={statusFilter}
+          total={total}
+          locations={locations}
+          categories={categories}
+          departments={departments}
+        />
 
         <div className="flex gap-4" style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
           {/* 左侧：可折叠分类/位置树 */}
