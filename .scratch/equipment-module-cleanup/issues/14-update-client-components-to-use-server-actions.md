@@ -4,11 +4,11 @@
 
 **Blocked by:** 12: Move write operations to Server Actions
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Client components call batch delete Server Action
-- [ ] Client components call import Server Action
-- [ ] No direct API calls for write operations from client components
-- [ ] All write operations go through Server Actions
-- [ ] UI behavior unchanged
-- [ ] Tests verify Server Actions are called correctly
+- [x] Client components call batch delete Server Action
+- [x] Client components call import Server Action
+- [x] No direct API calls for write operations from client components
+- [x] All write operations go through Server Actions
+- [x] UI behavior unchanged
+- [x] Tests verify Server Actions are called correctly
