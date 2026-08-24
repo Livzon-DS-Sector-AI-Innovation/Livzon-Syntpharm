@@ -428,13 +428,17 @@ export type InspectionTemplateItem = InspectionTemplateItemResponse
  */
 export interface MaintenancePlanResponse {
   id: string
-  equipment_id: string
+  equipment_id: string | null
+  category_id: string | null
+  category_name?: string | null
   plan_name: string
   plan_type: string
   frequency: number
   frequency_unit: string
   last_maintenance_date: string | null
   next_maintenance_date: string | null
+  executor_id: string | null
+  executor_name?: string | null
   responsible_person_id: string | null
   maintenance_content: string | null
   status: string
@@ -443,6 +447,8 @@ export interface MaintenancePlanResponse {
   updated_at: string
   created_by: string | null
   updated_by: string | null
+  equipment_name?: string
+  asset_no?: string
 }
 
 /**
@@ -450,7 +456,9 @@ export interface MaintenancePlanResponse {
  */
 export interface MaintenancePlanFilters {
   equipment_id?: string
+  category_id?: string
   status?: string
+  keyword?: string
   date_from?: string
   date_to?: string
   page?: number
@@ -530,3 +538,106 @@ export interface InspectionRecordItemResponse {
 
 /** @deprecated Use InspectionRecordItemResponse instead */
 export type InspectionRecordItem = InspectionRecordItemResponse
+
+// ============================================================================
+// List Response Types (paginated responses)
+// ============================================================================
+
+export interface CalibrationPlanListResponse {
+  items: CalibrationPlanResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface CalibrationRecordListResponse {
+  items: CalibrationRecordResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface MaintenancePlanListResponse {
+  items: MaintenancePlanResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface InspectionTemplateListResponse {
+  items: InspectionTemplateResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface CalibrationRecordFilters {
+  equipment_id?: string
+  plan_id?: string
+  calibration_type?: string
+  page?: number
+  page_size?: number
+}
+
+export interface EquipmentListResponse {
+  items: EquipmentResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface WorkOrderListResponse {
+  items: WorkOrderResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface SparePartListResponse {
+  items: SparePartResponse[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface SparePartStockResponse {
+  spare_part_id: string
+  current_stock: number
+  stock_in: number
+  stock_out: number
+}
+
+export interface ClaimTimeoutConfig {
+  emergency: number
+  high: number
+  medium: number
+  low: number
+}
+
+export interface Maintainer {
+  id: string
+  name: string
+  employee_id?: string
+}
+
+export interface WorkOrderImage {
+  id: string
+  work_order_id: string
+  image_url: string
+  uploaded_at: string
+}
+
+// ============================================================================
+// Status/Priority/Type Enums (as string literal types)
+// ============================================================================
+
+export type EquipmentStatus = '在用' | '备用' | '维修中' | '报废'
+export type WorkOrderStatus = '待处理' | '进行中' | '已完成' | '已关闭'
+export type WorkOrderPriority = '紧急' | '高' | '中' | '低'
+export type WorkOrderType = '故障维修' | '预防性维护' | '改善维修' | '其他'
+export type CalibrationPlanStatus = '待执行' | '进行中' | '已完成' | '已过期'
+export type MaintenancePlanStatus = '待执行' | '进行中' | '已完成' | '已过期'
+export interface DepartmentOption {
+  id: string
+  name: string
+}
