@@ -267,7 +267,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
           <Descriptions.Item label="归属部门">{equipment.department_name || '-'}</Descriptions.Item>
           <Descriptions.Item label="负责人">{equipment.responsible_person_name || '-'}</Descriptions.Item>
           <Descriptions.Item label="设备状态">
-            <span style={EQUIP_STATUS_MAP[equipment.status] || pillNeutral}>{equipment.status}</span>
+            <span style={EQUIP_STATUS_MAP[equipment.status as EquipmentStatus] || pillNeutral}>{equipment.status}</span>
           </Descriptions.Item>
           <Descriptions.Item label="资产类别说明">{equipment.category_description || '-'}</Descriptions.Item>
           <Descriptions.Item label="数量">

@@ -54,6 +54,11 @@ export interface EquipmentCategoryResponse {
   code: string
   parent_id: string | null
   description: string | null
+  current_cost: number | null
+  book_value: number | null
+  warranty_expire_date: string | null
+  depreciation_years: number | null
+  technical_params: Record<string, unknown> | null
   created_at: string
   updated_at: string
   created_by: string | null
@@ -78,6 +83,11 @@ export interface LocationResponse {
   code: string
   parent_id: string | null
   description: string | null
+  current_cost: number | null
+  book_value: number | null
+  warranty_expire_date: string | null
+  depreciation_years: number | null
+  technical_params: Record<string, unknown> | null
   created_at: string
   updated_at: string
   created_by: string | null
@@ -103,7 +113,10 @@ export interface EquipmentResponse {
   equipment_class: string
   category_description: string | null
   category_ids: string[]
+  category_names?: string | null
   location_id: string | null
+  location_text: string | null
+  location_name?: string | null
   status: string
   importance: string
   model: string | null
@@ -129,6 +142,8 @@ export interface EquipmentResponse {
   label_no: string | null
   scrap_status: string | null
   scrap_time: string | null
+  category?: EquipmentCategoryResponse
+  location?: LocationResponse
 }
 
 /**
@@ -140,6 +155,8 @@ export interface FailureCodeResponse {
   name: string
   type: string
   description: string | null
+  sort_order?: number
+  is_active?: boolean
   created_at: string
   updated_at: string
 }
@@ -153,13 +170,19 @@ export interface SparePartResponse {
   name: string
   specification: string | null
   unit: string
-  stock_quantity: number
-  min_stock: number
-  max_stock: number
+  category: string | null
+  default_supplier: string | null
+  unit_price: number | null
+  is_active: boolean
+  current_qty?: number
+  min_qty?: number
+  max_qty?: number
   location: string | null
   equipment_ids: string[]
   created_at: string
   updated_at: string
+  created_by: string | null
+  updated_by: string | null
 }
 
 /**
@@ -167,18 +190,45 @@ export interface SparePartResponse {
  */
 export interface WorkOrderResponse {
   id: string
-  order_no: string
+  work_order_no: string
   equipment_id: string
-  equipment_name: string
-  fault_type: string
-  fault_description: string
+  equipment_name?: string
+  asset_no?: string
+  order_type: string
   priority: string
   status: string
+  fault_symptom_id: string | null
+  fault_cause_id: string | null
+  fault_action_id: string | null
+  fault_description: string | null
+  reporter_id: string | null
   assignee_id: string | null
-  assignee_name: string | null
+  assignee_name?: string
+  verified_by: string | null
+  reported_at: string
+  assigned_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  verified_at: string | null
+  verification_result: string | null
+  verification_remark: string | null
+  repair_detail: string | null
+  actual_duration: number | null
+  original_equipment_status: string | null
+  maintenance_plan_id: string | null
+  planned_start_date: string | null
+  checklist_template_id: string | null
+  check_result: string | null
+  spare_parts_cost: number | null
+  responsible_person_id?: string | null
+  symptom_name?: string | null
+  reporter_name?: string | null
+  responsible_person_name?: string | null
+  images?: Array<{id: string, url: string, file_name?: string}> | null
   created_at: string
   updated_at: string
-  completed_at: string | null
+  created_by: string | null
+  updated_by: string | null
 }
 
 /**
@@ -187,13 +237,23 @@ export interface WorkOrderResponse {
 export interface CalibrationPlanResponse {
   id: string
   equipment_id: string
-  equipment_name: string
-  plan_date: string
-  actual_date: string | null
+  equipment_name?: string
+  asset_no?: string
+  calibration_type: string
+  cycle_months: number
+  last_calibration_date: string | null
+  next_calibration_date: string | null
+  responsible_person_id: string | null
+  responsible_person_name?: string
   status: string
-  result: string | null
+  remark: string | null
+  plan_date?: string
+  actual_date?: string
+  result?: string
   created_at: string
   updated_at: string
+  created_by: string | null
+  updated_by: string | null
 }
 
 /**
@@ -204,9 +264,14 @@ export interface InspectionTemplateResponse {
   name: string
   description: string | null
   equipment_category_id: string | null
+  equipment_category_name?: string | null
+  is_active: boolean
+  items_count: number
   items: InspectionTemplateItemResponse[]
   created_at: string
   updated_at: string
+  created_by: string | null
+  updated_by: string | null
 }
 
 /**
@@ -215,7 +280,10 @@ export interface InspectionTemplateResponse {
 export interface InspectionTemplateItemResponse {
   id: string
   template_id: string
-  name: string
+  item_name: string
+  item_description: string | null
+  expected_result: string | null
+  check_method?: string | null
   standard: string | null
   method: string | null
   sort_order: number
@@ -246,7 +314,6 @@ export interface EquipmentFilters {
   keyword?: string
   page?: number
   page_size?: number
-  is_active?: boolean
 }
 
 /**
@@ -261,19 +328,19 @@ export interface WorkOrderFilters {
   exclude_status?: string
   page?: number
   page_size?: number
-  is_active?: boolean
 }
 
 /**
  * Spare part filters
  */
 export interface SparePartFilters {
-  category?: string
   keyword?: string
   equipment_id?: string
+  category?: string
+  is_active?: boolean
+  low_stock?: boolean
   page?: number
   page_size?: number
-  is_active?: boolean
 }
 
 /**
@@ -286,7 +353,6 @@ export interface CalibrationPlanFilters {
   date_to?: string
   page?: number
   page_size?: number
-  is_active?: boolean
 }
 
 /**
@@ -324,3 +390,35 @@ export interface WorkOrderStatistics {
   by_priority: Record<string, number>
   overdue?: number
 }
+
+// ============================================================================
+// Legacy Type Aliases (for backward compatibility during migration)
+// These map old hand-written type names to the new bridge types
+// ============================================================================
+
+/** @deprecated Use EquipmentCategoryTree instead */
+export type EquipmentCategory = EquipmentCategoryTree
+
+/** @deprecated Use LocationTree instead */
+export type Location = LocationTree
+
+/** @deprecated Use EquipmentResponse instead */
+export type Equipment = EquipmentResponse
+
+/** @deprecated Use FailureCodeResponse instead */
+export type FailureCode = FailureCodeResponse
+
+/** @deprecated Use SparePartResponse instead */
+export type SparePart = SparePartResponse
+
+/** @deprecated Use WorkOrderResponse instead */
+export type WorkOrder = WorkOrderResponse
+
+/** @deprecated Use CalibrationPlanResponse instead */
+export type CalibrationPlan = CalibrationPlanResponse
+
+/** @deprecated Use InspectionTemplateResponse instead */
+export type InspectionTemplate = InspectionTemplateResponse
+
+/** @deprecated Use InspectionTemplateItemResponse instead */
+export type InspectionTemplateItem = InspectionTemplateItemResponse
