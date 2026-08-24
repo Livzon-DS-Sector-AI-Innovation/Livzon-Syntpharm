@@ -33,7 +33,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
     fetchAllUsersClient().then((list: any[]) => {
       setAllUsers(list)
       // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
-      if (editingMaintenancePlan?.executor_id) {
+      if (editingMaintenancePlan?.responsible_person_id) {
         form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
       }
     }).catch(() => {})
