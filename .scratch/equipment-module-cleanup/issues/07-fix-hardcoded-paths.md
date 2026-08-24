@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** completed
+**Status:** ready-for-agent
 
-- [x] No hardcoded absolute paths in backend scripts
-- [x] All scripts use Path(__file__).parent or relative paths
-- [x] Scripts work across different environments and developers
-- [x] No /home/zhuangweizi/... paths remain
+- [ ] No hardcoded absolute paths in backend scripts
+- [ ] All scripts use Path(__file__).parent or relative paths
+- [ ] Scripts work across different environments and developers
+- [ ] No /home/zhuangweizi/... paths remain
