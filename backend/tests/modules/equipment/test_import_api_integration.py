@@ -1,14 +1,18 @@
 """Integration tests for equipment import v3 API endpoints."""
 
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from fastapi import FastAPI
 from httpx import ASGITransport
 
+from app import main as app_main
 from app.core.database import get_db
-from app.main import app as fastapi_app
+
+# Cast to FastAPI to help mypy understand the type
+app_instance = cast(FastAPI, app_main.app)
 
 
 class MockDB:
@@ -37,7 +41,7 @@ class MockDB:
 @pytest.mark.asyncio
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
-    fastapi_app.dependency_overrides[get_db] = lambda: db
+    app_instance.dependency_overrides[get_db] = lambda: db
 
     data = [
         {
@@ -51,7 +55,7 @@ async def test_preview_returns_inferred_fields() -> None:
         }
     ]
 
-    transport = ASGITransport(app=fastapi_app)
+    transport = ASGITransport(app=app_instance)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post("/api/v1/equipment/equipments/import/preview", json=data)
 
@@ -65,13 +69,13 @@ async def test_preview_returns_inferred_fields() -> None:
     assert item["technical_params"]["数量"] == 2
     assert item["department_name"] == "质量控制部"
 
-    fastapi_app.dependency_overrides.clear()
+    app_instance.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
 async def test_batch_import_handles_null_department() -> None:
     db = MockDB()
-    fastapi_app.dependency_overrides[get_db] = lambda: db
+    app_instance.dependency_overrides[get_db] = lambda: db
 
     data = [{"资产编号": "TEST002", "资产说明": "未知部门设备", "实物所在部门": "火星分部", "当前成本": 5000}]
 
@@ -79,7 +83,7 @@ async def test_batch_import_handles_null_department() -> None:
         mock_repo.get_equipment_by_asset_no = AsyncMock(return_value=None)
         mock_repo.create_equipment = AsyncMock()
 
-        transport = ASGITransport(app=fastapi_app)
+        transport = ASGITransport(app=app_instance)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.post("/api/v1/equipment/equipments/import/batch", json=data)
 
@@ -91,4 +95,4 @@ async def test_batch_import_handles_null_department() -> None:
         assert call_args["department_id"] is None
         assert call_args["technical_params"] is None  # No quantity provided
 
-    fastapi_app.dependency_overrides.clear()
+    app_instance.dependency_overrides.clear()
