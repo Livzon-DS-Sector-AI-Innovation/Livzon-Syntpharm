@@ -517,3 +517,16 @@ export interface StockWarningResponse {
 
 /** @deprecated Use StockWarningResponse instead */
 export type StockWarning = StockWarningResponse
+
+/**
+ * Inspection record item
+ */
+export interface InspectionRecordItemResponse {
+  item_id: string
+  result: string
+  actual_value?: string
+  remark?: string
+}
+
+/** @deprecated Use InspectionRecordItemResponse instead */
+export type InspectionRecordItem = InspectionRecordItemResponse

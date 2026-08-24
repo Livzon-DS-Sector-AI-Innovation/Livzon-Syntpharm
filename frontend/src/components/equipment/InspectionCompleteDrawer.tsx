@@ -5,7 +5,7 @@ import { App, Drawer, Form, Input, Select, Button, Space, Table, Typography } fr
 import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { completeInspection } from '@/actions/equipment'
-import { InspectionRecordItem, InspectionTemplateItem } from '@/types/equipment'
+import { InspectionRecordItem, InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography
 
