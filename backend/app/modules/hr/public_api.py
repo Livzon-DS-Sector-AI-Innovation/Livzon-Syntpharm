@@ -182,9 +182,7 @@ async def get_distinct_employee_values(
     return await repo.get_distinct_values(field, **normalized)  # type: ignore[no-any-return]
 
 
-async def get_department_by_name(
-    session: AsyncSession, name: str
-) -> HrDepartment | None:
+async def get_department_by_name(session: AsyncSession, name: str) -> HrDepartment | None:
     """Get a department by its exact name.
 
     Args:
