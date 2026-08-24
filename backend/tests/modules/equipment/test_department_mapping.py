@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.modules.hr.models import HrDepartment
+
 
 def _extract_param_values(stmt: Any) -> str:
     """Extract all parameter values from a SQLAlchemy statement as a string for matching."""
@@ -35,7 +37,7 @@ class MockDB:
 
 def create_mock_department(dept_id: str, name: str) -> MagicMock:
     """Create a mock HrDepartment object."""
-    mock_dept = MagicMock()
+    mock_dept = MagicMock(spec=HrDepartment)
     mock_dept.id = dept_id
     mock_dept.name = name
     return mock_dept
