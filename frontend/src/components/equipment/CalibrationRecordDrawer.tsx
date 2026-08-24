@@ -5,7 +5,8 @@ import { App, Drawer, Form, Input, Select, DatePicker, Button, Space } from 'ant
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createCalibrationRecord } from '@/actions/equipment'
-import { CreateCalibrationRecordInput, CalibrationPlan } from '@/types/equipment'
+import { CalibrationPlan } from '@/types/equipment/generated-bridge'
+import { CreateCalibrationRecordInput } from '@/types/equipment'
 
 const { TextArea } = Input
 
