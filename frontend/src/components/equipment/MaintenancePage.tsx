@@ -7,7 +7,7 @@ import { PlusOutlined } from '@ant-design/icons'
 import {
   Equipment, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,
   MaintenancePlan,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import {

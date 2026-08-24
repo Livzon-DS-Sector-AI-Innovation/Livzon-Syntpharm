@@ -459,3 +459,28 @@ export interface MaintenancePlanFilters {
 
 /** @deprecated Use MaintenancePlanResponse instead */
 export type MaintenancePlan = MaintenancePlanResponse
+
+/**
+ * Calibration record response
+ */
+export interface CalibrationRecordResponse {
+  id: string
+  calibration_plan_id: string
+  equipment_id: string
+  calibration_date: string
+  calibration_type: string
+  result: string
+  certificate_no: string | null
+  calibrated_by: string | null
+  next_due_date: string
+  remark: string | null
+  created_at: string
+  updated_at: string
+  created_by: string | null
+  updated_by: string | null
+  equipment_name?: string
+  asset_no?: string
+}
+
+/** @deprecated Use CalibrationRecordResponse instead */
+export type CalibrationRecord = CalibrationRecordResponse
