@@ -35,17 +35,14 @@ services:
       FRONTEND_URL: http://127.0.0.1:13000
       APP_ENV: e2e
       E2E_AUTH_SECRET: e2e-test-secret
-    command: 'sh -c "uv run --no-dev alembic upgrade head && uv run --no-dev uvicorn
+    command: 'sh -c "/app/.venv/bin/alembic upgrade head && /app/.venv/bin/uvicorn
       app.main:app --host 0.0.0.0 --port 8000 --workers 1"
 
       '
     healthcheck:
       test:
       - CMD
-      - uv
-      - run
-      - --no-dev
-      - python
+      - /app/.venv/bin/python
       - -c
       - import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready',
         timeout=2)
