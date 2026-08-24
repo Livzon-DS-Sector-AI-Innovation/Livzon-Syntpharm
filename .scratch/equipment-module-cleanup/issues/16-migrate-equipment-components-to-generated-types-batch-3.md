@@ -4,11 +4,11 @@
 
 **Blocked by:** 15: Migrate equipment components to generated types (batch 2)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Spare parts components use generated types
-- [ ] Work order components use generated types
-- [ ] Failure code components use generated types
-- [ ] All components type-check without errors
-- [ ] No runtime errors from type mismatches
-- [ ] Both old and new types coexist (expand phase)
+- [x] Spare parts components use generated types
+- [x] Work order components use generated types
+- [x] Failure code components use generated types
+- [x] All components type-check without errors
+- [x] No runtime errors from type mismatches
+- [x] Both old and new types coexist (expand phase)
