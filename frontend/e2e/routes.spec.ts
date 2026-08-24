@@ -67,6 +67,10 @@ async function checkRoute(page: Page, route: RouteCase) {
       timeout: 30_000,
     })
 
+    // Clear any errors from late responses of the previous page
+    httpErrors.length = 0
+    networkFailures.length = 0
+
     if (route.kind === 'redirect') {
       expect(response).not.toBeNull()
       expect(response!.status()).toBeLessThan(400)

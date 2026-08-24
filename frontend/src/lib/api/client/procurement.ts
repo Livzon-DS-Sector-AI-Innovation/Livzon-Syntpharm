@@ -94,3 +94,42 @@ function parseDownloadFilename(contentDisposition: string | null) {
   const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i)
   return asciiMatch?.[1] ?? '采购订单.xlsx'
 }
+
+export async function fetchSuppliers(
+  params: { keyword?: string; supplier_name?: string; material_name?: string; purchase_category?: string; page?: number; page_size?: number } = {}
+): Promise<import('@/types/procurement').SupplierListResponse> {
+  const searchParams = new URLSearchParams()
+  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.supplier_name) searchParams.set('supplier_name', params.supplier_name)
+  if (params.material_name) searchParams.set('material_name', params.material_name)
+  if (params.purchase_category) searchParams.set('purchase_category', params.purchase_category)
+  if (params.page) searchParams.set('page', String(params.page))
+  if (params.page_size) searchParams.set('page_size', String(params.page_size))
+  const qs = searchParams.toString()
+  return apiGet(`/api/v1/procurement/suppliers${qs ? `?${qs}` : ''}`)
+}
+
+export async function fetchContractRecords(
+  params: { keyword?: string; supplier_name?: string; material_name?: string; purchase_category?: string; page?: number; page_size?: number } = {}
+): Promise<import('@/types/procurement').ContractRecordListResponse> {
+  const searchParams = new URLSearchParams()
+  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.supplier_name) searchParams.set('supplier_name', params.supplier_name)
+  if (params.material_name) searchParams.set('material_name', params.material_name)
+  if (params.purchase_category) searchParams.set('purchase_category', params.purchase_category)
+  if (params.page) searchParams.set('page', String(params.page))
+  if (params.page_size) searchParams.set('page_size', String(params.page_size))
+  const qs = searchParams.toString()
+  return apiGet(`/api/v1/procurement/contracts${qs ? `?${qs}` : ''}`)
+}
+
+export async function fetchContractRecord(id: string): Promise<{ data: import('@/types/procurement').ContractRecordResponse }> {
+  const data = await apiGet(`/api/v1/procurement/contracts/${id}`)
+  return { data: data as any }
+}
+
+export async function fetchContractFile(id: string, filename: string): Promise<{ blob: Blob; filename: string }> {
+  const response = await fetch(`/api/v1/procurement/contracts/${id}/files/${filename}`)
+  const blob = await response.blob()
+  return { blob, filename }
+}
