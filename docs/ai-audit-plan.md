@@ -1113,7 +1113,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | `asyncio.create_task()` allowed in long-running background worker processes for heartbeats, event dispatch, and infrastructure tasks. | 异步任务 — 禁止 asyncio.create_task() | 7 |
 | Soft delete default; physical delete allowed "除非需求明确要求" (when requirements explicitly require). | API 规范 — 强制软删除 | 4 |
 | SSE/ReadableStream streaming responses and upload progress tracking allowed to use direct fetch in `lib/api/client/`. | 写操作必须用 Server Actions | 10 |
-| `'use server'` files may re-export types from `types/` via `export type { ... } from '@/types/...'` (not defining types directly). | `'use server'` 文件禁止 export type/interface | 10 |
+| Types may be defined in `'use server'` files when they are not duplicated in `types/` and are only used within that specific action file (not imported by other files). | Type definition placement | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
 | FormData / file upload may use custom `uploadFetch<T>()` (`apiFetch` sets `Content-Type: application/json`, breaking multipart). | apiFetch 一致性 — 自定义 apiFetch | 10 |
