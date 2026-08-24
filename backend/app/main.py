@@ -250,7 +250,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 from fastmcp.utilities.lifespan import combine_lifespans  # noqa: E402
 
-app = FastAPI(
+app: FastAPI = FastAPI(
     title=settings.APP_NAME,
     description="原料药事业部工厂基座系统",
     version="0.1.0",

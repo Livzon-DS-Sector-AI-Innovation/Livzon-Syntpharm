@@ -1,5 +1,7 @@
 """Integration tests for equipment import v3 API endpoints."""
 
+import json
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,10 +11,10 @@ from app.modules.equipment.api.batch_import import batch_import, preview_import
 
 class MockDB:
     def __init__(self) -> None:
-        self.executed_sql = []
-        self.committed = False
+        self.executed_sql: list[str] = []
+        self.committed: bool = False
 
-    async def execute(self, stmt) -> None:
+    async def execute(self, stmt: Any) -> MagicMock:
         self.executed_sql.append(str(stmt))
         mock_result = MagicMock()
         if "质量控制部" in str(stmt):
@@ -45,8 +47,9 @@ async def test_preview_returns_inferred_fields() -> None:
         }
     ]
 
-    result = await preview_import(data, db)
-    item = result["data"]["items"][0]
+    result = await preview_import(data, db)  # type: ignore[arg-type]
+    result_data = json.loads(result.body)
+    item = result_data["data"]["items"][0]
 
     assert item["equipment_class"] == "A"
     assert item["importance"] == "高"
@@ -64,9 +67,10 @@ async def test_batch_import_handles_null_department() -> None:
         mock_repo.get_equipment_by_asset_no = AsyncMock(return_value=None)
         mock_repo.create_equipment = AsyncMock()
 
-        result = await batch_import(data, db)
+        result = await batch_import(data, db)  # type: ignore[arg-type]
+        result_data = json.loads(result.body)
 
-        assert result["data"]["created_count"] == 1
+        assert result_data["data"]["created_count"] == 1
         call_args = mock_repo.create_equipment.call_args[0][1]
         assert call_args["department_id"] is None
         assert call_args["technical_params"] is None  # No quantity provided
