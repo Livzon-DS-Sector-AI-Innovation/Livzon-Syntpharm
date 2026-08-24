@@ -2121,7 +2121,7 @@ _None._
 
 ---
 
-### PR #39: Infrastructure and documentation updates (base: be9ad5, head: 760bc2a, date: 2026-08-24)
+### PR #39: Infrastructure and documentation updates (base: be9ad5, head: 37d25a0c, date: 2026-08-24)
 
 **Changed files (30):**
 - Deleted: 4 files in `.requirements/`
@@ -2203,7 +2203,7 @@ _None._
 | Rules evaluated | 8 (all Q1-Q8) |
 | Rules not evaluated | 0 |
 | Confirmed findings | 0 |
-| Uncertain findings | 1 |
+| Uncertain findings | 0 (1 resolved) |
 
 **Analysis:**
 - `docker-compose.dev.yml` correctly specifies `target: dev` for frontend
@@ -2216,7 +2216,7 @@ _None._
 
 **Uncertain:**
 ```
-README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubuntu 20+" (line 29) but deployment steps still say "Ubuntu 22.04 LTS" (line 37) — severity: low
+README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubuntu 20+" (line 29) but deployment steps still say "Ubuntu 22.04 LTS" (line 37) — severity: low — **RESOLVED** (commit 37d25a0c)
 ```
 
 #### Category 14: E2E
@@ -2243,8 +2243,8 @@ README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubu
 | 1. Repository layout | 0 | 0 | — |
 | 2. Secrets and hardcoded values | 0 | 0 | — |
 | 6. Configuration and logging | 0 | 0 | — |
-| 13. Docker and deployment | 0 | 1 | low |
+| 13. Docker and deployment | 0 | 0 | — (1 resolved) |
 | 14. E2E | 0 | 0 | — |
-| **Total** | **0** | **1** | **1 low** |
+| **Total** | **0** | **0** | **✅ All resolved** |
 
 **Status: ✅ COMPLETE — No blocking issues**
