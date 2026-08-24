@@ -11,6 +11,7 @@ from httpx import ASGITransport
 from app import main as app_main
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.modules.hr.models import HrDepartment
 
 # Cast to FastAPI to help mypy understand the type
 app_instance = cast(FastAPI, app_main.app)
@@ -50,6 +51,14 @@ class MockDB:
         pass
 
 
+def create_mock_department(dept_id: str, name: str) -> MagicMock:
+    """Create a mock HrDepartment object."""
+    mock_dept = MagicMock(spec=HrDepartment)
+    mock_dept.id = dept_id
+    mock_dept.name = name
+    return mock_dept
+
+
 @pytest.mark.asyncio
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
@@ -70,19 +79,26 @@ async def test_preview_returns_inferred_fields() -> None:
         }
     ]
 
-    transport = ASGITransport(app=app_instance)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post("/api/v1/equipment/equipments/import/preview", json=data)
+    mock_dept = create_mock_department("uuid-quality", "质量控制部")
 
-    assert response.status_code == 200
-    result_data = response.json()
-    item = result_data["data"]["items"][0]
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
+        mock_repo = MagicMock()
+        mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
+        mock_repo_class.return_value = mock_repo
 
-    assert item["equipment_class"] == "A"
-    assert item["importance"] == "高"
-    assert item["status"] == "在用"
-    assert item["technical_params"]["数量"] == 2
-    assert item["department_name"] == "质量控制部"
+        transport = ASGITransport(app=app_instance)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post("/api/v1/equipment/equipments/import/preview", json=data)
+
+        assert response.status_code == 200
+        result_data = response.json()
+        item = result_data["data"]["items"][0]
+
+        assert item["equipment_class"] == "A"
+        assert item["importance"] == "高"
+        assert item["status"] == "在用"
+        assert item["technical_params"]["数量"] == 2
+        assert item["department_name"] == "质量控制部"
 
     app_instance.dependency_overrides.clear()
 
