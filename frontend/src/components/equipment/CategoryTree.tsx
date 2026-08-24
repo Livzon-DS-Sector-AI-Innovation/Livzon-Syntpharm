@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { App, Button, Space, Popconfirm, Empty, Tooltip } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { EquipmentCategory } from '@/types/equipment'
+import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { CategoryEditor } from './CategoryEditor'
 import { deleteCategory } from '@/actions/equipment'
