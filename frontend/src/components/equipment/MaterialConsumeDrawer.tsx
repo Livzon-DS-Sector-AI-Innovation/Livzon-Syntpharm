@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { App, Drawer, Form, Select, InputNumber, Button, Space, Empty } from 'antd'
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import { consumeMaterials } from '@/actions/equipment'
-import { MaterialConsumeInput, SparePart } from '@/types/equipment'
+import { SparePart } from '@/types/equipment/generated-bridge'
+import { MaterialConsumeInput } from '@/types/equipment'
 
 interface MaterialConsumeDrawerProps {
   workOrderId: string
