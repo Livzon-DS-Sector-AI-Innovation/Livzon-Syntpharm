@@ -34,7 +34,7 @@
 
 ### 第一步：准备 Ubuntu 系统
 
-1. 准备一台服务器或虚拟机，安装 Ubuntu 22.04 LTS 或更高版本
+1. 准备一台服务器或虚拟机，安装 Ubuntu 20 LTS 或更高版本
 2. 确保系统已更新：
    ```bash
    sudo apt update && sudo apt upgrade -y
