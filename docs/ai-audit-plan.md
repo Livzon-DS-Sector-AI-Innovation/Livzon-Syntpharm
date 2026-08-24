@@ -822,7 +822,7 @@ Full audit
 - 所有 POST/PUT/DELETE 操作写在 `actions/` 目录
 - 禁止在 Client 组件里直接 fetch 写接口
 - 例外：流式响应（SSE/ReadableStream）或上传进度追踪，允许在 `lib/api/client/` 中直接 fetch
-- **禁止 `'use server'` 文件使用 `export type` 或 `export interface`**（Turbopack Server Actions loader 会导致运行时 `ReferenceError`）。类型定义必须放在 `types/` 中
+- **避免在 `'use server'` 文件中定义类型**（`export type` 或 `export interface`）。类型定义应集中在 `types/` 目录中，以防止重复定义和类型不一致。
 
 **类型系统 / API 类型来源:**
 - 所有 API 相关的类型（请求参数、响应数据）必须从 `@/types/generated/schema` 导入
@@ -858,7 +858,7 @@ Full audit
 5. Is Zod being used for simple form validation (where Ant Design Form `rules` would be appropriate)?
 6. Are generated types (`@/types/generated/schema.ts`) committed and up to date with the backend?
 7. Is the `types/generated/` directory free of manual edits?
-8. Do any `'use server'` files in `actions/` contain `export type` or `export interface` statements?
+8. Are there duplicate type definitions across `actions/` and `types/`? Are action return types consistent with the types that components import?
 9. Are there any duplicate `getApiBaseUrl()` implementations in `lib/api/server/` files other than `base.ts`? (Only `base.ts` may define this function.)
 10. Are there any custom `apiFetch` implementations (function named `apiFetch` with fetch logic) in `lib/api/server/` files other than `base.ts`? Note: `safeApiFetch` and `apiFetchPaginated` in `base.ts` are canonical first-class exports, not custom `apiFetch` violations.
 11. Are there ad-hoc `.data` access patterns at call sites instead of using `unwrapResponse()`? (Patterns like `response.data`, `result?.data`, `(result as any)?.data`)
