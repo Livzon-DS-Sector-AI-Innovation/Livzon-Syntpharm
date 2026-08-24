@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Backend Dockerfile uses multi-stage build
-- [ ] Build stage includes all build dependencies
-- [ ] Runtime stage only includes runtime dependencies
-- [ ] Production image size < 200MB
-- [ ] Application still works correctly in multi-stage image
-- [ ] Build time is reasonable
+- [x] Backend Dockerfile uses multi-stage build
+- [x] Build stage includes all build dependencies
+- [x] Runtime stage only includes runtime dependencies
+- [x] Production image size < 200MB
+- [x] Application still works correctly in multi-stage image
+- [x] Build time is reasonable
