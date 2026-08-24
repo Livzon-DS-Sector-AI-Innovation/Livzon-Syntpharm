@@ -4,11 +4,11 @@
 
 **Blocked by:** 05: Expand generated types
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Equipment list page uses generated types
-- [ ] Equipment detail page uses generated types
-- [ ] Equipment form components use generated types
-- [ ] All components type-check without errors
-- [ ] No runtime errors from type mismatches
-- [ ] Both old and new types coexist (expand phase)
+- [x] Equipment list page uses generated types
+- [x] Equipment detail page uses generated types
+- [x] Equipment form components use generated types
+- [x] All components type-check without errors
+- [x] No runtime errors from type mismatches
+- [x] Both old and new types coexist (expand phase)
