@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.equipment import service
@@ -35,8 +35,8 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.post("/roles", summary="创建角色")
 async def create_role(
     data: RoleCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     role = await service.create_role(db, data)
@@ -45,12 +45,12 @@ async def create_role(
 
 @router.get("/roles", summary="角色列表")
 async def list_roles(
+    current_user: RequiredUser,
     scope: str | None = Query(None, description="作用域筛选"),
     is_active: bool | None = Query(None, description="启用状态筛选"),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     roles, total = await service.list_roles(
@@ -69,8 +69,8 @@ async def list_roles(
 @router.get("/roles/{role_id}", summary="角色详情")
 async def get_role(
     role_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     role = await service.get_role(db, role_id)
@@ -81,8 +81,8 @@ async def get_role(
 async def update_role(
     role_id: uuid.UUID,
     data: RoleUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     role = await service.update_role(db, role_id, data)
@@ -92,8 +92,8 @@ async def update_role(
 @router.delete("/roles/{role_id}", summary="删除角色")
 async def delete_role(
     role_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     await service.delete_role(db, role_id)
@@ -106,8 +106,8 @@ async def delete_role(
 @router.post("", summary="从身份系统添加人员")
 async def add_personnel(
     data: PersonnelAddRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     result = await service.add_personnel(db, data)
@@ -116,13 +116,13 @@ async def add_personnel(
 
 @router.get("", summary="人员列表")
 async def list_personnel(
+    current_user: RequiredUser,
     role_id: list[uuid.UUID] | None = Query(None, description="按角色 ID 筛选"),
     is_active: bool | None = Query(None, description="在岗状态筛选"),
     keyword: str | None = Query(None, description="姓名搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     result = await service.list_personnel(
@@ -145,13 +145,13 @@ async def list_personnel(
 
 @router.get("/candidates", summary="按角色查询可分配人员")
 async def get_candidates(
+    current_user: RequiredUser,
     role_codes: list[str] = Query(
         ...,
         description="角色编码列表，如 maintenance_tech",
     ),
     category_id: uuid.UUID | None = Query(None, description="设备分类ID（可选）"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     candidates = await service.get_candidates(
@@ -165,8 +165,8 @@ async def get_candidates(
 @router.get("/{personnel_id}", summary="人员详情")
 async def get_personnel(
     personnel_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.get_personnel(db, personnel_id)
@@ -177,8 +177,8 @@ async def get_personnel(
 async def update_personnel(
     personnel_id: uuid.UUID,
     data: PersonnelUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.update_personnel(db, personnel_id, data)
@@ -188,8 +188,8 @@ async def update_personnel(
 @router.delete("/{personnel_id}", summary="移除人员")
 async def delete_personnel(
     personnel_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     await service.delete_personnel(db, personnel_id)
@@ -200,8 +200,8 @@ async def delete_personnel(
 async def assign_roles(
     personnel_id: uuid.UUID,
     data: PersonnelRoleAssign,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.assign_roles(db, personnel_id, data)
@@ -212,8 +212,8 @@ async def assign_roles(
 async def update_roles(
     personnel_id: uuid.UUID,
     data: PersonnelRoleAssign,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.assign_roles(db, personnel_id, data)
@@ -224,8 +224,8 @@ async def update_roles(
 async def assign_categories(
     personnel_id: uuid.UUID,
     data: PersonnelCategoryAssign,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.update_categories(db, personnel_id, data)
@@ -236,8 +236,8 @@ async def assign_categories(
 async def update_categories(
     personnel_id: uuid.UUID,
     data: PersonnelCategoryAssign,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     person = await service.update_categories(db, personnel_id, data)
@@ -246,8 +246,8 @@ async def update_categories(
 
 @router.post("/refresh-feishu", summary="手动刷新飞书信息")
 async def refresh_feishu(
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     result = await service.refresh_feishu(db)

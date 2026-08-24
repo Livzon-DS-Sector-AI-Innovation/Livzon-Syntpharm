@@ -12,7 +12,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.response import success_response
 from app.modules.equipment import repository as repo
 
@@ -290,8 +290,8 @@ async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(
 @router.post("/batch", summary="执行批量导入")
 async def batch_import(
     data: list[dict[str, Any]],
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     created = 0
     skipped = 0

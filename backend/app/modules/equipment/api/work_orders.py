@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -74,8 +74,8 @@ router = APIRouter()
 @router.post("/", summary="创建工单（报修）")
 async def create_work_order(
     data: WorkOrderCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     reporter_id = _require_user(current_user)
     wo = await service.create_work_order(db, data, reporter_id)
@@ -86,8 +86,8 @@ async def create_work_order(
 async def update_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.update_work_order(db, work_order_id, data)
@@ -96,6 +96,7 @@ async def update_work_order(
 
 @router.get("/", summary="工单列表")
 async def list_work_orders(
+    current_user: RequiredUser,
     status: str | None = Query(None, description="工单状态"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     priority: str | None = Query(None, description="优先级"),
@@ -103,7 +104,6 @@ async def list_work_orders(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     work_orders, total = await service.get_work_orders(
@@ -125,8 +125,8 @@ async def list_work_orders(
 
 @router.get("/statistics", summary="工单统计")
 async def get_work_order_statistics(
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     stats = await service.get_work_order_statistics(db)
@@ -136,8 +136,8 @@ async def get_work_order_statistics(
 @router.get("/{work_order_id}", summary="工单详情")
 async def get_work_order(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.get_work_order_by_id(db, work_order_id)
@@ -148,8 +148,8 @@ async def get_work_order(
 async def assign_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderAssign,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.assign_work_order(db, work_order_id, data.assignee_id)
@@ -159,8 +159,8 @@ async def assign_work_order(
 @router.put("/{work_order_id}/start", summary="开始维修")
 async def start_work_order(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.start_work_order(db, work_order_id)
@@ -171,8 +171,8 @@ async def start_work_order(
 async def complete_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderComplete,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.complete_work_order(db, work_order_id, data)
@@ -183,8 +183,8 @@ async def complete_work_order(
 async def verify_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderVerify,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     verifier_id = _require_user(current_user)
     wo = await service.verify_work_order(db, work_order_id, verifier_id, data)
@@ -194,8 +194,8 @@ async def verify_work_order(
 @router.put("/{work_order_id}/close", summary="关闭工单")
 async def close_work_order(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.close_work_order(db, work_order_id)
@@ -206,8 +206,8 @@ async def close_work_order(
 async def consume_materials(
     work_order_id: uuid.UUID,
     data: MaterialConsumeRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     items = [item.model_dump() for item in data.items]
@@ -218,8 +218,8 @@ async def consume_materials(
 @router.get("/{work_order_id}/materials", summary="工单领料记录")
 async def get_material_consumptions(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     from app.modules.equipment import repository as repo
