@@ -15,7 +15,6 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import success_response
 from app.modules.equipment import repository as repo
-from app.modules.hr.models import HrDepartment
 
 router = APIRouter()
 
@@ -97,10 +96,10 @@ def get_column_value(row: dict[str, Any], field_name: str) -> Any:
 
 
 async def get_department_id_by_name(db: AsyncSession, dept_name: str) -> uuid.UUID | None:
-    from sqlalchemy import select
+    from app.modules.hr.public_api import get_department_by_name
 
-    result = await db.execute(select(HrDepartment.id).where(HrDepartment.name == dept_name, ~HrDepartment.is_deleted))
-    return result.scalar_one_or_none()
+    dept = await get_department_by_name(db, dept_name)
+    return dept.id if dept else None
 
 
 async def map_department_name_v3(excel_dept: str, db: AsyncSession) -> tuple[str | None, uuid.UUID | None]:

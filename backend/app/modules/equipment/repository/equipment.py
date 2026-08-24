@@ -13,7 +13,6 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
 
@@ -620,34 +619,25 @@ async def get_equipment_statistics(
 
 async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
     """获取可选部门列表（含负责人），供下拉使用"""
-    query = (
-        select(
-            HrDepartment.id.label("id"),
-            HrDepartment.name.label("name"),
-        )
-        .where(
-            HrDepartment.is_deleted == False,  # noqa: E712
-        )
-        .order_by(HrDepartment.name)
-    )
-    result = await db.execute(query)
-    rows = result.all()
-    return [dict(row._mapping) for row in rows]
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    # Sort by name and return as dicts
+    sorted_depts = sorted(departments, key=lambda d: d.name)
+    return [{"id": dept.id, "name": dept.name} for dept in sorted_depts]
 
 
 async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dict[str, Any] | None:
     """获取单个部门信息（含负责人姓名和 leader_id）
     注意：当前 HrDepartment 模型暂无负责人字段，暂时只返回基本信息
     """
-    query = select(
-        HrDepartment.id.label("id"),
-        HrDepartment.name.label("name"),
-    ).where(
-        HrDepartment.id == department_id,
-        HrDepartment.is_deleted == False,  # noqa: E712
-    )
-    result = await db.execute(query)
-    row = result.one_or_none()
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    dept = next((d for d in departments if d.id == department_id), None)
+    if not dept:
+        return None
+    row = {"id": dept.id, "name": dept.name}
     if row is None:
         return None
     d = dict(row._mapping)
