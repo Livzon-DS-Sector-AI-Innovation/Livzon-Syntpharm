@@ -1,3 +1,4 @@
+import { apiGet } from '@/lib/api/client'
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -96,9 +97,7 @@ export function EquipmentDrawer({ onRefresh, defaultDepartmentId }: EquipmentDra
       setStaffLoading(true)
       try {
         const params = new URLSearchParams({ limit: '50', keyword: value.trim() })
-        const resp = await fetch(`/api/v1/identity/personnel?${params}`)
-        if (!resp.ok) { setStaffOptions([]); return }
-        const json = await resp.json()
+        const json = await apiGet<{ data: { items: Record<string, unknown>[] } }>(`/api/v1/identity/personnel?${params}`)
         const items = (json.data?.items ?? []) as Record<string, unknown>[]
         setStaffOptions(items.map(u => ({
           label: `${String(u.name ?? '')}${u.department ? ` - ${String(u.department)}` : ''}${u.employee_no ? ` (${String(u.employee_no)})` : ''}`,

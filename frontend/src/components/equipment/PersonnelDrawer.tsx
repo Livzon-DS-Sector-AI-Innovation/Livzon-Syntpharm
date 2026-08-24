@@ -1,3 +1,4 @@
+import { apiGet } from '@/lib/api/client'
 'use client'
 
 import { useState } from 'react'
