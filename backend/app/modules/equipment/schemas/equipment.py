@@ -218,4 +218,5 @@ class EquipmentStatistics(BaseModel):
 
 class BatchDeleteRequest(BaseModel):
     """批量删除请求"""
+
     ids: list[uuid.UUID] = Field(..., min_length=1, description="设备ID列表")

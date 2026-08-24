@@ -1,6 +1,5 @@
 """设备批量导入功能测试."""
 
-import pytest
 from difflib import SequenceMatcher
 
 from app.modules.equipment.api.batch_import import (

@@ -1,6 +1,5 @@
 """Tests for smart inference logic in equipment import."""
 
-import pytest
 from app.modules.equipment.api.batch_import import (
     infer_equipment_class,
     infer_importance,

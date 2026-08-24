@@ -17,11 +17,11 @@ from app.modules.equipment.service.calibration import (
     update_calibration_plan,
 )
 from app.modules.equipment.service.equipment import (
+    batch_delete_equipments,
     create_equipment,
     create_equipment_category,
     create_location,
     delete_equipment,
-    batch_delete_equipments,
     delete_equipment_category,
     delete_location,
     generate_equipment_no,

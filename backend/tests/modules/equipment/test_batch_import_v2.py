@@ -1,8 +1,10 @@
 """设备导入 v2 功能测试 (TDD)."""
+
 import pytest
-import asyncio
+
 from app.core.database import async_session_factory
-from app.modules.equipment.api.batch_import import map_department_name_strict, DEPT_MAPPING_V2
+from app.modules.equipment.api.batch_import import DEPT_MAPPING_V2, map_department_name_strict
+
 
 def test_dept_mapping_v2_coverage():
     """测试映射表是否包含关键别名"""
@@ -10,6 +12,7 @@ def test_dept_mapping_v2_coverage():
     assert DEPT_MAPPING_V2["检验室"] == "质量控制部"
     assert "头孢合成一车间" in DEPT_MAPPING_V2
     assert DEPT_MAPPING_V2["头孢合成一车间"] == "201车间"
+
 
 @pytest.mark.asyncio
 async def test_map_department_strict_alias():
@@ -19,6 +22,7 @@ async def test_map_department_strict_alias():
         assert name == "质量控制部"
         assert dept_id is not None
 
+
 @pytest.mark.asyncio
 async def test_map_department_strict_workshop():
     """测试车间编号映射"""
@@ -27,6 +31,7 @@ async def test_map_department_strict_workshop():
         assert name == "201车间"
         assert dept_id is not None
 
+
 @pytest.mark.asyncio
 async def test_map_department_strict_special_format():
     """测试溶剂回收车间特殊格式归口"""
@@ -34,6 +39,7 @@ async def test_map_department_strict_special_format():
         name, dept_id = await map_department_name_strict("溶剂回收车间-404岗", db)
         assert name == "溶剂回收车间"
         assert dept_id is not None
+
 
 @pytest.mark.asyncio
 async def test_map_department_strict_nonexistent():

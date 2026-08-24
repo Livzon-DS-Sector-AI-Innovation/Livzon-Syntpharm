@@ -567,7 +567,7 @@ async def get_equipment_statistics(
     """获取设备统计（支持筛选）"""
     # 构建基础查询条件
     base_filter = Equipment.is_deleted == False  # noqa: E712
-    
+
     # 添加筛选条件
     if category_id:
         category_ids = await _get_category_child_ids(db, category_id)
@@ -586,24 +586,18 @@ async def get_equipment_statistics(
         base_filter = base_filter & (Equipment.status == status)
 
     # 总数
-    total_result = await db.execute(
-        select(func.count()).where(base_filter)
-    )
+    total_result = await db.execute(select(func.count()).where(base_filter))
     total = total_result.scalar() or 0
 
     # 按状态统计
     status_result = await db.execute(
-        select(Equipment.status, func.count())
-        .where(base_filter)
-        .group_by(Equipment.status)
+        select(Equipment.status, func.count()).where(base_filter).group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（A/B/C）
     class_result = await db.execute(
-        select(Equipment.equipment_class, func.count())
-        .where(base_filter)
-        .group_by(Equipment.equipment_class)
+        select(Equipment.equipment_class, func.count()).where(base_filter).group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
 
@@ -645,15 +639,12 @@ async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dic
     """获取单个部门信息（含负责人姓名和 leader_id）
     注意：当前 HrDepartment 模型暂无负责人字段，暂时只返回基本信息
     """
-    query = (
-        select(
-            HrDepartment.id.label("id"),
-            HrDepartment.name.label("name"),
-        )
-        .where(
-            HrDepartment.id == department_id,
-            HrDepartment.is_deleted == False,  # noqa: E712
-        )
+    query = select(
+        HrDepartment.id.label("id"),
+        HrDepartment.name.label("name"),
+    ).where(
+        HrDepartment.id == department_id,
+        HrDepartment.is_deleted == False,  # noqa: E712
     )
     result = await db.execute(query)
     row = result.one_or_none()

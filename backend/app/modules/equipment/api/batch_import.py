@@ -55,10 +55,8 @@ DEPT_MAPPING_V3 = {
     "炊事班": "人事行政部",
     "实验室": "技术研发部",
     "生产管理部": "生产部",
-
     # 制造部映射
     "头孢精制制造部": "头孢无菌制造部",
-
     # 车间编号映射 (非头孢)
     "非头孢一车间": "101车间",
     "非头孢二车间": "102车间",
@@ -66,21 +64,18 @@ DEPT_MAPPING_V3 = {
     "非头孢五车间": "105车间",
     "非头孢六车间": "106车间",
     "非头孢七车间": "107车间",
-
     # 车间编号映射 (头孢)
     "头孢合成一车间": "201车间",
     "头孢合成二车间": "202车间",
     "头孢精制一车间": "301车间",
     "头孢精制二车间": "302车间",
     "头孢精制三车间": "303车间",
-
     # 特殊岗位映射 (溶剂回收)
     "溶剂回收车间-401岗": "溶剂回收车间",
     "溶剂回收车间-402岗": "溶剂回收车间",
     "溶剂回收车间-403岗": "溶剂回收车间",
     "溶剂回收车间-404岗": "溶剂回收车间",
     "溶剂回收车间-405岗": "溶剂回收车间",
-
     # 自映射：确保 Excel 原名与数据库名称完全一致
     "仓库": "仓库",
     "头孢合成制造部": "头孢合成制造部",
@@ -102,12 +97,8 @@ def get_column_value(row: dict[str, Any], field_name: str) -> Any:
 
 async def get_department_id_by_name(db: AsyncSession, dept_name: str) -> uuid.UUID | None:
     from sqlalchemy import select
-    result = await db.execute(
-        select(HrDepartment.id).where(
-            HrDepartment.name == dept_name,
-            ~HrDepartment.is_deleted
-        )
-    )
+
+    result = await db.execute(select(HrDepartment.id).where(HrDepartment.name == dept_name, ~HrDepartment.is_deleted))
     return result.scalar_one_or_none()
 
 
@@ -138,6 +129,7 @@ def parse_excel_date(value: Any) -> date | None:
         return value.date()
     if isinstance(value, (int, float)):
         from datetime import timedelta
+
         base_date = date(1899, 12, 30)
         try:
             return base_date + timedelta(days=int(value))
@@ -156,6 +148,7 @@ def parse_excel_date(value: Any) -> date | None:
 
 
 # ── v3 Smart Inference Functions ──
+
 
 def infer_equipment_class(category_description: str | None) -> str:
     if not category_description:
@@ -194,6 +187,7 @@ def infer_status(scrap_status: str | None) -> str:
 async def download_template():
     from openpyxl import Workbook
     from openpyxl.styles import Font
+
     wb = Workbook()
     ws = wb.active
     ws.title = "设备台账"
@@ -244,31 +238,33 @@ async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(
         if not dept_id and dept_raw:
             warnings.append(f"部门 '{dept_raw}' 未在系统中找到，将设为 NULL")
 
-        results.append({
-            "row_index": idx,
-            "asset_no": asset_no,
-            "name": name,
-            "label_no": get_column_value(row, "标签号"),
-            "manufacturer": get_column_value(row, "制造商"),
-            "model": get_column_value(row, "型号"),
-            "location_text": get_column_value(row, "实物所在地点"),
-            "department_name": dept_name,
-            "department_id": str(dept_id) if dept_id else None,
-            "equipment_class": equipment_class,
-            "importance": importance,
-            "status": status,
-            "category_description": category_desc,
-            "current_cost": current_cost,
-            "technical_params": technical_params,
-            "validation_errors": errors,
-            "warnings": warnings
-        })
+        results.append(
+            {
+                "row_index": idx,
+                "asset_no": asset_no,
+                "name": name,
+                "label_no": get_column_value(row, "标签号"),
+                "manufacturer": get_column_value(row, "制造商"),
+                "model": get_column_value(row, "型号"),
+                "location_text": get_column_value(row, "实物所在地点"),
+                "department_name": dept_name,
+                "department_id": str(dept_id) if dept_id else None,
+                "equipment_class": equipment_class,
+                "importance": importance,
+                "status": status,
+                "category_description": category_desc,
+                "current_cost": current_cost,
+                "technical_params": technical_params,
+                "validation_errors": errors,
+                "warnings": warnings,
+            }
+        )
 
     valid_count = sum(1 for r in results if not r["validation_errors"])
     warning_count = sum(1 for r in results if r["warnings"])
-    return success_response(data={"total": len(results), "valid_count": valid_count,
-        "warning_count": warning_count,
-        "items": results})
+    return success_response(
+        data={"total": len(results), "valid_count": valid_count, "warning_count": warning_count, "items": results}
+    )
 
 
 @router.post("/batch", summary="执行批量导入")
@@ -317,7 +313,8 @@ async def batch_import(
                 book_value = None
 
             equipment_data = {
-                "asset_no": asset_no, "name": name,
+                "asset_no": asset_no,
+                "name": name,
                 "label_no": str(get_column_value(row, "标签号") or "") or None,
                 "equipment_tag": str(get_column_value(row, "设备位号") or "") or None,
                 "equipment_class": equipment_class,
@@ -356,9 +353,10 @@ async def batch_import(
 
 @router.post("/", summary="上传Excel文件并解析")
 async def import_excel(file: UploadFile = File(...)) -> dict[str, Any]:
-    if not file.filename or not file.filename.endswith(('.xlsx', '.xls')):
+    if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook
+
     content_bytes = await file.read()
     try:
         wb = load_workbook(io.BytesIO(content_bytes))
