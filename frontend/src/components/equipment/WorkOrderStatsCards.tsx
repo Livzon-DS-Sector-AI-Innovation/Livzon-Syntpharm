@@ -10,7 +10,8 @@ import {
   ExclamationCircleOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { WorkOrderStatistics, WorkOrderStatus } from '@/types/equipment'
+import { WorkOrderStatistics } from '@/types/equipment/generated-bridge'
+import { WorkOrderStatus } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 
 interface StatCardProps {
