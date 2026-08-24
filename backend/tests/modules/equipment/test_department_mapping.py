@@ -1,7 +1,7 @@
 """Tests for department mapping logic in equipment import."""
 
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
 
@@ -33,14 +33,29 @@ class MockDB:
         return mock_result
 
 
+def create_mock_department(dept_id: str, name: str) -> MagicMock:
+    """Create a mock HrDepartment object."""
+    mock_dept = MagicMock()
+    mock_dept.id = dept_id
+    mock_dept.name = name
+    return mock_dept
+
+
 @pytest.mark.asyncio
 async def test_exact_match_in_mapping() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 
     db = MockDB()
-    name, id_val = await map_department_name_v3("检验室", db)  # type: ignore[arg-type]
-    assert name == "质量控制部"
-    assert id_val == "uuid-quality-control"
+    mock_dept = create_mock_department("uuid-quality-control", "质量控制部")
+    
+    with patch('app.modules.hr.public_api.DepartmentRepository') as mock_repo_class:
+        mock_repo = MagicMock()
+        mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
+        mock_repo_class.return_value = mock_repo
+        
+        name, id_val = await map_department_name_v3("检验室", db)  # type: ignore[arg-type]
+        assert name == "质量控制部"
+        assert id_val == "uuid-quality-control"
 
 
 @pytest.mark.asyncio
@@ -48,9 +63,16 @@ async def test_solvent_workshop_mapping() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 
     db = MockDB()
-    name, id_val = await map_department_name_v3("溶剂回收车间-401岗", db)  # type: ignore[arg-type]
-    assert name == "溶剂回收车间"
-    assert id_val == "uuid-solvent-recovery"
+    mock_dept = create_mock_department("uuid-solvent-recovery", "溶剂回收车间")
+    
+    with patch('app.modules.hr.public_api.DepartmentRepository') as mock_repo_class:
+        mock_repo = MagicMock()
+        mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
+        mock_repo_class.return_value = mock_repo
+        
+        name, id_val = await map_department_name_v3("溶剂回收车间-401岗", db)  # type: ignore[arg-type]
+        assert name == "溶剂回收车间"
+        assert id_val == "uuid-solvent-recovery"
 
 
 @pytest.mark.asyncio
@@ -58,6 +80,12 @@ async def test_unknown_department_returns_none() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 
     db = MockDB()
-    name, id_val = await map_department_name_v3("不存在的火星部门", db)  # type: ignore[arg-type]
-    assert name is None
-    assert id_val is None
+    
+    with patch('app.modules.hr.public_api.DepartmentRepository') as mock_repo_class:
+        mock_repo = MagicMock()
+        mock_repo.get_by_name = AsyncMock(return_value=None)
+        mock_repo_class.return_value = mock_repo
+        
+        name, id_val = await map_department_name_v3("不存在的火星部门", db)  # type: ignore[arg-type]
+        assert name is None
+        assert id_val is None
