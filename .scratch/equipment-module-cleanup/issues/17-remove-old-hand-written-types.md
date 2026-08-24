@@ -4,11 +4,11 @@
 
 **Blocked by:** 16: Migrate equipment components to generated types (batch 3)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Old hand-written type definitions removed
-- [ ] All components use generated types exclusively
-- [ ] No references to old types remain
-- [ ] Type generation script is the single source of truth
-- [ ] All components type-check without errors
-- [ ] No runtime errors from type mismatches
+- [x] Old hand-written type definitions removed
+- [x] All components use generated types exclusively
+- [x] No references to old types remain
+- [x] Type generation script is the single source of truth
+- [x] All components type-check without errors
+- [x] No runtime errors from type mismatches
