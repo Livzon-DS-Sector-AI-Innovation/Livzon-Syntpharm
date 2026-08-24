@@ -78,28 +78,6 @@ function TreeNode({
 
   return (
     <div>
-      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button 
-          type="primary" 
-          size="small" 
-          icon={<PlusOutlined />}
-          onClick={() => setEditorOpen(true)}
-        >
-          新建根分类
-        </Button>
-        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
-          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
-        </Tooltip>
-      </div>
-      <CategoryEditor
-        mode="create"
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        onSuccess={() => {
-          setEditorOpen(false)
-          onRefresh?.()
-        }}
-      />
       {/* 节点行 */}
       <div
         role="button"
