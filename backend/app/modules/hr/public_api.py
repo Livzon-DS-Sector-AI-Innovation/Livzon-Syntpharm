@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.hr.models import HrDepartment
 from app.modules.hr.repository import EmployeeRepository
 
 # Valid filter keys accepted by EmployeeRepository.list_employees / _apply_filters
@@ -179,3 +180,37 @@ async def get_distinct_employee_values(
     repo = EmployeeRepository(session)
     normalized = _normalize_filters(filters)
     return await repo.get_distinct_values(field, **normalized)  # type: ignore[no-any-return]
+
+
+async def get_department_by_name(
+    session: AsyncSession, name: str
+) -> HrDepartment | None:
+    """Get a department by its exact name.
+
+    Args:
+        session: Database session
+        name: Exact department name to search for
+
+    Returns:
+        HrDepartment if found, None otherwise
+    """
+    from app.modules.hr.repository import DepartmentRepository
+
+    repo = DepartmentRepository(session)
+    return await repo.get_by_name(name)
+
+
+async def list_all_departments(session: AsyncSession) -> list[HrDepartment]:
+    """List all non-deleted departments.
+
+    Args:
+        session: Database session
+
+    Returns:
+        List of all HrDepartment objects
+    """
+    from app.modules.hr.repository import DepartmentRepository
+
+    repo = DepartmentRepository(session)
+    departments, _ = await repo.list_departments(page=1, page_size=10000)
+    return departments
