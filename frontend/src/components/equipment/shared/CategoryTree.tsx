@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { App, Button, Space, Popconfirm, Empty } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { EquipmentCategory } from '@/types/equipment'
+import { EquipmentCategoryTree } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteCategory } from '@/actions/equipment'
 
 interface CategoryTreeProps {
-  categories: EquipmentCategory[]
+  categories: EquipmentCategoryTree[]
   onRefresh?: () => void
 }
 
@@ -202,7 +202,7 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
 
   const handleEdit = (node: TreeNodeData) => {
     // 从 categories 中找到完整对象传给 drawer
-    function find(items: EquipmentCategory[]): EquipmentCategory | undefined {
+    function find(items: EquipmentCategoryTree[]): EquipmentCategoryTree | undefined {
       for (const item of items) {
         if (item.id === node.id) return item
         if (item.children?.length) {
@@ -213,7 +213,7 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
       return undefined
     }
     const full = find(categories)
-    if (full) openCategoryDrawer(full)
+    if (full) openCategoryDrawer(full as any)
   }
 
   if (!categories.length) {

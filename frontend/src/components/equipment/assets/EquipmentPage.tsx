@@ -158,7 +158,7 @@ export function EquipmentPage({
     {
       key: 'category',
       label: '分类',
-      children: <CategoryTree categories={categories} onRefresh={refreshCategoriesAndLocations} />,
+      children: <CategoryTree categories={categories as any} onRefresh={refreshCategoriesAndLocations} />,
     },
     {
       key: 'location',
