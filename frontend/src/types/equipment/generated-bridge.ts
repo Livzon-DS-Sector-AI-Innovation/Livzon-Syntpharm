@@ -668,24 +668,33 @@ export type CreateSparePartInput = SparePartCreate
 export type UpdateSparePartInput = SparePartUpdate
 export type StockInboundInput = components['schemas']['StockInboundRequest']
 export type StockAdjustInput = components['schemas']['StockAdjustRequest']
-export type CreateMaintenancePlanInput = MaintenancePlanCreate
-export type UpdateMaintenancePlanInput = MaintenancePlanUpdate
+export type CreateMaintenancePlanInput = components['schemas']['MaintenancePlanCreate']
+export type UpdateMaintenancePlanInput = components['schemas']['MaintenancePlanUpdate']
 export type CreateInspectionTemplateInput = InspectionTemplateCreate
 export type UpdateInspectionTemplateInput = InspectionTemplateUpdate
 export type CreateInspectionTemplateItemInput = InspectionTemplateItemCreate
 export type UpdateInspectionTemplateItemInput = InspectionTemplateItemUpdate
-export type InspectionCompleteInput = components['schemas']['InspectionComplete']
-export type MaterialConsumeInput = components['schemas']['MaterialConsume']
+export type InspectionCompleteInput = components['schemas']['InspectionCompleteRequest']
+export type MaterialConsumeInput = components['schemas']['MaterialConsumeRequest']
 export type CreateRoleInput = components['schemas']['RoleCreate']
 export type UpdateRoleInput = components['schemas']['RoleUpdate']
 export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 
-export type AssignRolesInput = components['schemas']['AssignRolesRequest']
-export type AssignCategoriesInput = components['schemas']['AssignCategoriesRequest']
+export type AssignRolesInput = any
+export type AssignCategoriesInput = any
 export type CalibrationType = string
 export type CalibrationResult = string
 
-export type EquipmentRole = string
+export interface EquipmentRole {
+  id: string
+  name: string
+  code: string
+  description: string | null
+  scope: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
 
 export interface Personnel {
   id: string
@@ -693,4 +702,34 @@ export interface Personnel {
   employee_number?: string
   department?: string
   [key: string]: any
+}
+
+export interface PersonnelRoleInfo {
+  id: string
+  name: string
+  code: string
+  scope: string
+}
+
+export interface PersonnelCategoryInfo {
+  role_id: string
+  role_name: string
+  category_id: string
+  category_name: string
+}
+
+export interface PersonnelListResponse {
+  items: Personnel[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface Candidate {
+  personnel_id: string
+  name: string
+  department: string | null
+  feishu_user_id: string | null
+  feishu_open_id: string | null
+  roles: PersonnelRoleInfo[]
 }

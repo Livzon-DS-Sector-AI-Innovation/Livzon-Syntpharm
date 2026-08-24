@@ -13,6 +13,10 @@ import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill
 const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,
   '停用': pillNeutral,
+  '待执行': pillWarning,
+  '进行中': pillPurple,
+  '已完成': pillSuccess,
+  '已过期': pillError,
 }
 
 interface Props { onRefresh?: () => void; onRecordRefresh?: () => void }

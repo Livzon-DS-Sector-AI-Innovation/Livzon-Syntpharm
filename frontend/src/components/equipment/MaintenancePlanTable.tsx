@@ -13,7 +13,10 @@ import { pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrima
 const statusMap: Record<MaintenancePlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,
   '停用': pillNeutral,
-  '已完成': pillPurple,
+  '待执行': pillWarning,
+  '进行中': pillPurple,
+  '已完成': pillSuccess,
+  '已过期': pillError,
 }
 
 interface Props { onRefresh?: () => void; equipments: { id: string; name: string; asset_no: string }[] }
