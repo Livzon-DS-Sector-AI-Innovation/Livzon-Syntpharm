@@ -1,7 +1,7 @@
 """设备导入 v2 功能测试 (TDD)."""
 
 from typing import Any
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
