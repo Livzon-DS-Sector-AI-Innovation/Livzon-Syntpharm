@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(app)  # type: ignore[arg-type]
 
 
 def test_download_template_endpoint_exists() -> None:

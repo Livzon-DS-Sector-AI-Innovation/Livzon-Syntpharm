@@ -1,6 +1,5 @@
 """Integration tests for equipment import v3 API endpoints."""
 
-import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -48,7 +47,7 @@ async def test_preview_returns_inferred_fields() -> None:
     ]
 
     result = await preview_import(data, db)  # type: ignore[arg-type]
-    result_data = json.loads(result.body)
+    result_data = result.json()
     item = result_data["data"]["items"][0]
 
     assert item["equipment_class"] == "A"
@@ -68,7 +67,7 @@ async def test_batch_import_handles_null_department() -> None:
         mock_repo.create_equipment = AsyncMock()
 
         result = await batch_import(data, db)  # type: ignore[arg-type]
-        result_data = json.loads(result.body)
+        result_data = result.json()
 
         assert result_data["data"]["created_count"] == 1
         call_args = mock_repo.create_equipment.call_args[0][1]
