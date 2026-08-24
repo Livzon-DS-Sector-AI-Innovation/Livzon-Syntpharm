@@ -632,7 +632,7 @@ export interface WorkOrderImage {
 // ============================================================================
 
 export type EquipmentStatus = '在用' | '备用' | '维修中' | '报废'
-export type WorkOrderStatus = '待处理' | '进行中' | '已完成' | '已关闭'
+export type WorkOrderStatus = '待处理' | '已指派' | '执行中' | '维修中' | '待验收' | '已完成' | '已关闭'
 export type WorkOrderPriority = '紧急' | '高' | '中' | '低'
 export type WorkOrderType = '故障维修' | '预防性维护' | '改善维修' | '其他'
 export type CalibrationPlanStatus = '待执行' | '进行中' | '已完成' | '已过期'

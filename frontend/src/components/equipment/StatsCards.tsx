@@ -2,7 +2,7 @@
 
 import { Card, Col, Row, Statistic } from 'antd'
 import { EquipmentStatistics } from '@/types/equipment/generated-bridge'
-import { EquipmentStatus } from '@/types/equipment'
+import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 
 interface StatsCardsProps {

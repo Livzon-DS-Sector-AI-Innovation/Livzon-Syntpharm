@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Row, Col, Card } from 'antd'
+import { Card, Col, Row, Statistic } from 'antd'
 import {
   FileTextOutlined,
   ClockCircleOutlined,
@@ -10,8 +10,7 @@ import {
   ExclamationCircleOutlined,
   StopOutlined,
 } from '@ant-design/icons'
-import { WorkOrderStatistics } from '@/types/equipment/generated-bridge'
-import { WorkOrderStatus } from '@/types/equipment'
+import { WorkOrderStatistics, WorkOrderStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 
 interface StatCardProps {
