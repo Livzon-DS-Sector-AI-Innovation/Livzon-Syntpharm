@@ -484,3 +484,22 @@ export interface CalibrationRecordResponse {
 
 /** @deprecated Use CalibrationRecordResponse instead */
 export type CalibrationRecord = CalibrationRecordResponse
+
+/**
+ * Material record response
+ */
+export interface MaterialRecordResponse {
+  id: string
+  work_order_id: string
+  spare_part_id: string
+  quantity: number
+  remark: string | null
+  created_at: string
+  created_by: string | null
+  spare_part_name?: string
+  spare_part_code?: string
+  spare_part_unit?: string
+}
+
+/** @deprecated Use MaterialRecordResponse instead */
+export type MaterialRecord = MaterialRecordResponse
