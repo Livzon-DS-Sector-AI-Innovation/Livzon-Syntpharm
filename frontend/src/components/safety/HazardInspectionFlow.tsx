@@ -370,10 +370,19 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
   // ── 从草稿继续登记 ──
   const handleContinueDraft = (draft: HazardReport) => {
     setDraftFormValues({
-      inspection_category: draft.inspection_category,
+      // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+      inspection_category: Array.isArray(draft.inspection_category)
+        ? draft.inspection_category
+        : draft.inspection_category
+          ? draft.inspection_category.split(/[,，]/).filter(Boolean)
+          : undefined,
       discovered_by: draft.discovered_by,
       discovered_by_name: draft.discovered_by_name,
-      inspector_department: draft.inspector_department,
+      inspector_department: Array.isArray(draft.inspector_department)
+        ? draft.inspector_department
+        : draft.inspector_department
+          ? draft.inspector_department.split(/[,，]/).filter(Boolean)
+          : undefined,
       department: draft.department,
       discovered_at: draft.discovered_at,
       description: draft.description,
