@@ -223,7 +223,11 @@ async def download_template() -> JSONResponse:
 
 
 @router.post("/preview", summary="预览导入数据")
-async def preview_import(data: list[dict[str, Any]], db: AsyncSession = Depends(get_db)) -> JSONResponse:
+async def preview_import(
+    data: list[dict[str, Any]],
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
     results = []
     for idx, row in enumerate(data):
         asset_no = get_column_value(row, "资产编号")
@@ -372,7 +376,7 @@ async def batch_import(
 
 
 @router.post("/", summary="上传Excel文件并解析")
-async def import_excel(file: UploadFile = File(...)) -> JSONResponse:
+async def import_excel(current_user: RequiredUser, file: UploadFile = File(...)) -> JSONResponse:
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook
