@@ -20,7 +20,7 @@ import {
   UploadOutlined,
 } from '@ant-design/icons'
 import { importSupplierTable } from '@/actions/procurement'
-import { fetchSuppliers } from '@/lib/api/server/procurement'
+import { fetchSuppliers } from '@/lib/api/client/procurement'
 import type { SupplierListResponse, SupplierResponse } from '@/types/procurement'
 
 const { Dragger } = Upload

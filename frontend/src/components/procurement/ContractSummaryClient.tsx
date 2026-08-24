@@ -25,7 +25,7 @@ import {
   fetchContractFile,
   fetchContractRecord,
   fetchContractRecords,
-} from '@/lib/api/server/procurement'
+} from '@/lib/api/client/procurement'
 import type { ContractCategory, ContractRecordResponse } from '@/types/procurement'
 
 const { Search } = Input
