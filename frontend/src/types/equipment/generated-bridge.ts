@@ -634,13 +634,63 @@ export interface WorkOrderImage {
 // Status/Priority/Type Enums (as string literal types)
 // ============================================================================
 
-export type EquipmentStatus = '在用' | '备用' | '维修中' | '报废'
+export type EquipmentStatus = '在用' | '备用' | '维修中' | '停用' | '报废'
 export type WorkOrderStatus = '待处理' | '已指派' | '执行中' | '维修中' | '待验收' | '已完成' | '已关闭'
 export type WorkOrderPriority = '紧急' | '高' | '中' | '低'
-export type WorkOrderType = '故障维修' | '预防性维护' | '改善维修' | '其他'
-export type CalibrationPlanStatus = '待执行' | '进行中' | '已完成' | '已过期'
-export type MaintenancePlanStatus = '待执行' | '进行中' | '已完成' | '已过期'
+export type WorkOrderType = '故障维修' | '预防性维护' | '改善维修' | '计划维护' | '巡检' | '校准' | '异常处理' | '日常维护' | '其他'
+export type CalibrationPlanStatus = '待执行' | '进行中' | '已完成' | '已过期' | '启用' | '停用'
+export type MaintenancePlanStatus = '待执行' | '进行中' | '已完成' | '已过期' | '启用' | '停用'
 export interface DepartmentOption {
   id: string
   name: string
+}
+
+// ============================================================================
+// Input Type Aliases (for backward compatibility)
+// ============================================================================
+
+export type CreateCategoryInput = EquipmentCategoryCreate
+export type UpdateCategoryInput = EquipmentCategoryUpdate
+export type CreateLocationInput = LocationCreate
+export type UpdateLocationInput = LocationUpdate
+export type CreateEquipmentInput = EquipmentCreate
+export type UpdateEquipmentInput = EquipmentUpdate
+export type CreateFailureCodeInput = FailureCodeCreate
+export type UpdateFailureCodeInput = FailureCodeUpdate
+export type UpdateWorkOrderInput = WorkOrderUpdate
+export type AssignWorkOrderInput = components['schemas']['WorkOrderAssign']
+export type CompleteWorkOrderInput = components['schemas']['WorkOrderComplete']
+export type VerifyWorkOrderInput = components['schemas']['WorkOrderVerify']
+export type CreateCalibrationPlanInput = CalibrationPlanCreate
+export type UpdateCalibrationPlanInput = CalibrationPlanUpdate
+export type CreateCalibrationRecordInput = components['schemas']['app__modules__equipment__schemas__calibration__CalibrationRecordCreate']
+export type CreateSparePartInput = SparePartCreate
+export type UpdateSparePartInput = SparePartUpdate
+export type StockInboundInput = components['schemas']['StockInboundRequest']
+export type StockAdjustInput = components['schemas']['StockAdjustRequest']
+export type CreateMaintenancePlanInput = MaintenancePlanCreate
+export type UpdateMaintenancePlanInput = MaintenancePlanUpdate
+export type CreateInspectionTemplateInput = InspectionTemplateCreate
+export type UpdateInspectionTemplateInput = InspectionTemplateUpdate
+export type CreateInspectionTemplateItemInput = InspectionTemplateItemCreate
+export type UpdateInspectionTemplateItemInput = InspectionTemplateItemUpdate
+export type InspectionCompleteInput = components['schemas']['InspectionComplete']
+export type MaterialConsumeInput = components['schemas']['MaterialConsume']
+export type CreateRoleInput = components['schemas']['RoleCreate']
+export type UpdateRoleInput = components['schemas']['RoleUpdate']
+export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
+
+export type AssignRolesInput = components['schemas']['AssignRolesRequest']
+export type AssignCategoriesInput = components['schemas']['AssignCategoriesRequest']
+export type CalibrationType = string
+export type CalibrationResult = string
+
+export type EquipmentRole = string
+
+export interface Personnel {
+  id: string
+  name: string
+  employee_number?: string
+  department?: string
+  [key: string]: any
 }

@@ -21,7 +21,7 @@ import type {
   InspectionTemplateItem,
   Maintainer,
   DepartmentOption,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 
 // ============ Equipment Store State ============
 

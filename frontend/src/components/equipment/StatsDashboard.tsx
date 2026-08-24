@@ -34,7 +34,7 @@ import type {
   WorkOrderStatus,
   WorkOrderPriority,
   WorkOrderType,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import { antdTheme } from '@/lib/antd-theme'
 
 // ============================================================

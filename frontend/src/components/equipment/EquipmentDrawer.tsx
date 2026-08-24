@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { App, Drawer, Form, Input, Select, DatePicker, Button, Space, InputNumber } from 'antd'
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
-import { EquipmentStatus } from '@/types/equipment'
+import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { createEquipment, updateEquipment } from '@/actions/equipment'
 
 const { TextArea } = Input

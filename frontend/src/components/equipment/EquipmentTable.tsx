@@ -4,7 +4,7 @@ import { useCallback, useState, useEffect, useRef, type CSSProperties } from 're
 import { App, Table, Space, Input, Select, Button } from 'antd'
 import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutlined, EyeOutlined, ImportOutlined, SettingOutlined } from '@ant-design/icons'
 import { Equipment } from '@/types/equipment/generated-bridge'
-import { EquipmentStatus } from '@/types/equipment'
+import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteEquipment, batchDeleteEquipments } from '@/actions/equipment'
 import { statusPill, linkDanger, linkPrimary, linkWarning } from '@/components/equipment/shared-styles'

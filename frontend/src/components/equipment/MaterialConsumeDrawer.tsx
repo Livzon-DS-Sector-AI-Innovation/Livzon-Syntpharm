@@ -5,7 +5,7 @@ import { App, Drawer, Form, Select, InputNumber, Button, Space, Empty } from 'an
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import { consumeMaterials } from '@/actions/equipment'
 import { SparePart } from '@/types/equipment/generated-bridge'
-import { MaterialConsumeInput } from '@/types/equipment'
+import { MaterialConsumeInput } from '@/types/equipment/generated-bridge'
 
 interface MaterialConsumeDrawerProps {
   workOrderId: string

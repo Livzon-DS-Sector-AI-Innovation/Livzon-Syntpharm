@@ -4,7 +4,7 @@ import { Table, Space, Select } from 'antd'
 import { EditOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { WorkOrder } from '@/types/equipment/generated-bridge'
-import { WorkOrderStatus, WorkOrderPriority, WorkOrderType } from '@/types/equipment'
+import { WorkOrderStatus, WorkOrderPriority, WorkOrderType } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import {statusPill, pillSuccess, pillError, pillWarning, pillPurple, pillNeutral, pillInfo, linkPrimary, linkPurple} from '@/components/equipment/shared-styles'
 

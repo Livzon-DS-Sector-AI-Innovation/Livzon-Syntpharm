@@ -3,7 +3,7 @@ import {
   InspectionRoute, InspectionTask, InspectionTaskStatus,
   InspectionRouteDetail, InspectionOverallResult,
 } from '@/types/inspection'
-import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment'
+import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 interface InspectionStore {
   // 当前 Tab

@@ -35,7 +35,7 @@ type CreateFailureCodeInput = components['schemas']['FailureCodeCreate']
 type UpdateFailureCodeInput = components['schemas']['FailureCodeUpdate']
 import type {
   InspectionCompleteInput, MaterialConsumeInput,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 
 import {
   createCategoryApi, updateCategoryApi, deleteCategoryApi,

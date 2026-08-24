@@ -4,7 +4,7 @@ import { Table, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { CalibrationRecord } from '@/types/equipment/generated-bridge'
-import { CalibrationType, CalibrationResult } from '@/types/equipment'
+import { CalibrationType, CalibrationResult } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import {pillSuccess, pillError, pillPurple, pillWarning} from '@/components/equipment/shared-styles'
 

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { App, Drawer, Form, Input, InputNumber, Switch, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createSparePart, updateSparePart } from '@/actions/equipment'
-import { CreateSparePartInput, UpdateSparePartInput } from '@/types/equipment'
+import { CreateSparePartInput, UpdateSparePartInput } from '@/types/equipment/generated-bridge'
 
 interface SparePartDrawerProps {
   onRefresh?: () => void

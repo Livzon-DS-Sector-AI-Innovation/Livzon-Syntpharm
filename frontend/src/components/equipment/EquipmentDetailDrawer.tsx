@@ -9,7 +9,7 @@ import type { InspectionTask } from '@/types/inspection'
 import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/client/equipment'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import {monoFont, pillNeutral, pillSuccess, pillWarning, pillError, statusPill} from '@/components/equipment/shared-styles'
-import type { EquipmentStatus } from '@/types/equipment'
+import type { EquipmentStatus } from '@/types/equipment/generated-bridge'
 
 interface EquipmentDetailDrawerProps {
   open: boolean

@@ -1,6 +1,6 @@
 'use client'
 
-import { EquipmentStatus } from '@/types/equipment'
+import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 
 interface StatusBadgeProps {
   status: EquipmentStatus

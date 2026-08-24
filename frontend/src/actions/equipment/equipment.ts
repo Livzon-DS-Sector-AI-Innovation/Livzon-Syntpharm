@@ -12,7 +12,7 @@ import {
   CreateInspectionTemplateInput, UpdateInspectionTemplateInput,
   CreateInspectionTemplateItemInput, UpdateInspectionTemplateItemInput,
   InspectionCompleteInput, MaterialConsumeInput,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import {
   createCategoryApi,
   updateCategoryApi,

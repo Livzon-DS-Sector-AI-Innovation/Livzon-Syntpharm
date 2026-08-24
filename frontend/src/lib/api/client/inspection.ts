@@ -1,7 +1,7 @@
 import {
   InspectionTemplateListResponse,
   InspectionTemplate,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import {
   InspectionRouteFilters, InspectionRouteListResponse, InspectionRouteDetail,
   InspectionTaskFilters, InspectionTaskListResponse, InspectionTask,

@@ -19,7 +19,7 @@ import {
   fetchClaimTimeoutConfigClient,
 } from '@/lib/api/client/equipment'
 import { updateClaimTimeoutConfig } from '@/actions/equipment'
-import { EquipmentCategory } from '@/types/equipment'
+import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 import { WorkOrderStatsCards } from './WorkOrderStatsCards'
 import { WorkOrderTable } from './WorkOrderTable'
 import { WorkOrderDrawer } from './WorkOrderDrawer'

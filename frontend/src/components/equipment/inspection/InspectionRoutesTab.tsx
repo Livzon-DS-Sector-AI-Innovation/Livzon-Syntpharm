@@ -9,7 +9,7 @@ import { deleteInspectionRoute } from '@/actions/inspection'
 import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
 import {pillSuccess, pillNeutral, linkPurple, linkPrimary, linkDanger} from '@/components/equipment/shared-styles'
 import type { InspectionRoute } from '@/types/inspection'
-import type { InspectionTemplate } from '@/types/equipment'
+import type { InspectionTemplate } from '@/types/equipment/generated-bridge'
 
 interface Props {
   templates: InspectionTemplate[]

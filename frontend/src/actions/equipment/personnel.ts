@@ -5,7 +5,7 @@ import { getAuthHeaders } from '@/lib/auth'
 import type {
   CreateRoleInput, UpdateRoleInput, AddPersonnelInput,
   AssignRolesInput, AssignCategoriesInput,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import {
   createPersonnelRoleApi,
   updatePersonnelRoleApi,

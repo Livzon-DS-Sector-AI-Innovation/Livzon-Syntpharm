@@ -1,7 +1,7 @@
 import { EquipmentPage } from '@/components/equipment'
 import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/actions/equipment'
-import type { DepartmentOption } from '@/types/equipment'
-import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment'
+import type { DepartmentOption } from '@/types/equipment/generated-bridge'
+import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'
 
 // 强制动态渲染：不在构建时预渲染，每次请求都实时从后端获取数据

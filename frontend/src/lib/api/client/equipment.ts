@@ -1,4 +1,5 @@
-import type { Personnel } from '@/types/equipment'
+import type { DepartmentOption } from '@/types/equipment/generated-bridge'
+import type { Personnel } from '@/types/equipment/generated-bridge'
 import {
   EquipmentCategory, Location, EquipmentFilters, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
@@ -250,13 +251,6 @@ export async function fetchWorkOrderMaterials(workOrderId: string): Promise<Mate
 // ═══════════════════════════════════════════════════════════
 //  部门列表
 // ═══════════════════════════════════════════════════════════
-export interface DepartmentOption {
-  id: string
-  name: string
-  leader_name: string | null
-  leader_user_id: string | null
-  leader_id: string | null
-}
 
 export async function fetchDepartments(): Promise<DepartmentOption[]> {
   return apiGet(`${API_BASE}/equipment/departments`)
