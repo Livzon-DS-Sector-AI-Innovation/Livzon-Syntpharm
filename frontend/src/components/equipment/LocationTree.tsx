@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { App, Button, Space, Popconfirm, Empty, Tooltip } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { Location } from '@/types/equipment'
+import { Location } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteLocation } from '@/actions/equipment'
 import { LocationEditor } from './LocationEditor'
