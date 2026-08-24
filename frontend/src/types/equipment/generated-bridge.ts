@@ -503,3 +503,17 @@ export interface MaterialRecordResponse {
 
 /** @deprecated Use MaterialRecordResponse instead */
 export type MaterialRecord = MaterialRecordResponse
+
+/**
+ * Stock warning response
+ */
+export interface StockWarningResponse {
+  spare_part_id: string
+  code: string
+  name: string
+  current_qty: number
+  min_qty: number
+}
+
+/** @deprecated Use StockWarningResponse instead */
+export type StockWarning = StockWarningResponse
