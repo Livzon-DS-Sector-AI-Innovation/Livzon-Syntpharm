@@ -1,5 +1,6 @@
 """AI 填充服务 - 编排素材提取、AI 解析、模板填充的完整流程"""
 
+import asyncio
 import logging
 import uuid
 from pathlib import Path
@@ -212,7 +213,7 @@ class AIFillService:
             asset_errors = []
             for asset in category_assets:
                 file_path = Path(asset.file_path)
-                extracted = self.extractor.extract(file_path)
+                extracted = await asyncio.to_thread(self.extractor.extract, file_path)
                 if extracted.get("text"):
                     asset_texts[asset.original_filename] = extracted["text"]
                 elif extracted.get("error"):
@@ -547,7 +548,7 @@ class AIFillService:
         if file_path.suffix.lower() != ".pdf":
             return {"success": False, "message": "仅支持 PDF 文件的页拆分"}
 
-        extracted = self.extractor.extract(file_path)
+        extracted = await asyncio.to_thread(self.extractor.extract, file_path)
         if not extracted.get("page_texts"):
             return {
                 "success": False,
@@ -1062,7 +1063,7 @@ class AIFillService:
         """获取素材页数，失败返回 None
 
         - 图片文件（jpg/png 等）天然视为单页
-        - PDF 文件使用 pdfplumber 快速数页（不触发 OCR）
+        - PDF 文件使用 count_pdf_pages 数页（pypdf 优先，不触发 OCR）
         - 其他类型或失败返回 None
         """
         suffix = file_path.suffix.lower()
@@ -1071,13 +1072,12 @@ class AIFillService:
         if suffix in (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"):
             return 1
 
-        # PDF 文件通过 pdfplumber 快速数页
+        # PDF 文件通过 count_pdf_pages 数页（pypdf 优先）
         if suffix == ".pdf":
             try:
-                import pdfplumber
+                from app.shared.ocr_service import count_pdf_pages
 
-                with pdfplumber.open(str(file_path)) as pdf:
-                    return len(pdf.pages)
+                return count_pdf_pages(file_path)
             except Exception:
                 return None
 

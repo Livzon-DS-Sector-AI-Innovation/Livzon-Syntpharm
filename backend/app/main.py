@@ -26,7 +26,6 @@ from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
     start_scheduler,
 )
 from app.platform.audit import AuditMiddleware
-from app.shared.ocr_service import init_ocr
 from app.shared.file_conversion import init_file_conversion
 
 settings = get_settings()
@@ -58,9 +57,6 @@ mcp_asgi = get_mcp_app(path="/", middleware=mcp_middleware)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan — auto-start all registered background workers."""
     logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
-
-    # Initialize OCR service in background (model loading is heavy)
-    asyncio.create_task(asyncio.to_thread(init_ocr))
 
     # Initialize file conversion service (libreoffice CLI wrapper, no-op)
     init_file_conversion()

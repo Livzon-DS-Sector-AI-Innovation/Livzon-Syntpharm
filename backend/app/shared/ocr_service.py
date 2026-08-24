@@ -5,6 +5,7 @@ with a hybrid approach that allows automatic or manual engine selection.
 """
 
 import logging
+import sys
 import threading
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,34 @@ import numpy as np
 from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+# Global lock for serializing OCR calls
+_ocr_lock = threading.Lock()
+
+
+def get_ocr_lock() -> threading.Lock:
+    """Get the global lock for OCR serialization."""
+    return _ocr_lock
+
+
+def count_pdf_pages(file_path: str | Path) -> int:
+    """统计 PDF 页数：pypdf 优先（耐受非规范"暗伤"文件），pdfplumber 兜底。
+
+    背景：pdfplumber 底层 pdfminer 对部分扫描件会漏读为 0 页
+    （2026-08-24 实测：华辰授权书丽珠(1).pdf，poppler/pypdf 读 1 页，pdfplumber 读 0 页）。
+    """
+    try:
+        from pypdf import PdfReader
+
+        pages = len(PdfReader(str(file_path)).pages)
+        if pages > 0:
+            return pages
+    except Exception:
+        pass
+    import pdfplumber
+
+    with pdfplumber.open(str(file_path)) as pdf:
+        return len(pdf.pages)
 
 
 class OCRService:
@@ -230,6 +259,130 @@ class OCRService:
         else:
             raise ValueError(f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'")
 
+    @staticmethod
+    def _run_ocr_in_subprocess(
+        file_path: Path,
+        timeout: int = 300,
+        min_memory_gb: float = 8.0,
+    ) -> dict[str, Any]:
+        """Run OCR inference for entire PDF in isolated subprocess.
+
+        Args:
+            file_path: Path to the PDF file
+            timeout: Timeout in seconds (default 300)
+            min_memory_gb: Minimum available memory in GB (default 8.0)
+
+        Returns:
+            Dict with OCR result containing 'pages' list
+
+        Raises:
+            RuntimeError: If subprocess fails or times out
+        """
+        import json
+        import os
+        import signal
+        import subprocess
+        import tempfile
+
+        import psutil
+
+        # Check available memory before starting
+        mem = psutil.virtual_memory()
+        available_gb = mem.available / (1024**3)
+        if available_gb < min_memory_gb:
+            raise RuntimeError(f"Insufficient memory: {available_gb:.1f}GB available, need at least {min_memory_gb}GB")
+
+        # Get page count for timeout calculation
+        total_pages = count_pdf_pages(file_path)
+
+        # Calculate timeout: max(provided, 120 + 60 * pages)
+        calculated_timeout = 120 + 60 * total_pages
+        actual_timeout = max(timeout, calculated_timeout)
+
+        logger.info(f"Starting OCR subprocess for {total_pages} pages, timeout={actual_timeout}s")
+
+        # Create temporary files for result and logs
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            output_file = Path(tmp.name)
+
+        log_file = output_file.with_suffix(".log")
+
+        try:
+            # Prepare subprocess command using python -m
+            cmd = [
+                sys.executable,
+                "-m",
+                "app.shared.ocr_worker",
+                str(file_path),
+                "pp_structurev3",
+                str(output_file),
+            ]
+
+            # Set environment variables
+            env = os.environ.copy()
+            env["PYTHONPATH"] = "/app"
+            env["OMP_NUM_THREADS"] = "1"
+            env["MKL_NUM_THREADS"] = "1"
+            env["OPENBLAS_NUM_THREADS"] = "1"
+
+            # Start subprocess with new session, redirect stdout/stderr to log file
+            with open(log_file, "w") as log_f:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=log_f,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    start_new_session=True,
+                    cwd="/app",
+                )
+
+                try:
+                    # Wait for completion with timeout
+                    proc.wait(timeout=actual_timeout)
+
+                    # Read result from temporary file
+                    if output_file.exists():
+                        result_text = output_file.read_text()
+                        result: dict[str, Any] = json.loads(result_text)
+
+                        if not result.get("success"):
+                            # Append log tail to error message
+                            if log_file.exists():
+                                log_tail = log_file.read_text().splitlines()[-50:]
+                                error_detail = "\n".join(log_tail)
+                                raise RuntimeError(
+                                    f"{result.get('error', 'Unknown error')}\n\nWorker log:\n{error_detail}"
+                                )
+                            else:
+                                raise RuntimeError(result.get("error", "Unknown error"))
+
+                        return result
+                    else:
+                        raise RuntimeError("Worker did not produce output file")
+
+                except subprocess.TimeoutExpired:
+                    # Kill the entire process group
+                    try:
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        proc.wait()
+                    except (ProcessLookupError, OSError):
+                        pass
+
+                    # Read log tail for debugging
+                    error_msg = f"OCR inference timed out after {actual_timeout} seconds ({total_pages} pages)"
+                    if log_file.exists():
+                        log_tail = log_file.read_text().splitlines()[-50:]
+                        error_msg += "\n\nWorker log (last 50 lines):\n" + "\n".join(log_tail)
+
+                    raise RuntimeError(error_msg)
+
+        finally:
+            # Clean up temporary files
+            if output_file.exists():
+                output_file.unlink()
+            if log_file.exists():
+                log_file.unlink()
+
 
 class FakeOCRService:
     """No-op OCR service for e2e — returns empty/fake results, no model download."""
@@ -256,7 +409,6 @@ class FakeOCRService:
 
 # Global instance
 _ocr_service: OCRService | FakeOCRService | None = None
-_ocr_lock = threading.Lock()
 _ocr_initializing = False
 
 
