@@ -422,3 +422,40 @@ export type InspectionTemplate = InspectionTemplateResponse
 
 /** @deprecated Use InspectionTemplateItemResponse instead */
 export type InspectionTemplateItem = InspectionTemplateItemResponse
+
+/**
+ * Maintenance plan response
+ */
+export interface MaintenancePlanResponse {
+  id: string
+  equipment_id: string
+  plan_name: string
+  plan_type: string
+  frequency: number
+  frequency_unit: string
+  last_maintenance_date: string | null
+  next_maintenance_date: string | null
+  responsible_person_id: string | null
+  maintenance_content: string | null
+  status: string
+  remark: string | null
+  created_at: string
+  updated_at: string
+  created_by: string | null
+  updated_by: string | null
+}
+
+/**
+ * Maintenance plan filters
+ */
+export interface MaintenancePlanFilters {
+  equipment_id?: string
+  status?: string
+  date_from?: string
+  date_to?: string
+  page?: number
+  page_size?: number
+}
+
+/** @deprecated Use MaintenancePlanResponse instead */
+export type MaintenancePlan = MaintenancePlanResponse

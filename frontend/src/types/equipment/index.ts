@@ -1,21 +1,65 @@
-// Export from equipment.ts (includes bridge types and equipment-specific types)
-export * from './equipment'
+// Export response types from bridge file (these are the source of truth)
+export type {
+  EquipmentCategory,
+  EquipmentCategoryTree,
+  Location,
+  LocationTree,
+  Equipment,
+  FailureCode,
+  SparePart,
+  WorkOrder,
+  CalibrationPlan,
+  InspectionTemplate,
+  InspectionTemplateItem,
+  MaintenancePlan,
+} from './generated-bridge'
+
+// Export filter and statistics types from bridge
+export type {
+  EquipmentFilters,
+  WorkOrderFilters,
+  SparePartFilters,
+  CalibrationPlanFilters,
+  InspectionTemplateFilters,
+  MaintenancePlanFilters,
+  EquipmentStatistics,
+  WorkOrderStatistics,
+  PaginatedResponse,
+} from './generated-bridge'
+
+// Export response types (new naming)
+export type {
+  EquipmentCategoryResponse,
+  LocationResponse,
+  EquipmentResponse,
+  FailureCodeResponse,
+  SparePartResponse,
+  WorkOrderResponse,
+  CalibrationPlanResponse,
+  InspectionTemplateResponse,
+  InspectionTemplateItemResponse,
+  MaintenancePlanResponse,
+} from './generated-bridge'
 
 // Export enums and utility types from individual files
+export type { EquipmentStatus, EquipmentImportance, EquipmentClass } from './equipment'
 export type { WorkOrderType, WorkOrderPriority, WorkOrderStatus, VerificationResult } from './work-order'
 export type { CalibrationType, CalibrationResult, CalibrationPlanStatus } from './calibration'
 export type { MaintenancePlanStatus } from './maintenance'
 export type { FailureCodeType } from './failure-code'
 
-// Export legacy interfaces from individual files (for backward compatibility)
-export type { WorkOrder, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics } from './work-order'
-export type { CalibrationPlan, CalibrationPlanFilters, CalibrationPlanListResponse, CalibrationRecord, CalibrationRecordFilters, CalibrationRecordListResponse } from './calibration'
-export type { SparePart, SparePartFilters, SparePartListResponse, StockWarning, SparePartStockResponse } from './spare-part'
-export type { FailureCode } from './failure-code'
-export type { InspectionTemplate, InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplateItem, InspectionRecordItem, InspectionCompleteInput } from './inspection-template'
-export type { MaintenancePlan, MaintenancePlanFilters, MaintenancePlanListResponse } from './maintenance'
-
 // Export request types from individual files
+export type { 
+  CreateCategoryInput,
+  UpdateCategoryInput,
+  CreateEquipmentInput,
+  UpdateEquipmentInput,
+  CreateLocationInput,
+  UpdateLocationInput,
+  EquipmentListResponse,
+  ImportResult,
+  ImportRowError,
+} from './equipment'
 export type { 
   CreateWorkOrderInput, 
   UpdateWorkOrderInput, 
@@ -48,6 +92,13 @@ export type {
   StockInboundInput,
   StockAdjustInput
 } from './spare-part'
+
+// Export list response types from individual files
+export type { WorkOrderListResponse } from './work-order'
+export type { CalibrationPlanListResponse, CalibrationRecord, CalibrationRecordFilters, CalibrationRecordListResponse } from './calibration'
+export type { SparePartListResponse, StockWarning, SparePartStockResponse } from './spare-part'
+export type { InspectionTemplateListResponse, InspectionRecordItem, InspectionCompleteInput } from './inspection-template'
+export type { MaintenancePlanListResponse } from './maintenance'
 
 // Export common types
 export * from './common'
