@@ -1,4 +1,6 @@
-import type { components } from '@/types/generated/schema'
+import type { components } from '../generated/schema'
+
+// Re-export request types from generated schema
 export type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
 export type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
 export type CreateEquipmentInput = components['schemas']['EquipmentCreate']
@@ -7,8 +9,25 @@ export type UpdateEquipmentInput = components['schemas']['EquipmentUpdate']
 export type CreateLocationInput = components['schemas']['LocationCreate']
 export type UpdateLocationInput = components['schemas']['LocationUpdate']
 
+// Import response types from bridge file
+export type {
+  EquipmentCategoryResponse,
+  EquipmentCategoryTree,
+  LocationResponse,
+  LocationTree,
+  EquipmentResponse,
+  FailureCodeResponse,
+  SparePartResponse,
+  WorkOrderResponse,
+  CalibrationPlanResponse,
+  InspectionTemplateResponse,
+  InspectionTemplateItemResponse,
+  EquipmentFilters,
+  EquipmentStatistics,
+} from './generated-bridge'
 
-// 设备分类
+// Legacy type aliases for backward compatibility
+// These match the structure of the backend Pydantic models
 export interface EquipmentCategory {
   id: string
   name: string
@@ -27,9 +46,6 @@ export interface EquipmentCategory {
   children?: EquipmentCategory[]
 }
 
-
-
-// 位置管理
 export interface Location {
   id: string
   name: string
@@ -48,9 +64,6 @@ export interface Location {
   children?: Location[]
 }
 
-
-
-// 设备管理
 export type EquipmentStatus = '在用' | '备用' | '维修中' | '停用' | '报废'
 export type EquipmentImportance = '高' | '中' | '低'
 export type EquipmentClass = 'A' | 'B' | 'C'
@@ -96,19 +109,6 @@ export interface Equipment {
   location?: Location
 }
 
-
-
-// 列表和筛选
-export interface EquipmentFilters {
-  category_id?: string
-  location_id?: string
-  department_id?: string
-  status?: EquipmentStatus
-  keyword?: string
-  page?: number
-  page_size?: number
-}
-
 export interface EquipmentListResponse {
   items: Equipment[]
   total: number
@@ -116,15 +116,6 @@ export interface EquipmentListResponse {
   page_size: number
 }
 
-// 统计
-export interface EquipmentStatistics {
-  total: number
-  by_status: Record<EquipmentStatus, number>
-  by_category: Record<string, number>
-  by_location: Record<string, number>
-}
-
-// 导入结果
 export interface ImportResult {
   success: number
   failed: number
