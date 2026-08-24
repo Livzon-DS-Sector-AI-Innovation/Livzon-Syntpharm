@@ -30,6 +30,7 @@ export type FailureCodeUpdate = components['schemas']['FailureCodeUpdate']
 export type SparePartCreate = components['schemas']['SparePartCreate']
 export type SparePartUpdate = components['schemas']['SparePartUpdate']
 export type WorkOrderCreate = components['schemas']['WorkOrderCreate']
+export type CreateWorkOrderInput = WorkOrderCreate
 export type WorkOrderUpdate = components['schemas']['WorkOrderUpdate']
 export type CalibrationPlanCreate = components['schemas']['CalibrationPlanCreate']
 export type CalibrationPlanUpdate = components['schemas']['CalibrationPlanUpdate']
@@ -618,6 +619,8 @@ export interface Maintainer {
   id: string
   name: string
   employee_id?: string
+  employee_no?: string
+  user_id?: string
 }
 
 export interface WorkOrderImage {

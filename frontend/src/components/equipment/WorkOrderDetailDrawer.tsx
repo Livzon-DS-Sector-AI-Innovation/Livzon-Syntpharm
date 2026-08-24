@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons'
 import { useEquipmentStore } from '@/stores/equipment'
 import { assignWorkOrder, startWorkOrder, completeWorkOrder, verifyWorkOrder, closeWorkOrder, claimWorkOrder } from '@/actions/equipment'
-import { WorkOrderStatus, WorkOrderPriority, Maintainer } from '@/types/equipment'
+import { WorkOrderStatus, WorkOrderPriority, Maintainer } from '@/types/equipment/generated-bridge'
 import { fetchMaintainersClient, fetchWorkOrderByIdClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
@@ -70,8 +70,8 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
   if (!viewingWorkOrder) return null
 
   const wo = viewingWorkOrder
-  const statusCfg = statusConfig[wo.status]
-  const priorityCfg = priorityConfig[wo.priority]
+  const statusCfg = statusConfig[wo.status as WorkOrderStatus]
+  const priorityCfg = priorityConfig[wo.priority as WorkOrderPriority]
 
   const handleAssign = () => {
     let assigneeId = ''
