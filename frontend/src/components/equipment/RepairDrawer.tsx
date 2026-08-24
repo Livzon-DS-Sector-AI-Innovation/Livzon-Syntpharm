@@ -6,7 +6,8 @@ import { PlusOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
-import { CreateWorkOrderInput, FailureCode, Maintainer } from '@/types/equipment'
+import { FailureCode } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, Maintainer } from '@/types/equipment'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
