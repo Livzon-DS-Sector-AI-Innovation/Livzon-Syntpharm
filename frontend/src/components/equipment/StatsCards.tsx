@@ -1,7 +1,8 @@
 'use client'
 
 import { Card, Col, Row, Statistic } from 'antd'
-import { EquipmentStatistics, EquipmentStatus } from '@/types/equipment'
+import { EquipmentStatistics } from '@/types/equipment/generated-bridge'
+import { EquipmentStatus } from '@/types/equipment'
 import { useEquipmentStore } from '@/stores/equipment'
 
 interface StatsCardsProps {
