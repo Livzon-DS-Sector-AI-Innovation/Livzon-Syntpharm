@@ -10,6 +10,7 @@ from httpx import ASGITransport
 
 from app import main as app_main
 from app.core.database import get_db
+from app.core.deps import get_current_user
 
 # Cast to FastAPI to help mypy understand the type
 app_instance = cast(FastAPI, app_main.app)
@@ -53,6 +54,9 @@ class MockDB:
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
     app_instance.dependency_overrides[get_db] = lambda: db
+    mock_user = MagicMock()
+    mock_user.id = "test-user-id"
+    app_instance.dependency_overrides[get_current_user] = lambda: mock_user
 
     data = [
         {
@@ -87,6 +91,9 @@ async def test_preview_returns_inferred_fields() -> None:
 async def test_batch_import_handles_null_department() -> None:
     db = MockDB()
     app_instance.dependency_overrides[get_db] = lambda: db
+    mock_user = MagicMock()
+    mock_user.id = "test-user-id"
+    app_instance.dependency_overrides[get_current_user] = lambda: mock_user
 
     data = [{"资产编号": "TEST002", "资产说明": "未知部门设备", "实物所在部门": "火星分部", "当前成本": 5000}]
 
