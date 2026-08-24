@@ -64,7 +64,7 @@ async def test_map_department_strict_alias() -> None:
     db = MockDB()
     mock_dept = create_mock_department("uuid-quality-control", "质量控制部")
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
@@ -80,7 +80,7 @@ async def test_map_department_strict_workshop() -> None:
     db = MockDB()
     mock_dept = create_mock_department("uuid-201-workshop", "201车间")
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
@@ -96,7 +96,7 @@ async def test_map_department_strict_special_format() -> None:
     db = MockDB()
     mock_dept = create_mock_department("uuid-solvent", "溶剂回收车间")
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
@@ -111,7 +111,7 @@ async def test_map_department_strict_nonexistent() -> None:
     """测试不存在的部门返回 None"""
     db = MockDB()
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=None)
         mock_repo_class.return_value = mock_repo

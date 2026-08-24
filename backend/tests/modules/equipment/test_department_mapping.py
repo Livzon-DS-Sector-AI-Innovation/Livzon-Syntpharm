@@ -48,7 +48,7 @@ async def test_exact_match_in_mapping() -> None:
     db = MockDB()
     mock_dept = create_mock_department("uuid-quality-control", "质量控制部")
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
@@ -65,7 +65,7 @@ async def test_solvent_workshop_mapping() -> None:
     db = MockDB()
     mock_dept = create_mock_department("uuid-solvent-recovery", "溶剂回收车间")
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
@@ -81,7 +81,7 @@ async def test_unknown_department_returns_none() -> None:
 
     db = MockDB()
 
-    with patch("app.modules.hr.public_api.DepartmentRepository") as mock_repo_class:
+    with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:
         mock_repo = MagicMock()
         mock_repo.get_by_name = AsyncMock(return_value=None)
         mock_repo_class.return_value = mock_repo
