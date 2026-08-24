@@ -261,7 +261,14 @@ app: FastAPI = FastAPI(
 
 __all__ = ["app"]
 
-allow_origins = [settings.FRONTEND_URL] if settings.FRONTEND_URL else ["http://localhost:3000"]
+# CORS configuration: explicit origins, no silent fallbacks in production
+if settings.is_production:
+    if not settings.FRONTEND_URL:
+        raise RuntimeError("FRONTEND_URL must be set in production")
+    allow_origins = [settings.FRONTEND_URL]
+else:
+    # Development: allow configured frontend URL or localhost:3000
+    allow_origins = [settings.FRONTEND_URL] if settings.FRONTEND_URL else ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
