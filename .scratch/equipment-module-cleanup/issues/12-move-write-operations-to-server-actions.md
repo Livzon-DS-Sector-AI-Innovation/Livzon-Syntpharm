@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Add authentication to all equipment API endpoints
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Batch delete operation implemented as Server Action
-- [ ] Import operation implemented as Server Action
-- [ ] Server Actions use authentication middleware
-- [ ] Server Actions call backend API with auth headers
-- [ ] Tests verify Server Actions work with authentication
+- [x] Batch delete operation implemented as Server Action
+- [x] Import operation implemented as Server Action
+- [x] Server Actions use authentication middleware
+- [x] Server Actions call backend API with auth headers
+- [x] Tests verify Server Actions work with authentication
