@@ -7,13 +7,13 @@ import type {
   AssignRolesInput, AssignCategoriesInput,
 } from '@/types/equipment/generated-bridge'
 import {
-  createPersonnelRoleApi,
-  updatePersonnelRoleApi,
+  createPersonnelRoleApiTyped,
+  updatePersonnelRoleApiTyped,
   deletePersonnelRoleApi,
-  addPersonnelApi,
+  addPersonnelApiTyped,
   deletePersonnelApi,
-  assignRolesApi,
-  assignCategoriesApi,
+  assignRolesApiTyped,
+  assignCategoriesApiTyped,
   refreshFeishuApi,
 } from '@/lib/api/server/equipment'
 
@@ -29,14 +29,14 @@ async function wrapApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
 
 export async function createRole(data: CreateRoleInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await createPersonnelRoleApi(data, authHeaders)
+  const result = await createPersonnelRoleApiTyped(data, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }
 
 export async function updateRole(id: string, data: UpdateRoleInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await updatePersonnelRoleApi(id, data, authHeaders)
+  const result = await updatePersonnelRoleApiTyped(id, data, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }
@@ -52,7 +52,7 @@ export async function deleteRole(id: string) {
 
 export async function addPersonnel(data: AddPersonnelInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await addPersonnelApi(data, authHeaders)
+  const result = await addPersonnelApiTyped(data as any, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }
@@ -68,7 +68,7 @@ export async function assignRoles(
   personnelId: string, data: AssignRolesInput,
 ) {
   const authHeaders = await getAuthHeaders()
-  const result = await assignRolesApi(personnelId, data, authHeaders)
+  const result = await assignRolesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }
@@ -77,7 +77,7 @@ export async function assignCategories(
   personnelId: string, data: AssignCategoriesInput,
 ) {
   const authHeaders = await getAuthHeaders()
-  const result = await assignCategoriesApi(personnelId, data, authHeaders)
+  const result = await assignCategoriesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }

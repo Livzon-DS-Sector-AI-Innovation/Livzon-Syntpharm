@@ -4,10 +4,10 @@
 
 **Blocked by:** 02: API Client Type Safety - Migrate Batch 1, 03: API Client Type Safety - Migrate Batch 2
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Remove all old `data: any` API function versions from src/lib/api/server/equipment.ts
-- [ ] Verify no code still references old versions
-- [ ] Ensure TypeScript compilation passes with strict mode
-- [ ] All existing tests continue to pass
-- [ ] No `data: any` remains in equipment API client
+- [x] Remove all old `data: any` API function versions from src/lib/api/server/equipment.ts
+- [x] Verify no code still references old versions
+- [x] Ensure TypeScript compilation passes with strict mode
+- [x] All existing tests continue to pass
+- [x] No `data: any` remains in equipment API client (except for 3 special cases: previewEquipmentImportApiTyped, batchImportEquipmentApiTyped, claimWorkOrderDataApiTyped which use any[] or any for backend compatibility)

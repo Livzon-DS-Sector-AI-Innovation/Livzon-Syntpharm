@@ -41,23 +41,23 @@ import {
   createCategoryApiTyped, updateCategoryApiTyped, deleteCategoryApi,
   createLocationApiTyped, updateLocationApiTyped, deleteLocationApi,
   createEquipmentApiTyped, updateEquipmentApiTyped, deleteEquipmentApi, batchDeleteEquipmentsApi,
-  createFailureCodeApi, updateFailureCodeApi, deleteFailureCodeApi,
-  createWorkOrderApi, updateWorkOrderApi, assignWorkOrderApi,
-  startWorkOrderApi, completeWorkOrderApi, verifyWorkOrderApi, closeWorkOrderApi,
-  createCalibrationPlanApi, updateCalibrationPlanApi, deleteCalibrationPlanApi,
-  createCalibrationRecordApi,
-  createSparePartApi, updateSparePartApi, deleteSparePartApi,
-  stockInboundApi, stockAdjustApi,
-  createMaintenancePlanApi, updateMaintenancePlanApi, deleteMaintenancePlanApi,
-  createInspectionTemplateApi, updateInspectionTemplateApi, deleteInspectionTemplateApi,
-  createInspectionTemplateItemApi, updateInspectionTemplateItemApi, deleteInspectionTemplateItemApi,
-  completeInspectionApi, consumeMaterialsApi,
+  createFailureCodeApiTyped, updateFailureCodeApiTyped, deleteFailureCodeApi,
+  createWorkOrderApiTyped, updateWorkOrderApiTyped, assignWorkOrderApiTyped,
+  startWorkOrderApi, completeWorkOrderApiTyped, verifyWorkOrderApiTyped, closeWorkOrderApi,
+  createCalibrationPlanApiTyped, updateCalibrationPlanApiTyped, deleteCalibrationPlanApi,
+  createCalibrationRecordApiTyped,
+  createSparePartApiTyped, updateSparePartApiTyped, deleteSparePartApi,
+  stockInboundApiTyped, stockAdjustApiTyped,
+  createMaintenancePlanApiTyped, updateMaintenancePlanApiTyped, deleteMaintenancePlanApi,
+  createInspectionTemplateApiTyped, updateInspectionTemplateApiTyped, deleteInspectionTemplateApi,
+  createInspectionTemplateItemApiTyped, updateInspectionTemplateItemApiTyped, deleteInspectionTemplateItemApi,
+  completeInspectionApiTyped, consumeMaterialsApiTyped,
   uploadWorkOrderImagesApi, deleteWorkOrderImageApi,
-  claimWorkOrderApi, updateClaimTimeoutConfigApi,
+  claimWorkOrderApi, updateClaimTimeoutConfigApiTyped,
   downloadImportTemplateApi, importEquipmentsApi,
-  previewEquipmentImportApi, batchImportEquipmentApi,
-  createPersonnelRoleApi, updatePersonnelRoleApi, deletePersonnelRoleApi,
-  addPersonnelApi, deletePersonnelApi, assignRolesApi, assignCategoriesApi, refreshFeishuApi,
+  previewEquipmentImportApiTyped, batchImportEquipmentApiTyped,
+  createPersonnelRoleApiTyped, updatePersonnelRoleApiTyped, deletePersonnelRoleApi,
+  addPersonnelApiTyped, deletePersonnelApi, assignRolesApiTyped, assignCategoriesApiTyped, refreshFeishuApi,
 } from '@/lib/api/server/equipment'
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -121,13 +121,13 @@ export async function deleteEquipment(id: string) {
 }
 
 export async function createFailureCode(path: FailureCodePath, data: CreateFailureCodeInput) {
-  const result = await createFailureCodeApi(path, data, await authHeaders())
+  const result = await createFailureCodeApiTyped(path, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateFailureCode(path: FailureCodePath, id: string, data: UpdateFailureCodeInput) {
-  const result = await updateFailureCodeApi(path, id, data, await authHeaders())
+  const result = await updateFailureCodeApiTyped(path, id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -139,19 +139,19 @@ export async function deleteFailureCode(path: FailureCodePath, id: string) {
 }
 
 export async function createWorkOrder(data: CreateWorkOrderInput) {
-  const result = await createWorkOrderApi(data, await authHeaders())
+  const result = await createWorkOrderApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateWorkOrder(id: string, data: UpdateWorkOrderInput) {
-  const result = await updateWorkOrderApi(id, data, await authHeaders())
+  const result = await updateWorkOrderApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function assignWorkOrder(id: string, data: AssignWorkOrderInput) {
-  const result = await assignWorkOrderApi(id, data, await authHeaders())
+  const result = await assignWorkOrderApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -163,13 +163,13 @@ export async function startWorkOrder(id: string) {
 }
 
 export async function completeWorkOrder(id: string, data: CompleteWorkOrderInput) {
-  const result = await completeWorkOrderApi(id, data, await authHeaders())
+  const result = await completeWorkOrderApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function verifyWorkOrder(id: string, data: VerifyWorkOrderInput) {
-  const result = await verifyWorkOrderApi(id, data, await authHeaders())
+  const result = await verifyWorkOrderApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -181,13 +181,13 @@ export async function closeWorkOrder(id: string) {
 }
 
 export async function createCalibrationPlan(data: CreateCalibrationPlanInput) {
-  const result = await createCalibrationPlanApi(data, await authHeaders())
+  const result = await createCalibrationPlanApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateCalibrationPlan(id: string, data: UpdateCalibrationPlanInput) {
-  const result = await updateCalibrationPlanApi(id, data, await authHeaders())
+  const result = await updateCalibrationPlanApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -199,19 +199,19 @@ export async function deleteCalibrationPlan(id: string) {
 }
 
 export async function createCalibrationRecord(data: CreateCalibrationRecordInput) {
-  const result = await createCalibrationRecordApi(data, await authHeaders())
+  const result = await createCalibrationRecordApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function createSparePart(data: CreateSparePartInput) {
-  const result = await createSparePartApi(data, await authHeaders())
+  const result = await createSparePartApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateSparePart(id: string, data: UpdateSparePartInput) {
-  const result = await updateSparePartApi(id, data, await authHeaders())
+  const result = await updateSparePartApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -223,25 +223,25 @@ export async function deleteSparePart(id: string) {
 }
 
 export async function stockInbound(sparePartId: string, data: StockInboundInput) {
-  const result = await stockInboundApi(sparePartId, data, await authHeaders())
+  const result = await stockInboundApiTyped(sparePartId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function stockAdjust(sparePartId: string, data: StockAdjustInput) {
-  const result = await stockAdjustApi(sparePartId, data, await authHeaders())
+  const result = await stockAdjustApiTyped(sparePartId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function createMaintenancePlan(data: CreateMaintenancePlanInput) {
-  const result = await createMaintenancePlanApi(data, await authHeaders())
+  const result = await createMaintenancePlanApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateMaintenancePlan(id: string, data: UpdateMaintenancePlanInput) {
-  const result = await updateMaintenancePlanApi(id, data, await authHeaders())
+  const result = await updateMaintenancePlanApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -253,13 +253,13 @@ export async function deleteMaintenancePlan(id: string) {
 }
 
 export async function createInspectionTemplate(data: CreateInspectionTemplateInput) {
-  const result = await createInspectionTemplateApi(data, await authHeaders())
+  const result = await createInspectionTemplateApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateInspectionTemplate(id: string, data: UpdateInspectionTemplateInput) {
-  const result = await updateInspectionTemplateApi(id, data, await authHeaders())
+  const result = await updateInspectionTemplateApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -271,13 +271,13 @@ export async function deleteInspectionTemplate(id: string) {
 }
 
 export async function createInspectionTemplateItem(templateId: string, data: CreateInspectionTemplateItemInput) {
-  const result = await createInspectionTemplateItemApi(templateId, data, await authHeaders())
+  const result = await createInspectionTemplateItemApiTyped(templateId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateInspectionTemplateItem(itemId: string, data: UpdateInspectionTemplateItemInput) {
-  const result = await updateInspectionTemplateItemApi(itemId, data, await authHeaders())
+  const result = await updateInspectionTemplateItemApiTyped(itemId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -289,13 +289,13 @@ export async function deleteInspectionTemplateItem(itemId: string) {
 }
 
 export async function completeInspection(workOrderId: string, data: InspectionCompleteInput) {
-  const result = await completeInspectionApi(workOrderId, data, await authHeaders())
+  const result = await completeInspectionApiTyped(workOrderId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function consumeMaterials(workOrderId: string, data: MaterialConsumeInput) {
-  const result = await consumeMaterialsApi(workOrderId, data, await authHeaders())
+  const result = await consumeMaterialsApiTyped(workOrderId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -319,7 +319,7 @@ export async function claimWorkOrder(id: string) {
 }
 
 export async function updateClaimTimeoutConfig(data: { emergency?: number; high?: number; medium?: number; low?: number }) {
-  const result = await updateClaimTimeoutConfigApi(data, await authHeaders())
+  const result = await updateClaimTimeoutConfigApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -336,8 +336,8 @@ export async function importEquipments(formData: FormData) {
   return result
 }
 
-export async function addPersonnel(data: Record<string, unknown>) {
-  const result = await addPersonnelApi(data, await authHeaders())
+export async function addPersonnel(data: components['schemas']['PersonnelAddRequest']) {
+  const result = await addPersonnelApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -348,14 +348,14 @@ export async function deletePersonnel(id: string) {
   return result
 }
 
-export async function assignRoles(personnelId: string, data: Record<string, unknown>) {
-  const result = await assignRolesApi(personnelId, data, await authHeaders())
+export async function assignRoles(personnelId: string, data: components['schemas']['PersonnelRoleAssign']) {
+  const result = await assignRolesApiTyped(personnelId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
-export async function assignCategories(personnelId: string, data: Record<string, unknown>) {
-  const result = await assignCategoriesApi(personnelId, data, await authHeaders())
+export async function assignCategories(personnelId: string, data: components['schemas']['PersonnelCategoryAssign']) {
+  const result = await assignCategoriesApiTyped(personnelId, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -366,14 +366,14 @@ export async function refreshFeishu() {
   return result
 }
 
-export async function createRole(data: Record<string, unknown>) {
-  const result = await createPersonnelRoleApi(data, await authHeaders())
+export async function createRole(data: components['schemas']['RoleCreate']) {
+  const result = await createPersonnelRoleApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateRole(id: string, data: Record<string, unknown>) {
-  const result = await updatePersonnelRoleApi(id, data, await authHeaders())
+  const result = await updatePersonnelRoleApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -385,12 +385,12 @@ export async function deleteRole(id: string) {
 }
 
 export async function previewEquipmentImport(data: any) {
-  const result = await previewEquipmentImportApi(data, await authHeaders())
+  const result = await previewEquipmentImportApiTyped(data, await authHeaders())
   return result
 }
 
 export async function batchImportEquipment(data: any) {
-  const result = await batchImportEquipmentApi(data, await authHeaders())
+  const result = await batchImportEquipmentApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
