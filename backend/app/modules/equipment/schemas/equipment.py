@@ -225,6 +225,7 @@ class BatchDeleteRequest(BaseModel):
 # ==================== 设备导入 ====================
 class EquipmentImportRow(BaseModel):
     """设备导入行数据"""
+
     model_config = ConfigDict(extra="allow")
 
     资产编号: str | int | None = Field(default=None, description="资产编号")
@@ -235,16 +236,16 @@ class EquipmentImportRow(BaseModel):
     当前成本: str | float | None = Field(default=None, description="当前成本")
     报废状态: str | None = Field(default=None, description="报废状态")
     数量: int | float | None = Field(default=None, description="数量")
-    
-    @field_validator('资产编号', mode='before')
+
+    @field_validator("资产编号", mode="before")
     @classmethod
     def convert_asset_no_to_str(cls, v):
         """将资产编号转换为字符串"""
         if v is None:
             return None
         return str(v)
-    
-    @model_validator(mode='after')
+
+    @model_validator(mode="after")
     def merge_equipment_name(self):
         """合并设备名称到资产说明"""
         if self.资产说明 is None and self.设备名称 is not None:

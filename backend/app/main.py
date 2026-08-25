@@ -324,13 +324,12 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
 
-
-
 # Add middleware to log all POST requests with body
 @app.middleware("http")
 async def log_request_body(request: Request, call_next):
     if request.method == "POST" and "/import/" in str(request.url.path):
         import logging
+
         logger = logging.getLogger(__name__)
         body = await request.body()
         logger.error(f"[REQUEST LOGGER] Path: {request.url.path}")
@@ -339,19 +338,21 @@ async def log_request_body(request: Request, call_next):
             logger.error(f"[REQUEST LOGGER] Body: {body.decode('utf-8', errors='ignore')}")
         else:
             logger.error(f"[REQUEST LOGGER] Body (first 5000 chars): {body[:5000].decode('utf-8', errors='ignore')}")
-        
+
         # Create a new request with the same body
         async def receive():
             return {"type": "http.request", "body": body, "more_body": False}
-        
+
         request = Request(request.scope, receive)
-    
+
     response = await call_next(request)
     return response
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     import logging
+
     logger = logging.getLogger(__name__)
     errors = exc.errors()
     logger.error(f"[VALIDATION ERROR] Path: {request.url.path}")

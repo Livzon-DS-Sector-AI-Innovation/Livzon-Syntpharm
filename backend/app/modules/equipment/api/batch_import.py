@@ -230,6 +230,7 @@ async def preview_import(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     import logging
+
     logger = logging.getLogger(__name__)
     logger.error(f"[DEBUG] Received {len(data)} rows")
     if data:
@@ -421,6 +422,7 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
 async def test_validation(data: list[EquipmentImportRow]):
     """Test endpoint to debug validation errors without authentication."""
     import logging
+
     logger = logging.getLogger(__name__)
     logger.error(f"[TEST] Received {len(data)} rows")
     if data:
