@@ -106,9 +106,7 @@ class TestSequenceMatcher:
             ("设备工程部", "设备工程部", 1.0, 1.0),  # identical strings
         ],
     )
-    def test_similarity_scores(
-        self, str1: str, str2: str, expected_min: float, expected_max: float
-    ) -> None:
+    def test_similarity_scores(self, str1: str, str2: str, expected_min: float, expected_max: float) -> None:
         """测试字符串相似度计算."""
         score = SequenceMatcher(None, str1, str2).ratio()
         assert expected_min <= score <= expected_max

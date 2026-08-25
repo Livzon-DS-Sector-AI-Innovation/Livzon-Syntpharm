@@ -11,7 +11,7 @@ from tests.modules.equipment.conftest import MockDB, create_mock_department
 async def test_preview_returns_inferred_fields(async_client: Any) -> None:
     """Test that preview endpoint correctly infers equipment fields."""
     from app import main as app_main
-    
+
     db = MockDB()
     app_main.app.dependency_overrides[get_db] = lambda: db
     mock_user = MagicMock()
@@ -56,7 +56,7 @@ async def test_preview_returns_inferred_fields(async_client: Any) -> None:
 async def test_batch_import_handles_null_department(async_client: Any) -> None:
     """Test that batch import handles null department gracefully."""
     from app import main as app_main
-    
+
     db = MockDB()
     app_main.app.dependency_overrides[get_db] = lambda: db
     mock_user = MagicMock()

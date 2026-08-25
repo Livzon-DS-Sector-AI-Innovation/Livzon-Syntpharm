@@ -1,6 +1,6 @@
 """Shared test fixtures for equipment module tests."""
 
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,15 +10,13 @@ from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
 
-from typing import Protocol, runtime_checkable
-
 @runtime_checkable
 class MockDBProtocol(Protocol):
     """Protocol defining the minimal database interface for testing."""
+
     async def execute(self, stmt: Any) -> MagicMock: ...
     async def commit(self) -> None: ...
     async def rollback(self) -> None: ...
-
 
 
 def _extract_param_values(stmt: Any) -> str:
@@ -89,28 +87,32 @@ async def test_assignee(db_session: AsyncSession) -> User:
 def client() -> Any:
     """Create a test client for synchronous tests."""
     from fastapi.testclient import TestClient
+
     from app.main import app
+
     return TestClient(app)
 
 
 @pytest.fixture
 async def async_client() -> Any:
     """Create an async test client with automatic dependency override cleanup."""
-    import httpx
-    from httpx import ASGITransport
-    from app import main as app_main
     from typing import cast
+
+    import httpx
     from fastapi import FastAPI
-    
+    from httpx import ASGITransport
+
+    from app import main as app_main
+
     app_instance = cast(FastAPI, app_main.app)
-    
+
     # Store original overrides
     original_overrides = app_instance.dependency_overrides.copy()
-    
+
     transport = ASGITransport(app=app_instance)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
-    
+
     # Restore original overrides after test
     app_instance.dependency_overrides.clear()
     app_instance.dependency_overrides.update(original_overrides)
