@@ -12,13 +12,26 @@ import {
   MaterialRecord, ClaimTimeoutConfig, Maintainer, WorkOrderImage,
 } from '@/types/equipment/generated-bridge'
 import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
-import type { operations } from '@/types/generated/schema'
 
 const API_BASE = '/api/v1'
 
-// Generated type aliases from OpenAPI spec
-export type GetEquipmentsQuery = NonNullable<operations['get_equipments_api_v1_equipment_equipments_get']['parameters']['query']>
-export type GetStatisticsQuery = NonNullable<operations['get_equipment_statistics_api_v1_equipment_equipments_statistics_get']['parameters']['query']>
+// Query parameter types (manually defined to avoid type resolution issues)
+export interface GetEquipmentsQuery {
+  category_id?: string | null
+  location_id?: string | null
+  department_id?: string | null
+  status?: string | null
+  keyword?: string | null
+  page?: number
+  page_size?: number
+}
+
+export interface GetStatisticsQuery {
+  category_id?: string | null
+  location_id?: string | null
+  department_id?: string | null
+  status?: string | null
+}
 
 
 
