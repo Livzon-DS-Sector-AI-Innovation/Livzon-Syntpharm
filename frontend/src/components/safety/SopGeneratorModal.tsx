@@ -434,7 +434,7 @@ export default function SopGeneratorModal({
       width={640}
       footer={null}
       destroyOnHidden
-      maskClosable={maskClosable}
+      mask={{ closable: maskClosable }}
       closable={!uploading}
       styles={{
         body: { padding: 24 }

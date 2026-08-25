@@ -113,7 +113,6 @@ DEPARTMENT_CONFIG: dict[str, dict[str, str]] = {
     },
     "采购部": {"leader": "周亮亮", "supervisor": "刘畅"},
     "财务部": {"leader": "吴丽文", "supervisor": "雷春建"},
-
     # ── 车间部门（负责人待人工确认，暂填默认值）──
     "201车间": {"leader": "梁学超", "supervisor": "佘祥辉"},
     "202车间": {"leader": "梁学超", "supervisor": "佘祥辉"},

@@ -3,11 +3,12 @@
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import DuplicateException
 from app.core.storage import delete_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.models import (
@@ -21,7 +22,6 @@ from app.modules.safety.schemas import (
     SpecialOperationPersonnelCreate,
     SpecialOperationPersonnelUpdate,
 )
-from app.core.exceptions import DuplicateException
 from app.modules.safety.service._helpers import audit_log
 
 logger = logging.getLogger(__name__)
@@ -90,12 +90,13 @@ class SpecialOperationService:
         keyword: str | None = None,
     ) -> tuple[list[SpecialOperationPersonnel], int]:
         """获取特殊作业人员资质列表（动态计算过期状态）"""
-        from datetime import datetime, timezone
+        from datetime import datetime
+
         items, total = await self.repo.get_special_operation_personnel(
             skip, limit, status, certificate_type, department, keyword
         )
         # 动态计算状态：如果到期日期已过，标记为 expired
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for item in items:
             if item.expiry_date and item.expiry_date < now and item.status != "revoked":
                 item.status = "expired"
@@ -116,8 +117,10 @@ class SpecialOperationService:
             expiry_date=data.expiry_date,
         )
         if existing:
+            exp = data.expiry_date.strftime("%Y-%m-%d") if data.expiry_date else "未设置"
             raise DuplicateException(
-                message=f"该人员（{data.personnel_no}）在 {data.department} 已持有相同的 {data.certificate_type} 证书（编号：{data.certificate_number}，到期日：{data.expiry_date.strftime('%Y-%m-%d') if data.expiry_date else '未设置'}）"
+                field="certificate",
+                value=f"{data.personnel_no}-{data.department}-{data.certificate_type}-{data.certificate_number}-{exp}",
             )
         create_data = data.model_dump()
         item = await self.repo.create_special_operation_personnel(create_data)
@@ -129,21 +132,21 @@ class SpecialOperationService:
     ) -> SpecialOperationPersonnel | None:
         """更新人员资质（检查重复：人员编号 + 部门 + 证书类型 + 证书编号 + 到期日期）"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-        
+
         # 检查是否重复（排除自身）
         if update_data:
             # 获取当前记录以获取未更新的字段值
             current = await self.repo.get_special_operation_personnel_by_id(personnel_id)
             if not current:
                 return None
-            
+
             # 构建完整的字段值用于重复检查
-            check_personnel_no = update_data.get('personnel_no', current.personnel_no)
-            check_department = update_data.get('department', current.department)
-            check_cert_type = update_data.get('certificate_type', current.certificate_type)
-            check_cert_number = update_data.get('certificate_number', current.certificate_number)
-            check_expiry_date = update_data.get('expiry_date', current.expiry_date)
-            
+            check_personnel_no = update_data.get("personnel_no", current.personnel_no)
+            check_department = update_data.get("department", current.department)
+            check_cert_type = update_data.get("certificate_type", current.certificate_type)
+            check_cert_number = update_data.get("certificate_number", current.certificate_number)
+            check_expiry_date = update_data.get("expiry_date", current.expiry_date)
+
             existing = await self.repo.check_personnel_duplicate(
                 personnel_no=check_personnel_no,
                 department=check_department,
@@ -153,10 +156,12 @@ class SpecialOperationService:
                 exclude_id=personnel_id,
             )
             if existing:
+                exp2 = check_expiry_date.strftime("%Y-%m-%d") if check_expiry_date else "未设置"
                 raise DuplicateException(
-                    message=f"该人员（{check_personnel_no}）在 {check_department} 已持有相同的 {check_cert_type} 证书（编号：{check_cert_number}，到期日：{check_expiry_date.strftime('%Y-%m-%d') if check_expiry_date else '未设置'}）"
+                    field="certificate",
+                    value=f"{check_personnel_no}-{check_department}-{check_cert_type}-{check_cert_number}-{exp2}",
                 )
-        
+
         item = await self.repo.update_special_operation_personnel(personnel_id, update_data)
         if item:
             await self._audit("update", "special_operation_personnel", resource_id=personnel_id)

@@ -195,13 +195,18 @@ export function SafetyRegulationPageClient() {
   }
 
   const loadRegulationsForSelect = async () => {
+    console.log('[DEBUG] loadRegulationsForSelect called')
     try {
-      const response = await getRegulations({ page: 1, page_size: 500 })
+      const response = await getRegulations({ page: 1, page_size: 200 })
+      console.log('[DEBUG] getRegulations response:', response)
       if (response.code === 200) {
+        console.log('[DEBUG] Setting regulationsForSelect:', response.data)
         setRegulationsForSelect(response.data)
+      } else {
+        console.log('[DEBUG] Response code is not 200:', response.code, response.message)
       }
-    } catch {
-      // silent
+    } catch (error) {
+      console.log('[DEBUG] loadRegulationsForSelect error:', error)
     }
   }
 

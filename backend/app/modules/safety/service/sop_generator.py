@@ -260,9 +260,7 @@ class SopGeneratorService:
         try:
             from pipeline import run_pipeline  # type: ignore[import-not-found]
         except ImportError:
-            raise RuntimeError(
-                "安全操规生成插件未安装。请联系管理员安装 safety-sop-generator 插件。"
-            )
+            raise RuntimeError("安全操规生成插件未安装。请联系管理员安装 safety-sop-generator 插件。")
 
         return run_pipeline(  # type: ignore[no-any-return]
             draft_path=draft_path,

@@ -386,6 +386,15 @@ wheels = [
 ]
 
 [[package]]
+name = "babel"
+version = "2.18.0"
+source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
+sdist = { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7d/b2/51899539b6ceeeb420d40ed3cd4b7a40519404f9baf3d4ac99dc413a834b/babel-2.18.0.tar.gz", hash = "sha256:b80b99a14bd085fcacfa15c9165f651fbb3406e66cc603abf11c5750937c992d", size = 9959554, upload-time = "2026-02-01T12:30:56.078Z" }
+wheels = [
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/77/f5/21d2de20e8b8b0408f0681956ca2c69f1320a3848ac50e6e7f39c6159675/babel-2.18.0-py3-none-any.whl", hash = "sha256:e2b422b277c2b9a9630c1d7903c2a00d0830c409c59ac8cae9081c92f1aeba35", size = 10196845, upload-time = "2026-02-01T12:30:53.445Z" },
+]
+
+[[package]]
 name = "bce-python-sdk"
 version = "0.9.72"
 source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
@@ -819,6 +828,7 @@ dependencies = [
     { name = "apscheduler" },
     { name = "asyncpg" },
     { name = "croniter" },
+    { name = "docxcompose" },
     { name = "fastapi", extra = ["standard"] },
     { name = "fastmcp" },
     { name = "httpx" },
@@ -878,6 +888,7 @@ requires-dist = [
     { name = "apscheduler", marker = "extra == 'dev'", specifier = ">=3.10.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "croniter", specifier = ">=6.2.2" },
+    { name = "docxcompose", specifier = ">=1.4.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.0" },
     { name = "fastmcp", specifier = ">=3.4.2" },
     { name = "httpx", specifier = ">=0.27.0" },
@@ -960,6 +971,20 @@ source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
 sdist = { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/e0/4d/f332313098c1de1b2d2ff91cf2674415cc7cddab2ca1b01ae29774bd5fdf/docstring_parser-0.18.0.tar.gz", hash = "sha256:292510982205c12b1248696f44959db3cdd1740237a968ea1e2e7a900eeb2015", size = 29341, upload-time = "2026-04-14T04:09:19.867Z" }
 wheels = [
     { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/a7/5f/ed01f9a3cdffbd5a008556fc7b2a08ddb1cc6ace7effa7340604b1d16699/docstring_parser-0.18.0-py3-none-any.whl", hash = "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b", size = 22484, upload-time = "2026-04-14T04:09:18.638Z" },
+]
+
+[[package]]
+name = "docxcompose"
+version = "2.2.0"
+source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
+dependencies = [
+    { name = "babel" },
+    { name = "lxml" },
+    { name = "python-docx" },
+]
+sdist = { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/0d/10/d0941047b177c0b6eb95138b15949ca59a8ddb1d7266d10dc384d0dba681/docxcompose-2.2.0.tar.gz", hash = "sha256:e2c69703a2fefad4471aad82861a1c5d7b3f4a669510de504bb36f41f66f6d3e", size = 22036, upload-time = "2026-06-02T12:18:11.083Z" }
+wheels = [
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/e4/70/121090145cb543e48da7421e64036e6484bfbbc40fc619d73599dc22eb2e/docxcompose-2.2.0-py3-none-any.whl", hash = "sha256:fcfec8b0ba7d341bd3280cb92b571ed2f9e868bbd0d6750ea9539e0ab0bb49a1", size = 25738, upload-time = "2026-06-02T12:18:09.963Z" },
 ]
 
 [[package]]

@@ -1128,13 +1128,13 @@ class HazardService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
 
-        return await create_ai_service("text")
+        return await create_ai_service("text")  # type: ignore[no-any-return]
 
     async def _get_vision_ai_service(self) -> "AIService":
         """获取视觉模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
 
-        return await create_ai_service("vision")
+        return await create_ai_service("vision")  # type: ignore[no-any-return]
 
     async def run_hazard_ai_script(self, hazard_id: uuid.UUID, script_number: int) -> HazardReport | None:
         """执行隐患AI工作流脚本（1=AI隐患识别）。

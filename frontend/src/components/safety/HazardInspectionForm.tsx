@@ -41,10 +41,10 @@ interface UserOption {
 }
 
 export interface InspectionFormValues {
-  inspection_category?: string     // 逗号分隔的多选值（匹配 Bitable multi_select）
-  discovered_by?: string           // user UUID (person field)
-  discovered_by_name?: string      // display name
-  inspector_department?: string    // 逗号分隔的多选值（匹配 Bitable multi_select）
+  inspection_category?: string | string[]     // 逗号分隔的多选值（匹配 Bitable multi_select）
+  discovered_by?: string                      // user UUID (person field)
+  discovered_by_name?: string                 // display name
+  inspector_department?: string | string[]    // 逗号分隔的多选值（匹配 Bitable multi_select）
   department?: string
   discovered_at?: string
   description?: string
@@ -253,7 +253,6 @@ export default function HazardInspectionForm({
         form={form}
         layout="vertical"
         initialValues={{
-          discovered_at: dayjs(),
           ...initialValues,
           // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
           inspection_category: Array.isArray(initialValues?.inspection_category)
