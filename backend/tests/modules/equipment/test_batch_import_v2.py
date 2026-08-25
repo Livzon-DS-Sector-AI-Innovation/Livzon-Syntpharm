@@ -27,7 +27,6 @@ def test_dept_mapping_v2_coverage() -> None:
     assert DEPT_MAPPING_V3["头孢合成一车间"] == "201车间"
 
 
-@pytest.mark.asyncio
 async def test_map_department_strict_alias() -> None:
     """测试别名映射逻辑"""
     db = MockDB()
@@ -43,7 +42,6 @@ async def test_map_department_strict_alias() -> None:
         assert dept_id is not None
 
 
-@pytest.mark.asyncio
 async def test_map_department_strict_workshop() -> None:
     """测试车间编号映射"""
     db = MockDB()
@@ -59,7 +57,6 @@ async def test_map_department_strict_workshop() -> None:
         assert dept_id is not None
 
 
-@pytest.mark.asyncio
 async def test_map_department_strict_special_format() -> None:
     """测试溶剂回收车间特殊格式归口"""
     db = MockDB()
@@ -75,7 +72,6 @@ async def test_map_department_strict_special_format() -> None:
         assert dept_id is not None
 
 
-@pytest.mark.asyncio
 async def test_map_department_strict_nonexistent() -> None:
     """测试不存在的部门返回 None"""
     db = MockDB()

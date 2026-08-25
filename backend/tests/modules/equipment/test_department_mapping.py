@@ -15,7 +15,6 @@ from app.modules.hr.models import HrDepartment
 
 
 
-@pytest.mark.asyncio
 async def test_exact_match_in_mapping() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 
@@ -32,7 +31,6 @@ async def test_exact_match_in_mapping() -> None:
         assert id_val == "uuid-quality-control"
 
 
-@pytest.mark.asyncio
 async def test_solvent_workshop_mapping() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 
@@ -49,7 +47,6 @@ async def test_solvent_workshop_mapping() -> None:
         assert id_val == "uuid-solvent-recovery"
 
 
-@pytest.mark.asyncio
 async def test_unknown_department_returns_none() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 

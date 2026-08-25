@@ -24,7 +24,6 @@ app_instance = cast(FastAPI, app_main.app)
 
 
 
-@pytest.mark.asyncio
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
     app_instance.dependency_overrides[get_db] = lambda: db
@@ -68,7 +67,6 @@ async def test_preview_returns_inferred_fields() -> None:
     app_instance.dependency_overrides.clear()
 
 
-@pytest.mark.asyncio
 async def test_batch_import_handles_null_department() -> None:
     db = MockDB()
     app_instance.dependency_overrides[get_db] = lambda: db
