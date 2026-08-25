@@ -19,11 +19,6 @@ from app.modules.hr.models import HrDepartment
 app_instance = cast(FastAPI, app_main.app)
 
 
-
-
-
-
-
 async def test_preview_returns_inferred_fields() -> None:
     db = MockDB()
     app_instance.dependency_overrides[get_db] = lambda: db

@@ -10,11 +10,6 @@ from tests.modules.equipment.conftest import MockDB, _extract_param_values, crea
 from app.modules.hr.models import HrDepartment
 
 
-
-
-
-
-
 async def test_exact_match_in_mapping() -> None:
     from app.modules.equipment.api.batch_import import map_department_name_v3
 

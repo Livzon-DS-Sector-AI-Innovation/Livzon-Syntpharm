@@ -11,14 +11,6 @@ from app.modules.equipment.api.batch_import import DEPT_MAPPING_V3, map_departme
 from app.modules.hr.models import HrDepartment
 
 
-
-
-
-
-
-
-
-
 def test_dept_mapping_v2_coverage() -> None:
     """测试映射表是否包含关键别名"""
     assert "检验室" in DEPT_MAPPING_V3
