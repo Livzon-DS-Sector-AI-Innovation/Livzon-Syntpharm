@@ -38,9 +38,9 @@ import type {
 } from '@/types/equipment/generated-bridge'
 
 import {
-  createCategoryApi, updateCategoryApi, deleteCategoryApi,
-  createLocationApi, updateLocationApi, deleteLocationApi,
-  createEquipmentApi, updateEquipmentApi, deleteEquipmentApi, batchDeleteEquipmentsApi,
+  createCategoryApiTyped, updateCategoryApiTyped, deleteCategoryApi,
+  createLocationApiTyped, updateLocationApiTyped, deleteLocationApi,
+  createEquipmentApiTyped, updateEquipmentApiTyped, deleteEquipmentApi, batchDeleteEquipmentsApi,
   createFailureCodeApi, updateFailureCodeApi, deleteFailureCodeApi,
   createWorkOrderApi, updateWorkOrderApi, assignWorkOrderApi,
   startWorkOrderApi, completeWorkOrderApi, verifyWorkOrderApi, closeWorkOrderApi,
@@ -80,13 +80,13 @@ async function authHeaders(): Promise<Record<string, string>> {
 type FailureCodePath = 'symptoms' | 'causes' | 'actions'
 
 export async function createCategory(data: CreateCategoryInput) {
-  const result = await createCategoryApi(data, await authHeaders())
+  const result = await createCategoryApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateCategory(id: string, data: UpdateCategoryInput) {
-  const result = await updateCategoryApi(id, data, await authHeaders())
+  const result = await updateCategoryApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -98,13 +98,13 @@ export async function deleteCategory(id: string) {
 }
 
 export async function createLocation(data: CreateLocationInput) {
-  const result = await createLocationApi(data, await authHeaders())
+  const result = await createLocationApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateLocation(id: string, data: UpdateLocationInput) {
-  const result = await updateLocationApi(id, data, await authHeaders())
+  const result = await updateLocationApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
@@ -116,13 +116,13 @@ export async function deleteLocation(id: string) {
 }
 
 export async function createEquipment(data: CreateEquipmentInput) {
-  const result = await createEquipmentApi(data, await authHeaders())
+  const result = await createEquipmentApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
 
 export async function updateEquipment(id: string, data: UpdateEquipmentInput) {
-  const result = await updateEquipmentApi(id, data, await authHeaders())
+  const result = await updateEquipmentApiTyped(id, data, await authHeaders())
   revalidatePath('/equipment')
   return result
 }
