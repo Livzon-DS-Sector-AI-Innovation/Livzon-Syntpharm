@@ -1,13 +1,15 @@
 """Tests for department mapping logic in equipment import."""
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.equipment.api.batch_import import map_department_name_v3
 from tests.modules.equipment.conftest import MockDB, create_mock_department
 
 
 async def test_exact_match_in_mapping() -> None:
-    from app.modules.equipment.api.batch_import import map_department_name_v3
-
     db = MockDB()
     mock_dept = create_mock_department("uuid-quality-control", "质量控制部")
 
@@ -22,8 +24,6 @@ async def test_exact_match_in_mapping() -> None:
 
 
 async def test_solvent_workshop_mapping() -> None:
-    from app.modules.equipment.api.batch_import import map_department_name_v3
-
     db = MockDB()
     mock_dept = create_mock_department("uuid-solvent-recovery", "溶剂回收车间")
 
@@ -38,8 +38,6 @@ async def test_solvent_workshop_mapping() -> None:
 
 
 async def test_unknown_department_returns_none() -> None:
-    from app.modules.equipment.api.batch_import import map_department_name_v3
-
     db = MockDB()
 
     with patch("app.modules.hr.repository.DepartmentRepository") as mock_repo_class:

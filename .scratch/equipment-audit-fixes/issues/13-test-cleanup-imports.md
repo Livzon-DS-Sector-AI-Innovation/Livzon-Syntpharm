@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Move repeated imports from inside test functions to module level
-- [ ] Remove duplicate import statements
-- [ ] Ensure all tests still pass
-- [ ] Test code is cleaner and more maintainable
+- [x] Move repeated imports from inside test functions to module level
+- [x] Remove duplicate import statements
+- [x] Ensure all tests still pass
+- [x] Test code is cleaner and more maintainable
