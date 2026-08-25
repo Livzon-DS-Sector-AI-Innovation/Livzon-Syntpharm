@@ -117,8 +117,8 @@ export async function fetchWorkOrders(filters: WorkOrderFilters = {}): Promise<W
 
   const queryString = params.toString()
   const url = queryString
-    ? `${API_BASE}/equipment/maintenance/work-orders/?${queryString}`
-    : `${API_BASE}/equipment/maintenance/work-orders/`
+    ? `${API_BASE}/equipment/maintenance/work-orders?${queryString}`
+    : `${API_BASE}/equipment/maintenance/work-orders`
 
   return apiFetchPaginated(url)
 }
@@ -127,11 +127,11 @@ export async function fetchWorkOrderStatistics(exclude_status?: string): Promise
   const params = new URLSearchParams()
   if (exclude_status) params.append('exclude_status', exclude_status)
   const qs = params.toString()
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-ordersstatistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrderById(id: string): Promise<WorkOrder> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${id}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -219,19 +219,19 @@ export async function fetchMaintenancePlans(filters: MaintenancePlanFilters = {}
 
   const queryString = params.toString()
   const url = queryString
-    ? `${API_BASE}/equipment/maintenance/plans/?${queryString}`
-    : `${API_BASE}/equipment/maintenance/plans/`
+    ? `${API_BASE}/equipment/maintenance/plans?${queryString}`
+    : `${API_BASE}/equipment/maintenance/plans`
 
   return apiFetchPaginated(url)
 }
 
 export async function fetchMaintenancePlanById(id: string): Promise<MaintenancePlan> {
-  return apiGet(`${API_BASE}/equipment/maintenance/plans/${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans${id}`)
 }
 
 export async function fetchOverdueMaintenancePlans(days?: number): Promise<MaintenancePlan[]> {
   const params = days ? `?days=${days}` : ''
-  return apiGet(`${API_BASE}/equipment/maintenance/plans/overdue${params}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plansoverdue${params}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -261,7 +261,7 @@ export async function fetchInspectionTemplateById(id: string): Promise<Inspectio
 //  工单物料
 // ═══════════════════════════════════════════════════════════
 export async function fetchWorkOrderMaterials(workOrderId: string): Promise<MaterialRecord[]> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/materials`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/materials`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -285,7 +285,7 @@ export async function fetchAllUsersClient(): Promise<Maintainer[]> {
 }
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
-  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/images`) || []
 }
 
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
