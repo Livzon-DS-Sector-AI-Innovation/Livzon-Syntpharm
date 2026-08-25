@@ -1,4 +1,5 @@
 'use client'
+import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 
 import { useEffect } from 'react'
 import { App, Form, Input, Button, Modal } from 'antd'
@@ -9,7 +10,7 @@ const { TextArea } = Input
 interface CategoryEditorProps {
   mode: 'create' | 'edit'
   parentId?: string
-  initialData?: any
+  initialData?: EquipmentCategory
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
