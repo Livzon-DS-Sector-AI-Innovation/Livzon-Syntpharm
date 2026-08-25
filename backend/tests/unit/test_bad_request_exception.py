@@ -1,6 +1,6 @@
-import pytest
 from fastapi import status
-from app.core.exceptions import BadRequestException, AppException
+
+from app.core.exceptions import AppException, BadRequestException
 
 
 def test_bad_request_exception_default_message() -> None:

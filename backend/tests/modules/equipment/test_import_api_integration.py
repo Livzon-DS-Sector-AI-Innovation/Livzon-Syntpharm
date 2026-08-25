@@ -1,19 +1,16 @@
 """Integration tests for equipment import v3 API endpoints."""
 
-from typing import Any, cast
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
-
-from tests.modules.equipment.conftest import MockDB, _extract_param_values, create_mock_department
 from fastapi import FastAPI
 from httpx import ASGITransport
 
 from app import main as app_main
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.modules.hr.models import HrDepartment
+from tests.modules.equipment.conftest import MockDB, create_mock_department
 
 # Cast to FastAPI to help mypy understand the type
 app_instance = cast(FastAPI, app_main.app)

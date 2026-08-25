@@ -1,13 +1,8 @@
 """Tests for department mapping logic in equipment import."""
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from tests.modules.equipment.conftest import MockDB, _extract_param_values, create_mock_department
-
-from app.modules.hr.models import HrDepartment
+from tests.modules.equipment.conftest import MockDB, create_mock_department
 
 
 async def test_exact_match_in_mapping() -> None:

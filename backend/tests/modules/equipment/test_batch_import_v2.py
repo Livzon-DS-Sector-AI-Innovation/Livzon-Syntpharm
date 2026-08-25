@@ -1,14 +1,9 @@
 """设备导入 v2 功能测试 (TDD)."""
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from tests.modules.equipment.conftest import MockDB, _extract_param_values, create_mock_department
-
 from app.modules.equipment.api.batch_import import DEPT_MAPPING_V3, map_department_name_v3
-from app.modules.hr.models import HrDepartment
+from tests.modules.equipment.conftest import MockDB, create_mock_department
 
 
 def test_dept_mapping_v2_coverage() -> None:

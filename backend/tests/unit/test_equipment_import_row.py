@@ -1,4 +1,3 @@
-import pytest
 from app.modules.equipment.schemas.equipment import EquipmentImportRow
 
 
