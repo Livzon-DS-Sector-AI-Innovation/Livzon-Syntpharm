@@ -1,8 +1,9 @@
 """Tests for department mapping logic in equipment import."""
 
 from typing import cast
-from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import AsyncMock, MagicMock, patch
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.equipment.api.batch_import import map_department_name_v3
 from tests.modules.equipment.conftest import MockDB, create_mock_department
