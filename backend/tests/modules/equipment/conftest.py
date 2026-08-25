@@ -10,6 +10,17 @@ from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
 
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class MockDBProtocol(Protocol):
+    """Protocol defining the minimal database interface for testing."""
+    async def execute(self, stmt: Any) -> MagicMock: ...
+    async def commit(self) -> None: ...
+    async def rollback(self) -> None: ...
+
+
+
 def _extract_param_values(stmt: Any) -> str:
     """Extract all parameter values from a SQLAlchemy statement as a string for matching."""
     try:

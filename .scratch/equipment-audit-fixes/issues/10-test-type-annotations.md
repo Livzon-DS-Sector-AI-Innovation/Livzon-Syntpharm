@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Define Protocol types for mock database objects
-- [ ] Remove all `# type: ignore[arg-type]` suppressions from equipment tests
-- [ ] Ensure mypy type checking passes
-- [ ] All existing tests continue to pass
-- [ ] No type suppressions remain in equipment tests
+- [x] Define Protocol types for mock database objects
+- [x] Remove all `# type: ignore[arg-type]` suppressions from equipment tests
+- [x] Ensure mypy type checking passes
+- [x] All existing tests continue to pass
+- [x] No type suppressions remain in equipment tests

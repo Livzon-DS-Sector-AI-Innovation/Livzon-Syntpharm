@@ -24,7 +24,7 @@ async def test_map_department_strict_alias() -> None:
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
 
-        name, dept_id = await map_department_name_v3("检验室", db)  # type: ignore[arg-type]
+        name, dept_id = await map_department_name_v3("检验室", cast(AsyncSession, db))
         assert name == "质量控制部"
         assert dept_id is not None
 
@@ -39,7 +39,7 @@ async def test_map_department_strict_workshop() -> None:
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
 
-        name, dept_id = await map_department_name_v3("头孢合成一车间", db)  # type: ignore[arg-type]
+        name, dept_id = await map_department_name_v3("头孢合成一车间", cast(AsyncSession, db))
         assert name == "201车间"
         assert dept_id is not None
 
@@ -54,7 +54,7 @@ async def test_map_department_strict_special_format() -> None:
         mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
         mock_repo_class.return_value = mock_repo
 
-        name, dept_id = await map_department_name_v3("溶剂回收车间-404岗", db)  # type: ignore[arg-type]
+        name, dept_id = await map_department_name_v3("溶剂回收车间-404岗", cast(AsyncSession, db))
         assert name == "溶剂回收车间"
         assert dept_id is not None
 
@@ -68,5 +68,5 @@ async def test_map_department_strict_nonexistent() -> None:
         mock_repo.get_by_name = AsyncMock(return_value=None)
         mock_repo_class.return_value = mock_repo
 
-        name, dept_id = await map_department_name_v3("银河系漫游指南部", db)  # type: ignore[arg-type]
+        name, dept_id = await map_department_name_v3("银河系漫游指南部", cast(AsyncSession, db))
         assert dept_id is None
