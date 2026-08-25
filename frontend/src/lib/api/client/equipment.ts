@@ -11,7 +11,7 @@ import {
   InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate, InspectionTemplateItem,
   MaterialRecord, ClaimTimeoutConfig, Maintainer, WorkOrderImage,
 } from '@/types/equipment/generated-bridge'
-import { apiGet, apiFetchPaginated } from '@/lib/api/client'
+import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
@@ -323,10 +323,7 @@ export const fetchStockWarningsClient = fetchStockWarnings
 export const fetchMaintenancePlansClient = fetchMaintenancePlans
 export const fetchOverdueMaintenancePlansClient = fetchOverdueMaintenancePlans
 export async function fetchInspectionTemplateItemsClient(templateId: string): Promise<InspectionTemplateItem[]> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/inspection-templates/${templateId}/items`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || []
+  return await apiGet<InspectionTemplateItem[]>(`${API_BASE}/equipment/maintenance/inspection-templates/${templateId}/items`)
 }
 
 export const fetchInspectionTemplatesClient = fetchInspectionTemplates
@@ -337,10 +334,8 @@ export const fetchDepartmentsClient = fetchDepartments
  * 批量删除设备
  */
 export async function batchDeleteEquipments(ids: string[]): Promise<any> {
-  const response = await fetch(`${API_BASE}/equipment/equipments/batch-delete`, {
+  return await fetchApi<any>(`${API_BASE}/equipment/equipments/batch-delete`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids }),
   })
-  return response.json()
 }
