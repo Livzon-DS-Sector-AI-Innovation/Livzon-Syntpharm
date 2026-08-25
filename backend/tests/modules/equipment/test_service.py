@@ -32,7 +32,6 @@ def sample_category_data() -> EquipmentCategoryCreate:
 
 async def test_create_equipment_category_success(
     db_session: AsyncSession,
-    mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试成功创建设备分类"""
@@ -43,7 +42,6 @@ async def test_create_equipment_category_success(
 
 async def test_create_equipment_category_duplicate_code(
     db_session: AsyncSession,
-    mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试创建重复编码的设备分类"""
@@ -60,7 +58,6 @@ async def test_get_equipment_category_not_found(db_session: AsyncSession) -> Non
 
 async def test_update_equipment_category_success(
     db_session: AsyncSession,
-    mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试成功更新设备分类"""
@@ -75,7 +72,6 @@ async def test_update_equipment_category_success(
 
 async def test_delete_equipment_category_success(
     db_session: AsyncSession,
-    mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试成功删除设备分类"""
@@ -86,7 +82,6 @@ async def test_delete_equipment_category_success(
 
 async def test_generate_equipment_no(
     db_session: AsyncSession,
-    mock_equipment_context: EquipmentAccessContext,
     sample_category_data: EquipmentCategoryCreate,
 ) -> None:
     """测试生成设备编号"""

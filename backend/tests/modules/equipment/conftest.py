@@ -1,9 +1,12 @@
 """Shared test fixtures for equipment module tests."""
 
 from typing import Any
+import pytest
 from unittest.mock import MagicMock
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.hr.models import HrDepartment
+from app.platform.identity.models import User
 
 
 def _extract_param_values(stmt: Any) -> str:
@@ -54,3 +57,17 @@ def create_mock_department(dept_id: str, name: str) -> MagicMock:
     mock_dept.id = dept_id
     mock_dept.name = name
     return mock_dept
+
+
+@pytest.fixture
+async def test_assignee(db_session: AsyncSession) -> User:
+    """Create a test user for work order assignment."""
+    user = User(
+        username="test_assignee",
+        employee_no="EMP001",
+        name="Test Assignee",
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
