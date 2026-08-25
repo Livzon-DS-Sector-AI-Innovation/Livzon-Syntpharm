@@ -39,3 +39,22 @@
 - [ ] 扩展 `DEPT_MAPPING_V2`
 - [ ] 修改前端 `EquipmentTable.tsx` 显示数量
 - [ ] 编写 ADR 文档
+
+## 📚 术语表 (Glossary)
+
+### API Response Envelope (API 响应信封)
+所有后端 API 响应遵循的标准结构：`{code: number, data: T, message: string, meta?: object}`。这个结构由 `ApiResponse` 模型定义，确保前后端交互的一致性。
+
+- `code`: HTTP 状态码或业务状态码（200 表示成功）
+- `data`: 实际的业务数据
+- `message`: 响应消息（成功或错误信息）
+- `meta`: 可选的元数据（如分页信息）
+
+### Generated Types (生成类型)
+从后端 OpenAPI 规范自动生成的 TypeScript 类型。这些类型是前后端 API 契约的唯一真实来源。
+
+生成流程：
+1. 后端导出 OpenAPI 规范：`uv run python scripts/ci/export_openapi.py`
+2. 前端生成 TypeScript 类型：`BACKEND_SPEC_PATH=../backend/openapi.json node scripts/generate-api.mjs`
+
+生成的类型位于 `frontend/src/types/generated/schema.ts`，包含所有 API 请求和响应的类型定义。
