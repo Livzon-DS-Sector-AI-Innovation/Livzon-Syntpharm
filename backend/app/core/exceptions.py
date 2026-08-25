@@ -49,3 +49,11 @@ class UnauthorizedException(AppException):
             status_code=status.HTTP_401_UNAUTHORIZED,
             message=message,
         )
+
+
+class BadRequestException(AppException):
+    def __init__(self, message: str = "请求参数错误") -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message=message,
+        )
