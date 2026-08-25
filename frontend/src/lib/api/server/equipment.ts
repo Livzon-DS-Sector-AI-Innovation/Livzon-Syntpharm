@@ -119,6 +119,260 @@ export async function updateMaintenancePlanApiTyped(id: string, data: components
 }
 
 
+
+// Additional typed versions - Failure Codes
+export async function createFailureCodeApiTyped(path: string, data: components['schemas']['FailureCodeCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${path}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateFailureCodeApiTyped(path: string, id: string, data: components['schemas']['FailureCodeUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${path}/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Work Order Operations
+export async function assignWorkOrderApiTyped(id: string, data: components['schemas']['WorkOrderAssign'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/assign`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function completeWorkOrderApiTyped(id: string, data: components['schemas']['WorkOrderComplete'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function verifyWorkOrderApiTyped(id: string, data: components['schemas']['WorkOrderVerify'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/verify`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Calibration Records
+export async function createCalibrationRecordApiTyped(data: components['schemas']['CalibrationRecordUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Spare Parts Operations
+export async function stockInboundApiTyped(sparePartId: string, data: components['schemas']['StockInboundRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${sparePartId}/stock-inbound`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function stockAdjustApiTyped(sparePartId: string, data: components['schemas']['StockAdjustRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${sparePartId}/stock-adjust`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Inspection Templates
+export async function createInspectionTemplateApiTyped(data: components['schemas']['InspectionTemplateCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection/templates`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateInspectionTemplateApiTyped(id: string, data: components['schemas']['InspectionTemplateUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection/templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createInspectionTemplateItemApiTyped(templateId: string, data: components['schemas']['InspectionTemplateItemCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection/templates/${templateId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateInspectionTemplateItemApiTyped(itemId: string, data: components['schemas']['InspectionTemplateItemUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/inspection/templates/items/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Inspection Operations
+export async function completeInspectionApiTyped(workOrderId: string, data: components['schemas']['InspectionCompleteRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/complete-inspection`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function consumeMaterialsApiTyped(workOrderId: string, data: components['schemas']['MaterialConsumeRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/consume-materials`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Claim Timeout Config
+export async function updateClaimTimeoutConfigApiTyped(data: components['schemas']['ClaimTimeoutUpdateRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/claim-timeout-config`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Personnel Management
+export async function createPersonnelRoleApiTyped(data: components['schemas']['RoleCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updatePersonnelRoleApiTyped(id: string, data: components['schemas']['RoleUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function addPersonnelApiTyped(data: components['schemas']['PersonnelAddRequest'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function assignRolesApiTyped(personnelId: string, data: components['schemas']['PersonnelRoleAssign'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/roles`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function assignCategoriesApiTyped(personnelId: string, data: components['schemas']['PersonnelCategoryAssign'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/${personnelId}/categories`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Inspection Routes
+export async function createInspectionRouteApiTyped(data: components['schemas']['InspectionRouteCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateInspectionRouteApiTyped(id: string, data: components['schemas']['InspectionRouteUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Inspection Tasks
+export async function createInspectionTaskApiTyped(data: components['schemas']['InspectionTaskCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function submitEquipmentCheckApiTyped(taskId: string, equipmentId: string, data: components['schemas']['EquipmentCheckResult'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipment/${equipmentId}/check`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function submitRouteCheckApiTyped(taskId: string, data: components['schemas']['RouteCheckSubmit'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/route-check`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Schedules
+export async function createScheduleApiTyped(routeId: string, data: components['schemas']['InspectionScheduleCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/schedules`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateScheduleApiTyped(routeId: string, scheduleId: string, data: components['schemas']['InspectionScheduleUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/schedules/${scheduleId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Equipment Import (using EquipmentImportRow from backend)
+export async function previewEquipmentImportApiTyped(data: any[], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function batchImportEquipmentApiTyped(data: any[], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+// Work Order Claim
+export async function claimWorkOrderDataApiTyped(id: string, data: any, headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
     method: 'POST',
