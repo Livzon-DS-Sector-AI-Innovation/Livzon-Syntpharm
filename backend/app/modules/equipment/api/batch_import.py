@@ -419,7 +419,7 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
 
 # Temporary test endpoint for debugging validation errors
 @router.post("/test-validation", summary="测试验证错误")
-async def test_validation(data: list[EquipmentImportRow]):
+async def test_validation(data: list[EquipmentImportRow]) -> dict[str, Any]:
     """Test endpoint to debug validation errors without authentication."""
     import logging
 

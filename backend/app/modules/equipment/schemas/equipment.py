@@ -239,14 +239,14 @@ class EquipmentImportRow(BaseModel):
 
     @field_validator("资产编号", mode="before")
     @classmethod
-    def convert_asset_no_to_str(cls, v):
+    def convert_asset_no_to_str(cls, v: Any) -> str | None:
         """将资产编号转换为字符串"""
         if v is None:
             return None
         return str(v)
 
     @model_validator(mode="after")
-    def merge_equipment_name(self):
+    def merge_equipment_name(self) -> "EquipmentImportRow":
         """合并设备名称到资产说明"""
         if self.资产说明 is None and self.设备名称 is not None:
             self.资产说明 = self.设备名称
