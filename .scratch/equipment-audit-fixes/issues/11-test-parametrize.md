@@ -4,11 +4,11 @@
 
 **Blocked by:** 10: Test Infrastructure - Type Annotations
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Identify similar test cases in test_smart_inference.py
-- [ ] Consolidate using @pytest.mark.parametrize
-- [ ] Identify similar test cases in test_batch_import.py
-- [ ] Consolidate using @pytest.mark.parametrize
-- [ ] Ensure all test cases still pass
-- [ ] Test code is more concise and maintainable
+- [x] Identify similar test cases in test_smart_inference.py
+- [x] Consolidate using @pytest.mark.parametrize
+- [x] Identify similar test cases in test_batch_import.py
+- [x] Consolidate using @pytest.mark.parametrize
+- [x] Ensure all test cases still pass
+- [x] Test code is more concise and maintainable

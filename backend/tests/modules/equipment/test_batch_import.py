@@ -2,6 +2,8 @@
 
 from difflib import SequenceMatcher
 
+import pytest
+
 from app.modules.equipment.api.batch_import import (
     fuzzy_match_department,
     get_column_value,
@@ -96,17 +98,17 @@ class TestGetColumnValue:
 class TestSequenceMatcher:
     """测试相似度计算逻辑."""
 
-    def test_similar_strings(self) -> None:
-        """测试相似字符串的相似度."""
-        score = SequenceMatcher(None, "设备工程不", "设备工程部").ratio()
-        assert score >= 0.8
-
-    def test_different_strings(self) -> None:
-        """测试不同字符串的相似度."""
-        score = SequenceMatcher(None, "质控部", "质量控制部").ratio()
-        assert score < 0.8
-
-    def test_identical_strings(self) -> None:
-        """测试相同字符串的相似度."""
-        score = SequenceMatcher(None, "设备工程部", "设备工程部").ratio()
-        assert score == 1.0
+    @pytest.mark.parametrize(
+        "str1,str2,expected_min,expected_max",
+        [
+            ("设备工程不", "设备工程部", 0.8, 1.0),  # similar strings
+            ("质控部", "质量控制部", 0.0, 0.8),  # different strings
+            ("设备工程部", "设备工程部", 1.0, 1.0),  # identical strings
+        ],
+    )
+    def test_similarity_scores(
+        self, str1: str, str2: str, expected_min: float, expected_max: float
+    ) -> None:
+        """测试字符串相似度计算."""
+        score = SequenceMatcher(None, str1, str2).ratio()
+        assert expected_min <= score <= expected_max
