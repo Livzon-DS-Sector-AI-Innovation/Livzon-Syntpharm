@@ -52,6 +52,73 @@ export async function updateEquipmentApiTyped(id: string, data: components['sche
 
 
 
+
+// More typed versions (batch 2)
+export async function createWorkOrderApiTyped(data: components['schemas']['WorkOrderCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateWorkOrderApiTyped(id: string, data: components['schemas']['WorkOrderUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createCalibrationPlanApiTyped(data: components['schemas']['CalibrationPlanCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateCalibrationPlanApiTyped(id: string, data: components['schemas']['CalibrationPlanUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createSparePartApiTyped(data: components['schemas']['SparePartCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateSparePartApiTyped(id: string, data: components['schemas']['SparePartUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/spare-parts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createMaintenancePlanApiTyped(data: components['schemas']['MaintenancePlanCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateMaintenancePlanApiTyped(id: string, data: components['schemas']['MaintenancePlanUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
     method: 'POST',
