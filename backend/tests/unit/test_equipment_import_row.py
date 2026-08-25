@@ -2,7 +2,7 @@ import pytest
 from app.modules.equipment.schemas.equipment import EquipmentImportRow
 
 
-def test_equipment_import_row_all_fields():
+def test_equipment_import_row_all_fields() -> None:
     """Test EquipmentImportRow with all fields"""
     row = EquipmentImportRow(
         资产编号="TEST001",
@@ -22,7 +22,7 @@ def test_equipment_import_row_all_fields():
     assert row.数量 == 2
 
 
-def test_equipment_import_row_minimal_fields():
+def test_equipment_import_row_minimal_fields() -> None:
     """Test EquipmentImportRow with minimal fields"""
     row = EquipmentImportRow()
     assert row.资产编号 is None
@@ -34,7 +34,7 @@ def test_equipment_import_row_minimal_fields():
     assert row.数量 is None
 
 
-def test_equipment_import_row_partial_fields():
+def test_equipment_import_row_partial_fields() -> None:
     """Test EquipmentImportRow with partial fields"""
     row = EquipmentImportRow(资产编号="TEST002", 当前成本="¥100,000")
     assert row.资产编号 == "TEST002"
@@ -42,7 +42,7 @@ def test_equipment_import_row_partial_fields():
     assert row.资产说明 is None
 
 
-def test_equipment_import_row_numeric_types():
+def test_equipment_import_row_numeric_types() -> None:
     """Test EquipmentImportRow accepts different numeric types"""
     row1 = EquipmentImportRow(当前成本=100.5)
     assert row1.当前成本 == 100.5
