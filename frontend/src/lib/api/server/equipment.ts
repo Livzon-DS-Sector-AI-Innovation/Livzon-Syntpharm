@@ -1,4 +1,56 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+
+// Typed versions of critical CRUD functions (expand phase)
+export async function createCategoryApiTyped(data: components['schemas']['EquipmentCategoryCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateCategoryApiTyped(id: string, data: components['schemas']['EquipmentCategoryUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createLocationApiTyped(data: components['schemas']['LocationCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateLocationApiTyped(id: string, data: components['schemas']['LocationUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createEquipmentApiTyped(data: components['schemas']['EquipmentCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function updateEquipmentApiTyped(id: string, data: components['schemas']['EquipmentUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+
 
 export async function createCategoryApi(data: any, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
