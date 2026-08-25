@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 EquipmentStatus = Literal["在用", "备用", "维修中", "停用", "报废"]
 EquipmentImportance = Literal["高", "中", "低"]
@@ -225,6 +225,7 @@ class BatchDeleteRequest(BaseModel):
 # ==================== 设备导入 ====================
 class EquipmentImportRow(BaseModel):
     """设备导入行数据"""
+    model_config = ConfigDict(extra="allow")
 
     资产编号: str | None = Field(default=None, description="资产编号")
     资产说明: str | None = Field(default=None, description="资产说明")
