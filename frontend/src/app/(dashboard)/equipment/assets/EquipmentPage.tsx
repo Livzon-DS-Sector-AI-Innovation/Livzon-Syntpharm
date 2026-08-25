@@ -9,13 +9,13 @@ import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/t
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
-import { StatsCards } from './StatsCards'
-import { EquipmentTable } from './EquipmentTable'
-import { CategoryTree } from './CategoryTree'
-import { LocationTree } from './LocationTree'
-import { EquipmentDrawer } from './EquipmentDrawer'
-import { LocationDrawer } from './LocationDrawer'
-import { RepairDrawer } from './RepairDrawer'
+import { StatsCards } from '@/components/equipment/StatsCards'
+import { EquipmentTable } from '@/components/equipment/EquipmentTable'
+import { CategoryTree } from '@/components/equipment/CategoryTree'
+import { LocationTree } from '@/components/equipment/LocationTree'
+import { EquipmentDrawer } from '@/components/equipment/EquipmentDrawer'
+import { LocationDrawer } from '@/components/equipment/LocationDrawer'
+import { RepairDrawer } from '@/components/equipment/RepairDrawer'
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
