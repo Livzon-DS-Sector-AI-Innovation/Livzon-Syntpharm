@@ -9,13 +9,13 @@
 ## ✅ 已完成工作
 
 ### 1. 创建部门种子文件
-- **文件位置**: `/home/zhuangweizi/Livzon-Syntpharm/backend/scripts/seed/departments.json`
+- **文件位置**: `backend/scripts/seed/departments.json`
 - **部门数量**: 27 个
 - **数据来源**: 从用户提供的 Excel 文件中提取的所有唯一部门名称
 
 ### 2. 运行种子脚本
 ```bash
-cd /home/zhuangweizi/Livzon-Syntpharm
+cd /path/to/Livzon-Syntpharm
 docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend bash -c "uv run python scripts/seed/seed.py"
 ```
 

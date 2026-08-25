@@ -33,7 +33,7 @@
 
 **使用方法**:
 ```bash
-cd /home/zhuangweizi/Livzon-Syntpharm/backend
+cd $(pwd)/backend
 python scripts/import/convert_excel_to_template.py \
     ~/Desktop/202606sbgz.xls \
     ~/Desktop/converted_template.xlsx

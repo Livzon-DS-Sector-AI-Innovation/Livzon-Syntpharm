@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Replace /home/zhuangweizi/Livzon-Syntpharm/... with relative paths in flexible-import-guide.md
-- [ ] Replace /home/zhuangweizi/Livzon-Syntpharm/... with relative paths in department-seeding-summary.md
-- [ ] Use $(pwd) or relative path notation in shell command examples
-- [ ] Verify documentation examples are still valid
-- [ ] No hardcoded absolute paths remain in documentation
+- [x] Replace /home/zhuangweizi/Livzon-Syntpharm/... with relative paths in flexible-import-guide.md
+- [x] Replace /home/zhuangweizi/Livzon-Syntpharm/... with relative paths in department-seeding-summary.md
+- [x] Use $(pwd) or relative path notation in shell command examples
+- [x] Verify documentation examples are still valid
+- [x] No hardcoded absolute paths remain in documentation
