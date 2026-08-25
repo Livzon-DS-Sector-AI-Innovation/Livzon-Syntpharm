@@ -1,6 +1,18 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
+
+// Equipment import row type (matches backend EquipmentImportRow schema)
+export interface EquipmentImportRow {
+  资产编号?: string | null;
+  资产说明?: string | null;
+  实物所在部门?: string | null;
+  资产类别说明?: string | null;
+  当前成本?: string | number | null;
+  报废状态?: string | null;
+  数量?: number | null;
+}
+
 // Typed versions of critical CRUD functions (expand phase)
 export async function createCategoryApiTyped(data: components['schemas']['EquipmentCategoryCreate'], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories`, {
@@ -348,7 +360,7 @@ export async function updateScheduleApiTyped(routeId: string, scheduleId: string
 }
 
 // Equipment Import (using EquipmentImportRow from backend)
-export async function previewEquipmentImportApiTyped(data: any[], headers?: Record<string, string>) {
+export async function previewEquipmentImportApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -356,7 +368,7 @@ export async function previewEquipmentImportApiTyped(data: any[], headers?: Reco
   })
 }
 
-export async function batchImportEquipmentApiTyped(data: any[], headers?: Record<string, string>) {
+export async function batchImportEquipmentApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -364,14 +376,6 @@ export async function batchImportEquipmentApiTyped(data: any[], headers?: Record
   })
 }
 
-// Work Order Claim
-export async function claimWorkOrderDataApiTyped(id: string, data: any, headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${id}/claim`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers,
-  })
-}
 
 export async function deleteCategoryApi(id: string, headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/categories/${id}`, {
