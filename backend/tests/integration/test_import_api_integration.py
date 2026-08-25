@@ -1,6 +1,7 @@
 """Integration tests for equipment import v3 API endpoints."""
 
-from typing import Any
+from typing import Any, cast
+from fastapi import FastAPI
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.core.database import get_db
@@ -13,10 +14,10 @@ async def test_preview_returns_inferred_fields(async_client: Any) -> None:
     from app import main as app_main
 
     db = MockDB()
-    app_main.app.dependency_overrides[get_db] = lambda: db
+    cast(FastAPI, app_main.app).dependency_overrides[get_db] = lambda: db
     mock_user = MagicMock()
     mock_user.id = "test-user-id"
-    app_main.app.dependency_overrides[get_current_user] = lambda: mock_user
+    cast(FastAPI, app_main.app).dependency_overrides[get_current_user] = lambda: mock_user
 
     try:
         data = [
@@ -50,7 +51,7 @@ async def test_preview_returns_inferred_fields(async_client: Any) -> None:
         assert item["technical_params"]["数量"] == 2
         assert item["department_name"] == "质量控制部"
     finally:
-        app_main.app.dependency_overrides.clear()
+        cast(FastAPI, app_main.app).dependency_overrides.clear()
 
 
 async def test_batch_import_handles_null_department(async_client: Any) -> None:
@@ -58,10 +59,10 @@ async def test_batch_import_handles_null_department(async_client: Any) -> None:
     from app import main as app_main
 
     db = MockDB()
-    app_main.app.dependency_overrides[get_db] = lambda: db
+    cast(FastAPI, app_main.app).dependency_overrides[get_db] = lambda: db
     mock_user = MagicMock()
     mock_user.id = "test-user-id"
-    app_main.app.dependency_overrides[get_current_user] = lambda: mock_user
+    cast(FastAPI, app_main.app).dependency_overrides[get_current_user] = lambda: mock_user
 
     try:
         data = [{"资产编号": "TEST002", "资产说明": "未知部门设备", "实物所在部门": "火星分部", "当前成本": 5000}]
@@ -80,4 +81,4 @@ async def test_batch_import_handles_null_department(async_client: Any) -> None:
         assert call_args["department_id"] is None
         assert call_args["technical_params"] is None  # No quantity provided
     finally:
-        app_main.app.dependency_overrides.clear()
+        cast(FastAPI, app_main.app).dependency_overrides.clear()

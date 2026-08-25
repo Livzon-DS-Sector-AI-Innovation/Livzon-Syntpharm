@@ -86,11 +86,14 @@ async def test_assignee(db_session: AsyncSession) -> User:
 @pytest.fixture
 def client() -> Any:
     """Create a test client for synchronous tests."""
+    from typing import cast
+
+    from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
     from app.main import app
 
-    return TestClient(app)
+    return TestClient(cast(FastAPI, app))
 
 
 @pytest.fixture
