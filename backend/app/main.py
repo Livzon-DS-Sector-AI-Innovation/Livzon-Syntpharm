@@ -324,9 +324,48 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
 
+
+
+# Add middleware to log all POST requests with body
+@app.middleware("http")
+async def log_request_body(request: Request, call_next):
+    if request.method == "POST" and "/import/" in str(request.url.path):
+        import logging
+        logger = logging.getLogger(__name__)
+        body = await request.body()
+        logger.error(f"[REQUEST LOGGER] Path: {request.url.path}")
+        logger.error(f"[REQUEST LOGGER] Body length: {len(body)}")
+        if len(body) < 5000:
+            logger.error(f"[REQUEST LOGGER] Body: {body.decode('utf-8', errors='ignore')}")
+        else:
+            logger.error(f"[REQUEST LOGGER] Body (first 5000 chars): {body[:5000].decode('utf-8', errors='ignore')}")
+        
+        # Create a new request with the same body
+        async def receive():
+            return {"type": "http.request", "body": body, "more_body": False}
+        
+        request = Request(request.scope, receive)
+    
+    response = await call_next(request)
+    return response
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    import logging
+    logger = logging.getLogger(__name__)
     errors = exc.errors()
+    logger.error(f"[VALIDATION ERROR] Path: {request.url.path}")
+    logger.error(f"[VALIDATION ERROR] Errors: {errors}")
+    logger.error(f"[VALIDATION ERROR] Body type: {type(exc.body)}")
+    if exc.body:
+        # Try to get more details about the body
+        if isinstance(exc.body, list):
+            logger.error(f"[VALIDATION ERROR] Body is list with {len(exc.body)} items")
+            if exc.body:
+                logger.error(f"[VALIDATION ERROR] First item: {exc.body[0]}")
+                logger.error(f"[VALIDATION ERROR] First item type: {type(exc.body[0])}")
+        body_str = str(exc.body)[:2000]
+        logger.error(f"[VALIDATION ERROR] Body: {body_str}")
     detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
     return error_response(
         message="请求参数校验失败",

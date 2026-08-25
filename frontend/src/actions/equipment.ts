@@ -385,6 +385,11 @@ export async function deleteRole(id: string) {
 }
 
 export async function previewEquipmentImport(data: any) {
+  console.log('[DEBUG] previewEquipmentImport called with:', {
+    dataLength: data?.length,
+    firstItem: data?.[0],
+    firstItemType: typeof data?.[0],
+  })
   const result = await previewEquipmentImportApiTyped(data, await authHeaders())
   return result
 }

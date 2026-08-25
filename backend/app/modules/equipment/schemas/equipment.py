@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EquipmentStatus = Literal["在用", "备用", "维修中", "停用", "报废"]
 EquipmentImportance = Literal["高", "中", "低"]
@@ -227,10 +227,26 @@ class EquipmentImportRow(BaseModel):
     """设备导入行数据"""
     model_config = ConfigDict(extra="allow")
 
-    资产编号: str | None = Field(default=None, description="资产编号")
+    资产编号: str | int | None = Field(default=None, description="资产编号")
     资产说明: str | None = Field(default=None, description="资产说明")
+    设备名称: str | None = Field(default=None, description="设备名称（别名）")
     实物所在部门: str | None = Field(default=None, description="实物所在部门")
     资产类别说明: str | None = Field(default=None, description="资产类别说明")
     当前成本: str | float | None = Field(default=None, description="当前成本")
     报废状态: str | None = Field(default=None, description="报废状态")
     数量: int | float | None = Field(default=None, description="数量")
+    
+    @field_validator('资产编号', mode='before')
+    @classmethod
+    def convert_asset_no_to_str(cls, v):
+        """将资产编号转换为字符串"""
+        if v is None:
+            return None
+        return str(v)
+    
+    @model_validator(mode='after')
+    def merge_equipment_name(self):
+        """合并设备名称到资产说明"""
+        if self.资产说明 is None and self.设备名称 is not None:
+            self.资产说明 = self.设备名称
+        return self

@@ -229,6 +229,12 @@ async def preview_import(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"[DEBUG] Received {len(data)} rows")
+    if data:
+        logger.error(f"[DEBUG] First row: {data[0]}")
+        logger.error(f"[DEBUG] First row dict: {data[0].model_dump()}")
     results = []
     # Convert EquipmentImportRow to dict for processing
     data_dicts = [row.model_dump() for row in data]
@@ -408,3 +414,16 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
             row_dict = {str(headers[i]): row[i] for i in range(len(headers)) if i < len(row) and headers[i]}
             data.append(row_dict)
     return build_response(data=data)
+
+
+# Temporary test endpoint for debugging validation errors
+@router.post("/test-validation", summary="测试验证错误")
+async def test_validation(data: list[EquipmentImportRow]):
+    """Test endpoint to debug validation errors without authentication."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"[TEST] Received {len(data)} rows")
+    if data:
+        logger.error(f"[TEST] First row: {data[0]}")
+        logger.error(f"[TEST] First row dict: {data[0].model_dump()}")
+    return {"status": "ok", "count": len(data)}
