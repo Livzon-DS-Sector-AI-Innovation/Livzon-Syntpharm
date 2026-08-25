@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Move test_import_api_integration.py to backend/tests/integration/
-- [ ] Update any imports or references to the moved test
-- [ ] Ensure test still runs correctly in new location
-- [ ] All existing tests continue to pass
-- [ ] Test organization follows project conventions
+- [x] Move test_import_api_integration.py to backend/tests/integration/
+- [x] Update any imports or references to the moved test
+- [x] Ensure test still runs correctly in new location
+- [x] All existing tests continue to pass
+- [x] Test organization follows project conventions
