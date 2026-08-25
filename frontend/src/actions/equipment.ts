@@ -58,20 +58,7 @@ import {
   previewEquipmentImportApi, batchImportEquipmentApi,
   createPersonnelRoleApi, updatePersonnelRoleApi, deletePersonnelRoleApi,
   addPersonnelApi, deletePersonnelApi, assignRolesApi, assignCategoriesApi, refreshFeishuApi,
-  fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics,
-  fetchDepartments, fetchWorkOrders, fetchWorkOrderStatistics, fetchFailureCodes,
-  fetchCalibrationPlans, fetchCalibrationRecords, fetchMaintenancePlans,
-  fetchInspectionTemplates, fetchCategories, fetchSpareParts, fetchStockWarnings,
-  fetchOverdueMaintenancePlans,
 } from '@/lib/api/server/equipment'
-
-export {
-  fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics,
-  fetchDepartments, fetchWorkOrders, fetchWorkOrderStatistics, fetchFailureCodes,
-  fetchCalibrationPlans, fetchCalibrationRecords, fetchMaintenancePlans,
-  fetchInspectionTemplates, fetchCategories, fetchSpareParts, fetchStockWarnings,
-  fetchOverdueMaintenancePlans,
-}
 
 async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await getServerToken()}` }

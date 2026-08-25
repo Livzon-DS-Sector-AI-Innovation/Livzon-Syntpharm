@@ -4,7 +4,7 @@ import {
   fetchEquipments, fetchWorkOrders, fetchWorkOrderStatistics, fetchFailureCodes,
   fetchCalibrationPlans, fetchCalibrationRecords,
   fetchMaintenancePlans,
-} from '@/actions/equipment'
+} from '@/lib/api/server/equipment'
 import {
 
   Equipment, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,

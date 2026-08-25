@@ -1,5 +1,5 @@
 import { EquipmentPage } from '@/components/equipment'
-import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/actions/equipment'
+import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/lib/api/server/equipment'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'

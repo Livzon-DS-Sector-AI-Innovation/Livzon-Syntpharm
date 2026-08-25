@@ -1,6 +1,5 @@
 import { InspectionPage } from '@/components/equipment/inspection'
-import { fetchInspectionTemplates } from '@/actions/equipment'
-import { fetchEquipments, fetchCategories, fetchLocationTree } from '@/actions/equipment'
+import { fetchInspectionTemplates, fetchEquipments, fetchCategories, fetchLocationTree } from '@/lib/api/server/equipment'
 import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment/generated-bridge'
 
 export const dynamic = 'force-dynamic'

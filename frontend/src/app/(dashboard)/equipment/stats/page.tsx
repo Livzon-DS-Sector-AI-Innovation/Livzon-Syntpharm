@@ -7,7 +7,7 @@ import {
   fetchOverdueMaintenancePlans,
   fetchCalibrationPlans,
   fetchWorkOrders,
-} from '@/actions/equipment'
+} from '@/lib/api/server/equipment'
 import type {
 
   EquipmentStatus,

@@ -1,6 +1,6 @@
 
 import { SparePartsPage } from '@/components/equipment'
-import { fetchSpareParts, fetchStockWarnings } from '@/actions/equipment'
+import { fetchSpareParts, fetchStockWarnings } from '@/lib/api/server/equipment'
 import { SparePart, StockWarning } from '@/types/equipment/generated-bridge'
 
 export const dynamic = 'force-dynamic'
