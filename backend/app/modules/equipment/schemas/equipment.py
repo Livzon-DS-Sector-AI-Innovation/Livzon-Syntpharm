@@ -220,3 +220,16 @@ class BatchDeleteRequest(BaseModel):
     """批量删除请求"""
 
     ids: list[uuid.UUID] = Field(..., min_length=1, description="设备ID列表")
+
+
+# ==================== 设备导入 ====================
+class EquipmentImportRow(BaseModel):
+    """设备导入行数据"""
+
+    资产编号: str | None = Field(default=None, description="资产编号")
+    资产说明: str | None = Field(default=None, description="资产说明")
+    实物所在部门: str | None = Field(default=None, description="实物所在部门")
+    资产类别说明: str | None = Field(default=None, description="资产类别说明")
+    当前成本: str | float | None = Field(default=None, description="当前成本")
+    报废状态: str | None = Field(default=None, description="报废状态")
+    数量: int | float | None = Field(default=None, description="数量")
