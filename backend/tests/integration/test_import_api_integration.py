@@ -1,8 +1,9 @@
 """Integration tests for equipment import v3 API endpoints."""
 
 from typing import Any, cast
-from fastapi import FastAPI
 from unittest.mock import AsyncMock, MagicMock, patch
+
+from fastapi import FastAPI
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
