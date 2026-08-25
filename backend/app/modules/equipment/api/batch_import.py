@@ -6,14 +6,16 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import success_response
+from app.core.response import build_response, ApiResponse
+from app.core.exceptions import BadRequestException
+from app.modules.equipment.schemas.equipment import EquipmentImportRow
 from app.modules.equipment import repository as repo
 
 router = APIRouter()
@@ -204,7 +206,7 @@ def fuzzy_match_department(dept_name: str, departments: list[str], threshold: fl
 
 
 @router.get("/template", summary="下载导入模板")
-async def download_template() -> JSONResponse:
+async def download_template() -> ApiResponse:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
@@ -219,17 +221,19 @@ async def download_template() -> JSONResponse:
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
-    return success_response(data=base64.b64encode(buffer.read()).decode())
+    return build_response(data=base64.b64encode(buffer.read()).decode())
 
 
 @router.post("/preview", summary="预览导入数据")
 async def preview_import(
-    data: list[dict[str, Any]],
+    data: list[EquipmentImportRow],
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     results = []
-    for idx, row in enumerate(data):
+    # Convert EquipmentImportRow to dict for processing
+    data_dicts = [row.model_dump() for row in data]
+    for idx, row in enumerate(data_dicts):
         asset_no = get_column_value(row, "资产编号")
         name = get_column_value(row, "资产说明")
         dept_raw = get_column_value(row, "实物所在部门")
@@ -286,21 +290,23 @@ async def preview_import(
 
     valid_count = sum(1 for r in results if not r["validation_errors"])
     warning_count = sum(1 for r in results if r["warnings"])
-    return success_response(
+    return build_response(
         data={"total": len(results), "valid_count": valid_count, "warning_count": warning_count, "items": results}
     )
 
 
 @router.post("/batch", summary="执行批量导入")
 async def batch_import(
-    data: list[dict[str, Any]],
+    data: list[EquipmentImportRow],
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     created = 0
+    # Convert EquipmentImportRow to dict for processing
+    data_dicts = [row.model_dump() for row in data]
     skipped = 0
     errors = []
-    for idx, row in enumerate(data):
+    for idx, row in enumerate(data_dicts):
         try:
             asset_no = str(get_column_value(row, "资产编号") or "").strip()
             if not asset_no:
@@ -372,20 +378,20 @@ async def batch_import(
             await db.rollback()
             skipped += 1
             errors.append({"row": idx, "error": str(e)})
-    return success_response(data={"created_count": created, "skipped_count": skipped, "errors": errors})
+    return build_response(data={"created_count": created, "skipped_count": skipped, "errors": errors})
 
 
 @router.post("/", summary="上传Excel文件并解析")
-async def import_excel(current_user: RequiredUser, file: UploadFile = File(...)) -> JSONResponse:
+async def import_excel(current_user: RequiredUser, file: UploadFile = File(...)) -> ApiResponse:
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        raise HTTPException(status_code=400, detail="仅支持 .xlsx 或 .xls 文件")
+        raise BadRequestException(message="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook
 
     content_bytes = await file.read()
     try:
         wb = load_workbook(io.BytesIO(content_bytes))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Excel 解析失败: {str(e)}")
+        raise BadRequestException(message=f"Excel 解析失败: {str(e)}")
     ws = wb.active
     headers = None
     start_row = 2
@@ -402,4 +408,4 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
         if any(cell is not None for cell in row):
             row_dict = {str(headers[i]): row[i] for i in range(len(headers)) if i < len(row) and headers[i]}
             data.append(row_dict)
-    return success_response(data=data)
+    return build_response(data=data)
