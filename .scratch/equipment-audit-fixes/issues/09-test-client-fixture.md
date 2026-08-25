@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Create pytest fixture for TestClient initialization
-- [ ] Replace module-level TestClient initialization with fixture
-- [ ] Replace manual dependency_overrides.clear() with try/finally or fixture cleanup
-- [ ] Ensure test isolation is maintained
-- [ ] All existing tests continue to pass
-- [ ] No unsafe cleanup patterns remain
+- [x] Create pytest fixture for TestClient initialization
+- [x] Replace module-level TestClient initialization with fixture
+- [x] Replace manual dependency_overrides.clear() with try/finally or fixture cleanup
+- [x] Ensure test isolation is maintained
+- [x] All existing tests continue to pass
+- [x] No unsafe cleanup patterns remain

@@ -72,3 +72,34 @@ async def test_assignee(db_session: AsyncSession) -> User:
     await db_session.flush()
     await db_session.refresh(user)
     return user
+
+
+@pytest.fixture
+def client() -> Any:
+    """Create a test client for synchronous tests."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    return TestClient(app)
+
+
+@pytest.fixture
+async def async_client() -> Any:
+    """Create an async test client with automatic dependency override cleanup."""
+    import httpx
+    from httpx import ASGITransport
+    from app import main as app_main
+    from typing import cast
+    from fastapi import FastAPI
+    
+    app_instance = cast(FastAPI, app_main.app)
+    
+    # Store original overrides
+    original_overrides = app_instance.dependency_overrides.copy()
+    
+    transport = ASGITransport(app=app_instance)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    
+    # Restore original overrides after test
+    app_instance.dependency_overrides.clear()
+    app_instance.dependency_overrides.update(original_overrides)
