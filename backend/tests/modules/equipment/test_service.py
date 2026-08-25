@@ -7,7 +7,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
-from app.modules.equipment.deps import EquipmentAccessContext
 from app.modules.equipment.schemas import (
     EquipmentCategoryCreate,
     EquipmentCategoryUpdate,

@@ -1,10 +1,11 @@
 """Shared test fixtures for equipment module tests."""
 
 from typing import Any
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
