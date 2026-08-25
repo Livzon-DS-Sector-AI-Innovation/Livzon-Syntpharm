@@ -450,18 +450,12 @@ export async function deleteInspectionTemplateItemApi(itemId: string, headers?: 
   })
 }
 
-export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
+export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
     method: 'POST',
     headers,
     body: formData,
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '上传失败')
-  }
-  const json = await res.json()
-  return unwrapResponse(json)
 }
 
 export async function deleteWorkOrderImageApi(workOrderId: string, imageId: string, headers?: Record<string, string>) {
@@ -487,18 +481,12 @@ export async function downloadImportTemplateApi(headers?: Record<string, string>
   return Buffer.from(arrayBuffer).toString('base64')
 }
 
-export async function importEquipmentsApi(formData: FormData, headers: Record<string, string>): Promise<any> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
+export async function importEquipmentsApi(formData: FormData, headers?: Record<string, string>): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     headers,
     body: formData,
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '导入失败')
-  }
-  const json = await res.json()
-  return unwrapResponse(json)
 }
 
 export async function deletePersonnelRoleApi(id: string, headers?: Record<string, string>) {
@@ -559,18 +547,12 @@ export async function closeInspectionTaskApi(id: string, closureRemark?: string,
   })
 }
 
-export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
+export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
     headers,
     body: formData,
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '上传失败')
-  }
-  const json = await res.json()
-  return unwrapResponse(json)
 }
 
 export async function deleteInspectionPhotoApi(taskId: string, photoId: string, headers?: Record<string, string>) {
@@ -580,18 +562,12 @@ export async function deleteInspectionPhotoApi(taskId: string, photoId: string, 
   })
 }
 
-export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers: Record<string, string>): Promise<any> {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
+export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
     headers,
     body: formData,
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).message || '上传失败')
-  }
-  const json = await res.json()
-  return unwrapResponse(json)
 }
 
 export async function analyzeInspectionPhotoApi(
@@ -743,16 +719,6 @@ export async function downloadImportTemplateOldApi() {
   const res = await apiFetchRaw('/api/v1/equipment/equipments/import-template')
   const blob = await res.blob()
   return blob
-}
-
-export async function importEquipmentsOldApi(formData: FormData, headers: Record<string, string>) {
-  const res = await fetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
-    method: 'POST',
-    body: formData,
-    headers,
-  })
-  if (!res.ok) throw new Error('导入设备失败')
-  return res.json()
 }
 
 // ── Read functions (Server Component GET calls) ──

@@ -4,11 +4,11 @@
 
 **Blocked by:** 04: API Client Type Safety - Contract Phase
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Replace all raw fetch() calls in src/lib/api/server/equipment.ts with apiFetch() or apiFetchRaw()
-- [ ] Ensure all API calls go through the authenticated client layer
-- [ ] Verify auth headers are properly applied in all cases
-- [ ] Ensure TypeScript compilation passes
-- [ ] All existing tests continue to pass
-- [ ] No raw fetch() calls remain in equipment API layer
+- [x] Replace all raw fetch() calls in src/lib/api/server/equipment.ts with apiFetch() or apiFetchRaw()
+- [x] Ensure all API calls go through the authenticated client layer
+- [x] Verify auth headers are properly applied in all cases
+- [x] Ensure TypeScript compilation passes
+- [x] All existing tests continue to pass
+- [x] No raw fetch() calls remain in equipment API layer
