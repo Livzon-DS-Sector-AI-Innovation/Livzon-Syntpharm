@@ -65,14 +65,9 @@ export async function fetchEquipments(filters: EquipmentFilters = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-export interface EquipmentStatisticsFilters {
-  category_id?: string
-  location_id?: string
-  department_id?: string
-  status?: string
-}
+// Use GetStatisticsQuery from generated types
 
-export async function fetchEquipmentStatistics(filters: EquipmentStatisticsFilters = {}): Promise<EquipmentStatistics> {
+export async function fetchEquipmentStatistics(filters: GetStatisticsQuery = {}): Promise<EquipmentStatistics> {
   const params = new URLSearchParams()
   if (filters.category_id) params.append('category_id', filters.category_id)
   if (filters.location_id) params.append('location_id', filters.location_id)
