@@ -288,25 +288,17 @@ export async function fetchPersonnelList(params?: any): Promise<Personnel[]> {
 //  Client aliases with null-to-undefined coercion
 // ═══════════════════════════════════════════════════════════
 
-interface FetchEquipmentsClientParams {
-  category_id?: string | null
-  location_id?: string | null
-  department_id?: string | null
-  status?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}
+// Use GetEquipmentsQuery from generated types
 
-export async function fetchEquipmentsClient(params: FetchEquipmentsClientParams = {}): Promise<EquipmentListResponse> {
+export async function fetchEquipmentsClient(params: GetEquipmentsQuery = {}): Promise<EquipmentListResponse> {
   return fetchEquipments({
     category_id: params.category_id ?? undefined,
     location_id: params.location_id ?? undefined,
     department_id: params.department_id ?? undefined,
-    status: params.status as EquipmentFilters['status'],
-    keyword: params.keyword,
-    page: params.page,
-    page_size: params.page_size,
+    status: params.status ?? undefined,
+    keyword: params.keyword ?? undefined,
+    page: params.page ?? undefined,
+    page_size: params.page_size ?? undefined,
   })
 }
 
