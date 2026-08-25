@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 from typing import Any
@@ -81,7 +82,7 @@ class DocumentLoader:
 
         # 3. 解析文本
         try:
-            text = DocumentParser.extract_text(str(file_path), max_chars=max_chars)
+            text = await asyncio.to_thread(DocumentParser.extract_text, str(file_path), max_chars)
         except Exception as e:
             logger.error("解析文档失败: %s, error=%s", title, e)
             # 尝试作为纯文本读取

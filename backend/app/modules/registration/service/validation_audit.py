@@ -1,5 +1,6 @@
 """Validation Audit business logic."""
 
+import asyncio
 import json
 import logging
 import uuid
@@ -155,7 +156,7 @@ class ValidationAuditService:
         for audit_file in pending_files:
             try:
                 await self.file_repo.update_parse_result(audit_file, parse_status="parsing")
-                text = DocumentParser.extract_text(audit_file.file_path, max_chars=80000)
+                text = await asyncio.to_thread(DocumentParser.extract_text, audit_file.file_path, 80000)
                 await self.file_repo.update_parse_result(audit_file, parse_status="completed", parsed_text=text)
             except Exception as e:
                 logger.exception("文件解析失败: %s", audit_file.original_filename)

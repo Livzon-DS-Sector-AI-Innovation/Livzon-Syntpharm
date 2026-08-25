@@ -1,5 +1,6 @@
 """Safety business workflows."""
 
+import asyncio
 import json
 import logging
 import os
@@ -1040,7 +1041,7 @@ class SafetyService:
             attachment_text = ""
             if item.attachment_path:
                 try:
-                    attachment_text = DocumentParser.extract_text(item.attachment_path, max_chars=30000)
+                    attachment_text = await asyncio.to_thread(DocumentParser.extract_text, item.attachment_path, 30000)
                 except Exception as e:
                     logger.warning(f"附件解析失败: {e}")
             if attachment_text:

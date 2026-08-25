@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -164,9 +165,8 @@ class HazardIdentificationOrchestrator:
                                     DocumentParser,
                                 )
 
-                                attachment_text = DocumentParser.extract_text(
-                                    reg.document_path,
-                                    max_chars=30000,
+                                attachment_text = await asyncio.to_thread(
+                                    DocumentParser.extract_text, reg.document_path, 30000
                                 )
                                 logger.info(
                                     "脚本1 解析引用操规文档: %s (%d 字符)",

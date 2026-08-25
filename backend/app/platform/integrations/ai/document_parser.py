@@ -6,6 +6,7 @@ Uses hybrid approach: PP-OCR for simple text, PP-StructureV3 for structured docu
 """
 
 import logging
+import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ class DocumentParser:
 
     @staticmethod
     def _extract_pdf_ocr(path: str, max_pages: int = 10) -> str:
-        """Extract text from scanned PDF using PaddleOCR.
+        """Extract text from scanned PDF using PaddleOCR (subprocess isolation).
 
         Uses PP-StructureV3 for better structure preservation (tables, formulas, layout).
 
@@ -69,31 +70,64 @@ class DocumentParser:
             max_pages: Maximum pages to process (to avoid timeout)
         """
         try:
-            from pdf2image import convert_from_path
+            from pypdf import PdfReader, PdfWriter
 
-            from app.shared.ocr_service import get_ocr_service
+            from app.shared.ocr_service import OCRService, get_ocr_lock
 
-            ocr_service = get_ocr_service()
+            # Create a temporary PDF with only the first max_pages pages
+            reader = PdfReader(path)
+            total_pages = len(reader.pages)
+            pages_to_process = min(max_pages, total_pages)
 
-            # Convert PDF to images with lower DPI for speed
-            # 150 DPI is a good balance between speed and accuracy
-            images = convert_from_path(path, dpi=150, first_page=1, last_page=max_pages)
-            parts: list[str] = []
+            if pages_to_process == 0:
+                return "[PDF 无页面]"
 
-            logger.info(f"OCR processing {len(images)} pages with PP-StructureV3...")
+            # Create temporary truncated PDF
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                truncated_path = Path(tmp.name)
 
-            for i, image in enumerate(images):
-                # Use hybrid API - PP-StructureV3 for better structure preservation
-                # Returns Markdown format which preserves tables, formulas, etc.
-                text = ocr_service.extract(image, output_format="markdown")
-                if text.strip():  # type: ignore[union-attr]
-                    parts.append(f"--- Page {i + 1} ---\n{text.strip()}")  # type: ignore[union-attr]
+            try:
+                writer = PdfWriter()
+                for i in range(pages_to_process):
+                    writer.add_page(reader.pages[i])
 
-            if not parts:
-                return "[OCR未能提取到文本内容]"
+                with open(truncated_path, "wb") as f:
+                    writer.write(f)
 
-            return "\n\n".join(parts)
+                # Acquire global lock for serialization
+                lock = get_ocr_lock()
 
+                with lock:
+                    # Call subprocess-based OCR
+                    # Timeout: base 120s, formula will use max(120, 120+60*pages)
+                    result = OCRService._run_ocr_in_subprocess(
+                        file_path=truncated_path,
+                        timeout=120,
+                        min_memory_gb=8.0,
+                    )
+
+                # Extract page texts from result
+                pages = result.get("pages", [])
+                parts = [
+                    f"--- Page {p['page_number']} ---\n{p.get('markdown', '').strip()}"
+                    for p in pages
+                    if p.get("markdown", "").strip()
+                ]
+
+                if not parts:
+                    return "[OCR未能提取到文本内容]"
+
+                return "\n\n".join(parts)
+
+            finally:
+                # Clean up temporary PDF
+                if truncated_path.exists():
+                    truncated_path.unlink()
+
+        except RuntimeError as e:
+            error_msg = str(e)
+            logger.error(f"OCR extraction failed: {error_msg}")
+            return f"[OCR提取失败: {error_msg}]"
         except Exception as e:
             logger.error(f"OCR extraction failed: {e}")
             return f"[OCR提取失败: {str(e)}]"

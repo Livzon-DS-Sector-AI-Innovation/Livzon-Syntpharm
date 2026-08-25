@@ -1,5 +1,6 @@
 """Safety business workflows."""
 
+import asyncio
 import logging
 import os
 import uuid
@@ -66,7 +67,7 @@ class AttachmentService:
 
         # 2. 提取文本并转为 Markdown
         try:
-            md_content = _extract_to_markdown(original_path)
+            md_content = await asyncio.to_thread(_extract_to_markdown, original_path)
         except Exception:
             logger.exception(
                 "Document parsing failed",

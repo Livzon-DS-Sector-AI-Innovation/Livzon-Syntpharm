@@ -5,10 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from docx import Document
-from pdf2image import convert_from_path
-from PIL import Image
 
-from app.shared.ocr_service import get_ocr_service
+from app.shared.ocr_service import OCRService, get_ocr_lock
 
 
 class AssetExtractor:
@@ -56,41 +54,36 @@ class AssetExtractor:
 
     @staticmethod
     def extract_text_from_pdf_ocr(file_path: Path) -> dict[str, Any]:
-        """使用 OCR 从 PDF 扫描件提取文本"""
+        """使用 OCR 从 PDF 扫描件提取文本（子进程隔离）"""
         try:
-            ocr_service = get_ocr_service()
+            # Acquire global lock for serialization
+            lock = get_ocr_lock()
 
-            # 使用混合 API，PDF 自动使用 PP-StructureV3 保持结构
-            full_text = ocr_service.extract(file_path, output_format="text")
+            with lock:
+                # Call subprocess-based OCR (synchronous)
+                # Timeout: 300s base, formula will use max(300, 120+60*pages)
+                result = OCRService._run_ocr_in_subprocess(
+                    file_path=file_path,
+                    timeout=300,
+                    min_memory_gb=8.0,
+                )
 
-            # 转换 PDF 为图片以获取页数
-            images = convert_from_path(str(file_path), dpi=200)
+            # Extract page texts from result
+            pages = result.get("pages", [])
+            all_text = [{"page": p["page_number"], "text": p.get("markdown", "").strip()} for p in pages]
 
-            # 为每页提取文本（使用 PP-StructureV3）
-            all_text = []
-            for page_num, image in enumerate(images):
-                text = ocr_service.extract(image, output_format="text")
-                all_text.append({"page": page_num + 1, "text": text.strip()})  # type: ignore[union-attr]
+            full_text = "\n\n".join(pt["text"] for pt in all_text)
 
             return {
                 "pages": all_text,
                 "full_text": full_text,
-                "page_count": len(images),
+                "page_count": len(pages),
             }
+        except RuntimeError as e:
+            error_msg = str(e)
+            return {"pages": [], "full_text": "", "error": f"PDF OCR 提取失败: {error_msg}"}
         except Exception as e:
-            return {"pages": [], "full_text": "", "error": str(e)}
-
-    @staticmethod
-    def extract_from_image(file_path: Path) -> dict[str, Any]:
-        """从图片文件提取文本"""
-        try:
-            ocr_service = get_ocr_service()
-            image = Image.open(str(file_path))
-            # 使用 PP-OCR 进行快速文本提取
-            text = ocr_service.extract_text(image)
-            return {"text": text.strip(), "format": image.format, "size": image.size}
-        except Exception as e:
-            return {"text": "", "error": str(e)}
+            return {"pages": [], "full_text": "", "error": f"PDF OCR 提取失败: {str(e)}"}
 
     @staticmethod
     def extract_field_value(content: str, field_name: str) -> str | None:

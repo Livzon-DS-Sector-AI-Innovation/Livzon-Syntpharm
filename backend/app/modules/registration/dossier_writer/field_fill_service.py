@@ -1,5 +1,6 @@
 """字段填充服务 - 编排素材提取和填充流程"""
 
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -251,7 +252,7 @@ class FieldFillService:
             else:
                 return None
         elif file_type == "pdf":
-            content = self.extractor.extract_text_from_pdf_ocr(asset_path)
+            content = await asyncio.to_thread(self.extractor.extract_text_from_pdf_ocr, asset_path)
         else:
             return None
 
