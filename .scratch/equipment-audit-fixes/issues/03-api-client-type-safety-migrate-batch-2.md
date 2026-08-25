@@ -4,11 +4,11 @@
 
 **Blocked by:** 01: API Client Type Safety - Expand Phase, 02: API Client Type Safety - Migrate Batch 1
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Update all maintenance work order API calls to use typed versions
-- [ ] Update all calibration plan/record API calls to use typed versions
-- [ ] Update all spare parts API calls to use typed versions
-- [ ] Update all related actions and page components
-- [ ] Ensure TypeScript compilation passes
-- [ ] All existing tests continue to pass
+- [x] Update all maintenance work order API calls to use typed versions
+- [x] Update all calibration plan/record API calls to use typed versions
+- [x] Update all spare parts API calls to use typed versions
+- [x] Update all related actions and page components
+- [x] Ensure TypeScript compilation passes
+- [x] All existing tests continue to pass
