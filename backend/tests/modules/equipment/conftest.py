@@ -69,6 +69,6 @@ async def test_assignee(db_session: AsyncSession) -> User:
         name="Test Assignee",
     )
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
     return user
