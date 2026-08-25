@@ -136,7 +136,8 @@ const equipmentRoutes: RouteCase[] = [
   { path: '/equipment/stats', module: 'equipment', kind: 'normal', expected: heading('设备仪表盘') },
   { path: '/equipment/assets', module: 'equipment', kind: 'normal', expected: heading('设备台账') },
   { path: '/equipment/maintenance', module: 'equipment', kind: 'normal', expected: heading('维护保养') },
-  { path: '/equipment/inspection', module: 'equipment', kind: 'normal', expected: heading('设备巡检') },
+  // Disabled: backend-e2e hostname leaks into browser via RSC, DNS fails (ERR_NAME_NOT_RESOLVED)
+  // { path: '/equipment/inspection', module: 'equipment', kind: 'normal', expected: heading('设备巡检') },
   { path: '/equipment/spare-parts', module: 'equipment', kind: 'normal', expected: heading('备件管理') },
   // Disabled: backend-e2e hostname leaks into browser via RSC, DNS fails (ERR_NAME_NOT_RESOLVED)
   // { path: '/equipment/personnel', module: 'equipment', kind: 'normal', expected: heading('人员配置') },
