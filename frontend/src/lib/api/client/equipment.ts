@@ -17,8 +17,8 @@ import type { operations } from '@/types/generated/schema'
 const API_BASE = '/api/v1'
 
 // Generated type aliases from OpenAPI spec
-export type GetEquipmentsQuery = operations['get_equipments_api_v1_equipment_equipments_get']['parameters']['query']
-export type GetStatisticsQuery = operations['get_equipment_statistics_api_v1_equipment_equipments_statistics_get']['parameters']['query']
+export type GetEquipmentsQuery = NonNullable<operations['get_equipments_api_v1_equipment_equipments_get']['parameters']['query']>
+export type GetStatisticsQuery = NonNullable<operations['get_equipment_statistics_api_v1_equipment_equipments_statistics_get']['parameters']['query']>
 
 
 
