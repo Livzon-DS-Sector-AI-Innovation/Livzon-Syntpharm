@@ -14,14 +14,14 @@ import {
   InspectionCompleteInput, MaterialConsumeInput,
 } from '@/types/equipment/generated-bridge'
 import {
-  createCategoryApi,
-  updateCategoryApi,
+  createCategoryApiTyped,
+  updateCategoryApiTyped,
   deleteCategoryApi,
-  createLocationApi,
-  updateLocationApi,
+  createLocationApiTyped,
+  updateLocationApiTyped,
   deleteLocationApi,
-  createEquipmentApi,
-  updateEquipmentApi,
+  createEquipmentApiTyped,
+  updateEquipmentApiTyped,
   deleteEquipmentApi,
   createFailureCodeApi,
   updateFailureCodeApi,
@@ -111,14 +111,14 @@ async function wrapApiCall<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
 // 设备分类
 export async function createCategory(data: CreateCategoryInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createCategoryApi(data, authHeaders))
+  const result = await wrapApiCall(() => createCategoryApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }
 
 export async function updateCategory(id: string, data: UpdateCategoryInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => updateCategoryApi(id, data, authHeaders))
+  const result = await wrapApiCall(() => updateCategoryApiTyped(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }
@@ -133,14 +133,14 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
 // 位置管理
 export async function createLocation(data: CreateLocationInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createLocationApi(data, authHeaders))
+  const result = await wrapApiCall(() => createLocationApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }
 
 export async function updateLocation(id: string, data: UpdateLocationInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => updateLocationApi(id, data, authHeaders))
+  const result = await wrapApiCall(() => updateLocationApiTyped(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }
@@ -155,14 +155,14 @@ export async function deleteLocation(id: string): Promise<ActionResult> {
 // 设备管理
 export async function createEquipment(data: CreateEquipmentInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createEquipmentApi(data, authHeaders))
+  const result = await wrapApiCall(() => createEquipmentApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }
 
 export async function updateEquipment(id: string, data: UpdateEquipmentInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => updateEquipmentApi(id, data, authHeaders))
+  const result = await wrapApiCall(() => updateEquipmentApiTyped(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment')
   return result
 }

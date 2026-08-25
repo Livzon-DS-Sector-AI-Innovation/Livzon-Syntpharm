@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: API Client Type Safety - Expand Phase
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Update all equipment create/update API calls to use typed versions
-- [ ] Update src/actions/equipment.ts to use typed API functions
-- [ ] Update all page components that call equipment actions
-- [ ] Ensure TypeScript compilation passes
-- [ ] All existing tests continue to pass
+- [x] Update all equipment create/update API calls to use typed versions
+- [x] Update src/actions/equipment.ts to use typed API functions
+- [x] Update all page components that call equipment actions
+- [x] Ensure TypeScript compilation passes
+- [x] All existing tests continue to pass
