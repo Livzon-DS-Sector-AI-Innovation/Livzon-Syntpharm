@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Replace `initialData?: any` with `components['schemas']['LocationUpdate']`
-- [ ] Update component implementation to use typed props
-- [ ] Ensure TypeScript compilation passes with strict mode
-- [ ] All existing tests continue to pass
-- [ ] No `any` types remain in component props
+- [x] Replace `initialData?: any` with `Location` type
+- [x] Update component implementation to use typed props
+- [x] Ensure TypeScript compilation passes with strict mode
+- [x] All existing tests continue to pass
+- [x] No `any` types remain in component props

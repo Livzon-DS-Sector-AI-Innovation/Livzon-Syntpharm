@@ -3,13 +3,14 @@
 import { useEffect } from 'react'
 import { App, Form, Input, Modal } from 'antd'
 import { createLocation, updateLocation } from '@/actions/equipment'
+import { Location } from '@/types/equipment/generated-bridge'
 
 const { TextArea } = Input
 
 interface LocationEditorProps {
   mode: 'create' | 'edit'
   parentId?: string
-  initialData?: any
+  initialData?: Location
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
