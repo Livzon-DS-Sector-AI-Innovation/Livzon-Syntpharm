@@ -5,42 +5,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from tests.modules.equipment.conftest import MockDB, _extract_param_values, create_mock_department
+
 from app.modules.hr.models import HrDepartment
 
 
-def _extract_param_values(stmt: Any) -> str:
-    """Extract all parameter values from a SQLAlchemy statement as a string for matching."""
-    try:
-        compiled = stmt.compile(compile_kwargs={"literal_binds": True})
-        return str(compiled)
-    except Exception:
-        return str(stmt)
 
 
-class MockDB:
-    def __init__(self) -> None:
-        self.executed_sql: list[str] = []
 
-    async def execute(self, stmt: Any) -> MagicMock:
-        self.executed_sql.append(str(stmt))
-        mock_result = MagicMock()
-        sql_str = _extract_param_values(stmt)
-
-        if "质量控制部" in sql_str:
-            mock_result.scalar_one_or_none.return_value = "uuid-quality-control"
-        elif "溶剂回收车间" in sql_str:
-            mock_result.scalar_one_or_none.return_value = "uuid-solvent-recovery"
-        else:
-            mock_result.scalar_one_or_none.return_value = None
-        return mock_result
-
-
-def create_mock_department(dept_id: str, name: str) -> MagicMock:
-    """Create a mock HrDepartment object."""
-    mock_dept = MagicMock(spec=HrDepartment)
-    mock_dept.id = dept_id
-    mock_dept.name = name
-    return mock_dept
 
 
 @pytest.mark.asyncio
