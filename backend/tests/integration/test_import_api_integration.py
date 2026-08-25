@@ -9,7 +9,7 @@ from app.core.deps import get_current_user
 from tests.modules.equipment.conftest import MockDB, create_mock_department
 
 
-async def test_preview_returns_inferred_fields(async_client: Any) -> None:
+async def test_preview_returns_inferred_fields(client: Any) -> None:
     """Test that preview endpoint correctly infers equipment fields."""
     from app import main as app_main
 
@@ -39,7 +39,7 @@ async def test_preview_returns_inferred_fields(async_client: Any) -> None:
             mock_repo.get_by_name = AsyncMock(return_value=mock_dept)
             mock_repo_class.return_value = mock_repo
 
-            response = await async_client.post("/api/v1/equipment/equipments/import/preview", json=data)
+            response = await client.post("/api/v1/equipment/equipments/import/preview", json=data)
 
         assert response.status_code == 200
         result_data = response.json()
@@ -54,7 +54,7 @@ async def test_preview_returns_inferred_fields(async_client: Any) -> None:
         cast(FastAPI, app_main.app).dependency_overrides.clear()
 
 
-async def test_batch_import_handles_null_department(async_client: Any) -> None:
+async def test_batch_import_handles_null_department(client: Any) -> None:
     """Test that batch import handles null department gracefully."""
     from app import main as app_main
 
@@ -71,7 +71,7 @@ async def test_batch_import_handles_null_department(async_client: Any) -> None:
             mock_repo.get_equipment_by_asset_no = AsyncMock(return_value=None)
             mock_repo.create_equipment = AsyncMock()
 
-            response = await async_client.post("/api/v1/equipment/equipments/import/batch", json=data)
+            response = await client.post("/api/v1/equipment/equipments/import/batch", json=data)
 
         assert response.status_code == 200
         result_data = response.json()
