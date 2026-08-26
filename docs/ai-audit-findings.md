@@ -381,32 +381,6 @@ Categories affected: all 14
 | 13. Docker | 0 | ✓ |
 | 14. E2E | 0 | ✓ |
 
-### PR #10: Ruanjiaheng (base: main, head: ruanjiaheng, date: 2026-07-27)
-
-Files changed: 93 files across all categories
-
-#### New findings (not in baseline)
-
-- [x] `frontend/src/components/settings/NoAccessResult.tsx` — 前端/模块边界 — Imported via `@/components/settings/NoAccessResult` (direct path) instead of through `settings/index.ts` barrel. — severity: low — **RESOLVED** (added to barrel, import updated to `@/components/settings`)
-
-#### Category summaries
-
-| Category | New violations | Note |
-|---|---|---|
-| 1. Repository layout | 0 | |
-| 2. Secrets | 0 | CI-only credentials, in scope |
-| 3. Module boundaries | 0 | |
-| 4. API & auth | 0 | E2E auth hardening |
-| 5. Models & migrations | 0 | Migration CI passes |
-| 6. Config & logging | 0 | |
-| 7. External services | 0 | |
-| 8. Backend tests | 0 | |
-| 9. Frontend boundaries | 1 | NoAccessResult barrel missing |
-| 10. Frontend API & types | 0 | |
-| 11. Proxy & routing | 0 | |
-| 12. OpenAPI | 0 | CI passes |
-| 13. Docker | 0 | |
-| 14. E2E | 0 | CI updated |
 
 ### PR #11: Ruanjiaheng — E2E rework (head: ruanjiaheng, date: 2026-07-27)
 
@@ -1160,7 +1134,7 @@ Category 1 (Repository layout), Category 5 (Models & migrations), Category 6 (Co
 
 ---
 
-## PR #28 — fix: add network retry to apiFetch for Docker DNS resilience (2026-08-12)
+### PR #28 — fix: add network retry to apiFetch for Docker DNS resilience (2026-08-12)
 
 **Changed files** (1): `frontend/src/lib/api/server/base.ts`
 
@@ -1235,7 +1209,7 @@ Categories 1, 3-9, 12-14 — no changed files in scope.
 
 ---
 
-## PR #29 — liangxuechao-ProductManagement-v2（产品管理功能增强（年度回顾/飞书同步/导入预览撤销）(2026-08-13)
+### PR #29 — liangxuechao-ProductManagement-v2（产品管理功能增强（年度回顾/飞书同步/导入预览撤销）(2026-08-13)
 
 **PR URL:** https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm/pull/29
 **Author:** liangxuechao201
@@ -1564,7 +1538,7 @@ Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), C
 
 ---
 
-## PR #30 Audit (commit: 2eb03c7, date: 2026-08-17)
+### PR #30 Audit (commit: 2eb03c7, date: 2026-08-17)
 
 **PR Title:** 实现能源 AI 智能分析多产品折算功能及数据治理  
 **Branch:** `lzhc-zhuang` → `main`  
@@ -1867,21 +1841,21 @@ _None._
 | 15. SQL injection and unsafe queries | 1 | 0 | medium |
 | **Total** | **8** | **0** | — |
 
-### Blocking issues
+#### Blocking issues
 1. **Migration downgrade is broken** (Category 5) — The `downgrade()` function in `29a5a96069e8_add_energy_product_conversion_table.py` contains duplicate operations and will fail if executed.
 
-### High priority
+#### High priority
 2. **Frontend API client inconsistency** (Category 10) — Multiple frontend functions use raw `fetch()` instead of `apiFetch<T>()`, bypassing standardized error handling and type safety.
 
-### Medium priority
+#### Medium priority
 3. **Dead code in service layer** (Category 4) — Duplicate `raise` statement in `create_monthly_record()`.
 4. **Raw fetch in page component** (Category 10) — AI analysis page uses raw `fetch()` instead of API client.
 5. **SQL LIKE wildcard escaping** (Category 15) — `ilike` pattern construction doesn't escape special characters.
 
-### Low priority
+#### Low priority
 6. **Duplicate schema creation** (Category 5) — Migration executes `CREATE SCHEMA` twice.
 
-### Resolution status (updated 2026-08-17)
+#### Resolution status (updated 2026-08-17)
 
 All 8 findings have been resolved in commits:
 - `23ad2d7 fix: resolve PR audit findings` — Fixed 7 findings (migration downgrade, frontend API consistency, dead code, raw fetch usage, SQL LIKE escaping)
@@ -2094,23 +2068,23 @@ _None._
 | 14. E2E | 0 | 1 | low |
 | **Total** | **12** | **1** | **5 blocking, 2 medium, 1 low** |
 
-### Blocking issues (must fix before merge)
+#### Blocking issues (must fix before merge)
 
 1. **Scratch files at repo root** (Category 1) — Remove `fix-any-progress.json`, `fix-any-types.sh`, `fix-any.log`, `lint-output.txt` and add to `.gitignore`
 2. **Hardcoded developer path in CI script** (Category 13) — `scripts/ci.sh:213` contains `/home/ruanjiaheng/.local/bin`
 3. **Missing 'use client' directive** (Category 9) — `PersonnelInfo.tsx` exports React component using antd without 'use client'
 
-### High priority
+#### High priority
 
 4. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
 5. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
 
-### Medium priority
+#### Medium priority
 
 6. **Error message leaks internal backend URL** (Category 2) — `base.ts:100` exposes `getApiBaseUrl()` to client
 7. **Client API file in wrong directory** (Category 1) — `static-data-api.ts` should be in `lib/api/client/`
 
-### Low priority
+#### Low priority
 
 8. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
 
@@ -2929,16 +2903,16 @@ frontend/src/types/dossier-writer.ts:152 — 前端/类型系统/API 类型来�
 | 15. SQL injection | 0 | 0 | — |
 | **Total** | **3** | **2** | |
 
-### High priority
+#### High priority
 
 1. **uv.lock registry mismatch** (Category 2) — Lockfile switched to `pypi.org` but Dockerfile sets `UV_INDEX_URL=mirrors.aliyun.com`. Will break `uv sync --locked` in CI/Docker.
 
-### Medium priority
+#### Medium priority
 
 2. **Frontend types not regenerated** (Category 10) — `SplitConfirmResult` and `PageSplitInfo.split_id` are hand-written instead of regenerated from OpenAPI spec. Backend schema changed but `pnpm generate:api` was not run.
 3. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling.
 
-### Low priority
+#### Low priority
 
 4. **Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path.
 
