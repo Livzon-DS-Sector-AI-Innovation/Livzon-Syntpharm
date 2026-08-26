@@ -124,9 +124,6 @@ Example:
 - [ ] `backend/app/shared/ocr_service.py:323` — 仓库通用规则/禁止硬编码绝对路径 — `env["PYTHONPATH"] = "/app"` hardcodes Docker container path. Should use `os.environ.get("APP_ROOT", "/app")` or relative path.
 ```
 
-### Retroactive formatting
-
-Only apply this format to new PR audits. Do not reformat existing findings in `ai-audit-findings.md`.
 
 ---
 
