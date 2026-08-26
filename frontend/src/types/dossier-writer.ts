@@ -148,13 +148,7 @@ export interface AIFillResult {
   }>
 }
 
-export interface PageSplitInfo {
-  split_id: string
-  page_number: number
-  page_type: string
-  content_summary: string
-  appendix_slot?: string | null
-}
+export type PageSplitInfo = components['schemas']['PageSplitItem']
 
 export interface PageSplitPreviewResult {
   success: boolean

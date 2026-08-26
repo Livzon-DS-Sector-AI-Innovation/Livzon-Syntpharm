@@ -2773,6 +2773,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/equipment/equipments/import/test-validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试验证错误
+         * @description Test endpoint to debug validation errors without authentication.
+         */
+        post: operations["test_validation_api_v1_equipment_equipments_import_test_validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/accidents": {
         parameters: {
             query?: never;
@@ -22807,6 +22827,54 @@ export interface components {
             scrap_time?: string | null;
         };
         /**
+         * EquipmentImportRow
+         * @description 设备导入行数据
+         */
+        EquipmentImportRow: {
+            /**
+             * 资产编号
+             * @description 资产编号
+             */
+            "\u8D44\u4EA7\u7F16\u53F7"?: string | number | null;
+            /**
+             * 资产说明
+             * @description 资产说明
+             */
+            "\u8D44\u4EA7\u8BF4\u660E"?: string | null;
+            /**
+             * 设备名称
+             * @description 设备名称（别名）
+             */
+            "\u8BBE\u5907\u540D\u79F0"?: string | null;
+            /**
+             * 实物所在部门
+             * @description 实物所在部门
+             */
+            "\u5B9E\u7269\u6240\u5728\u90E8\u95E8"?: string | null;
+            /**
+             * 资产类别说明
+             * @description 资产类别说明
+             */
+            "\u8D44\u4EA7\u7C7B\u522B\u8BF4\u660E"?: string | null;
+            /**
+             * 当前成本
+             * @description 当前成本
+             */
+            "\u5F53\u524D\u6210\u672C"?: string | number | null;
+            /**
+             * 报废状态
+             * @description 报废状态
+             */
+            "\u62A5\u5E9F\u72B6\u6001"?: string | null;
+            /**
+             * 数量
+             * @description 数量
+             */
+            "\u6570\u91CF"?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * EquipmentUpdate
          * @description 更新设备请求
          */
@@ -27366,10 +27434,24 @@ export interface components {
             updated_at?: string | null;
         };
         /**
+         * PageInsertDetail
+         * @description 逐页插入明细
+         */
+        PageInsertDetail: {
+            /** Page Number */
+            page_number: number;
+            /** Success */
+            success: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
          * PageSplitItem
          * @description 页拆分项
          */
         PageSplitItem: {
+            /** Split Id */
+            split_id?: string | null;
             /** Page Number */
             page_number: number;
             /** Page Type */
@@ -32637,6 +32719,11 @@ export interface components {
             message: string;
             /** Inserted Count */
             inserted_count: number;
+            /**
+             * Details
+             * @default []
+             */
+            details: components["schemas"]["PageInsertDetail"][];
         };
         /**
          * SplitConfirmRequest
@@ -43245,7 +43332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
         };
@@ -43261,9 +43348,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43273,7 +43358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43298,9 +43383,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43310,7 +43393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43345,7 +43428,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_validation_api_v1_equipment_equipments_import_test_validation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentImportRow"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

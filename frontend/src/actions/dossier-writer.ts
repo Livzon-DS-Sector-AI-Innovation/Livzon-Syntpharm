@@ -25,10 +25,7 @@ type SplitConfirmData = components['schemas']['SplitConfirmData']
 type AssetCategoryUpdateData = components['schemas']['AssetCategoryUpdateData']
 type AssetUsageToggleData = components['schemas']['AssetUsageToggleData']
 
-// 扩展生成的 SplitConfirmData，补充逐页明细（后端 SplitConfirmResponse.details）
-type SplitConfirmResult = SplitConfirmData & {
-  details?: { page_number: number; success: boolean; reason?: string | null }[]
-}
+type SplitConfirmResult = SplitConfirmData
 import {
   uploadTemplatesApi,
   uploadChapterAssetApi,
