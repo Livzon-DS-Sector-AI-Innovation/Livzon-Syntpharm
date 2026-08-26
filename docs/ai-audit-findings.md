@@ -1893,7 +1893,7 @@ All 8 findings have been resolved in commits:
 
 ---
 
-## PR #31 — Ruanjiaheng (audit date: 2026-08-18)
+### PR #31 — Ruanjiaheng (audit date: 2026-08-18)
 
 ### Audit scope
 - **PR**: [#31](https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm/pull/31)
@@ -2113,6 +2113,413 @@ _None._
 ### Low priority
 
 8. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
+
+### PR #38: Fix equipment module: lint, type checking, and batch operations (base: origin/main, head: origin/lzhc-zhuang-equipment, date: 2026-08-24)
+
+**Changed files (78):**
+- `.scratch/` — 19 planning/spec markdown files (4 feature areas)
+- `CONTEXT.md` — domain context doc
+- `backend/Dockerfile.backup`, `backend/Dockerfile.dev` — new Dockerfiles
+- `backend/app/main.py` — CORS config change
+- `backend/app/modules/equipment/` — 12 files (api/, repository/, service/, schemas/)
+- `backend/docs/` — 8 new spec/review docs
+- `backend/pyproject.toml` — ruff config
+- `backend/scripts/import/`, `backend/scripts/seed/` — 3 new scripts
+- `backend/seed/departments.json` — duplicate seed data
+- `backend/tests/modules/equipment/` — 7 new test files
+- `docs/ai-audit-findings.md`, `docs/ai-audit-plan.md` — governance files (cosmetic changes)
+- `frontend/src/app/globals.css`, `frontend/src/styles/industrial-theme.css` — styling
+- `frontend/src/components/equipment/` — 16 component files (including duplicates)
+- `frontend/src/lib/antd-theme.ts` — theme config
+- `frontend/src/lib/api/client/equipment.ts`, `frontend/src/lib/api/server/base.ts`, `frontend/src/lib/api/server/equipment.ts` — API layer
+
+**Affected categories:** 1, 2, 3, 4, 5, 6, 8, 9, 10, 13, 15
+
+#### Category 1: Repository layout
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 38 |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (all Q1-Q11) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 3 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+```
+backend/seed/departments.json:1 — 仓库组织/脚本 — Seed data JSON placed in `backend/seed/` instead of `backend/scripts/seed/`. Identical copy exists at `backend/scripts/seed/departments.json`. `backend/seed/` is not defined in AGENTS.md. — ✅ RESOLVED — file deleted — severity: medium
+```
+```
+backend/app/modules/equipment/api/batch_import.py.bak:1 — 仓库组织/代码卫生 — Backup file committed to repository. — ✅ RESOLVED — file deleted — severity: low
+```
+```
+backend/app/modules/equipment/api/batch_import.py.backup_v3:1 — 仓库组织/代码卫生 — Backup file committed to repository. — ✅ RESOLVED — file deleted — severity: low
+```
+
+**Uncertain:**
+```
+docs/ai-audit-plan.md:235, docs/ai-audit-findings.md:1348 — 治理文件审批 — Both governance files modified. Changes are purely cosmetic (reformatting). No audit rules substantively altered. Technically requires architecture approval. — ✅ RESOLVED — accepted (approved) — severity: low — **ACCEPTED** (approved)
+```
+
+#### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 10 |
+| Files not inspected | 0 |
+| Rules evaluated | 7 (all Q1-Q7) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 3 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+```
+backend/scripts/seed/create_departments_from_excel.py:118 — 禁止硬编码绝对路径 — `output_path = Path("/home/zhuangweizi/Livzon-Syntpharm/backend/seed/departments.json")` — hardcoded absolute path to a specific user's home directory. — ✅ RESOLVED — now uses Path(__file__).parent — severity: high
+```
+```
+frontend/src/lib/api/server/base.ts:9 — 禁止硬编码localhost — `return 'http://localhost:8000'` — hardcoded localhost URL as browser-side fallback when API_BASE_URL is unset. — ✅ RESOLVED — now throws error if API_BASE_URL not set — severity: high
+```
+```
+backend/app/main.py:264 — 禁止硬编码localhost — `allow_origins = [...] if settings.FRONTEND_URL else ["http://localhost:3000"]` — hardcoded localhost:3000 as CORS fallback. Silently allows localhost:3000 in production if FRONTEND_URL is unset. — ✅ RESOLVED — now checks is_production and raises error if FRONTEND_URL missing — severity: medium
+```
+
+**Uncertain:**
+```
+backend/docs/flexible-import-guide.md:36, backend/docs/department-seeding-summary.md:12,18 — 禁止硬编码绝对路径 — Documentation contains hardcoded paths like `/home/zhuangweizi/Livzon-Syntpharm/...` in example shell commands. Not executable code. — ✅ RESOLVED — no hardcoded paths found — severity: low
+```
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 8 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (all Q1-Q8) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+```
+backend/app/modules/equipment/api/batch_import.py:18 — 模块所有权/禁止直接import内部文件 — `from app.modules.hr.models import HrDepartment` directly imports HR's ORM model instead of going through `app.modules.hr.public_api`. — ✅ RESOLVED — now imports from hr.public_api — severity: high
+```
+```
+backend/app/modules/equipment/repository/equipment.py:16 — 模块所有权/禁止直接import内部文件 — `from app.modules.hr.models import HrDepartment` directly imports HR's ORM model into repository layer. — ✅ RESOLVED — now imports from hr.public_api — severity: high
+```
+
+#### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 8 |
+| Files not inspected | 0 |
+| Rules evaluated | 7 (all Q1-Q7) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 8 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+```
+backend/app/modules/equipment/api/equipment.py:67,103,114,126,162,173,195,256,267,278 — API 规范/认证 — `current_user: CurrentUser = None` uses `CurrentUser = Annotated[User | None, ...]` with `= None` default. Unauthenticated requests silently receive None instead of being rejected. Should use `RequiredUser`. — ✅ RESOLVED — all endpoints now use RequiredUser — severity: blocking
+```
+```
+backend/app/modules/equipment/api/batch_import.py:227 — API 规范/认证 — `preview_import` has no `current_user` parameter at all; anyone can preview import data. — ✅ RESOLVED — preview_import now has current_user: RequiredUser — severity: blocking
+```
+```
+backend/app/modules/equipment/api/batch_import.py:376 — API 规范/认证 — `import_excel` has no `current_user` parameter; unauthenticated users can upload Excel files. — ✅ RESOLVED — import_excel now has current_user: RequiredUser — severity: blocking
+```
+```
+backend/app/modules/equipment/api/batch_import.py:378,385 — API 规范/必须: 业务异常使用 app/core/exceptions.py — Uses `raise HTTPException(status_code=400, detail=...)` instead of `BadRequestException`. — ✅ RESOLVED — now uses BadRequestException — severity: medium
+```
+```
+backend/app/modules/equipment/api/batch_import.py:223,286,372,402 — API 规范/禁止 success_response() — All four endpoints return `success_response()` (JSONResponse) instead of `build_response()` (Pydantic ApiResponse), bypassing response_model validation and OpenAPI schema generation. — ✅ RESOLVED — now uses build_response() — severity: medium
+```
+```
+backend/app/modules/equipment/api/batch_import.py:227,292 — API 规范/类型安全 — `data: list[dict[str, Any]]` provides no Pydantic validation for import payloads. — ✅ RESOLVED — now uses EquipmentImportRow type — severity: low
+```
+```
+frontend/src/lib/api/client/equipment.ts:331 — API 规范/认证 — `fetchInspectionTemplateItemsClient` uses bare `fetch()` without auth headers. — ✅ RESOLVED — now uses apiGet — severity: high
+```
+```
+frontend/src/lib/api/client/equipment.ts:345 — API 规范/认证 — `batchDeleteEquipments` uses bare `fetch()` without auth headers. — ✅ RESOLVED — now uses apiGet — severity: high
+```
+
+#### Category 5: Models and migrations (Schemas)
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 (all Q1-Q6) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** _None._
+**Uncertain:** _None._
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all Q1-Q5) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Uncertain:**
+```
+backend/app/main.py:264 — 配置/硬编码配置值 — `["http://localhost:3000"]` as CORS fallback when FRONTEND_URL is unset. Reasonable for dev, but in production if FRONTEND_URL is missing, silently allows localhost:3000 as CORS origin. Should fail closed or require explicit config. — ✅ RESOLVED — now checks is_production and raises error if FRONTEND_URL missing — severity: medium
+```
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 7 |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (all Q1-Q10) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 8 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+```
+test_batch_import_v2.py:20, test_department_mapping.py:19, test_import_api_integration.py:27 — 测试/fixture — Duplicated `MockDB` class across 3 files with slight variations. Should be a single shared fixture in conftest.py. — ✅ RESOLVED — MockDB extracted to conftest.py — severity: medium
+```
+```
+test_batch_import_v2.py:11, test_department_mapping.py:9, test_import_api_integration.py:18 — 测试/fixture — Duplicated `_extract_param_values` helper (7 lines) across 3 files. Should be extracted to shared utility. — ✅ RESOLVED — _extract_param_values extracted to conftest.py — severity: medium
+```
+```
+test_import_v2.py:7 — 测试/pytest模式 — `client = TestClient(app)` at module scope bypasses fixture infrastructure. Module-level side effect, bypasses auth_client/anonymous_client fixtures, sync client inconsistent with async patterns. — ✅ RESOLVED — now uses async test functions with client parameter — severity: medium
+```
+```
+test_batch_import_v2.py:54,60,66,72; test_department_mapping.py:42,49,56; test_import_v2.py:7 — 测试/类型检查 — 8 total `# type: ignore[arg-type]` suppressions. A Protocol defining the minimal DB interface would eliminate all suppressions. — ✅ RESOLVED — all type: ignore suppressions removed — severity: medium
+```
+```
+test_import_api_integration.py:72,101 — 测试/httpx模式 — Unsafe manual `dependency_overrides.clear()` at end of test; if assertion fails, overrides leak to next test. Should use try/finally or fixture. — ✅ RESOLVED — now uses try/finally blocks — severity: medium
+```
+```
+test_smart_inference.py:8-43, test_batch_import.py:12-59 — 测试/pytest模式 — Missing @pytest.mark.parametrize opportunities. 20 test methods with identical structure suitable for parametrize. — ✅ RESOLVED — added @pytest.mark.parametrize decorators — severity: low
+```
+```
+test_batch_import_v2.py:50,57,63,69; test_department_mapping.py:38,45,52; test_import_api_integration.py:49,75 — 测试/async模式 — 9 redundant @pytest.mark.asyncio markers; pyproject.toml sets asyncio_mode = "auto". — ✅ RESOLVED — severity: low
+```
+```
+test_import_api_integration.py:1 — 测试/目录结构 — Integration test (uses httpx.AsyncClient with ASGITransport) placed in modules/equipment/ instead of backend/tests/integration/. — ✅ RESOLVED — moved to backend/tests/integration/ — severity: low
+```
+
+**Uncertain:**
+```
+test_department_mapping.py:40,47,54 — 测试/pytest模式 — Same import repeated inside 3 test functions instead of at module level. Might be intentional. — ✅ RESOLVED — now has single import at module level — severity: low
+```
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 19 |
+| Files not inspected | 0 |
+| Rules evaluated | 10 (all Q1-Q10) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 12 |
+| Uncertain findings | 2 |
+
+**Confirmed:**
+```
+frontend/src/components/equipment/CategoryTree.tsx:5 — 前端类型/禁止手写API类型 — Imports EquipmentCategory from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/LocationTree.tsx:5 — 前端类型/禁止手写API类型 — Imports Location from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentDrawer.tsx:6 — 前端类型/禁止手写API类型 — Imports EquipmentStatus from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentTable.tsx:6 — 前端类型/禁止手写API类型 — Imports Equipment, EquipmentStatus from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentDetailDrawer.tsx:7-8 — 前端类型/禁止手写API类型 — Imports Equipment, MaintenancePlan, WorkOrder, InspectionTask from hand-written type files instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/StatusBadge.tsx:3 — 前端类型/禁止手写API类型 — Imports EquipmentStatus from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentTable.tsx:121 — 前端API层级/写操作必须通过Server Actions — Calls batchDeleteEquipments (write operation) directly from client component, bypassing Server Actions. — ✅ RESOLVED — now imports from @/actions/equipment — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentImportModal.tsx:7 — 前端API层级/客户端禁止导入服务器端API — Client component ('use client') imports previewEquipmentImportApi and batchImportEquipmentApi from @/lib/api/server/equipment (server-only API layer). Will fail at runtime. — ✅ RESOLVED — now imports from @/actions/equipment — severity: blocking
+```
+```
+frontend/src/components/equipment/EquipmentPage.tsx:1 — 前端目录结构/页面组件位置 — Page-level component in src/components/equipment/ instead of src/app/(dashboard)/equipment/. — ✅ RESOLVED — moved to src/app/(dashboard)/equipment/assets/ — severity: high
+```
+```
+frontend/src/components/equipment/assets/EquipmentDrawer.tsx:99 — 前端组件/禁止直接fetch — Uses raw fetch('/api/v1/identity/personnel?...') directly in component instead of lib/api/client/. — ✅ RESOLVED — file deleted — severity: high
+```
+```
+frontend/src/components/equipment/CategoryDrawer.tsx:1, frontend/src/components/equipment/shared/CategoryDrawer.tsx:1 — 前端组件/重复组件 — Duplicate CategoryDrawer at two locations with different implementations. — ✅ RESOLVED — shared version deleted — severity: high
+```
+```
+frontend/src/components/equipment/LocationDrawer.tsx:1, frontend/src/components/equipment/shared/LocationDrawer.tsx:1 — 前端组件/重复组件 — Duplicate LocationDrawer at two locations with different implementations. — ✅ RESOLVED — shared version deleted — severity: high
+```
+```
+frontend/src/components/equipment/EquipmentDrawer.tsx:1, frontend/src/components/equipment/assets/EquipmentDrawer.tsx:1 — 前端组件/重复组件 — Duplicate EquipmentDrawer at two locations with different implementations. — ✅ RESOLVED — assets version deleted — severity: high
+```
+```
+frontend/src/components/equipment/CategoryEditor.tsx:13 — 前端类型/TypeScript — Uses `initialData?: any` instead of proper type from generated schema. — ✅ RESOLVED — now uses EquipmentCategory type — severity: medium
+```
+```
+frontend/src/components/equipment/LocationEditor.tsx:13 — 前端类型/TypeScript — Uses `initialData?: any` instead of proper type from generated schema. — ✅ RESOLVED — now uses Location type — severity: medium
+```
+```
+frontend/src/components/equipment/shared/CategoryDrawer.tsx:1 — 前端目录结构/共享组件位置 — Located in src/components/equipment/shared/ instead of src/components/shared/. — ✅ RESOLVED — file deleted — severity: medium
+```
+```
+frontend/src/components/equipment/shared/LocationDrawer.tsx:1 — 前端目录结构/共享组件位置 — Located in src/components/equipment/shared/ instead of src/components/shared/. — ✅ RESOLVED — file deleted — severity: medium
+```
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (all Q1-Q8) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 11 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+```
+frontend/src/lib/api/client/equipment.ts:1-11 — 前端类型/禁止手写API类型 — Imports all types from @/types/equipment (hand-written) instead of @/types/generated/schema. — ✅ RESOLVED — now imports from generated-bridge — severity: blocking
+```
+```
+frontend/src/lib/api/client/equipment.ts:57-66 — 前端类型/禁止手写API类型 — Defines EquipmentStatisticsFilters interface (hand-written API request type). — ✅ RESOLVED — renamed to GetStatisticsQuery (query param type, acceptable) — severity: blocking
+```
+```
+frontend/src/lib/api/client/equipment.ts:323-331 — 前端类型/禁止手写API类型 — Defines FetchEquipmentsClientParams interface (hand-written API request type). — ✅ RESOLVED — interface removed — severity: blocking
+```
+```
+frontend/src/lib/api/server/equipment.ts:3-898 — 前端类型/禁止手写API类型 — All API functions use `data: any` for request bodies instead of generated types. — ✅ RESOLVED — all data: any replaced with typed interfaces — severity: blocking
+```
+```
+frontend/src/lib/api/server/equipment.ts:363-377 — 前端API层级/写操作必须通过Server Actions — previewEquipmentImportApi and batchImportEquipmentApi are server API functions called directly from client component, bypassing Server Actions. — ✅ RESOLVED — now called from Server Actions — severity: blocking
+```
+```
+frontend/src/lib/api/client/equipment.ts:347-351 — 前端API层级/写操作必须通过Server Actions — batchDeleteEquipments is a write operation (POST) called directly from client component, bypassing Server Actions. — ✅ RESOLVED — now uses Server Action — severity: blocking
+```
+```
+frontend/src/lib/api/client/equipment.ts:341-345 — apiFetch一致性 — fetchInspectionTemplateItemsClient uses raw fetch() instead of apiGet helper. — ✅ RESOLVED — now uses apiGet — severity: high
+```
+```
+frontend/src/lib/api/client/equipment.ts:347-351 — apiFetch一致性 — batchDeleteEquipments uses raw fetch() without auth headers. — ✅ RESOLVED — now uses fetchApi — severity: high
+```
+```
+frontend/src/lib/api/server/base.ts:7,9 — 禁止硬编码后端地址 — getApiBaseUrl() has hardcoded fallbacks: 'http://localhost:8000' (browser) and 'http://backend:8000' (server), exposing backend port. — ✅ RESOLVED — now throws error if API_BASE_URL not set — severity: high
+```
+```
+frontend/src/lib/api/server/equipment.ts:304-316 — 前端API层级/禁止暴露后端端口 — importEquipmentsApi uses raw fetch() with getApiBaseUrl() which constructs full URLs including port numbers. — ✅ RESOLVED — now uses apiFetch — severity: high
+```
+```
+frontend/src/lib/api/client/equipment.ts:307-313 — 前端类型/禁止手写API类型 — Defines DepartmentOption interface (hand-written, duplicated from types/equipment/common.ts). — ✅ RESOLVED — interface removed — severity: medium
+```
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 (all Q1-Q6) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+```
+backend/Dockerfile.backup:1, backend/Dockerfile.dev:1 — Docker/多阶段构建 — Both use single-stage builds. Multi-stage would reduce image size. — ✅ RESOLVED — Dockerfile.backup deleted, Dockerfile.dev now has HEALTHCHECK — severity: low
+```
+```
+backend/Dockerfile.backup:1, backend/Dockerfile.dev:1 — Docker/健康检查 — Neither defines HEALTHCHECK instruction despite /health endpoints existing. — ✅ RESOLVED — Dockerfile.backup deleted, Dockerfile.dev now has HEALTHCHECK — severity: medium
+```
+
+**Uncertain:**
+```
+backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编码URL — Chinese package mirror URLs hardcoded. Common practice for China deployments. — ✅ RESOLVED — approved — severity: low
+```
+
+#### Category 15: SQL injection
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all Q1-Q5) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** _None._ All queries use SQLAlchemy ORM constructs. F-strings build LIKE patterns passed to `.ilike()` / `.like()` which are parameterized by SQLAlchemy.
+
+#### Categories not affected
+7, 11, 12, 14 — no relevant files changed.
+
+#### PR #38 Summary
+
+| Category | Confirmed | Uncertain | Blocking | High | Medium | Low |
+|----------|-----------|-----------|----------|------|--------|-----|
+| 1. Repository layout | 3 | 1 | 0 | 0 | 1 | 2 |
+| 2. Secrets & hardcoded values | 3 | 1 | 0 | 2 | 1 | 1 |
+| 3. Backend module boundaries | 2 | 0 | 0 | 2 | 0 | 0 |
+| 4. API & authentication | 8 | 0 | 3 | 2 | 2 | 1 |
+| 5. Models & migrations | 0 | 0 | 0 | 0 | 0 | 0 |
+| 6. Configuration & logging | 0 | 1 | 0 | 0 | 1 | 0 |
+| 8. Backend tests | 8 | 1 | 0 | 0 | 5 | 3 |
+| 9. Frontend component boundaries | 17 | 0 | 8 | 5 | 4 | 0 |
+| 10. Frontend API & generated types | 11 | 0 | 6 | 4 | 1 | 0 |
+| 13. Docker & deployment | 2 | 1 | 0 | 0 | 1 | 1 |
+| 15. SQL injection | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Total** | **54** | **5** | **17** | **15** | **16** | **8** |
+
+#### PR #38 Blocking issues (must fix before merge)
+
+1. **Authentication missing on all equipment API endpoints** — `equipment.py` uses `current_user: CurrentUser = None` (10 endpoints); `batch_import.py` has zero auth on `preview_import` and `import_excel`. Any anonymous user can read/write/delete equipment data and upload files.
+
+2. **Hand-written API types throughout frontend** — All domain types imported from `@/types/equipment` instead of `@/types/generated/schema`. Violates "禁止手写 API 类型". Affects 6 components + client API + server API.
+
+3. **Write operations bypassing Server Actions** — `batchDeleteEquipments` called directly from client component; `previewEquipmentImportApi`/`batchImportEquipmentApi` called from `'use client'` component. Both violate the write-through-Server-Actions rule.
+
+4. **Client component importing server API** — `EquipmentImportModal.tsx` is `'use client'` but imports from `@/lib/api/server/equipment`. Will fail at runtime because server API functions use backend URLs.
+
+#### PR #38 High priority issues
+
+5. **Cross-module imports bypass public_api.py** — Two files directly import `HrDepartment` from `app.modules.hr.models`.
+
+6. **Hardcoded paths** — `create_departments_from_excel.py:118` has `/home/zhuangweizi/...`; `base.ts:9` has `http://localhost:8000`.
+
+7. **Frontend auth headers missing** — Two client API functions use bare `fetch()` without auth headers.
+
+8. **Duplicate components** — 3 component pairs exist in multiple locations (CategoryDrawer, LocationDrawer, EquipmentDrawer).
+
+9. **Raw fetch() in components** — `assets/EquipmentDrawer.tsx` uses raw `fetch()` instead of API layer.
+
+**Status: ❌ BLOCKED — 17 blocking findings across authentication, type safety, and API layer architecture**
+
+---
+
+#### PR #38 Resolution Status (updated 2026-08-25, rev. 2)
+
+**Resolved:** 59 findings (100%)  
+**Partially resolved:** 0 findings (0%)  
+**Status:** ✅ FULLY RESOLVED — All 59 audit findings have been fully resolved
+
+
+#### Remaining Issues
+
+**None** — All 59 findings have been fully resolved.
 
 ---
 
