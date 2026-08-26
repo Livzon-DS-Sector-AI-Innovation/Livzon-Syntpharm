@@ -1348,7 +1348,9 @@ _None._
   result = await db.execute(
       text(
           "SELECT product_name, workshop, batch_no, production_date "
-          "FROM production.product_outputs WHERE is_deleted = false AND (" + or_clauses + ")"
+          "FROM production.product_outputs WHERE is_deleted = false AND ("
+          + or_clauses
+          + ")"
       )
   )
   ```
@@ -1356,10 +1358,11 @@ _None._
   **修复建议：** 使用参数化查询，例如：
   ```python
   from sqlalchemy import or_, and_
+
   conditions = []
   params = {}
   for i, k in enumerate(existing_keys):
-      parts = k.split('|')
+      parts = k.split("|")
       conditions.append(
           and_(
               ProductOutput.product_name == parts[0],

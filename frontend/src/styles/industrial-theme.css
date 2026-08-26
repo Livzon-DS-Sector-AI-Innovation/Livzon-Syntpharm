@@ -1,0 +1,39 @@
+/**
+ * 工业风格主题色彩令牌
+ * 用于设备台账页面的视觉增强
+ */
+
+:root {
+  /* 主色调 */
+  --color-deep-steel: #1e293b;    /* 深蓝灰，用于标题和重点文字 */
+  --color-machine-blue: #0ea5e9;  /* 机械蓝，用于链接和强调 */
+  --color-safety-orange: #f97316; /* 安全橙，用于警示和操作按钮 */
+  --color-signal-green: #10b981;  /* 信号绿，用于成功状态 */
+  
+  /* 背景层 */
+  --color-panel-base: #f8fafc;    /* 面板底 */
+  --color-surface: #ffffff;       /* 卡片面 */
+  --color-border: #e2e8f0;        /* 分割线 */
+  
+  /* 状态色（与 StatusBadge 保持一致） */
+  --status-running-bg: #d1fae5;
+  --status-running-text: #10b981;
+  --status-standby-bg: #e0e7ff;
+  --status-standby-text: #6366f1;
+  --status-maintenance-bg: #ffedd5;
+  --status-maintenance-text: #f97316;
+  --status-offline-bg: #f1f5f9;
+  --status-offline-text: #94a3b8;
+  --status-scrapped-bg: #fee2e2;
+  --status-scrapped-text: #ef4444;
+}
+
+/* 应用工业色彩到设备台账页面 */
+.equipment-page-title {
+  color: var(--color-deep-steel);
+}
+
+.equipment-page-subtitle {
+  color: var(--color-deep-steel);
+  opacity: 0.7;
+}

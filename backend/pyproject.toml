@@ -67,6 +67,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["I001"]
+"scripts/seed/create_departments_from_excel.py" = ["E501"]
 "app/modules/safety/ai_rectification_review/prompts.py" = ["E501", "E722"]
 "app/modules/safety/ai_hazard_identification/prompts.py" = ["E501", "E722"]
 "app/modules/safety/ai_hazard_identification/script2_hazard_id/prompts.py" = ["E501", "E722"]

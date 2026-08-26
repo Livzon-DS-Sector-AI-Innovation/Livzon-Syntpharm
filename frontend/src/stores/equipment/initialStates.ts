@@ -15,7 +15,7 @@ import type {
   InspectionTemplateItem,
   Maintainer,
   DepartmentOption,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 
 // ============ 设备列表基础状态 ============
 

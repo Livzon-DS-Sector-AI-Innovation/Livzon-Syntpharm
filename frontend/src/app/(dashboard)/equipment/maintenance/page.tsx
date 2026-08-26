@@ -4,12 +4,12 @@ import {
   fetchEquipments, fetchWorkOrders, fetchWorkOrderStatistics, fetchFailureCodes,
   fetchCalibrationPlans, fetchCalibrationRecords,
   fetchMaintenancePlans,
-} from '@/actions/equipment'
+} from '@/lib/api/server/equipment'
 import {
 
   Equipment, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,
   MaintenancePlan,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'
 
 export const dynamic = 'force-dynamic'

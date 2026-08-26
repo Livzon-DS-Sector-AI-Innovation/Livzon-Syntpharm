@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import { App, Button, Card, Form, Input, Select, Space, Tag, Typography } from 'antd'
 import { CheckOutlined, CameraOutlined } from '@ant-design/icons'
-import { InspectionTemplateItem } from '@/types/equipment'
+import { InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 import { InspectionRecordItem } from '@/types/inspection'
 import { PhotoPreviewGroup } from './PhotoPreviewGroup'
 import { PhotoUploadButton } from './PhotoUploadButton'

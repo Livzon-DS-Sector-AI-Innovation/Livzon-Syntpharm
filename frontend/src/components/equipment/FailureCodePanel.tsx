@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { App, Table, Tag, Button, Space, Tabs } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { FailureCode } from '@/types/equipment'
+import { FailureCode } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteFailureCode } from '@/actions/equipment'
 

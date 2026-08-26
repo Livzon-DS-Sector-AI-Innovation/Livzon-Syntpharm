@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react'
 import {App, ConfigProvider, Button} from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { SparePart, StockWarning } from '@/types/equipment'
+import { SparePart, StockWarning } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchSparePartsClient, fetchStockWarningsClient } from '@/lib/api/client/equipment'

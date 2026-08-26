@@ -7,7 +7,7 @@ import {
   fetchOverdueMaintenancePlans,
   fetchCalibrationPlans,
   fetchWorkOrders,
-} from '@/actions/equipment'
+} from '@/lib/api/server/equipment'
 import type {
 
   EquipmentStatus,
@@ -20,7 +20,7 @@ import type {
   MaintenancePlan,
   CalibrationPlan,
   WorkOrder,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'
 
 export const dynamic = 'force-dynamic'

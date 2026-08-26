@@ -45,7 +45,7 @@ ENV API_BASE_URL=http://backend:8000
 ENV NODE_ENV=production
 
 # Clean and build
-RUN rm -rf .next
+RUN rm -rf .next tsconfig.tsbuildinfo
 RUN pnpm build
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -22,17 +22,19 @@ import {
   FallOutlined,
 } from '@ant-design/icons'
 import type {
-  EquipmentStatus,
-  WorkOrderStatus,
-  WorkOrderPriority,
-  WorkOrderType,
   EquipmentStatistics,
   WorkOrderStatistics,
   StockWarning,
   MaintenancePlan,
   CalibrationPlan,
   WorkOrder,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
+import type {
+  EquipmentStatus,
+  WorkOrderStatus,
+  WorkOrderPriority,
+  WorkOrderType,
+} from '@/types/equipment/generated-bridge'
 import { antdTheme } from '@/lib/antd-theme'
 
 // ============================================================

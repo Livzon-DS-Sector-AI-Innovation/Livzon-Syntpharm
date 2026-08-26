@@ -23,7 +23,7 @@ import {
   InspectionTemplateItem,
   Maintainer,
   DepartmentOption,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 
 interface EquipmentStore {
   // 数据

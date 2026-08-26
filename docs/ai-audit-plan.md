@@ -235,18 +235,18 @@ For code in `backend/app/modules/<source_module>/**/*.py`:
 **Allowed:** imports from the same module or from `public_api.py` of another module:
 ```python
 from app.modules.safety.repository import SafetyRepository  # same module
-from app.modules.energy.public_api import fetch_summary      # public API
+from app.modules.energy.public_api import fetch_summary  # public API
 ```
 
 **Violation:** any import from another module that is NOT through `public_api.py`:
 ```python
-from app.modules.energy.repository import EnergyRepository   # VIOLATION
-from app.modules.energy.service import EnergyService         # VIOLATION
-from app.modules.energy.models import EnergyRecord           # VIOLATION
+from app.modules.energy.repository import EnergyRepository  # VIOLATION
+from app.modules.energy.service import EnergyService  # VIOLATION
+from app.modules.energy.models import EnergyRecord  # VIOLATION
 from app.modules.energy.internal_util import calculate_cost  # VIOLATION
-from app.modules.energy.schemas import EnergyResponse        # VIOLATION
-from app.modules.energy.api import router                    # VIOLATION
-import app.modules.energy.service as es                      # VIOLATION
+from app.modules.energy.schemas import EnergyResponse  # VIOLATION
+from app.modules.energy.api import router  # VIOLATION
+import app.modules.energy.service as es  # VIOLATION
 ```
 
 **Candidate:** broad package import that may bypass boundary:

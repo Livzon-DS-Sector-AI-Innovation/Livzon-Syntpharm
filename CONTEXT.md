@@ -1,0 +1,60 @@
+# 设备批量导入功能 v2 - 上下文文档
+
+## 📅 创建时间
+2026-08-17
+
+## 🎯 需求背景
+用户需要批量导入 3000+ 条设备数据（来源：`202606sbgz.xls`）。现有导入功能存在路径错误、部门映射缺失以及模型冲突问题，导致全部 2970 条数据无法导入。
+
+## 🔍 现状分析
+1.  **数据源**：Excel 表头位于第 5 行，包含 38 个唯一部门名称。
+2.  **核心痛点**：
+    *   **Schema 冲突**：`identity.models.Department` 与 `hr.models.HrDepartment` 并存，导致查询混乱。
+    *   **路径不匹配**：前端请求 `/equipment/import/...`，后端注册在 `/equipment/equipments/import/...`。
+    *   **映射不全**：大量车间别名（如“头孢合成一车间”）未在系统中定义。
+
+## 💡 技术方案 (v2)
+1.  **唯一真理来源**：强制所有部门查询指向 `hr.departments` (Schema: `hr`)。
+2.  **严格映射引擎**：建立完整的 `DEPT_MAPPING_V2`，取消不可控的模糊匹配。
+3.  **部分成功机制**：支持行级事务，导入成功后返回详细的错误报告。
+
+## ⚠️ 注意事项
+*   **磁盘空间**：服务器磁盘紧张，需定期执行 `docker system prune`。
+*   **热重载**：开发环境下修改 Python 代码后，Uvicorn 会自动重启，无需重建镜像。
+
+## 🔄 v3 重构决策（基于 /grill-with-docs）
+
+### 核心变更
+1. **混合导入模式**：前端解析 → 预览确认 → 批量入库。
+2. **智能推断逻辑**：
+   - `equipment_class`：根据"资产类别说明"自动映射（电子设备/机器设备 → C类）。
+   - `importance`：根据"当前成本"自动分级（>10万=高，5-10万=中，<5万=低）。
+   - `status`："未报废" → "在用"。
+3. **部门映射增强**：补充溶剂回收车间各岗位映射，未匹配部门设为 NULL 但不跳过数据。
+4. **数量字段处理**：存入 `technical_params`，前端表格增加显示列。
+5. **资产类别说明**：直接存入 `category_description` 字段。
+
+### 待办事项
+- [ ] 更新 `batch_import.py` 的映射算法
+- [ ] 扩展 `DEPT_MAPPING_V2`
+- [ ] 修改前端 `EquipmentTable.tsx` 显示数量
+- [ ] 编写 ADR 文档
+
+## 📚 术语表 (Glossary)
+
+### API Response Envelope (API 响应信封)
+所有后端 API 响应遵循的标准结构：`{code: number, data: T, message: string, meta?: object}`。这个结构由 `ApiResponse` 模型定义，确保前后端交互的一致性。
+
+- `code`: HTTP 状态码或业务状态码（200 表示成功）
+- `data`: 实际的业务数据
+- `message`: 响应消息（成功或错误信息）
+- `meta`: 可选的元数据（如分页信息）
+
+### Generated Types (生成类型)
+从后端 OpenAPI 规范自动生成的 TypeScript 类型。这些类型是前后端 API 契约的唯一真实来源。
+
+生成流程：
+1. 后端导出 OpenAPI 规范：`uv run python scripts/ci/export_openapi.py`
+2. 前端生成 TypeScript 类型：`BACKEND_SPEC_PATH=../backend/openapi.json node scripts/generate-api.mjs`
+
+生成的类型位于 `frontend/src/types/generated/schema.ts`，包含所有 API 请求和响应的类型定义。

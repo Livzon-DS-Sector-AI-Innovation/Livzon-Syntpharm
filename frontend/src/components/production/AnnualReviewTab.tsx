@@ -94,7 +94,7 @@ export default function AnnualReviewTab({ year }: Props) {
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
-      data: monthly_trend.map((m) => `${m.month}月`),
+      data: monthly_trend.map((m: any) => `${m.month}月`),
     },
     yAxis: {
       type: 'value',
@@ -104,14 +104,14 @@ export default function AnnualReviewTab({ year }: Props) {
       {
         name: `${year}年`,
         type: 'line',
-        data: monthly_trend.map((m) => m.current_year_weight),
+        data: monthly_trend.map((m: any) => m.current_year_weight),
         smooth: true,
         itemStyle: { color: '#5645d4' },
       },
       {
         name: `${year - 1}年`,
         type: 'line',
-        data: monthly_trend.map((m) => m.previous_year_weight),
+        data: monthly_trend.map((m: any) => m.previous_year_weight),
         smooth: true,
         itemStyle: { color: '#1aae39' },
         lineStyle: { type: 'dashed' },
@@ -126,7 +126,7 @@ export default function AnnualReviewTab({ year }: Props) {
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const p = params[0]
-        const item = workshop_ranking.find((w) => w.workshop === p.name)
+        const item = workshop_ranking.find((w: any) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
@@ -137,12 +137,12 @@ export default function AnnualReviewTab({ year }: Props) {
     },
     yAxis: {
       type: 'category',
-      data: workshop_ranking.map((w) => w.workshop).reverse(),
+      data: workshop_ranking.map((w: any) => w.workshop).reverse(),
     },
     series: [
       {
         type: 'bar',
-        data: workshop_ranking.map((w) => w.total_weight).reverse(),
+        data: workshop_ranking.map((w: any) => w.total_weight).reverse(),
         itemStyle: {
           color: (params: any) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
@@ -189,7 +189,7 @@ export default function AnnualReviewTab({ year }: Props) {
         emphasis: {
           label: { show: true, fontSize: 14, fontWeight: 'bold' },
         },
-        data: top_products.map((p, i) => ({
+        data: top_products.map((p: any, i: any) => ({
           name: `${p.product_name}(${p.workshop})`,
           value: p.total_weight,
           itemStyle: {

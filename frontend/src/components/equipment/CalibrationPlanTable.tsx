@@ -4,7 +4,8 @@ import { useCallback } from 'react'
 import { App, Table, Button, Space, Select } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { CalibrationPlan, CalibrationPlanStatus, CalibrationType } from '@/types/equipment'
+import { CalibrationPlan } from '@/types/equipment/generated-bridge'
+import { CalibrationPlanStatus, CalibrationType } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteCalibrationPlan } from '@/actions/equipment'
 import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared-styles'
@@ -12,6 +13,10 @@ import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill
 const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,
   '停用': pillNeutral,
+  '待执行': pillWarning,
+  '进行中': pillPurple,
+  '已完成': pillSuccess,
+  '已过期': pillError,
 }
 
 interface Props { onRefresh?: () => void; onRecordRefresh?: () => void }

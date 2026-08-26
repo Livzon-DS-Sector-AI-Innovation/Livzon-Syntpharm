@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, updateWorkOrder } from '@/actions/equipment'
-import { CreateWorkOrderInput, UpdateWorkOrderInput, FailureCode, WorkOrderStatus, Maintainer } from '@/types/equipment'
-import { Equipment } from '@/types/equipment'
+import { FailureCode } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, UpdateWorkOrderInput, WorkOrderStatus, Maintainer } from '@/types/equipment/generated-bridge'
+import { Equipment } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
 from app.modules.equipment import service
@@ -29,8 +29,8 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.put("/{work_order_id}/claim", summary="抢单（维修人员自主接单）")
 async def claim_work_order(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     _require_user(current_user)

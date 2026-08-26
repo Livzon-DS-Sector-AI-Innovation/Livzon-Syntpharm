@@ -4,7 +4,8 @@ import { useCallback } from 'react'
 import { App, Table, Space, Select, Input } from 'antd'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { MaintenancePlan, MaintenancePlanStatus } from '@/types/equipment'
+import { MaintenancePlan } from '@/types/equipment/generated-bridge'
+import { MaintenancePlanStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteMaintenancePlan } from '@/actions/equipment'
 import { pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
@@ -12,7 +13,10 @@ import { pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrima
 const statusMap: Record<MaintenancePlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,
   '停用': pillNeutral,
-  '已完成': pillPurple,
+  '待执行': pillWarning,
+  '进行中': pillPurple,
+  '已完成': pillSuccess,
+  '已过期': pillError,
 }
 
 interface Props { onRefresh?: () => void; equipments: { id: string; name: string; asset_no: string }[] }

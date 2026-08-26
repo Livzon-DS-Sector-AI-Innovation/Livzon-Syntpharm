@@ -8,7 +8,7 @@ import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplateItem, updateInspectionTemplateItem, deleteInspectionTemplateItem } from '@/actions/equipment'
 import { fetchInspectionTemplateByIdClient } from '@/lib/api/client/equipment'
 import { linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
-import type { InspectionTemplateItem } from '@/types/equipment'
+import type { InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography
 const C = { navy: '#0a1530', purple: '#5645d4', ink: '#1a1a1a', slate: '#5d5b54', stone: '#a4a097', hairline: '#e5e3df', hairlineSoft: '#ede9e4', surface: '#f6f5f4', surfaceSoft: '#fafaf9', canvas: '#ffffff' }

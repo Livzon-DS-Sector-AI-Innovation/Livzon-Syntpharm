@@ -7,7 +7,7 @@ import { useInspectionStore } from '@/stores/inspection'
 import { createInspectionTask } from '@/actions/inspection'
 import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
 import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import type { InspectionTemplate } from '@/types/equipment'
+import type { InspectionTemplate } from '@/types/equipment/generated-bridge'
 import type { InspectionRoute } from '@/types/inspection'
 import type { Personnel } from '@/types/equipment-personnel'
 import dayjs from 'dayjs'
@@ -36,7 +36,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
   useEffect(() => {
     if (taskDrawerOpen) {
       if (routes.length === 0) fetchInspectionRoutes({ page: 1, page_size: 200 }).then(r => setRoutes(r.items.filter(x => x.is_active))).catch(() => {})
-      fetchPersonnelList({}).then(r => setPersonnel(r.items.filter(p => p.is_active))).catch(() => {})
+      fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: any) => p.is_active))).catch(() => {})
     }
   }, [taskDrawerOpen, routes.length])
 

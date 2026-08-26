@@ -18,7 +18,7 @@ import { InspectionRouteEquipmentDrawer } from './InspectionRouteEquipmentDrawer
 import { InspectionDetailDrawer } from './InspectionDetailDrawer'
 import { InspectionTemplateTable, InspectionTemplateDrawer, InspectionItemDrawer } from '@/components/equipment'
 import { fetchInspectionTemplatesClient } from '@/lib/api/client/equipment'
-import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment'
+import type { InspectionTemplate, EquipmentCategory } from '@/types/equipment/generated-bridge'
 
 interface Props {
   initialTemplates: InspectionTemplate[]
