@@ -2088,6 +2088,137 @@ _None._
 
 8. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
 
+### PR #39: Infrastructure and documentation updates (base: be9ad5, head: 37d25a0c, date: 2026-08-24)
+
+**Changed files (30):**
+- Deleted: 4 files in `.requirements/`
+- Renamed: 22 files (`docs/specs/` + `docs/tickets/` → `.scratch/*/`)
+- Added: `.scratch/fix-ocr-timeout-and-routing/spec.md`
+- Modified: `AGENTS.md`, `README.md`, `docker-compose.dev.yml`, `docs/agents/issue-tracker.md`, `docs/ai-audit-plan.md`, `frontend/.gitignore`
+
+**Affected categories:** 1, 2, 6, 13, 14
+
+#### Category 1: Repository layout
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 30 |
+| Files not inspected | 0 |
+| Rules evaluated | 11 (all Q1-Q11) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Analysis:**
+- `.scratch/` directory structure is valid — not prohibited by any repo layout rule
+- `.requirements/` fully removed — no dangling references
+- `docs/specs/` and `docs/tickets/` fully migrated to `.scratch/` — no orphaned files
+- New spec `.scratch/fix-ocr-timeout-and-routing/spec.md` references valid paths (`backend/tests/fixtures/`, `backend/app/modules/registration/dossier_writer/`)
+- AGENTS.md adds "Agent skills" section referencing `.scratch/` — consistent with issue-tracker.md
+- Governance files (AGENTS.md, docs/ai-audit-plan.md) modified with documented rationale in commit messages
+
+**Confirmed:** _None._
+**Uncertain:** _None._
+
+#### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 6 |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (all Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Analysis:**
+- No `.env` files committed
+- No hardcoded localhost/127.0.0.1 URLs
+- No hardcoded absolute paths
+- No API key patterns in changed files
+- `frontend/.gitignore` properly ignores `.env*` files
+- No credentials in docker-compose.dev.yml
+
+**Confirmed:** _None._
+**Uncertain:** _None._
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 6 |
+| Files not inspected | 0 |
+| Rules evaluated | 9 (all Q1-Q9) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Analysis:**
+- No Python code changed — no module config/logging changes
+- No `.env` or `.env.example` changes
+- docker-compose.dev.yml removes env vars (not adding any)
+
+**Confirmed:** _None._
+**Uncertain:** _None._
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 (all Q1-Q8) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 (1 resolved) |
+
+**Analysis:**
+- `docker-compose.dev.yml` correctly specifies `target: dev` for frontend
+- Polling env vars (`WATCHPACK_POLLING`, `CHOKIDAR_USEPOLLING`) removed consistently from docker-compose.dev.yml and AGENTS.md
+- AGENTS.md Docker section updated to remove polling references
+- Audit plan question 6 (polling check) removed and subsequent questions renumbered
+- Change documented in commit "Remove polling-based file watching config"
+
+**Confirmed:** _None._
+
+**Uncertain:**
+```
+README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubuntu 20+" (line 29) but deployment steps still say "Ubuntu 22.04 LTS" (line 37) — severity: low — **RESOLVED** (commit 37d25a0c)
+```
+
+#### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| Checks verified | 1 |
+| Checks failing | 0 |
+
+**Analysis:**
+- CI check "e2e" passed on PR
+- No E2E test files changed
+- `.requirements/` deletion removed E2E test plan docs but these were legacy docs, not active test code
+
+**Confirmed:** _None._
+
+#### Categories not affected
+3, 4, 5, 7, 8, 9, 10, 11, 12, 15 — no relevant files changed.
+
+#### PR #39 Summary
+
+| Category | Confirmed | Uncertain | Severity |
+|----------|-----------|-----------|----------|
+| 1. Repository layout | 0 | 0 | — |
+| 2. Secrets and hardcoded values | 0 | 0 | — |
+| 6. Configuration and logging | 0 | 0 | — |
+| 13. Docker and deployment | 0 | 0 | — (1 resolved) |
+| 14. E2E | 0 | 0 | — |
+| **Total** | **0** | **0** | **✅ All resolved** |
+
+**Status: ✅ COMPLETE — No blocking issues**
+
+---
+
+
 ### PR #38: Fix equipment module: lint, type checking, and batch operations (base: origin/main, head: origin/lzhc-zhuang-equipment, date: 2026-08-24)
 
 **Changed files (78):**
@@ -2502,135 +2633,6 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 
 ---
 
-### PR #39: Infrastructure and documentation updates (base: be9ad5, head: 37d25a0c, date: 2026-08-24)
-
-**Changed files (30):**
-- Deleted: 4 files in `.requirements/`
-- Renamed: 22 files (`docs/specs/` + `docs/tickets/` → `.scratch/*/`)
-- Added: `.scratch/fix-ocr-timeout-and-routing/spec.md`
-- Modified: `AGENTS.md`, `README.md`, `docker-compose.dev.yml`, `docs/agents/issue-tracker.md`, `docs/ai-audit-plan.md`, `frontend/.gitignore`
-
-**Affected categories:** 1, 2, 6, 13, 14
-
-#### Category 1: Repository layout
-
-| Stat | Count |
-|------|-------|
-| Files inspected | 30 |
-| Files not inspected | 0 |
-| Rules evaluated | 11 (all Q1-Q11) |
-| Rules not evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-**Analysis:**
-- `.scratch/` directory structure is valid — not prohibited by any repo layout rule
-- `.requirements/` fully removed — no dangling references
-- `docs/specs/` and `docs/tickets/` fully migrated to `.scratch/` — no orphaned files
-- New spec `.scratch/fix-ocr-timeout-and-routing/spec.md` references valid paths (`backend/tests/fixtures/`, `backend/app/modules/registration/dossier_writer/`)
-- AGENTS.md adds "Agent skills" section referencing `.scratch/` — consistent with issue-tracker.md
-- Governance files (AGENTS.md, docs/ai-audit-plan.md) modified with documented rationale in commit messages
-
-**Confirmed:** _None._
-**Uncertain:** _None._
-
-#### Category 2: Secrets and hardcoded values
-
-| Stat | Count |
-|------|-------|
-| Files inspected | 6 |
-| Files not inspected | 0 |
-| Rules evaluated | 9 (all Q1-Q9) |
-| Rules not evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-**Analysis:**
-- No `.env` files committed
-- No hardcoded localhost/127.0.0.1 URLs
-- No hardcoded absolute paths
-- No API key patterns in changed files
-- `frontend/.gitignore` properly ignores `.env*` files
-- No credentials in docker-compose.dev.yml
-
-**Confirmed:** _None._
-**Uncertain:** _None._
-
-#### Category 6: Configuration and logging
-
-| Stat | Count |
-|------|-------|
-| Files inspected | 6 |
-| Files not inspected | 0 |
-| Rules evaluated | 9 (all Q1-Q9) |
-| Rules not evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 |
-
-**Analysis:**
-- No Python code changed — no module config/logging changes
-- No `.env` or `.env.example` changes
-- docker-compose.dev.yml removes env vars (not adding any)
-
-**Confirmed:** _None._
-**Uncertain:** _None._
-
-#### Category 13: Docker and deployment
-
-| Stat | Count |
-|------|-------|
-| Files inspected | 3 |
-| Files not inspected | 0 |
-| Rules evaluated | 8 (all Q1-Q8) |
-| Rules not evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 0 (1 resolved) |
-
-**Analysis:**
-- `docker-compose.dev.yml` correctly specifies `target: dev` for frontend
-- Polling env vars (`WATCHPACK_POLLING`, `CHOKIDAR_USEPOLLING`) removed consistently from docker-compose.dev.yml and AGENTS.md
-- AGENTS.md Docker section updated to remove polling references
-- Audit plan question 6 (polling check) removed and subsequent questions renumbered
-- Change documented in commit "Remove polling-based file watching config"
-
-**Confirmed:** _None._
-
-**Uncertain:**
-```
-README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubuntu 20+" (line 29) but deployment steps still say "Ubuntu 22.04 LTS" (line 37) — severity: low — **RESOLVED** (commit 37d25a0c)
-```
-
-#### Category 14: E2E
-
-| Stat | Count |
-|------|-------|
-| Checks verified | 1 |
-| Checks failing | 0 |
-
-**Analysis:**
-- CI check "e2e" passed on PR
-- No E2E test files changed
-- `.requirements/` deletion removed E2E test plan docs but these were legacy docs, not active test code
-
-**Confirmed:** _None._
-
-#### Categories not affected
-3, 4, 5, 7, 8, 9, 10, 11, 12, 15 — no relevant files changed.
-
-#### PR #39 Summary
-
-| Category | Confirmed | Uncertain | Severity |
-|----------|-----------|-----------|----------|
-| 1. Repository layout | 0 | 0 | — |
-| 2. Secrets and hardcoded values | 0 | 0 | — |
-| 6. Configuration and logging | 0 | 0 | — |
-| 13. Docker and deployment | 0 | 0 | — (1 resolved) |
-| 14. E2E | 0 | 0 | — |
-| **Total** | **0** | **0** | **✅ All resolved** |
-
-**Status: ✅ COMPLETE — No blocking issues**
-
----
 
 ### PR #41: Feature/s6 pdf split optimization (base: origin/main, head: feature/s6-pdf-split-optimization, date: 2026-08-26)
 
