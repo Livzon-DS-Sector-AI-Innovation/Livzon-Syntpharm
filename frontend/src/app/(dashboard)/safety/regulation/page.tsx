@@ -197,7 +197,7 @@ export default function RegulationPage() {
 
   const loadRegulationsForSelect = async () => {
     try {
-      const response = await getRegulations({ page: 1, page_size: 500 })
+      const response = await getRegulations({ page: 1, page_size: 200 })
       if (response.code === 200) {
         setRegulationsForSelect(response.data)
       }
