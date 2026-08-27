@@ -35,17 +35,13 @@ async def validate_equipment_exists(db: AsyncSession, equipment_id: uuid.UUID) -
         raise NotFoundException("设备", str(equipment_id))
 
 
-async def validate_unique_category_code(
-    db: AsyncSession, code: str, exclude_id: uuid.UUID | None = None
-) -> None:
+async def validate_unique_category_code(db: AsyncSession, code: str, exclude_id: uuid.UUID | None = None) -> None:
     """验证分类代码唯一性。"""
     if await repo.exists_category_by_code(db, code, exclude_id=exclude_id):
         raise DuplicateException("分类代码", code)
 
 
-async def validate_unique_location_code(
-    db: AsyncSession, code: str, exclude_id: uuid.UUID | None = None
-) -> None:
+async def validate_unique_location_code(db: AsyncSession, code: str, exclude_id: uuid.UUID | None = None) -> None:
     """验证位置代码唯一性。"""
     if await repo.exists_location_by_code(db, code, exclude_id=exclude_id):
         raise DuplicateException("位置代码", code)
