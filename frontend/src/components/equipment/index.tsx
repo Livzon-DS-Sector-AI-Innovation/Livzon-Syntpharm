@@ -1,4 +1,3 @@
-'use client'
 export { EquipmentPage } from './EquipmentPage'
 export { StatsCards } from './StatsCards'
 export { StatsDashboard } from './stats/StatsDashboard'
