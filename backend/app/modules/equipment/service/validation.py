@@ -62,4 +62,3 @@ async def validate_asset_no_unique(db: AsyncSession, asset_no: str) -> None:
     existing = await repo.get_equipment_by_asset_no(db, asset_no)
     if existing:
         raise DuplicateException("资产编号", asset_no)
-
