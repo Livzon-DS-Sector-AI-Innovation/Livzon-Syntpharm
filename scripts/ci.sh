@@ -147,7 +147,7 @@ run_e2e() {
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
     local start_time=$SECONDS
-    local timeout=120
+    local timeout=180
     local backend_ready=false
 
     while (( SECONDS - start_time < timeout )); do
@@ -214,6 +214,8 @@ run_e2e() {
     if [[ $e2e_exit_code -ne 0 ]]; then
         echo "=== Frontend container logs ==="
         docker logs e2e-frontend 2>/dev/null | tail -30 || true
+        echo "=== Backend container logs ==="
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs backend-e2e 2>/dev/null | tail -80 || true
     fi
 
     cd "$REPO_ROOT"
