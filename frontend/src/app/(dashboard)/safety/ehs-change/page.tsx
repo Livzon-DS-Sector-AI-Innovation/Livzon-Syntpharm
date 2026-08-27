@@ -166,8 +166,8 @@ export default function EhsChangePage() {
     setEditingChange(record)
     form.setFieldsValue({
       ...record,
-      expected_start: record.expected_start ? record.expected_start : undefined,
-      expected_completion: record.expected_completion ? record.expected_completion : undefined,
+      expected_start: record.expected_start ? record.expected_start.split('T')[0] : undefined,
+      expected_completion: record.expected_completion ? record.expected_completion.split('T')[0] : undefined,
     })
     setModalOpen(true)
   }
@@ -599,10 +599,10 @@ export default function EhsChangePage() {
           <Title level={5} className="mb-3 mt-4">计划</Title>
           <Space size="middle" wrap>
             <Form.Item name="expected_start" label="预期开始日期">
-              <DatePicker style={{ width: 180 }} />
+              <Input type="date" style={{ width: 180 }} />
             </Form.Item>
             <Form.Item name="expected_completion" label="预期完成日期">
-              <DatePicker style={{ width: 180 }} />
+              <Input type="date" style={{ width: 180 }} />
             </Form.Item>
           </Space>
 
