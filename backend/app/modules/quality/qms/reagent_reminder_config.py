@@ -10,7 +10,7 @@ from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.modules.quality.qms.static_data.models import BaseModel
+from app.shared.base_model import BaseModel
 
 
 class ReagentReminderConfig(BaseModel):
@@ -38,7 +38,7 @@ class ReagentReminderConfig(BaseModel):
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="创建人")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, comment="创建时间")
     updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="更新人")
-    updated_at: Mapped[datetime | None] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime, nullable=True, onupdate=datetime.utcnow, comment="更新时间"
     )
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否删除")
