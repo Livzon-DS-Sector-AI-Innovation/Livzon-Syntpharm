@@ -720,7 +720,7 @@ class RdInitiationBase(BaseModel):
     approval_comments: str | None = None
     attachments: dict[str, Any] | None = None
     notes: str | None = None
-    filing_content: str | None = Field(None, comment="国内申报信息")
+    filing_content: str | None = Field(None)
 
 
 class RdInitiationCreate(RdInitiationBase):
@@ -844,7 +844,7 @@ class RdReportTemplateResponse(BaseModel):
     name: str
     description: str | None = None
     content_md: str
-    meta_info: dict | None = None
+    meta_info: dict[str, Any] | None = None
     category: str
     is_active: bool
     created_at: datetime

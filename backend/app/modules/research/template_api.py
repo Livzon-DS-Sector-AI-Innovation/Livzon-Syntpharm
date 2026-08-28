@@ -6,5 +6,5 @@ router = APIRouter(prefix="/templates", tags=["test"])
 
 
 @router.get("/ping")
-def ping():
+def ping() -> dict[str, str]:
     return {"message": "pong"}

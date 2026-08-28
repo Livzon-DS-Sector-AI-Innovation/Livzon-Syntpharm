@@ -3503,9 +3503,9 @@ async def generate_research_report(
         # 4. 槽位填充
         # Type ignore for quick fix: facts and derived_facts structure matches internal logic
         filled_text, prose_slots = fill_template_slots(
-            template.template_content,
-            facts,  # type: ignore[arg-type]
-            derived_facts,  # type: ignore[arg-type]
+            template.template_content or "",
+            facts, 
+            derived_facts, 
         )
 
         # 5. AI 补全 Prose 部分 (简化版，实际应调用 LLM)

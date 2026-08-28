@@ -3,6 +3,7 @@
 import logging
 import re
 import uuid
+from typing import Any
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -1322,8 +1323,7 @@ async def generate_deliverable_report(
                 {"role": "system", "content": "你是制药研发专家，负责润色报告。"},
                 {"role": "user", "content": prompt},
             ]
-            response = await llm_client.chat_completion(messages)
-            final_report = response.choices[0].message.content
+            final_report = await llm_client.chat(messages)
         except Exception as e:
             logger.error(f"LLM 补全失败: {e}")
             # 如果 LLM 失败，至少返回已填充事实的草稿
@@ -1334,7 +1334,7 @@ async def generate_deliverable_report(
 # ===== Fact 字典构建器 =====
 
 
-async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: str) -> dict:
+async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: str) -> dict[str, Any]:
     """
     构建用于报告生成的 Fact 字典。
     包含：项目基本信息 + 当前阶段的关键实验数据。
@@ -1347,8 +1347,8 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
     if project:
         facts["project_name"] = {"value": project.name, "unit": "", "source_id": str(project.id)}
         facts["api_name"] = {"value": project.api_name, "unit": "", "source_id": str(project.id)}
-        facts["cas_number"] = {"value": project.cas_number, "unit": "", "source_id": str(project.id)}
-        facts["molecular_formula"] = {"value": project.molecular_formula, "unit": "", "source_id": str(project.id)}
+        facts["cas_number"] = {"value": project.cas_number or "", "unit": "", "source_id": str(project.id)}
+        facts["molecular_formula"] = {"value": project.molecular_formula or "", "unit": "", "source_id": str(project.id)}
 
     # 2. 获取当前阶段的工艺优化数据 (以 DOE 为例)
     if stage == "process_optimization":
@@ -1401,13 +1401,13 @@ def _get_unit_for_param(param_name: str) -> str:
 # ===== 派生结论计算器 (Derived Fact Calculator) =====
 
 
-def calculate_doe_conclusions(doe_data: dict) -> dict:
+def calculate_doe_conclusions(doe_data: dict[str, Any]) -> dict[str, Any]:
     """
     根据 DOE 实验数据计算派生结论。
     输入: doe_data (包含 runs, factors, responses)
     输出: 结构化结论标签字典
     """
-    conclusions = {}
+    conclusions: dict[str, Any] = {}
 
     if not doe_data or "runs" not in doe_data:
         return conclusions
@@ -1466,7 +1466,7 @@ def calculate_doe_conclusions(doe_data: dict) -> dict:
 # ===== 槽位填充引擎 (Slot Filling Engine) =====
 
 
-def fill_template_slots(template_content: str, facts: dict, derived_facts: dict) -> tuple[str, list[str]]:
+def fill_template_slots(template_content: str, facts: dict[str, Any], derived_facts: dict[str, Any]) -> tuple[str, list[str]]:
     """
     填充模板中的 Fact 和 Derived Fact 槽位。
     返回: (填充后的文本, 剩余的 Prose 槽位列表)
@@ -1475,7 +1475,7 @@ def fill_template_slots(template_content: str, facts: dict, derived_facts: dict)
     prose_slots = []
 
     # 1. 填充 Fact 槽位 {{F:key}}
-    def replace_fact(match):
+    def replace_fact(match: re.Match[str]) -> str:
         key = match.group(1)
         if key in facts:
             item = facts[key]
@@ -1489,7 +1489,7 @@ def fill_template_slots(template_content: str, facts: dict, derived_facts: dict)
 
     # 2. 填充 Derived Fact 槽位 {{B:key}}
     # 这里我们简单地将结论标签转化为自然语言片段
-    def replace_derived(match):
+    def replace_derived(match: re.Match[str]) -> str:
         key = match.group(1)
         if key in derived_facts:
             data = derived_facts[key]
@@ -1512,7 +1512,7 @@ def fill_template_slots(template_content: str, facts: dict, derived_facts: dict)
 # ===== 数值校验层 (Validation Layer) =====
 
 
-def validate_report_content(report: str, facts: dict) -> dict:
+def validate_report_content(report: str, facts: dict[str, Any]) -> dict[str, Any]:
     """
     对生成的报告进行确定性校验。
     返回: {"passed": bool, "errors": list}

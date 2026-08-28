@@ -749,7 +749,7 @@ class RdReportTemplate(BaseModel):
     content_md: Mapped[str] = mapped_column(Text, comment="模板内容(Markdown)")
 
     # 元数据：存储 YAML frontmatter 解析后的结果，方便前端展示变量列表
-    meta_info: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="模板元数据(info)")
+    meta_info: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="模板元数据(info)")
 
     category: Mapped[str] = mapped_column(
         String(50), default="general", comment="分类：process_optimization, validation, etc."
