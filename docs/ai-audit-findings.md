@@ -2702,14 +2702,10 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 - `uv.lock`: All 2848 registry URL references switched from `mirrors.aliyun.com/pypi/simple/` to `pypi.org/simple`. The Dockerfile sets `UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/` — this mismatch will cause `uv sync --locked` to fail or pull from a different registry than intended.
 
 **Confirmed:**
-```
-backend/uv.lock (throughout) — 仓库通用规则/禁止硬编码绝对路径 + 部署一致性 — uv.lock registry URLs switched from mirrors.aliyun.com to pypi.org/simple, but Dockerfile sets UV_INDEX_URL=mirrors.aliyun.com. Lockfile was regenerated outside Docker without the mirror config. This mismatch will break uv sync --locked in CI/Docker builds. — severity: high
-```
+- [x] `backend/uv.lock (throughout)` — 仓库通用规则/禁止硬编码绝对路径 + 部署一致性 — uv.lock registry URLs switched from mirrors.aliyun.com to pypi.org/simple, but Dockerfile sets UV_INDEX_URL=mirrors.aliyun.com. Lockfile was regenerated outside Docker without the mirror config. This mismatch will break uv sync --locked in CI/Docker builds. — severity: high — **RESOLVED** (commit ec4143d9: lockfile regenerated with mirrors.aliyun.com)
 
 **Uncertain:**
-```
-backend/app/shared/ocr_service.py:323,336 — 仓库通用规则/禁止硬编码绝对路径 — env["PYTHONPATH"] = "/app" and cwd="/app" are hardcoded absolute paths. Only used inside Docker subprocess. The explicit exceptions table allows Docker service discovery names but not paths. Could use os.environ or Path relative to WORKDIR. — severity: low
-```
+- [ ] `backend/app/shared/ocr_service.py:323,336` — 仓库通用规则/禁止硬编码绝对路径 — env["PYTHONPATH"] = "/app" and cwd="/app" are hardcoded absolute paths. Only used inside Docker subprocess. The explicit exceptions table allows Docker service discovery names but not paths. Could use os.environ or Path relative to WORKDIR. — severity: low — **NOT RESOLVED** (low priority, Docker-specific)
 
 #### Category 3: Backend module boundaries
 
@@ -2797,9 +2793,7 @@ backend/app/shared/ocr_service.py:323,336 — 仓库通用规则/禁止硬编码
 - Temp file cleanup in `finally` block — correct.
 
 **Uncertain:**
-```
-backend/app/modules/registration/dossier_writer/ai_fill_service.py, asset_text_extractor.py, document_parser.py — 异步任务/禁止在 HTTP 请求中执行超过 5 秒的操作 — OCR subprocess can take 300+ seconds (timeout = max(300, 120+60*pages)), called from HTTP handlers via asyncio.to_thread(). While the event loop is not blocked, the HTTP request itself waits for OCR completion. AGENTS.md requires ">5s operations" to use async tasks + polling. This is a pre-existing issue (previous in-process OCR also blocked), but the PR makes the long duration more explicit. Follow-up: convert OCR endpoints to async task + polling pattern. — severity: medium
-```
+- [ ] `backend/app/modules/registration/dossier_writer/ai_fill_service.py, asset_text_extractor.py, document_parser.py` — 异步任务/禁止在 HTTP 请求中执行超过 5 秒的操作 — OCR subprocess can take 300+ seconds (timeout = max(300, 120+60*pages)), called from HTTP handlers via asyncio.to_thread(). While the event loop is not blocked, the HTTP request itself waits for OCR completion. AGENTS.md requires ">5s operations" to use async tasks + polling. This is a pre-existing issue (previous in-process OCR also blocked), but the PR makes the long duration more explicit. Follow-up: convert OCR endpoints to async task + polling pattern. — severity: medium — **NOT RESOLVED** (pre-existing, follow-up item)
 
 #### Category 9: Frontend component boundaries
 
@@ -2838,13 +2832,8 @@ backend/app/modules/registration/dossier_writer/ai_fill_service.py, asset_text_e
 - The PR manually extended/wrote types instead of regenerating from OpenAPI spec.
 
 **Confirmed:**
-```
-frontend/src/actions/dossier-writer.ts:27-30 — 前端/类型系统/API 类型来源 — Hand-written type extension `SplitConfirmResult = SplitConfirmData & { details?: ... }` instead of regenerating from OpenAPI spec. Backend `SplitConfirmData` schema now includes `details: list[PageInsertDetail]`. Fix: run `cd ../backend && uv run python scripts/ci/export_openapi.py && cd ../frontend && pnpm generate:api`. — severity: medium
-```
-```
-frontend/src/types/dossier-writer.ts:152 — 前端/类型系统/API 类型来源 — `PageSplitInfo` interface manually adds `split_id: string` field. Backend `PageSplitItem` schema now includes `split_id: str | None = None`. This is an API contract type used to represent the split preview response. Fix: regenerate types from OpenAPI spec. — severity: medium
-```
-
+- [x] `frontend/src/actions/dossier-writer.ts:27-30` — 前端/类型系统/API 类型来源 — Hand-written type extension `SplitConfirmResult = SplitConfirmData & { details?: ... }` instead of regenerating from OpenAPI spec. Backend `SplitConfirmData` schema now includes `details: list[PageInsertDetail]`. Fix: run `cd ../backend && uv run python scripts/ci/export_openapi.py && cd ../frontend && pnpm generate:api`. — severity: medium — **RESOLVED** (commit ec4143d9: types regenerated, now `type SplitConfirmResult = SplitConfirmData`)
+- [x] `frontend/src/types/dossier-writer.ts:152` — 前端/类型系统/API 类型来源 — `PageSplitInfo` interface manually adds `split_id: string` field. Backend `PageSplitItem` schema now includes `split_id: str | None = None`. This is an API contract type used to represent the split preview response. Fix: regenerate types from OpenAPI spec. — severity: medium — **RESOLVED** (commit ec4143d9: types regenerated, now `type PageSplitInfo = components['schemas']['PageSplitItem']`)
 #### Category 13: Docker and deployment
 
 | Stat | Count |
@@ -2889,102 +2878,32 @@ frontend/src/types/dossier-writer.ts:152 — 前端/类型系统/API 类型来�
 #### Categories not affected
 4 (API and authentication), 8 (Backend tests), 11 (Proxy and routing), 12 (Cross-project OpenAPI), 14 (E2E) — no relevant files changed.
 
-#### PR #41 Summary
+#### PR #41 Summary (Re-audit 2026-08-28)
 
 | Category | Confirmed | Uncertain | Severity |
 |----------|-----------|-----------|----------|
 | 1. Repository layout | 0 | 0 | — |
-| 2. Secrets and hardcoded values | 1 | 1 | high, low |
+| 2. Secrets and hardcoded values | 0 (1 resolved) | 1 | — |
 | 3. Backend module boundaries | 0 | 0 | — |
 | 5. Models and migrations | 0 | 0 | — |
 | 6. Configuration and logging | 0 | 0 | — |
 | 7. External services and background tasks | 0 | 1 | medium |
 | 9. Frontend component boundaries | 0 | 0 | — |
-| 10. Frontend API and generated types | 2 | 0 | medium, medium |
+| 10. Frontend API and generated types | 0 (2 resolved) | 0 | — |
 | 13. Docker and deployment | 0 | 0 | — |
 | 15. SQL injection | 0 | 0 | — |
-| **Total** | **3** | **2** | |
+| **Total** | **0** | **2** | **✅ All blocking resolved** |
 
-#### High priority
+#### Resolved findings
 
-1. **uv.lock registry mismatch** (Category 2) — Lockfile switched to `pypi.org` but Dockerfile sets `UV_INDEX_URL=mirrors.aliyun.com`. Will break `uv sync --locked` in CI/Docker.
+1. ~~**uv.lock registry mismatch** (Category 2) — Lockfile switched to `pypi.org` but Dockerfile sets `UV_INDEX_URL=mirrors.aliyun.com`. Will break `uv sync --locked` in CI/Docker.~~ — **RESOLVED** (commit ec4143d9: lockfile regenerated with mirrors.aliyun.com)
+2. ~~**Frontend types not regenerated** (Category 10) — `SplitConfirmResult` and `PageSplitInfo.split_id` are hand-written instead of regenerated from OpenAPI spec. Backend schema changed but `pnpm generate:api` was not run.~~ — **RESOLVED** (commit ec4143d9: types regenerated)
 
-#### Medium priority
+#### Outstanding findings (follow-up)
 
-2. **Frontend types not regenerated** (Category 10) — `SplitConfirmResult` and `PageSplitInfo.split_id` are hand-written instead of regenerated from OpenAPI spec. Backend schema changed but `pnpm generate:api` was not run.
-3. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling.
+3. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling. — **NOT RESOLVED** (pre-existing architectural issue)
+4. **Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path. — **NOT RESOLVED** (low priority, Docker-specific)
 
-#### Low priority
-
-4. **Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path.
-
-**Status: ⚠️ COMPLETE — 1 high-severity blocking issue (uv.lock registry mismatch)**
+**Status: ✅ COMPLETE — All blocking issues resolved (re-audit 2026-08-28) — PR ready to merge**
 
 ---
-
-### PR #41 Re-audit (commit: ec4143d9, date: 2026-08-28)
-
-**PR updated with additional commits. Re-checking previous findings:**
-
-#### Finding 1: uv.lock registry mismatch — ✅ RESOLVED
-- **Previous:** Lockfile switched to `pypi.org` but Dockerfile uses `mirrors.aliyun.com`
-- **Current:** Lockfile regenerated with `mirrors.aliyun.com` URLs, matching Dockerfile
-- **Status:** Fixed
-
-#### Finding 2: Frontend types not regenerated (SplitConfirmResult) — ✅ RESOLVED
-- **Previous:** Hand-written `SplitConfirmResult = SplitConfirmData & { details?: ... }`
-- **Current:** `type SplitConfirmResult = SplitConfirmData` (alias only, generated types include `details`)
-- **Status:** Fixed — types regenerated from OpenAPI spec
-
-#### Finding 3: Frontend types not regenerated (PageSplitInfo.split_id) — ✅ RESOLVED
-- **Previous:** Hand-written `interface PageSplitInfo { split_id: string; ... }`
-- **Current:** `type PageSplitInfo = components['schemas']['PageSplitItem']` (alias to generated type)
-- **Status:** Fixed — types regenerated from OpenAPI spec
-
-#### Finding 4: OCR subprocess 300+s in HTTP handlers — ⏳ NOT RESOLVED (follow-up)
-- **Status:** Pre-existing architectural issue, not addressed in this PR update
-- **Recommendation:** Future PR to convert OCR endpoints to async task + polling pattern
-
-#### Finding 5: Hardcoded `/app` path in subprocess — ⏳ NOT RESOLVED (low priority)
-- **Status:** Still hardcoded in `ocr_service.py:323,336`
-- **Context:** Docker-specific, works correctly in container environment
-- **Recommendation:** Low priority, could use env var in future refactor
-
-#### New finding from PR update:
-
-**Category 15: SQL 注入与不安全查询**
-
-| Stat | Count |
-|------|-------|
-| Files inspected | 1 (new migration file) |
-| Files not inspected | 0 |
-| Rules evaluated | 5 (all Q1-Q5) |
-| Rules not evaluated | 0 |
-| Confirmed findings | 0 |
-| Uncertain findings | 1 |
-
-**Analysis:**
-- New migration `0056_recreate_qms_reagent_reminder_config.py` uses f-string in `sa.text()` at line 65
-- However, both `col` and `comment` values are hardcoded string literals defined in the migration file itself (lines 49-62)
-- These are not external data sources or runtime user input
-- Column names cannot be parameterized in SQL (identifiers don't support bind parameters)
-- This is a one-time DDL migration, not runtime application code
-- The audit rule focuses on "外部数据源" (external data sources) and "运行时数据" (runtime data)
-
-**Uncertain:**
-```
-backend/alembic/versions/0056_recreate_qms_reagent_reminder_config.py:65 — 安全规则/SQL 查询 — Uses f-string in sa.text() for COMMENT ON COLUMN, but values are hardcoded literals from the migration file itself (not external input). Column names cannot be parameterized. This is a common pattern in migrations for DDL statements. Not a security risk since values are compile-time constants. — severity: low (informational)
-```
-
-#### PR #41 Re-audit Summary
-
-| Finding | Severity | Status |
-|---------|----------|--------|
-| 1. uv.lock registry mismatch | HIGH | ✅ RESOLVED |
-| 2. Frontend types (SplitConfirmResult) | MEDIUM | ✅ RESOLVED |
-| 3. Frontend types (PageSplitInfo) | MEDIUM | ✅ RESOLVED |
-| 4. OCR in HTTP >5s | MEDIUM | ⏳ Follow-up (pre-existing) |
-| 5. Hardcoded /app path | LOW | ⏳ Not resolved (low priority) |
-| 6. Migration f-string | LOW | ⚠️ Informational (not a security risk) |
-
-**Status: ✅ ALL BLOCKING ISSUES RESOLVED — PR ready to merge**
