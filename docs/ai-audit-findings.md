@@ -2919,3 +2919,72 @@ frontend/src/types/dossier-writer.ts:152 — 前端/类型系统/API 类型来�
 4. **Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path.
 
 **Status: ⚠️ COMPLETE — 1 high-severity blocking issue (uv.lock registry mismatch)**
+
+---
+
+### PR #41 Re-audit (commit: ec4143d9, date: 2026-08-28)
+
+**PR updated with additional commits. Re-checking previous findings:**
+
+#### Finding 1: uv.lock registry mismatch — ✅ RESOLVED
+- **Previous:** Lockfile switched to `pypi.org` but Dockerfile uses `mirrors.aliyun.com`
+- **Current:** Lockfile regenerated with `mirrors.aliyun.com` URLs, matching Dockerfile
+- **Status:** Fixed
+
+#### Finding 2: Frontend types not regenerated (SplitConfirmResult) — ✅ RESOLVED
+- **Previous:** Hand-written `SplitConfirmResult = SplitConfirmData & { details?: ... }`
+- **Current:** `type SplitConfirmResult = SplitConfirmData` (alias only, generated types include `details`)
+- **Status:** Fixed — types regenerated from OpenAPI spec
+
+#### Finding 3: Frontend types not regenerated (PageSplitInfo.split_id) — ✅ RESOLVED
+- **Previous:** Hand-written `interface PageSplitInfo { split_id: string; ... }`
+- **Current:** `type PageSplitInfo = components['schemas']['PageSplitItem']` (alias to generated type)
+- **Status:** Fixed — types regenerated from OpenAPI spec
+
+#### Finding 4: OCR subprocess 300+s in HTTP handlers — ⏳ NOT RESOLVED (follow-up)
+- **Status:** Pre-existing architectural issue, not addressed in this PR update
+- **Recommendation:** Future PR to convert OCR endpoints to async task + polling pattern
+
+#### Finding 5: Hardcoded `/app` path in subprocess — ⏳ NOT RESOLVED (low priority)
+- **Status:** Still hardcoded in `ocr_service.py:323,336`
+- **Context:** Docker-specific, works correctly in container environment
+- **Recommendation:** Low priority, could use env var in future refactor
+
+#### New finding from PR update:
+
+**Category 15: SQL 注入与不安全查询**
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 (new migration file) |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (all Q1-Q5) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Analysis:**
+- New migration `0056_recreate_qms_reagent_reminder_config.py` uses f-string in `sa.text()` at line 65
+- However, both `col` and `comment` values are hardcoded string literals defined in the migration file itself (lines 49-62)
+- These are not external data sources or runtime user input
+- Column names cannot be parameterized in SQL (identifiers don't support bind parameters)
+- This is a one-time DDL migration, not runtime application code
+- The audit rule focuses on "外部数据源" (external data sources) and "运行时数据" (runtime data)
+
+**Uncertain:**
+```
+backend/alembic/versions/0056_recreate_qms_reagent_reminder_config.py:65 — 安全规则/SQL 查询 — Uses f-string in sa.text() for COMMENT ON COLUMN, but values are hardcoded literals from the migration file itself (not external input). Column names cannot be parameterized. This is a common pattern in migrations for DDL statements. Not a security risk since values are compile-time constants. — severity: low (informational)
+```
+
+#### PR #41 Re-audit Summary
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| 1. uv.lock registry mismatch | HIGH | ✅ RESOLVED |
+| 2. Frontend types (SplitConfirmResult) | MEDIUM | ✅ RESOLVED |
+| 3. Frontend types (PageSplitInfo) | MEDIUM | ✅ RESOLVED |
+| 4. OCR in HTTP >5s | MEDIUM | ⏳ Follow-up (pre-existing) |
+| 5. Hardcoded /app path | LOW | ⏳ Not resolved (low priority) |
+| 6. Migration f-string | LOW | ⚠️ Informational (not a security risk) |
+
+**Status: ✅ ALL BLOCKING ISSUES RESOLVED — PR ready to merge**
