@@ -3,8 +3,8 @@
 import logging
 import re
 import uuid
-from typing import Any
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -1348,7 +1348,11 @@ async def build_fact_dictionary(db: AsyncSession, project_id: uuid.UUID, stage: 
         facts["project_name"] = {"value": project.name, "unit": "", "source_id": str(project.id)}
         facts["api_name"] = {"value": project.api_name, "unit": "", "source_id": str(project.id)}
         facts["cas_number"] = {"value": project.cas_number or "", "unit": "", "source_id": str(project.id)}
-        facts["molecular_formula"] = {"value": project.molecular_formula or "", "unit": "", "source_id": str(project.id)}
+        facts["molecular_formula"] = {
+            "value": project.molecular_formula or "",
+            "unit": "",
+            "source_id": str(project.id),
+        }
 
     # 2. 获取当前阶段的工艺优化数据 (以 DOE 为例)
     if stage == "process_optimization":
@@ -1466,7 +1470,9 @@ def calculate_doe_conclusions(doe_data: dict[str, Any]) -> dict[str, Any]:
 # ===== 槽位填充引擎 (Slot Filling Engine) =====
 
 
-def fill_template_slots(template_content: str, facts: dict[str, Any], derived_facts: dict[str, Any]) -> tuple[str, list[str]]:
+def fill_template_slots(
+    template_content: str, facts: dict[str, Any], derived_facts: dict[str, Any]
+) -> tuple[str, list[str]]:
     """
     填充模板中的 Fact 和 Derived Fact 槽位。
     返回: (填充后的文本, 剩余的 Prose 槽位列表)
