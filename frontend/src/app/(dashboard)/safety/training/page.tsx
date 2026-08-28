@@ -742,6 +742,7 @@ export default function TrainingPage() {
         width={700}
         okText="确认"
         cancelText="取消"
+        bodyStyle={{ maxHeight: "70vh", overflowY: "auto" }}
       >
         <Form
           form={editingRecord ? editForm : form}
@@ -847,8 +848,10 @@ export default function TrainingPage() {
         title={`签到管理 - ${currentTrainingName}`}
         open={recordModalVisible}
         onCancel={() => setRecordModalVisible(false)}
-        width={900}
+        width={1100}
+        style={{ maxWidth: "95vw" }}
         footer={null}
+        bodyStyle={{ maxHeight: "70vh", overflowY: "auto" }}
       >
         <div className="mb-4">
           <Space>
@@ -861,14 +864,17 @@ export default function TrainingPage() {
           </Space>
         </div>
 
-        <Table
-          columns={recordColumns}
-          dataSource={records}
-          rowKey="id"
-          loading={recordsLoading}
-          size="small"
-          pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 人` }}
-        />
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <Table
+            columns={recordColumns}
+            dataSource={records}
+            rowKey="id"
+            loading={recordsLoading}
+            size="small"
+            pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 人` }}
+            scroll={{ x: 1000 }}
+          />
+        </div>
 
         {/* Single Record Form */}
         {(recordForm || editingRecordItem) && (
