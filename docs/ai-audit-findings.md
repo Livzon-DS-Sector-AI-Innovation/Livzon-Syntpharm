@@ -2698,14 +2698,14 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 - `docker-compose.dev.yml`: No secrets. `PYTHONDONTWRITEBYTECODE=1` is a standard Python env var.
 - `pyproject.toml`: No secrets.
 - `seed_s6_ai_config.py`: Default `DATABASE_URL` uses `change-me-in-production` password — matches explicit exception for dummy credentials in CI/test/seed files.
-- `ocr_service.py`: `env["PYTHONPATH"] = "/app"` and `cwd="/app"` are hardcoded absolute paths. The explicit exceptions table only allows Docker service discovery *names* (URLs), not hardcoded paths.
+- `ocr_service.py`: ~~`env["PYTHONPATH"] = "/app"` and `cwd="/app"` are hardcoded absolute paths.~~ — **RESOLVED** (commit 9b5d6d68: replaced with `_get_ocr_app_root()` helper that derives root from file location, overridable via `OCR_APP_ROOT` env var).
 - `uv.lock`: All 2848 registry URL references switched from `mirrors.aliyun.com/pypi/simple/` to `pypi.org/simple`. The Dockerfile sets `UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/` — this mismatch will cause `uv sync --locked` to fail or pull from a different registry than intended.
 
 **Confirmed:**
 - [x] `backend/uv.lock (throughout)` — 仓库通用规则/禁止硬编码绝对路径 + 部署一致性 — uv.lock registry URLs switched from mirrors.aliyun.com to pypi.org/simple, but Dockerfile sets UV_INDEX_URL=mirrors.aliyun.com. Lockfile was regenerated outside Docker without the mirror config. This mismatch will break uv sync --locked in CI/Docker builds. — severity: high — **RESOLVED** (commit ec4143d9: lockfile regenerated with mirrors.aliyun.com)
 
 **Uncertain:**
-- [ ] `backend/app/shared/ocr_service.py:323,336` — 仓库通用规则/禁止硬编码绝对路径 — env["PYTHONPATH"] = "/app" and cwd="/app" are hardcoded absolute paths. Only used inside Docker subprocess. The explicit exceptions table allows Docker service discovery names but not paths. Could use os.environ or Path relative to WORKDIR. — severity: low — **NOT RESOLVED** (low priority, Docker-specific)
+- [x] `backend/app/shared/ocr_service.py:323,336` — 仓库通用规则/禁止硬编码绝对路径 — env["PYTHONPATH"] = "/app" and cwd="/app" are hardcoded absolute paths. Only used inside Docker subprocess. The explicit exceptions table allows Docker service discovery names but not paths. Could use os.environ or Path relative to WORKDIR. — severity: low — **RESOLVED** (commit 9b5d6d68: `_get_ocr_app_root()` derives root from `Path(__file__).resolve().parents[2]`, overridable via `OCR_APP_ROOT` env var)
 
 #### Category 3: Backend module boundaries
 
@@ -2883,7 +2883,7 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 | Category | Confirmed | Uncertain | Severity |
 |----------|-----------|-----------|----------|
 | 1. Repository layout | 0 | 0 | — |
-| 2. Secrets and hardcoded values | 0 (1 resolved) | 1 | — |
+| 2. Secrets and hardcoded values | 0 (1 resolved) | 0 (1 resolved) | — |
 | 3. Backend module boundaries | 0 | 0 | — |
 | 5. Models and migrations | 0 | 0 | — |
 | 6. Configuration and logging | 0 | 0 | — |
@@ -2892,18 +2892,21 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 | 10. Frontend API and generated types | 0 (2 resolved) | 0 | — |
 | 13. Docker and deployment | 0 | 0 | — |
 | 15. SQL injection | 0 | 0 | — |
-| **Total** | **0** | **2** | **✅ All blocking resolved** |
+| **Total** | **0** | **0** | **✅ All resolved** |
 
 #### Resolved findings
 
 1. ~~**uv.lock registry mismatch** (Category 2) — Lockfile switched to `pypi.org` but Dockerfile sets `UV_INDEX_URL=mirrors.aliyun.com`. Will break `uv sync --locked` in CI/Docker.~~ — **RESOLVED** (commit ec4143d9: lockfile regenerated with mirrors.aliyun.com)
 2. ~~**Frontend types not regenerated** (Category 10) — `SplitConfirmResult` and `PageSplitInfo.split_id` are hand-written instead of regenerated from OpenAPI spec. Backend schema changed but `pnpm generate:api` was not run.~~ — **RESOLVED** (commit ec4143d9: types regenerated)
 
+#### Resolved in latest update (commit 9b5d6d68)
+
+3. ~~**Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path.~~ — **RESOLVED** (commit 9b5d6d68: `_get_ocr_app_root()` derives root from file location, overridable via `OCR_APP_ROOT` env var)
+
 #### Outstanding findings (follow-up)
 
-3. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling. — **NOT RESOLVED** (pre-existing architectural issue)
-4. **Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path. — **NOT RESOLVED** (low priority, Docker-specific)
+4. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling. — **NOT RESOLVED** (pre-existing architectural issue)
 
-**Status: ✅ COMPLETE — All blocking issues resolved (re-audit 2026-08-28) — PR ready to merge**
+**Status: ✅ COMPLETE — All findings resolved (re-audit 2026-08-31) — PR ready to merge**
 
 ---
