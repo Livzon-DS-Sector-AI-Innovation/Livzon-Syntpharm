@@ -469,3 +469,74 @@ async def sync_equipments_from_excel(db: AsyncSession, file_content: bytes) -> E
     
     await db.commit()
     return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)
+
+async def sync_equipments_from_excel_v2(db: AsyncSession, file_content: bytes) -> EquipmentSyncResult:
+    """TB-02: 补全匹配策略（迁移、新增、软删除）"""
+    try:
+        df = pd.read_excel(BytesIO(file_content), header=4)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+    dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
+    dept_map = {n: i for i, n in dept_result.fetchall()}
+    valid_depts = set(dept_map.keys())
+    
+    loc_result = await db.execute(select(Location.id, Location.name))
+    loc_map = {n: i for i, n in loc_result.fetchall()}
+
+    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
+    all_active = equip_result.scalars().all()
+    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    asset_index = {}
+    for e in all_active:
+        asset_index.setdefault(e.asset_no, []).append(e)
+
+    updated, inserted, migrated, deleted = 0, 0, 0, 0
+    processed_ids = set()
+
+    for _, row in df.iterrows():
+        asset_no = str(row['资产编号']).strip()
+        if not asset_no: continue
+        
+        std_dept = _get_standard_dept(row['实物所在部门'], valid_depts)
+        dept_id = dept_map.get(std_dept) if std_dept else None
+        
+        loc_text = str(row['实物所在地点']).strip() if pd.notna(row['实物所在地点']) and str(row['实物所在地点']).strip() != '-' else None
+        loc_id = loc_map.get(loc_text) if loc_text else None
+
+        target_key = (asset_no, dept_id, loc_id)
+        target_equip = combo_index.get(target_key)
+
+        update_vals = {
+            "name": str(row['设备名称']).strip(),
+            "department_id": dept_id, "location_id": loc_id, "location_text": loc_text,
+            "current_cost": float(row['当前成本']) if pd.notna(row['当前成本']) else None,
+            "book_value": float(row['帐面净值']) if pd.notna(row['帐面净值']) else None,
+            "status": "在用", 
+            "model": str(row['型号']).strip() if pd.notna(row['型号']) else None,
+            "manufacturer": str(row['制造商']).strip() if pd.notna(row['制造商']) else None,
+            "commissioning_date": row['启用日期'] if pd.notna(row['启用日期']) else None,
+        }
+
+        if target_equip:
+            await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**update_vals))
+            processed_ids.add(target_equip.id)
+            updated += 1
+        elif asset_no in asset_index:
+            old_equip = asset_index[asset_no][0]
+            await db.execute(update(Equipment).where(Equipment.id == old_equip.id).values(**update_vals))
+            processed_ids.add(old_equip.id)
+            migrated += 1
+        else:
+            new_e = Equipment(asset_no=asset_no, is_deleted=False, **update_vals)
+            db.add(new_e)
+            inserted += 1
+
+    # 软删除
+    for e in all_active:
+        if e.id not in processed_ids:
+            await db.execute(update(Equipment).where(Equipment.id == e.id).values(is_deleted=True))
+            deleted += 1
+    
+    await db.commit()
+    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)

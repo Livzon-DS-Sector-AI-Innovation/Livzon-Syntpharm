@@ -289,5 +289,5 @@ async def sync_equipments_excel(
 ) -> ApiResponse:
     """上传 Excel 文件并执行智能同步"""
     content = await file.read()
-    result = await service.sync_equipments_from_excel(db, content)
+    result = await service.sync_equipments_from_excel_v2(db, content)
     return build_response(data=result.model_dump())

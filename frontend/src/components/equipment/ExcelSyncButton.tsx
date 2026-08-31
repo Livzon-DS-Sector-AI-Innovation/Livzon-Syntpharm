@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Upload, message } from 'antd'
+import { Button, Upload, message, Modal } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 
@@ -20,9 +20,20 @@ export function ExcelSyncButton() {
       })
       const result = await response.json()
       if (result.code === 200) {
-        message.success(`同步成功！更新: ${result.data.updated} 台`)
+        const { updated, inserted, migrated, deleted } = result.data
+        Modal.info({
+          title: '同步完成',
+          content: (
+            <div>
+              <p>更新: {updated} 台</p>
+              <p>迁移: {migrated} 台</p>
+              <p>新增: {inserted} 台</p>
+              <p>停用: {deleted} 台</p>
+            </div>
+          ),
+          onOk: () => window.location.reload(),
+        })
         onSuccess?.(result)
-        setTimeout(() => window.location.reload(), 1500) 
       } else {
         message.error(result.message || '同步失败')
         onError?.(new Error(result.message))
