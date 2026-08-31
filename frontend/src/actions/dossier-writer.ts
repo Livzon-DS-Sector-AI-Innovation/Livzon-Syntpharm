@@ -216,7 +216,6 @@ export async function aiConfirmAndFill(chapterId: string, data: AIConfirmRequest
   const result = unwrapResponse(await apiFetch<{code: number; data: AIFillResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-confirm`, {
     method: 'POST',
     body: JSON.stringify(data),
-    signal: AbortSignal.timeout(600000),
   }))
   revalidatePath('/registration/dossier-writer')
   return result
@@ -229,7 +228,6 @@ export async function splitPreview(
   const result = unwrapResponse(await apiFetch<{code: number; data: PageSplitPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/assets/${assetId}/split-preview`, {
     method: 'POST',
     body: JSON.stringify({ available_appendix_slots: availableAppendixSlots }),
-    signal: AbortSignal.timeout(600000), // 拆分预览含 OCR，需要 10 分钟超时
   }))
   return result
 }
