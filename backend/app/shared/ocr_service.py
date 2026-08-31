@@ -5,6 +5,7 @@ with a hybrid approach that allows automatic or manual engine selection.
 """
 
 import logging
+import os
 import sys
 import threading
 from pathlib import Path
@@ -17,6 +18,15 @@ logger = logging.getLogger(__name__)
 
 # Global lock for serializing OCR calls
 _ocr_lock = threading.Lock()
+
+
+def _get_ocr_app_root() -> Path:
+    """推导 OCR 子进程的代码根目录（包含 app 包的目录），容器内外自洽。
+
+    本文件位于 <root>/app/shared/ocr_service.py，向上三级即 <root>：
+    容器内为 /app，宿主机为 backend/ 的真实路径。可用 OCR_APP_ROOT 覆盖。
+    """
+    return Path(os.environ.get("OCR_APP_ROOT") or Path(__file__).resolve().parents[2])
 
 
 def get_ocr_lock() -> threading.Lock:
@@ -320,7 +330,7 @@ class OCRService:
 
             # Set environment variables
             env = os.environ.copy()
-            env["PYTHONPATH"] = "/app"
+            env["PYTHONPATH"] = str(_get_ocr_app_root())
             env["OMP_NUM_THREADS"] = "1"
             env["MKL_NUM_THREADS"] = "1"
             env["OPENBLAS_NUM_THREADS"] = "1"
@@ -333,7 +343,7 @@ class OCRService:
                     stderr=subprocess.STDOUT,
                     env=env,
                     start_new_session=True,
-                    cwd="/app",
+                    cwd=str(_get_ocr_app_root()),
                 )
 
                 try:
