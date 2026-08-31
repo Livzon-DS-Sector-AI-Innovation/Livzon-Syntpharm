@@ -540,3 +540,108 @@ async def sync_equipments_from_excel_v2(db: AsyncSession, file_content: bytes) -
     
     await db.commit()
     return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)
+
+async def sync_equipments_with_audit(
+    db: AsyncSession, 
+    file_content: bytes, 
+    operator_id: uuid.UUID | None = None,
+    file_name: str = "unknown.xlsx",
+    dry_run: bool = False
+) -> EquipmentSyncResult:
+    """TB-04: 带审计追踪和熔断保护的同步逻辑"""
+    
+    # 1. 解析 Excel
+    try:
+        df = pd.read_excel(BytesIO(file_content), header=4)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+    # 2. 加载映射与索引 (同 v2)
+    dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
+    dept_map = {n: i for i, n in dept_result.fetchall()}
+    valid_depts = set(dept_map.keys())
+    loc_result = await db.execute(select(Location.id, Location.name))
+    loc_map = {n: i for i, n in loc_result.fetchall()}
+    
+    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
+    all_active = equip_result.scalars().all()
+    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    asset_index = {}
+    for e in all_active:
+        asset_index.setdefault(e.asset_no, []).append(e)
+
+    updated, inserted, migrated, deleted = 0, 0, 0, 0
+    processed_ids = set()
+    changes_log = [] # 用于审计
+
+    # 3. 执行同步并记录变更
+    for _, row in df.iterrows():
+        asset_no = str(row['资产编号']).strip()
+        if not asset_no: continue
+        
+        std_dept = _get_standard_dept(row['实物所在部门'], valid_depts)
+        dept_id = dept_map.get(std_dept) if std_dept else None
+        loc_text = str(row['实物所在地点']).strip() if pd.notna(row['实物所在地点']) and str(row['实物所在地点']).strip() != '-' else None
+        loc_id = loc_map.get(loc_text) if loc_text else None
+
+        target_key = (asset_no, dept_id, loc_id)
+        target_equip = combo_index.get(target_key)
+
+        new_vals = {
+            "name": str(row['设备名称']).strip(),
+            "current_cost": float(row['当前成本']) if pd.notna(row['当前成本']) else None,
+            "book_value": float(row['帐面净值']) if pd.notna(row['帐面净值']) else None,
+            "department_id": dept_id, "location_id": loc_id,
+        }
+
+        if target_equip:
+            # 记录字段级变更
+            for field, new_val in new_vals.items():
+                old_val = getattr(target_equip, field, None)
+                if old_val != new_val:
+                    changes_log.append({"asset_no": asset_no, "field": field, "old": str(old_val), "new": str(new_val)})
+            
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**new_vals))
+            processed_ids.add(target_equip.id)
+            updated += 1
+        elif asset_no in asset_index:
+            old_equip = asset_index[asset_no][0]
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == old_equip.id).values(**new_vals))
+            processed_ids.add(old_equip.id)
+            migrated += 1
+        else:
+            if not dry_run:
+                db.add(Equipment(asset_no=asset_no, is_deleted=False, **new_vals))
+            inserted += 1
+
+    # 4. 软删除与熔断检查
+    active_asset_nos = {e.asset_no for e in all_active}
+    excel_asset_nos = set(df['资产编号'].dropna().astype(str).str.strip())
+    missing_assets = active_asset_nos - excel_asset_nos
+    
+    # 熔断：如果缺失超过 5%
+    if len(active_asset_nos) > 0 and len(missing_assets) / len(active_asset_nos) > 0.05:
+        raise ValueError(f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！")
+
+    for e in all_active:
+        if e.id not in processed_ids:
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == e.id).values(is_deleted=True))
+            deleted += 1
+            changes_log.append({"asset_no": e.asset_no, "field": "status", "old": "Active", "new": "Deleted"})
+
+    # 5. 写入审计日志
+    if not dry_run:
+        log_entry = EquipmentSyncLog(
+            operator_id=operator_id,
+            file_name=file_name,
+            summary={"updated": updated, "inserted": inserted, "migrated": migrated, "deleted": deleted},
+            changes_detail=changes_log[:1000], # 限制日志大小
+            is_dry_run=False
+        )
+        db.add(log_entry)
+        await db.commit()
+
+    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)
