@@ -648,6 +648,7 @@ async def ai_preview_extraction(
             task_id=task.id,
             file_path=asset.file_path,
             task_type="preview_extraction",
+            chapter_id=chapter_id,
         )
 
     await db.commit()
@@ -794,6 +795,7 @@ async def split_preview(
         task_id=task.id,
         file_path=asset.file_path,
         task_type="split_preview",
+        chapter_id=asset.chapter_id,
     )
 
     await db.commit()
