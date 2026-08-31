@@ -149,7 +149,7 @@ export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewR
   
   // Poll for task completion
   const pollTask = async (attempt: number = 0): Promise<AIPreviewResult> => {
-    const maxAttempts = 600 // 20 minutes at 2 second intervals
+    const maxAttempts = 900 // 30 minutes at 2 second intervals
     
     if (attempt >= maxAttempts) {
       throw new Error('OCR tasks timed out')

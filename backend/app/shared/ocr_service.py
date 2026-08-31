@@ -306,7 +306,7 @@ class OCRService:
         total_pages = count_pdf_pages(file_path)
 
         # Calculate timeout: max(provided, 120 + 60 * pages)
-        calculated_timeout = 120 + 60 * total_pages
+        calculated_timeout = 300 + 120 * total_pages
         actual_timeout = max(timeout, calculated_timeout)
 
         logger.info(f"Starting OCR subprocess for {total_pages} pages, timeout={actual_timeout}s")
