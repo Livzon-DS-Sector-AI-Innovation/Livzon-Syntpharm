@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -605,13 +605,15 @@ async def get_fill_results(
 async def ai_preview_extraction(
     current_user: CurrentUser,
     chapter_id: UUID,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    """AI 智能解析预览：提取素材中的字段值（不写入文档）"""
-    from .ai_fill_service import AIFillService
+    """启动AI智能解析预览任务（异步）"""
     from .models import DossierChapter, ProductDossier
+    from .ocr_task_repository import OcrTaskRepository
+    from .service import DossierService
 
-    # 获取章节和品种信息
+    # 获取章节
     ch_stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
     ch_result = await db.execute(ch_stmt)
     chapter = ch_result.scalar_one_or_none()
@@ -619,30 +621,88 @@ async def ai_preview_extraction(
     if not chapter:
         return error_response(message="章节不存在", status_code=404)
 
-    pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
-    pd_result = await db.execute(pd_stmt)
-    dossier = pd_result.scalar_one_or_none()
+    # 获取章节素材
+    service = DossierService(db)
+    assets = await service.list_chapter_assets(chapter_id)
 
-    if not dossier:
-        return error_response(message="品种资料不存在", status_code=404)
+    if not assets:
+        return error_response(message="请先上传素材", status_code=400)
 
-    try:
-        service = AIFillService(db)
-        result = await service.preview_extraction(dossier, chapter)
-        return success_response(data=result, message=result.get("message", "完成"))
-    except Exception as e:
-        # 记录完整错误日志
-        import traceback
+    # 为每个素材创建OCR任务
+    repo = OcrTaskRepository(db)
+    task_ids = []
 
-        error_detail = traceback.format_exc()
-        print(f"AI 解析失败: {error_detail}")
-
-        # 返回 JSON 错误响应
-        return error_response(
-            message=f"AI解析失败：{str(e)}",
-            status_code=500,
-            detail={"error_type": type(e).__name__, "error_detail": str(e)},
+    for asset in assets:
+        task = await repo.create_task(
+            asset_id=asset.id,
+            chapter_id=chapter_id,
+            task_type="preview_extraction",
         )
+        task_ids.append(str(task.id))
+
+        # 使用 FastAPI BackgroundTasks 调度后台任务
+        from .ocr_worker import execute_ocr_extraction
+
+        background_tasks.add_task(
+            execute_ocr_extraction,
+            task_id=task.id,
+            file_path=asset.file_path,
+            task_type="preview_extraction",
+        )
+
+    await db.commit()
+
+    return success_response(
+        data={
+            "task_ids": task_ids,
+            "status": "pending",
+            "message": f"已启动 {len(task_ids)} 个OCR提取任务",
+        },
+        message="任务已启动，请轮询查询结果",
+    )
+
+
+
+
+
+@router.get("/ocr-tasks/{task_id}", response_model=dict)
+async def get_ocr_task_status(
+    current_user: CurrentUser,
+    task_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """查询OCR任务状态和结果"""
+    from .ocr_task_repository import OcrTaskRepository
+
+    repo = OcrTaskRepository(db)
+    task = await repo.get_task(task_id)
+
+    if not task:
+        return error_response(message="任务不存在", status_code=404)
+
+    response_data = {
+        "id": str(task.id),
+        "asset_id": str(task.asset_id),
+        "task_type": task.task_type,
+        "status": task.status,
+        "started_at": task.started_at.isoformat() if task.started_at else None,
+        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+        "total_pages": task.total_pages,
+        "processed_pages": task.processed_pages,
+        "error_message": task.error_message,
+    }
+
+    # Include result only if completed
+    if task.status == "completed" and task.result_data:
+        response_data["result"] = task.result_data
+
+    # Calculate progress percentage
+    if task.total_pages and task.total_pages > 0:
+        response_data["progress"] = round(
+            (task.processed_pages / task.total_pages) * 100, 2
+        )
+
+    return success_response(data=response_data)
 
 
 @router.post("/chapters/{chapter_id}/ai-confirm", response_model=AIConfirmResponse)
@@ -694,33 +754,59 @@ async def get_asset_categories(
     return success_response(data=categories, message="获取成功")
 
 
-@router.post("/assets/{asset_id}/split-preview", response_model=SplitPreviewResponse)
+@router.post("/assets/{asset_id}/split-preview", response_model=dict)
 async def split_preview(
     current_user: CurrentUser,
     asset_id: UUID,
     data: SplitPreviewRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    """AI 拆分预览：识别多页 PDF 每页的类型"""
-    from .ai_fill_service import AIFillService
+) -> JSONResponse:
+    """启动AI拆分预览任务（异步）"""
     from .models import ChapterAsset
+    from .ocr_task_repository import OcrTaskRepository
 
     stmt = select(ChapterAsset).where(ChapterAsset.id == asset_id)
     db_result = await db.execute(stmt)
     asset = db_result.scalar_one_or_none()
 
     if not asset:
-        raise HTTPException(status_code=404, detail="素材不存在")
+        return error_response(message="素材不存在", status_code=404)
 
-    available_appendix_slots = data.available_appendix_slots
+    # Check if it's a PDF
+    from pathlib import Path
+    if Path(asset.file_path).suffix.lower() != ".pdf":
+        return error_response(message="仅支持 PDF 文件的页拆分", status_code=400)
 
-    service = AIFillService(db)
-    result = await service.preview_page_splits(asset, available_appendix_slots)
+    # Create OCR task
+    repo = OcrTaskRepository(db)
+    task = await repo.create_task(
+        asset_id=asset.id,
+        chapter_id=asset.chapter_id,
+        task_type="split_preview",
+    )
 
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["message"])
+    # Schedule background task
+    from .ocr_worker import execute_ocr_extraction
 
-    return build_response(data=result, message=result["message"])
+    background_tasks.add_task(
+        execute_ocr_extraction,
+        task_id=task.id,
+        file_path=asset.file_path,
+        task_type="split_preview",
+    )
+
+    await db.commit()
+
+    return success_response(
+        data={
+            "task_id": str(task.id),
+            "status": "pending",
+            "message": "已启动OCR提取任务，请轮询查询结果后进行拆分",
+        },
+        message="任务已启动",
+    )
+
 
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)

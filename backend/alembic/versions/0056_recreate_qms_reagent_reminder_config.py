@@ -19,7 +19,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0056_recreate_qms_reagent_reminder_config"
-down_revision: str | None = "d89b9d01b93a"
+down_revision: str | None = "0059_merge_migration_heads"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

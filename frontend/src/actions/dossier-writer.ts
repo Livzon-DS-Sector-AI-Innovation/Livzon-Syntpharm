@@ -9,6 +9,8 @@ import type {
   ParseResult,
   ExportResult,
   AIPreviewResult,
+  OCRTaskStartResponse,
+  OCRTaskStatusResponse,
   AIConfirmRequest,
   AIFillResult,
   PageSplitPreviewResult,
@@ -126,12 +128,88 @@ export async function fillChapterFields(chapterId: string): Promise<FieldFillRes
 
 // ====== AI Fill ======
 export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewResult> {
-  const result = unwrapResponse(await apiFetch<{code: number; data: AIPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
-    method: 'POST',
-    signal: AbortSignal.timeout(600000),
-  }))
-  revalidatePath('/registration/dossier-writer')
-  return result
+  // Start OCR tasks (returns immediately with task_ids)
+  const startResponse = await apiFetch<{code: number; data: OCRTaskStartResponse; message?: string}>(
+    `/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`,
+    {
+      method: 'POST',
+    }
+  )
+  
+  if (!startResponse || !startResponse.data) {
+    throw new Error('Invalid response from server')
+  }
+  
+  const startResult = unwrapResponse(startResponse)
+  const taskIds = startResult.task_ids
+  
+  if (!taskIds || taskIds.length === 0) {
+    throw new Error('No OCR tasks created')
+  }
+  
+  // Poll for task completion
+  const pollTask = async (attempt: number = 0): Promise<AIPreviewResult> => {
+    const maxAttempts = 300 // 10 minutes at 2 second intervals
+    
+    if (attempt >= maxAttempts) {
+      throw new Error('OCR tasks timed out')
+    }
+    
+    try {
+      const taskResults = await Promise.all(
+        taskIds.map(async (taskId: string) => {
+          const response = await apiFetch<{code: number; data: OCRTaskStatusResponse}>(
+            `/api/v1/registration/dossier-writer/ocr-tasks/${taskId}`,
+            { method: 'GET' }
+          )
+          if (!response || !response.data) {
+            throw new Error('Invalid polling response')
+          }
+          return unwrapResponse(response)
+        })
+      )
+      
+      const allCompleted = taskResults.every(task => task.status === 'completed')
+      const anyFailed = taskResults.some(task => task.status === 'failed')
+      
+      if (anyFailed) {
+        const failedTask = taskResults.find(task => task.status === 'failed')
+        throw new Error(failedTask?.error_message || 'OCR task failed')
+      }
+      
+      if (allCompleted) {
+        const mergedFields: AIFieldResult[] = []
+        let tokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+        
+        for (const task of taskResults) {
+          if (task.result) {
+            mergedFields.push(...task.result.fields)
+            if (task.result.token_usage) {
+              tokenUsage.prompt_tokens += task.result.token_usage.prompt_tokens
+              tokenUsage.completion_tokens += task.result.token_usage.completion_tokens
+              tokenUsage.total_tokens += task.result.token_usage.total_tokens
+            }
+          }
+        }
+        
+        revalidatePath('/registration/dossier-writer')
+        
+        return {
+          success: true,
+          message: 'AI extraction completed',
+          fields: mergedFields,
+          token_usage: tokenUsage,
+        }
+      }
+    } catch (error) {
+      console.error('[OCR] Polling error:', error)
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    return pollTask(attempt + 1)
+  }
+  
+  return pollTask()
 }
 
 export async function aiConfirmAndFill(chapterId: string, data: AIConfirmRequest): Promise<AIFillResult> {

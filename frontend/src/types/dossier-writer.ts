@@ -241,3 +241,24 @@ export interface AssetUsageToggle {
   usage_id?: string
   is_selected: boolean
 }
+
+// OCR Async Task Types
+export interface OCRTaskStartResponse {
+  task_ids: string[]
+  status: string
+  message: string
+}
+
+export interface OCRTaskStatusResponse {
+  id: string
+  asset_id: string
+  task_type: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  started_at: string | null
+  completed_at: string | null
+  total_pages: number | null
+  processed_pages: number
+  progress: number | null
+  error_message: string | null
+  result: AIPreviewResult | null
+}

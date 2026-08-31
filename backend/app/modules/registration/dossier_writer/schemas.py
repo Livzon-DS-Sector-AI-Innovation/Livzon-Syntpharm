@@ -339,3 +339,30 @@ class AssetCategoryUpdateResponse(BaseModel):
 # 解决循环引用
 ChapterResponse.model_rebuild()
 ChapterDetailResponse.model_rebuild()
+
+
+# ====== OCR Tasks ======
+
+
+class OcrTaskStartResponse(BaseModel):
+    """OCR任务启动响应"""
+
+    task_ids: list[str]
+    status: str
+    message: str
+
+
+class OcrTaskStatusResponse(BaseModel):
+    """OCR任务状态响应"""
+
+    id: str
+    asset_id: str
+    task_type: str
+    status: str  # pending/processing/completed/failed
+    started_at: str | None
+    completed_at: str | None
+    total_pages: int | None
+    processed_pages: int
+    progress: float | None  # 0-100
+    error_message: str | None
+    result: dict[str, Any] | None  # Only present when completed
