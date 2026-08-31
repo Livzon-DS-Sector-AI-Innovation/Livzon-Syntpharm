@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException, DuplicateException, NotFoundException
 from app.modules.equipment import repository as repo
+from app.modules.equipment.repository.equipment import get_sync_context, bulk_update_equipment, bulk_insert_equipment, bulk_soft_delete
 from app.modules.equipment.models import Equipment, EquipmentCategory, Location
 from app.modules.equipment.schemas import (
     EquipmentCategoryCreate,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Upload, message, Modal } from 'antd'
+import { Button, Upload, message, Modal, Checkbox } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 
@@ -10,6 +10,7 @@ const ALLOWED_EXTENSIONS = ['.xls', '.xlsx']
 
 export function ExcelSyncButton() {
   const [loading, setLoading] = useState(false)
+  const [dryRun, setDryRun] = useState(false)
 
   const beforeUpload = (file: File) => {
     const isExcel = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.some(ext => file.name.endsWith(ext))
@@ -26,7 +27,12 @@ export function ExcelSyncButton() {
     formData.append('file', file as File)
     
     try {
-      const response = await fetch('/api/v1/equipment/equipments/sync-excel', {
+      // 如果开启预览模式，在 URL 中附加参数
+      const url = dryRun 
+        ? '/api/v1/equipment/equipments/sync-excel?dry_run=true' 
+        : '/api/v1/equipment/equipments/sync-excel'
+
+      const response = await fetch(url, {
         method: 'POST',
         body: formData,
       })
@@ -39,6 +45,7 @@ export function ExcelSyncButton() {
         
         let content = (
           <div style={{ marginTop: 10 }}>
+            {dryRun && <p style={{ color: '#1890ff', fontWeight: 'bold' }}>🔍 预览模式（未执行实际变更）:</p>}
             <p>🔄 更新设备: <strong>{updated}</strong> 台</p>
             <p>🚚 位置迁移: <strong>{migrated}</strong> 台</p>
             <p>➕ 新增设备: <strong>{inserted}</strong> 台</p>
@@ -55,10 +62,10 @@ export function ExcelSyncButton() {
         )
 
         Modal.success({
-          title: '✅ 同步完成',
+          title: dryRun ? '✅ 预览完成' : '✅ 同步完成',
           content: content,
           width: 600,
-          onOk: () => window.location.reload(),
+          onOk: () => !dryRun && window.location.reload(),
         })
         onSuccess?.(result)
       } else {
@@ -73,16 +80,21 @@ export function ExcelSyncButton() {
   }
 
   return (
-    <Upload
-      accept=".xls,.xlsx"
-      showUploadList={false}
-      customRequest={handleSync}
-      beforeUpload={beforeUpload}
-      disabled={loading}
-    >
-      <Button icon={<UploadOutlined />} loading={loading} type="primary">
-        {loading ? '正在同步...' : '同步 Excel'}
-      </Button>
-    </Upload>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <Checkbox checked={dryRun} onChange={e => setDryRun(e.target.checked)}>
+        仅预览
+      </Checkbox>
+      <Upload
+        accept=".xls,.xlsx"
+        showUploadList={false}
+        customRequest={handleSync}
+        beforeUpload={beforeUpload}
+        disabled={loading}
+      >
+        <Button icon={<UploadOutlined />} loading={loading} type="primary">
+          {loading ? '处理中...' : '同步 Excel'}
+        </Button>
+      </Upload>
+    </div>
   )
 }

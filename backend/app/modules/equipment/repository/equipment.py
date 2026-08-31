@@ -656,3 +656,41 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
     """根据 User.id 获取用户姓名"""
     result = await db.execute(select(User.name).where(User.id == user_id))
     return result.scalar_one_or_none()
+
+# ==================== Sync Helpers ====================
+from sqlalchemy import select, update
+from app.modules.equipment.models.equipment import Equipment
+from app.modules.hr.models import HrDepartment
+from app.modules.equipment.models.location import Location
+
+async def get_sync_context(session):
+    """获取同步所需的部门和位置映射及活跃设备索引"""
+    dept_result = await session.execute(select(HrDepartment.id, HrDepartment.name))
+    dept_map = {n: i for i, n in dept_result.fetchall()}
+    
+    loc_result = await session.execute(select(Location.id, Location.name))
+    loc_map = {n: i for i, n in loc_result.fetchall()}
+    
+    equip_result = await session.execute(select(Equipment).where(Equipment.is_deleted == False))
+    all_active = equip_result.scalars().all()
+    
+    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    asset_index = {}
+    for e in all_active:
+        asset_index.setdefault(e.asset_no, []).append(e)
+        
+    return dept_map, loc_map, all_active, combo_index, asset_index
+
+async def bulk_update_equipment(session, ids_and_vals):
+    """批量更新设备"""
+    for equip_id, vals in ids_and_vals:
+        await session.execute(update(Equipment).where(Equipment.id == equip_id).values(**vals))
+
+async def bulk_insert_equipment(session, equipments):
+    """批量新增设备"""
+    session.add_all(equipments)
+
+async def bulk_soft_delete(session, ids):
+    """批量软删除"""
+    for eid in ids:
+        await session.execute(update(Equipment).where(Equipment.id == eid).values(is_deleted=True))
