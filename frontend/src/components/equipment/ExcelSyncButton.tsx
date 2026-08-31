@@ -5,8 +5,20 @@ import { Button, Upload, message, Modal } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 
+const ALLOWED_TYPES = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+const ALLOWED_EXTENSIONS = ['.xls', '.xlsx']
+
 export function ExcelSyncButton() {
   const [loading, setLoading] = useState(false)
+
+  const beforeUpload = (file: File) => {
+    const isExcel = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.some(ext => file.name.endsWith(ext))
+    if (!isExcel) {
+      message.error('只能上传 .xls 或 .xlsx 格式的 Excel 文件！')
+      return Upload.LIST_IGNORE
+    }
+    return true
+  }
 
   const handleSync: UploadProps['customRequest'] = async ({ file, onSuccess, onError }) => {
     setLoading(true)
@@ -18,29 +30,33 @@ export function ExcelSyncButton() {
         method: 'POST',
         body: formData,
       })
+      
+      if (!response.ok) {
+        throw new Error(`服务器响应错误: ${response.status}`)
+      }
+
       const result = await response.json()
       if (result.code === 200) {
         const { updated, inserted, migrated, deleted } = result.data
-        Modal.info({
-          title: '同步完成',
+        Modal.success({
+          title: '✅ 同步成功',
           content: (
-            <div>
-              <p>更新: {updated} 台</p>
-              <p>迁移: {migrated} 台</p>
-              <p>新增: {inserted} 台</p>
-              <p>停用: {deleted} 台</p>
+            <div style={{ marginTop: 10 }}>
+              <p>🔄 更新设备: <strong>{updated}</strong> 台</p>
+              <p>🚚 位置迁移: <strong>{migrated}</strong> 台</p>
+              <p>➕ 新增设备: <strong>{inserted}</strong> 台</p>
+              <p>🗑️ 自动停用: <strong>{deleted}</strong> 台</p>
             </div>
           ),
           onOk: () => window.location.reload(),
         })
         onSuccess?.(result)
       } else {
-        message.error(result.message || '同步失败')
-        onError?.(new Error(result.message))
+        throw new Error(result.message || '同步业务逻辑失败')
       }
-    } catch (e) {
-      message.error('网络错误，请重试')
-      onError?.(e as Error)
+    } catch (e: any) {
+      message.error(e.message || '网络请求失败，请检查连接')
+      onError?.(e)
     } finally {
       setLoading(false)
     }
@@ -51,10 +67,11 @@ export function ExcelSyncButton() {
       accept=".xls,.xlsx"
       showUploadList={false}
       customRequest={handleSync}
+      beforeUpload={beforeUpload}
       disabled={loading}
     >
-      <Button icon={<UploadOutlined />} loading={loading}>
-        {loading ? '同步中...' : '同步 Excel'}
+      <Button icon={<UploadOutlined />} loading={loading} type="primary">
+        {loading ? '正在同步...' : '同步 Excel'}
       </Button>
     </Upload>
   )
