@@ -564,7 +564,7 @@ Files changed: 334 across all 14 categories (core: energy auth refactor to Requi
 - [x] `frontend/src/app/(dashboard)/safety/hazard-identification-legacy/page.tsx` — 页面标题/Q9 — No `<h1>`. **RESOLVED** — now has `<h1>隐患识别（旧版）</h1>`. — severity: low
 - [x] `frontend/src/app/(dashboard)/safety/hazard-legacy/page.tsx` — 页面标题/Q9 — No `<h1>`. **RESOLVED** — now has `<h1>隐患管理（旧版）</h1>`. — severity: low
 
-##
+##### Uncertain findings
 ```
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
@@ -573,7 +573,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 - [x] `frontend/src/actions/administration.ts:13-67` — 类型系统/Q1 — Server Actions use `data: any`. **ACCEPTED** (deferred) — backend administration module is a stub (models.py, schemas.py empty). Frontend has TODO comments acknowledging this. Will fix when backend module is built. — severity: high
 - [x] `frontend/src/actions/equipment-personnel.ts:6-10` — 类型系统/Q1 — Imported from handwritten `@/types/equipment-personnel`. **RESOLVED** — now imports directly from `@/types/generated/schema` using `components['schemas']['RoleCreate']` etc. — severity: high
@@ -585,7 +585,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调�
 - [x] `frontend/src/lib/api/server/energy.ts:13` — API 调用层级 — Local `apiFetch`/`getApiBaseUrl()` duplicate `base.ts`. **RESOLVED** — now imports from `./base`. — severity: medium
 - [x] `frontend/src/types/generated/schema.ts` — 类型系统/Q6 — Drift against current backend OpenAPI spec unverified. **ACCEPTED** (needs CI run) — module code changes may require regenerating types. Run `pnpm generate:api` + `scripts/ci.sh openapi` to verify. — severity: low
 
-##
+##### Uncertain findings
 ```
 frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
 ```
@@ -598,7 +598,7 @@ frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Serv
 frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
 ```
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 - [x] `frontend/src/actions/inspection.ts:87` — Q6 / Actions must call lib/api — `uploadInspectionPhoto` directly fetches. **RESOLVED** — no raw `fetch()` calls remain on main. — severity: medium
 - [x] `frontend/src/actions/inspection.ts:115` — Q6 / Actions must call lib/api — `uploadTaskPhoto` directly fetches. **RESOLVED** — no raw `fetch()` calls remain. — severity: medium
@@ -606,7 +606,7 @@ frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Serv
 - [x] `frontend/src/actions/equipment.ts:420` — Q6 / Actions must call lib/api — `batchImportEquipment` directly fetches. **RESOLVED** — no raw `fetch()` calls remain. — severity: medium
 - [x] `frontend/src/actions/energy.ts:236` — Q6 / Actions must call lib/api — `syncMonthlyFromBitable` directly fetches. **RESOLVED** — now calls `syncMonthlyFromBitableApi()` through `lib/api/server`. — severity: medium
 
-##### Category 13: Docker and deployment
+#### Category 13: Docker and deployment
 
 - [x] `docker-compose.yml:98` — Docker/配置一致性 — Build arg `NEXT_PUBLIC_API_BASE_URL` not declared via `ARG`. **RESOLVED** — build arg no longer present on main. — severity: low
 - [x] `docker-compose.dev.yml:30` — 仓库通用规则/禁止硬编码 — `ALLOWED_DEV_ORIGINS: "8.138.238.190"` hardcodes IP. **RESOLVED** — now uses `"${ALLOWED_DEV_ORIGINS:-}"` (env var with empty default). — severity: low
@@ -816,7 +816,7 @@ _None._
 ##### Accepted exceptions
 _None._
 
-#
+##### Uncertain findings
 ```
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
@@ -825,7 +825,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 24 (actions, lib/api, types, components with type imports) |
 | Rules evaluated | 8 |
@@ -846,7 +846,7 @@ _None._
 ##### Accepted exceptions
 _None._
 
-#
+##### Uncertain findings
 ```
 frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
 ```
@@ -859,7 +859,7 @@ frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Serv
 frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
 ```
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 | Files inspected | 5 (lib/api/server, lib/api/client, actions with routing-relevant changes) |
 | Rules evaluated | 6 |
@@ -929,7 +929,7 @@ Files changed: 30 across categories 2, 3, 4, 6, 7, 9, 10, 11, 12, 14 (core: remo
 
 - [x] `frontend/src/app/(dashboard)/quality/cpv/page.tsx` — 页面标题/Q9 — No `<h1>` heading. Page renders `<CpvProductListClient>` without a semantic heading element. AGENTS.md requires every `page.tsx` to have an `<h1>` or `<Title level={1}>`. Every other page changed in this PR received an `<h1>` — this page was missed. — severity: medium — **RESOLVED** (added `<h1>CPV产品管理</h1>` at line 12)
 
-##
+##### Uncertain findings
 ```
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
@@ -938,11 +938,11 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 - [x] `frontend/src/actions/safety/helpers.ts:8` — apiFetch一致性/Q9 addendum — `getApiV1Url()` reads `process.env.API_BASE_URL` directly instead of relying solely on `getApiBaseUrl()` from `base.ts`. The function imports `getApiBaseUrl` from `base.ts` but also performs a direct `process.env.API_BASE_URL` null-check (line 8) before calling it. Since `getApiBaseUrl()` already provides a fallback (`http://backend:8000`), the direct `process.env` read bypasses this fallback and is redundant. Q9: "Are there `process.env.API_BASE_URL` reads outside of `lib/api/server/base.ts`?" — severity: high — **RESOLVED** (removed `process.env.API_BASE_URL` check; `getApiV1Url()` now simply returns `${getApiBaseUrl()}/api/v1`)
 
-#### Positive changes (not violations)
+##### Positive changes (not violations)
 
 - **`getApiBaseUrl()` consolidation**: 7 files (`dossier-writer.ts`, `safety/helpers.ts`, `agent-skills.ts`, `auth.ts`, `deviation.ts`, `procurement.ts`, `warehouse.ts`) had their duplicate `getApiBaseUrl()` definitions (all hardcoding `http://dazah-backend-app-1:8000` as fallback) removed and replaced with `import { getApiBaseUrl } from '@/lib/api/server/base'`. This eliminates 7 hardcoded URLs from the codebase.
 
@@ -958,15 +958,15 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调�
 
 - **`procurement.ts` data access fix**: Line 37 changed from `return data.data ?? data` (double-unwrapping when `data` is null) to `return data` (return full envelope — callers unwrap).
 
-#### Category 3: Backend module boundaries — Clean
+##### Category 3: Backend module boundaries — Clean
 
 All imports in `backend/app/modules/quality/cpv/` are from `app.core.*` (allowed global layer) or `app.modules.quality.cpv.*` (same module). No cross-module imports bypassing `public_api.py`. No new module directory created (cpv is a sub-path of existing `quality` module).
 
-#### Category 7: External services — Clean
+##### Category 7: External services — Clean
 
 `cpv_products.py` is a thin API layer that delegates to service layer. No external service calls, no `asyncio.create_task()`, no bare `except: pass`, no APScheduler usage.
 
-#### Category 12: OpenAPI — CI-verified
+##### Category 12: OpenAPI — CI-verified
 
 `backend/openapi.json` and `frontend/src/types/generated/schema.ts` both updated in sync. CI (`scripts/ci.sh openapi`) verifies drift.
 
@@ -1046,7 +1046,7 @@ Note: The PR also upgraded the 5 endpoints to proper Pydantic request/response s
 ##### Positive changes
 - `evaluation-form/page.tsx`, `sop-catalog/page.tsx`, `trainers/page.tsx`: Changed from raw `fetch()` to `apiGet()` from `@/lib/api/client` ✓
 
-#
+##### Uncertain findings
 ```
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/workshops?category=workshop\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
@@ -1055,7 +1055,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 51 |
 | Files not inspected | 2 (http-client.ts, http-server.ts — confirmed deleted) |
@@ -1081,7 +1081,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调�
 - 13 server API modules consolidated to import from `@/lib/api/server/base` instead of local helper copies ✓
 - `deviation.ts`, `dossier-writer.ts`, `actions/safety/helpers.ts` had duplicate `getApiBaseUrl` definitions removed ✓
 
-#
+##### Uncertain findings
 ```
 frontend/src/lib/api/client/energy.ts:1 — API 类型来源/禁止手写 API 类型 — import type { EnergyOverviewData, CollectLogDetail, PaginatedResponse } from '@/types/energy'; these are hand-written API response types that should come from generated schema. — severity: medium
 ```
@@ -1094,7 +1094,7 @@ frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Serv
 frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
 ```
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 | Files inspected | 36 |
 | Rules evaluated | 6 |
@@ -1147,7 +1147,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 1 |
 | Files not inspected | 0 |
@@ -1156,16 +1156,16 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调�
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Positive changes
+##### Positive changes
 - `fetchWithRetry()` added as internal helper with bounded `maxRetries=2` and 500ms linear backoff — prevents transient Docker DNS (127.0.0.11) failures from cascading into SSR errors ✓
 - Applied to `apiFetch()` and `safeApiFetch()` calls ✓
 - `apiFetchRaw()` correctly left unchanged (used for SSE/streaming where retry is inappropriate) ✓
 - No new `apiFetch` variants introduced — `fetchWithRetry` is an internal helper, not a public API ✓
 
-#### Accepted exceptions
+##### Accepted exceptions
 _None._
 
 
@@ -1181,7 +1181,7 @@ frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Serv
 frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
 ```
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 | Files inspected | 1 |
 | Files not inspected | 0 |
@@ -1192,12 +1192,12 @@ frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Serv
 
 No changes to `proxy.ts`. All server-side calls use `getApiBaseUrl()`. `getApiBaseUrl()` definition remains canonical in `base.ts`. No violations.
 
-### Categories not affected
+#### Categories not affected
 
 Category 2 (Secrets) — no new hardcoded URLs or credentials; the `http://backend:8000` fallback is the canonical definition and pre-existing.
 Categories 1, 3-9, 12-14 — no changed files in scope.
 
-### Category summary
+#### Category summary
 
 | Category | Blocking | High | Medium | Low | Note |
 |---|---|---|---|---|---|
@@ -1242,7 +1242,7 @@ Categories 1, 3-9, 12-14 — no changed files in scope.
 
 ---
 
-### Category 1: Repository layout
+#### Category 1: Repository layout
 
 | Files inspected | 2 (`.gitattributes`, `scripts/ci.sh`) |
 | Files not inspected | 0 |
@@ -1251,14 +1251,14 @@ Categories 1, 3-9, 12-14 — no changed files in scope.
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 `scripts/ci.sh` is the documented cross-project CI script at repo root (per AGENTS.md "跨项目CI"). `.gitattributes` adds `text eol=lf` for generated files — correct.
 
 ---
 
-### Category 2: Secrets and hardcoded values
+#### Category 2: Secrets and hardcoded values
 
 | Files inspected | 24 (all changed files) |
 | Files not inspected | 0 |
@@ -1267,7 +1267,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - `frontend/src/lib/api/server/base.ts` — `http://backend:8000` fallback is the canonical pre-existing definition, uses env var first.
@@ -1275,7 +1275,7 @@ _None._
 
 ---
 
-### Category 3: Backend module boundaries
+#### Category 3: Backend module boundaries
 
 | Files inspected | 8 (all `backend/app/modules/production/product/*` files + `alembic/env.py`) |
 | Files not inspected | 0 |
@@ -1284,7 +1284,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - All new backend code is within `backend/app/modules/production/product/` — same module, no cross-module boundary violations.
@@ -1295,7 +1295,7 @@ _None._
 
 ---
 
-### Category 4: API and authentication
+#### Category 4: API and authentication
 
 | Files inspected | 2 (`output_api.py`, `sync_config_api.py`) |
 | Files not inspected | 0 |
@@ -1304,10 +1304,10 @@ _None._
 | Confirmed findings | 1 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Security concern (outside AGENTS.md audit scope) — RESOLVED
+##### Security concern (outside AGENTS.md audit scope) — RESOLVED
 - ~~⚠️ **`backend/app/modules/production/product/output_api.py:~630-645`** — **SQL注入风险**~~ — 已修复。`import_from_bitable` 端点现在使用 SQLAlchemy ORM 的 `and_()`、`or_()`、`not_()` 构建查询，不再使用 f-string 拼接 SQL。
 
   **问题代码：**
@@ -1349,7 +1349,7 @@ _None._
       query = select(...).where(ProductOutput.is_deleted == False, or_(*conditions))
   ```
 
-#### Positive observations
+##### Positive observations
 - All endpoints require `RequiredUser` authentication ✓
 - All responses use `ApiResponse` wrapper ✓
 - Delete operations use soft delete (`is_deleted = true`) ✓
@@ -1358,7 +1358,7 @@ _None._
 
 ---
 
-### Category 5: Models and migrations
+#### Category 5: Models and migrations
 
 | Files inspected | 5 (`alembic/env.py`, 2 migrations, `output_models.py`, `sync_operation_log_model.py`) |
 | Files not inspected | 0 |
@@ -1367,7 +1367,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - Migration `0054` adds `import_batch_id` column to `production.product_outputs` — single module, correct schema.
@@ -1379,7 +1379,7 @@ _None._
 
 ---
 
-### Category 6: Configuration and logging
+#### Category 6: Configuration and logging
 
 | Files inspected | 2 (`feishu/sync.py`, `output_service.py`) |
 | Files not inspected | 0 |
@@ -1388,7 +1388,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - `feishu/sync.py` uses `logger.info()` and `logger.exception()` — no sensitive data in log messages.
@@ -1397,7 +1397,7 @@ _None._
 
 ---
 
-### Category 7: External services and background tasks
+#### Category 7: External services and background tasks
 
 | Files inspected | 2 (`feishu/sync.py`, `sync_config_api.py`) |
 | Files not inspected | 0 |
@@ -1406,7 +1406,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - `feishu/sync.py` — Feishu Bitable sync service. All operations are synchronous (awaited). No `asyncio.create_task()` usage.
@@ -1415,7 +1415,7 @@ _None._
 
 ---
 
-### Category 8: Backend tests
+#### Category 8: Backend tests
 
 | Files inspected | 0 |
 | Rules evaluated | 0 |
@@ -1423,7 +1423,7 @@ _None._
 
 ---
 
-### Category 9: Frontend component boundaries
+#### Category 9: Frontend component boundaries
 
 | Files inspected | 4 (2 page files, `AnnualReviewTab.tsx`, `ProductSyncConfig.tsx`) |
 | Files not inspected | 0 |
@@ -1432,7 +1432,7 @@ _None._
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - All components have `'use client'` directive ✓
@@ -1452,7 +1452,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:41 — 前端/API 调�
 frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调用层级 — Raw fetch(\`/api/v1/energy/production/output?workshop_id=...\`) in client component bypassing Server Actions and the apiFetch layer entirely. — severity: high
 ```
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 6 (`actions/product-output.ts`, `actions/product-sync.ts`, `lib/api/server/base.ts`, `lib/api/server/product-output.ts`, `types/generated/schema.ts`, `types/product-output.ts`) |
 | Files not inspected | 0 |
@@ -1461,7 +1461,7 @@ frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:100 — 前端/API 调�
 | Confirmed findings | 0 |
 | Uncertain findings | 0 |
 
-#### Confirmed
+##### Confirmed
 _None._
 
 - All `'use server'` files import types (not define them) ✓
@@ -1473,7 +1473,7 @@ _None._
 - `.gitattributes` ensures `text eol=lf` for generated files ✓
 - `base.ts` adds `fetchWithRetry()` with bounded retries — pre-existing from PR #28, unchanged ✓
 
-#### Minor observation (not a finding)
+##### Minor observation (not a finding)
 - `lib/api/server/product-output.ts` prepends `getApiBaseUrl()` explicitly in every call (e.g., `${getApiBaseUrl()}/api/v1/...`). Other server API modules pass relative paths to `apiFetch()` which handles the base URL internally. This is redundant but not a rule violation.
 
 ---
@@ -1491,7 +1491,7 @@ frontend/src/components/energy/TargetModal.tsx:53 — 写操作必须通过 Serv
 frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Server Actions — result = await createTarget({ workshop_id, target_month, target_unit_consumption }); POST operation called directly from client component; no revalidatePath triggered. — severity: blocking
 ```
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 | Files inspected | 0 |
 | Rules evaluated | 0 |
@@ -1499,7 +1499,7 @@ frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Serv
 
 ---
 
-### Category 12: Cross-project OpenAPI
+#### Category 12: Cross-project OpenAPI
 
 | Files inspected | 2 (`.gitattributes`, `types/generated/schema.ts`) |
 | Rules evaluated | 3 |
@@ -1509,13 +1509,13 @@ frontend/src/components/energy/TargetModal.tsx:59 — 写操作必须通过 Serv
 
 ---
 
-### Categories not affected
+#### Categories not affected
 
 Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), Category 14 (E2E) — no changed files in scope.
 
 ---
 
-### Category summary
+#### Category summary
 
 | Category | Blocking | High | Medium | Low | Note |
 |---|---|---|---|---|---|
@@ -1546,7 +1546,7 @@ Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), C
 
 ---
 
-### Category 1: Repository layout
+#### Category 1: Repository layout
 
 | Files inspected | 59 (all changed files) |
 | Files not inspected | 0 |
@@ -1556,15 +1556,15 @@ Category 8 (Backend tests), Category 11 (Proxy/routing), Category 13 (Docker), C
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 2: Secrets and hardcoded values
+#### Category 2: Secrets and hardcoded values
 
 | Files inspected | 59 (all changed files) |
 | Files not inspected | 0 |
@@ -1574,15 +1574,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 3: Backend module boundaries
+#### Category 3: Backend module boundaries
 
 | Files inspected | 15 (energy module files) |
 | Files not inspected | 0 |
@@ -1592,15 +1592,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 4: API and authentication
+#### Category 4: API and authentication
 
 | Files inspected | 3 (energy/api.py, energy/public_api.py, equipment/api/*.py) |
 | Files not inspected | 0 |
@@ -1610,15 +1610,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 - [x] `backend/app/modules/energy/service.py:502-503` — API 规范/必须: 业务异常使用 app/core/exceptions.py — Duplicate `raise NotFoundException` statement. Line 502 raises with `data.workshop_id` (UUID object), line 503 raises with `str(data.workshop_id)`. The second raise is unreachable dead code. — severity: medium — **RESOLVED**
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 5: Models and migrations
+#### Category 5: Models and migrations
 
 | Files inspected | 4 (energy/models.py, 3 migration files) |
 | Files not inspected | 0 |
@@ -1628,16 +1628,16 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 - [x] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:22-23` — 模型与迁移/迁移规范 — Duplicate `op.execute('CREATE SCHEMA IF NOT EXISTS energy')` statement. The schema creation is executed twice. — severity: low — **RESOLVED**
 - [x] `backend/alembic/versions/29a5a96069e8_add_energy_product_conversion_table.py:56-119` — 模型与迁移/迁移规范 — Migration `downgrade()` function contains duplicate operations: `op.drop_table('energy_product_conversions', schema='energy')` appears twice (lines 56 and 119), and multiple FK/index operations are duplicated. The downgrade function is malformed and will fail if executed. — severity: high — **RESOLVED**
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 6: Configuration and logging
+#### Category 6: Configuration and logging
 
 | Files inspected | 59 (all changed files) |
 | Files not inspected | 0 |
@@ -1647,15 +1647,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 7: External services and background tasks
+#### Category 7: External services and background tasks
 
 | Files inspected | 2 (energy/service.py, energy/scheduler.py) |
 | Files not inspected | 0 |
@@ -1665,15 +1665,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 8: Backend tests
+#### Category 8: Backend tests
 
 | Files inspected | 1 (tests/modules/energy/test_unit_consumption.py) |
 | Files not inspected | 0 |
@@ -1683,15 +1683,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 9: Frontend component boundaries
+#### Category 9: Frontend component boundaries
 
 | Files inspected | 5 (frontend page and component files) |
 | Files not inspected | 0 |
@@ -1701,15 +1701,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 4 (frontend API client files) |
 | Files not inspected | 0 |
@@ -1719,18 +1719,18 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 - [x] `frontend/src/lib/api/client/energy.ts:13-103` — 前端 API/必须使用 apiFetch — Multiple functions (`fetchEnergyOverviewClient`, `fetchCollectLogDetailClient`, `fetchPlatformsClient`, `fetchAlertRules`, `fetchAlertRecords`, `fetchMonthlyRecordsClient`, `fetchWorkshopsClient`, `fetchMonthlySummaryClient`) use raw `fetch()` instead of `apiFetch<T>()`. This violates the API client consistency rule. — severity: high — **RESOLVED**
 - [x] `frontend/src/lib/api/client/energy.ts:186-202` — 前端 API/必须使用 apiFetch — `analyzeEnergyV2()` function uses raw `fetch()` with manual JSON parsing instead of `apiFetch<AIAnalysisResult>()`. — severity: high — **RESOLVED**
 - [x] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:44-58` — 前端 API/必须使用 apiFetch — Component uses raw `fetch()` to call `/api/v1/energy/workshops` instead of using the proper API client from `@/lib/api/client/energy`. This bypasses the standardized error handling and type safety. — severity: medium — **RESOLVED**
 - [x] `frontend/src/app/(dashboard)/energy/ai-analysis/page.tsx:107-118` — 前端 API/必须使用 apiFetch — `handleSyncProduction()` uses raw `fetch()` to call `/api/v1/energy/production/output` instead of using a typed API client function. — severity: medium — **RESOLVED**
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 11: Proxy and routing
+#### Category 11: Proxy and routing
 
 | Files inspected | 2 (proxy.ts, menu-config.ts) |
 | Files not inspected | 0 |
@@ -1740,15 +1740,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 12: Cross-project OpenAPI
+#### Category 12: Cross-project OpenAPI
 
 | Files inspected | 2 (client API files) |
 | Files not inspected | 0 |
@@ -1758,15 +1758,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 13: Docker and deployment
+#### Category 13: Docker and deployment
 
 | Files inspected | 3 (docker-compose.dev.yml, scripts/ci.sh, scripts/dev.sh) |
 | Files not inspected | 0 |
@@ -1776,15 +1776,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 14: E2E
+#### Category 14: E2E
 
 | Files inspected | 2 (e2e test files) |
 | Files not inspected | 0 |
@@ -1794,15 +1794,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Category 15: SQL injection and unsafe queries
+#### Category 15: SQL injection and unsafe queries
 
 | Files inspected | 3 (energy/repository.py, energy/service.py, energy/models.py) |
 | Files not inspected | 0 |
@@ -1812,15 +1812,15 @@ _None._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 - [x] `backend/app/modules/energy/repository.py:67` — 安全规则/SQL 查询 — Uses f-string to build `ilike` pattern: `EnergyDeviceConfig.device_name.ilike(f"%{keyword}%")`. While SQLAlchemy's `ilike()` method does parameterize the value, the f-string construction bypasses proper LIKE wildcard escaping. If `keyword` contains `%` or `_` characters, they will be interpreted as wildcards rather than literal characters. Should use `ilike(f"%{keyword.replace('%', '\\%').replace('_', '\\_')}%")` or SQLAlchemy's `contains()` method. — severity: medium — **RESOLVED**
 
-#### Uncertain
+##### Uncertain
 _None._
 
 ---
 
-### Summary
+#### Summary
 
 | Category | Confirmed | Uncertain | Severity |
 |----------|-----------|-----------|----------|
@@ -1841,21 +1841,21 @@ _None._
 | 15. SQL injection and unsafe queries | 1 | 0 | medium |
 | **Total** | **8** | **0** | — |
 
-#### Blocking issues
+##### Blocking issues
 1. **Migration downgrade is broken** (Category 5) — The `downgrade()` function in `29a5a96069e8_add_energy_product_conversion_table.py` contains duplicate operations and will fail if executed.
 
-#### High priority
+##### High priority
 2. **Frontend API client inconsistency** (Category 10) — Multiple frontend functions use raw `fetch()` instead of `apiFetch<T>()`, bypassing standardized error handling and type safety.
 
-#### Medium priority
+##### Medium priority
 3. **Dead code in service layer** (Category 4) — Duplicate `raise` statement in `create_monthly_record()`.
 4. **Raw fetch in page component** (Category 10) — AI analysis page uses raw `fetch()` instead of API client.
 5. **SQL LIKE wildcard escaping** (Category 15) — `ilike` pattern construction doesn't escape special characters.
 
-#### Low priority
+##### Low priority
 6. **Duplicate schema creation** (Category 5) — Migration executes `CREATE SCHEMA` twice.
 
-#### Resolution status (updated 2026-08-17)
+##### Resolution status (updated 2026-08-17)
 
 All 8 findings have been resolved in commits:
 - `23ad2d7 fix: resolve PR audit findings` — Fixed 7 findings (migration downgrade, frontend API consistency, dead code, raw fetch usage, SQL LIKE escaping)
@@ -1869,7 +1869,7 @@ All 8 findings have been resolved in commits:
 
 ### PR #31 — Ruanjiaheng (audit date: 2026-08-18)
 
-### Audit scope
+#### Audit scope
 - **PR**: [#31](https://github.com/Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm/pull/31)
 - **Base**: `main`
 - **Head**: `ruanjiaheng` (SHA `2e79101`)
@@ -1879,7 +1879,7 @@ All 8 findings have been resolved in commits:
 
 ---
 
-### Category 1: Repository layout
+#### Category 1: Repository layout
 
 | Files inspected | 233 (all changed files) |
 | Files not inspected | 0 |
@@ -1889,7 +1889,7 @@ All 8 findings have been resolved in commits:
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 
 - [x] `fix-any-progress.json:1` — repo root cleanliness — scratch state file from local fix-any-types.sh run (JSON progress tracker, status "completed") — severity: **blocking** — **RESOLVED**
 - [x] `fix-any-types.sh:1` — repo root cleanliness — local bash script with hardcoded absolute path `/home/ruanjiaheng/projects/Livzon-Syntpharm` — severity: **blocking** — **RESOLVED**
@@ -1897,15 +1897,15 @@ All 8 findings have been resolved in commits:
 - [x] `lint-output.txt:1` — repo root cleanliness — raw ESLint output dump, 1653+ warnings — severity: **blocking** — **RESOLVED**
 - [x] `frontend/src/lib/static-data-api.ts:1` — frontend layout rule 8 (lib/api/client/ for browser GET APIs) — file is a client-side fetch API (客户端直连 API 客户端, uses browser fetch), but lives in lib/ root instead of lib/api/client/ — severity: **medium** (pre-existing, but touched by PR) — **RESOLVED**
 
-#### Uncertain
+##### Uncertain
 _None._
 
-#### Accepted exceptions
+##### Accepted exceptions
 _None yet._
 
 ---
 
-### Category 2: Secrets and hardcoded values
+#### Category 2: Secrets and hardcoded values
 
 | Files inspected | 233 (all changed files) |
 | Files not inspected | 0 |
@@ -1915,7 +1915,7 @@ _None yet._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 
 - [x] `fix-any-types.sh:5` — Rule 1 (No hardcoded absolute paths) — `PROJECT_DIR="/home/ruanjiaheng/projects/Livzon-Syntpharm"` — severity: **blocking** — **RESOLVED**
 - [x] `lint-output.txt:1-800+` — Rule 1 (No hardcoded absolute paths) — Multiple instances of `/home/ruanjiaheng/projects/Livzon-Syntpharm/frontend/...` — severity: **blocking** — **RESOLVED**
@@ -1923,20 +1923,20 @@ _None yet._
 - [x] `fix-any-progress.json:1-11` — Build artifact committed — severity: **blocking** — **RESOLVED**
 - [x] `frontend/src/lib/api/server/base.ts:100` — Rule 3 (No API keys/tokens in logs/exceptions) — Error message exposes internal backend URL: `网络请求失败，无法连接到后端服务 (${getApiBaseUrl()}${endpoint})` — severity: **medium** — **RESOLVED**
 
-#### False positives (corrected)
+##### False positives (corrected)
 The following were initially flagged but are acceptable patterns:
 - `frontend/Dockerfile:44` and `docker-compose.yml:110` — `http://backend:8000` is Docker's internal service discovery hostname, not a hardcoded secret. AGENTS.md rule targets `localhost`/`127.0.0.1`, not Docker network names.
 - CI dummy credentials (`POSTGRES_PASSWORD: postgres`, `FEISHU__PLATFORM__APP_SECRET: ci_dummy`, etc.) — Intentional dummy values for ephemeral CI test environments. Standard practice.
 
-#### Uncertain
+##### Uncertain
 _None._
 
-#### Accepted exceptions
+##### Accepted exceptions
 _None yet._
 
 ---
 
-### Category 9: Frontend component boundaries
+#### Category 9: Frontend component boundaries
 
 | Files inspected | 168 |
 | Files not inspected | 0 |
@@ -1946,10 +1946,10 @@ _None yet._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### False positives (corrected)
+##### False positives (corrected)
 The following were initially flagged but are acceptable patterns:
 - `PersonnelInfo.tsx` missing 'use client' — Only imported by `PersonnelTable.tsx` which already has 'use client', so it inherits the client boundary.
 - 5 deep imports (energy/ai-analysis, hr/training/evaluation-form, production/product-output, safety/knowledge-base, safety/regulation) — These are **intra-module imports** (same module importing from itself), which are allowed:
@@ -1959,15 +1959,15 @@ The following were initially flagged but are acceptable patterns:
 - `safety/knowledge-base/graph/page.tsx:1` → `@/components/safety/KnowledgeGraphPanel` (safety → safety)
 - `safety/regulation/generator/page.tsx:6` → `@/components/safety/SopGeneratorPanel` (safety → safety)
 
-#### Uncertain
+##### Uncertain
 _None._
 
-#### Accepted exceptions
+##### Accepted exceptions
 _None yet._
 
 ---
 
-### Category 10: Frontend API and generated types
+#### Category 10: Frontend API and generated types
 
 | Files inspected | 30 |
 | Files not inspected | 0 |
@@ -1977,16 +1977,16 @@ _None yet._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 _None._
 
-#### Accepted exceptions
+##### Accepted exceptions
 _None yet._
 
-#### Notes
+##### Notes
 This PR introduces **zero new violations** in Category 10. All changes are safe code cleanup:
 - 15 files: Removed unused imports (revalidatePath, z, apiFetchRaw, unwrapResponse, create, enum imports)
 - 10 files: Prefixed unused variables/parameters with `_` to satisfy linter
@@ -1996,7 +1996,7 @@ Total diff: 28 insertions(+), 38 deletions(-)
 
 ---
 
-### Category 12: Cross-project OpenAPI
+#### Category 12: Cross-project OpenAPI
 
 | Files inspected | 3 (dossier-writer.ts, hr.ts, regulatory-tracker.ts) |
 | Files not inspected | 0 |
@@ -2006,12 +2006,12 @@ Total diff: 28 insertions(+), 38 deletions(-)
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None in PR changes._
 
 ---
 
-### Category 13: Docker and deployment
+#### Category 13: Docker and deployment
 
 | Files inspected | 7 (Dockerfile, docker-compose.*, ci.yml, ci.sh) |
 | Files not inspected | 0 |
@@ -2021,12 +2021,12 @@ _None in PR changes._
 | Uncertain findings | 0 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 
 - [x] `scripts/ci.sh:213` — Rule 7 (env vars, not hardcoded paths) — `PATH="/home/ruanjiaheng/.local/bin:$PATH"` hardcodes developer's home directory — severity: **blocking** — **RESOLVED**
 - [x] `scripts/ci.sh:181` — Rule 7 (no hardcoded URLs) — `docker compose ... build ci-build` rebuilds frontend image, ignoring pre-built artifact — severity: **medium** — **RESOLVED**
 
-#### False positives (corrected)
+##### False positives (corrected)
 The following were initially flagged but are acceptable patterns:
 - `frontend/Dockerfile:44` and `docker-compose.yml:110` — `http://backend:8000` is Docker's internal service discovery, not a hardcoded secret.
 - `docker-compose.yml:63,79` — `redis://erp-redis:6379/0` is Docker's internal service discovery.
@@ -2037,7 +2037,7 @@ The following were initially flagged but are acceptable patterns:
 
 ---
 
-### Category 14: E2E
+#### Category 14: E2E
 
 | Files inspected | 1 (routes.spec.ts) |
 | Files not inspected | 0 |
@@ -2047,15 +2047,15 @@ The following were initially flagged but are acceptable patterns:
 | Uncertain findings | 1 |
 | Status | complete |
 
-#### Confirmed
+##### Confirmed
 _None._
 
-#### Uncertain
+##### Uncertain
 - [x] `frontend/e2e/routes.spec.ts:110` — `_iframe` helper is defined but unused (now prefixed with _) — severity: low (dead code observation) — **RESOLVED**
 
 ---
 
-### Summary
+#### Summary
 
 | Category | Confirmed | Uncertain | Severity |
 |----------|-----------|-----------|----------|
@@ -2068,23 +2068,23 @@ _None._
 | 14. E2E | 0 | 1 | low |
 | **Total** | **12** | **1** | **5 blocking, 2 medium, 1 low** |
 
-#### Blocking issues (must fix before merge)
+##### Blocking issues (must fix before merge)
 
 1. **Scratch files at repo root** (Category 1) — Remove `fix-any-progress.json`, `fix-any-types.sh`, `fix-any.log`, `lint-output.txt` and add to `.gitignore`
 2. **Hardcoded developer path in CI script** (Category 13) — `scripts/ci.sh:213` contains `/home/ruanjiaheng/.local/bin`
 3. **Missing 'use client' directive** (Category 9) — `PersonnelInfo.tsx` exports React component using antd without 'use client'
 
-#### High priority
+##### High priority
 
 4. **Dead CI artifact pipeline** (Category 13) — `scripts/ci.sh:181` rebuilds frontend, ignoring pre-built artifact
 5. **Hardcoded backend URL in Dockerfile** (Category 2, 13) — Should use build arg
 
-#### Medium priority
+##### Medium priority
 
 6. **Error message leaks internal backend URL** (Category 2) — `base.ts:100` exposes `getApiBaseUrl()` to client
 7. **Client API file in wrong directory** (Category 1) — `static-data-api.ts` should be in `lib/api/client/`
 
-#### Low priority
+##### Low priority
 
 8. **Unused `_iframe` helper** (Category 14) — Dead code in E2E test
 
