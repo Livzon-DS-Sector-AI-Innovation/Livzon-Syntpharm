@@ -65,24 +65,29 @@ def main() -> None:
         service = OCRService()
         logger.info("[Worker] Models loaded successfully")
 
-        # Process all pages
+        # Process pages in batches to balance memory and speed
+        batch_size = 3  # Process 3 pages at a time
         page_results = []
 
-        for page_num in range(1, total_pages + 1):
-            logger.info(f"[Worker] Processing page {page_num}/{total_pages}...")
+        for batch_start in range(1, total_pages + 1, batch_size):
+            batch_end = min(batch_start + batch_size - 1, total_pages)
+            logger.info(f"[Worker] Converting pages {batch_start}-{batch_end}/{total_pages}...")
 
-            # Convert page to image
+            # Convert batch of pages to images
             images = convert_from_path(
                 str(file_path),
                 dpi=200,
-                first_page=page_num,
-                last_page=page_num,
+                first_page=batch_start,
+                last_page=batch_end,
             )
 
-            if not images:
-                raise RuntimeError(f"Failed to convert page {page_num} to image")
+            if len(images) != (batch_end - batch_start + 1):
+                raise RuntimeError(f"Expected {batch_end - batch_start + 1} images, got {len(images)}")
 
-            img_array = images[0]
+            # Process each page in the batch
+            for i, img_array in enumerate(images):
+                page_num = batch_start + i
+                logger.info(f"[Worker] Processing page {page_num}/{total_pages}...")
 
             # Single inference call - get both markdown and structure
             structure_result = service.extract_structure(img_array)
