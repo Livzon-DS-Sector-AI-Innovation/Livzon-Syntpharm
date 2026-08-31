@@ -4,12 +4,14 @@ import '../../../../styles/industrial-theme.css';
 import { useEffect, useCallback, useState } from 'react'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
+import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
-import { CategoryTree, EquipmentDrawer, EquipmentTable, FilterSummary, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
+import { message, Upload } from 'antd'
+import type { UploadProps } from 'antd'
+import { CategoryTree, EquipmentDrawer, EquipmentTable, ExcelSyncButton, FilterSummary, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
@@ -173,6 +175,7 @@ export function EquipmentPage({
     },
   ]
 
+  const syncButton = <ExcelSyncButton />
   const tabBarExtra = (selectedCategory || selectedLocation) ? (
     <Button
       type="text"

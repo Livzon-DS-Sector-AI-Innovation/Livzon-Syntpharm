@@ -280,3 +280,14 @@ async def batch_delete_equipments(
     """批量删除设备"""
     deleted_count = await service.batch_delete_equipments(db, data.ids)
     return build_response(message=f"成功删除 {deleted_count} 台设备")
+
+@router.post("/equipments/sync-excel", summary="智能同步 Excel 设备数据")
+async def sync_equipments_excel(
+    file: UploadFile = File(...),
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """上传 Excel 文件并执行智能同步"""
+    content = await file.read()
+    result = await service.sync_equipments_from_excel(db, content)
+    return build_response(data=result.model_dump())

@@ -288,3 +288,184 @@ async def batch_delete_equipments(db: AsyncSession, ids: list[uuid.UUID]) -> int
             deleted_count += 1
     await db.commit()
     return deleted_count
+
+# ==================== Excel 智能同步 ====================
+import pandas as pd
+from io import BytesIO
+
+async def sync_equipments_from_excel(db: AsyncSession, file_content: bytes) -> dict:
+    """从 Excel 文件内容智能同步设备数据"""
+    try:
+        df = pd.read_excel(BytesIO(file_content), header=4)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+    # 加载部门和位置映射
+    dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
+    dept_map = {n: i for i, n in dept_result.fetchall()}
+    valid_depts = set(dept_map.keys())
+    
+    loc_result = await db.execute(select(Location.id, Location.name))
+    loc_map = {n: i for i, n in loc_result.fetchall()}
+
+    # 部门映射逻辑
+    DEPT_MAPPING = {
+        "头孢合成一车间": "201车间", "头孢合成二车间": "202车间",
+        "头孢精制一车间": "301车间", "头孢精制二车间": "302车间", "头孢精制三车间": "303车间",
+        "非头孢一车间": "101车间", "非头孢二车间": "102车间", "非头孢三车间": "103车间",
+        "非头孢五车间": "105车间", "非头孢六车间": "106车间", "非头孢七车间": "107车间",
+        "环保中心": "安全环保部", "安全中心": "安全环保部", "检验室": "质量控制部",
+        "质量部": "质量保证部", "仪表电工班": "设备工程部", "机修班": "动力部",
+        "制冷班": "动力部", "锅炉制水班": "动力部", "工程部": "设备工程部",
+        "实验室": "技术研发部", "仓库": "生产部", "炊事班": "人事行政部",
+        "头孢精制制造部": "头孢无菌制造部", "头孢合成制造部": "头孢无菌制造部",
+        "生产管理部": "生产部",
+    }
+    for i in range(401, 406):
+        DEPT_MAPPING[f"溶剂回收车间-{i}岗"] = "溶剂回收车间"
+
+    def get_std_dept(raw):
+        if not raw or pd.isna(raw): return None
+        raw = str(raw).strip()
+        return DEPT_MAPPING.get(raw, raw if raw in valid_depts else None)
+
+    # 建立数据库索引
+    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
+    all_active = equip_result.scalars().all()
+    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    asset_index = {}
+    for e in all_active:
+        asset_index.setdefault(e.asset_no, []).append(e)
+
+    updated, inserted, migrated = 0, 0, 0
+    processed_ids = set()
+
+    for _, row in df.iterrows():
+        asset_no = str(row['资产编号']).strip()
+        if not asset_no: continue
+        
+        std_dept = get_std_dept(row['实物所在部门'])
+        dept_id = dept_map.get(std_dept) if std_dept else None
+        loc_text = str(row['实物所在地点']).strip() if pd.notna(row['实物所在地点']) and str(row['实物所在地点']).strip() != '-' else None
+        loc_id = loc_map.get(loc_text) if loc_text else None
+
+        target_key = (asset_no, dept_id, loc_id)
+        target_equip = combo_index.get(target_key)
+
+        update_vals = {
+            "name": str(row['设备名称']).strip(),
+            "department_id": dept_id, "location_id": loc_id, "location_text": loc_text,
+            "current_cost": float(row['当前成本']) if pd.notna(row['当前成本']) else None,
+            "book_value": float(row['帐面净值']) if pd.notna(row['帐面净值']) else None,
+            "status": "在用", 
+            "model": str(row['型号']).strip() if pd.notna(row['型号']) else None,
+            "manufacturer": str(row['制造商']).strip() if pd.notna(row['制造商']) else None,
+            "commissioning_date": row['启用日期'] if pd.notna(row['启用日期']) else None,
+        }
+
+        if target_equip:
+            await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**update_vals))
+            processed_ids.add(target_equip.id)
+            updated += 1
+        elif asset_no in asset_index:
+            old_equip = asset_index[asset_no][0]
+            await db.execute(update(Equipment).where(Equipment.id == old_equip.id).values(**update_vals))
+            processed_ids.add(old_equip.id)
+            migrated += 1
+        else:
+            new_e = Equipment(asset_no=asset_no, is_deleted=False, **update_vals)
+            db.add(new_e)
+            inserted += 1
+
+    # 软删除
+    deleted_count = 0
+    for e in all_active:
+        if e.id not in processed_ids:
+            await db.execute(update(Equipment).where(Equipment.id == e.id).values(is_deleted=True))
+            deleted_count += 1
+
+    return {"updated": updated, "inserted": inserted, "migrated": migrated, "deleted": deleted_count}
+
+# ==================== Excel 智能同步 ====================
+import pandas as pd
+from io import BytesIO
+
+DEPT_MAPPING = {
+    "头孢合成一车间": "201车间", "头孢合成二车间": "202车间",
+    "头孢精制一车间": "301车间", "头孢精制二车间": "302车间", "头孢精制三车间": "303车间",
+    "非头孢一车间": "101车间", "非头孢二车间": "102车间", "非头孢三车间": "103车间",
+    "非头孢五车间": "105车间", "非头孢六车间": "106车间", "非头孢七车间": "107车间",
+    "环保中心": "安全环保部", "安全中心": "安全环保部", "检验室": "质量控制部",
+    "质量部": "质量保证部", "仪表电工班": "设备工程部", "机修班": "动力部",
+    "制冷班": "动力部", "锅炉制水班": "动力部", "工程部": "设备工程部",
+    "实验室": "技术研发部", "仓库": "生产部", "炊事班": "人事行政部",
+    "头孢精制制造部": "头孢无菌制造部", "头孢合成制造部": "头孢无菌制造部",
+    "生产管理部": "生产部",
+}
+for i in range(401, 406):
+    DEPT_MAPPING[f"溶剂回收车间-{i}岗"] = "溶剂回收车间"
+
+def _get_standard_dept(raw_dept: str | None, valid_depts: set) -> str | None:
+    if not raw_dept or pd.isna(raw_dept): return None
+    raw = str(raw_dept).strip()
+    return DEPT_MAPPING.get(raw, raw if raw in valid_depts else None)
+
+async def sync_equipments_from_excel(db: AsyncSession, file_content: bytes) -> EquipmentSyncResult:
+    """从 Excel 文件内容智能同步设备数据 (TB-01 最小闭环版)"""
+    try:
+        df = pd.read_excel(BytesIO(file_content), header=4)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+    # 1. 加载基础映射
+    dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
+    dept_map = {n: i for i, n in dept_result.fetchall()}
+    valid_depts = set(dept_map.keys())
+    
+    loc_result = await db.execute(select(Location.id, Location.name))
+    loc_map = {n: i for i, n in loc_result.fetchall()}
+
+    # 2. 建立数据库索引
+    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
+    all_active = equip_result.scalars().all()
+    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    
+    updated, inserted, migrated, deleted = 0, 0, 0, 0
+    processed_ids = set()
+
+    # 3. 遍历 Excel 执行同步
+    for _, row in df.iterrows():
+        asset_no = str(row['资产编号']).strip()
+        if not asset_no: continue
+        
+        std_dept = _get_standard_dept(row['实物所在部门'], valid_depts)
+        dept_id = dept_map.get(std_dept) if std_dept else None
+        
+        loc_text = str(row['实物所在地点']).strip() if pd.notna(row['实物所在地点']) and str(row['实物所在地点']).strip() != '-' else None
+        loc_id = loc_map.get(loc_text) if loc_text else None
+
+        target_key = (asset_no, dept_id, loc_id)
+        target_equip = combo_index.get(target_key)
+
+        update_vals = {
+            "name": str(row['设备名称']).strip(),
+            "department_id": dept_id, "location_id": loc_id, "location_text": loc_text,
+            "current_cost": float(row['当前成本']) if pd.notna(row['当前成本']) else None,
+            "book_value": float(row['帐面净值']) if pd.notna(row['帐面净值']) else None,
+            "status": "在用", 
+            "model": str(row['型号']).strip() if pd.notna(row['型号']) else None,
+            "manufacturer": str(row['制造商']).strip() if pd.notna(row['制造商']) else None,
+            "commissioning_date": row['启用日期'] if pd.notna(row['启用日期']) else None,
+        }
+
+        if target_equip:
+            # 完全匹配：更新
+            await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**update_vals))
+            processed_ids.add(target_equip.id)
+            updated += 1
+        # TB-01 暂时只处理完全匹配，迁移和新增留待 TB-02
+
+    # 4. 软删除 (TB-01 暂不实现，留待 TB-02)
+    
+    await db.commit()
+    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)

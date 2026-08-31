@@ -463,3 +463,34 @@ export async function importEquipments(formData: FormData): Promise<ActionResult
     return { success: false, error: (err as Error).message || '导入失败' }
   }
 }
+// ==================== 批量删除设备 ====================
+export async function batchDeleteEquipments(ids: string[]): Promise<ActionResult> {
+  const authHeaders = await getAuthHeaders()
+  try {
+    // 将字符串 ID 数组转换为正确的格式
+    const response = await fetch('/api/v1/equipment/equipments/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ ids: ids }),
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      // 处理错误响应
+      return { success: false, error: result.message || result.detail || '批量删除失败' }
+    }
+    
+    if (result.code === 200) {
+      return { success: true, data: null }
+    } else {
+      return { success: false, error: result.message || '批量删除失败' }
+    }
+  } catch (error) {
+    console.error('批量删除设备失败:', error)
+    return { success: false, error: '网络错误，请稍后重试' }
+  }
+}
