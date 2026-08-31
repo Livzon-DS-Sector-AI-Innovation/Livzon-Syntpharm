@@ -200,6 +200,7 @@ export function DossierWriterDetailPageClient() {
 
   // 选择章节
   const handleSelectChapter = async (selectedKeys: React.Key[]) => {
+    console.log('[DEBUG] handleSelectChapter called with:', selectedKeys)
     if (selectedKeys.length > 0) {
       const chapterId = selectedKeys[0] as string
       const findChapter = (chapters: any[]): any => {
@@ -221,8 +222,11 @@ export function DossierWriterDetailPageClient() {
         } catch {
           assets = []
         }
+        console.log('[DEBUG] Setting selected chapter:', chapterId)
         setSelectedChapterId(chapterId)
+        console.log('[DEBUG] About to set selectedChapter')
         setSelectedChapter({ ...chapter, assets })
+        console.log('[DEBUG] selectedChapter set successfully')
         setPreviewRefreshKey(prev => prev + 1)
         // 加载该章节的素材分类
         if (chapter.chapter_code) {

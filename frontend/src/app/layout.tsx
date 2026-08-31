@@ -12,6 +12,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Add error handler to catch startTime errors
+  if (typeof window !== 'undefined') {
+    const originalError = console.error
+    console.error = function(...args) {
+      if (args[0]?.includes?.('startTime')) {
+        console.warn('[CAUGHT] startTime error suppressed:', args)
+        return
+      }
+      originalError.apply(console, args)
+    }
+    
+    window.addEventListener('error', (event) => {
+      if (event.message?.includes('startTime')) {
+        console.warn('[CAUGHT] Global startTime error:', event.message)
+        event.preventDefault()
+      }
+    })
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      if (event.reason?.message?.includes('startTime')) {
+        console.warn('[CAUGHT] Unhandled rejection startTime error:', event.reason)
+        event.preventDefault()
+      }
+    })
+  }
+
   return (
     <html lang="zh-CN" className="h-full" suppressHydrationWarning>
       <body className="h-full antialiased" style={{ fontFamily: "'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, sans-serif" }}>
