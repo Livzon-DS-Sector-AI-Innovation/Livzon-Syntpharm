@@ -31,23 +31,33 @@ export function ExcelSyncButton() {
         body: formData,
       })
       
-      if (!response.ok) {
-        throw new Error(`服务器响应错误: ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`服务器响应错误: ${response.status}`)
 
       const result = await response.json()
       if (result.code === 200) {
-        const { updated, inserted, migrated, deleted } = result.data
+        const { updated, inserted, migrated, deleted, warnings } = result.data
+        
+        let content = (
+          <div style={{ marginTop: 10 }}>
+            <p>🔄 更新设备: <strong>{updated}</strong> 台</p>
+            <p>🚚 位置迁移: <strong>{migrated}</strong> 台</p>
+            <p>➕ 新增设备: <strong>{inserted}</strong> 台</p>
+            <p>🗑️ 自动停用: <strong>{deleted}</strong> 台</p>
+            {warnings && warnings.length > 0 && (
+              <div style={{ marginTop: 10, padding: 10, background: '#fffbe6', border: '1px solid #ffe58f' }}>
+                <p style={{ color: '#d48806', fontWeight: 'bold' }}>⚠️ 同步警告:</p>
+                <ul style={{ paddingLeft: 20, margin: 0 }}>
+                  {warnings.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )
+
         Modal.success({
-          title: '✅ 同步成功',
-          content: (
-            <div style={{ marginTop: 10 }}>
-              <p>🔄 更新设备: <strong>{updated}</strong> 台</p>
-              <p>🚚 位置迁移: <strong>{migrated}</strong> 台</p>
-              <p>➕ 新增设备: <strong>{inserted}</strong> 台</p>
-              <p>🗑️ 自动停用: <strong>{deleted}</strong> 台</p>
-            </div>
-          ),
+          title: '✅ 同步完成',
+          content: content,
+          width: 600,
           onOk: () => window.location.reload(),
         })
         onSuccess?.(result)

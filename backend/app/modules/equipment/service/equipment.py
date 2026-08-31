@@ -303,6 +303,7 @@ async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, lis
     loc_result = await db.execute(select(Location.id, Location.name))
     loc_map = {n: i for i, n in loc_result.fetchall()}
     
+    # TODO: Refactor to EquipmentRepository.get_all_active()
     equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
     all_active = equip_result.scalars().all()
     
@@ -332,6 +333,7 @@ async def sync_equipments_with_audit(
     updated, inserted, migrated, deleted = 0, 0, 0, 0
     processed_ids = set()
     changes_log = []
+    warnings = []
 
     for _, row in df.iterrows():
         asset_no = str(row['资产编号']).strip()
@@ -350,7 +352,7 @@ async def sync_equipments_with_audit(
             candidates = [e for e in asset_index.get(asset_no, []) if e.department_id == dept_id]
             if len(candidates) > 1:
                 # 发现多条潜在记录，记录警告并跳过，防止误更新
-                print(f"⚠️ 警告：资产 {asset_no} 在部门 {std_dept} 下存在 {len(candidates)} 条位置为空的记录，已跳过同步以确保安全。")
+                warnings.append(f"资产 {asset_no} 在部门 {std_dept} 下存在多条位置为空的记录，已跳过同步。")
                 continue
             elif len(candidates) == 1:
                 target_equip = candidates[0]
@@ -411,7 +413,7 @@ async def sync_equipments_with_audit(
         db.add(log_entry)
         await db.commit()
 
-    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)
+    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted, warnings=warnings)
 
 
 from typing import TypedDict, NotRequired
