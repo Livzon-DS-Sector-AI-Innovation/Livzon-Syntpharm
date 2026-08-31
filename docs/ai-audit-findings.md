@@ -2212,7 +2212,7 @@ README.md:37 — 仓库通用规则/文档一致性 — "环境要求" says "Ubu
 | 6. Configuration and logging | 0 | 0 | — |
 | 13. Docker and deployment | 0 | 0 | — (1 resolved) |
 | 14. E2E | 0 | 0 | — |
-| **Total** | **0** | **0** | **✅ All resolved** |
+| **Total** | **1** | **0** | **⚠️ 1 confirmed violation** |
 
 **Status: ✅ COMPLETE — No blocking issues**
 
@@ -2792,8 +2792,8 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 - Error handling: all `except` blocks log and return errors, no bare `except: pass`.
 - Temp file cleanup in `finally` block — correct.
 
-**Uncertain:**
-- [ ] `backend/app/modules/registration/dossier_writer/ai_fill_service.py, asset_text_extractor.py, document_parser.py` — 异步任务/禁止在 HTTP 请求中执行超过 5 秒的操作 — OCR subprocess can take 300+ seconds (timeout = max(300, 120+60*pages)), called from HTTP handlers via asyncio.to_thread(). While the event loop is not blocked, the HTTP request itself waits for OCR completion. AGENTS.md requires ">5s operations" to use async tasks + polling. This is a pre-existing issue (previous in-process OCR also blocked), but the PR makes the long duration more explicit. Follow-up: convert OCR endpoints to async task + polling pattern. — severity: medium — **NOT RESOLVED** (pre-existing, follow-up item)
+**Confirmed:**
+- [ ] `backend/app/modules/registration/dossier_writer/ai_fill_service.py, asset_text_extractor.py, document_parser.py` — 异步任务/禁止在 HTTP 请求中执行超过 5 秒的操作 — OCR subprocess can take 300+ seconds (timeout = max(300, 120+60*pages)), called from HTTP handlers via asyncio.to_thread(). While the event loop is not blocked, the HTTP request itself waits for OCR completion. AGENTS.md requires ">5s operations" to use async tasks + polling. This is a pre-existing issue (previous in-process OCR also blocked), but the PR makes the long duration more explicit. **Violation confirmed**: should convert OCR endpoints to async task + polling pattern. — severity: medium — **NOT RESOLVED** (requires follow-up PR)
 
 #### Category 9: Frontend component boundaries
 
@@ -2887,12 +2887,12 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 | 3. Backend module boundaries | 0 | 0 | — |
 | 5. Models and migrations | 0 | 0 | — |
 | 6. Configuration and logging | 0 | 0 | — |
-| 7. External services and background tasks | 0 | 1 | medium |
+| 7. External services and background tasks | 1 | 0 | medium |
 | 9. Frontend component boundaries | 0 | 0 | — |
 | 10. Frontend API and generated types | 0 (2 resolved) | 0 | — |
 | 13. Docker and deployment | 0 | 0 | — |
 | 15. SQL injection | 0 | 0 | — |
-| **Total** | **0** | **0** | **✅ All resolved** |
+| **Total** | **1** | **0** | **⚠️ 1 confirmed violation** |
 
 #### Resolved findings
 
@@ -2903,10 +2903,10 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 
 3. ~~**Hardcoded `/app` path in subprocess** (Category 2) — `ocr_service.py` hardcodes Docker container path. Should use env var or configurable path.~~ — **RESOLVED** (commit 9b5d6d68: `_get_ocr_app_root()` derives root from file location, overridable via `OCR_APP_ROOT` env var)
 
-#### Outstanding findings (follow-up)
+#### Confirmed violations (requires follow-up PR)
 
-4. **OCR in HTTP request > 5s** (Category 7) — Pre-existing issue, but PR makes it more explicit. OCR subprocess can take 300+ seconds from HTTP handlers. Follow-up: convert to async task + polling. — **NOT RESOLVED** (pre-existing architectural issue)
+4. **OCR in HTTP request > 5s** (Category 7) — OCR subprocess takes 300+ seconds from HTTP handlers via `asyncio.to_thread()`. AGENTS.md requires operations >5s to use async tasks + polling. **Violation confirmed**. — severity: medium — **NOT RESOLVED** (requires follow-up PR to convert OCR endpoints to async task + polling pattern)
 
-**Status: ✅ COMPLETE — All findings resolved (re-audit 2026-08-31) — PR ready to merge**
+**Status: ⚠️ COMPLETE — 1 confirmed violation (OCR >5s in HTTP, pre-existing but not fixed) — Requires follow-up PR**
 
 ---
