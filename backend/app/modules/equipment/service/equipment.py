@@ -347,10 +347,13 @@ async def sync_equipments_with_audit(
         
         if not target_equip and loc_id is None:
             # 如果位置为空，尝试只匹配资产号和部门
-            for e in asset_index.get(asset_no, []):
-                if e.department_id == dept_id:
-                    target_equip = e
-                    break
+            candidates = [e for e in asset_index.get(asset_no, []) if e.department_id == dept_id]
+            if len(candidates) > 1:
+                # 发现多条潜在记录，记录警告并跳过，防止误更新
+                print(f"⚠️ 警告：资产 {asset_no} 在部门 {std_dept} 下存在 {len(candidates)} 条位置为空的记录，已跳过同步以确保安全。")
+                continue
+            elif len(candidates) == 1:
+                target_equip = candidates[0]
 
         new_vals = {
             "name": str(row['设备名称']).strip(),
@@ -410,3 +413,17 @@ async def sync_equipments_with_audit(
 
     return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted)
 
+
+from typing import TypedDict, NotRequired
+
+class EquipmentUpdateValues(TypedDict, total=False):
+    """设备同步更新值的类型定义"""
+    name: str
+    current_cost: float | None
+    book_value: float | None
+    department_id: uuid.UUID | None
+    location_id: uuid.UUID | None
+    location_text: str | None
+    model: str | None
+    manufacturer: str | None
+    commissioning_date: datetime.date | None
