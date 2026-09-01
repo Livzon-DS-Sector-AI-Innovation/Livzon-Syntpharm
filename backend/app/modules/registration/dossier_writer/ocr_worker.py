@@ -17,7 +17,7 @@ async def execute_ocr_extraction(
     file_path: str,
     task_type: str,
     chapter_id: UUID | None = None,
-):
+) -> None:
     """执行OCR提取后台任务
 
     Args:

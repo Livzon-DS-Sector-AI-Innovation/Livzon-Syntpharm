@@ -1,6 +1,7 @@
 """OCR task repository for managing async OCR extraction tasks."""
 
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -36,7 +37,7 @@ class OcrTaskRepository:
         self,
         task_id: UUID,
         status: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> OcrExtractionTask:
         """更新任务状态"""
         task = await self.get_task(task_id)
