@@ -62,25 +62,27 @@ async def execute_ocr_extraction(
                 # Perform AI field extraction if this is a preview_extraction task
                 if task_type == "preview_extraction" and chapter_id:
                     try:
-                        from app.modules.registration.dossier_writer.ai_fill_service import AIFillService
                         from sqlalchemy import select
+
+                        from app.modules.registration.dossier_writer.ai_fill_service import AIFillService
+
                         from .models import DossierChapter, ProductDossier
-                        
+
                         # Get chapter and dossier info
                         stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
                         result = await db.execute(stmt)
                         chapter = result.scalar_one_or_none()
-                        
+
                         if chapter:
                             pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
                             pd_result = await db.execute(pd_stmt)
                             dossier = pd_result.scalar_one_or_none()
-                            
+
                             if dossier:
                                 # Perform AI field extraction (same as original sync flow)
                                 service = AIFillService(db)
                                 ai_result = await service.preview_extraction(dossier, chapter)
-                                
+
                                 # Store AI-extracted fields (not raw OCR)
                                 await repo.update_status(
                                     task_id,
@@ -94,7 +96,7 @@ async def execute_ocr_extraction(
                     except Exception as e:
                         logger.error(f"AI extraction failed for task {task_id}: {e}")
                         # Fall back to storing raw OCR results
-                
+
                 # Store raw OCR result (fallback)
                 await repo.update_status(
                     task_id,

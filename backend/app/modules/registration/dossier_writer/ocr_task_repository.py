@@ -1,6 +1,6 @@
 """OCR task repository for managing async OCR extraction tasks."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -46,9 +46,9 @@ class OcrTaskRepository:
 
         task.status = status
         if status == "processing" and not task.started_at:
-            task.started_at = datetime.now(timezone.utc)
+            task.started_at = datetime.now(UTC)
         elif status in ("completed", "failed"):
-            task.completed_at = datetime.now(timezone.utc)
+            task.completed_at = datetime.now(UTC)
 
         for key, value in kwargs.items():
             setattr(task, key, value)
