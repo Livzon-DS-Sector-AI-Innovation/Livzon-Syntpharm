@@ -205,3 +205,68 @@ async def handler(  # noqa: F811
         return ApiResponse(code=404, message="文章不存在")
     await db.commit()
     return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+
+
+# ── 知识图谱端点 ──────────────────────────────────────────
+
+@knowledge_router.get(
+    "/knowledge-graph/full-graph",
+    response_model=ApiResponse,
+    summary="获取完整知识图谱",
+)
+async def get_full_graph(
+    node_types: str | None = None,
+    relation_types: str | None = None,
+    max_nodes: int = Query(500, ge=1, le=1000),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """获取完整知识图谱数据（暂时返回空数据）"""
+    return ApiResponse(
+        data={
+            "nodes": [],
+            "edges": [],
+            "stats": {
+                "total_nodes": 0,
+                "total_edges": 0,
+                "by_type": {},
+                "by_status": {},
+            },
+        }
+    )
+
+
+@knowledge_router.get(
+    "/knowledge-graph/nodes",
+    response_model=ApiResponse,
+    summary="获取图谱节点列表",
+)
+async def get_graph_nodes(
+    node_type: str | None = None,
+    entity_type: str | None = None,
+    status: str | None = None,
+    keyword: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """获取图谱节点列表（暂时返回空数据）"""
+    return ApiResponse(data=[], meta={"page": page, "page_size": page_size, "total": 0})
+
+
+@knowledge_router.get(
+    "/knowledge-graph/edges",
+    response_model=ApiResponse,
+    summary="获取图谱边列表",
+)
+async def get_graph_edges(
+    relation_type: str | None = None,
+    status: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """获取图谱边列表（暂时返回空数据）"""
+    return ApiResponse(data=[], meta={"page": page, "page_size": page_size, "total": 0})

@@ -26,21 +26,23 @@ export default function KnowledgeGraphToolbar({
   onFitView,
 }: ToolbarProps) {
   const { message } = App.useApp()
-  const store = useKnowledgeGraphStore()
+  const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
+  const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
   const [searching, setSearching] = useState(false)
 
   // 搜索
   const handleSearch = useCallback(
     async (value: string) => {
-      store.setSearchQuery(value)
+      useKnowledgeGraphStore.setState({ searchQuery: value })
       if (!value.trim()) {
-        store.setSearchResults([])
+        useKnowledgeGraphStore.setState({ searchResults: [] })
         return
       }
       setSearching(true)
       try {
-        const results = await searchGraphNodes(value, store.nodeTypeFilter || undefined)
-        store.setSearchResults(results)
+        const state = useKnowledgeGraphStore.getState()
+        const results = await searchGraphNodes(value, state.nodeTypeFilter || undefined)
+        useKnowledgeGraphStore.setState({ searchResults: results })
         if (results.length === 0) {
           message.info('未找到匹配节点')
         } else {
@@ -52,7 +54,7 @@ export default function KnowledgeGraphToolbar({
         setSearching(false)
       }
     },
-    [store, message],
+    [message],
   )
 
   // 导出图片
@@ -96,7 +98,7 @@ export default function KnowledgeGraphToolbar({
           style={{ width: 200 }}
           loading={searching}
           onSearch={handleSearch}
-          onClear={() => store.setSearchResults([])}
+          onClear={() => useKnowledgeGraphStore.setState({ searchResults: [] })}
         />
 
         <div style={{ width: 1, height: 20, background: 'var(--color-hairline, #e5e3df)' }} />
@@ -107,8 +109,8 @@ export default function KnowledgeGraphToolbar({
           placeholder="节点类型"
           allowClear
           style={{ minWidth: 110 }}
-          value={store.nodeTypeFilter}
-          onChange={store.setNodeTypeFilter}
+          value={nodeTypeFilter}
+          onChange={(v) => useKnowledgeGraphStore.setState({ nodeTypeFilter: v })}
           options={NODE_TYPE_OPTIONS}
         />
 
@@ -118,8 +120,8 @@ export default function KnowledgeGraphToolbar({
           placeholder="关系类型"
           allowClear
           style={{ minWidth: 100 }}
-          value={store.relationTypeFilter}
-          onChange={store.setRelationTypeFilter}
+          value={relationTypeFilter}
+          onChange={(v) => useKnowledgeGraphStore.setState({ relationTypeFilter: v })}
           options={RELATION_TYPE_OPTIONS}
         />
 
