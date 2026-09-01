@@ -193,7 +193,12 @@ class OcrExtractionTask(BaseModel):
     """OCR extraction task for async processing"""
 
     __tablename__ = "ocr_extraction_tasks"
-    __table_args__ = {"schema": "dossier_writer", "comment": "OCR提取任务表"}
+    __table_args__ = (
+        Index("ix_ocr_extraction_tasks_asset_id", "asset_id"),
+        Index("ix_ocr_extraction_tasks_created_at", "created_at"),
+        Index("ix_ocr_extraction_tasks_status", "status"),
+        {"schema": "dossier_writer", "comment": "OCR提取任务表"},
+    )
 
     # Foreign keys
     asset_id: Mapped[uuid.UUID] = mapped_column(
