@@ -608,7 +608,7 @@ async def ai_preview_extraction(
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """启动AI智能解析预览任务（异步）"""
-    from .models import DossierChapter, ProductDossier
+    from .models import DossierChapter
     from .ocr_task_repository import OcrTaskRepository
     from .service import DossierService
 
