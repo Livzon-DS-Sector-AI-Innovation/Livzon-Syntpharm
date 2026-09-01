@@ -38,8 +38,8 @@ def upgrade() -> None:
     sa.Column('processed_pages', sa.Integer(), server_default=sa.text('0'), nullable=False, comment='已处理页数'),
     sa.ForeignKeyConstraint(['asset_id'], ['dossier_writer.chapter_assets.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['chapter_id'], ['dossier_writer.dossier_chapters.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], name='ocr_extraction_tasks_created_by_fkey', ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], name='ocr_extraction_tasks_updated_by_fkey', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id'),
     schema='dossier_writer',
     comment='OCR提取任务表'
