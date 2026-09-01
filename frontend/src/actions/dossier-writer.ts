@@ -9,6 +9,7 @@ import type {
   ParseResult,
   ExportResult,
   AIPreviewResult,
+  AIFieldResult,
   OCRTaskStartResponse,
   OCRTaskStatusResponse,
   AIConfirmRequest,
