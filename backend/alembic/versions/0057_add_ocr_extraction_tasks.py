@@ -38,19 +38,19 @@ def upgrade() -> None:
         sa.Column('error_message', sa.Text(), nullable=True, comment='错误信息'),
         sa.Column('total_pages', sa.Integer(), nullable=True, comment='总页数'),
         sa.Column('processed_pages', sa.Integer(), server_default='0', nullable=False, comment='已处理页数'),
-        sa.ForeignKeyConstraint(['asset_id'], ['dossier_writer.chapter_assets.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['chapter_id'], ['dossier_writer.dossier_chapters.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], ondelete='SET NULL'),
-        sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], ondelete='SET NULL'),
+        sa.ForeignKeyConstraint(['asset_id'], ['dossier_writer.chapter_assets.id'], ondelete='CASCADE', name='fk_ocr_extraction_tasks_asset_id'),
+        sa.ForeignKeyConstraint(['chapter_id'], ['dossier_writer.dossier_chapters.id'], ondelete='CASCADE', name='fk_ocr_extraction_tasks_chapter_id'),
+        sa.ForeignKeyConstraint(['created_by'], ['identity.users.id'], ondelete='SET NULL', name='fk_ocr_extraction_tasks_created_by'),
+        sa.ForeignKeyConstraint(['updated_by'], ['identity.users.id'], ondelete='SET NULL', name='fk_ocr_extraction_tasks_updated_by'),
         sa.PrimaryKeyConstraint('id'),
         schema='dossier_writer',
         comment='OCR提取任务表'
     )
     
-    # Create indexes
-    op.create_index('ix_ocr_extraction_tasks_asset_id', 'ocr_extraction_tasks', ['asset_id'], schema='dossier_writer')
-    op.create_index('ix_ocr_extraction_tasks_status', 'ocr_extraction_tasks', ['status'], schema='dossier_writer')
-    op.create_index('ix_ocr_extraction_tasks_created_at', 'ocr_extraction_tasks', ['created_at'], schema='dossier_writer')
+    # Create indexes with explicit names
+    op.create_index(op.f('ix_ocr_extraction_tasks_asset_id'), 'ocr_extraction_tasks', ['asset_id'], schema='dossier_writer')
+    op.create_index(op.f('ix_ocr_extraction_tasks_status'), 'ocr_extraction_tasks', ['status'], schema='dossier_writer')
+    op.create_index(op.f('ix_ocr_extraction_tasks_created_at'), 'ocr_extraction_tasks', ['created_at'], schema='dossier_writer')
 
 
 def downgrade() -> None:
