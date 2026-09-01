@@ -1,9 +1,8 @@
 """Dossier Writer API endpoints."""
 
 import logging
-from uuid import UUID
-
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
