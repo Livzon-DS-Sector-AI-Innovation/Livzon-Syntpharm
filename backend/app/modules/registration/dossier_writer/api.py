@@ -3,6 +3,8 @@
 import logging
 from uuid import UUID
 
+from typing import Any
+
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
@@ -680,7 +682,7 @@ async def get_ocr_task_status(
     if not task:
         return error_response(message="任务不存在", status_code=404)
 
-    response_data = {
+    response_data: dict[str, Any] = {
         "id": str(task.id),
         "asset_id": str(task.asset_id),
         "task_type": task.task_type,
