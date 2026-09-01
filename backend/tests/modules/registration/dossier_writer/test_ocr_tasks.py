@@ -98,16 +98,16 @@ async def test_ocr_task_model_fields(db_session, sample_asset):
     )
 
     # Check all fields exist
-    assert hasattr(task, 'asset_id')
-    assert hasattr(task, 'chapter_id')
-    assert hasattr(task, 'task_type')
-    assert hasattr(task, 'status')
-    assert hasattr(task, 'started_at')
-    assert hasattr(task, 'completed_at')
-    assert hasattr(task, 'result_data')
-    assert hasattr(task, 'error_message')
-    assert hasattr(task, 'total_pages')
-    assert hasattr(task, 'processed_pages')
+    assert hasattr(task, "asset_id")
+    assert hasattr(task, "chapter_id")
+    assert hasattr(task, "task_type")
+    assert hasattr(task, "status")
+    assert hasattr(task, "started_at")
+    assert hasattr(task, "completed_at")
+    assert hasattr(task, "result_data")
+    assert hasattr(task, "error_message")
+    assert hasattr(task, "total_pages")
+    assert hasattr(task, "processed_pages")
 
 
 async def test_ocr_task_error_handling(db_session, sample_asset):

@@ -193,30 +193,25 @@ class OcrExtractionTask(BaseModel):
     """OCR extraction task for async processing"""
 
     __tablename__ = "ocr_extraction_tasks"
-    __table_args__ = {
-        "schema": "dossier_writer",
-        "comment": "OCR提取任务表"
-    }
+    __table_args__ = {"schema": "dossier_writer", "comment": "OCR提取任务表"}
 
     # Foreign keys
     asset_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("dossier_writer.chapter_assets.id", ondelete="CASCADE"),
         nullable=False,
-        comment="素材ID"
+        comment="素材ID",
     )
     chapter_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("dossier_writer.dossier_chapters.id", ondelete="CASCADE"),
         nullable=True,
-        comment="章节ID（可选，用于上下文）"
+        comment="章节ID（可选，用于上下文）",
     )
 
     # Task metadata
     task_type: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        comment="任务类型: preview_extraction/split_preview/field_fill"
+        String(50), nullable=False, comment="任务类型: preview_extraction/split_preview/field_fill"
     )
 
     # Status tracking
@@ -225,43 +220,18 @@ class OcrExtractionTask(BaseModel):
         nullable=False,
         default="pending",
         server_default="pending",
-        comment="状态: pending/processing/completed/failed"
+        comment="状态: pending/processing/completed/failed",
     )
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="开始时间"
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="完成时间"
-    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="开始时间")
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成时间")
 
     # Results
-    result_data: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON,
-        nullable=True,
-        comment="OCR提取结果JSON"
-    )
-    error_message: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        comment="错误信息"
-    )
+    result_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="OCR提取结果JSON")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="错误信息")
 
     # Progress (for long-running multi-page PDFs)
-    total_pages: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True,
-        comment="总页数"
-    )
-    processed_pages: Mapped[int] = mapped_column(
-        Integer,
-        default=0,
-        server_default="0",
-        comment="已处理页数"
-    )
+    total_pages: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="总页数")
+    processed_pages: Mapped[int] = mapped_column(Integer, default=0, server_default="0", comment="已处理页数")
 
     # Relationships
     asset = relationship("ChapterAsset", foreign_keys=[asset_id])

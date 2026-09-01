@@ -18,14 +18,14 @@ def sample_dossier_data():
 @pytest.fixture
 async def sample_chapter(db_session, sample_dossier_data):
     """Create a sample chapter for testing."""
-    from app.modules.registration.dossier_writer.models import ProductDossier, DossierChapter
-    from uuid import uuid4
-    
+
+    from app.modules.registration.dossier_writer.models import DossierChapter, ProductDossier
+
     # Create dossier first
     dossier = ProductDossier(**sample_dossier_data)
     db_session.add(dossier)
     await db_session.flush()
-    
+
     # Create chapter
     chapter = DossierChapter(
         product_dossier_id=dossier.id,
@@ -35,16 +35,16 @@ async def sample_chapter(db_session, sample_dossier_data):
     )
     db_session.add(chapter)
     await db_session.flush()
-    
+
     return chapter
 
 
 @pytest.fixture
 async def sample_asset(db_session, sample_chapter):
     """Create a sample asset for testing."""
+
     from app.modules.registration.dossier_writer.models import ChapterAsset
-    from pathlib import Path
-    
+
     asset = ChapterAsset(
         chapter_id=sample_chapter.id,
         original_filename="test_document.pdf",
@@ -54,5 +54,5 @@ async def sample_asset(db_session, sample_chapter):
     )
     db_session.add(asset)
     await db_session.flush()
-    
+
     return asset

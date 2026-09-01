@@ -663,9 +663,6 @@ async def ai_preview_extraction(
     )
 
 
-
-
-
 @router.get("/ocr-tasks/{task_id}", response_model=dict)
 async def get_ocr_task_status(
     current_user: CurrentUser,
@@ -699,9 +696,7 @@ async def get_ocr_task_status(
 
     # Calculate progress percentage
     if task.total_pages and task.total_pages > 0:
-        response_data["progress"] = round(
-            (task.processed_pages / task.total_pages) * 100, 2
-        )
+        response_data["progress"] = round((task.processed_pages / task.total_pages) * 100, 2)
 
     return success_response(data=response_data)
 
@@ -776,6 +771,7 @@ async def split_preview(
 
     # Check if it's a PDF
     from pathlib import Path
+
     if Path(asset.file_path).suffix.lower() != ".pdf":
         return error_response(message="仅支持 PDF 文件的页拆分", status_code=400)
 
@@ -808,7 +804,6 @@ async def split_preview(
         },
         message="任务已启动",
     )
-
 
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
