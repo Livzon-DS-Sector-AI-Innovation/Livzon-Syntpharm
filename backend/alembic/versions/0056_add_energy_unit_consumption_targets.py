@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0058_add_energy_unit_consumption_targets'
+revision: str = '0056_add_energy_unit_consumption_targets'
 down_revision: Union[str, None] = '0053_add_dossier_unique_indexes_and_cleanup'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

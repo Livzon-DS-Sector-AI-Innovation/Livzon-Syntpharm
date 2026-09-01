@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '0057_add_ocr_extraction_tasks'
-down_revision: Union[str, None] = '0056_recreate_qms_reagent_reminder_config'
+revision: str = '0060_add_ocr_extraction_tasks'
+down_revision: Union[str, None] = '0059_recreate_qms_reagent_reminder_config'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
