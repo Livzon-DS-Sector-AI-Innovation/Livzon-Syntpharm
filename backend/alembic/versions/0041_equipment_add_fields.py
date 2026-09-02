@@ -1,6 +1,6 @@
 """0041_equipment_add_fields
 
-Revision ID: 6379b65e0052
+Revision ID: 0041_equipment_add_fields
 Revises: 1f550ec06f66
 Create Date: 2026-07-15 17:49:37.922995
 """

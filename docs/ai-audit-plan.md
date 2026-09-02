@@ -26,6 +26,108 @@ No scanners, scripts, or automation. This document IS the procedure. Feed one ca
 
 ---
 
+## Findings format
+
+### Finding entry format
+
+Every finding uses checkbox syntax:
+
+```markdown
+- [ ] `file:line` — rule reference — evidence
+- [x] `file:line` — rule reference — evidence (resolution detail)
+```
+
+**Required elements:**
+- **File location**: `path/to/file:LINE` (or line range `LINE1-LINE2`)
+- **Rule reference**: The AGENTS.md rule being violated
+- **Evidence**: 1-3 sentences explaining what the code does and why it violates the rule
+
+**Optional:**
+- **Resolution detail**: When status is resolved (`- [x]`), include commit hash or brief explanation in parentheses
+
+**Checkbox status:**
+- `- [ ]` = open
+- `- [x]` = resolved
+
+### Stats table per category
+
+Each category section includes a stats table:
+
+```markdown
+| Stat | Count |
+|------|-------|
+| Files inspected | N |
+| Files not inspected | N |
+| Rules evaluated | N |
+| Rules not evaluated | N |
+| Confirmed findings | N |
+| Uncertain findings | N |
+```
+
+### PR section template
+
+```markdown
+### PR #N: <title> (base: <base>, head: <head>, date: <date>)
+
+**Changed files (N):**
+- `path/to/file1` — description
+- `path/to/file2` — description
+
+**Affected categories:** 1, 2, 3, ...
+
+#### Category N: <name>
+
+| Stat | Count |
+|------|-------|
+| Files inspected | N |
+| Files not inspected | N |
+| Rules evaluated | N |
+| Rules not evaluated | N |
+| Confirmed findings | N |
+| Uncertain findings | N |
+
+**Confirmed:**
+- [ ] `file:line` — rule — evidence
+- [x] `file:line` — rule — evidence (resolution detail)
+
+**Uncertain:**
+- [ ] `file:line` — rule — evidence
+
+#### Categories not affected
+N, N, N — no relevant files changed.
+
+#### PR #N Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | N | N |
+| 2. Secrets and hardcoded values | N | N |
+| ...
+| **Total** | **N** | **N** |
+```
+
+### Notes/observations
+
+Use the "Notes/observations" section for:
+- Observations that aren't violations (e.g., "this pattern exists but isn't prohibited")
+- Context for uncertain findings (e.g., "this might be a violation if Y")
+- Recommendations for future audits
+
+### Evidence definition
+
+Evidence should explain:
+1. **What the code does** — concrete behavior
+2. **Why it violates the rule** — cite the specific rule
+
+Example:
+```markdown
+- [ ] `backend/app/shared/ocr_service.py:323` — 仓库通用规则/禁止硬编码绝对路径 — `env["PYTHONPATH"] = "/app"` hardcodes Docker container path. Should use `os.environ.get("APP_ROOT", "/app")` or relative path.
+```
+
+
+---
+
+
 
 ## 1. Repository layout
 
@@ -117,23 +219,6 @@ frontend/src/
 10. Is the training template directory `backend/docs/training/` present if referenced?
 
 11. Have `AGENTS.md`, `docs/ai-audit-plan.md`, or `docs/ai-audit-findings.md` been modified in a way that requires architecture approval?
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 2. Secrets and hardcoded values
@@ -181,23 +266,6 @@ Full audit
 8. Are environment variable files (`.env`, `.env.local`) properly gitignored?
 9. Are there `process.env.API_BASE_URL` reads or `getApiBaseUrl()` definitions outside of `lib/api/server/base.ts`?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 3. Backend module boundaries
@@ -275,23 +343,6 @@ Do NOT inspect what `public_api.py` exports to decide publicness. Other modules 
 7. Do event names follow the `{module}.{entity}.{action}` format?
 8. Is the event bus being used for data queries or validation (which require return values) instead of `public_api.py`?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence (import statement) — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 4. API and authentication
@@ -398,23 +449,6 @@ from app.core.deps import RequiredUser, OptionalUser
 12. Do structured JSON endpoints return Pydantic data via `build_response()` instead of `success_response()` → `JSONResponse`?
 13. For endpoints with typed response models, does the model describe the full response body (including `code`, `data`, `message` fields), not just the inner `data` type?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 5. Models and migrations
@@ -488,23 +522,6 @@ Full audit
 10. Are there any circular foreign key dependencies?
 11. Is `module_registry.py` updated when a new schema is introduced?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 6. Configuration and logging
@@ -570,23 +587,6 @@ from app.core.config import get_settings
 8. Do Feishu environment variables follow the `FEISHU__{MODULE}__{FIELD}` naming format?
 9. Is `.env.example` in sync with `.env`? (Check for variables in `.env` missing from `.env.example`)
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 7. External services and background tasks
@@ -655,23 +655,6 @@ Full audit
 8. Are there unhandled exceptions in background tasks or loops?
 9. Are external service dependencies (LLM, Feishu, MinIO) properly mocked in tests?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 8. Backend tests
@@ -703,23 +686,6 @@ Full audit
 4. Are OCR service calls mocked via `get_ocr_service`?
 5. Do test files roughly follow the coverage priority (service > API > repository)?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 9. Frontend component boundaries
@@ -780,23 +746,6 @@ Full audit
 8. Has `proxy.ts`, `components/shared/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
 9. Does every `page.tsx` have a semantic `<h1>` heading (using `<h1>` or `<Title level={1}>`) that is NOT provided via `<Card title="...">`?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 10. Frontend API and generated types
@@ -863,23 +812,6 @@ Full audit
 10. Are there any custom `apiFetch` implementations (function named `apiFetch` with fetch logic) in `lib/api/server/` files other than `base.ts`? Note: `safeApiFetch` and `apiFetchPaginated` in `base.ts` are canonical first-class exports, not custom `apiFetch` violations.
 11. Are there ad-hoc `.data` access patterns at call sites instead of using `unwrapResponse()`? (Patterns like `response.data`, `result?.data`, `(result as any)?.data`)
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 11. Proxy and routing
@@ -931,23 +863,6 @@ Full audit
 5. Are all server-side API calls using `API_BASE_URL` environment variable?
 6. Do Server Actions call functions from `lib/api/server/` rather than directly fetching?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 
 ## 12. Cross-project OpenAPI
@@ -979,14 +894,6 @@ CI verification only — CI already enforces via `scripts/ci.sh openapi`
 2. Is `frontend/src/types/generated/schema.ts` committed and up to date?
 3. Is `frontend/src/types/generated/openapi.json` committed and matching `backend/openapi.json`?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Checks verified | |
-| Checks failing | |
-
----
 
 
 ## 13. Docker and deployment
@@ -1038,18 +945,6 @@ Full audit
 7. Is `frontend/Dockerfile.dev` deleted (should not exist after consolidation)?
 8. Are all Dockerfile and docker-compose changes documented with approval in the PR?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
----
 ## 14. E2E
 
 ### Audit type
@@ -1071,14 +966,6 @@ CI verification only — CI already enforces via `scripts/ci.sh e2e`
 2. Are Playwright tests organized and maintained?
 3. Is the CI service setup (PostgreSQL + backend + frontend) functioning?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Checks verified | |
-| Checks failing | |
-
----
 
 
 ## Rules not directly auditable
@@ -1151,23 +1038,6 @@ Full audit
 4. Are all ORM queries using SQLAlchemy constructs (`and_`, `or_`, column comparisons) rather than string interpolation?
 5. Are there any dynamic `ORDER BY`, `LIMIT`, or table/column name references built via string interpolation?
 
-### Output format
-
-| Stat | Count |
-|------|-------|
-| Files inspected | |
-| Files not inspected | |
-| Rules evaluated | |
-| Rules not evaluated | |
-| Confirmed findings | |
-| Uncertain findings | |
-
-Each finding:
-```
-file:line — rule reference — evidence — severity: blocking|high|medium|low
-```
-
----
 
 ## Audit procedure
 

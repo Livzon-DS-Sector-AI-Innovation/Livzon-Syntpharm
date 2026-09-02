@@ -1,6 +1,6 @@
 """0044_rename_equipment_no_to_asset_no
 
-Revision ID: 74a464371488
+Revision ID: 0044_rename_equipment_no_to_asset_no
 Revises: fcb768b8df78
 Create Date: 2026-07-15 18:30:00.000000
 """

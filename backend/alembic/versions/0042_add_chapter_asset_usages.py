@@ -1,6 +1,6 @@
 """0042_add_chapter_asset_usages
 
-Revision ID: 2eb6d687679e
+Revision ID: 0042_add_chapter_asset_usages
 Revises: 6379b65e0052
 Create Date: 2026-07-15 17:59:53.152467
 """
