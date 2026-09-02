@@ -69,6 +69,7 @@ async def test_sync_updates_cost_and_value(db: AsyncSession, seed_departments_an
     # Assert
     assert result.updated == 1
     updated_equip = await db.get(Equipment, equip.id)
+    assert updated_equip is not None
     assert updated_equip.current_cost == 200.0
     assert updated_equip.book_value == 100.0
 
@@ -90,6 +91,7 @@ async def test_sync_soft_deletes_missing_assets(db: AsyncSession, seed_departmen
     # Assert
     assert result.deleted == 1
     deleted_equip = await db.get(Equipment, equip.id)
+    assert deleted_equip is not None
     assert deleted_equip.is_deleted
 
 

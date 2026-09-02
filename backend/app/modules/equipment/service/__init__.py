@@ -274,5 +274,7 @@ __all__ = [
     "update_categories",
     "update_personnel",
     "update_role",
+    # equipment sync
+    "sync_equipments_with_audit",
 ]
 # ruff: noqa: F401

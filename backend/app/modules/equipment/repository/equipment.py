@@ -1,7 +1,7 @@
 """Equipment database queries live here."""
 
 import uuid
-from typing import Any
+from typing import Any, Sequence
 
 import sqlalchemy as sa
 from sqlalchemy import and_, func, select, update
@@ -666,40 +666,44 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
     return result.scalar_one_or_none()
 
 
-async def get_sync_context(session) -> tuple[dict, dict, dict, list]:
+async def get_sync_context(
+    session: AsyncSession,
+) -> tuple[dict[str, Any], dict[str, Any], Sequence[Equipment], dict[tuple[str, Any, Any], Equipment], dict[str, list[Equipment]]]:
     """获取同步所需的部门和位置映射及活跃设备索引"""
     # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
     from sqlalchemy import text
 
     dept_result = await session.execute(text("SELECT id, name FROM identity.departments WHERE is_deleted = false"))
-    dept_map = {n: i for i, n in dept_result.fetchall()}
+    dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
 
     loc_result = await session.execute(select(Location.id, Location.name))
-    loc_map = {n: i for i, n in loc_result.fetchall()}
+    loc_map: dict[str, Any] = {n: i for i, n in loc_result.fetchall()}
 
     equip_result = await session.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
-    all_active = equip_result.scalars().all()
+    all_active: Sequence[Equipment] = equip_result.scalars().all()
 
-    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
-    asset_index: dict[str, list] = {}
+    combo_index: dict[tuple[str, Any, Any], Equipment] = {
+        (e.asset_no, e.department_id, e.location_id): e for e in all_active
+    }
+    asset_index: dict[str, list[Equipment]] = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
 
     return dept_map, loc_map, all_active, combo_index, asset_index
 
 
-async def bulk_update_equipment(session, ids_and_vals):
+async def bulk_update_equipment(session: AsyncSession, ids_and_vals: list[tuple[Any, ...]]) -> None:
     """批量更新设备"""
     for equip_id, vals in ids_and_vals:
         await session.execute(update(Equipment).where(Equipment.id == equip_id).values(**vals))
 
 
-async def bulk_insert_equipment(session, equipments):
+async def bulk_insert_equipment(session: AsyncSession, equipments: list[Equipment]) -> None:
     """批量新增设备"""
     session.add_all(equipments)
 
 
-async def bulk_soft_delete(session, ids):
+async def bulk_soft_delete(session: AsyncSession, ids: list[Any]) -> None:
     """批量软删除"""
     for eid in ids:
         await session.execute(update(Equipment).where(Equipment.id == eid).values(is_deleted=True))

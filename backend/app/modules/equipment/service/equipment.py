@@ -3,7 +3,7 @@
 import datetime
 import uuid
 from io import BytesIO
-from typing import Any, NamedTuple, TypedDict
+from typing import Any, NamedTuple, Sequence, TypedDict
 
 import pandas as pd
 from sqlalchemy import select, update
@@ -323,9 +323,9 @@ class SyncContext(NamedTuple):
     dept_map: dict[str, Any]
     valid_depts: set[str]
     loc_map: dict[str, Any]
-    all_active: list[Any]
-    combo_index: dict[tuple, Any]
-    asset_index: dict[str, list[Any]]
+    all_active: Sequence[Equipment]
+    combo_index: dict[tuple[str, Any, Any], Equipment]
+    asset_index: dict[str, list[Equipment]]
 
 
 # ==================== Excel 智能同步 ====================
@@ -344,10 +344,10 @@ async def _prepare_sync_context(db: AsyncSession) -> SyncContext:
     equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
     all_active = equip_result.scalars().all()
 
-    combo_index: dict[tuple, Any] = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
-    asset_index: dict[str, list[Any]] = {}
-    for e in all_active:
-        asset_index.setdefault(e.asset_no, []).append(e)
+    combo_index: dict[tuple[str, Any, Any], Equipment] = {(equip.asset_no, equip.department_id, equip.location_id): equip for equip in all_active}
+    asset_index: dict[str, list[Equipment]] = {}
+    for equip in all_active:
+        asset_index.setdefault(equip.asset_no, []).append(equip)
 
     return SyncContext(dept_map, valid_depts, loc_map, all_active, combo_index, asset_index)
 
@@ -361,8 +361,8 @@ def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
 
 
 def _build_equipment_update_values(
-    row: pd.Series, dept_map: dict, loc_map: dict, valid_depts: set
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    row: pd.Series, dept_map: dict[str, Any], loc_map: dict[str, Any], valid_depts: set[str]
+) -> tuple[EquipmentUpdateValues, list[dict[str, Any]]]:
     """构建设备更新值字典和变更日志"""
     asset_no = str(row["资产编号"]).strip()
     if not asset_no:
@@ -486,12 +486,12 @@ async def sync_equipments_with_audit(
             f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！"
         )
 
-    for e in all_active:
-        if e.id not in processed_ids:
+    for equip in all_active:
+        if equip.id not in processed_ids:
             if not dry_run:
-                await db.execute(update(Equipment).where(Equipment.id == e.id).values(is_deleted=True))
+                await db.execute(update(Equipment).where(Equipment.id == equip.id).values(is_deleted=True))
             deleted += 1
-            changes_log.append({"asset_no": e.asset_no, "field": "status", "old": "Active", "new": "Deleted"})
+            changes_log.append({"asset_no": equip.asset_no, "field": "status", "old": "Active", "new": "Deleted"})
 
     if not dry_run:
         log_entry = EquipmentSyncLog(
