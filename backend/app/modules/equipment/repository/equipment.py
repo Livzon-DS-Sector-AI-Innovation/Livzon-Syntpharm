@@ -384,7 +384,7 @@ async def get_equipments(
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(not Equipment.is_deleted)  # noqa: E712
+        .where(Equipment.is_deleted.is_(False))  # noqa: E712
     )
 
     if category_id:
@@ -669,7 +669,7 @@ async def get_sync_context(session) -> tuple[dict, dict, dict, list]:
     loc_result = await session.execute(select(Location.id, Location.name))
     loc_map = {n: i for i, n in loc_result.fetchall()}
 
-    equip_result = await session.execute(select(Equipment).where(not Equipment.is_deleted))
+    equip_result = await session.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
     all_active = equip_result.scalars().all()
 
     combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}

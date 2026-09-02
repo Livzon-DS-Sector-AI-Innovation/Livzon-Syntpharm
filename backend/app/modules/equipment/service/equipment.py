@@ -3,7 +3,7 @@
 import datetime
 import uuid
 from io import BytesIO
-from typing import Any, TypedDict
+from typing import Any, NamedTuple, TypedDict
 
 import pandas as pd
 from sqlalchemy import select, update
@@ -317,18 +317,15 @@ def _get_standard_dept(raw_dept: str | None, valid_depts: set[str]) -> str | Non
     return DEPT_MAPPING.get(raw, raw if raw in valid_depts else None)
 
 
-from typing import NamedTuple
-
-
 class SyncContext(NamedTuple):
     """同步上下文数据结构"""
+
     dept_map: dict[str, Any]
     valid_depts: set[str]
     loc_map: dict[str, Any]
     all_active: list[Any]
     combo_index: dict[tuple, Any]
     asset_index: dict[str, list[Any]]
-
 
 
 # ==================== Excel 智能同步 ====================
@@ -344,7 +341,7 @@ async def _prepare_sync_context(db: AsyncSession) -> SyncContext:
     loc_map: dict[str, Any] = {n: i for i, n in loc_result.fetchall()}
 
     # TODO: Refactor to EquipmentRepository.get_all_active()
-    equip_result = await db.execute(select(Equipment).where(not Equipment.is_deleted))
+    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
     all_active = equip_result.scalars().all()
 
     combo_index: dict[tuple, Any] = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
