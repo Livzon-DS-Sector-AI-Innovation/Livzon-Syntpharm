@@ -1,9 +1,9 @@
 """Equipment database queries live here."""
 
 import uuid
-import sqlalchemy as sa
 from typing import Any
 
+import sqlalchemy as sa
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
