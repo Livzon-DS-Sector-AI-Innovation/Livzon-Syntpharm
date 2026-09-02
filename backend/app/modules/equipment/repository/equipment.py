@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -564,39 +564,46 @@ async def get_equipment_statistics(
     status: str | None = None,
 ) -> dict[str, Any]:
     """获取设备统计（支持筛选）"""
-    # 构建基础查询条件
-    base_filter = Equipment.is_deleted.is_(False)  # noqa: E712
+    # 构建筛选条件列表
+    conditions: list[sa.ColumnElement[bool]] = [Equipment.is_deleted.is_(False)]
 
     # 添加筛选条件
     if category_id:
         category_ids = await _get_category_child_ids(db, category_id)
-        base_filter = base_filter & Equipment.id.in_(
-            select(EquipmentCategoryLink.equipment_id).where(
-                EquipmentCategoryLink.category_id.in_(category_ids),
-                EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
+        conditions.append(
+            Equipment.id.in_(
+                select(EquipmentCategoryLink.equipment_id).where(
+                    EquipmentCategoryLink.category_id.in_(category_ids),
+                    EquipmentCategoryLink.is_deleted.is_(False),
+                )
             )
         )
     if location_id:
         location_ids = await _get_location_child_ids(db, location_id)
-        base_filter = base_filter & Equipment.location_id.in_(location_ids)
+        conditions.append(Equipment.location_id.in_(location_ids))
     if department_id:
-        base_filter = base_filter & (Equipment.department_id == department_id)
+        conditions.append(Equipment.department_id == department_id)
     if status:
-        base_filter = base_filter & (Equipment.status == status)
+        conditions.append(Equipment.status == status)
 
     # 总数
-    total_result = await db.execute(select(func.count()).where(base_filter))
+    stmt = select(func.count())
+    if len(conditions) > 1:
+        stmt = stmt.where(and_(*conditions))
+    elif conditions:
+        stmt = stmt.where(conditions[0])
+    total_result = await db.execute(stmt)
     total = total_result.scalar() or 0
 
     # 按状态统计
     status_result = await db.execute(
-        select(Equipment.status, func.count()).where(base_filter).group_by(Equipment.status)
+        select(Equipment.status, func.count()).where(and_(*conditions) if len(conditions) > 1 else conditions[0] if conditions else true()).group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（A/B/C）
     class_result = await db.execute(
-        select(Equipment.equipment_class, func.count()).where(base_filter).group_by(Equipment.equipment_class)
+        select(Equipment.equipment_class, func.count()).where(and_(*conditions) if len(conditions) > 1 else conditions[0] if conditions else true()).group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
 
