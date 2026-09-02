@@ -2634,3 +2634,202 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 ---
 
 
+
+---
+
+### PR #44: Migration naming CI, audit docs cleanup, E2E procurement fix (base: main, head: ruanjiaheng, date: 2026-09-02)
+
+**Changed files (24):**
+- `.scratch/migration-naming-ci/issues/01-delete-stale-migrations.md` — planning doc
+- `.scratch/migration-naming-ci/issues/02-rename-energy-migration.md` — planning doc
+- `.scratch/migration-naming-ci/issues/03-regenerate-merge-migration.md` — planning doc
+- `.scratch/migration-naming-ci/issues/04-extend-naming-validation.md` — planning doc
+- `.scratch/migration-naming-ci/issues/04-implement-naming-validation.md` — planning doc
+- `.scratch/migration-naming-ci/issues/05-test-ci-integration.md` — planning doc
+- `.scratch/migration-naming-ci/spec.md` — spec doc
+- `backend/alembic/versions/0038_add_product_sync_config.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0041_equipment_add_fields.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0042_add_chapter_asset_usages.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0043_fix_production_index_names.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0044_rename_equipment_no_to_asset_no.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0045_energy_add_workshop_and_steam.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0056_add_energy_product_conversion_table.py` — migration (new file, replaces hash-prefixed version)
+- `backend/alembic/versions/0057_merge_migration_heads.py` — merge migration (new file, replaces hash-prefixed version)
+- `backend/scripts/ci/check_migration_scope.py` — CI script (extended with naming validation)
+- `backend/scripts/ci/ci.sh` — CI orchestration (python → python3)
+- `backend/tests/test_check_migration_scope.py` — test for naming validation (new file)
+- `docs/ai-audit-findings.md` — audit findings doc
+- `docs/ai-audit-plan.md` — audit plan doc
+- `frontend/e2e/routes.spec.ts` — E2E route smoke test (bugfix: clear stale errors)
+- `frontend/src/components/procurement/ContractSummaryClient.tsx` — client component (import path fix)
+- `frontend/src/components/procurement/SupplierManagementClient.tsx` — client component (import path fix)
+- `frontend/src/lib/api/client/procurement.ts` — client API (new functions for procurement)
+
+**Affected categories:** 1, 5, 8, 9, 10, 14
+
+#### Category 1: Repository layout
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 10 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (Q1 test location, Q2 script location, Q3 docs location) |
+| Rules not evaluated | 6 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+- [ ] `backend/tests/test_check_migration_scope.py:1` — 仓库组织/测试 — Test file is in `backend/tests/` root. AGENTS.md requires "测试文件放在 `backend/tests/modules/<module>/`" or "单元测试放在 `backend/tests/unit/`". This is a unit test for a CI script and should be in `backend/tests/unit/`. — severity: low
+
+**Uncertain:**
+_None._
+
+#### Category 5: Models and migrations
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 8 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (Q1 naming, Q2 revision ID, Q3 single-module, Q4 raw SQL, Q5 docstring consistency) |
+| Rules not evaluated | 6 |
+| Confirmed findings | 5 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+- [ ] `backend/alembic/versions/0041_equipment_add_fields.py:13` — 迁移规范/命名规范 — `revision: str = '6379b65e0052'` uses hash-based revision ID. AGENTS.md states "Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）。禁止使用 Alembic 自动生成的哈希 ID". The new CI check `validate_naming_convention()` will reject this. Should be `revision: str = '0041_equipment_add_fields'`. — severity: blocking
+- [ ] `backend/alembic/versions/0042_add_chapter_asset_usages.py:13` — 迁移规范/命名规范 — `revision: str = '2eb6d687679e'` uses hash-based revision ID. Should be `revision: str = '0042_add_chapter_asset_usages'`. — severity: blocking
+- [ ] `backend/alembic/versions/0043_fix_production_index_names.py:15` — 迁移规范/命名规范 — `revision: str = 'fcb768b8df78'` uses hash-based revision ID. Should be `revision: str = '0043_fix_production_index_names'`. — severity: blocking
+- [ ] `backend/alembic/versions/0044_rename_equipment_no_to_asset_no.py:13` — 迁移规范/命名规范 — `revision: str = '74a464371488'` uses hash-based revision ID. Should be `revision: str = '0044_rename_equipment_no_to_asset_no'`. — severity: blocking
+- [ ] `backend/alembic/versions/0045_energy_add_workshop_and_steam.py:13` — 迁移规范/命名规范 — `revision: str = '49684887bf7e'` uses hash-based revision ID. Should be `revision: str = '0045_energy_add_workshop_and_steam'`. — severity: blocking
+
+**Uncertain:**
+_None._
+
+**Notes:**
+- Migration 0038 has correct revision ID (`0038_add_product_sync_config`) but stale docstring ("Revision ID: 1f550ec06f66"). Not a functional issue.
+- Migration 0056 has correct revision ID (`0056_add_energy_product_conversion_table`) but stale docstring ("Revises: 0054_add_product_conversion" vs actual down_revision "0053_add_energy_unit_consumption_targets"). Not a functional issue.
+- Migration 0057 has correct revision ID (`0057_merge_migration_heads`). ✓
+- All migrations follow single-module principle. ✓
+- No raw SQL found. ✓
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 (Q1 test location, Q2 test structure) |
+| Rules not evaluated | 3 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+_None._ (Test location finding reported under Category 1)
+
+**Uncertain:**
+_None._
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 (Q1 module imports, Q2 client component, Q3 cross-module, Q4 barrel files) |
+| Rules not evaluated | 4 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+_None._
+
+**Uncertain:**
+_None._
+
+**Notes:**
+- Both components correctly import from `@/lib/api/client/procurement` (client API layer). ✓
+- `SupplierManagementClient.tsx` correctly imports Server Action from `@/actions/procurement`. ✓
+- No cross-module imports. ✓
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 (Q1 generated types, Q2 apiFetch usage, Q3 hand-written types, Q4 file downloads, Q5 type safety) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+- [ ] `frontend/src/lib/api/client/procurement.ts:128` — 前端API层级/类型安全 — `fetchContractRecord()` uses `data as any` cast: `return { data: data as any }`. This bypasses TypeScript type checking. The function signature promises `{ data: ContractRecordResponse }` but the cast hides potential type mismatches. Should use proper type assertion or ensure `apiGet()` returns correctly typed data. — severity: medium
+
+**Uncertain:**
+_None._
+
+**Notes:**
+- `exportPurchaseOrdersExcel()` and `fetchContractFile()` use raw `fetch()` — allowed per explicit exceptions (file downloads). ✓
+- Response types imported from `@/types/procurement` which re-exports from `@/types/generated/schema`. ✓
+- Query parameter types derived from generated `operations` type. ✓
+- All other functions use `apiGet()` correctly. ✓
+
+#### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (Q1 test coverage, Q2 selectors, Q3 error handling) |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+_None._
+
+**Uncertain:**
+_None._
+
+**Notes:**
+- Bugfix correctly clears stale HTTP errors and network failures between route navigations. ✓
+- Test structure is sound with proper timeout handling and error grouping. ✓
+
+#### Categories not affected
+2, 3, 4, 6, 7, 11, 12, 13, 15 — no relevant files changed.
+
+#### PR #44 Summary
+
+| Category | Confirmed | Uncertain | Blocking | High | Medium | Low |
+|----------|-----------|-----------|----------|------|--------|-----|
+| 1. Repository layout | 1 | 0 | 0 | 0 | 0 | 1 |
+| 5. Models & migrations | 5 | 0 | 5 | 0 | 0 | 0 |
+| 8. Backend tests | 0 | 0 | 0 | 0 | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 | 0 | 0 | 0 | 0 |
+| 10. Frontend API & generated types | 1 | 0 | 0 | 0 | 1 | 0 |
+| 14. E2E | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Total** | **7** | **0** | **5** | **0** | **1** | **1** |
+
+#### PR #44 Blocking issues (must fix before merge)
+
+1. **Migration revision IDs still use hash format** — Migrations 0041-0045 have correct NNNN filenames but their internal `revision: str` values are still hash-based (e.g., `'6379b65e0052'`). The new CI check `validate_naming_convention()` validates BOTH filename AND revision ID, so these will fail CI. Each migration's revision ID must be updated to match the filename pattern (e.g., `0041_equipment_add_fields`).
+
+**Status: ❌ BLOCKED — 5 blocking findings (migration revision IDs)**
+
+---
+
+
+#### PR #44 Second Review Notes
+
+Second pass confirmed: no missed categories or rules. Additional context for the blocking fix:
+
+**Cascading `down_revision` chain**: Fixing revision IDs in migrations 0041-0045 requires also updating the `down_revision` references in migrations 0042-0045 to maintain the chain:
+- 0041: `revision` → `'0041_equipment_add_fields'`
+- 0042: `down_revision` → `'0041_equipment_add_fields'`, `revision` → `'0042_add_chapter_asset_usages'`
+- 0043: `down_revision` → `'0042_add_chapter_asset_usages'`, `revision` → `'0043_fix_production_index_names'`
+- 0044: `down_revision` → `'0043_fix_production_index_names'`, `revision` → `'0044_rename_equipment_no_to_asset_no'`
+- 0045: `down_revision` → `'0044_rename_equipment_no_to_asset_no'`, `revision` → `'0045_energy_add_workshop_and_steam'`
+
+Migration 0038's `revision` is already correct (`'0038_add_product_sync_config'`), so 0041's `down_revision` is already correct.
+
+**Status: ❌ BLOCKED — must fix 5 migration revision IDs + 4 down_revision references before merge**
