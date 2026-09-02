@@ -1,6 +1,6 @@
 """0045_energy_add_workshop_and_steam
 
-Revision ID: 49684887bf7e
+Revision ID: 0045_energy_add_workshop_and_steam
 Revises: 74a464371488
 Create Date: 2026-07-15 19:25:58.830586
 """

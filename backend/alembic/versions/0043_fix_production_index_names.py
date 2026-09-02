@@ -1,6 +1,6 @@
 """0043_fix_production_index_names
 
-Revision ID: fcb768b8df78
+Revision ID: 0043_fix_production_index_names
 Revises: 2eb6d687679e
 Create Date: 2026-07-15 18:02:28.635344
 """

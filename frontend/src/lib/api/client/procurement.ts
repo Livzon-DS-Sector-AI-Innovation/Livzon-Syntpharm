@@ -124,8 +124,8 @@ export async function fetchContractRecords(
 }
 
 export async function fetchContractRecord(id: string): Promise<{ data: import('@/types/procurement').ContractRecordResponse }> {
-  const data = await apiGet(`/api/v1/procurement/contracts/${id}`)
-  return { data: data as any }
+  const data = await apiGet<import('../../../types/procurement').ContractRecordResponse>(`/api/v1/procurement/contracts/${id}`)
+  return { data }
 }
 
 export async function fetchContractFile(id: string, filename: string): Promise<{ blob: Blob; filename: string }> {
