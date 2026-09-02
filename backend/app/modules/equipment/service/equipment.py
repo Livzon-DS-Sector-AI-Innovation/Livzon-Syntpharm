@@ -14,11 +14,11 @@ from app.core.exceptions import AppException, DuplicateException, NotFoundExcept
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models import Equipment, EquipmentCategory, Location
 from app.modules.equipment.models.equipment import EquipmentSyncLog
-from app.modules.equipment.schemas import EquipmentSyncResult
 from app.modules.equipment.schemas import (
     EquipmentCategoryCreate,
     EquipmentCategoryUpdate,
     EquipmentCreate,
+    EquipmentSyncResult,
     EquipmentUpdate,
     LocationCreate,
     LocationUpdate,
