@@ -52,9 +52,9 @@ def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
 
     if not revision_match:
         errors.append(
-            f"  Could not find revision ID in file\n"
-            f"  Expected: revision: str = 'NNNN_descriptive_name'\n"
-            f"  See AGENTS.md: 迁移规范 > 命名规范"
+            "  Could not find revision ID in file\n"
+            "  Expected: revision: str = 'NNNN_descriptive_name'\n"
+            "  See AGENTS.md: 迁移规范 > 命名规范"
         )
     else:
         revision_id = revision_match.group(1)
