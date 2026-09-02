@@ -63,9 +63,7 @@ async def main():
         try:
             # 0. 预清理：删除所有 is_deleted = true 的记录，消除潜在的唯一键冲突
             print("🧹 正在清理已删除的重复记录...")
-            await db.execute(
-                update(Equipment).where(Equipment.is_deleted).values(is_deleted=True)
-            )  # 确保状态一致
+            await db.execute(update(Equipment).where(Equipment.is_deleted).values(is_deleted=True))  # 确保状态一致
             # 实际上我们直接物理删除已删除的记录，因为它们通常没有关联业务数据，或者我们可以只保留活跃的进行比对
             # 为了安全，我们先只处理活跃数据的同步。如果存在活跃冲突，我们再处理。
 

@@ -317,10 +317,24 @@ def _get_standard_dept(raw_dept: str | None, valid_depts: set[str]) -> str | Non
     return DEPT_MAPPING.get(raw, raw if raw in valid_depts else None)
 
 
+from typing import NamedTuple
+
+
+class SyncContext(NamedTuple):
+    """同步上下文数据结构"""
+    dept_map: dict[str, Any]
+    valid_depts: set[str]
+    loc_map: dict[str, Any]
+    all_active: list[Any]
+    combo_index: dict[tuple, Any]
+    asset_index: dict[str, list[Any]]
+
+
+
 # ==================== Excel 智能同步 ====================
 
 
-async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, list, dict, dict]:
+async def _prepare_sync_context(db: AsyncSession) -> SyncContext:
     """准备同步所需的映射表和索引"""
     dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
     dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
@@ -334,11 +348,11 @@ async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, lis
     all_active = equip_result.scalars().all()
 
     combo_index: dict[tuple, Any] = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
-    asset_index: dict[str, list] = {}
+    asset_index: dict[str, list[Any]] = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
 
-    return dept_map, valid_depts, loc_map, all_active, combo_index, asset_index
+    return SyncContext(dept_map, valid_depts, loc_map, all_active, combo_index, asset_index)
 
 
 def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
@@ -396,7 +410,8 @@ async def sync_equipments_with_audit(
     except Exception as e:
         raise ValueError(f"Excel 解析失败: {str(e)}")
 
-    dept_map, valid_depts, loc_map, all_active, combo_index, asset_index = await _prepare_sync_context(db)
+    context = await _prepare_sync_context(db)
+    dept_map, valid_depts, loc_map, all_active, combo_index, asset_index = context
 
     updated, inserted, migrated, deleted = 0, 0, 0, 0
     processed_ids = set()

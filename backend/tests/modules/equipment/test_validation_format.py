@@ -5,6 +5,7 @@
 
 import subprocess
 from pathlib import Path
+import pytest
 
 
 def test_validation_py_ruff_format() -> None:
@@ -28,9 +29,9 @@ def test_validation_py_ruff_format() -> None:
     assert result.returncode == 0, f"validation.py 格式不符合规范:\nstdout: {result.stdout}\nstderr: {result.stderr}"
 
 
-def test_validation_py_no_trailing_whitespace() -> None:
+def test_validation_py_no_trailing_whitespace(project_root: Path) -> None:
     """验证 validation.py 没有 trailing whitespace。"""
-    validation_file = Path(__file__).parents[2].parent / "app" / "modules" / "equipment" / "service" / "validation.py"
+    validation_file = project_root / "app" / "modules" / "equipment" / "service" / "validation.py"
 
     with open(validation_file, encoding="utf-8") as f:
         lines = f.readlines()
@@ -41,9 +42,9 @@ def test_validation_py_no_trailing_whitespace() -> None:
             raise AssertionError(f"Line {i} has trailing whitespace: {repr(line)}")
 
 
-def test_validation_py_ends_with_single_newline() -> None:
+def test_validation_py_ends_with_single_newline(project_root: Path) -> None:
     """验证 validation.py 以单个换行符结尾。"""
-    validation_file = Path(__file__).parents[2].parent / "app" / "modules" / "equipment" / "service" / "validation.py"
+    validation_file = project_root / "app" / "modules" / "equipment" / "service" / "validation.py"
 
     with open(validation_file, "rb") as f:
         content = f.read()
