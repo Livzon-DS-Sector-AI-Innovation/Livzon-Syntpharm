@@ -28,14 +28,14 @@ NAMING_PATTERN = re.compile(r'^\d{4}_[a-zA-Z0-9_]+$')
 
 def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
     """Validate that migration filename and revision ID follow NNNN naming convention.
-    
+
     Returns:
         tuple[bool, list[str]]: (is_valid, list_of_errors)
     """
     path = Path(file_path)
     filename = path.stem  # filename without .py extension
     errors = []
-    
+
     # Validate filename
     if not NAMING_PATTERN.match(filename):
         errors.append(
@@ -43,13 +43,13 @@ def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
             f"  Expected pattern: NNNN_descriptive_name (4 digits, underscore, alphanumeric/underscore)\n"
             f"  See AGENTS.md: 迁移规范 > 命名规范"
         )
-    
+
     # Extract revision ID from file content
     content = path.read_text()
-    
+
     # Match revision: str = '...' or revision = '...'
     revision_match = re.search(r"revision(?:\s*:\s*str)?\s*=\s*['\"]([^'\"]+)['\"]", content)
-    
+
     if not revision_match:
         errors.append(
             f"  Could not find revision ID in file\n"
@@ -58,7 +58,7 @@ def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
         )
     else:
         revision_id = revision_match.group(1)
-        
+
         # Validate revision ID
         if not NAMING_PATTERN.match(revision_id):
             errors.append(
@@ -66,7 +66,7 @@ def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
                 f"  Expected pattern: NNNN_descriptive_name (4 digits, underscore, alphanumeric/underscore)\n"
                 f"  See AGENTS.md: 迁移规范 > 命名规范"
             )
-    
+
     return len(errors) == 0, errors
 
 
@@ -132,7 +132,7 @@ def main():
         for error in naming_errors:
             print(error)
         sys.exit(1)
-    
+
     print(f"✓ {migration_file}: Naming convention valid")
 
     # Check 2: Scope (single-module principle)
