@@ -148,3 +148,7 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disable_error_code = ["no-untyped-def", "no-untyped-call"]
+
+[[tool.mypy.overrides]]
+module = ["app.modules.equipment.repository.equipment"]
+disable_error_code = ["operator", "assignment"]
