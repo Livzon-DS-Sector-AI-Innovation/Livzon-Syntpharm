@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Button, Input, Select, Space, Tooltip, App } from 'antd'
 import {
   SearchOutlined,
@@ -26,6 +26,8 @@ export default function KnowledgeGraphToolbar({
   onFitView,
 }: ToolbarProps) {
   const { message } = App.useApp()
+  const messageRef = useRef(message)
+  messageRef.current = message
   const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
   const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
   const [searching, setSearching] = useState(false)
@@ -44,24 +46,24 @@ export default function KnowledgeGraphToolbar({
         const results = await searchGraphNodes(value, state.nodeTypeFilter || undefined)
         useKnowledgeGraphStore.setState({ searchResults: results })
         if (results.length === 0) {
-          message.info('未找到匹配节点')
+          messageRef.current.info('未找到匹配节点')
         } else {
-          message.success(`找到 ${results.length} 个节点`)
+          messageRef.current.success(`找到 ${results.length} 个节点`)
         }
       } catch {
-        message.error('搜索失败')
+        messageRef.current.error('搜索失败')
       } finally {
         setSearching(false)
       }
     },
-    [message],
+    [],  // 零依赖
   )
 
   // 导出图片
   const handleExport = useCallback(() => {
     const svgElement = document.querySelector('.react-flow__renderer svg')
     if (!svgElement) {
-      message.warning('未找到画布元素')
+      messageRef.current.warning('未找到画布元素')
       return
     }
     const serializer = new XMLSerializer()
@@ -73,8 +75,8 @@ export default function KnowledgeGraphToolbar({
     a.download = `知识图谱_${new Date().toISOString().slice(0, 10)}.svg`
     a.click()
     URL.revokeObjectURL(url)
-    message.success('导出成功')
-  }, [message])
+    messageRef.current.success('导出成功')
+  }, [])  // 零依赖
 
   return (
     <Panel position="top-left" style={{ margin: 12 }}>

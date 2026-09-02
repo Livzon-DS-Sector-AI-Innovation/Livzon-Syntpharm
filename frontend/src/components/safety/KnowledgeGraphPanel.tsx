@@ -264,6 +264,8 @@ function mapEdgeToFlowEdge(e: GraphEdgeData): Edge {
 
 export default function KnowledgeGraphPanel() {
   const { message } = App.useApp()
+  const messageRef = useRef(message)
+  messageRef.current = message
   // 用 selector 订阅，避免整个 store 对象变化触发重渲染
   const nodes = useKnowledgeGraphStore(s => s.nodes)
   const edges = useKnowledgeGraphStore(s => s.edges)
@@ -278,7 +280,7 @@ export default function KnowledgeGraphPanel() {
   const rfInstance = useRef<any>(null)
   const loadingRef = useRef(false)  // 防重入
 
-  // 加载数据 — 零依赖，用 store 实例 + ref 防重入
+  // 加载数据 — 零依赖，用 ref 防重入 + 避免 message 变化导致重复执行
   const loadGraph = useCallback(async () => {
     if (loadingRef.current) return
     loadingRef.current = true
@@ -300,11 +302,11 @@ export default function KnowledgeGraphPanel() {
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : '加载图谱失败'
       useKnowledgeGraphStore.setState({ error: errMsg, loading: false })
-      message.error(`加载图谱数据失败: ${errMsg}`)
+      messageRef.current.error(`加载图谱数据失败: ${errMsg}`)
     } finally {
       loadingRef.current = false
     }
-  }, [message])
+  }, [])  // 零依赖，永远不重新创建
 
   useEffect(() => { loadGraph() }, [loadGraph])
 
