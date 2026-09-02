@@ -114,7 +114,7 @@ def is_baseline_migration(file_path: str) -> bool:
     return False
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python scripts/check_migration_scope.py <migration_file>")
         sys.exit(2)
