@@ -5,7 +5,6 @@
 
 import subprocess
 from pathlib import Path
-import pytest
 
 
 def test_validation_py_ruff_format() -> None:
