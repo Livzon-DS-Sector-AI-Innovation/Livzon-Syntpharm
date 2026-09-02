@@ -264,7 +264,7 @@ run_migration_scope() {
 
     SCOPE_FAILED=0
     for migration in ${MIGRATIONS}; do
-        if ! python scripts/ci/check_migration_scope.py "${migration}"; then
+        if ! python3 scripts/ci/check_migration_scope.py "${migration}"; then
             SCOPE_FAILED=1
         fi
     done
