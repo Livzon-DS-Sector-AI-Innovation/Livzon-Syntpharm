@@ -1,15 +1,20 @@
 """Equipment service layer: business logic, validation, transaction orchestration."""
 
+import datetime
 import uuid
-from typing import Any
+from io import BytesIO
+from typing import Any, TypedDict
 
+import pandas as pd
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException, DuplicateException, NotFoundException
 from app.modules.equipment import repository as repo
-from app.modules.equipment.repository.equipment import get_sync_context, bulk_update_equipment, bulk_insert_equipment, bulk_soft_delete
 from app.modules.equipment.models import Equipment, EquipmentCategory, Location
+from app.modules.equipment.models.equipment import EquipmentSyncLog
+from app.modules.equipment.schemas import EquipmentSyncResult
 from app.modules.equipment.schemas import (
     EquipmentCategoryCreate,
     EquipmentCategoryUpdate,
@@ -18,6 +23,7 @@ from app.modules.equipment.schemas import (
     LocationCreate,
     LocationUpdate,
 )
+from app.modules.hr.models import HrDepartment
 
 from .validation import (
     validate_asset_no_unique,
@@ -290,9 +296,22 @@ async def batch_delete_equipments(db: AsyncSession, ids: list[uuid.UUID]) -> int
     await db.commit()
     return deleted_count
 
+
+# 部门名称映射表（标准化处理）
+DEPT_MAPPING = {
+    # 示例：可以根据实际情况扩展
+}
+
+
+def _get_standard_dept(raw_dept: str | None, valid_depts: set) -> str | None:
+    """标准化部门名称"""
+    if not raw_dept or pd.isna(raw_dept):
+        return None
+    raw = str(raw_dept).strip()
+    return DEPT_MAPPING.get(raw, raw if raw in valid_depts else None)
+
+
 # ==================== Excel 智能同步 ====================
-import pandas as pd
-from io import BytesIO
 
 
 async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, list]:
@@ -300,28 +319,28 @@ async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, lis
     dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
     dept_map = {n: i for i, n in dept_result.fetchall()}
     valid_depts = set(dept_map.keys())
-    
+
     loc_result = await db.execute(select(Location.id, Location.name))
     loc_map = {n: i for i, n in loc_result.fetchall()}
-    
+
     # TODO: Refactor to EquipmentRepository.get_all_active()
-    equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted == False))
+    equip_result = await db.execute(select(Equipment).where(not Equipment.is_deleted))
     all_active = equip_result.scalars().all()
-    
+
     combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
     asset_index = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
-        
+
     return dept_map, valid_depts, loc_map, all_active, combo_index, asset_index
 
 
 async def sync_equipments_with_audit(
-    db: AsyncSession, 
-    file_content: bytes, 
+    db: AsyncSession,
+    file_content: bytes,
     operator_id: uuid.UUID | None = None,
     file_name: str = "unknown.xlsx",
-    dry_run: bool = False
+    dry_run: bool = False,
 ) -> EquipmentSyncResult:
     """TB-04: 带审计追踪、熔断保护及 Dry Run 的最终版同步逻辑"""
     try:
@@ -337,17 +356,22 @@ async def sync_equipments_with_audit(
     warnings = []
 
     for _, row in df.iterrows():
-        asset_no = str(row['资产编号']).strip()
-        if not asset_no: continue
-        
-        std_dept = _get_standard_dept(row['实物所在部门'], valid_depts)
+        asset_no = str(row["资产编号"]).strip()
+        if not asset_no:
+            continue
+
+        std_dept = _get_standard_dept(row["实物所在部门"], valid_depts)
         dept_id = dept_map.get(std_dept) if std_dept else None
-        loc_text = str(row['实物所在地点']).strip() if pd.notna(row['实物所在地点']) and str(row['实物所在地点']).strip() != '-' else None
+        loc_text = (
+            str(row["实物所在地点"]).strip()
+            if pd.notna(row["实物所在地点"]) and str(row["实物所在地点"]).strip() != "-"
+            else None
+        )
         loc_id = loc_map.get(loc_text) if loc_text else None
 
         # 修复匹配逻辑：优先精确匹配，其次容错匹配
         target_equip = combo_index.get((asset_no, dept_id, loc_id))
-        
+
         if not target_equip and loc_id is None:
             # 如果位置为空，尝试只匹配资产号和部门
             candidates = [e for e in asset_index.get(asset_no, []) if e.department_id == dept_id]
@@ -359,13 +383,15 @@ async def sync_equipments_with_audit(
                 target_equip = candidates[0]
 
         new_vals = {
-            "name": str(row['设备名称']).strip(),
-            "current_cost": float(row['当前成本']) if pd.notna(row['当前成本']) else None,
-            "book_value": float(row['帐面净值']) if pd.notna(row['帐面净值']) else None,
-            "department_id": dept_id, "location_id": loc_id, "location_text": loc_text,
-            "model": str(row['型号']).strip() if pd.notna(row['型号']) else None,
-            "manufacturer": str(row['制造商']).strip() if pd.notna(row['制造商']) else None,
-            "commissioning_date": row['启用日期'] if pd.notna(row['启用日期']) else None,
+            "name": str(row["设备名称"]).strip(),
+            "current_cost": float(row["当前成本"]) if pd.notna(row["当前成本"]) else None,
+            "book_value": float(row["帐面净值"]) if pd.notna(row["帐面净值"]) else None,
+            "department_id": dept_id,
+            "location_id": loc_id,
+            "location_text": loc_text,
+            "model": str(row["型号"]).strip() if pd.notna(row["型号"]) else None,
+            "manufacturer": str(row["制造商"]).strip() if pd.notna(row["制造商"]) else None,
+            "commissioning_date": row["启用日期"] if pd.notna(row["启用日期"]) else None,
         }
 
         if target_equip:
@@ -373,7 +399,7 @@ async def sync_equipments_with_audit(
                 old_val = getattr(target_equip, field, None)
                 if old_val != new_val:
                     changes_log.append({"asset_no": asset_no, "field": field, "old": str(old_val), "new": str(new_val)})
-            
+
             if not dry_run:
                 await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**new_vals))
             processed_ids.add(target_equip.id)
@@ -392,11 +418,13 @@ async def sync_equipments_with_audit(
 
     # 熔断检查
     active_asset_nos = {e.asset_no for e in all_active}
-    excel_asset_nos = set(df['资产编号'].dropna().astype(str).str.strip())
+    excel_asset_nos = set(df["资产编号"].dropna().astype(str).str.strip())
     missing_assets = active_asset_nos - excel_asset_nos
-    
+
     if len(active_asset_nos) > 0 and len(missing_assets) / len(active_asset_nos) > 0.05:
-        raise ValueError(f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！")
+        raise ValueError(
+            f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！"
+        )
 
     for e in all_active:
         if e.id not in processed_ids:
@@ -407,20 +435,23 @@ async def sync_equipments_with_audit(
 
     if not dry_run:
         log_entry = EquipmentSyncLog(
-            operator_id=operator_id, file_name=file_name,
+            operator_id=operator_id,
+            file_name=file_name,
             summary={"updated": updated, "inserted": inserted, "migrated": migrated, "deleted": deleted},
-            changes_detail=changes_log[:1000], is_dry_run=False
+            changes_detail=changes_log[:1000],
+            is_dry_run=False,
         )
         db.add(log_entry)
         await db.commit()
 
-    return EquipmentSyncResult(updated=updated, inserted=inserted, migrated=migrated, deleted=deleted, warnings=warnings)
+    return EquipmentSyncResult(
+        updated=updated, inserted=inserted, migrated=migrated, deleted=deleted, warnings=warnings
+    )
 
-
-from typing import TypedDict, NotRequired
 
 class EquipmentUpdateValues(TypedDict, total=False):
     """设备同步更新值的类型定义"""
+
     name: str
     current_cost: float | None
     book_value: float | None

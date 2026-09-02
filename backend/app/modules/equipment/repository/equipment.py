@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -13,6 +13,7 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
+from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
 
@@ -329,7 +330,7 @@ async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equip
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(Equipment.id == equipment_id, Equipment.is_deleted == False)  # noqa: E712
+        .where(Equipment.id == equipment_id, not Equipment.is_deleted)  # noqa: E712
     )
     return result.scalar_one_or_none()
 
@@ -347,7 +348,7 @@ async def get_equipment_by_id(
         )
         .where(
             Equipment.id == equipment_id,
-            Equipment.is_deleted == False,  # noqa: E712
+            not Equipment.is_deleted,  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -361,7 +362,7 @@ async def get_equipment_by_asset_no(
     result = await db.execute(
         select(Equipment).where(
             Equipment.asset_no == asset_no,
-            Equipment.is_deleted == False,  # noqa: E712
+            not Equipment.is_deleted,  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -384,7 +385,7 @@ async def get_equipments(
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(not Equipment.is_deleted)  # noqa: E712
     )
 
     if category_id:
@@ -516,7 +517,7 @@ async def count_equipments_by_category(
         .where(
             EquipmentCategoryLink.category_id == category_id,
             EquipmentCategoryLink.is_deleted == False,  # noqa: E712
-            Equipment.is_deleted == False,  # noqa: E712
+            not Equipment.is_deleted,  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -532,7 +533,7 @@ async def count_equipments_by_location(
         .select_from(Equipment)
         .where(
             Equipment.location_id == location_id,
-            Equipment.is_deleted == False,  # noqa: E712
+            not Equipment.is_deleted,  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -548,7 +549,7 @@ async def get_max_equipment_no_by_category(
         select(Equipment.equipment_tag)
         .where(
             Equipment.equipment_tag.like(pattern),
-            Equipment.is_deleted == False,  # noqa: E712
+            not Equipment.is_deleted,  # noqa: E712
         )
         .order_by(Equipment.equipment_tag.desc())
         .limit(1)
@@ -565,7 +566,7 @@ async def get_equipment_statistics(
 ) -> dict[str, Any]:
     """获取设备统计（支持筛选）"""
     # 构建基础查询条件
-    base_filter = Equipment.is_deleted == False  # noqa: E712
+    base_filter = not Equipment.is_deleted  # noqa: E712
 
     # 添加筛选条件
     if category_id:
@@ -657,38 +658,36 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
     result = await db.execute(select(User.name).where(User.id == user_id))
     return result.scalar_one_or_none()
 
-# ==================== Sync Helpers ====================
-from sqlalchemy import select, update
-from app.modules.equipment.models.equipment import Equipment
-from app.modules.hr.models import HrDepartment
-from app.modules.equipment.models.location import Location
 
 async def get_sync_context(session):
     """获取同步所需的部门和位置映射及活跃设备索引"""
     dept_result = await session.execute(select(HrDepartment.id, HrDepartment.name))
     dept_map = {n: i for i, n in dept_result.fetchall()}
-    
+
     loc_result = await session.execute(select(Location.id, Location.name))
     loc_map = {n: i for i, n in loc_result.fetchall()}
-    
-    equip_result = await session.execute(select(Equipment).where(Equipment.is_deleted == False))
+
+    equip_result = await session.execute(select(Equipment).where(not Equipment.is_deleted))
     all_active = equip_result.scalars().all()
-    
+
     combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
     asset_index = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
-        
+
     return dept_map, loc_map, all_active, combo_index, asset_index
+
 
 async def bulk_update_equipment(session, ids_and_vals):
     """批量更新设备"""
     for equip_id, vals in ids_and_vals:
         await session.execute(update(Equipment).where(Equipment.id == equip_id).values(**vals))
 
+
 async def bulk_insert_equipment(session, equipments):
     """批量新增设备"""
     session.add_all(equipments)
+
 
 async def bulk_soft_delete(session, ids):
     """批量软删除"""

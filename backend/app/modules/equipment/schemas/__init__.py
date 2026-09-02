@@ -13,6 +13,7 @@ from app.modules.equipment.schemas.calibration import (
 from app.modules.equipment.schemas.equipment import (
     BatchDeleteRequest,
     EquipmentCategoryCreate,
+    EquipmentSyncResult,
     EquipmentCategoryResponse,
     EquipmentCategoryTree,
     EquipmentCategoryUpdate,
@@ -147,6 +148,7 @@ __all__ = [
     "EquipmentResponse",
     "EquipmentStatistics",
     "BatchDeleteRequest",
+    "EquipmentSyncResult",
     # failure code
     "FailureCodeType",
     "FailureCodeCreate",

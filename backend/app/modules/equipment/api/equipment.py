@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -281,14 +281,17 @@ async def batch_delete_equipments(
     deleted_count = await service.batch_delete_equipments(db, data.ids)
     return build_response(message=f"成功删除 {deleted_count} 台设备")
 
+
 @router.post("/equipments/sync-excel", summary="智能同步 Excel 设备数据")
 async def sync_equipments_excel(
-    dry_run: bool = Query(False, description="是否仅预览不执行"),
-    file: UploadFile = File(...),
     current_user: RequiredUser,
+    file: UploadFile = File(...),
+    dry_run: bool = Query(False, description="是否仅预览不执行"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """上传 Excel 文件并执行智能同步"""
     content = await file.read()
-    result = await service.sync_equipments_with_audit(db, content, dry_run=dry_run, operator_id=current_user.id, file_name=file.filename)
+    result = await service.sync_equipments_with_audit(
+        db, content, dry_run=dry_run, operator_id=current_user.id, file_name=file.filename
+    )
     return build_response(data=result.model_dump())

@@ -252,6 +252,7 @@ class EquipmentImportRow(BaseModel):
             self.资产说明 = self.设备名称
         return self
 
+
 class EquipmentSyncResult(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="同步过程中的警告信息")
     """设备同步结果统计"""
