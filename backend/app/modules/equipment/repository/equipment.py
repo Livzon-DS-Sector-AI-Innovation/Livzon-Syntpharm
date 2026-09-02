@@ -658,7 +658,7 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
     return result.scalar_one_or_none()
 
 
-async def get_sync_context(session):
+async def get_sync_context(session) -> tuple[dict, dict, dict, list]:
     """获取同步所需的部门和位置映射及活跃设备索引"""
     # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
     from sqlalchemy import text
@@ -673,7 +673,7 @@ async def get_sync_context(session):
     all_active = equip_result.scalars().all()
 
     combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
-    asset_index = {}
+    asset_index: dict[str, list] = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
 

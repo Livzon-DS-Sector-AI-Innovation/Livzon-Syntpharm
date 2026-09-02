@@ -199,8 +199,8 @@ class EquipmentSyncLog(BaseModel):
 
     operator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("identity.users.id"), comment="操作人ID")
     file_name: Mapped[str] = mapped_column(String(255), comment="上传的文件名")
-    summary: Mapped[dict] = mapped_column(JSON, comment="同步统计摘要 {updated, inserted, migrated, deleted}")
-    changes_detail: Mapped[list[dict]] = mapped_column(
+    summary: Mapped[dict[str, Any]] = mapped_column(JSON, comment="同步统计摘要 {updated, inserted, migrated, deleted}")
+    changes_detail: Mapped[list[dict[str, Any]]] = mapped_column(
         JSON, comment="详细变更列表 [{asset_no, field, old_val, new_val}]"
     )
     is_dry_run: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为预演模式")

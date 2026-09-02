@@ -304,12 +304,12 @@ async def batch_delete_equipments(db: AsyncSession, ids: list[uuid.UUID]) -> int
 
 
 # 部门名称映射表（标准化处理）
-DEPT_MAPPING = {
+DEPT_MAPPING: dict[str, str] = {
     # 示例：可以根据实际情况扩展
 }
 
 
-def _get_standard_dept(raw_dept: str | None, valid_depts: set) -> str | None:
+def _get_standard_dept(raw_dept: str | None, valid_depts: set[str]) -> str | None:
     """标准化部门名称"""
     if not raw_dept or pd.isna(raw_dept):
         return None
@@ -320,21 +320,21 @@ def _get_standard_dept(raw_dept: str | None, valid_depts: set) -> str | None:
 # ==================== Excel 智能同步 ====================
 
 
-async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, list]:
+async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, list, dict, dict]:
     """准备同步所需的映射表和索引"""
     dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
-    dept_map = {n: i for i, n in dept_result.fetchall()}
-    valid_depts = set(dept_map.keys())
+    dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
+    valid_depts: set[str] = set(dept_map.keys())
 
     loc_result = await db.execute(select(Location.id, Location.name))
-    loc_map = {n: i for i, n in loc_result.fetchall()}
+    loc_map: dict[str, Any] = {n: i for i, n in loc_result.fetchall()}
 
     # TODO: Refactor to EquipmentRepository.get_all_active()
     equip_result = await db.execute(select(Equipment).where(not Equipment.is_deleted))
     all_active = equip_result.scalars().all()
 
-    combo_index = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
-    asset_index = {}
+    combo_index: dict[tuple, Any] = {(e.asset_no, e.department_id, e.location_id): e for e in all_active}
+    asset_index: dict[str, list] = {}
     for e in all_active:
         asset_index.setdefault(e.asset_no, []).append(e)
 
@@ -351,7 +351,7 @@ def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
 
 def _build_equipment_update_values(
     row: pd.Series, dept_map: dict, loc_map: dict, valid_depts: set
-) -> tuple[dict, list]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """构建设备更新值字典和变更日志"""
     asset_no = str(row["资产编号"]).strip()
     if not asset_no:
@@ -368,7 +368,7 @@ def _build_equipment_update_values(
     loc_id = loc_map.get(loc_text) if loc_text else None
 
     new_vals: EquipmentUpdateValues = {}
-    changes_log = []
+    changes_log: list[dict[str, Any]] = []
 
     # 构建更新字段（根据实际业务需求）
     if dept_id:
@@ -400,7 +400,7 @@ async def sync_equipments_with_audit(
 
     updated, inserted, migrated, deleted = 0, 0, 0, 0
     processed_ids = set()
-    changes_log = []
+    changes_log: list[dict[str, Any]] = []
     warnings = []
 
     for _, row in df.iterrows():
