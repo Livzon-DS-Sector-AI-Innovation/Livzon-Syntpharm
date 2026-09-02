@@ -209,6 +209,42 @@ async def handler(  # noqa: F811
 
 # ── 知识图谱端点 ──────────────────────────────────────────
 
+def _node_to_dict(n) -> dict:
+    """节点 ORM → dict"""
+    return {
+        "id": str(n.id),
+        "name": n.name,
+        "node_type": n.node_type,
+        "aliases": n.aliases,
+        "article_id": str(n.article_id) if n.article_id else None,
+        "entity_type": n.entity_type,
+        "ai_summary": n.ai_summary,
+        "confidence": n.confidence,
+        "status": n.status,
+        "merged_into_id": str(n.merged_into_id) if n.merged_into_id else None,
+        "metadata": n.extra_metadata,
+        "created_at": n.created_at.isoformat() if n.created_at else None,
+        "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+    }
+
+
+def _edge_to_dict(e) -> dict:
+    """边 ORM → dict"""
+    return {
+        "id": str(e.id),
+        "source_node_id": str(e.source_node_id),
+        "target_node_id": str(e.target_node_id),
+        "relation_type": e.relation_type,
+        "description": e.description,
+        "evidence_text": e.evidence_text,
+        "confidence": e.confidence,
+        "status": e.status,
+        "metadata": e.extra_metadata,
+        "created_at": e.created_at.isoformat() if e.created_at else None,
+        "updated_at": e.updated_at.isoformat() if e.updated_at else None,
+    }
+
+
 @knowledge_router.get(
     "/knowledge-graph/full-graph",
     response_model=ApiResponse,
@@ -221,17 +257,15 @@ async def get_full_graph(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """获取完整知识图谱数据（暂时返回空数据）"""
+    """获取完整知识图谱数据"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    data = await service.get_full_graph(node_types, relation_types, max_nodes)
     return ApiResponse(
         data={
-            "nodes": [],
-            "edges": [],
-            "stats": {
-                "total_nodes": 0,
-                "total_edges": 0,
-                "by_type": {},
-                "by_status": {},
-            },
+            "nodes": [_node_to_dict(n) for n in data["nodes"]],
+            "edges": [_edge_to_dict(e) for e in data["edges"]],
+            "stats": data["stats"],
         }
     )
 
@@ -251,8 +285,15 @@ async def get_graph_nodes(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """获取图谱节点列表（暂时返回空数据）"""
-    return ApiResponse(data=[], meta={"page": page, "page_size": page_size, "total": 0})
+    """获取图谱节点列表"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    offset = (page - 1) * page_size
+    items, total = await service.get_nodes(node_type, entity_type, status, keyword, offset, page_size)
+    return ApiResponse(
+        data=[_node_to_dict(n) for n in items],
+        meta={"page": page, "page_size": page_size, "total": total},
+    )
 
 
 @knowledge_router.get(
@@ -268,5 +309,75 @@ async def get_graph_edges(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """获取图谱边列表（暂时返回空数据）"""
-    return ApiResponse(data=[], meta={"page": page, "page_size": page_size, "total": 0})
+    """获取图谱边列表"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    offset = (page - 1) * page_size
+    items, total = await service.get_edges(relation_type, status, offset, page_size)
+    return ApiResponse(
+        data=[_edge_to_dict(e) for e in items],
+        meta={"page": page, "page_size": page_size, "total": total},
+    )
+
+
+@knowledge_router.get(
+    "/knowledge-graph/search",
+    response_model=ApiResponse,
+    summary="搜索图谱节点",
+)
+async def search_graph_nodes(
+    query: str = Query(..., min_length=1),
+    node_types: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """搜索图谱节点"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    items = await service.search_nodes(query, node_types)
+    return ApiResponse(data=[_node_to_dict(n) for n in items])
+
+
+@knowledge_router.get(
+    "/knowledge-graph/expand",
+    response_model=ApiResponse,
+    summary="展开节点邻居",
+)
+async def expand_graph_node(
+    node_id: uuid.UUID,
+    hops: int = Query(1, ge=1, le=3),
+    relation_types: str | None = None,
+    max_nodes: int = Query(30, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """展开指定节点的邻居节点"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    data = await service.expand_node(node_id, hops, relation_types, max_nodes)
+    return ApiResponse(
+        data={
+            "nodes": [_node_to_dict(n) for n in data["nodes"]],
+            "edges": [_edge_to_dict(e) for e in data["edges"]],
+            "stats": data["stats"],
+        }
+    )
+
+
+@knowledge_router.post(
+    "/knowledge-graph/generate",
+    response_model=ApiResponse,
+    summary="AI 生成知识图谱",
+)
+async def generate_graph(
+    document_ids: list[uuid.UUID] | None = None,
+    force_rebuild: bool = False,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser | None = Depends(get_current_user),
+) -> Any:
+    """从知识库文章 AI 生成知识图谱"""
+    from app.modules.safety.service import KnowledgeGraphService
+    service = KnowledgeGraphService(db)
+    result = await service.generate_graph(document_ids, force_rebuild)
+    await db.commit()
+    return ApiResponse(data=result)

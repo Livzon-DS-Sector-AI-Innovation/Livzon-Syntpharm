@@ -1968,3 +1968,80 @@ class ScheduledTaskLog(BaseModel):
 
     # 关系
     task: Mapped[ScheduledTask] = relationship("ScheduledTask", back_populates="logs")
+
+
+# ==================== 知识图谱 ====================
+
+
+class GraphKnowledgeNode(BaseModel):
+    """知识图谱节点表"""
+
+    __tablename__ = "graph_knowledge_nodes"
+    __table_args__ = {"schema": "safety"}
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="节点名称")
+    node_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="节点类型: document/clause/entity/category/concept"
+    )
+    aliases: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="别名列表")
+    article_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="关联知识库文章ID"
+    )
+    entity_type: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="实体子类型: equipment/condition/location/operation/material/standard"
+    )
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI 摘要")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="AI 置信度 0-1")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="ai_generated",
+        server_default="ai_generated",
+        nullable=False,
+        comment="状态: ai_generated/human_confirmed/deprecated/merged",
+    )
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="合并目标节点ID"
+    )
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="扩展元数据")
+
+
+class GraphKnowledgeEdge(BaseModel):
+    """知识图谱边（关系）表"""
+
+    __tablename__ = "graph_knowledge_edges"
+    __table_args__ = {"schema": "safety"}
+
+    source_node_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.graph_knowledge_nodes.id"),
+        nullable=False,
+        comment="源节点ID",
+    )
+    target_node_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.graph_knowledge_nodes.id"),
+        nullable=False,
+        comment="目标节点ID",
+    )
+    relation_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="关系类型: cites/supplements/replaces/belongs_to/related_to/conflicts_with"
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="关系说明")
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="AI 置信度 0-1")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="ai_generated",
+        server_default="ai_generated",
+        nullable=False,
+        comment="状态: ai_generated/human_confirmed/human_deleted/human_added",
+    )
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="扩展元数据")
+
+    # 关系
+    source_node: Mapped[GraphKnowledgeNode] = relationship(
+        "GraphKnowledgeNode", foreign_keys=[source_node_id], lazy="select"
+    )
+    target_node: Mapped[GraphKnowledgeNode] = relationship(
+        "GraphKnowledgeNode", foreign_keys=[target_node_id], lazy="select"
+    )
