@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Naming convention pattern: NNNN_descriptive_name
 # NNNN = 4 digits, followed by underscore, then alphanumeric/underscore
-NAMING_PATTERN = re.compile(r'^\d{4}_[a-zA-Z0-9_]+$')
+NAMING_PATTERN = re.compile(r"^\d{4}_[a-zA-Z0-9_]+$")
 
 
 def validate_naming_convention(file_path: str) -> tuple[bool, list[str]]:
