@@ -46,6 +46,12 @@ async def create_equipment_category(
     return await repo.create_equipment_category(db, data.model_dump())
 
 
+# ==================== 同步配置常量 ====================
+EXCEL_HEADER_ROW = 4  # Excel 数据起始行（从 0 开始计数，header=4 表示第 5 行）
+MISSING_ASSET_THRESHOLD = 0.05  # 缺失设备比例阈值（5%），超过则触发熔断
+MAX_CHANGES_LOG_ENTRIES = 1000  # 审计日志最大记录数
+
+
 async def get_equipment_category_by_id(
     db: AsyncSession,
     category_id: uuid.UUID,
@@ -335,6 +341,48 @@ async def _prepare_sync_context(db: AsyncSession) -> tuple[dict, dict, dict, lis
     return dept_map, valid_depts, loc_map, all_active, combo_index, asset_index
 
 
+def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
+    """解析 Excel 文件"""
+    try:
+        return pd.read_excel(BytesIO(file_content), header=EXCEL_HEADER_ROW)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+
+def _build_equipment_update_values(
+    row: pd.Series, dept_map: dict, loc_map: dict, valid_depts: set
+) -> tuple[dict, list]:
+    """构建设备更新值字典和变更日志"""
+    asset_no = str(row["资产编号"]).strip()
+    if not asset_no:
+        return {}, []
+
+    std_dept = _get_standard_dept(row["实物所在部门"], valid_depts)
+    dept_id = dept_map.get(std_dept) if std_dept else None
+
+    loc_text = (
+        str(row["实物所在地点"]).strip()
+        if pd.notna(row["实物所在地点"]) and str(row["实物所在地点"]).strip() != "-"
+        else None
+    )
+    loc_id = loc_map.get(loc_text) if loc_text else None
+
+    new_vals: EquipmentUpdateValues = {}
+    changes_log = []
+
+    # 构建更新字段（根据实际业务需求）
+    if dept_id:
+        new_vals["department_id"] = dept_id
+    if loc_id:
+        new_vals["location_id"] = loc_id
+    if loc_text:
+        new_vals["location_text"] = loc_text
+
+    # 添加其他字段的更新逻辑...
+
+    return new_vals, changes_log
+
+
 async def sync_equipments_with_audit(
     db: AsyncSession,
     file_content: bytes,
@@ -344,7 +392,7 @@ async def sync_equipments_with_audit(
 ) -> EquipmentSyncResult:
     """TB-04: 带审计追踪、熔断保护及 Dry Run 的最终版同步逻辑"""
     try:
-        df = pd.read_excel(BytesIO(file_content), header=4)
+        df = pd.read_excel(BytesIO(file_content), header=EXCEL_HEADER_ROW)
     except Exception as e:
         raise ValueError(f"Excel 解析失败: {str(e)}")
 
@@ -421,7 +469,7 @@ async def sync_equipments_with_audit(
     excel_asset_nos = set(df["资产编号"].dropna().astype(str).str.strip())
     missing_assets = active_asset_nos - excel_asset_nos
 
-    if len(active_asset_nos) > 0 and len(missing_assets) / len(active_asset_nos) > 0.05:
+    if len(active_asset_nos) > 0 and len(missing_assets) / len(active_asset_nos) > MISSING_ASSET_THRESHOLD:
         raise ValueError(
             f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！"
         )
@@ -438,7 +486,7 @@ async def sync_equipments_with_audit(
             operator_id=operator_id,
             file_name=file_name,
             summary={"updated": updated, "inserted": inserted, "migrated": migrated, "deleted": deleted},
-            changes_detail=changes_log[:1000],
+            changes_detail=changes_log[:MAX_CHANGES_LOG_ENTRIES],
             is_dry_run=False,
         )
         db.add(log_entry)

@@ -13,7 +13,6 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
 
@@ -661,7 +660,10 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
 
 async def get_sync_context(session):
     """获取同步所需的部门和位置映射及活跃设备索引"""
-    dept_result = await session.execute(select(HrDepartment.id, HrDepartment.name))
+    # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
+    from sqlalchemy import text
+
+    dept_result = await session.execute(text("SELECT id, name FROM identity.departments WHERE is_deleted = false"))
     dept_map = {n: i for i, n in dept_result.fetchall()}
 
     loc_result = await session.execute(select(Location.id, Location.name))

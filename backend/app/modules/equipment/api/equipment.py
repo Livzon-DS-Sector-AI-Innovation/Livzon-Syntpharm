@@ -1,6 +1,7 @@
 """设备台账 API 路由."""
 
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +28,51 @@ from app.modules.equipment.schemas import (
     LocationUpdate,
 )
 from app.shared.schemas import ApiResponse
+
+# 文件上传限制
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXCEL_EXTENSIONS = {".xlsx", ".xls"}
+
+RATE_LIMIT_PER_MINUTE = 5  # 每分钟最多 5 次同步请求
+
+# 简单的内存速率限制器（生产环境应使用 Redis）
+_rate_limit_store: dict[str, list[float]] = {}
+
+
+def _check_rate_limit(user_id: str) -> bool:
+    """检查用户是否在速率限制内"""
+    import time
+
+    now = time.time()
+    window = 60  # 60 秒窗口
+
+    if user_id not in _rate_limit_store:
+        _rate_limit_store[user_id] = []
+
+    # 清理过期记录
+    _rate_limit_store[user_id] = [t for t in _rate_limit_store[user_id] if now - t < window]
+
+    if len(_rate_limit_store[user_id]) >= RATE_LIMIT_PER_MINUTE:
+        return False
+
+    _rate_limit_store[user_id].append(now)
+    return True
+
+
+def _validate_excel_signature(content: bytes) -> bool:
+    """验证文件是否为有效的 Excel 格式（检查文件签名）"""
+    if not content or len(content) < 4:
+        return False
+
+    # Excel .xlsx 文件是 ZIP 格式，以 PK 开头
+    # Excel .xls 文件是 OLE2 格式，以 D0 CF 11 E0 开头
+    if content[:2] == b"PK":  # .xlsx (ZIP)
+        return True
+    elif content[:4] == b"\xd0\xcf\x11\xe0":  # .xls (OLE2)
+        return True
+
+    return False
+
 
 router = APIRouter()
 
@@ -290,7 +336,30 @@ async def sync_equipments_excel(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """上传 Excel 文件并执行智能同步"""
+    # 检查速率限制
+    if not _check_rate_limit(str(current_user.id)):
+        raise ValueError(f"操作过于频繁，请稍后再试（限制：{RATE_LIMIT_PER_MINUTE} 次/分钟）")
+
+    # 验证文件扩展名
+    if not file.filename:
+        raise ValueError("文件名不能为空")
+
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in ALLOWED_EXCEL_EXTENSIONS:
+        raise ValueError(f"不支持的文件格式: {file_ext}，仅支持 {', '.join(ALLOWED_EXCEL_EXTENSIONS)}")
+
+    # 读取文件内容
     content = await file.read()
+
+    # 验证文件大小
+    if len(content) > MAX_FILE_SIZE:
+        raise ValueError(
+            f"文件大小超过限制 ({MAX_FILE_SIZE // 1024 // 1024}MB)，当前文件大小: {len(content) // 1024}KB"
+        )
+
+    # 验证 MIME 类型（简单检查文件头）
+    if not _validate_excel_signature(content):
+        raise ValueError("文件内容不是有效的 Excel 格式")
     result = await service.sync_equipments_with_audit(
         db, content, dry_run=dry_run, operator_id=current_user.id, file_name=file.filename
     )
