@@ -1,6 +1,7 @@
 """Equipment database queries live here."""
 
 import uuid
+import sqlalchemy as sa
 from typing import Any
 
 from sqlalchemy import and_, func, select, update
@@ -597,13 +598,13 @@ async def get_equipment_statistics(
 
     # 按状态统计
     status_result = await db.execute(
-        select(Equipment.status, func.count()).where(and_(*conditions) if len(conditions) > 1 else conditions[0] if conditions else true()).group_by(Equipment.status)
+        select(Equipment.status, func.count()).where(and_(*conditions)).group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（A/B/C）
     class_result = await db.execute(
-        select(Equipment.equipment_class, func.count()).where(and_(*conditions) if len(conditions) > 1 else conditions[0] if conditions else true()).group_by(Equipment.equipment_class)
+        select(Equipment.equipment_class, func.count()).where(and_(*conditions)).group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
 
@@ -611,7 +612,7 @@ async def get_equipment_statistics(
     location_result = await db.execute(
         select(Location.name, func.count())
         .join(Equipment, Equipment.location_id == Location.id)
-        .where(base_filter)
+        .where(and_(*conditions))
         .group_by(Location.name)
     )
     by_location = {row[0]: row[1] for row in location_result.all()}
