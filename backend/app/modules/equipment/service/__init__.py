@@ -38,6 +38,7 @@ from app.modules.equipment.service.equipment import (
     update_equipment,
     update_equipment_category,
     update_location,
+    sync_equipments_with_audit,
 )
 from app.modules.equipment.service.failure_code import (
     FailureCodeModel,
@@ -275,3 +276,4 @@ __all__ = [
     "update_role",
 ]
 # ruff: noqa: F401
+    sync_equipments_with_audit,
