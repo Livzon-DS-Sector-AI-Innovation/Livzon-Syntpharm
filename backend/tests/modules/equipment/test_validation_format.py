@@ -12,7 +12,7 @@ def test_validation_py_ruff_format() -> None:
 
     这个测试确保文件格式符合项目规范，防止 CI 中的 ruff format check 失败。
     """
-    validation_file = Path(__file__).parents[4] / "app" / "modules" / "equipment" / "service" / "validation.py"
+    validation_file = Path(__file__).parents[2].parent / "app" / "modules" / "equipment" / "service" / "validation.py"
 
     assert validation_file.exists(), f"Validation file not found: {validation_file}"
 
@@ -30,7 +30,7 @@ def test_validation_py_ruff_format() -> None:
 
 def test_validation_py_no_trailing_whitespace() -> None:
     """验证 validation.py 没有 trailing whitespace。"""
-    validation_file = Path(__file__).parents[4] / "app" / "modules" / "equipment" / "service" / "validation.py"
+    validation_file = Path(__file__).parents[2].parent / "app" / "modules" / "equipment" / "service" / "validation.py"
 
     with open(validation_file, encoding="utf-8") as f:
         lines = f.readlines()
@@ -43,7 +43,7 @@ def test_validation_py_no_trailing_whitespace() -> None:
 
 def test_validation_py_ends_with_single_newline() -> None:
     """验证 validation.py 以单个换行符结尾。"""
-    validation_file = Path(__file__).parents[4] / "app" / "modules" / "equipment" / "service" / "validation.py"
+    validation_file = Path(__file__).parents[2].parent / "app" / "modules" / "equipment" / "service" / "validation.py"
 
     with open(validation_file, "rb") as f:
         content = f.read()

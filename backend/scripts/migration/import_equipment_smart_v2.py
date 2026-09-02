@@ -28,7 +28,6 @@ DEPT_MAPPING = {
     "非头孢五车间": "105车间",
     "非头孢六车间": "106车间",
     "非头孢七车间": "107车间",
-    
     # 职能部门映射
     "环保中心": "安全环保部",
     "安全中心": "安全环保部",
@@ -63,15 +62,15 @@ def get_standard_dept(raw_dept: str, valid_depts: set) -> str | None:
     """将原始部门名称转换为标准部门名称。"""
     if not raw_dept or pd.isna(raw_dept):
         return None
-    
+
     raw_dept = str(raw_dept).strip()
-    
+
     if raw_dept in DEPT_MAPPING:
         return DEPT_MAPPING[raw_dept]
-    
+
     if raw_dept in valid_depts:
         return raw_dept
-    
+
     return None
 
 
@@ -80,7 +79,7 @@ async def main():
     print(f"📊 读取 Excel 文件: {excel_path}")
     df = pd.read_excel(excel_path, header=4)
     print(f"   总行数: {len(df)}")
-    
+
     async with async_session_factory() as db:
         try:
             # Step 1: 加载部门和位置
@@ -88,33 +87,38 @@ async def main():
             dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
             dept_map = {row[1]: row[0] for row in dept_result.fetchall()}
             valid_depts = set(dept_map.keys())
-            
+
             loc_result = await db.execute(select(Location.id, Location.name))
             loc_map = {row[1]: row[0] for row in loc_result.fetchall()}
             print(f"   部门: {len(dept_map)} 个, 位置: {len(loc_map)} 个")
-            
+
             # Step 2: 获取所有设备（包括已删除的）
             print("\n📊 步骤 2: 加载所有设备...")
             existing_result = await db.execute(
-                select(Equipment.id, Equipment.asset_no, Equipment.department_id, 
-                       Equipment.location_id, Equipment.is_deleted)
+                select(
+                    Equipment.id,
+                    Equipment.asset_no,
+                    Equipment.department_id,
+                    Equipment.location_id,
+                    Equipment.is_deleted,
+                )
             )
-            
+
             # 建立索引
             active_equipments = {}  # key -> equip_id (only active)
             deleted_equipments = {}  # key -> equip_id (only deleted)
-            
+
             for equip_id, asset_no, dept_id, loc_id, is_deleted in existing_result.fetchall():
                 key = (str(asset_no).strip(), dept_id, loc_id)
-                
+
                 if is_deleted:
                     deleted_equipments[key] = equip_id
                 else:
                     active_equipments[key] = equip_id
-            
+
             print(f"   活跃设备: {len(active_equipments)} 条")
             print(f"   已删除设备: {len(deleted_equipments)} 条")
-            
+
             # Step 3: 处理 Excel 数据
             print("\n📊 步骤 3: 处理 Excel 数据...")
             inserted_count = 0
@@ -122,40 +126,38 @@ async def main():
             skipped_count = 0
             duplicate_removed = 0
             error_count = 0
-            
+
             for idx, row in df.iterrows():
                 try:
-                    asset_no = str(row.get('资产编号', '')).strip()
-                    name = str(row.get('设备名称', '')).strip()
-                    raw_dept = row.get('实物所在部门')
-                    location_text = str(row.get('实物所在地点', '')).strip()
-                    
+                    asset_no = str(row.get("资产编号", "")).strip()
+                    name = str(row.get("设备名称", "")).strip()
+                    raw_dept = row.get("实物所在部门")
+                    location_text = str(row.get("实物所在地点", "")).strip()
+
                     if not asset_no or not name:
                         skipped_count += 1
                         continue
-                    
+
                     # 获取标准部门
                     standard_dept = get_standard_dept(raw_dept, valid_depts)
                     dept_id = dept_map.get(standard_dept) if standard_dept else None
-                    
+
                     # 获取位置 ID
-                    loc_id = loc_map.get(location_text) if location_text and location_text != '-' else None
-                    
+                    loc_id = loc_map.get(location_text) if location_text and location_text != "-" else None
+
                     # 检查是否已存在
                     key = (asset_no, dept_id, loc_id)
-                    
+
                     if key in active_equipments:
                         # 已有活跃设备，跳过
                         skipped_count += 1
-                        
+
                         # 如果还有已删除的重复记录，删除它
                         if key in deleted_equipments:
                             deleted_id = deleted_equipments[key]
-                            await db.execute(
-                                delete(Equipment).where(Equipment.id == deleted_id)
-                            )
+                            await db.execute(delete(Equipment).where(Equipment.id == deleted_id))
                             duplicate_removed += 1
-                            
+
                     elif key in deleted_equipments:
                         # 只有已删除的设备，恢复它
                         deleted_id = deleted_equipments[key]
@@ -170,11 +172,11 @@ async def main():
                         )
                         await db.execute(stmt)
                         restored_count += 1
-                        
+
                         # 移动到活跃索引
                         active_equipments[key] = deleted_id
                         del deleted_equipments[key]
-                        
+
                     else:
                         # 不存在，插入新记录
                         new_equip = Equipment(
@@ -184,44 +186,43 @@ async def main():
                             department_id=dept_id,
                             location_id=loc_id,
                             location_text=location_text if location_text else None,
-                            status='在用',
-                            equipment_class='C',
-                            importance='低',
+                            status="在用",
+                            equipment_class="C",
+                            importance="低",
                             is_deleted=False,
                         )
                         db.add(new_equip)
                         inserted_count += 1
-                        
+
                         # 添加到索引
                         active_equipments[key] = new_equip.id
-                
+
                 except Exception as e:
                     error_count += 1
                     if error_count <= 5:
-                        print(f"   ❌ 行 {idx+1} 错误: {e}")
+                        print(f"   ❌ 行 {idx + 1} 错误: {e}")
                     await db.rollback()
-            
+
             await db.commit()
-            
-            print(f"\n✅ 导入完成:")
+
+            print("\n✅ 导入完成:")
             print(f"   新增设备: {inserted_count} 台")
             print(f"   恢复已删除设备: {restored_count} 台")
             print(f"   删除重复的已删除记录: {duplicate_removed} 条")
             print(f"   已存在跳过: {skipped_count} 台")
             print(f"   错误: {error_count} 条")
-            
+
             # Step 4: 验证结果
             print("\n📊 步骤 4: 验证结果...")
-            total = await db.execute(
-                select(func.count()).where(Equipment.is_deleted == False)
-            )
+            total = await db.execute(select(func.count()).where(not Equipment.is_deleted))
             total_count = total.scalar()
             print(f"   数据库活跃设备数: {total_count}")
-        
+
         except Exception as e:
             await db.rollback()
             print(f"\n❌ 错误: {e}")
             import traceback
+
             traceback.print_exc()
             raise
         finally:

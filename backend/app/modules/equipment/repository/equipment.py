@@ -30,7 +30,7 @@ async def exists_category_by_code(
     """Check if category code exists."""
     query = select(EquipmentCategory.id).where(
         EquipmentCategory.code == code,
-        EquipmentCategory.is_deleted == False,  # noqa: E712
+        EquipmentCategory.is_deleted.is_(False),  # noqa: E712
     )
     if exclude_id:
         query = query.where(EquipmentCategory.id != exclude_id)
@@ -46,7 +46,7 @@ async def exists_location_by_code(
     """Check if location code exists."""
     query = select(Location.id).where(
         Location.code == code,
-        Location.is_deleted == False,  # noqa: E712
+        Location.is_deleted.is_(False),  # noqa: E712
     )
     if exclude_id:
         query = query.where(Location.id != exclude_id)
@@ -73,7 +73,7 @@ async def get_equipment_category_by_id(
     result = await db.execute(
         select(EquipmentCategory).where(
             EquipmentCategory.id == category_id,
-            EquipmentCategory.is_deleted == False,  # noqa: E712
+            EquipmentCategory.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -85,7 +85,7 @@ async def get_equipment_categories(
 ) -> list[EquipmentCategory]:
     """获取设备分类列表"""
     query = select(EquipmentCategory).where(
-        EquipmentCategory.is_deleted == False  # noqa: E712
+        EquipmentCategory.is_deleted.is_(False)  # noqa: E712
     )
     if parent_id is not None:
         query = query.where(EquipmentCategory.parent_id == parent_id)
@@ -100,7 +100,7 @@ async def get_equipment_category_tree(db: AsyncSession) -> list[EquipmentCategor
     """获取设备分类树形结构"""
     result = await db.execute(
         select(EquipmentCategory)
-        .where(EquipmentCategory.is_deleted == False)  # noqa: E712
+        .where(EquipmentCategory.is_deleted.is_(False))  # noqa: E712
         .options(selectinload(EquipmentCategory.children))
         .order_by(EquipmentCategory.code)
     )
@@ -171,7 +171,7 @@ async def get_location_by_id(
     result = await db.execute(
         select(Location).where(
             Location.id == location_id,
-            Location.is_deleted == False,  # noqa: E712
+            Location.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -182,7 +182,7 @@ async def get_locations(
     parent_id: uuid.UUID | None = None,
 ) -> list[Location]:
     """获取位置列表"""
-    query = select(Location).where(Location.is_deleted == False)  # noqa: E712
+    query = select(Location).where(Location.is_deleted.is_(False))  # noqa: E712
     if parent_id is not None:
         query = query.where(Location.parent_id == parent_id)
     else:
@@ -196,7 +196,7 @@ async def get_location_tree(db: AsyncSession) -> list[Location]:
     """获取位置树形结构"""
     result = await db.execute(
         select(Location)
-        .where(Location.is_deleted == False)  # noqa: E712
+        .where(Location.is_deleted.is_(False))  # noqa: E712
         .options(selectinload(Location.children))
         .order_by(Location.code)
     )
@@ -255,7 +255,7 @@ async def _get_category_child_ids(
     result = await db.execute(
         select(EquipmentCategory.id).where(
             EquipmentCategory.parent_id == parent_id,
-            EquipmentCategory.is_deleted == False,  # noqa: E712
+            EquipmentCategory.is_deleted.is_(False),  # noqa: E712
         )
     )
     child_ids = list(result.scalars().all())
@@ -273,7 +273,7 @@ async def _get_location_child_ids(
     result = await db.execute(
         select(Location.id).where(
             Location.parent_id == parent_id,
-            Location.is_deleted == False,  # noqa: E712
+            Location.is_deleted.is_(False),  # noqa: E712
         )
     )
     child_ids = list(result.scalars().all())
@@ -299,7 +299,7 @@ async def create_equipment(
         deleted_result = await db.execute(
             select(Equipment).where(
                 Equipment.asset_no == asset_no,
-                Equipment.is_deleted == True,  # noqa: E712
+                Equipment.is_deleted.is_(True),  # noqa: E712
             )
         )
         for old in deleted_result.scalars().all():
@@ -393,7 +393,7 @@ async def get_equipments(
             Equipment.id.in_(
                 select(EquipmentCategoryLink.equipment_id).where(
                     EquipmentCategoryLink.category_id.in_(category_ids),
-                    EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+                    EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
                 )
             )
         )
@@ -494,7 +494,7 @@ async def delete_equipment(
     links_result = await db.execute(
         select(EquipmentCategoryLink).where(
             EquipmentCategoryLink.equipment_id == equipment_id,
-            EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+            EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
         )
     )
     for link in links_result.scalars().all():
@@ -515,7 +515,7 @@ async def count_equipments_by_category(
         .join(Equipment, Equipment.id == EquipmentCategoryLink.equipment_id)
         .where(
             EquipmentCategoryLink.category_id == category_id,
-            EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+            EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
             not Equipment.is_deleted,  # noqa: E712
         )
     )
@@ -565,7 +565,7 @@ async def get_equipment_statistics(
 ) -> dict[str, Any]:
     """获取设备统计（支持筛选）"""
     # 构建基础查询条件
-    base_filter = not Equipment.is_deleted  # noqa: E712
+    base_filter = Equipment.is_deleted.is_(False)  # noqa: E712
 
     # 添加筛选条件
     if category_id:
@@ -573,7 +573,7 @@ async def get_equipment_statistics(
         base_filter = base_filter & Equipment.id.in_(
             select(EquipmentCategoryLink.equipment_id).where(
                 EquipmentCategoryLink.category_id.in_(category_ids),
-                EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+                EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
             )
         )
     if location_id:
