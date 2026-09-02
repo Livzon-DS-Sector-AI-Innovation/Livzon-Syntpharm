@@ -2674,7 +2674,7 @@ backend/Dockerfile.backup:6,17 / backend/Dockerfile.dev:6,17 — Docker/硬编�
 | Uncertain findings | 0 |
 
 **Confirmed:**
-- [ ] `backend/tests/test_check_migration_scope.py:1` — 仓库组织/测试 — Test file is in `backend/tests/` root. AGENTS.md requires "测试文件放在 `backend/tests/modules/<module>/`" or "单元测试放在 `backend/tests/unit/`". This is a unit test for a CI script and should be in `backend/tests/unit/`. — severity: low
+- [x] `backend/tests/test_check_migration_scope.py:1` — 仓库组织/测试 — Test file is in `backend/tests/` root. AGENTS.md requires "测试文件放在 `backend/tests/modules/<module>/`" or "单元测试放在 `backend/tests/unit/`". This is a unit test for a CI script and should be in `backend/tests/unit/`. — severity: low — ✅ RESOLVED — moved to `backend/tests/unit/test_check_migration_scope.py`
 
 **Uncertain:**
 _None._
@@ -2691,11 +2691,11 @@ _None._
 | Uncertain findings | 0 |
 
 **Confirmed:**
-- [ ] `backend/alembic/versions/0041_equipment_add_fields.py:13` — 迁移规范/命名规范 — `revision: str = '6379b65e0052'` uses hash-based revision ID. AGENTS.md states "Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）。禁止使用 Alembic 自动生成的哈希 ID". The new CI check `validate_naming_convention()` will reject this. Should be `revision: str = '0041_equipment_add_fields'`. — severity: blocking
-- [ ] `backend/alembic/versions/0042_add_chapter_asset_usages.py:13` — 迁移规范/命名规范 — `revision: str = '2eb6d687679e'` uses hash-based revision ID. Should be `revision: str = '0042_add_chapter_asset_usages'`. — severity: blocking
-- [ ] `backend/alembic/versions/0043_fix_production_index_names.py:15` — 迁移规范/命名规范 — `revision: str = 'fcb768b8df78'` uses hash-based revision ID. Should be `revision: str = '0043_fix_production_index_names'`. — severity: blocking
-- [ ] `backend/alembic/versions/0044_rename_equipment_no_to_asset_no.py:13` — 迁移规范/命名规范 — `revision: str = '74a464371488'` uses hash-based revision ID. Should be `revision: str = '0044_rename_equipment_no_to_asset_no'`. — severity: blocking
-- [ ] `backend/alembic/versions/0045_energy_add_workshop_and_steam.py:13` — 迁移规范/命名规范 — `revision: str = '49684887bf7e'` uses hash-based revision ID. Should be `revision: str = '0045_energy_add_workshop_and_steam'`. — severity: blocking
+- [x] `backend/alembic/versions/0041_*` — 迁移规范/命名规范 — Revision ID updated to match filename pattern. — severity: blocking — ✅ RESOLVED
+- [x] `backend/alembic/versions/0042_*` — 迁移规范/命名规范 — Revision ID updated to match filename pattern. — severity: blocking — ✅ RESOLVED
+- [x] `backend/alembic/versions/0043_*` — 迁移规范/命名规范 — Revision ID updated to match filename pattern. — severity: blocking — ✅ RESOLVED
+- [x] `backend/alembic/versions/0044_*` — 迁移规范/命名规范 — Revision ID updated to match filename pattern. — severity: blocking — ✅ RESOLVED
+- [x] `backend/alembic/versions/0045_*` — 迁移规范/命名规范 — Revision ID updated to match filename pattern. — severity: blocking — ✅ RESOLVED
 
 **Uncertain:**
 _None._
@@ -2758,7 +2758,7 @@ _None._
 | Uncertain findings | 0 |
 
 **Confirmed:**
-- [ ] `frontend/src/lib/api/client/procurement.ts:128` — 前端API层级/类型安全 — `fetchContractRecord()` uses `data as any` cast: `return { data: data as any }`. This bypasses TypeScript type checking. The function signature promises `{ data: ContractRecordResponse }` but the cast hides potential type mismatches. Should use proper type assertion or ensure `apiGet()` returns correctly typed data. — severity: medium
+- [x] `frontend/src/lib/api/client/procurement.ts:128` — 前端API层级/类型安全 — `fetchContractRecord()` uses `data as any` cast: `return { data: data as any }`. This bypasses TypeScript type checking. The function signature promises `{ data: ContractRecordResponse }` but the cast hides potential type mismatches. Should use proper type assertion or ensure `apiGet()` returns correctly typed data. — severity: medium — ✅ RESOLVED — uses generic type parameter `apiGet<ContractRecordResponse>()`
 
 **Uncertain:**
 _None._
@@ -2809,7 +2809,7 @@ _None._
 
 1. **Migration revision IDs still use hash format** — Migrations 0041-0045 have correct NNNN filenames but their internal `revision: str` values are still hash-based (e.g., `'6379b65e0052'`). The new CI check `validate_naming_convention()` validates BOTH filename AND revision ID, so these will fail CI. Each migration's revision ID must be updated to match the filename pattern (e.g., `0041_equipment_add_fields`).
 
-**Status: ❌ BLOCKED — 5 blocking findings (migration revision IDs)**
+**Status: ✅ RESOLVED — All 7 findings resolved (commit 8d424e20)**
 
 ---
 
@@ -2827,4 +2827,18 @@ Second pass confirmed: no missed categories or rules. Additional context for the
 
 Migration 0038's `revision` is already correct (`'0038_add_product_sync_config'`), so 0041's `down_revision` is already correct.
 
-**Status: ❌ BLOCKED — must fix 5 migration revision IDs + 4 down_revision references before merge**
+**Status: ✅ RESOLVED — All revision IDs and down_revision references updated correctly**
+
+#### PR #44 Resolution Status (updated 2026-09-02)
+
+**Resolved:** 7 findings (100%)  
+**Partially resolved:** 0 findings (0%)  
+**Status:** ✅ FULLY RESOLVED — All 7 audit findings have been fully resolved
+
+**Resolution details:**
+- 5 migration revision IDs updated (0041-0045)
+- 4 down_revision references updated (0042-0045)
+- Test file moved to `backend/tests/unit/`
+- Type safety improved in `fetchContractRecord()`
+
+**Status: ✅ COMPLETE — All categories audited, all findings resolved**
