@@ -1,3 +1,4 @@
+import type { UploadFile } from "antd";
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
@@ -429,7 +430,7 @@ export function HazardDetailPageClient() {
   const [saving, setSaving] = useState(false)
 
   // 整改回复状态
-  const [replyFiles, setReplyFiles] = useState<any[]>([])
+  const [replyFiles, setReplyFiles] = useState<UploadFile[]>([])
   const [replySubmitting, setReplySubmitting] = useState(false)
   const [_leaderLoading, setLeaderLoading] = useState(false)
 
@@ -491,8 +492,8 @@ export function HazardDetailPageClient() {
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {
-    if (editSection && field in edits) return edits[field] ?? (record as any)?.[field] ?? ''
-    return (record as any)?.[field] ?? ''
+    if (editSection && field in edits) return edits[field] ?? (record as Record<string, unknown>)?.[field] ?? ''
+    return (record as Record<string, unknown>)?.[field] ?? ''
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
@@ -538,7 +539,7 @@ export function HazardDetailPageClient() {
     if (Object.keys(edits).length === 0) { setEditSection(null); return }
     setSaving(true)
     try {
-      const res = await updateHazard(id, edits as any)
+      const res = await updateHazard(id, edits as Record<string, unknown>)
       if (res.code === 200) {
         message.success('修改已保存')
         setRecord(res.data as HazardReport)
@@ -618,7 +619,7 @@ export function HazardDetailPageClient() {
     try {
       // 1. 保存字段编辑
       if (Object.keys(edits).length > 0) {
-        const updateRes = await updateHazard(id, edits as any)
+        const updateRes = await updateHazard(id, edits as Record<string, unknown>)
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '保存失败')
           setReplySubmitting(false)

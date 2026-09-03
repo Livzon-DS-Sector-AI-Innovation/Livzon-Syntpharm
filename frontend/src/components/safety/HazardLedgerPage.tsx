@@ -284,7 +284,7 @@ export default function HazardLedgerPage() {
         let data = response.data || []
         // 客户端排序（多维表格即时排序体验）
         if (sortField && sortOrder) {
-          data = [...data].sort((a: any, b: any) => {
+          data = [...data].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
             const aVal = a[sortField] ?? ''
             const bVal = b[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')

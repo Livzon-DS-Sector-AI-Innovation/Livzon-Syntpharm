@@ -56,9 +56,9 @@ export function BitableCrossImportModal({ open, onClose, onSuccess }: BitableCro
       const importResult = await crossImportFromBitableAction(data)
       setResult(importResult)
       setStep('result')
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.errorFields) return
-      message.error('导入失败：' + (error?.message || '未知错误'))
+      message.error('导入失败：' + ((error instanceof Error ? error.message : null) || '未知错误'))
     } finally {
       setLoading(false)
     }

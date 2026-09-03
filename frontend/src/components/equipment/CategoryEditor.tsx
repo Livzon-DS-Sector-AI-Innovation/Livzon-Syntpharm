@@ -42,12 +42,12 @@ export function CategoryEditor({ mode, parentId, initialData, open, onOpenChange
       
       onOpenChange(false)
       onSuccess()
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errorFields" in error && Array.isArray((error as { errorFields: unknown[] }).errorFields)) {
         // Validation error, do nothing
         return
       }
-      message.error(error?.message || '操作失败')
+      message.error((error instanceof Error ? error.message : null) || '操作失败')
     }
   }
 

@@ -35,16 +35,16 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   }, [inspectionTemplateDrawerOpen, editingInspectionTemplate, form])
 
   const handleSubmit = async () => {
-    let v: any
+    let v: Record<string, unknown>
     try {
       v = await form.validateFields()
     } catch { return }
     if (editingInspectionTemplate) {
-      const result: any = await updateInspectionTemplate(editingInspectionTemplate.id, { name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: v.is_active })
+      const result: { data: unknown } = await updateInspectionTemplate(editingInspectionTemplate.id, { name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: v.is_active })
       if (!result.success) { message.error(result.error); return }
       message.success('更新成功')
     } else {
-      const result: any = await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined })
+      const result: { data: unknown } = await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined })
       if (!result.success) { message.error(result.error); return }
       message.success('创建成功')
     }

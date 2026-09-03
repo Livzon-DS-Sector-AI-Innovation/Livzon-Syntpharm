@@ -70,7 +70,7 @@ function layoutGraph(flowNodes: Node[], flowEdges: Edge[]): Node[] {
 
   // 1. 识别边的关系类型（从 data 或 label 判断）
   const getRelType = (e: Edge): string =>
-    (e.data as any)?.relationType || (e as any).relationType || ''
+    (e.data as { relationType?: string } | null)?.relationType || (e as { relationType?: string }).relationType || ''
 
   // 2. 找 belongs_to 边 → entity → category 映射
   const entityCat = new Map<string, string>()
@@ -267,7 +267,7 @@ export default function KnowledgeGraphPanel() {
   const store = useKnowledgeGraphStore()
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
-  const rfInstance = useRef<any>(null)
+  const rfInstance = useRef<unknown>(null)
 
   // 加载数据
   const loadGraph = useCallback(async () => {

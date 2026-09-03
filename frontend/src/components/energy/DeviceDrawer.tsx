@@ -148,7 +148,7 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       if (err instanceof Error) {
-        message.error(err.message)
+        message.error((err instanceof Error ? err.message : null))
       } else {
         message.error('操作失败')
       }

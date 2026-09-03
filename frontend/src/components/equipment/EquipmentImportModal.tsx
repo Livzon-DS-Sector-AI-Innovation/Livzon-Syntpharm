@@ -44,7 +44,7 @@ interface EquipmentImportModalProps {
 export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImportModalProps) {
   const { message } = App.useApp()
   const [currentStep, setCurrentStep] = useState(0)
-  const [rawData, setRawData] = useState<any[]>([])
+  const [rawData, setRawData] = useState<Record<string, unknown>[]>()
   const [previewData, setPreviewData] = useState<ImportPreviewItem[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -72,7 +72,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         
         // 将 sheet 转换为数组（包含所有行）
-        const sheetData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][]
+        const sheetData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as (string | number | null)[][]
         
 
         
@@ -80,8 +80,8 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         // Smart Header Detection: Look for "资产编号" in the first 10 rows
         let headerRowIndex = 0
         for (let i = 0; i < Math.min(sheetData.length, 10); i++) {
-            const row = sheetData[i] as any[]
-            if (row && row.some((cell: any) => String(cell).trim() === '资产编号' || String(cell).trim() === 'Asset No')) {
+            const row = sheetData[i] as (string | number | null)[]
+            if (row && row.some((cell: string | number | null) => String(cell).trim() === '资产编号' || String(cell).trim() === 'Asset No')) {
                 headerRowIndex = i
                 break
             }
@@ -94,7 +94,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         
         // 转换为对象数组
         const result = dataRows.map(row => {
-          const obj: any = {}
+          const obj: Record<string, string | number | null> = {}
           headers.forEach((header, idx) => {
             if (header && idx < row.length) {
               obj[header] = row[idx]
@@ -123,7 +123,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   }
 
   // 调用预览接口
-  const fetchPreview = async (data: any[]) => {
+  const fetchPreview = async (data: Record<string, string | number | null>[]) => {
     setLoading(true)
     try {
       const result = await previewEquipmentImport(data)
@@ -178,7 +178,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
       title: '数量', 
       dataIndex: 'technical_params', 
       width: 80, 
-      render: (params: any) => params?.['数量'] ?? '-' 
+      render: (params: Record<string, unknown> | null | undefined) => params?.['数量'] ?? '-' 
     },
     { title: '部门', dataIndex: 'department_name', width: 120, ellipsis: true, render: (v: string) => v || '-' },
     { title: '位置', dataIndex: 'location_text', width: 120, ellipsis: true, render: (v: string) => v || '-' },

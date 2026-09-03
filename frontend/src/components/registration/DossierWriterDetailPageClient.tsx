@@ -1,3 +1,4 @@
+import type { DataNode } from "antd/es/tree"
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -100,7 +101,7 @@ export function DossierWriterDetailPageClient() {
   // Sync selectedChapter when chapterTree updates (e.g. after template re-upload)
   useEffect(() => {
     if (!selectedChapterId || chapterTree.length === 0) return
-    const findChapter = (chapters: any[]): any => {
+    const findChapter = (chapters: Chapter[]): Chapter | undefined => {
       for (const ch of chapters) {
         if (ch.id === selectedChapterId) return ch
         if (ch.children) {
@@ -159,8 +160,8 @@ export function DossierWriterDetailPageClient() {
         prev.map(a => a.id === assetId ? { ...a, is_selected: !currentSelected } : a)
       )
       message.success(!currentSelected ? '已选择使用' : '已取消使用')
-    } catch (err: any) {
-      message.error(err.message || '操作失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '操作失败')
     } finally {
       setTogglingAssetId(null)
     }
@@ -168,7 +169,7 @@ export function DossierWriterDetailPageClient() {
 
   // 构建树数据
   const buildTreeData = () => {
-    const convertToTreeData = (chapters: any[]): any[] => {
+    const convertToTreeData = (chapters: Chapter[]): DataNode[] => {
       return chapters.map(ch => {
         const children = ch.children ? convertToTreeData(ch.children) : []
         return {
@@ -202,7 +203,7 @@ export function DossierWriterDetailPageClient() {
   const handleSelectChapter = async (selectedKeys: React.Key[]) => {
     if (selectedKeys.length > 0) {
       const chapterId = selectedKeys[0] as string
-      const findChapter = (chapters: any[]): any => {
+      const findChapter = (chapters: Chapter[]): Chapter | undefined => {
         for (const ch of chapters) {
           if (ch.id === chapterId) return ch
           if (ch.children) {
@@ -284,8 +285,8 @@ export function DossierWriterDetailPageClient() {
       loadAvailableAssets(selectedChapterId!)
       setAssetRefreshKey(prev => prev + 1)
       message.success('分类已更新')
-    } catch (err: any) {
-      message.error(err.message || '更新分类失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '更新分类失败')
     }
   }
 
@@ -314,8 +315,8 @@ export function DossierWriterDetailPageClient() {
       
       // Trigger preview refresh
       setPreviewRefreshKey(prev => prev + 1)
-    } catch (err: any) {
-      message.error(err?.message || '上传失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '上传失败')
     } finally {
       setParsing(false)
     }
@@ -329,8 +330,8 @@ export function DossierWriterDetailPageClient() {
       const result = await matchAssetsToChapters(dossierId)
       message.success(result.message)
       loadChapterTree(dossierId)
-    } catch (err: any) {
-      message.error(err?.message || '匹配失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '匹配失败')
     } finally {
       setMatching(false)
     }
@@ -349,8 +350,8 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err?.message || '导出失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -368,8 +369,8 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err?.message || '导出失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -400,9 +401,9 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.warning(result.message)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.destroy('filling')
-      message.error(error.message || '填充失败')
+      message.error((error instanceof Error ? error.message : null) || '填充失败')
     } finally {
       setFilling(false)
     }

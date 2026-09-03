@@ -74,7 +74,7 @@ export default function KnowledgeFormModal({
           if (dupRes.code === 200 && dupRes.data?.has_duplicates) {
             const confirmed = window.confirm(
               `发现 ${dupRes.data.duplicates.length} 篇相似文档：\n` +
-                dupRes.data.duplicates.map((d: any) => `• ${d.title}`).join('\n') +
+                dupRes.data.duplicates.map((d: { title: string }) => `• ${d.title}`).join('\n') +
                 '\n\n确定继续保存吗？'
             )
             if (!confirmed) {

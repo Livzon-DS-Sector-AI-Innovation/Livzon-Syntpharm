@@ -48,7 +48,7 @@ export function PressureRecordsPageClient() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: any = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (area) params.area = area
       if (pointId) params.point_id = pointId
       if (dateRange) {
@@ -95,7 +95,7 @@ export function PressureRecordsPageClient() {
   }
 
   const handleExport = async () => {
-    const params: any = {}
+    const params: Record<string, unknown> = {}
     if (area) params.area = area
     if (dateRange) {
       params.start_date = dateRange[0].startOf('day').toISOString()
@@ -147,7 +147,7 @@ export function PressureRecordsPageClient() {
     {
       title: '各时段压差值',
       key: 'values',
-      render: (_: any, record: MergedPressureRow) => (
+      render: (_: unknown, record: MergedPressureRow) => (
         <Space wrap>
           {Object.entries(record.time_slot_values).map(([slot, value]) => (
             <Tag key={slot} color={value !== null && Math.abs((value || 0) - record.standard_pressure) > 5 ? 'error' : 'blue'}>
@@ -175,7 +175,7 @@ export function PressureRecordsPageClient() {
       title: '操作',
       key: 'action',
       width: 80,
-      render: (_: any, record: MergedPressureRow) => (
+      render: (_: unknown, record: MergedPressureRow) => (
         <Popconfirm title="确认删除该记录？" onConfirm={() => handleDelete(record)}>
           <Button type="link" danger size="small" icon={<DeleteOutlined />} />
         </Popconfirm>

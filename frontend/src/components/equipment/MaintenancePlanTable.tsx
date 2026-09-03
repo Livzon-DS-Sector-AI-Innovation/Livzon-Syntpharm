@@ -36,7 +36,7 @@ export function MaintenancePlanTable({ onRefresh, equipments }: Props) {
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
         try { await deleteMaintenancePlan(r.id); message.success('删除成功'); onRefresh?.() }
-        catch (error: any) { message.error(error?.message || '删除失败') }
+        catch (error: unknown) { message.error((error instanceof Error ? error.message : null) || '删除失败') }
       },
     })
   }, [modal, message, onRefresh])

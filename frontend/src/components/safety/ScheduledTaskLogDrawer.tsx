@@ -33,7 +33,7 @@ export default function ScheduledTaskLogDrawer({
     if (open && taskId) {
       setLoading(true)
       getScheduledTaskLogs(taskId)
-        .then((res: any) => {
+        .then((res: { data: unknown[] }) => {
           if (res.code === 200 && res.data) {
             setLogs(res.data)
           }

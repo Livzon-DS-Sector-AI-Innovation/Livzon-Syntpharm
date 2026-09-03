@@ -166,7 +166,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         } else {
           // 如果有详细错误信息，构建更详细的提示
           if (result.error_details && Array.isArray(result.error_details)) {
-            const details = result.error_details.slice(0, 3).map((err: any) => {
+            const details = result.error_details.slice(0, 3).map((err: { filename?: string; reason?: string } | string) => {
               if (err.filename && err.reason) {
                 return `${err.filename}: ${err.reason}`
               }
@@ -179,8 +179,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         
         message.error(errorMsg, 10)  // 显示10秒
       }
-    } catch (err: any) {
-      let errorMsg = err.message || 'AI 提取失败'
+    } catch (err: unknown) {
+      let errorMsg = (err instanceof Error ? err.message : null) || 'AI 提取失败'
       
       // 如果是超时错误
       if (err.name === 'AbortError' || errorMsg.includes('超时')) {
@@ -195,7 +195,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }
 
   // Handle field edit
-  const handleFieldEdit = (index: number, value: any) => {
+  const handleFieldEdit = (index: number, value: unknown) => {
     setEditedFields(prev => {
       const next = [...prev]
       next[index] = { ...next[index], value }
@@ -212,7 +212,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         setFillResults(result.results || [])
         setFillDone(true)
         onFillComplete?.()
-        const filled = (result.results || []).filter((r: any) => r.status === 'filled').length
+        const filled = (result.results || []).filter((r: { status: string }) => r.status === 'filled').length
         const total = (result.results || []).length
         if (filled === total) {
           message.success(`填充完成: ${filled}/${total} 个字段`)
@@ -222,8 +222,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       } else {
         message.error(result.message || '填充失败', 8)
       }
-    } catch (err: any) {
-      message.error(err.message || '填充失败', 8)
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '填充失败', 8)
       console.error('[AI Fill] 异常:', err)
     } finally {
       setFilling(false)
@@ -281,8 +281,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       const slots = imageFields.map(f => f.field_name)
       const result = await splitPreview(asset.id, slots)
       setSplitPages(result.pages || [])
-    } catch (err: any) {
-      message.error(err.message || '页面拆分失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '页面拆分失败')
     } finally {
       setSplitLoading(false)
     }
@@ -319,8 +319,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       
       // Trigger refresh
       onAssetsChange()
-    } catch (err: any) {
-      message.error(err.message || '插入失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '插入失败')
     } finally {
       setSplitInserting(false)
     }
@@ -447,7 +447,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
 
                 {field.field_type === 'table' && Array.isArray(field.value) ? (
                   <div className="text-xs text-gray-500">
-                    表格数据: {field.value.length} 行 × {(field.value[0] as any[])?.length || 0} 列
+                    表格数据: {field.value.length} 行 × {(field.value[0] as unknown[])?.length || 0} 列
                   </div>
                 ) : field.field_type === 'image_appendix' ? (
                   <div className="flex items-center justify-between gap-2">

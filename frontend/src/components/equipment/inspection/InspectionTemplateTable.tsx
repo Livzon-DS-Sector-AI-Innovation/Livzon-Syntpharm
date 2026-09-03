@@ -26,7 +26,7 @@ export function InspectionTemplateTable({ onRefresh, categories: _categories }: 
       title: '确认删除', content: '确定要删除此巡检模板吗？',
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
-        const result: any = await deleteInspectionTemplate(r.id)
+        const result: { data: unknown } = await deleteInspectionTemplate(r.id)
         if (!result.success) { message.error(result.error); return }
         message.success('删除成功')
         onRefresh?.()

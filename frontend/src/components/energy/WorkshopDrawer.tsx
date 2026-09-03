@@ -64,7 +64,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
         message.success('创建成功')
       }
       onSuccess()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.errorFields) return // form validation error
       message.error(isEdit ? '更新失败' : '创建失败')
     } finally {

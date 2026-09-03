@@ -43,9 +43,9 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
       })
       setDryRunResult(result)
       setStep('preview')
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.errorFields) return
-      message.error('预览失败：' + (error?.message || '未知错误'))
+      message.error('预览失败：' + ((error instanceof Error ? error.message : null) || '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -63,8 +63,8 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
       })
       setFinalResult(result)
       setStep('result')
-    } catch (error: any) {
-      message.error('导入失败：' + (error?.message || '未知错误'))
+    } catch (error: unknown) {
+      message.error('导入失败：' + ((error instanceof Error ? error.message : null) || '未知错误'))
     } finally {
       setLoading(false)
     }

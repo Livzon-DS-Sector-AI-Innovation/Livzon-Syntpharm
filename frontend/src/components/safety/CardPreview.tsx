@@ -3,7 +3,7 @@
 // Stub component for CardPreview
 interface CardPreviewProps {
   content?: string
-  dataSources?: any[]
+  dataSources?: { id: string; name: string }[]
   cardTemplate?: string
   headerColor?: string
 }

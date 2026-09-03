@@ -93,7 +93,7 @@ export function WorkshopTable() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const result: any = await getWorkshops({
+      const result: { items: EnergyWorkshop[]; total: number } = await getWorkshops({
         category: categoryFilter,
         page,
         page_size: pageSize,

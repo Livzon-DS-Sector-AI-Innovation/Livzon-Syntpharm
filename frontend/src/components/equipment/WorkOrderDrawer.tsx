@@ -35,7 +35,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
 
   useEffect(() => {
     if (workOrderDrawerOpen) {
-      fetchAllUsersClient().then((list: any[]) => {
+      fetchAllUsersClient().then((list: { id: string; name: string }[]) => {
         setMaintainers(list)
         // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
         if (editingWorkOrder?.responsible_person_id) {
@@ -97,9 +97,9 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
       }
       closeWorkOrderDrawer()
       onRefresh?.()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.errorFields) return
-      if (error?.message) message.error(error.message)
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 

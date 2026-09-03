@@ -78,10 +78,10 @@ export default function AnnualReviewTab({ year }: Props) {
   const trendOption: EChartsOption = {
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => {
+      formatter: (params: Array<{ name: string; value: number; marker: string; seriesName: string }>) => {
         const month = params[0].name
         let html = `<strong>${month}月</strong><br/>`
-        params.forEach((p: any) => {
+        params.forEach((p: { name: string; value: number; marker: string; seriesName: string }) => {
           html += `${p.marker} ${p.seriesName}: ${p.value.toLocaleString()} kg<br/>`
         })
         return html
@@ -94,7 +94,7 @@ export default function AnnualReviewTab({ year }: Props) {
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
-      data: monthly_trend.map((m: any) => `${m.month}月`),
+      data: monthly_trend.map((m: MonthlyTrend) => `${m.month}月`),
     },
     yAxis: {
       type: 'value',
@@ -104,14 +104,14 @@ export default function AnnualReviewTab({ year }: Props) {
       {
         name: `${year}年`,
         type: 'line',
-        data: monthly_trend.map((m: any) => m.current_year_weight),
+        data: monthly_trend.map((m: MonthlyTrend) => m.current_year_weight),
         smooth: true,
         itemStyle: { color: '#5645d4' },
       },
       {
         name: `${year - 1}年`,
         type: 'line',
-        data: monthly_trend.map((m: any) => m.previous_year_weight),
+        data: monthly_trend.map((m: MonthlyTrend) => m.previous_year_weight),
         smooth: true,
         itemStyle: { color: '#1aae39' },
         lineStyle: { type: 'dashed' },
@@ -124,9 +124,9 @@ export default function AnnualReviewTab({ year }: Props) {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      formatter: (params: any) => {
+      formatter: (params: { name: string; value: number }) => {
         const p = params[0]
-        const item = workshop_ranking.find((w: any) => w.workshop === p.name)
+        const item = workshop_ranking.find((w: WorkshopRanking) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
@@ -137,14 +137,14 @@ export default function AnnualReviewTab({ year }: Props) {
     },
     yAxis: {
       type: 'category',
-      data: workshop_ranking.map((w: any) => w.workshop).reverse(),
+      data: workshop_ranking.map((w: WorkshopRanking) => w.workshop).reverse(),
     },
     series: [
       {
         type: 'bar',
-        data: workshop_ranking.map((w: any) => w.total_weight).reverse(),
+        data: workshop_ranking.map((w: WorkshopRanking) => w.total_weight).reverse(),
         itemStyle: {
-          color: (params: any) => {
+          color: (params: { name: string; value: number }) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
             return colors[params.dataIndex % colors.length]
           },
@@ -152,7 +152,7 @@ export default function AnnualReviewTab({ year }: Props) {
         label: {
           show: true,
           position: 'right',
-          formatter: (params: any) => `${params.value.toLocaleString()} kg`,
+          formatter: (params: { value: number }) => `${params.value.toLocaleString()} kg`,
         },
       },
     ],
@@ -189,8 +189,8 @@ export default function AnnualReviewTab({ year }: Props) {
         emphasis: {
           label: { show: true, fontSize: 14, fontWeight: 'bold' },
         },
-        data: top_products.map((p: any, i: any) => ({
-          name: `${p.product_name}(${p.workshop})`,
+        data: top_products.map((p: TopProduct, i: number) => ({
+          name: `${p.product_name}(${p.key})`,
           value: p.total_weight,
           itemStyle: {
             color: ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2', '#8b5cf6', '#f59e0b', '#0075de', '#ff64c8', '#2a9d99'][i % 10],

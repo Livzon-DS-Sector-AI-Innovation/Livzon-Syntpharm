@@ -1,3 +1,4 @@
+import type { UploadFile } from "antd";
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
@@ -27,8 +28,8 @@ export default function SupplementaryReplyClient({
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [form] = Form.useForm()
-  const [noticeFileList, setNoticeFileList] = useState<any[]>([])
-  const [templateFileList, setTemplateFileList] = useState<any[]>([])
+  const [noticeFileList, setNoticeFileList] = useState<UploadFile[]>([])
+  const [templateFileList, setTemplateFileList] = useState<UploadFile[]>([])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -40,8 +41,8 @@ export default function SupplementaryReplyClient({
       })
       setReplies(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -92,8 +93,8 @@ export default function SupplementaryReplyClient({
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '生成失败')
     } finally {
       setGenerating(false)
     }
@@ -104,8 +105,8 @@ export default function SupplementaryReplyClient({
       await deleteSupplementaryReplyAction(id)
       message.success('删除成功')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '删除失败')
     }
   }
 
@@ -152,7 +153,7 @@ export default function SupplementaryReplyClient({
       key: 'action',
       width: 150,
       fixed: 'right' as const,
-      render: (_: any, record: SupplementaryReplyListItem) => (
+      render: (_: unknown, record: SupplementaryReplyListItem) => (
         <Space>
           <Button
             type="link"

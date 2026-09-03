@@ -66,8 +66,8 @@ export default function TargetModal({
 
       onSuccess(result)
       onClose()
-    } catch (error: any) {
-      message.error(error.message || '操作失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : null) || '操作失败')
     } finally {
       setLoading(false)
     }

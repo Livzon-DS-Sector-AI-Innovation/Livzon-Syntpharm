@@ -129,7 +129,7 @@ export default function FeishuSettingsClient() {
       message.success('Livzon 助手飞书设置已保存')
     } catch (error) {
       console.error('Save Livzon Feishu config failed:', error)
-      message.error(error instanceof Error ? error.message : '保存失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -151,7 +151,7 @@ export default function FeishuSettingsClient() {
       loadConfig()
     } catch (error) {
       console.error('Test Livzon Feishu config failed:', error)
-      message.error(error instanceof Error ? error.message : '诊断失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '诊断失败')
     } finally {
       setTesting(false)
     }
@@ -170,7 +170,7 @@ export default function FeishuSettingsClient() {
       loadConfig()
     } catch (error) {
       console.error('Sync Livzon Feishu contacts failed:', error)
-      message.error(error instanceof Error ? error.message : '同步失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '同步失败')
     } finally {
       setSyncing(false)
     }

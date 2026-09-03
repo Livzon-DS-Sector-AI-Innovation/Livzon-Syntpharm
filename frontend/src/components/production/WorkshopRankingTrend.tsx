@@ -95,7 +95,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const p = Array.isArray(params) ? params[0] : params
           const item = ranking.find((w) => w.workshop === p.name)
           return `<strong>${p.name}</strong><br/>${p.marker} 总产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batches || 0} 批`
@@ -120,7 +120,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
           label: {
             show: true,
             position: 'right',
-            formatter: (p: any) => `${p.value.toLocaleString()} kg`,
+            formatter: (p: { value: number }) => `${p.value.toLocaleString()} kg`,
             fontSize: 11,
           },
         },
@@ -144,7 +144,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const items = Array.isArray(params) ? params : [params]
           let result = `<strong>${items[0]?.axisValue}</strong><br/>`
           for (const item of items) {

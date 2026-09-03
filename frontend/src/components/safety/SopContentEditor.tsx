@@ -1068,7 +1068,7 @@ export default function SopContentEditor({
         setJustSaved(true); setIsDirty(false); onSaved()
       }
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '保存失败')
+      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
     } finally { setSaving(false) }
   }, [regulationId, fullContent, onSaved, sopName, regulationName, revisionMode, onReviseSave, revisionOpinion])
 
@@ -1086,7 +1086,7 @@ export default function SopContentEditor({
       URL.revokeObjectURL(url)
       message.success('PDF 下载已开始')
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '导出失败')
+      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '导出失败')
     } finally { setExporting(false) }
   }, [regulationId, regulationName])
 
@@ -1102,7 +1102,7 @@ export default function SopContentEditor({
       setSaving(false)
       await handleExport()
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '保存失败')
+      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
       setSaving(false)
     }
   }, [regulationId, fullContent, onSaved, handleExport, sopName, regulationName])

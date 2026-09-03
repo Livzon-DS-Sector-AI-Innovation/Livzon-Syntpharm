@@ -173,7 +173,7 @@ export function CollectLogDetailDrawer({
     setDetail(null)
     fetchCollectLogDetailClient(logId)
       .then(setDetail)
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error('获取采集日志详情失败:', err)
         message.error('获取采集日志详情失败')
       })

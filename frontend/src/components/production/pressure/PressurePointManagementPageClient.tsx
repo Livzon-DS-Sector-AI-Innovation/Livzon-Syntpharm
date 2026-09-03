@@ -121,7 +121,7 @@ export function PressurePointManagementPageClient() {
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: any, record: PointMapping) => (
+      render: (_: unknown, record: PointMapping) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>

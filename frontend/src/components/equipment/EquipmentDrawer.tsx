@@ -100,7 +100,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
       }
       closeEquipmentDrawer()
       onRefresh?.()
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ant Design validation errors have an errorFields property
       if (err?.errorFields) return
       message.error('操作失败')

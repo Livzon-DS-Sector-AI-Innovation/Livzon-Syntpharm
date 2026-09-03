@@ -151,7 +151,7 @@ export function PressureManualInputPageClient() {
       key: slot,
       width: 120,
       align: 'center' as const,
-      render: (_: any, record: PointMapping) => {
+      render: (_: unknown, record: PointMapping) => {
         const key = `${record.point_id}::${slot}`
         return (
           <InputNumber

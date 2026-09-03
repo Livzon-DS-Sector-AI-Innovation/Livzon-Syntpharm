@@ -414,7 +414,7 @@ export default function SopGeneratorModal({
       })
       setFile(null)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '生成失败，请重试'
+      const msg = err instanceof Error ? (err instanceof Error ? err.message : null) : '生成失败，请重试'
       setErrorMsg(msg)
     } finally {
       setUploading(false)

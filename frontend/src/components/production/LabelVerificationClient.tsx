@@ -118,7 +118,7 @@ export default function LabelVerificationClient({
   const [productName, setProductName] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
-  const [statistics, setStatistics] = useState<any>(null)
+  const [statistics, setStatistics] = useState<Record<string, unknown>>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createForm] = Form.useForm()
@@ -144,8 +144,8 @@ export default function LabelVerificationClient({
       })
       setVerifications(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -155,7 +155,7 @@ export default function LabelVerificationClient({
     try {
       const res = await fetchLabelVerificationStatistics()
       setStatistics(res.data)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('加载统计数据失败', err)
     }
   }, [])
@@ -179,8 +179,8 @@ export default function LabelVerificationClient({
         video_file_name: result.data.file_name,
       })
       message.success('视频上传成功')
-    } catch (err: any) {
-      message.error(err.message || '上传失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '上传失败')
     } finally {
       setVideoUploading(false)
     }
@@ -239,19 +239,19 @@ export default function LabelVerificationClient({
       } else {
         message.warning(`对比完成但置信度较低 (${compareData.confidence}%)，建议人工复核`)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAutoCompareProgress('')
-      if (err.errorFields) {
+      if (err && typeof err === "object" && "errorFields" in err) {
         message.warning('请先填写表单基本信息并上传视频')
       } else {
-        message.error(err.message || '自动对比失败')
+        message.error((err instanceof Error ? err.message : null) || '自动对比失败')
       }
     } finally {
       setAutoComparing(false)
     }
   }
 
-  const handleCreate = async (values: any) => {
+  const handleCreate = async (values: Record<string, unknown>) => {
     try {
       const data: LabelVerificationCreateInput = {
         batch_number: values.batch_number,
@@ -287,8 +287,8 @@ export default function LabelVerificationClient({
       setAutoCompareResult(null)
       loadData()
       loadStatistics()
-    } catch (err: any) {
-      message.error(err.message || '创建失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '创建失败')
     }
   }
 
@@ -363,7 +363,7 @@ export default function LabelVerificationClient({
       key: 'action',
       width: 80,
       fixed: 'right' as const,
-      render: (_: any, record: LabelVerification) => (
+      render: (_: unknown, record: LabelVerification) => (
         <Button type="link" size="small" onClick={() => showDetail(record)}>
           详情
         </Button>
@@ -451,7 +451,7 @@ export default function LabelVerificationClient({
           </Select>
           <RangePicker
             value={dateRange}
-            onChange={(dates) => setDateRange(dates as any)}
+            onChange={(dates) => setDateRange(dates as [string, string] | null)}
             placeholder={['复核开始日期', '复核结束日期']}
           />
         </Space>

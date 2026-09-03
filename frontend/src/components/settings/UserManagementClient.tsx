@@ -120,7 +120,7 @@ export default function UserManagementClient() {
       setModalOpen(false)
       loadUsers()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     } finally {
       setSaving(false)
     }
@@ -133,7 +133,7 @@ export default function UserManagementClient() {
       message.success(nextStatus === 'active' ? '用户已启用' : '用户已禁用')
       loadUsers()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     }
   }
 
@@ -146,7 +146,7 @@ export default function UserManagementClient() {
       setPasswordUser(null)
       passwordForm.resetFields()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     }
   }
 

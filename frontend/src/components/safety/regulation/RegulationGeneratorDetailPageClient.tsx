@@ -36,7 +36,7 @@ export function RegulationGeneratorDetailPageClient() {
         setError(response.message || '未找到该操规记录')
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '加载失败')
+      setError(err instanceof Error ? (err instanceof Error ? err.message : null) : '加载失败')
     } finally {
       setLoading(false)
     }

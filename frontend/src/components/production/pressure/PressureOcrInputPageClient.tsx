@@ -95,7 +95,7 @@ export function PressureOcrInputPageClient() {
     setEditableRecords([])
   }
 
-  const updateRecord = (index: number, field: string, value: any) => {
+  const updateRecord = (index: number, field: string, value: unknown) => {
     const updated = [...editableRecords]
     updated[index] = { ...updated[index], [field]: value }
     setEditableRecords(updated)
@@ -106,7 +106,7 @@ export function PressureOcrInputPageClient() {
       title: '位点编号',
       key: 'point_id',
       width: 130,
-      render: (_: any, record: OcrResultRecord, index: number) => (
+      render: (_: unknown, record: OcrResultRecord, index: number) => (
         <Input
           size="small"
           value={editableRecords[index]?.point_id}
@@ -118,7 +118,7 @@ export function PressureOcrInputPageClient() {
       title: '压差值 (Pa)',
       key: 'pressure_value',
       width: 120,
-      render: (_: any, record: OcrResultRecord, index: number) => (
+      render: (_: unknown, record: OcrResultRecord, index: number) => (
         <InputNumber
           size="small"
           value={editableRecords[index]?.pressure_value}
@@ -131,7 +131,7 @@ export function PressureOcrInputPageClient() {
       title: '时段',
       key: 'time_slot',
       width: 100,
-      render: (_: any, record: OcrResultRecord, index: number) => (
+      render: (_: unknown, record: OcrResultRecord, index: number) => (
         <Input
           size="small"
           value={editableRecords[index]?.time_slot || ''}
@@ -143,7 +143,7 @@ export function PressureOcrInputPageClient() {
       title: '记录时间',
       key: 'record_time',
       width: 170,
-      render: (_: any, record: OcrResultRecord, index: number) => (
+      render: (_: unknown, record: OcrResultRecord, index: number) => (
         <Text>{editableRecords[index]?.record_time}</Text>
       ),
     },
@@ -151,7 +151,7 @@ export function PressureOcrInputPageClient() {
       title: '记录人',
       key: 'recorder',
       width: 100,
-      render: (_: any, record: OcrResultRecord, index: number) => (
+      render: (_: unknown, record: OcrResultRecord, index: number) => (
         <Text>{editableRecords[index]?.recorder}</Text>
       ),
     },

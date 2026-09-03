@@ -55,7 +55,7 @@ export function PressureAuditPageClient() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: any = { page, page_size: pageSize, status }
+      const params: Record<string, unknown> = { page, page_size: pageSize, status }
       if (area) params.area = area
       if (dateRange) {
         params.start_date = dateRange[0].startOf('day').toISOString()
@@ -139,7 +139,7 @@ export function PressureAuditPageClient() {
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: any, record: PressureRecord) =>
+      render: (_: unknown, record: PressureRecord) =>
         record.status === 'pending' ? (
           <Space>
             <Button type="link" size="small" icon={<CheckOutlined />} style={{ color: '#52c41a' }} onClick={() => handleApprove(record.id)} />

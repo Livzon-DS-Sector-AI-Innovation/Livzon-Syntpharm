@@ -201,7 +201,7 @@ export default function WorkflowListPanel() {
         let list = (res.data as HazardIdentification[]) || []
         // 客户端排序
         if (sortField && sortOrder) {
-          list = [...list].sort((a: any, b: any) => {
+          list = [...list].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
             const aVal = a[sortField] ?? ''
             const bVal = b[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')

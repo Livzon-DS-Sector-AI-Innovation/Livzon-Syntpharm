@@ -33,7 +33,7 @@ function isEmbeddedBrowser(): boolean {
   return (
     ua.includes('electron') ||
     ua.includes('vscode') ||
-    (window as any).__vscodeWebview !== undefined
+    (window as unknown as { __vscodeWebview?: unknown }).__vscodeWebview !== undefined
   )
 }
 
@@ -158,8 +158,8 @@ export default function RegulationClient() {
       } else {
         message.warning('未能提取到文本，请手动输入')
       }
-    } catch (err: any) {
-      message.error(err.message || '识别失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? (err instanceof Error ? err.message : null) : null) || '识别失败')
     } finally {
       setPendingFiles((prev) =>
         prev.map((f) => (f.id === id ? { ...f, extracting: false } : f))
@@ -189,8 +189,8 @@ export default function RegulationClient() {
       message.success(`已上传 ${pendingFiles.length} 个文件`)
       setUploadModalOpen(false)
       setPendingFiles([])
-    } catch (err: any) {
-      message.error(err.message || '上传失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? (err instanceof Error ? err.message : null) : null) || '上传失败')
     } finally {
       setUploading(false)
     }
@@ -213,8 +213,8 @@ export default function RegulationClient() {
     try {
       await removeRegulation(record.id)
       message.success('已删除')
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? (err instanceof Error ? err.message : null) : null) || '删除失败')
     }
   }
 
@@ -296,7 +296,7 @@ export default function RegulationClient() {
       title: '操作',
       key: 'action',
       width: 320,
-      render: (_: any, record: Regulation) => (
+      render: (_: unknown, record: Regulation) => (
         <Space size="middle">
           <Button
             size="middle"

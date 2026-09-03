@@ -169,13 +169,13 @@ export default function ModuleSettingsClient({
       title: '当前值',
       dataIndex: 'value',
       key: 'value',
-      render: (_: any, setting: ModuleSetting) => renderValue(setting),
+      render: (_: unknown, setting: ModuleSetting) => renderValue(setting),
     },
     {
       title: '操作',
       key: 'action',
       width: 100,
-      render: (_: any, setting: ModuleSetting) => (
+      render: (_: unknown, setting: ModuleSetting) => (
         <Button
           type="link"
           icon={<EditOutlined />}

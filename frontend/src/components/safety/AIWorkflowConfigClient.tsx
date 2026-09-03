@@ -38,7 +38,7 @@ export default function AIWorkflowConfigClient({
     try {
       const res = await getAIWorkflowConfigs({ page_size: 500 })
       setWorkflows(
-        (res.data || []).filter((w: any) => !EXCLUDED_MODULE_CODES.has(w.module_code)),
+        (res.data || []).filter((w: { module_code: string }) => !EXCLUDED_MODULE_CODES.has(w.module_code)),
       )
     } catch {
       message.error('刷新失败')

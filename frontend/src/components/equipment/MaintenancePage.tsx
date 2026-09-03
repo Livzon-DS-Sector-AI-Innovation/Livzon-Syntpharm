@@ -88,8 +88,8 @@ export function MaintenancePage({
     try {
       await updateClaimTimeoutConfig(claimTimeoutConfig)
       configMsg.success('超时配置保存成功')
-    } catch (error: any) {
-      configMsg.error(error?.message || '保存配置失败')
+    } catch (error: unknown) {
+      configMsg.error((error instanceof Error ? error.message : null) || '保存配置失败')
     }
   }
 
@@ -100,7 +100,7 @@ export function MaintenancePage({
   useEffect(() => {
     // 如果服务端没拿到设备数据，客户端重新获取
     if (initialEquipments.length === 0) {
-      fetchEquipmentsClient({ page: 1, page_size: 200 }).then((res: any) => {
+      fetchEquipmentsClient({ page: 1, page_size: 200 }).then((res: EquipmentListResponse) => {
         setEquipmentsState(res.items)
       }).catch(() => {})
     }

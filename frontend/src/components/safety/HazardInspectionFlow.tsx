@@ -286,7 +286,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setCompletedHazardNo(updated?.hazard_no || hazard.hazard_no)
       setCurrentStep('done')
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : '请重试'
+      const errMsg = err instanceof Error ? (err instanceof Error ? err.message : null) : '请重试'
       message.error(`提交失败：${errMsg}`)
     } finally {
       setSubmitting(false)

@@ -50,21 +50,21 @@ export default function LcReportView({ report }: Props) {
       dataIndex: 'first_percent',
       key: 'first',
       width: 100,
-      render: (_: any, r: ImpurityResult) => toPct(r.first_percent, 4),
+      render: (_: unknown, r: ImpurityResult) => toPct(r.first_percent, 4),
     },
     {
       title: '第二份(%)',
       dataIndex: 'second_percent',
       key: 'second',
       width: 100,
-      render: (_: any, r: ImpurityResult) => toPct(r.second_percent, 4),
+      render: (_: unknown, r: ImpurityResult) => toPct(r.second_percent, 4),
     },
     {
       title: '限度(%)',
       dataIndex: 'limit',
       key: 'limit',
       width: 100,
-      render: (_: any, r: ImpurityResult) => toPct(r.limit, 4),
+      render: (_: unknown, r: ImpurityResult) => toPct(r.limit, 4),
     },
     {
       title: '判定',
@@ -92,7 +92,7 @@ export default function LcReportView({ report }: Props) {
       dataIndex: 'limit',
       key: 'limit',
       width: 120,
-      render: (_: any, s: any) => {
+      render: (_: unknown, s: ImpurityResult) => {
         const op = s.operator || '≤'
         return s.limit ? `${op} ${toPct(s.limit)}` : '-'
       },

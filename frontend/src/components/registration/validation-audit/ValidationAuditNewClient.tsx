@@ -1,3 +1,4 @@
+import type { UploadFile } from "antd";
 'use client'
 
  'use client'
@@ -47,7 +48,7 @@ export default function ValidationAuditNewClient() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
-  const [fileList, setFileList] = useState<any[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([])
   const [auditMode, setAuditMode] = useState<AuditMode>('protocol')
 
   const handleSubmit = async () => {
@@ -96,7 +97,7 @@ export default function ValidationAuditNewClient() {
       router.push(`/registration/validation-audit/${taskId}`)
     } catch (error) {
       if (error instanceof Error) {
-        message.error(error.message)
+        message.error((error instanceof Error ? error.message : null))
       }
     } finally {
       setSubmitting(false)

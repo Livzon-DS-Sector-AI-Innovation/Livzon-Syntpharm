@@ -59,7 +59,7 @@ export default function AgentSkillManagementClient() {
     try {
       setSkills(await getAgentSkills())
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '加载 Skill 失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '加载 Skill 失败')
     } finally {
       setLoading(false)
     }
@@ -114,7 +114,7 @@ export default function AgentSkillManagementClient() {
       setModalOpen(false)
       loadSkills()
     } catch (error) {
-      if (error instanceof Error) message.error(error.message)
+      if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     } finally {
       setSaving(false)
     }
@@ -131,7 +131,7 @@ export default function AgentSkillManagementClient() {
       }
       loadSkills()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '操作失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '操作失败')
     }
   }
 
@@ -141,7 +141,7 @@ export default function AgentSkillManagementClient() {
       message.success('Skill 已删除')
       loadSkills()
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '删除失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '删除失败')
     }
   }
 
