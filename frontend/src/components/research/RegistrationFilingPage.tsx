@@ -43,8 +43,8 @@ export function RegistrationFilingPage({ projectId }: Props) {
     try {
       const data = await fetchFilings(projectId)
       setFilings(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -85,7 +85,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
     setDrawerOpen(true)
   }
 
-  const collectJsonFields = (values: Record<string, any>) => ({
+  const collectJsonFields = (values: Record<string, unknown>) => ({
     ctd_structure: {
       module1_admin: values.ctd_m1 || '',
       module2_summaries: values.ctd_m2 || '',
@@ -130,8 +130,8 @@ export function RegistrationFilingPage({ projectId }: Props) {
       setDrawerOpen(false)
       form.resetFields()
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -141,8 +141,8 @@ export function RegistrationFilingPage({ projectId }: Props) {
       await deleteFiling(id)
       msgApi.success('删除成功')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -154,7 +154,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
     { title: '备注', dataIndex: 'notes', key: 'notes', width: 200, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
-      render: (_: any, record: RdRegistrationFiling) => (
+      render: (_: unknown, record: RdRegistrationFiling) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">

@@ -6,6 +6,21 @@ import {CheckCircleOutlined, ExpandOutlined} from '@ant-design/icons'
 import type { ScaleUpStudy, ScaleUpBatch, DOEExperiment, LabConfirmationStudy } from '@/types/research'
 import { AIFileParser } from './AIFileParser'
 
+// Type for AI parsed scale up data
+interface ParsedScaleUpData {
+  batch_no?: string
+  scale_kg?: number
+  date?: string
+  operator?: string
+  equipment?: string
+  yield_pct?: number
+  purity_pct?: number
+  impurities_pct?: number
+  appearance?: string
+  comparison_notes?: string
+}
+
+
 interface ModuleScaleUpProps {
   optimizationId: string
   doeExperiment?: DOEExperiment
@@ -194,19 +209,20 @@ export function ModuleScaleUp({ optimizationId, doeExperiment: _doeExperiment, l
             <>
             <AIFileParser
               parseType="scale_up"
-              onParseComplete={(data) => {
+              onParseComplete={(data: unknown) => {
+                const parsed = data as ParsedScaleUpData;
                 // 将AI解析的结果填充到表单
                 form.setFieldsValue({
-                  batch_no: data.batch_no,
-                  scale_kg: data.scale_kg,
-                  date: data.date,
-                  operator: data.operator,
-                  equipment: data.equipment,
-                  yield_pct: data.yield_pct,
-                  purity_pct: data.purity_pct,
-                  impurities_pct: data.impurities_pct,
-                  appearance: data.appearance,
-                  comparison_notes: data.comparison_notes,
+                  batch_no: parsed.batch_no,
+                  scale_kg: parsed.scale_kg,
+                  date: parsed.date,
+                  operator: parsed.operator,
+                  equipment: parsed.equipment,
+                  yield_pct: parsed.yield_pct,
+                  purity_pct: parsed.purity_pct,
+                  impurities_pct: parsed.impurities_pct,
+                  appearance: parsed.appearance,
+                  comparison_notes: parsed.comparison_notes,
                 })
                 message.success('AI已自动填充表单，请检查并确认')
               }}

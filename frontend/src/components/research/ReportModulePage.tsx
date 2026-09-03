@@ -18,8 +18,8 @@ export function ReportModulePage() {
       try {
         const result = await fetchRdProjects({ page_size: 100 })
         setProjects(result.items)
-      } catch (e: any) {
-        msgApi.error(e.message || '加载项目列表失败')
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载项目列表失败')
       } finally {
         setLoading(false)
       }

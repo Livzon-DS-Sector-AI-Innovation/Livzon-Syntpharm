@@ -45,7 +45,7 @@ export function TestingRecommendations({ solvents }: TestingRecommendationsProps
       title: '溶剂',
       key: 'name',
       width: 200,
-      render: (_: any, record: Solvent) => (
+      render: (_: unknown, record: Solvent) => (
         <div>
           <div>{record.name_cn}</div>
           {record.name_cn !== record.name_en && (
@@ -68,7 +68,7 @@ export function TestingRecommendations({ solvents }: TestingRecommendationsProps
       title: '推荐方法',
       key: 'method',
       width: 180,
-      render: (_: any, record: Solvent) => (
+      render: (_: unknown, record: Solvent) => (
         <Text strong>{getRecommendedMethod(record.class)}</Text>
       ),
     },
@@ -77,7 +77,7 @@ export function TestingRecommendations({ solvents }: TestingRecommendationsProps
       dataIndex: 'limit_ppm',
       key: 'limit_ppm',
       width: 100,
-      render: (val: any) => {
+      render: (val: number | string | null | undefined) => {
         if (val == null) return '-'
         return typeof val === 'number' ? val.toFixed(0) : val
       },

@@ -181,8 +181,8 @@ export function ICHAnalysisPage() {
       setResult({ id: data.data.id, q3c: data.data.q3c_result, q3d: data.data.q3d_result })
       message.success('ICH Q3C/Q3D 杂质识别完成，已保存')
       loadHistory(historyPage)
-    } catch (error: any) {
-      message.error(error.message || '分析失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '分析失败')
     } finally {
       setLoading(false)
     }
@@ -293,7 +293,7 @@ export function ICHAnalysisPage() {
               title: '备注',
               key: 'note',
               width: 150,
-              render: (_: any, record: any) => {
+              render: (_: unknown, record: { ctcl?: number }) => {
                 if (record.ctcl) {
                   return <Text type="secondary" style={{ fontSize: 12 }}>CTCL: {record.ctcl} μg/g</Text>
                 }
@@ -331,7 +331,7 @@ export function ICHAnalysisPage() {
     { title: '时间', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v: string) => v ? new Date(v).toLocaleString('zh-CN') : '-' },
     {
       title: '操作', key: 'action', width: 120,
-      render: (_: any, record: HistoryRecord) => (
+      render: (_: unknown, record: HistoryRecord) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => viewRecord(record.id)}>查看</Button>
           <Popconfirm title="确定删除此记录？" onConfirm={() => deleteRecord(record.id)}>

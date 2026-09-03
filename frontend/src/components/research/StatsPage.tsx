@@ -40,8 +40,8 @@ export function StatsPage() {
         ])
         setStats(s)
         setProgress(p)
-      } catch (e: any) {
-        msgApi.error(e.message || '加载统计数据失败')
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载统计数据失败')
       } finally {
         setLoading(false)
       }
@@ -95,7 +95,7 @@ export function StatsPage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string, record: any) => {
+      render: (status: string, record: RdProjectProgress) => {
         // Derive meaningful status from current_stage when status is always 'initiation'
         const stage = record.current_stage
         const stageStatusLabels: Record<string, string> = {

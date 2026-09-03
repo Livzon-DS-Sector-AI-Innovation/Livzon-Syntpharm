@@ -14,6 +14,37 @@ import {
 import dayjs from 'dayjs'
 import { createTrack, updateTrack, createFinding, updateFinding } from '@/actions/research/rd-project'
 
+
+// JSON structure interfaces for ResearchTrackPage
+interface ExperimentConditions {
+  temperature?: string
+  solvent?: string
+  time?: string
+  ph?: string
+}
+
+interface MaterialsUsed {
+  reagents?: string
+  quantities?: string
+}
+
+interface EquipmentUsed {
+  instruments?: string
+  models?: string
+}
+
+interface SpectraRefs {
+  hplc?: string
+  nmr?: string
+  xrd?: string
+  ms?: string
+}
+
+interface AnalyticalResults {
+  purity?: string
+  impurities?: string
+  yield?: string
+}
 interface Props { projectId: string; trackTypeFilter?: string }
 
 const typeOptions = Object.entries(TRACK_TYPE_LABELS).map(([value, label]) => ({ value, label }))
@@ -92,8 +123,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       // Filter by type if specified
       const filtered = trackTypeFilter ? data.filter(t => t.type === trackTypeFilter) : data
       setTracks(filtered)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -111,8 +142,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
     try {
       const detail = await fetchTrackDetail(trackId)
       setSelectedTrack(detail)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载详情失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载详情失败')
     } finally {
       setDetailLoading(false)
     }
@@ -152,9 +183,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       if (selectedTrack && editingTrack?.id === selectedTrack.id) {
         loadTrackDetail(selectedTrack.id)
       }
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -164,8 +195,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       msgApi.success('删除成功')
       if (selectedTrack?.id === id) setSelectedTrack(null)
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -188,21 +219,21 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       observations: finding.observations,
       notes: finding.notes,
       // JSON fields
-      ec_temperature: (finding.experiment_conditions as any)?.temperature || '',
-      ec_solvent: (finding.experiment_conditions as any)?.solvent || '',
-      ec_time: (finding.experiment_conditions as any)?.time || '',
-      ec_ph: (finding.experiment_conditions as any)?.ph || '',
-      mu_reagents: (finding.materials_used as any)?.reagents || '',
-      mu_quantities: (finding.materials_used as any)?.quantities || '',
-      eu_instruments: (finding.equipment_used as any)?.instruments || '',
-      eu_models: (finding.equipment_used as any)?.models || '',
-      sr_hplc: (finding.spectra_refs as any)?.hplc || '',
-      sr_nmr: (finding.spectra_refs as any)?.nmr || '',
-      sr_xrd: (finding.spectra_refs as any)?.xrd || '',
-      sr_ms: (finding.spectra_refs as any)?.ms || '',
-      ar_purity: (finding.analytical_results as any)?.purity || '',
-      ar_impurities: (finding.analytical_results as any)?.impurities || '',
-      ar_yield: (finding.analytical_results as any)?.yield || '',
+      ec_temperature: (finding.experiment_conditions as ExperimentConditions)?.temperature || '',
+      ec_solvent: (finding.experiment_conditions as ExperimentConditions)?.solvent || '',
+      ec_time: (finding.experiment_conditions as ExperimentConditions)?.time || '',
+      ec_ph: (finding.experiment_conditions as ExperimentConditions)?.ph || '',
+      mu_reagents: (finding.materials_used as MaterialsUsed)?.reagents || '',
+      mu_quantities: (finding.materials_used as MaterialsUsed)?.quantities || '',
+      eu_instruments: (finding.equipment_used as EquipmentUsed)?.instruments || '',
+      eu_models: (finding.equipment_used as EquipmentUsed)?.models || '',
+      sr_hplc: (finding.spectra_refs as SpectraRefs)?.hplc || '',
+      sr_nmr: (finding.spectra_refs as SpectraRefs)?.nmr || '',
+      sr_xrd: (finding.spectra_refs as SpectraRefs)?.xrd || '',
+      sr_ms: (finding.spectra_refs as SpectraRefs)?.ms || '',
+      ar_purity: (finding.analytical_results as AnalyticalResults)?.purity || '',
+      ar_impurities: (finding.analytical_results as AnalyticalResults)?.impurities || '',
+      ar_yield: (finding.analytical_results as AnalyticalResults)?.yield || '',
       // data JSON
       data_summary: finding.data ? JSON.stringify(finding.data, null, 2) : '',
     })
@@ -257,9 +288,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       }
       setFindingDrawerOpen(false)
       if (selectedTrack) loadTrackDetail(selectedTrack.id)
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -268,8 +299,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       await deleteFinding(id)
       msgApi.success('删除成功')
       if (selectedTrack) loadTrackDetail(selectedTrack.id)
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -296,9 +327,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       setConclusionModalOpen(false)
       loadTrackDetail(selectedTrack.id)
       loadData()
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '发布失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '发布失败')
     }
   }
 

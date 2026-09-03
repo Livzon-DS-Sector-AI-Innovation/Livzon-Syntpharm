@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker} from 'antd'
 import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
 import {
-  RdProject, RdMilestone, RdStageRecord,
+  RdProject, RdMilestone, RdStageRecord, RdProjectStage,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-project'
@@ -75,14 +75,14 @@ export function ProjectDetailPage({ project }: Props) {
           } else {
             msgApi.error('阶段流转失败')
           }
-        } catch (e: any) {
-          msgApi.error(e.message || '阶段流转失败')
+        } catch (e: unknown) {
+          msgApi.error(e instanceof Error ? e.message : '阶段流转失败')
         }
       },
     })
   }
 
-  const nextStage = STAGE_ORDER[STAGE_ORDER.indexOf(project.current_stage as any) + 1]
+  const nextStage = STAGE_ORDER[STAGE_ORDER.indexOf(project.current_stage as RdProjectStage) + 1]
 
   // 里程碑表单
   const [milestoneForm] = Form.useForm()
@@ -98,7 +98,7 @@ export function ProjectDetailPage({ project }: Props) {
       msgApi.success('里程碑创建成功')
       setMilestoneModalOpen(false)
       loadAll()
-    } catch (e: any) { msgApi.error(e.message) }
+    } catch (e: unknown) { msgApi.error(e instanceof Error ? e.message : "保存失败") }
   }
 
   const tabs = [

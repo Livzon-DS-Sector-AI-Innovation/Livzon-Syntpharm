@@ -13,7 +13,7 @@ function LabeledInput({ label, ...props }: { label: string } & React.ComponentPr
   return (
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
-      <Input {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
+      <Input {...props} style={{ ...((props.style as React.CSSProperties) || {}), borderRadius: '0 6px 6px 0' }} />
     </Space.Compact>
   )
 }
@@ -22,7 +22,7 @@ function LabeledInputNumber({ label, ...props }: { label: string } & React.Compo
   return (
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
-      <InputNumber {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
+      <InputNumber {...props} style={{ ...((props.style as React.CSSProperties) || {}), borderRadius: '0 6px 6px 0' }} />
     </Space.Compact>
   )
 }

@@ -51,8 +51,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       const result = await fetchRdProjects({ page: p, page_size: ps, ...f })
       setProjects(result.items)
       setTotal(result.total)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -70,8 +70,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       setCreateModalOpen(false)
       createForm.resetFields()
       loadData()
-    } catch (e: any) {
-      message.error(e.message || '创建失败')
+    } catch (e: unknown) {
+      message.error(e instanceof Error ? e.message : '创建失败')
     }
   }
 
@@ -115,8 +115,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
               await deleteRdProject(project.id)
               message.success('删除成功')
               loadData()
-            } catch (e: any) {
-              message.error(e.message || '删除失败')
+            } catch (e: unknown) {
+              message.error(e instanceof Error ? e.message : '删除失败')
             }
           },
         })

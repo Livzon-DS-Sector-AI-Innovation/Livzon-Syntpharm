@@ -34,8 +34,8 @@ export function DeliverableTemplatePage() {
         })
         msgApi.success(`模板 "${fileName}" 创建成功`)
         loadData()
-      } catch (err: any) {
-        msgApi.error(`创建失败: ${err.message}`)
+      } catch (err: unknown) {
+        msgApi.error(`创建失败: ${err instanceof Error ? err.message : "未知错误"}`)
       } finally {
         setBatchUploading(false)
       }
@@ -63,8 +63,8 @@ export function DeliverableTemplatePage() {
     try {
       const data = await fetchDeliverableTemplates()
       setTemplates(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -115,9 +115,9 @@ export function DeliverableTemplatePage() {
       }
       setDrawerOpen(false)
       loadData()
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -126,8 +126,8 @@ export function DeliverableTemplatePage() {
     await deleteDeliverableTemplate(id)
     msgApi.success('删除成功')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 

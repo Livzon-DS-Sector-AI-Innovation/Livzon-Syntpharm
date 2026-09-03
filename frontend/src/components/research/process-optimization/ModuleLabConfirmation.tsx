@@ -6,6 +6,26 @@ import { CheckCircleOutlined, ExperimentOutlined } from '@ant-design/icons'
 import type { LabConfirmationStudy, LabConfirmationBatch, DOEExperiment, QualityStandardSet } from '@/types/research'
 import { AIFileParser } from './AIFileParser'
 
+// Type for AI parsed lab confirmation data
+interface ParsedLabConfirmationData {
+  batch_no?: string
+  scale_g?: number
+  date?: string
+  operator?: string
+  equipment?: string
+  temperature?: string
+  time?: string
+  ratio?: string
+  other_parameters?: string
+  yield_pct?: number
+  purity_pct?: number
+  impurities_pct?: number
+  appearance?: string
+  observations?: string
+  conclusion?: string
+}
+
+
 interface ModuleLabConfirmationProps {
   optimizationId: string
   doeExperiment?: DOEExperiment
@@ -75,7 +95,7 @@ export function ModuleLabConfirmation({
   const getDefaultParameters = () => {
     if (!doeExperiment?.analysis_result?.optimal_conditions) return {}
     const optimal = doeExperiment.analysis_result.optimal_conditions
-    const params: any = {}
+    const params: Record<string, unknown> = {}
     doeExperiment.factors.forEach(f => {
       if (optimal[f.symbol] !== undefined) {
         const key = f.name.includes('温度') ? 'temperature' : 
@@ -163,24 +183,25 @@ export function ModuleLabConfirmation({
 
       <AIFileParser
         parseType="lab_confirmation"
-        onParseComplete={(data) => {
+        onParseComplete={(data: unknown) => {
+          const parsed = data as ParsedLabConfirmationData;
           // 将AI解析的结果填充到表单
           form.setFieldsValue({
-            batch_no: data.batch_no,
-            scale_g: data.scale_g,
-            date: data.date,
-            operator: data.operator,
-            equipment: data.equipment,
-            temperature: data.temperature,
-            time: data.time,
-            ratio: data.ratio,
-            other_parameters: data.other_parameters,
-            yield_pct: data.yield_pct,
-            purity_pct: data.purity_pct,
-            impurities_pct: data.impurities_pct,
-            appearance: data.appearance,
-            observations: data.observations,
-            conclusion: data.conclusion,
+            batch_no: parsed.batch_no,
+            scale_g: parsed.scale_g,
+            date: parsed.date,
+            operator: parsed.operator,
+            equipment: parsed.equipment,
+            temperature: parsed.temperature,
+            time: parsed.time,
+            ratio: parsed.ratio,
+            other_parameters: parsed.other_parameters,
+            yield_pct: parsed.yield_pct,
+            purity_pct: parsed.purity_pct,
+            impurities_pct: parsed.impurities_pct,
+            appearance: parsed.appearance,
+            observations: parsed.observations,
+            conclusion: parsed.conclusion,
           })
           message.success('AI已自动填充表单，请检查并确认')
         }}

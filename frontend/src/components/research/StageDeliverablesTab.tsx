@@ -15,8 +15,16 @@ import { generateReport } from '@/actions/research/rd-project'
 import { RdDeliverableTemplate } from '@/types/research/rd-project'
 
 interface Props {
+
   projectId: string
   currentStage?: RdProjectStage | null
+}
+
+// Row type for deliverable table
+interface DeliverableRow {
+  type: string
+  label: string
+  record?: RdStageDeliverable
 }
 
 const statusColorMap: Record<RdDeliverableStatus, string> = {
@@ -80,8 +88,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     try {
       const data = await fetchDeliverables(projectId)
       setDeliverables(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载交付物列表失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载交付物列表失败')
     } finally {
       setLoading(false)
     }
@@ -152,8 +160,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       setEditModalOpen(false)
       form.resetFields()
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -162,8 +170,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       await deleteDeliverable(id)
       msgApi.success('已删除')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -175,8 +183,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       await uploadDeliverableFile(deliverableId, formData)
       msgApi.success('上传成功')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '上传失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '上传失败')
     } finally {
       setUploadingId(null)
     }
@@ -229,8 +237,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       msgApi.success('已保存为交付物')
       setAiGenerateModalOpen(false)
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -246,8 +254,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       })
       setAiResult(result.content)
       msgApi.success('报告生成成功')
-    } catch (e: any) {
-      msgApi.error(e.message || 'AI 生成失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : 'AI 生成失败')
     } finally {
       setAiGenerating(false)
     }
@@ -299,7 +307,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               title: '交付物',
               dataIndex: 'label',
               key: 'label',
-              render: (label: string, row: any) => (
+              render: (label: string, row: DeliverableRow) => (
                 <Space>
                   <FileTextOutlined style={{ color: row.record ? '#1677ff' : '#bbb' }} />
                   <span style={{ color: row.record ? '#333' : '#999' }}>{label}</span>
@@ -310,7 +318,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               title: '状态',
               key: 'status',
               width: 100,
-              render: (_: any, row: any) => {
+              render: (_: unknown, row: DeliverableRow) => {
                 if (!row.record) return <Tag>未创建</Tag>
                 return (
                   <Tag color={statusColorMap[row.record.status as RdDeliverableStatus] || 'default'}>
@@ -323,18 +331,18 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               title: '版本',
               key: 'version',
               width: 80,
-              render: (_: any, row: any) => row.record?.version || '-',
+              render: (_: unknown, row: DeliverableRow) => row.record?.version || '-',
             },
             {
               title: '附件',
               key: 'file',
               width: 200,
-              render: (_: any, row: any) => {
+              render: (_: unknown, row: DeliverableRow) => {
                 if (!row.record) return '-'
                 if (row.record.file_name) {
                   return (
                     <Space>
-                      <a href={row.record.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                      <a href={row.record.file_url || undefined} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
                         <DownloadOutlined /> {row.record.file_name}
                       </a>
                       <span style={{ fontSize: 11, color: '#999' }}>
@@ -350,7 +358,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               title: '操作',
               key: 'actions',
               width: 180,
-              render: (_: any, row: any) => (
+              render: (_: unknown, row: DeliverableRow) => (
                 <Space size="small">
                   {(() => {
                     const allVersions = deliverables.filter(d => d.stage === stage && d.deliverable_type === row.type)
@@ -392,26 +400,26 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                           type="link"
                           size="small"
                           icon={<DownloadOutlined />}
-                          onClick={() => handleExport(row.record)}
+                          onClick={() => row.record && handleExport(row.record)}
                           disabled={!row.record.content}
                         >
                           导出
                         </Button>
                       <Upload
                         showUploadList={false}
-                        beforeUpload={(file) => { handleUpload(file, row.record.id); return false }}
-                        disabled={uploadingId === row.record.id}
+                        beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
+                        disabled={!row.record || uploadingId === row.record.id}
                       >
                         <Button
                           type="link"
                           size="small"
                           icon={<UploadOutlined />}
-                          loading={uploadingId === row.record.id}
+                          loading={!!row.record && uploadingId === row.record.id}
                         >
                           上传
                         </Button>
                       </Upload>
-                      <Popconfirm title="确认删除？" onConfirm={() => handleDelete(row.record.id)} okText="删除" cancelText="取消">
+                      <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
                         <Button type="link" size="small" danger icon={<DeleteOutlined />} />
                       </Popconfirm>
                     </>

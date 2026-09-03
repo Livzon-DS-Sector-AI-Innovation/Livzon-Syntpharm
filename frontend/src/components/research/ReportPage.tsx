@@ -47,8 +47,8 @@ export function ReportPage({ projectId }: Props) {
     try {
       const data = await fetchReports(projectId)
       setReports(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -82,7 +82,7 @@ export function ReportPage({ projectId }: Props) {
     setDrawerOpen(true)
   }
 
-  const collectJsonFields = (values: Record<string, any>) => ({
+  const collectJsonFields = (values: Record<string, unknown>) => ({
     key_findings: {
       summary: values.kf_summary || '',
       key_data: values.kf_data || '',
@@ -116,8 +116,8 @@ export function ReportPage({ projectId }: Props) {
       setDrawerOpen(false)
       form.resetFields()
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -126,8 +126,8 @@ export function ReportPage({ projectId }: Props) {
       await deleteReport(id)
       msgApi.success('删除成功')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -143,7 +143,7 @@ export function ReportPage({ projectId }: Props) {
     { title: '摘要', dataIndex: 'summary', key: 'summary', width: 200, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
-      render: (_: any, record: RdReport) => (
+      render: (_: unknown, record: RdReport) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">

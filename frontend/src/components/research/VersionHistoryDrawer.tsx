@@ -58,7 +58,7 @@ export function VersionHistoryDrawer({ open, onClose, projectId, stage, delivera
     try {
       await createDeliverable({
         project_id: projectId,
-        stage: stage as any,
+        stage: stage,
         deliverable_type: deliverableType,
         title: values.title || `${title} (${values.version})`,
         status: 'draft',
@@ -69,8 +69,8 @@ export function VersionHistoryDrawer({ open, onClose, projectId, stage, delivera
       setNewVersionModalOpen(false)
       newVersionForm.resetFields()
       onRefresh()
-    } catch (e: any) {
-      msgApi.error(e.message || '创建失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '创建失败')
     }
   }
 
