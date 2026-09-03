@@ -377,7 +377,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
     import itertools
     import math
 
-    import pandas as pd  # type: ignore[import-untyped]
+    import pandas as pd
 
     logger = logging.getLogger(__name__)
 
