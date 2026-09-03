@@ -36,13 +36,17 @@ import type {
   SafetyTrainingQueryParams,
   SafetyTraining,
   TrainingRecord,
+  SpecialOperationPermit,
   SpecialOperationPermitFormData,
   SpecialOperationPermitQueryParams,
+  SpecialOperationPersonnel,
   SpecialOperationPersonnelFormData,
   SpecialOperationPersonnelQueryParams,
+  SpecialOperationReport,
   SpecialOperationReportFormData,
   SpecialOperationReportQueryParams,
   SpecialOperationLedgerQueryParams,
+  SpecialOperationLedgerStats,
   DailyRiskReportFormData,
   DailyRiskReportQueryParams,
   RectificationReplyRequest,
@@ -814,110 +818,110 @@ export async function identifyRevisionScope(revisionId: string): Promise<ApiResp
 
 // ============ SpecialOperationPersonnel Actions ============
 
-export async function getPersonnelList(params: SpecialOperationPersonnelQueryParams = {}) {
+export async function getPersonnelList(params: SpecialOperationPersonnelQueryParams = {}): Promise<ApiResponse<SpecialOperationPersonnel[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPersonnelList(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getPersonnelList(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationPersonnel[]>>
 }
 
-export async function getPersonnel(id: string) {
+export async function getPersonnel(id: string): Promise<ApiResponse<SpecialOperationPersonnel>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPersonnel(id, authHeaders) as any as any
+  return safetyApi.getPersonnel(id, authHeaders) as Promise<ApiResponse<SpecialOperationPersonnel>>
 }
 
-export async function createPersonnel(data: SpecialOperationPersonnelFormData) {
+export async function createPersonnel(data: SpecialOperationPersonnelFormData): Promise<ApiResponse<SpecialOperationPersonnel>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createPersonnel(data, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as any
+  return response as ApiResponse<SpecialOperationPersonnel>
 }
 
-export async function updatePersonnel(id: string, data: Partial<SpecialOperationPersonnelFormData>) {
+export async function updatePersonnel(id: string, data: Partial<SpecialOperationPersonnelFormData>): Promise<ApiResponse<SpecialOperationPersonnel>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePersonnel(id, data, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as any
+  return response as ApiResponse<SpecialOperationPersonnel>
 }
 
-export async function deletePersonnel(id: string) {
+export async function deletePersonnel(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deletePersonnel(id, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ SpecialOperationPermit Actions ============
 
-export async function getPermitList(params: SpecialOperationPermitQueryParams = {}) {
+export async function getPermitList(params: SpecialOperationPermitQueryParams = {}): Promise<ApiResponse<SpecialOperationPermit[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPermitList(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getPermitList(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationPermit[]>>
 }
 
-export async function getPermit(id: string) {
+export async function getPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPermit(id, authHeaders) as any as any
+  return safetyApi.getPermit(id, authHeaders) as Promise<ApiResponse<SpecialOperationPermit>>
 }
 
-export async function createPermit(data: SpecialOperationPermitFormData) {
+export async function createPermit(data: SpecialOperationPermitFormData): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createPermit(data, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function updatePermit(id: string, data: Partial<SpecialOperationPermitFormData>) {
+export async function updatePermit(id: string, data: Partial<SpecialOperationPermitFormData>): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePermit(id, data, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function deletePermit(id: string) {
+export async function deletePermit(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deletePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<null>
 }
 
-export async function submitPermit(id: string) {
+export async function submitPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitPermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function approvePermit(id: string) {
+export async function approvePermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approvePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function rejectPermit(id: string, reason: string) {
+export async function rejectPermit(id: string, reason: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectPermit(id, reason, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function startPermit(id: string) {
+export async function startPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startPermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function completePermit(id: string, method: string) {
+export async function completePermit(id: string, method: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completePermit(id, method, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
-export async function archivePermit(id: string) {
+export async function archivePermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.archivePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as any
+  return response as ApiResponse<SpecialOperationPermit>
 }
 
 // ============ Safety Knowledge Article Actions ============
@@ -1073,64 +1077,64 @@ export async function syncKnowledgeArticles(): Promise<ApiResponse<SyncKnowledge
 
 // ==================== 八大特殊作业报备 Actions ====================
 
-export async function getSpecialOperationReports(params?: SpecialOperationReportQueryParams) {
+export async function getSpecialOperationReports(params?: SpecialOperationReportQueryParams): Promise<ApiResponse<SpecialOperationReport[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationReports((params || {}) as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getSpecialOperationReports((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationReport[]>>
 }
 
-export async function getSpecialOperationReport(id: string) {
+export async function getSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationReport(id, authHeaders) as any as any
+  return safetyApi.getSpecialOperationReport(id, authHeaders) as Promise<ApiResponse<SpecialOperationReport>>
 }
 
-export async function createSpecialOperationReport(data: SpecialOperationReportFormData) {
+export async function createSpecialOperationReport(data: SpecialOperationReportFormData): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createSpecialOperationReport(data, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
-export async function updateSpecialOperationReport(id: string, data: Partial<SpecialOperationReportFormData>) {
+export async function updateSpecialOperationReport(id: string, data: Partial<SpecialOperationReportFormData>): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateSpecialOperationReport(id, data, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
-export async function deleteSpecialOperationReport(id: string) {
+export async function deleteSpecialOperationReport(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<null>
 }
 
-export async function submitSpecialOperationReport(id: string) {
+export async function submitSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
-export async function approveSpecialOperationReport(id: string) {
+export async function approveSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
-export async function rejectSpecialOperationReport(id: string, reason: string) {
+export async function rejectSpecialOperationReport(id: string, reason: string): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectSpecialOperationReport(id, reason, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
-export async function setSpecialOperationReportCritical(id: string, is_critical: boolean, reason?: string) {
+export async function setSpecialOperationReportCritical(id: string, is_critical: boolean, reason?: string): Promise<ApiResponse<SpecialOperationReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.setSpecialOperationReportCritical(
     id,
@@ -1138,14 +1142,14 @@ export async function setSpecialOperationReportCritical(id: string, is_critical:
     authHeaders
   )
   revalidatePath('/safety/special-ops')
-  return response as any
+  return response as ApiResponse<SpecialOperationReport>
 }
 
 // ==================== 特殊作业台账 Actions ====================
 
-export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQueryParams) {
+export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQueryParams): Promise<ApiResponse<SpecialOperationReport[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationLedger((params || {}) as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getSpecialOperationLedger((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationReport[]>>
 }
 
 export async function getSpecialOperationLedgerStats() {
