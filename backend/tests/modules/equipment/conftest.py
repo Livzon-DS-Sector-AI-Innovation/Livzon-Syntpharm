@@ -1,11 +1,13 @@
 """Shared test fixtures for equipment module tests."""
 
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.equipment.models.equipment import Location
 from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
@@ -81,3 +83,55 @@ async def test_assignee(db_session: AsyncSession) -> User:
     await db_session.flush()
     await db_session.refresh(user)
     return user
+
+
+@pytest.fixture
+def project_root() -> Path:
+    """Return the backend project root directory."""
+    return Path(__file__).parent.parent.parent.parent
+
+
+@pytest.fixture
+async def seed_departments_and_locations(db_session: AsyncSession):
+    """Seed basic departments and locations for equipment sync tests."""
+    depts = [
+        HrDepartment(name="201车间", code="DEPT-201", is_production=True),
+        HrDepartment(name="质量控制部", code="DEPT-QC", is_production=False),
+        HrDepartment(name="溶剂回收车间", code="DEPT-SOLVENT", is_production=True),
+    ]
+    for dept in depts:
+        db_session.add(dept)
+
+    locations = [
+        Location(name="主厂房", code="LOC-MAIN"),
+        Location(name="仓库A", code="LOC-WH-A"),
+        Location(name="实验室", code="LOC-LAB"),
+    ]
+    for loc in locations:
+        db_session.add(loc)
+
+    await db_session.flush()
+    yield
+
+
+@pytest.fixture
+async def seed_basic_data(db_session: AsyncSession):
+    """Seed basic data for equipment sync TDD tests (same as seed_departments_and_locations)."""
+    depts = [
+        HrDepartment(name="201车间", code="DEPT-201", is_production=True),
+        HrDepartment(name="质量控制部", code="DEPT-QC", is_production=False),
+        HrDepartment(name="溶剂回收车间", code="DEPT-SOLVENT", is_production=True),
+    ]
+    for dept in depts:
+        db_session.add(dept)
+
+    locations = [
+        Location(name="主厂房", code="LOC-MAIN"),
+        Location(name="仓库A", code="LOC-WH-A"),
+        Location(name="实验室", code="LOC-LAB"),
+    ]
+    for loc in locations:
+        db_session.add(loc)
+
+    await db_session.flush()
+    yield
