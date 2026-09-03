@@ -76,6 +76,25 @@ import type {
   NewVersionResponse,
   SemanticSearchResult,
   SyncKnowledgeResponse,
+  HazardIdentification,
+  HazardIdentificationFormData,
+  HazardIdentificationQueryParams,
+  HazardIdentificationStats,
+  HazardIdentificationBatchCreateInput,
+  HazardIdentificationBatchResponse,
+  HazardLedgerStats,
+  HazardLedgerExportRequest,
+  HazardLedgerExportParsedFilters,
+  RegulationStagesResponse,
+  HazardRiskOption,
+  DailyRiskReport,
+  AIWorkflowConfig,
+  ScheduledTask,
+  ScheduledTaskLog,
+  DataSourceOption,
+  FeishuChat,
+  HazardRevisionRecord,
+  HazardRevisionArchive,
 } from '@/types/safety'
 
 // ============ SafetyCheck Actions ============
@@ -518,12 +537,12 @@ export async function getTrainingCertificates(
   params: { page?: number; page_size?: number; certificate_status?: string; keyword?: string } = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainingCertificates(params, authHeaders) as any as any
+  return safetyApi.getTrainingCertificates(params, authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
 }
 
 export async function getExpiringCertificates() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getExpiringCertificates(authHeaders) as any as any
+  return safetyApi.getExpiringCertificates(authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
 }
 
 // ============ HazardIdentification Actions ============
@@ -532,12 +551,12 @@ export async function getHazardIdentifications(
   params: import('@/types/safety').HazardIdentificationQueryParams = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardIdentification[]>>
 }
 
 export async function getHIStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHIStats(authHeaders) as any as any
+  return safetyApi.getHIStats(authHeaders) as Promise<ApiResponse<HazardIdentificationStats>>
 }
 
 export async function getHILedgerStats(
@@ -550,12 +569,12 @@ export async function getHILedgerStats(
   } = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHILedgerStats(params, authHeaders) as any as any
+  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<ApiResponse<HazardLedgerStats>>
 }
 
 export async function getHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardIdentification(id, authHeaders) as any as any
+  return safetyApi.getHazardIdentification(id, authHeaders) as Promise<ApiResponse<HazardIdentification>>
 }
 
 export async function createHazardIdentification(
@@ -564,14 +583,14 @@ export async function createHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardIdentification(data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentification>
 }
 
 // ── 批量辨识 ──
 
 export async function getRegulationStages(regulationId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRegulationStages(regulationId, authHeaders) as any as any
+  return safetyApi.getRegulationStages(regulationId, authHeaders) as Promise<ApiResponse<RegulationStagesResponse>>
 }
 
 export async function createHazardIdentificationBatch(
@@ -580,7 +599,7 @@ export async function createHazardIdentificationBatch(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardIdentificationBatch(data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentificationBatchResponse>
 }
 
 export async function updateHazardIdentification(
@@ -590,14 +609,14 @@ export async function updateHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardIdentification(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentification>
 }
 
 export async function submitHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitHazardIdentification(id, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentification>
 }
 
 export async function runHazardScript(
@@ -612,7 +631,7 @@ export async function runHazardScript(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardScript(id, body, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentification>
 }
 
 export async function reviewHazardScript(
@@ -627,7 +646,7 @@ export async function reviewHazardScript(
     authHeaders
   )
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<HazardIdentification>
 }
 
 export async function uploadHazardAttachment(id: string, file: File) {
@@ -636,33 +655,33 @@ export async function uploadHazardAttachment(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.uploadHazardAttachment(id, formData, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<{ attachment_path: string }>
 }
 
 export async function deleteHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardIdentification(id, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ Hazard Identification AI Export ============
 
 export async function parseHazardExportQuery(naturalQuery: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders) as any as any
+  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders) as Promise<ApiResponse<HazardLedgerExportParsedFilters>>
 }
 
 export async function exportHazardLedgerPdf(
   params: import('@/types/safety').HazardLedgerExportRequest
 ): Promise<ApiResponse<string>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.exportHazardLedgerPdf(params, authHeaders) as any as any
+  return safetyApi.exportHazardLedgerPdf(params, authHeaders) as Promise<ApiResponse<string>>
 }
 
 export async function getSafetyEnums() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSafetyEnums(authHeaders) as any as any
+  return safetyApi.getSafetyEnums(authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
 }
 
 // ============ OperationRegulation Actions ============
@@ -1157,61 +1176,61 @@ export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQ
 
 export async function getSpecialOperationLedgerStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationLedgerStats(authHeaders) as any as any
+  return safetyApi.getSpecialOperationLedgerStats(authHeaders) as Promise<ApiResponse<SpecialOperationLedgerStats[]>>
 }
 
 // ==================== 每日风险作业报备 Actions ====================
 
 export async function getDailyRiskReports(params?: DailyRiskReportQueryParams) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDailyRiskReports((params || {}) as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getDailyRiskReports((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<DailyRiskReport[]>>
 }
 
 export async function getDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDailyRiskReport(id, authHeaders) as any as any
+  return safetyApi.getDailyRiskReport(id, authHeaders) as Promise<ApiResponse<DailyRiskReport>>
 }
 
 export async function createDailyRiskReport(data: DailyRiskReportFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createDailyRiskReport(data, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<DailyRiskReport>
 }
 
 export async function updateDailyRiskReport(id: string, data: Partial<DailyRiskReportFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateDailyRiskReport(id, data, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<DailyRiskReport>
 }
 
 export async function deleteDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 export async function submitDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<DailyRiskReport>
 }
 
 export async function approveDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<DailyRiskReport>
 }
 
 export async function rejectDailyRiskReport(id: string, reason: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectDailyRiskReport(id, reason, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as any
+  return response as ApiResponse<DailyRiskReport>
 }
 
 export async function getHazardRiskOptions(params?: {
@@ -1221,7 +1240,7 @@ export async function getHazardRiskOptions(params?: {
   page_size?: number
 }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRiskOptions(params || {}, authHeaders) as any as any
+  return safetyApi.getHazardRiskOptions(params || {}, authHeaders) as Promise<ApiResponse<HazardRiskOption[]>>
 }
 
 
@@ -1504,137 +1523,137 @@ export async function updateExamItem(id: string, index: number, data: Record<str
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateExamItem(id, index, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 export async function deleteExamItem(id: string, index: number) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteExamItem(id, index, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<null>
 }
 
 export async function setExamConclusion(id: string, conclusion: string, remarks?: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.setExamConclusion(id, { conclusion, remarks }, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 export async function addExamAbnormality(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addExamAbnormality(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 export async function updateExamAbnormalityStatus(id: string, index: number, status: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateExamAbnormalityStatus(id, index, status, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 // ── Special Ops Export ──
 
 export async function parseSpecialOpsExportQuery(query: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseSpecialOpsExportQuery(query, authHeaders) as any as any
+  return safetyApi.parseSpecialOpsExportQuery(query, authHeaders) as Promise<ApiResponse<{ explanation?: string; filters?: Record<string, unknown> }>>
 }
 
 export async function exportSpecialOpsLedger(filters: Record<string, unknown>): Promise<Blob> {
-  return safetyApi.exportSpecialOpsLedger(filters) as any as any
+  return safetyApi.exportSpecialOpsLedger(filters) as Promise<Blob>
 }
 
 // ============ AI Workflow Config Actions ============
 
 export async function getAIWorkflowConfigs(params?: { page_size?: number; page?: number }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders) as any as any
+  return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders) as Promise<ApiResponse<AIWorkflowConfig[]>>
 }
 
 export async function createAIWorkflowConfig(data: components['schemas']['AIWorkflowConfigCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAIWorkflowConfig(data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as any
+  return response as ApiResponse<AIWorkflowConfig>
 }
 
 export async function updateAIWorkflowConfig(id: string, data: components['schemas']['AIWorkflowConfigUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAIWorkflowConfig(id, data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as any
+  return response as ApiResponse<AIWorkflowConfig>
 }
 
 export async function deleteAIWorkflowConfig(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteAIWorkflowConfig(id, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ Scheduled Task Actions ============
 
 export async function getScheduledTasks(params: { page?: number; page_size?: number }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTasks(params, authHeaders) as any as any
+  return safetyApi.getScheduledTasks(params, authHeaders) as Promise<ApiResponse<ScheduledTask[]>>
 }
 
 export async function getScheduledTask(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTask(id, authHeaders) as any as any
+  return safetyApi.getScheduledTask(id, authHeaders) as Promise<ApiResponse<ScheduledTask>>
 }
 
 export async function createScheduledTask(data: components['schemas']['ScheduledTaskCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createScheduledTask(data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as any
+  return response as ApiResponse<ScheduledTask>
 }
 
 export async function updateScheduledTask(id: string, data: components['schemas']['ScheduledTaskUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateScheduledTask(id, data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as any
+  return response as ApiResponse<ScheduledTask>
 }
 
 export async function deleteScheduledTask(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteScheduledTask(id, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 export async function toggleScheduledTask(id: string, enabled: boolean) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.toggleScheduledTask(id, enabled, authHeaders) as any as any
+  return safetyApi.toggleScheduledTask(id, enabled, authHeaders) as Promise<ApiResponse<ScheduledTask>>
 }
 
 export async function runScheduledTaskNow(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.runScheduledTaskNow(id, authHeaders) as any as any
+  return safetyApi.runScheduledTaskNow(id, authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
 }
 
 export async function getScheduledTaskLogs(taskId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTaskLogs(taskId, authHeaders) as any as any
+  return safetyApi.getScheduledTaskLogs(taskId, authHeaders) as Promise<ApiResponse<ScheduledTaskLog[]>>
 }
 
 export async function getDataSourceOptions() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDataSourceOptions(authHeaders) as any as any
+  return safetyApi.getDataSourceOptions(authHeaders) as Promise<ApiResponse<DataSourceOption[]>>
 }
 
 export async function getFeishuChats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getFeishuChats(authHeaders) as any as any
+  return safetyApi.getFeishuChats(authHeaders) as Promise<ApiResponse<FeishuChat[]>>
 }
 
 export async function previewCard(data: components['schemas']['CardPreviewRequest']) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.previewCard(data, authHeaders) as any as any
+  return safetyApi.previewCard(data, authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
 }
 
 // ============ Hazard Legacy Actions ============
@@ -1643,49 +1662,49 @@ export async function completeRectification(id: string, data?: Record<string, un
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completeRectification(id, data || {}, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
 export async function verifyRectification(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
 // ============ Hazard Revision Actions ============
 
 export async function getHazardRevisionRecords(params: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRevisionRecords(params, authHeaders) as any as any
+  return safetyApi.getHazardRevisionRecords(params, authHeaders) as Promise<ApiResponse<HazardRevisionRecord[]>>
 }
 
 export async function createHazardRevisionRecord(data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionRecord(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionRecord>
 }
 
 export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionRecord(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionRecord>
 }
 
 export async function deleteHazardRevisionRecord(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardRevisionRecord(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 export async function approveHazardRevision(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveHazardRevision(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionRecord>
 }
 
 export async function uploadHazardRevisionDocument(id: string, file: File) {
@@ -1694,38 +1713,38 @@ export async function uploadHazardRevisionDocument(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.uploadHazardRevisionDocument(id, formData, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<Record<string, unknown>>
 }
 
 export async function linkRevisionToArchive(revisionId: string, archiveId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.linkRevisionToArchive(revisionId, archiveId, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionRecord>
 }
 
 export async function getHazardRevisionArchives(params: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRevisionArchives(params, authHeaders) as any as any
+  return safetyApi.getHazardRevisionArchives(params, authHeaders) as Promise<ApiResponse<HazardRevisionArchive[]>>
 }
 
 export async function createHazardRevisionArchive(data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionArchive(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionArchive>
 }
 
 export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionArchive(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<HazardRevisionArchive>
 }
 
 export async function deleteHazardRevisionArchive(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardRevisionArchive(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as any
+  return response as ApiResponse<null>
 }
