@@ -1,7 +1,7 @@
 """Add sync_logs table for equipment audit trail
 
-Revision ID: 0056
-Revises: d89b9d01b93a
+Revision ID: 0058_add_sync_logs_table
+Revises: 0057_merge_migration_heads
 Create Date: 2026-09-02
 """
 from alembic import op
@@ -10,7 +10,7 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = '0056'
+revision = '0058_add_sync_logs_table'
 down_revision = '0057_merge_migration_heads'
 branch_labels = None
 depends_on = None
