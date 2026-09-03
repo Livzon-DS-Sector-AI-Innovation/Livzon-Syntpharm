@@ -17,6 +17,9 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Create equipment schema if not exists
+    op.execute("CREATE SCHEMA IF NOT EXISTS equipment")
+    
     # Create sync_logs table in equipment schema
     op.create_table(
         'sync_logs',
@@ -26,8 +29,8 @@ def upgrade() -> None:
         sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=False),
         sa.Column('operator_id', sa.UUID(), nullable=True, comment='操作人ID'),
         sa.Column('file_name', sa.String(length=255), nullable=False, comment='上传的文件名'),
-        sa.Column('summary', postgresql.JSON(astext_type=sa.Text()), nullable=False, comment='同步统计摘要'),
-        sa.Column('changes_detail', postgresql.JSON(astext_type=sa.Text()), nullable=False, comment='详细变更列表'),
+        sa.Column('summary', postgresql.JSON(astext_type=sa.Text()), nullable=False, comment='同步统计摘要 {updated, inserted, migrated, deleted}'),
+        sa.Column('changes_detail', postgresql.JSON(astext_type=sa.Text()), nullable=False, comment='详细变更列表 [{asset_no, field, old_val, new_val}]'),
         sa.Column('is_dry_run', sa.Boolean(), server_default='false', nullable=False, comment='是否为预演模式'),
         sa.Column('created_by', sa.UUID(), nullable=True, comment='创建人ID'),
         sa.Column('updated_by', sa.UUID(), nullable=True, comment='更新人ID'),
