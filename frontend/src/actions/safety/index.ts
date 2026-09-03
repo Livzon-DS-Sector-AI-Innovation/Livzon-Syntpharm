@@ -235,35 +235,35 @@ export async function runHazardAI(hazardId: string, scriptNumber: number): Promi
 
 // ============ Accident Actions ============
 
-export async function getAccidents(params: AccidentQueryParams = {}) {
+export async function getAccidents(params: AccidentQueryParams = {}): Promise<ApiResponse<Accident[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAccidents(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getAccidents(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<Accident[]>>
 }
 
-export async function getAccident(id: string) {
+export async function getAccident(id: string): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAccident(id, authHeaders) as any as any
+  return safetyApi.getAccident(id, authHeaders) as Promise<ApiResponse<Accident>>
 }
 
-export async function createAccident(data: AccidentFormData) {
+export async function createAccident(data: AccidentFormData): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAccident(data, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
-export async function updateAccident(id: string, data: Partial<AccidentFormData>) {
+export async function updateAccident(id: string, data: Partial<AccidentFormData>): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAccident(id, data, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
-export async function investigateAccident(id: string) {
+export async function investigateAccident(id: string): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.investigateAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
 export async function resolveAccident(
@@ -274,7 +274,7 @@ export async function resolveAccident(
   correctiveActions?: string,
   investigationFindings?: string,
   investigationMethod?: string
-) {
+): Promise<ApiResponse<Accident>> {
   const params = new URLSearchParams({ direct_cause: directCause, root_cause: rootCause, handling_measures: handlingMeasures })
   if (correctiveActions) params.set('corrective_actions', correctiveActions)
   if (investigationFindings) params.set('investigation_findings', investigationFindings)
@@ -283,40 +283,40 @@ export async function resolveAccident(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.resolveAccident(id, params.toString(), authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
 export async function startCapa(
   id: string,
   deadline: string,
   responsible: string
-) {
+): Promise<ApiResponse<Accident>> {
   const params = new URLSearchParams({ corrective_action_deadline: deadline, corrective_action_responsible: responsible })
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startCapa(id, params.toString(), authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
-export async function verifyCapa(id: string) {
+export async function verifyCapa(id: string): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyCapa(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
-export async function closeAccident(id: string) {
+export async function closeAccident(id: string): Promise<ApiResponse<Accident>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.closeAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<Accident>
 }
 
-export async function deleteAccident(id: string) {
+export async function deleteAccident(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ Contractor Actions ============
