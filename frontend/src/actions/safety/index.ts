@@ -418,77 +418,77 @@ export async function evaluateWorkRecord(
 
 // ============ SafetyTraining Actions ============
 
-export async function getTrainings(params: SafetyTrainingQueryParams = {}) {
+export async function getTrainings(params: SafetyTrainingQueryParams = {}): Promise<ApiResponse<SafetyTraining[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainings(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getTrainings(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SafetyTraining[]>>
 }
 
-export async function getTraining(id: string) {
+export async function getTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTraining(id, authHeaders) as any as any
+  return safetyApi.getTraining(id, authHeaders) as Promise<ApiResponse<SafetyTraining>>
 }
 
-export async function createTraining(data: SafetyTrainingFormData) {
+export async function createTraining(data: SafetyTrainingFormData): Promise<ApiResponse<SafetyTraining>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createTraining(data, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<SafetyTraining>
 }
 
-export async function updateTraining(id: string, data: Partial<SafetyTrainingFormData>) {
+export async function updateTraining(id: string, data: Partial<SafetyTrainingFormData>): Promise<ApiResponse<SafetyTraining>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateTraining(id, data, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<SafetyTraining>
 }
 
-export async function startTraining(id: string) {
+export async function startTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<SafetyTraining>
 }
 
-export async function completeTraining(id: string) {
+export async function completeTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completeTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<SafetyTraining>
 }
 
-export async function deleteTraining(id: string) {
+export async function deleteTraining(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ TrainingRecord Actions ============
 
-export async function getTrainingRecords(trainingId: string) {
+export async function getTrainingRecords(trainingId: string): Promise<ApiResponse<TrainingRecord[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainingRecords(trainingId, authHeaders) as any as any
+  return safetyApi.getTrainingRecords(trainingId, authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
 }
 
-export async function createTrainingRecord(trainingId: string, data: TrainingRecordFormData) {
+export async function createTrainingRecord(trainingId: string, data: TrainingRecordFormData): Promise<ApiResponse<TrainingRecord>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createTrainingRecord(trainingId, { ...data, training_id: trainingId }, authHeaders)
   revalidatePath(`/safety/training`)
-  return response as any
+  return response as ApiResponse<TrainingRecord>
 }
 
-export async function updateTrainingRecord(recordId: string, data: Partial<TrainingRecordFormData>) {
+export async function updateTrainingRecord(recordId: string, data: Partial<TrainingRecordFormData>): Promise<ApiResponse<TrainingRecord>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateTrainingRecord(recordId, data, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<TrainingRecord>
 }
 
-export async function deleteTrainingRecord(recordId: string) {
+export async function deleteTrainingRecord(recordId: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteTrainingRecord(recordId, authHeaders)
   revalidatePath('/safety/training')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // ============ Training Certificate Actions ============
