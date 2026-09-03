@@ -4,12 +4,17 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-## Acceptance Criteria
+**Result:** Already completed in commit 89b591c2. Removed 5 unused vars across 4 files:
+- `administration/RegulationClient.tsx` (total)
+- `layout/Sidebar.tsx` (currentUser)
+- `layout/TopNav.tsx` (visibleMenus)
+- `quality/ReportEditor.tsx` (Tag, Upload)
 
-- [ ] All unused imports removed from remaining components
-- [ ] All unused variables removed from remaining components
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in these components
-- [ ] No functional changes
+**Verification:**
+- [x] All unused imports removed from remaining components
+- [x] All unused variables removed from remaining components
+- [x] `tsc --noEmit` passes with no errors
+- [x] `pnpm lint` shows zero `@typescript-eslint/no-unused-vars` warnings in these components
+- [x] No functional changes
