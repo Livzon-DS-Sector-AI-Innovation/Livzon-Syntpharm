@@ -2,8 +2,9 @@
 
 import datetime
 import uuid
+from collections.abc import Sequence
 from io import BytesIO
-from typing import Any, NamedTuple, Sequence, TypedDict
+from typing import Any, NamedTuple, TypedDict
 
 import pandas as pd
 from sqlalchemy import select, update
@@ -344,7 +345,9 @@ async def _prepare_sync_context(db: AsyncSession) -> SyncContext:
     equip_result = await db.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
     all_active = equip_result.scalars().all()
 
-    combo_index: dict[tuple[str, Any, Any], Equipment] = {(equip.asset_no, equip.department_id, equip.location_id): equip for equip in all_active}
+    combo_index: dict[tuple[str, Any, Any], Equipment] = {
+        (equip.asset_no, equip.department_id, equip.location_id): equip for equip in all_active
+    }
     asset_index: dict[str, list[Equipment]] = {}
     for equip in all_active:
         asset_index.setdefault(equip.asset_no, []).append(equip)
@@ -362,7 +365,7 @@ def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
 
 def _build_equipment_update_values(
     row: pd.Series, dept_map: dict[str, Any], loc_map: dict[str, Any], valid_depts: set[str]
-) -> tuple[EquipmentUpdateValues, list[dict[str, Any]]]:
+) -> "tuple[EquipmentUpdateValues, list[dict[str, Any]]]":
     """构建设备更新值字典和变更日志"""
     asset_no = str(row["资产编号"]).strip()
     if not asset_no:

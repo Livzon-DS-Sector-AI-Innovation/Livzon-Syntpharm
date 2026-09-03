@@ -1,7 +1,8 @@
 """Equipment database queries live here."""
 
 import uuid
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import and_, func, select, update
@@ -668,7 +669,13 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
 
 async def get_sync_context(
     session: AsyncSession,
-) -> tuple[dict[str, Any], dict[str, Any], Sequence[Equipment], dict[tuple[str, Any, Any], Equipment], dict[str, list[Equipment]]]:
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    Sequence[Equipment],
+    dict[tuple[str, Any, Any], Equipment],
+    dict[str, list[Equipment]],
+]:
     """获取同步所需的部门和位置映射及活跃设备索引"""
     # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
     from sqlalchemy import text
