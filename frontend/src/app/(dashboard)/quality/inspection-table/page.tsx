@@ -54,8 +54,8 @@ export default function InspectionTableListPage() {
         page,
         page_size: pageSize,
       })
-      setData(result.data?.items || [])
-      setTotal(result.data?.total || 0)
+      setData((result as any)?.items || [])
+      setTotal((result as any)?.total || 0)
     } catch (_error) {
       message.error('获取数据失败')
     } finally {

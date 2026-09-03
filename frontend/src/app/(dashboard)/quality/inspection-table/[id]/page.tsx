@@ -167,7 +167,7 @@ export default function InspectionTableDetailPage({
     setLoading(true)
     try {
       const result = await getInspectionTable(resolvedParams.id)
-      const data = result.data as InspectionTableDetail
+      const data = result as InspectionTableDetail
       setTableData(data)
 
       // 转换数据行

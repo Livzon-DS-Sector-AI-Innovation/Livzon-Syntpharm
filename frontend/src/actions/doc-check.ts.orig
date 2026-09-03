@@ -152,8 +152,8 @@ export async function getCheckRecords(
     risk_medium: item.risk_medium || 0,
     risk_low: item.risk_low || 0,
     operator: item.operator,
-    created_at: item.created_at || '',
-    updated_at: item.updated_at || '',
+    created_at: item.created_at,
+    updated_at: item.updated_at,
   }))
 
   return {
@@ -206,26 +206,26 @@ export async function getCheckRecordDetail(
     description: p.description || '',
     suggestion: p.suggestion,
     handle_status: p.handle_status || 'pending',
-    created_at: p.created_at || '',
-    updated_at: p.updated_at || '',
+    created_at: p.created_at,
+    updated_at: p.updated_at,
   }))
 
   return {
-    id: data.id || '',
+    id: data.id,
     file_name: data.file_name || '',
-    file_no: data.file_code || data.file_name || "",
-    file_version: data.file_version || "",
-    file_type: data.file_type || "sop",
-    preparer: data.operator || "",
-    prepare_date: data.created_at || "",
-    status: data.status || 'pending',
+    file_no: data.file_code || data.file_name,
+    file_version: data.file_version,
+    file_type: data.file_type,
+    preparer: data.operator,
+    prepare_date: data.created_at,
+    status: data.status,
     total_problems: data.total_problems || 0,
     risk_high: data.risk_high || 0,
     risk_medium: data.risk_medium || 0,
     risk_low: data.risk_low || 0,
-    operator: data.operator || "",
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
+    operator: data.operator,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
     problems,
   }
 }
@@ -242,10 +242,10 @@ export async function handleProblem(
 
   revalidatePath('/quality/doc-check')
 
-  const data = response.data || { id: problemId, handle_status: request.handle_status }
+  const data = response.data || {}
 
   return {
-    id: data.id,
+    id: data.id || problemId,
     handle_status: (data.handle_status as HandleStatus) || request.handle_status,
     ignore_reason: data.ignore_reason,
   }
