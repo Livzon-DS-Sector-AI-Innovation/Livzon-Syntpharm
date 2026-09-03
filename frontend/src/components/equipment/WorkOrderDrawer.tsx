@@ -98,7 +98,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
       closeWorkOrderDrawer()
       onRefresh?.()
     } catch (error: unknown) {
-      if (error?.errorFields) return
+      if (error && typeof error === "object" && "errorFields" in error) return
       if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }

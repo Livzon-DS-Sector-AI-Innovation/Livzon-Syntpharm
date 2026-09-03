@@ -56,12 +56,12 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
 
   // Load reference data
   useEffect(() => {
-    getDataSourceOptions().then((res: { data: unknown[] }) => {
+    getDataSourceOptions().then((res: { code: number; data: DataSourceOption[] }) => {
       if (res.code === 200 && res.data) {
         setDataSourceOptions(res.data)
       }
     })
-    getFeishuChats().then((res: { data: unknown[] }) => {
+    getFeishuChats().then((res: { code: number; data: FeishuChat[] }) => {
       if (res.code === 200 && res.data) {
         setFeishuChats(res.data)
       }
@@ -259,7 +259,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
           <Select
             value={headerColor}
             onChange={(v) => setHeaderColor(v as HeaderColor)}
-            options={HEADER_COLOR_OPTIONS.map((c: string) => ({
+            options={HEADER_COLOR_OPTIONS.map((c: { value: string; label: string; color: string }) => ({
               value: c.value,
               label: (
                 <Space>
@@ -322,7 +322,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
       {previewData && (
         <Card title="卡片预览" style={{ marginBottom: 16 }}>
           <CardPreview
-            dataSources={previewData.data_sources}
+            dataSources={previewData.data_sources?.map(ds => ({ id: ds.key, name: ds.label }))}
             cardTemplate={previewData.card_template}
             headerColor={previewData.header_color}
           />

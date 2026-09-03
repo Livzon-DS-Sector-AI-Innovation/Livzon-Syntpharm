@@ -167,7 +167,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
           // 如果有详细错误信息，构建更详细的提示
           if (result.error_details && Array.isArray(result.error_details)) {
             const details = result.error_details.slice(0, 3).map((err: { filename?: string; reason?: string } | string) => {
-              if (err.filename && err.reason) {
+              if (typeof err === "object" && err !== null && "filename" in err && "reason" in err && err.filename && err.reason) {
                 return `${err.filename}: ${err.reason}`
               }
               return typeof err === 'string' ? err : JSON.stringify(err)
@@ -183,7 +183,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       let errorMsg = (err instanceof Error ? err.message : null) || 'AI 提取失败'
       
       // 如果是超时错误
-      if (err.name === 'AbortError' || errorMsg.includes('超时')) {
+      if (err instanceof Error && err.name === 'AbortError' || errorMsg.includes('超时')) {
         errorMsg = 'AI 解析超时，请稍后重试或减少素材数量'
       }
       
@@ -198,7 +198,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const handleFieldEdit = (index: number, value: unknown) => {
     setEditedFields(prev => {
       const next = [...prev]
-      next[index] = { ...next[index], value }
+      next[index] = { ...next[index], value: value as string | number | null | Array<Array<string>> }
       return next
     })
   }

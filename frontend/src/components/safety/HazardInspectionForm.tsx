@@ -54,8 +54,8 @@ export interface InspectionFormValues {
 interface Props {
   initialValues?: InspectionFormValues
   loading: boolean
-  onSubmit: (values: InspectionFormValues, files: File[]) => Promise<void>
-  onSaveDraft: (values: InspectionFormValues, files: File[]) => Promise<void>
+  onSubmit: (values: Record<string, unknown>, files: File[]) => Promise<void>
+  onSaveDraft: (values: Record<string, unknown>, files: File[]) => Promise<void>
 }
 
 export default function HazardInspectionForm({
@@ -162,7 +162,7 @@ export default function HazardInspectionForm({
   }, [initialValues])
 
   // 规范化表单值：mode="multiple" 字段返回数组，需转为逗号分隔字符串（匹配 Bitable multi_select）
-  const normalizeValues = (values: Record<string, unknown>): InspectionFormValues => {
+  const normalizeValues = (values: Record<string, unknown>): Record<string, unknown> => {
     // 从选中的用户选项中提取纯姓名（去掉 " - 部门" 后缀）
     let discoveredByName = values.discovered_by_name || ''
     if (!discoveredByName && values.discovered_by) {
@@ -173,8 +173,8 @@ export default function HazardInspectionForm({
     }
     return {
       ...values,
-      discovered_by: values.discovered_by || undefined,
-      discovered_by_name: discoveredByName || undefined,
+      discovered_by: (values.discovered_by as string) || undefined,
+      discovered_by_name: (discoveredByName as string) || undefined,
       // multi_select 字段：数组 → 逗号分隔字符串（匹配 Bitable 字段类型）
       inspection_category: Array.isArray(values.inspection_category)
         ? values.inspection_category.join(',')
@@ -183,9 +183,9 @@ export default function HazardInspectionForm({
         ? values.inspector_department.join(',')
         : values.inspector_department,
       discovered_at: values.discovered_at
-        ? dayjs(values.discovered_at).format('YYYY-MM-DD')
+        ? dayjs(values.discovered_at as string).format('YYYY-MM-DD')
         : undefined,
-    }
+    } as Record<string, unknown>
   }
 
   const handleSubmit = async () => {
@@ -194,7 +194,7 @@ export default function HazardInspectionForm({
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSubmit(normalizeValues(values), rawFiles)
+      await onSubmit(normalizeValues(values as Record<string, unknown>), rawFiles)
     } catch {
       // 表单校验失败
     }
@@ -206,14 +206,14 @@ export default function HazardInspectionForm({
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSaveDraft(normalizeValues(values), rawFiles)
+      await onSaveDraft(normalizeValues(values as Record<string, unknown>), rawFiles)
     } catch {
       // 草稿允许不完整，直接取 form 当前值
       const values = form.getFieldsValue()
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSaveDraft(normalizeValues(values), rawFiles)
+      await onSaveDraft(normalizeValues(values as Record<string, unknown>), rawFiles)
     }
   }
 

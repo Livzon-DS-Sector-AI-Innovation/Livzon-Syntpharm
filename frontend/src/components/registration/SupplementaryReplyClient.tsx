@@ -69,10 +69,10 @@ export default function SupplementaryReplyClient({
       setGenerating(true)
       
       const formData = new FormData()
-      formData.append('notice', noticeFileList[0].originFileObj)
+      formData.append('notice', noticeFileList[0].originFileObj as File)
       
       if (templateFileList.length > 0) {
-        formData.append('template', templateFileList[0].originFileObj)
+        formData.append('template', templateFileList[0].originFileObj as File)
       }
       
       const result = await generateSupplementaryReply(formData, {

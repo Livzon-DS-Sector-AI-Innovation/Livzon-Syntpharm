@@ -27,17 +27,17 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
   }, [mode, itemsCount, initialValues, form])
 
   const submit = async () => {
-    let v: Record<string, unknown>
+    let v: ItemFormValues
     try {
       v = await form.validateFields()
     } catch { return }
     setS(true)
     try {
       const data = { item_name: v.item_name, item_description: v.item_description || undefined, expected_result: v.expected_result || undefined, check_method: v.check_method || undefined, sort_order: v.sort_order }
-      const result: { data: unknown } = mode === 'create'
+      const result: { success?: boolean; error?: string; data?: unknown } = mode === 'create'
         ? await createInspectionTemplateItem(templateId, data)
         : await updateInspectionTemplateItem(mode, data)
-      if (!result.success) { message.error(result.error); return }
+      if (result.success === false) { message.error(result.error); return }
       message.success(mode === 'create' ? '已添加' : '已更新')
       onSuccess()
     } finally { setS(false) }
@@ -88,8 +88,8 @@ export function InspectionItemDrawer() {
   const cancelEdit = () => { setFormMode(null); setEditingData(null) }
   const onFormSuccess = () => { setFormMode(null); setEditingData(null); load() }
   const handleDelete = async (item: InspectionTemplateItem) => {
-    const result: { data: unknown } = await deleteInspectionTemplateItem(item.id)
-    if (!result.success) { message.error(result.error); return }
+    const result: { success?: boolean; error?: string } = await deleteInspectionTemplateItem(item.id)
+    if (result.success === false) { message.error(result.error); return }
     message.success('已删除')
     await load()
   }

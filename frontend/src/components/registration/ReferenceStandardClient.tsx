@@ -114,7 +114,7 @@ export default function ReferenceStandardClient({
       setGenerating(true)
 
       const formData = new FormData()
-      formData.append('coa', coaFileList[0].originFileObj)
+      formData.append('coa', coaFileList[0].originFileObj as File)
 
       const result = await generateReferenceStandard(formData, {
         drug_name: values.drug_name,

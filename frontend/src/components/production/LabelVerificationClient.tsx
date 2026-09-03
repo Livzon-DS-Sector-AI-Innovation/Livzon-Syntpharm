@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import {Table, Input, Select, DatePicker, Button, Space, Tag, Card, Statistic, Row, Col, Modal, App, Form, InputNumber, Checkbox, Upload, Alert, Descriptions} from 'antd'
 import {SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, BarChartOutlined, PlusOutlined, UploadOutlined, LoadingOutlined, RobotOutlined} from '@ant-design/icons'
-import { LabelVerification, LabelVerificationCreateInput } from '@/types/label-verification'
+import { LabelVerification, LabelVerificationCreateInput, LabelVerificationStatistics } from '@/types/label-verification'
 import { fetchLabelVerifications, fetchLabelVerificationStatistics } from '@/lib/api/client/label-verification'
 import type { AutoCompareResult } from '@/types/label-verification'
 import { createLabelVerification, autoCompareVideo } from '@/actions/label-verification'
@@ -118,7 +118,7 @@ export default function LabelVerificationClient({
   const [productName, setProductName] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
-  const [statistics, setStatistics] = useState<Record<string, unknown>>(null)
+  const [statistics, setStatistics] = useState<LabelVerificationStatistics | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createForm] = Form.useForm()
@@ -254,31 +254,31 @@ export default function LabelVerificationClient({
   const handleCreate = async (values: Record<string, unknown>) => {
     try {
       const data: LabelVerificationCreateInput = {
-        batch_number: values.batch_number,
-        product_name: values.product_name,
-        production_date: values.production_date.format('YYYY-MM-DD'),
-        expiry_date: values.expiry_date.format('YYYY-MM-DD'),
-        total_barrels: values.total_barrels,
-        standard_barrels: values.standard_barrels,
-        remainder_barrel: values.remainder_barrel,
-        standard_weight: values.standard_weight,
-        remainder_weight: values.remainder_weight,
-        total_weight: values.total_weight,
-        check_batch_number: values.check_batch_number,
-        check_production_date: values.check_production_date,
-        check_expiry_date: values.check_expiry_date,
-        check_standard_barrels: values.check_standard_barrels,
-        check_remainder_barrel: values.check_remainder_barrel,
-        check_total_weight: values.check_total_weight,
-        check_all_barrels_identified: values.check_all_barrels_identified,
-        check_exception_handled: values.check_exception_handled,
-        result_status: values.result_status,
-        result_summary: values.result_summary,
-        video_file_key: values.video_file_key,
-        video_file_name: values.video_file_name,
-        verification_date: values.verification_date.format('YYYY-MM-DD'),
-        verification_time: values.verification_time.format('YYYY-MM-DDTHH:mm:ss'),
-        remarks: values.remarks,
+        batch_number: values.batch_number as string,
+        product_name: values.product_name as string,
+        production_date: (values.production_date as { format: (format: string) => string }).format('YYYY-MM-DD'),
+        expiry_date: (values.expiry_date as { format: (format: string) => string }).format('YYYY-MM-DD'),
+        total_barrels: values.total_barrels as number,
+        standard_barrels: values.standard_barrels as number,
+        remainder_barrel: values.remainder_barrel as number,
+        standard_weight: values.standard_weight as number,
+        remainder_weight: values.remainder_weight as number,
+        total_weight: values.total_weight as number,
+        check_batch_number: values.check_batch_number as boolean,
+        check_production_date: values.check_production_date as boolean,
+        check_expiry_date: values.check_expiry_date as boolean,
+        check_standard_barrels: values.check_standard_barrels as boolean,
+        check_remainder_barrel: values.check_remainder_barrel as boolean,
+        check_total_weight: values.check_total_weight as boolean,
+        check_all_barrels_identified: values.check_all_barrels_identified as boolean,
+        check_exception_handled: values.check_exception_handled as boolean,
+        result_status: values.result_status as string,
+        result_summary: values.result_summary as string,
+        video_file_key: values.video_file_key as string,
+        video_file_name: values.video_file_name as string,
+        verification_date: (values.verification_date as { format: (format: string) => string }).format('YYYY-MM-DD'),
+        verification_time: (values.verification_time as { format: (format: string) => string }).format('YYYY-MM-DDTHH:mm:ss'),
+        remarks: values.remarks as string,
       }
       await createLabelVerification(data)
       message.success('创建成功')
@@ -381,14 +381,14 @@ export default function LabelVerificationClient({
         <Row gutter={16}>
           <Col span={6}>
             <Card>
-              <Statistic title="总复核次数" value={statistics.total} prefix={<BarChartOutlined />} />
+              <Statistic title="总复核次数" value={statistics?.total} prefix={<BarChartOutlined />} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
               <Statistic
                 title="全部一致"
-                value={statistics.all_match}
+                value={statistics?.all_match}
                 styles={{ content: { color: '#52c41a' } }}
                 prefix={<CheckCircleOutlined />}
               />
@@ -398,7 +398,7 @@ export default function LabelVerificationClient({
             <Card>
               <Statistic
                 title="存在差异"
-                value={statistics.has_difference}
+                value={statistics?.has_difference}
                 styles={{ content: { color: '#ff4d4f' } }}
                 prefix={<CloseCircleOutlined />}
               />
@@ -408,10 +408,10 @@ export default function LabelVerificationClient({
             <Card>
               <Statistic
                 title="一致率"
-                value={statistics.match_rate}
+                value={statistics?.match_rate}
                 precision={1}
                 suffix="%"
-                styles={{ content: { color: statistics.match_rate >= 90 ? '#52c41a' : '#faad14' } }}
+                styles={{ content: { color: statistics?.match_rate >= 90 ? '#52c41a' : '#faad14' } }}
               />
             </Card>
           </Col>
@@ -451,7 +451,7 @@ export default function LabelVerificationClient({
           </Select>
           <RangePicker
             value={dateRange}
-            onChange={(dates) => setDateRange(dates as [string, string] | null)}
+            onChange={(dates) => setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null)}
             placeholder={['复核开始日期', '复核结束日期']}
           />
         </Space>

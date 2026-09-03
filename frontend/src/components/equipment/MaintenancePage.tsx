@@ -5,7 +5,7 @@ import {App, ConfigProvider, Tabs, Button, Collapse, InputNumber, Space} from 'a
 import zhCN from 'antd/locale/zh_CN'
 import { PlusOutlined } from '@ant-design/icons'
 import {
-  Equipment, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,
+  Equipment, EquipmentListResponse, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,
   MaintenancePlan,
 } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'

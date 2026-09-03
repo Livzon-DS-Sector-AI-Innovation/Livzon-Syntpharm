@@ -117,7 +117,7 @@ export default function AuthorizationLetterClient({
       setGenerating(true)
       
       const formData = new FormData()
-      formData.append('template', fileList[0].originFileObj)
+      formData.append('template', fileList[0].originFileObj as File)
       
       // 添加替换规则
       const validReplacements = replacements.filter(r => r.old && r.new)

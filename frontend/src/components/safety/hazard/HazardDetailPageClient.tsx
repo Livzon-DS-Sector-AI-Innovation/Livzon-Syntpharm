@@ -492,8 +492,8 @@ export function HazardDetailPageClient() {
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {
-    if (editSection && field in edits) return edits[field] ?? (record as Record<string, unknown>)?.[field] ?? ''
-    return (record as Record<string, unknown>)?.[field] ?? ''
+    if (editSection && field in edits) return edits[field] ?? ((record as unknown as Record<string, unknown>)?.[field] as string) ?? ''
+    return ((record as unknown as Record<string, unknown>)?.[field] as string) ?? ''
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {

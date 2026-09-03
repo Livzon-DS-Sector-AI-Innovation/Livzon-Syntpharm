@@ -44,7 +44,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
       setDryRunResult(result)
       setStep('preview')
     } catch (error: unknown) {
-      if (error?.errorFields) return
+      if (error && typeof error === "object" && "errorFields" in error) return
       message.error('预览失败：' + ((error instanceof Error ? error.message : null) || '未知错误'))
     } finally {
       setLoading(false)

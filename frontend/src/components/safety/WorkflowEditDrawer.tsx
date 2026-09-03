@@ -49,7 +49,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
         workflow_description: workflow.workflow_description,
         trigger_event: workflow.trigger_event,
         is_enabled: workflow.is_enabled,
-        script_configs: (workflow.script_configs || []).map((s: Record<string, unknown>) => ({
+        script_configs: (workflow.script_configs || []).map((s: WorkflowStepItem) => ({
           ...s,
           // Ensure 4-field format with backward compat
           input_info: s.input_info || s.prompt_template || '',

@@ -26,7 +26,7 @@ export default function CronInput({ value = '', onChange, onPresetSelect }: Cron
         style={{ fontFamily: 'monospace' }}
       />
       <Space wrap size={[8, 4]}>
-        {CRON_PRESETS.map((preset: { value: string; label: string }) => (
+        {CRON_PRESETS.map((preset: { value: string; label: string; desc: string }) => (
           <Button
             key={preset.label}
             size="small"

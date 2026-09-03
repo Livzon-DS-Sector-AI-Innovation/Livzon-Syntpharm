@@ -1,3 +1,4 @@
+import type { UploadFile } from "antd";
 'use client'
 
 
@@ -100,7 +101,7 @@ export default function ValidationAuditDetailClient({
     ? issues
     : issues.filter(i => i.issue_type === issueFilter)
 
-  const [uploadFileList, setUploadFileList] = useState<any[]>([])
+  const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([])
 
   const handleUpload = async () => {
     if (uploadFileList.length === 0) {
@@ -111,7 +112,7 @@ export default function ValidationAuditDetailClient({
     const formData = new FormData()
     for (const file of uploadFileList) {
       const originFile = file.originFileObj || file
-      formData.append('files', originFile)
+      formData.append('files', originFile as File)
     }
     formData.append('file_type', task.audit_mode === 'report' ? 'report' : 'protocol')
 

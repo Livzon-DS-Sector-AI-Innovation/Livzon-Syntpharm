@@ -36,7 +36,7 @@ export function CalibrationPlanTable({ onRefresh, onRecordRefresh: _onRecordRefr
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
         try { await deleteCalibrationPlan(r.id); message.success('删除成功'); onRefresh?.() }
-        catch (error: unknown) { message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : null || '删除失败') }
+        catch (error: unknown) { message.error((error instanceof Error ? error.message : null) || '删除失败') }
       },
     })
   }, [modal, message, onRefresh])

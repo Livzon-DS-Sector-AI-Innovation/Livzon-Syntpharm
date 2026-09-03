@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Row, Col, Statistic, Table, Spin, Empty, Alert, Button, Tag } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, DownloadOutlined } from '@ant-design/icons'
+import type { MonthlyTrend, WorkshopRanking } from "@/types/product-output";
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
 import { fetchAnnualReview, fetchExportAnnualReview } from '@/actions/product-output'
@@ -75,7 +76,7 @@ export default function AnnualReviewTab({ year }: Props) {
   const { overview, monthly_trend, workshop_ranking, top_products } = data
 
   // 月度趋势图配置
-  const trendOption: EChartsOption = {
+  const trendOption = {
     tooltip: {
       trigger: 'axis',
       formatter: (params: Array<{ name: string; value: number; marker: string; seriesName: string }>) => {
@@ -120,11 +121,11 @@ export default function AnnualReviewTab({ year }: Props) {
   }
 
   // 车间排名图配置
-  const rankingOption: EChartsOption = {
+  const rankingOption = {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      formatter: (params: { name: string; value: number }) => {
+      formatter: (params: Array<{ name: string; value: number }>) => {
         const p = params[0]
         const item = workshop_ranking.find((w: WorkshopRanking) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
@@ -144,7 +145,7 @@ export default function AnnualReviewTab({ year }: Props) {
         type: 'bar',
         data: workshop_ranking.map((w: WorkshopRanking) => w.total_weight).reverse(),
         itemStyle: {
-          color: (params: { name: string; value: number }) => {
+          color: (params: { dataIndex: number }) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
             return colors[params.dataIndex % colors.length]
           },

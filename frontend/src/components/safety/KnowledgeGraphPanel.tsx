@@ -309,7 +309,7 @@ export default function KnowledgeGraphPanel() {
     setFlowNodes(laidOut)
     setFlowEdges(mappedEdges)
     setTimeout(() => {
-      rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
+      (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
   }, [store.nodes, store.edges, setFlowEdges, setFlowNodes])
 
@@ -322,7 +322,7 @@ export default function KnowledgeGraphPanel() {
         if (expanded.nodes.length > 0) {
           store.setGraphData(expanded)
           setTimeout(() => {
-            rfInstance.current?.fitView?.({ padding: 0.1, duration: 300 })
+            (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.1, duration: 300 })
           }, 50)
         }
       } catch { /* ignore */ }
@@ -354,7 +354,7 @@ export default function KnowledgeGraphPanel() {
       <KnowledgeGraphToolbar
         onRefresh={loadGraph}
         loading={store.loading}
-        onFitView={() => rfInstance.current?.fitView?.({ padding: 0.1, duration: 300 })}
+        onFitView={() => (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.1, duration: 300 })}
       />
 
       <Panel position="top-right">

@@ -69,7 +69,7 @@ export function DossierWriterPageClient() {
       setUploadModalOpen(true)
       loadDossiers()
     } catch (err: unknown) {
-      const msg = (err instanceof Error ? err.message : null) || err?.detail || '创建失败'
+      const msg = (err instanceof Error ? err.message : null) || (err as { detail?: string })?.detail || '创建失败'
       message.error(msg)
     } finally {
       setSubmitting(false)
@@ -95,7 +95,7 @@ export function DossierWriterPageClient() {
       setUploadModalOpen(false)
       loadDossiers()
     } catch (err: unknown) {
-      const msg = (err instanceof Error ? err.message : null) || err?.detail || '上传失败'
+      const msg = (err instanceof Error ? err.message : null) || (err as { detail?: string })?.detail || '上传失败'
       message.error(msg)
     }
   }
@@ -130,7 +130,7 @@ export function DossierWriterPageClient() {
       }
       loadDossiers()
     } catch (err: unknown) {
-      const msg = (err instanceof Error ? err.message : null) || err?.detail || '解析失败'
+      const msg = (err instanceof Error ? err.message : null) || (err as { detail?: string })?.detail || '解析失败'
       message.error(msg)
     } finally {
       setParsingId(null)

@@ -259,7 +259,7 @@ export default function LcReportView({ report }: Props) {
             children: (
               <Table
                 columns={standardColumns}
-                dataSource={report.standards?.map((s, i) => ({ ...s, key: i })) || []}
+                dataSource={(report.standards?.map((s, i) => ({ ...s, key: i })) || []) as unknown as ImpurityResult[]}
                 pagination={false}
                 size="small"
               />

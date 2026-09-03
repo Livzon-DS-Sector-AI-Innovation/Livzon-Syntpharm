@@ -65,7 +65,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
       }
       onSuccess()
     } catch (error: unknown) {
-      if (error?.errorFields) return // form validation error
+      if (error && typeof error === "object" && "errorFields" in error) return // form validation error
       message.error(isEdit ? '更新失败' : '创建失败')
     } finally {
       setSubmitting(false)

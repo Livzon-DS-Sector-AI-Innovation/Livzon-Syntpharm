@@ -104,7 +104,7 @@ export function InspectionScheduleDrawer() {
     if (scheduleDrawerOpen) {
       load()
       if (personnel.length === 0) {
-        fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: { is_active: boolean; user_id?: string }) => p.is_active && p.user_id))).catch(() => {})
+        fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: Personnel) => p.is_active && p.user_id))).catch(() => {})
       }
     }
   }, [scheduleDrawerOpen, load, personnel.length])

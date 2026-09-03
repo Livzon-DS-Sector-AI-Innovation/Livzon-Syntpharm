@@ -1,4 +1,3 @@
-import type { DataNode } from "antd/es/tree"
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -14,6 +13,7 @@ import {
   WarningOutlined, NodeIndexOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import type { DataNode } from "antd/es/tree";
 import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
   getDownloadUrl, getChapterPreview, fetchChapterAssets,
@@ -101,7 +101,7 @@ export function DossierWriterDetailPageClient() {
   // Sync selectedChapter when chapterTree updates (e.g. after template re-upload)
   useEffect(() => {
     if (!selectedChapterId || chapterTree.length === 0) return
-    const findChapter = (chapters: Chapter[]): Chapter | undefined => {
+    const findChapter = (chapters: Chapter[]): Chapter | null => {
       for (const ch of chapters) {
         if (ch.id === selectedChapterId) return ch
         if (ch.children) {
@@ -116,8 +116,8 @@ export function DossierWriterDetailPageClient() {
       setSelectedChapter(prev => {
         if (!prev) return prev
         // Only update if something changed (working_file, has_content, etc.)
-        if (prev.working_file !== updated.working_file ||
-            prev.source_file !== updated.source_file ||
+        if (prev.working_file !== (updated as ChapterWithAssets).working_file ||
+            prev.source_file !== (updated as ChapterWithAssets).source_file ||
             prev.has_content !== updated.has_content) {
           return { ...prev, ...updated }
         }
@@ -203,7 +203,7 @@ export function DossierWriterDetailPageClient() {
   const handleSelectChapter = async (selectedKeys: React.Key[]) => {
     if (selectedKeys.length > 0) {
       const chapterId = selectedKeys[0] as string
-      const findChapter = (chapters: Chapter[]): Chapter | undefined => {
+      const findChapter = (chapters: Chapter[]): Chapter | null => {
         for (const ch of chapters) {
           if (ch.id === chapterId) return ch
           if (ch.children) {

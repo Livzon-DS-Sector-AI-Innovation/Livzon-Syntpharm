@@ -81,7 +81,7 @@ export default function ValidationAuditNewClient() {
       const formData = new FormData()
       for (const file of fileList) {
         const originFile = file.originFileObj || file
-        formData.append('files', originFile)
+        formData.append('files', originFile as File)
       }
       const fileType = values.audit_mode === 'protocol_report' ? 'protocol' : values.audit_mode
       formData.append('file_type', fileType)
@@ -286,7 +286,7 @@ export default function ValidationAuditNewClient() {
                       {f.name}
                     </span>
                     <span className="text-[var(--color-stone)] shrink-0">
-                      {(f.size / 1024 / 1024).toFixed(2)} MB
+                      {((f.size || 0) / 1024 / 1024).toFixed(2)} MB
                     </span>
                   </div>
                 ))}

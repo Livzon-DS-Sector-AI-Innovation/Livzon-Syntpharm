@@ -45,7 +45,7 @@ import {
   RECOMMENDATION_PRIORITY_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
-import { getWorkflowStepList } from '@/lib/workflow-templates'
+import { getWorkflowStepList, WorkflowStep } from '@/lib/workflow-templates'
 
 const { Title, Text } = Typography
 
@@ -61,8 +61,8 @@ const STEP_ICONS: Record<number, React.ReactNode> = {
 }
 
 // ── 工作流步骤配置（从共享模板派生） ──
-const WORKFLOW_STEPS = getWorkflowStepList('hazard-identification').map((s: { num: number; title: string }) => ({
-  ...s,
+const WORKFLOW_STEPS: Array<WorkflowStep & { icon: React.ReactNode; title: string }> = getWorkflowStepList('hazard-identification').map((s: WorkflowStep) => ({
+  ...s, title: s.name,
   icon: STEP_ICONS[s.num] || <RobotOutlined />,
 }))
 
@@ -260,7 +260,7 @@ export function HazardIdentificationDetailPageClient() {
           status={record.overall_status === 'completed' ? 'finish' : 'process'}
           size="small"
           onChange={(step) => setSelectedStep(step + 1)}
-          items={WORKFLOW_STEPS.map((s: { num: number; title: string }, i: number) => {
+          items={WORKFLOW_STEPS.map((s: WorkflowStep & { icon: React.ReactNode; title: string }, i: number) => {
             const rs = (record as unknown as Record<string, unknown>)[`script${s.num}_review_status`] as string
             let status: 'wait' | 'process' | 'finish' | 'error' = 'wait'
             if (rs === 'approved' || (i < currentStepNum - 1)) status = 'finish'
@@ -293,7 +293,7 @@ export function HazardIdentificationDetailPageClient() {
               {currentStep.desc}
             </Text>
 
-            {WORKFLOW_STEPS.map((step: { num: number; title: string }) => (
+            {WORKFLOW_STEPS.map((step: WorkflowStep & { icon: React.ReactNode; title: string }) => (
               <div
                 key={step.num}
                 onClick={() => setSelectedStep(step.num)}
@@ -531,7 +531,7 @@ function renderFieldValue(scriptNum: number, key: string, val: unknown) {
 }
 
 function getScriptOutputFields(scriptNum: number, record: HazardIdentification): Record<string, unknown> {
-  const step = WORKFLOW_STEPS.find((s: { num: number }) => s.num === scriptNum)
+  const step = WORKFLOW_STEPS.find((s: WorkflowStep & { icon: React.ReactNode; title: string }) => s.num === scriptNum)
   const fields = step?.expected_keys || []
   const result: Record<string, unknown> = {}
   for (const f of fields) {
