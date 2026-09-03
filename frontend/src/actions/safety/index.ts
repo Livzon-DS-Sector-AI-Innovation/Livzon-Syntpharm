@@ -321,90 +321,90 @@ export async function deleteAccident(id: string): Promise<ApiResponse<null>> {
 
 // ============ Contractor Actions ============
 
-export async function getContractors(params: ContractorQueryParams = {}) {
+export async function getContractors(params: ContractorQueryParams = {}): Promise<ApiResponse<Contractor[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getContractors(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getContractors(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<Contractor[]>>
 }
 
-export async function getContractor(id: string) {
+export async function getContractor(id: string): Promise<ApiResponse<Contractor>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getContractor(id, authHeaders) as any as any
+  return safetyApi.getContractor(id, authHeaders) as Promise<ApiResponse<Contractor>>
 }
 
-export async function createContractor(data: ContractorFormData) {
+export async function createContractor(data: ContractorFormData): Promise<ApiResponse<Contractor>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createContractor(data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<Contractor>
 }
 
-export async function updateContractor(id: string, data: Partial<ContractorFormData>) {
+export async function updateContractor(id: string, data: Partial<ContractorFormData>): Promise<ApiResponse<Contractor>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateContractor(id, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<Contractor>
 }
 
-export async function deleteContractor(id: string) {
+export async function deleteContractor(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<null>
 }
 
-export async function blacklistContractor(id: string) {
+export async function blacklistContractor(id: string): Promise<ApiResponse<Contractor>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.blacklistContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<Contractor>
 }
 
-export async function activateContractor(id: string) {
+export async function activateContractor(id: string): Promise<ApiResponse<Contractor>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.activateContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<Contractor>
 }
 
-export async function updateContractorTraining(id: string, trainingStatus: string) {
+export async function updateContractorTraining(id: string, trainingStatus: string): Promise<ApiResponse<Contractor>> {
   const params = new URLSearchParams({ training_status: trainingStatus })
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateContractorTraining(id, params.toString(), authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<Contractor>
 }
 
-export async function getWorkRecords(contractorId: string) {
+export async function getWorkRecords(contractorId: string): Promise<ApiResponse<ContractorWorkRecord[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getWorkRecords(contractorId, authHeaders) as any as any
+  return safetyApi.getWorkRecords(contractorId, authHeaders) as Promise<ApiResponse<ContractorWorkRecord[]>>
 }
 
-export async function createWorkRecord(contractorId: string, data: ContractorWorkRecordFormData) {
+export async function createWorkRecord(contractorId: string, data: ContractorWorkRecordFormData): Promise<ApiResponse<ContractorWorkRecord>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createWorkRecord(contractorId, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<ContractorWorkRecord>
 }
 
 export async function updateWorkRecord(
   contractorId: string, recordId: string, data: Partial<ContractorWorkRecordFormData>
-) {
+): Promise<ApiResponse<ContractorWorkRecord>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateWorkRecord(contractorId, recordId, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<ContractorWorkRecord>
 }
 
-export async function deleteWorkRecord(contractorId: string, recordId: string) {
+export async function deleteWorkRecord(contractorId: string, recordId: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteWorkRecord(contractorId, recordId, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 export async function evaluateWorkRecord(
   contractorId: string, recordId: string, score: number, comments?: string, evaluator?: string
-) {
+): Promise<ApiResponse<ContractorWorkRecord>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.evaluateWorkRecord(
     contractorId,
@@ -413,7 +413,7 @@ export async function evaluateWorkRecord(
     authHeaders
   )
   revalidatePath('/safety/contractor')
-  return response as any
+  return response as ApiResponse<ContractorWorkRecord>
 }
 
 // ============ SafetyTraining Actions ============
