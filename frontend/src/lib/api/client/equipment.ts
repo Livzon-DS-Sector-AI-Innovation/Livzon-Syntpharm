@@ -340,8 +340,8 @@ export const fetchDepartmentsClient = fetchDepartments
 /**
  * 批量删除设备
  */
-export async function batchDeleteEquipments(ids: string[]): Promise<any> {
-  return await fetchApi<any>(`${API_BASE}/equipment/equipments/batch-delete`, {
+export async function batchDeleteEquipments(ids: string[]): Promise<void> {
+  return await fetchApi<void>(`${API_BASE}/equipment/equipments/batch-delete`, {
     method: 'POST',
     body: JSON.stringify({ ids }),
   })

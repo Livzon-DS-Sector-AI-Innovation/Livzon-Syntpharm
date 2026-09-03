@@ -15,6 +15,7 @@ import {
   RdInitiation,
   StageTransitionCheck,
   RdDeliverableTemplate,
+  RdTrackConclusionVersion,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
@@ -49,11 +50,11 @@ export async function fetchTracks(projectId: string): Promise<RdResearchTrack[]>
   return result || []
 }
 
-export async function fetchAllTracks(params: { projectId?: string; trackType?: string } = {}): Promise<any[]> {
+export async function fetchAllTracks(params: { projectId?: string; trackType?: string } = {}): Promise<RdResearchTrack[]> {
   const qs = new URLSearchParams()
   if (params.projectId) qs.set('project_id', params.projectId)
   if (params.trackType) qs.set('track_type', params.trackType)
-  const result = await apiGet<any[]>(`${API_BASE}/research/tracks?${qs}`)
+  const result = await apiGet<RdResearchTrack[]>(`${API_BASE}/research/tracks?${qs}`)
   return result || []
 }
 
@@ -111,8 +112,8 @@ export async function fetchTrackDetail(trackId: string): Promise<RdResearchTrack
   return apiGet<RdResearchTrack>(`${API_BASE}/research/tracks/${trackId}`)
 }
 
-export async function fetchConclusionVersions(trackId: string): Promise<any[]> {
-  const result = await apiGet<any[]>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
+export async function fetchConclusionVersions(trackId: string): Promise<RdTrackConclusionVersion[]> {
+  const result = await apiGet<RdTrackConclusionVersion[]>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
   return result || []
 }
 

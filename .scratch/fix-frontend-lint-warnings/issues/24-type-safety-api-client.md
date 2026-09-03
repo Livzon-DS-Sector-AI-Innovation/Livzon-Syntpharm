@@ -4,9 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in safety API client
-- [ ] Types sourced from `@/types/safety` or `@/types/generated/schema`
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in safety API)
+**Result:** Already completed. Zero `any` warnings in `src/lib/api/client/safety.ts`.
+
+**Verification:**
+- [x] All `any` types replaced with proper types in safety API client
+- [x] Types sourced from `@/types/safety` or `@/types/generated/schema`
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in safety API)
