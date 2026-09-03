@@ -53,6 +53,7 @@ import type {
   VerifyLevelRequest,
   TrainingRecordFormData,
   ApiResponse,
+  EhsChange,
   EhsChangeFormData,
   EhsChangeQueryParams,
   OhHazardMonitorFormData,
@@ -1225,74 +1226,74 @@ export async function getHazardRiskOptions(params?: {
 // ============ EHS变更管理 (MOC) ============
 
 // CRUD
-export async function getEhsChanges(params: EhsChangeQueryParams = {}) {
+export async function getEhsChanges(params: EhsChangeQueryParams = {}): Promise<ApiResponse<EhsChange[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getEhsChanges(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getEhsChanges(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<EhsChange[]>>
 }
 
-export async function getEhsChange(id: string) {
+export async function getEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getEhsChange(id, authHeaders) as any as any
+  return safetyApi.getEhsChange(id, authHeaders) as Promise<ApiResponse<EhsChange>>
 }
 
-export async function createEhsChange(data: EhsChangeFormData) {
+export async function createEhsChange(data: EhsChangeFormData): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createEhsChange(data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function updateEhsChange(id: string, data: Partial<EhsChangeFormData>) {
+export async function updateEhsChange(id: string, data: Partial<EhsChangeFormData>): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateEhsChange(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function deleteEhsChange(id: string) {
+export async function deleteEhsChange(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 // Workflow
-export async function submitEhsChange(id: string) {
+export async function submitEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function approveEhsChange(id: string, decision: string, comments?: string) {
+export async function approveEhsChange(id: string, decision: string, comments?: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveEhsChange(id, { decision, comments }, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function rejectEhsChange(id: string, comments?: string) {
+export async function rejectEhsChange(id: string, comments?: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectEhsChange(id, comments, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function startImplementationEhsChange(id: string) {
+export async function startImplementationEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startImplementationEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function commissionEhsChange(id: string) {
+export async function commissionEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.commissionEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDate?: string, restoredDate?: string) {
+export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDate?: string, restoredDate?: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.closeEhsChange(id, {
     closed_by: closedBy,
@@ -1300,43 +1301,43 @@ export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDa
     restored_date: restoredDate,
   }, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function cancelEhsChange(id: string) {
+export async function cancelEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.cancelEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
 // JSON sub-record operations
-export async function addRiskAssessment(id: string, data: Record<string, unknown>) {
+export async function addRiskAssessment(id: string, data: Record<string, unknown>): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.addRiskAssessment(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function updateActionItem(id: string, index: number, status: string) {
+export async function updateActionItem(id: string, index: number, status: string): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateActionItem(id, index, status, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function updatePSSRChecklist(id: string, data: Record<string, unknown>[] | object[]) {
+export async function updatePSSRChecklist(id: string, data: Record<string, unknown>[] | object[]): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePSSRChecklist(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
-export async function submitVerification(id: string, data: Record<string, unknown>) {
+export async function submitVerification(id: string, data: Record<string, unknown>): Promise<ApiResponse<EhsChange>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitVerification(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as any
+  return response as ApiResponse<EhsChange>
 }
 
 
