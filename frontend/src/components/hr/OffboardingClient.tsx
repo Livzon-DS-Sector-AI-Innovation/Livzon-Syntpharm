@@ -34,8 +34,8 @@ export default function OffboardingClient({
         page_size: pageSize })
       setRecords(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -69,8 +69,8 @@ export default function OffboardingClient({
       await deleteOffboardingRecord(id)
       message.success('删除成功')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -95,12 +95,12 @@ export default function OffboardingClient({
       title: '员工姓名',
       key: 'employee_name',
       width: 120,
-      render: (_: any, record: OffboardingRecord) => record.employee?.name || '-' },
+      render: (_: unknown, record: OffboardingRecord) => record.employee?.name || '-' },
     {
       title: '工号',
       key: 'employee_number',
       width: 120,
-      render: (_: any, record: OffboardingRecord) => record.employee?.employee_number || '-' },
+      render: (_: unknown, record: OffboardingRecord) => record.employee?.employee_number || '-' },
     {
       title: '离职日期',
       dataIndex: 'offboarding_date',
@@ -132,7 +132,7 @@ export default function OffboardingClient({
       title: '操作',
       key: 'action',
       width: 150,
-      render: (_: any, record: OffboardingRecord) => (
+      render: (_: unknown, record: OffboardingRecord) => (
         <Space size="small">
           <Button
             type="text"

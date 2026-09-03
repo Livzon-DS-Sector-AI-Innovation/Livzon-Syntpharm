@@ -45,8 +45,8 @@ export default function DepartmentClient({
       })
       setDepartments(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -80,8 +80,8 @@ export default function DepartmentClient({
       await deleteDepartment(id)
       message.success('删除成功')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -117,7 +117,7 @@ export default function DepartmentClient({
       title: '操作',
       key: 'action',
       width: 220,
-      render: (_: any, record: Department) => (
+      render: (_: unknown, record: Department) => (
         <Space size="small">
           <Button
             type="text"

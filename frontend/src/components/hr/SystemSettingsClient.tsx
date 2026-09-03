@@ -14,10 +14,10 @@ export default function SystemSettingsClient() {
   const loadSettings = async () => {
     setLoading(true)
     try {
-      const data = await apiGet<any>('/api/v1/hr/system-settings')
+      const data = await apiGet<Record<string, unknown>>('/api/v1/hr/system-settings')
       form.setFieldsValue(data)
-    } catch (err: any) {
-      message.error('加载设置失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('加载设置失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -33,8 +33,8 @@ export default function SystemSettingsClient() {
       } else {
         message.error(json.message || '保存失败')
       }
-    } catch (err: any) {
-      message.error('保存失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('保存失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setSaving(false)
     }

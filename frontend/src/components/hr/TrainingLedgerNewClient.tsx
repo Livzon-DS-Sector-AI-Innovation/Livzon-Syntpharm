@@ -6,6 +6,7 @@ import { App, Button, Card, Form, Select, Spin, } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { fetchDepartments, fetchEmployees } from '@/lib/api/client/hr'
 import { createTrainingLedgerPage } from '@/actions/hr'
+import type { Employee } from '@/types/hr'
 
 export default function TrainingLedgerNewClient() {
   const router = useRouter()
@@ -13,7 +14,7 @@ export default function TrainingLedgerNewClient() {
 
   const [form] = Form.useForm()
   const [departments, setDepartments] = useState<string[]>([])
-  const [employees, setEmployees] = useState<any[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedDept, setSelectedDept] = useState<string | null>(null)
@@ -22,7 +23,7 @@ export default function TrainingLedgerNewClient() {
     setLoading(true)
     fetchDepartments({ page_size: 200 })
       .then((res) => {
-        const names = (res.data || []).map((d: any) => d.name)
+        const names = (res.data || []).map((d: { name: string }) => d.name)
         setDepartments(names)
       })
       .catch(() => message.error('加载部门列表失败'))
@@ -55,12 +56,12 @@ export default function TrainingLedgerNewClient() {
       })
       message.success('培训台账创建成功')
       router.push(`/hr/training/ledger?employee_number=${emp.employee_number}`)
-    } catch (err: any) {
-      if (err.message?.includes('Duplicate') || err.message?.includes('已存在')) {
+    } catch (err: unknown) {
+      if ((err instanceof Error ? err.message : '')?.includes('Duplicate') || (err instanceof Error ? err.message : '')?.includes('已存在')) {
         message.warning('该员工的培训台账已存在')
         router.push(`/hr/training/ledger?employee_number=${emp.employee_number}`)
       } else {
-        message.error(err.message || '创建失败')
+        message.error(err instanceof Error ? err.message : '创建失败')
       }
     } finally {
       setSubmitting(false)

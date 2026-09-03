@@ -26,8 +26,8 @@ export default function AnnualPlanDeptClient({ department }: AnnualPlanDeptClien
         page_size: 200
       })
       setPlans(res.data || [])
-    } catch (err: any) {
-      message.error('加载计划列表失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('加载计划列表失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -42,8 +42,8 @@ export default function AnnualPlanDeptClient({ department }: AnnualPlanDeptClien
       await deleteAnnualTrainingPlan(id)
       setPlans((prev) => prev.filter((p) => p.id !== id))
       message.success('删除成功')
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 

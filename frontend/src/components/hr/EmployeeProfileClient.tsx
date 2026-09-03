@@ -68,8 +68,8 @@ export default function EmployeeProfileClient({
       })
       setEmployees(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     }
   }, [debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize, doFetch])
 
@@ -150,7 +150,7 @@ export default function EmployeeProfileClient({
           <Button icon={<UploadOutlined />}>上传人员名单</Button>
         </Upload>
         <Select placeholder="选择部门下载花名册" allowClear style={{ width: 220 }}
-          options={departments.map((d: any) => ({value: d.name, label: d.name}))}
+          options={departments.map((d: { name: string }) => ({value: d.name, label: d.name}))}
           onChange={async (dept) => {
             if (!dept) return
             

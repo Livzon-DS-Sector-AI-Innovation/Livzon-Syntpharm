@@ -24,7 +24,7 @@ import {
   fetchNewEmployees,
 } from '@/lib/api/client/hr'
 import { createTrainingSession, updateTrainingSession, sendTrainingSessionSelectTasksAction } from '@/actions/hr'
-import type { TrainingSessionExtended as TrainingSession, TrainingSessionCreateInput, TrainingSessionUpdateInput } from '@/types/hr'
+import type { TrainingSessionExtended as TrainingSession, TrainingSessionCreateInput, TrainingSessionUpdateInput, Employee } from '@/types/hr'
 
 const TRAINING_METHODS = [
   { value: '面授', label: '面授' },
@@ -72,7 +72,7 @@ export default function TrainingSessionDetailModal({
   useEffect(() => {
     const fetchFn = factory === 'new' ? fetchNewDepartments : fetchDepartments
     fetchFn({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: any) => ({ value: d.name, label: d.name }))
+      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
       setDepartments(list)
     })
   }, [factory])
@@ -135,7 +135,7 @@ export default function TrainingSessionDetailModal({
     for (const dept of depts) {
       try {
         const res = await fetchFn({ department: dept, page_size: 100 })
-        const list = (res.data || []).map((e: any) => ({
+        const list = (res.data || []).map((e: Employee) => ({
           value: e.name,
           label: `${e.name} (${e.employee_number || ''})`,
         }))
@@ -242,8 +242,8 @@ export default function TrainingSessionDetailModal({
           try {
             await sendTrainingSessionSelectTasksAction(sessionId)
             message.success('创建成功，已自动发送选择任务给培训专员')
-          } catch (selectErr: any) {
-            message.warning(`创建成功，但发送选择任务失败：${selectErr.message || '未知错误'}`)
+          } catch (selectErr: unknown) {
+            message.warning(`创建成功，但发送选择任务失败：${(selectErr instanceof Error ? selectErr.message : '未知错误')}`)
           }
         } else {
           message.success('创建成功')
@@ -280,8 +280,8 @@ export default function TrainingSessionDetailModal({
       }
       onUpdated()
       if (isCreate) onClose()
-    } catch (err: any) {
-      message.error(err.message || (isCreate ? '创建失败' : '更新失败'))
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : (isCreate ? '创建失败' : '更新失败')))
     } finally {
       setSaving(false)
     }

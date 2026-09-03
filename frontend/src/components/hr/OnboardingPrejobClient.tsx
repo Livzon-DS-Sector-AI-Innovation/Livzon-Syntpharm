@@ -11,7 +11,7 @@ import {
   PrinterOutlined,
   DownloadOutlined
 } from '@ant-design/icons'
-import { Employee } from '@/types/hr'
+import { Employee, SopCatalogItem } from '@/types/hr'
 import {
   fetchEmployees,
   fetchNewEmployees,
@@ -54,8 +54,8 @@ export default function OnboardingPrejobClient() {
   const [sopCat, setSopCat] = useState('')
   const [sopDepts, setSopDepts] = useState<{value:string,label:string}[]>([])
   const [sopCats, setSopCats] = useState<{value:string,label:string}[]>([])
-  const [allSops, setAllSops] = useState<any[]>([])
-  const [selectedSops, setSelectedSops] = useState<any[]>([])
+  const [allSops, setAllSops] = useState<SopCatalogItem[]>([])
+  const [selectedSops, setSelectedSops] = useState<SopCatalogItem[]>([])
   const [trainers, setTrainers] = useState<{value:string,label:string}[]>([])
 
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -72,7 +72,7 @@ export default function OnboardingPrejobClient() {
     const fetcher = factory === 'old' ? fetchEmployees : fetchNewEmployees
     fetcher({ page_size: 200 })
       .then((res) => {
-        setEmployees((res.data || []) as any)
+        setEmployees((res.data || []) as Employee[])
       })
       .catch((err) => {
         message.error('加载员工列表失败: ' + (err.message || '未知错误'))
@@ -87,13 +87,13 @@ export default function OnboardingPrejobClient() {
     setLoading(true)
     try {
       const res = await fetchOnboardingRecords({ keyword, page_size: 30 })
-      setEmployees((res.data || []) as any)
-    } catch (err: any) {
-      message.error('搜索失败: ' + (err.message || '未知错误'))
+      setEmployees((res.data || []) as Employee[])
+    } catch (err: unknown) {
+      message.error('搜索失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally { setLoading(false) }
   }
 
-  const selectedEmployee = employees.find((e: any) => e.id === selectedEmployeeId)
+  const selectedEmployee = employees.find((e: Employee) => e.id === selectedEmployeeId)
 
   
 
@@ -103,8 +103,8 @@ export default function OnboardingPrejobClient() {
       .then(res => setSopDepts(res.map((d: string) => ({value:d,label:d}))))
     apiGet<string[]>('/api/v1/hr/sop-catalog/categories')
       .then(res => setSopCats(res.map((c: string) => ({value:c,label:c}))))
-    apiGet<any[]>('/api/v1/hr/trainers?page_size=200')
-      .then(res => setTrainers(res.map((t: any) => ({value:t.name,label:`${t.name}(${t.department})`}))))
+    apiGet<{name: string; department: string}[]>('/api/v1/hr/trainers?page_size=200')
+      .then(res => setTrainers(res.map((t: { name: string; department: string }) => ({value:t.name,label:`${t.name}(${t.department})`}))))
   }, [])
 
   // 按条件加载 SOP 列表
@@ -113,7 +113,7 @@ export default function OnboardingPrejobClient() {
     if (sopDept) params.set('department', sopDept)
     if (sopCat) params.set('category', sopCat)
     if (sopSearch) params.set('keyword', sopSearch)
-    apiGet<any[]>(`/api/v1/hr/sop-catalog?${params.toString()}`)
+    apiGet<SopCatalogItem[]>(`/api/v1/hr/sop-catalog?${params.toString()}`)
       .then(res => setAllSops(res || []))
       .catch(() => setAllSops([]))
   }, [sopDept, sopCat, sopSearch])
@@ -125,7 +125,7 @@ export default function OnboardingPrejobClient() {
     setSopMethods(prev => ({ ...prev, [sopId]: method }))
   }
 
-  const toggleSop = (sop: any) => {
+  const toggleSop = (sop: SopCatalogItem) => {
     setSelectedSops(prev => {
       const exists = prev.find(s => s.id === sop.id)
       if (exists) return prev.filter(s => s.id !== sop.id)
@@ -152,7 +152,7 @@ export default function OnboardingPrejobClient() {
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       message.success('入职培训记录已导出')
-    } catch (err: any) { message.error(err.message || '导出失败') }
+    } catch (err: unknown) { message.error(err instanceof Error ? err.message : '导出失败') }
     finally { setDownloadingWord(false) }
   }
 
@@ -165,8 +165,8 @@ export default function OnboardingPrejobClient() {
     try {
       await fetchPrejobTrainingPlan(selectedEmployee.id, selectedEmployee.name)
       message.success('岗前培训计划已导出')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     } finally {
       setDownloadingExcel(false)
     }
@@ -196,8 +196,8 @@ export default function OnboardingPrejobClient() {
         department: selectedEmployee.name,
       })
       message.success('员工上岗评估表已导出')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     } finally {
       setDownloadingEval(false)
     }

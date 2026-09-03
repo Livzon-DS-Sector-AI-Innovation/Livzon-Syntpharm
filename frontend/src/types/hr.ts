@@ -881,3 +881,13 @@ export type PrejobTemplateSaveResponse = { code: number; message: string; data: 
 // ─── Upload Types ───
 
 export type UploadEmployeesResponse = { code: number; message: string; data: { created: number; updated: number } }
+
+// SOP Catalog item type
+export interface SopCatalogItem {
+  id: string
+  sop_number?: string
+  file_name?: string
+  category?: string
+  department?: string
+  [key: string]: unknown
+}

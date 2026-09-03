@@ -28,6 +28,7 @@ import {
   } from '@/lib/api/client/hr'
 import { createTrainingLedger, createTrainingLedgerPage, sendTrainingNotification, generateTrainingNotification, generateTrainingSignInSheet, generateTrainingEvaluation } from '@/actions/hr'
 import { moduleMenus } from '@/lib/menu-config'
+import type { Employee } from '@/types/hr'
 
 const TRAINING_METHODS = [
   { value: '面授', label: '面授' },
@@ -91,7 +92,7 @@ export default function TrainingNotificationClient() {
 
   useEffect(() => {
     fetchDepartments({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: any) => ({ value: d.name, label: d.name }))
+      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
       setDepartments(list)
     })
   }, [])
@@ -112,14 +113,14 @@ export default function TrainingNotificationClient() {
         setTrainerDept(deptName)
         // 加载该部门员工
         fetchEmployees({ department: deptName, page_size: 200 }).then(res => {
-          const emps = (res.data || []).map((e: any) => ({
+          const emps = (res.data || []).map((e: Employee) => ({
             value: e.name, label: `${e.employee_number} ${e.name}`,
             employee_number: e.employee_number
           }))
           setEmployees(emps)
           setTrainerEmployees(emps)
           const map: Record<string, string> = {}
-          emps.forEach((e: any) => { map[e.value] = e.employee_number })
+          emps.forEach((e: { value: string; employee_number: string }) => { map[e.value] = e.employee_number })
           setNameToNumberMap(map)
         })
       }
@@ -133,7 +134,7 @@ export default function TrainingNotificationClient() {
     if (!dept) { setTrainerEmployees([]); return }
     try {
       const res = await fetchEmployees({ department: dept, page_size: 200 })
-      setTrainerEmployees((res.data || []).map((e: any) => ({
+      setTrainerEmployees((res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number || ''})`,
       })))
@@ -152,7 +153,7 @@ export default function TrainingNotificationClient() {
     for (const dept of depts) {
       try {
         const res = await fetchEmployees({ department: dept, page_size: 100 })
-        const list = (res.data || []).map((e: any) => ({
+        const list = (res.data || []).map((e: Employee) => ({
           value: e.name,
           label: `${e.name} (${e.employee_number || ''})`
         }))
@@ -203,8 +204,8 @@ export default function TrainingNotificationClient() {
       }
       await generateTrainingNotification(payload)
       message.success('培训通知已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     } finally {
       setSubmittingWord(false)
     }
@@ -234,8 +235,8 @@ export default function TrainingNotificationClient() {
       }
       await generateTrainingSignInSheet(payload)
       message.success('培训签到表已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     } finally {
       setSubmittingExcel(false)
     }
@@ -265,8 +266,8 @@ export default function TrainingNotificationClient() {
       }
       await generateTrainingEvaluation(payload)
       message.success('培训效果评估表已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     } finally {
       setSubmittingEval(false)
     }
@@ -383,8 +384,8 @@ export default function TrainingNotificationClient() {
               }
             })
           }
-        } catch (err: any) {
-          message.error(err.message || '添加到培训台账失败')
+        } catch (err: unknown) {
+          message.error(err instanceof Error ? err.message : '添加到培训台账失败')
         } finally {
           setAddingToLedger(false)
         }
@@ -446,8 +447,8 @@ export default function TrainingNotificationClient() {
           }
           const res = await sendTrainingNotification(payload)
           message.success(res.message)
-        } catch (err: any) {
-          message.error(err.message || '添加失败')
+        } catch (err: unknown) {
+          message.error(err instanceof Error ? err.message : '添加失败')
         } finally {
           setSendingNotify(false)
         }
@@ -976,15 +977,15 @@ export default function TrainingNotificationClient() {
 // Stub component for EvaluationPreview
 interface EvaluationPreviewProps {
   topicStr?: string
-  dateStr?: any
-  trainingMethodValue?: any
-  trainerValue?: any
-  assessmentMethodValue?: any
-  deptValue?: any
+  dateStr?: string
+  trainingMethodValue?: string
+  trainerValue?: string
+  assessmentMethodValue?: string
+  deptValue?: string
   traineeDepts?: string[]
   previewNames?: string[]
   evalDurationHours?: string | number
-  data?: any
+  data?: Record<string, unknown>
 }
 
 function EvaluationPreview(props: EvaluationPreviewProps) {

@@ -38,8 +38,8 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
     try {
       const res = await fetchTrainingSelectTasks("default")
       setTasks(res.data || [])
-    } catch (err: any) {
-      message.error(err.message || '加载失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -60,8 +60,8 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       // 跳转到培训通知页面，带 token 参数
       const url = `/hr/training/notification?token=${tokenInput.trim()}`
       router.push(url)
-    } catch (err: any) {
-      message.error(err.message || '导入失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导入失败')
     }
   }
 
@@ -95,7 +95,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       title: '状态',
       key: 'status',
       width: 120,
-      render: (_: any, record: TaskItem) =>
+      render: (_: unknown, record: TaskItem) =>
         record.has_result ? (
           <Tag color="green">已选择 ({record.selected_count}人)</Tag>
         ) : (
@@ -106,7 +106,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_: any, record: TaskItem) => (
+      render: (_: unknown, record: TaskItem) => (
         <Space>
           {record.has_result && (
             <Link href={`/hr/training/notification?token=${record.token}`}>

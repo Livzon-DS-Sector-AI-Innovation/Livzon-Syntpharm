@@ -60,7 +60,7 @@ export default function TrainingLedgerClient({
     try {
       const res = await fetchEmployees({ keyword, page_size: 20 })
       const emps = res.data || []
-      setSearchOptions(emps.map((e: any) => ({
+      setSearchOptions(emps.map((e: Employee) => ({
         value: e.employee_number,
         label: `${e.employee_number} — ${e.name} (${e.department || ''})`,
       })))
@@ -88,8 +88,8 @@ export default function TrainingLedgerClient({
         page_size: 100
       })
       setRecords(ledgerRes.data || [])
-    } catch (err: any) {
-      message.error('加载数据失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('加载数据失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -107,8 +107,8 @@ export default function TrainingLedgerClient({
     try {
       await exportTrainingLedger(employeeNumber)
       message.success('导出成功')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     }
   }
 
@@ -175,8 +175,8 @@ export default function TrainingLedgerClient({
       }
       setEditingId(null)
       setEditForm({})
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -192,8 +192,8 @@ export default function TrainingLedgerClient({
       await deleteTrainingLedger(record.id)
       setRecords((prev) => prev.filter((r) => r.id !== record.id))
       message.success('删除成功')
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 

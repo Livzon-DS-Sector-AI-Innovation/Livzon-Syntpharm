@@ -26,8 +26,8 @@ export default function FeishuSyncPanel({ onSynced }: { onSynced?: () => void })
     try {
       const res = await fetchSyncStatus()
       setStatus(res.data)
-    } catch (err: any) {
-      message.error(err.message || '获取同步状态失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '获取同步状态失败')
     } finally {
       setLoading(false)
     }
@@ -44,8 +44,8 @@ export default function FeishuSyncPanel({ onSynced }: { onSynced?: () => void })
       message.success(res.message)
       await loadStatus()
       onSynced?.()
-    } catch (err: any) {
-      message.error(err.message || '同步失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '同步失败')
     } finally {
       setSyncing(false)
     }

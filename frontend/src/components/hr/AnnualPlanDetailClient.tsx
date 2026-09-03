@@ -49,10 +49,10 @@ export default function AnnualPlanDetailClient({
   const [trainerList, setTrainerList] = useState<string[]>([])
 
   useEffect(() => {
-    apiGet<any[]>('/api/v1/hr/departments?page_size=100')
-      .then(d => setDeptList(d.map((x: any) => x.name)))
-    apiGet<any[]>('/api/v1/hr/trainers?page_size=200')
-      .then(d => setTrainerList(d.map((x: any) => x.name)))
+    apiGet<{name: string}[]>('/api/v1/hr/departments?page_size=100')
+      .then(d => setDeptList(d.map((x: {name: string}) => x.name)))
+    apiGet<{name: string}[]>('/api/v1/hr/trainers?page_size=200')
+      .then(d => setTrainerList(d.map((x: {name: string}) => x.name)))
   }, [])
 
   const loadItems = async () => {
@@ -60,8 +60,8 @@ export default function AnnualPlanDetailClient({
     try {
       const res = await fetchPlanItems(planId)
       setItems(res.data || [])
-    } catch (err: any) {
-      message.error('加载明细失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('加载明细失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -87,8 +87,8 @@ export default function AnnualPlanDetailClient({
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       message.success('导出成功')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     }
   }
 
@@ -150,13 +150,13 @@ export default function AnnualPlanDetailClient({
 
     setSaving(true)
     try {
-      await batchUpdatePlanItems(planId, { items: payloadItems as any })
+      await batchUpdatePlanItems(planId, { items: payloadItems })
       message.success('保存成功')
       setEditingId(null)
       setEditForm({})
       await loadItems()
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -175,7 +175,7 @@ export default function AnnualPlanDetailClient({
     } catch { message.error('删除失败') }
   }
 
-  const updateField = (field: keyof AnnualTrainingPlanItem, value: any) => {
+  const updateField = (field: keyof AnnualTrainingPlanItem, value: string | number | null | undefined) => {
     setEditForm((prev) => ({ ...prev, [field]: value }))
     if (editingId) {
       setItems((prev) =>
@@ -442,7 +442,7 @@ export default function AnnualPlanDetailClient({
                     </td>
                     <td className="border border-gray-300 px-2 py-2 align-top text-center" style={{ lineHeight: '1.6' }}>
                       {(() => {
-                        const s = (item as any).training_status || '—'
+                        const s = (item as AnnualTrainingPlanItem & { training_status?: string }).training_status || '—'
                         const colors: Record<string, string> = {'已评估': '#52c41a', '已通知': '#1677ff', '未开始': '#999'}
                         return <span style={{ color: colors[s] || '#999', fontWeight: 500, fontSize: 12 }}>{s}</span>
                       })()}

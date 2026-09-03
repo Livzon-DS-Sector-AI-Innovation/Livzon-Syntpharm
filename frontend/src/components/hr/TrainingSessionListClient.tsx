@@ -22,7 +22,7 @@ import {
   fetchEmployees,
   fetchNewEmployees,
 } from '@/lib/api/client/hr'
-import type { TrainingSession, SelectTask } from '@/types/hr'
+import type { TrainingSession, SelectTask, TrainingLedgerPageRecord } from '@/types/hr'
 
 const { RangePicker } = DatePicker
 
@@ -116,8 +116,8 @@ export default function TrainingSessionListClient({
       })
       setData(res.data || [])
       setMeta(res.meta)
-    } catch (err: any) {
-      message.error(err.message || '加载失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -155,8 +155,8 @@ export default function TrainingSessionListClient({
           await deleteTrainingSession(record.id)
           message.success('删除成功')
           handleRefresh()
-        } catch (err: any) {
-          message.error(err.message || '删除失败')
+        } catch (err: unknown) {
+          message.error(err instanceof Error ? err.message : '删除失败')
         }
       },
     })
@@ -167,8 +167,8 @@ export default function TrainingSessionListClient({
       await updateTrainingSessionStatus(record.id, status)
       message.success(`状态更新为：${STATUS_MAP[status]?.label || status}`)
       handleRefresh()
-    } catch (err: any) {
-      message.error(err.message || '状态更新失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '状态更新失败')
     }
   }
 
@@ -192,8 +192,8 @@ export default function TrainingSessionListClient({
       }
       await generateTrainingNotification({ ...payload, factory: (record.factory as 'old' | 'new') || 'old' })
       message.success('培训通知已导出')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     }
   }
 
@@ -235,8 +235,8 @@ export default function TrainingSessionListClient({
       }
       await generateTrainingSignInSheet({ ...payload, factory })
       message.success('签到表已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     }
   }
 
@@ -284,8 +284,8 @@ export default function TrainingSessionListClient({
       await generateTrainingEvaluation({ ...payload, factory })
       message.success('培训效果评估表已生成')
       await handleStatusChange(record, 'evaluated')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     }
   }
 
@@ -369,8 +369,8 @@ export default function TrainingSessionListClient({
       const existingRes = await fetchTrainingLedgerPages()
       const existingNumbers = new Set(
         (existingRes.data || [])
-          .filter((p: any) => p.ledger_type === ledgerType)
-          .map((p: any) => p.employee_number)
+          .filter((p: TrainingLedgerPageRecord) => (p as TrainingLedgerPageRecord & { ledger_type?: string }).ledger_type === ledgerType)
+          .map((p: TrainingLedgerPageRecord) => p.employee_number)
       )
       const noPage = targets.filter((t) => !existingNumbers.has(t.number))
       const created: string[] = []
@@ -382,7 +382,7 @@ export default function TrainingSessionListClient({
             ledger_type: ledgerType,
           })
           created.push(p.name)
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('创建台账页面失败:', p.name, err)
         }
       }
@@ -416,8 +416,8 @@ export default function TrainingSessionListClient({
       message.success(`已为 ${targets.map((t) => t.name).join('、')} 添加到${typeLabel}台账，页面即将刷新`)
       await handleStatusChange(record, 'archived')
       setTimeout(() => window.location.reload(), 1500)
-    } catch (err: any) {
-      message.error(err.message || '添加失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '添加失败')
     }
   }
 
@@ -453,8 +453,8 @@ export default function TrainingSessionListClient({
         )
       }
       handleRefresh()
-    } catch (err: any) {
-      message.error(err.message || '刷新失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '刷新失败')
     }
   }
 
@@ -467,8 +467,8 @@ export default function TrainingSessionListClient({
           await sendTrainingSessionSelectTasksAction(record.id)
           message.success('已发送选人任务给培训专员')
           handleRefresh()
-        } catch (err: any) {
-          message.error(err.message || '发送失败')
+        } catch (err: unknown) {
+          message.error(err instanceof Error ? err.message : '发送失败')
         }
       },
     })
@@ -597,7 +597,7 @@ export default function TrainingSessionListClient({
     {
       title: '培训时间',
       width: 140,
-      render: (_: any, record: TrainingSession) =>
+      render: (_: unknown, record: TrainingSession) =>
         record.training_time_start && record.training_time_end
           ? `${record.training_time_start} ~ ${record.training_time_end}`
           : '-',
@@ -623,7 +623,7 @@ export default function TrainingSessionListClient({
     {
       title: '受训人数',
       width: 110,
-      render: (_: any, record: TrainingSession) => {
+      render: (_: unknown, record: TrainingSession) => {
         const tasks = record.select_tasks
         if (!tasks || tasks.length === 0) {
           // 旧记录或未发送选择任务：显示已确认的人数
@@ -647,7 +647,7 @@ export default function TrainingSessionListClient({
       title: '操作',
       width: 120,
       fixed: 'right' as const,
-      render: (_: any, record: TrainingSession) => {
+      render: (_: unknown, record: TrainingSession) => {
         const actions = getWorkflowActions(record)
         return (
           <Dropdown

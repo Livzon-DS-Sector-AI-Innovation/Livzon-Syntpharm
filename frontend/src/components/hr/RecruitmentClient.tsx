@@ -45,8 +45,8 @@ export default function RecruitmentClient({
         page_size: pageSize })
       setCandidates(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -62,8 +62,8 @@ export default function RecruitmentClient({
       await deleteCandidateAction(id)
       message.success('删除成功')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 

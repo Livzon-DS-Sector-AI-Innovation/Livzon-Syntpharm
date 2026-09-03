@@ -44,8 +44,8 @@ export default function RosterClient({
       })
       setEmployees(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -67,8 +67,8 @@ export default function RosterClient({
           setEmployees(res.data)
           setTotal(res.meta?.total || 0)
         }
-      } catch (err: any) {
-        if (!cancelled) message.error(err.message || '加载数据失败')
+      } catch (err: unknown) {
+        if (!cancelled) message.error(err instanceof Error ? err.message : '加载数据失败')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -105,7 +105,7 @@ export default function RosterClient({
       key: 'department',
       width: 120,
       filters: departments.map((d) => ({ text: d, value: d })),
-      onFilter: (value: any, record: Employee) => record.department === value,
+      onFilter: (value: unknown, record: Employee) => record.department === value,
     },
     {
       title: '班组',
@@ -284,7 +284,7 @@ export default function RosterClient({
       key: 'feishu_sync',
       width: 100,
       fixed: 'right' as const,
-      render: (_: any, record: Employee) =>
+      render: (_: unknown, record: Employee) =>
         record.feishu_record_id ? (
           <Tooltip title={`record_id: ${record.feishu_record_id}`}>
             <Tag color="success" icon={<CheckCircleFilled />}>已同步</Tag>

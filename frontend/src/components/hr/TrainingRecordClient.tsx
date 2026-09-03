@@ -43,8 +43,8 @@ export default function TrainingRecordClient() {
     try {
       await fetchOnboardingTrainingRecord(selectedEmployee.id, selectedEmployee.name)
       message.success('培训记录已导出')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     } finally {
       setDownloading(false)
     }

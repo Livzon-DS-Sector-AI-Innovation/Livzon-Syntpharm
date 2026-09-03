@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Button, Card, Form, Input, Modal, Popconfirm, Radio, Select, Space, Table, Tag, Tabs, message } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons'
-import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist } from '@/types/hr'
+import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist, Employee } from '@/types/hr'
 import {
   fetchTrainingSpecialists,
   fetchTrainingTeams,
@@ -54,8 +54,8 @@ export default function TrainingSpecialistsClient() {
       } else {
         message.error(json.message || '同步失败')
       }
-    } catch (err: any) {
-      message.error('同步失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('同步失败: ' + (err instanceof Error ? err.message : '未知错误'))
     }
   }
 
@@ -65,8 +65,8 @@ export default function TrainingSpecialistsClient() {
     try {
       const res = await fetchTrainingSpecialists()
       setData(res.data || [])
-    } catch (err: any) {
-      message.error(err.message || '加载失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -76,7 +76,7 @@ export default function TrainingSpecialistsClient() {
     const fn = f === 'new' ? fetchNewDepartments : fetchDepartments
     try {
       const res = await fn({ page_size: 200 })
-      const list = (res.data || []).map((d: any) => ({ value: d.name, label: d.name }))
+      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
       setDepartments(list)
     } catch { /* ignore */ }
   }
@@ -86,7 +86,7 @@ export default function TrainingSpecialistsClient() {
     const fn = factory === 'new' ? fetchNewEmployees : fetchEmployees
     try {
       const res = await fn({ department: dept, page_size: 200 })
-      const list = (res.data || []).map((e: any) => ({
+      const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
         number: e.employee_number,
@@ -126,7 +126,7 @@ export default function TrainingSpecialistsClient() {
     const fn = f === 'new' ? fetchNewEmployees : fetchEmployees
     try {
       const res = await fn({ department: dept, page_size: 200 })
-      const list = (res.data || []).map((e: any) => ({
+      const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
         number: e.employee_number,
@@ -140,8 +140,8 @@ export default function TrainingSpecialistsClient() {
       await deleteTrainingSpecialistAction(id)
       message.success('已删除')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -158,8 +158,8 @@ export default function TrainingSpecialistsClient() {
       message.success('已保存')
       setModalOpen(false)
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -177,8 +177,8 @@ export default function TrainingSpecialistsClient() {
     try {
       const res = await fetchTrainingTeams(f)
       setTeams(res.data || [])
-    } catch (err: any) {
-      message.error(err.message || '加载班组失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载班组失败')
     } finally {
       setTeamsLoading(false)
     }
@@ -203,14 +203,14 @@ export default function TrainingSpecialistsClient() {
     const fn = f === 'new' ? fetchNewEmployees : fetchEmployees
     try {
       const res = await fn({ page_size: 200 })
-      const list = (res.data || []).map((e: any) => ({
+      const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
         number: e.employee_number,
       }))
       setTeamEmployees(list)
-    } catch (err: any) {
-      message.error('加载员工列表失败: ' + (err.message || '未知错误'))
+    } catch (err: unknown) {
+      message.error('加载员工列表失败: ' + (err instanceof Error ? err.message : '未知错误'))
     }
   }
 
@@ -250,8 +250,8 @@ export default function TrainingSpecialistsClient() {
       await deleteTrainingTeamAction(id)
       message.success('班组已删除')
       loadTeams(teamFactory)
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -281,8 +281,8 @@ export default function TrainingSpecialistsClient() {
       }
       setTeamModalOpen(false)
       loadTeams(values.factory)
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setTeamSaving(false)
     }
@@ -324,7 +324,7 @@ export default function TrainingSpecialistsClient() {
     { title: '飞书 OpenID', dataIndex: 'feishu_open_id', width: 100, render: (v: string) => v ? <Tag color="green">已绑定</Tag> : <Tag color="red">未绑定</Tag> },
     {
       title: '操作', width: 120,
-      render: (_: any, record: TrainingSpecialist) => (
+      render: (_: unknown, record: TrainingSpecialist) => (
         <Space>
           <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
@@ -343,7 +343,7 @@ export default function TrainingSpecialistsClient() {
     { title: '受训人数', dataIndex: 'employee_names', width: 100, render: (v: string[]) => v?.length || 0 },
     {
       title: '操作', width: 120,
-      render: (_: any, record: TrainingTeam) => (
+      render: (_: unknown, record: TrainingTeam) => (
         <Space>
           <Button size="small" icon={<EditOutlined />} onClick={() => handleTeamEdit(record)} />
           <Popconfirm title="确定删除？" onConfirm={() => handleTeamDelete(record.id)}>
