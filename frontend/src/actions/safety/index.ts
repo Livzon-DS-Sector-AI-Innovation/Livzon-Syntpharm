@@ -56,8 +56,10 @@ import type {
   EhsChange,
   EhsChangeFormData,
   EhsChangeQueryParams,
+  OhHazardMonitor,
   OhHazardMonitorFormData,
   OhHazardMonitorQueryParams,
+  OhHealthExam,
   OhHealthExamFormData,
   OhHealthExamQueryParams,
   // knowledge
@@ -1344,158 +1346,158 @@ export async function submitVerification(id: string, data: Record<string, unknow
 // ==================== 职业危害因素监测 Actions ====================
 
 
-export async function getOhHazardMonitors(params: OhHazardMonitorQueryParams = {}) {
+export async function getOhHazardMonitors(params: OhHazardMonitorQueryParams = {}): Promise<ApiResponse<OhHazardMonitor[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHazardMonitors(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getOhHazardMonitors(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<OhHazardMonitor[]>>
 }
 
-export async function getOhHazardMonitor(id: string) {
+export async function getOhHazardMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHazardMonitor(id, authHeaders) as any as any
+  return safetyApi.getOhHazardMonitor(id, authHeaders) as Promise<ApiResponse<OhHazardMonitor>>
 }
 
-export async function createOhHazardMonitor(data: OhHazardMonitorFormData) {
+export async function createOhHazardMonitor(data: OhHazardMonitorFormData): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.createOhHazardMonitor(data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function updateOhHazardMonitor(id: string, data: Partial<OhHazardMonitorFormData>) {
+export async function updateOhHazardMonitor(id: string, data: Partial<OhHazardMonitorFormData>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateOhHazardMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function deleteOhHazardMonitor(id: string) {
+export async function deleteOhHazardMonitor(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteOhHazardMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<null>
 }
 
 // Monitor Workflow
-export async function startMonitor(id: string) {
+export async function startMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.startMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function completeMonitor(id: string) {
+export async function completeMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.completeMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }) {
+export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.verifyMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
 // Monitor Sub-records
-export async function addDetectionResult(id: string, data: Record<string, unknown>) {
+export async function addDetectionResult(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addDetectionResult(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function updateDetectionResult(id: string, index: number, data: Record<string, unknown>) {
+export async function updateDetectionResult(id: string, index: number, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateDetectionResult(id, index, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function deleteDetectionResult(id: string, index: number) {
+export async function deleteDetectionResult(id: string, index: number): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteDetectionResult(id, index, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<null>
 }
 
-export async function addMonitorAbnormality(id: string, data: Record<string, unknown>) {
+export async function addMonitorAbnormality(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addMonitorAbnormality(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
-export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string) {
+export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateMonitorAbnormalityStatus(id, index, status, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHazardMonitor>
 }
 
 
 // ==================== 职业健康体检 Actions ====================
 
 
-export async function getOhHealthExams(params: OhHealthExamQueryParams = {}) {
+export async function getOhHealthExams(params: OhHealthExamQueryParams = {}): Promise<ApiResponse<OhHealthExam[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHealthExams(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getOhHealthExams(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<OhHealthExam[]>>
 }
 
-export async function getOhHealthExam(id: string) {
+export async function getOhHealthExam(id: string): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHealthExam(id, authHeaders) as any as any
+  return safetyApi.getOhHealthExam(id, authHeaders) as Promise<ApiResponse<OhHealthExam>>
 }
 
-export async function createOhHealthExam(data: OhHealthExamFormData) {
+export async function createOhHealthExam(data: OhHealthExamFormData): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.createOhHealthExam(data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
-export async function updateOhHealthExam(id: string, data: Partial<OhHealthExamFormData>) {
+export async function updateOhHealthExam(id: string, data: Partial<OhHealthExamFormData>): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateOhHealthExam(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
-export async function deleteOhHealthExam(id: string) {
+export async function deleteOhHealthExam(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteOhHealthExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<null>
 }
 
 // Exam Workflow
-export async function startExam(id: string) {
+export async function startExam(id: string): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.startExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
-export async function completeExam(id: string) {
+export async function completeExam(id: string): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.completeExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
-export async function archiveExam(id: string) {
+export async function archiveExam(id: string): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.archiveExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 // Exam Sub-records
-export async function addExamItem(id: string, data: Record<string, unknown>) {
+export async function addExamItem(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHealthExam>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addExamItem(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as any
+  return res as ApiResponse<OhHealthExam>
 }
 
 export async function updateExamItem(id: string, index: number, data: Record<string, unknown>) {
