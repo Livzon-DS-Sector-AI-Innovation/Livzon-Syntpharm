@@ -19,7 +19,7 @@ export async function createDeliverable(data: {
 }) {
   const result = await createDeliverableApi(data)
   revalidatePath('/research/projects')
-  return result as any
+  return result
 }
 
 export async function updateDeliverable(id: string, data: {
@@ -30,7 +30,7 @@ export async function updateDeliverable(id: string, data: {
 }) {
   const result = await updateDeliverableApi(id, data)
   revalidatePath('/research/projects')
-  return result as any
+  return result
 }
 
 export async function deleteDeliverable(id: string) {
@@ -41,5 +41,5 @@ export async function deleteDeliverable(id: string) {
 export async function uploadDeliverableFile(deliverableId: string, formData: FormData) {
   const result = await uploadDeliverableFileApi(deliverableId, formData)
   revalidatePath('/research/projects')
-  return result as any
+  return result
 }

@@ -19,6 +19,7 @@ import type {
   AiLogItem,
   AiLogListResponse,
   AiLogFilter,
+  UploadLcResponse,
 } from '@/types/quality'
 import type {
   SamplingOrder,
@@ -496,7 +497,7 @@ export async function createDeviation(data: CreateDeviationRequest) {
   const result = await QualityServer.createDeviation(data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
-  return result as any
+  return result
 }
 
 export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
@@ -504,7 +505,7 @@ export async function updateDeviation(deviationId: string, data: UpdateDeviation
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 export async function deleteDeviation(deviationId: string) {
@@ -519,7 +520,7 @@ export async function createCapa(data: CreateCapaRequest) {
   const result = await QualityServer.createCapa(data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
-  return result as any
+  return result
 }
 
 export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
@@ -527,7 +528,7 @@ export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function deleteCapa(capaId: string) {
@@ -543,14 +544,14 @@ export async function createDepartmentContact(data: CreateDepartmentContactReque
   const result = await QualityServer.createDepartmentContact(data)
   revalidatePath('/quality')
   revalidatePath('/quality/department-contacts')
-  return result as any
+  return result
 }
 
 export async function updateDepartmentContact(contactId: string, data: UpdateDepartmentContactRequest) {
   const result = await QualityServer.updateDepartmentContact(contactId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/department-contacts')
-  return result as any
+  return result
 }
 
 export async function deleteDepartmentContact(contactId: string) {
@@ -591,7 +592,7 @@ export async function submitCapa(capaId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function approveCapa(capaId: string, data: unknown) {
@@ -600,7 +601,7 @@ export async function approveCapa(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function resubmitCapa(capaId: string) {
@@ -608,7 +609,7 @@ export async function resubmitCapa(capaId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function addExecutionTrack(capaId: string, data: unknown) {
@@ -617,7 +618,7 @@ export async function addExecutionTrack(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function deleteExecutionTrack(capaId: string, trackId: string) {
@@ -633,7 +634,7 @@ export async function confirmExecution(capaId: string, data: unknown = {}) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function submitEvaluation(capaId: string, data: unknown) {
@@ -642,7 +643,7 @@ export async function submitEvaluation(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function completeCapaPart(capaId: string, data: unknown) {
@@ -651,7 +652,7 @@ export async function completeCapaPart(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 export async function confirmDeptHead(capaId: string, data: unknown) {
@@ -660,7 +661,7 @@ export async function confirmDeptHead(capaId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   revalidatePath(`/quality/capas/${capaId}`)
-  return result as any
+  return result
 }
 
 // ============ Additional Deviation Actions ============
@@ -670,7 +671,7 @@ export async function submitDeviation(deviationId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 export async function submitInvestigation(deviationId: string, data: unknown) {
@@ -679,7 +680,7 @@ export async function submitInvestigation(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 export async function submitReview(deviationId: string, data: unknown) {
@@ -688,7 +689,7 @@ export async function submitReview(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 export async function submitFinalCode(deviationId: string, data: unknown) {
@@ -697,7 +698,7 @@ export async function submitFinalCode(deviationId: string, data: unknown) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 export async function resubmitDeviation(deviationId: string) {
@@ -705,7 +706,7 @@ export async function resubmitDeviation(deviationId: string) {
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
-  return result as any
+  return result
 }
 
 // ============ AI Config Actions ============
@@ -842,7 +843,7 @@ export async function triggerAIProcess(taskId: number) {
   return response
 }
 
-export async function updateAIResult(taskId: number, aiResult: any) {
+export async function updateAIResult(taskId: number, aiResult: unknown) {
   const response = await wrap<unknown>(QualityServer.updateAIResult(taskId, aiResult))
   revalidatePath('/quality/deviation-automation')
   return response
@@ -909,11 +910,10 @@ export async function uploadDeviationFileWithTask(taskId: number, file: File) {
   revalidatePath('/quality/deviation-automation')
   return response
 }
-
-export async function uploadLcExcel(file: File): Promise<any> {
+export async function uploadLcExcel(file: File): Promise<UploadLcResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadLcExcel(formData))
+  const result = await QualityServer.uploadLcExcel(formData)
   revalidatePath('/quality')
-  return response
+  return result
 }

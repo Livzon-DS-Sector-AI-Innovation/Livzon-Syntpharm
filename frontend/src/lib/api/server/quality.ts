@@ -16,6 +16,7 @@ import type {
   CreateCapaRequest,
   UpdateCapaRequest,
   CreateDepartmentContactRequest,
+  UploadLcResponse,
   UpdateDepartmentContactRequest,
 } from '@/types/quality'
 import type {
@@ -978,7 +979,7 @@ export async function uploadDeviationFileWithTask(formData: FormData) {
   })
 }
 
-export async function uploadLcExcel(formData: FormData) {
+export async function uploadLcExcel(formData: FormData): Promise<UploadLcResponse> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/lc-report/upload`, {
     method: 'POST',
     body: formData,
