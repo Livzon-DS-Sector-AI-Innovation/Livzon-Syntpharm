@@ -419,7 +419,7 @@ export default function RegulationPage() {
     try {
       const response = await aiRevisionGenerate(revisionId)
       if (response.code === 200) {
-        setAiContent(response.data.generated_content)
+        setAiContent((response.data as { generated_content: string }).generated_content)
       } else {
         message.error(response.message || 'AI生成失败')
         setAiModalVisible(false)

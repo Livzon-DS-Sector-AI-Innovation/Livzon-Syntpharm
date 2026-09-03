@@ -408,9 +408,9 @@ export default function SopGeneratorModal({
       const result = response.data
       message.success('标准化操规生成成功！')
       onGenerated({
-        regulation_id: result.regulation_id,
-        meta: result.meta || {},
-        content: result.content || ''
+        regulation_id: (result as { regulation_id: string }).regulation_id,
+        meta: (result as { meta?: Record<string, string> }).meta || {},
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
     } catch (err: unknown) {

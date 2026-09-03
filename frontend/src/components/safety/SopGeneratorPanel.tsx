@@ -157,9 +157,9 @@ export default function SopGeneratorPanel({
 
       const result = response.data
       onGenerated({
-        regulation_id: result.regulation_id,
-        meta: result.meta || {},
-        content: result.content || ''
+        regulation_id: (result as { regulation_id: string }).regulation_id,
+        meta: (result as { meta?: Record<string, string> }).meta || {},
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
       loadGeneratedSops()
