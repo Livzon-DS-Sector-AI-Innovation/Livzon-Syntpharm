@@ -27,6 +27,7 @@ import type {
   SafetyCheck,
   SafetyCheckFormData,
   SafetyCheckQueryParams,
+  SafetyKnowledgeArticle,
   SafetyKnowledgeArticleFormData,
   SafetyKnowledgeArticleQueryParams,
   ParseDocumentResponse,
@@ -56,6 +57,18 @@ import type {
   OhHealthExamQueryParams,
   // knowledge
   GeneratePptRequest,
+  KnowledgeCardContent,
+  GenerateCardResponse,
+  AgentUsageStats,
+  BatchGenerateCardsResponse,
+  GeneratePptResponse,
+  PptHistoryResponse,
+  GenerateSummaryResponse,
+  DuplicateCheckResponse,
+  VersionChainItem,
+  NewVersionResponse,
+  SemanticSearchResult,
+  SyncKnowledgeResponse,
 } from '@/types/safety'
 
 // ============ SafetyCheck Actions ============
@@ -909,49 +922,49 @@ export async function archivePermit(id: string) {
 
 // ============ Safety Knowledge Article Actions ============
 
-export async function getKnowledgeArticles(params: SafetyKnowledgeArticleQueryParams = {}) {
+export async function getKnowledgeArticles(params: SafetyKnowledgeArticleQueryParams = {}): Promise<ApiResponse<SafetyKnowledgeArticle[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getKnowledgeArticles(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getKnowledgeArticles(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SafetyKnowledgeArticle[]>>
 }
 
-export async function getKnowledgeArticle(id: string) {
+export async function getKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getKnowledgeArticle(id, authHeaders) as any as any
+  return safetyApi.getKnowledgeArticle(id, authHeaders) as Promise<ApiResponse<SafetyKnowledgeArticle>>
 }
 
-export async function createKnowledgeArticle(data: SafetyKnowledgeArticleFormData) {
+export async function createKnowledgeArticle(data: SafetyKnowledgeArticleFormData): Promise<ApiResponse<SafetyKnowledgeArticle>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createKnowledgeArticle(data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<SafetyKnowledgeArticle>
 }
 
-export async function updateKnowledgeArticle(id: string, data: Partial<SafetyKnowledgeArticleFormData>) {
+export async function updateKnowledgeArticle(id: string, data: Partial<SafetyKnowledgeArticleFormData>): Promise<ApiResponse<SafetyKnowledgeArticle>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateKnowledgeArticle(id, data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<SafetyKnowledgeArticle>
 }
 
-export async function deleteKnowledgeArticle(id: string) {
+export async function deleteKnowledgeArticle(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<null>
 }
 
-export async function publishKnowledgeArticle(id: string) {
+export async function publishKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.publishKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<SafetyKnowledgeArticle>
 }
 
-export async function archiveKnowledgeArticle(id: string) {
+export async function archiveKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.archiveKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<SafetyKnowledgeArticle>
 }
 
 // ── AI 智能解析 ──
@@ -960,102 +973,102 @@ export async function parseKnowledgeDocument(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseKnowledgeDocument(formData, authHeaders) as any as any as Promise<ApiResponse<ParseDocumentResponse>>
+  return safetyApi.parseKnowledgeDocument(formData, authHeaders) as Promise<ApiResponse<ParseDocumentResponse>>
 }
 
 export async function batchParseKnowledgeDocuments(files: File[]) {
   const formData = new FormData()
   files.forEach((file) => formData.append('files', file))
   const authHeaders = await getAuthHeaders()
-  return safetyApi.batchParseKnowledgeDocuments(formData, authHeaders) as any as any as Promise<ApiResponse<ParseDocumentResponse[]>>
+  return safetyApi.batchParseKnowledgeDocuments(formData, authHeaders) as Promise<ApiResponse<ParseDocumentResponse[]>>
 }
 
 // ── 附件上传 ──
 
-export async function uploadKnowledgeAttachment(articleId: string, file: File) {
+export async function uploadKnowledgeAttachment(articleId: string, file: File): Promise<ApiResponse<{ attachment_path: string; attachment_original_name: string }>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadKnowledgeAttachment(articleId, file, authHeaders) as any as any
+  return safetyApi.uploadKnowledgeAttachment(articleId, file, authHeaders) as Promise<ApiResponse<{ attachment_path: string; attachment_original_name: string }>>
 }
 
 // ── 重复检测 ──
 
-export async function checkDuplicateArticle(data: DuplicateCheckRequest) {
+export async function checkDuplicateArticle(data: DuplicateCheckRequest): Promise<ApiResponse<DuplicateCheckResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.checkDuplicateArticle(data, authHeaders) as any as any
+  return safetyApi.checkDuplicateArticle(data, authHeaders) as Promise<ApiResponse<DuplicateCheckResponse>>
 }
 
 // ── 版本管理 ──
 
-export async function getArticleVersions(id: string) {
+export async function getArticleVersions(id: string): Promise<ApiResponse<VersionChainItem[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getArticleVersions(id, authHeaders) as any as any
+  return safetyApi.getArticleVersions(id, authHeaders) as Promise<ApiResponse<VersionChainItem[]>>
 }
 
-export async function createNewArticleVersion(id: string) {
+export async function createNewArticleVersion(id: string): Promise<ApiResponse<NewVersionResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createNewArticleVersion(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<NewVersionResponse>
 }
 
 // ── 语义搜索 ──
 
-export async function semanticSearchArticles(q: string, page = 1, page_size = 20) {
+export async function semanticSearchArticles(q: string, page = 1, page_size = 20): Promise<ApiResponse<SemanticSearchResult[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.semanticSearchArticles({ q, page: String(page), page_size: String(page_size) }, authHeaders) as any as any
+  return safetyApi.semanticSearchArticles({ q, page: String(page), page_size: String(page_size) }, authHeaders) as Promise<ApiResponse<SemanticSearchResult[]>>
 }
 
 // ── 知识卡片管理 ──
 
-export async function generateKnowledgeCard(articleId: string) {
+export async function generateKnowledgeCard(articleId: string): Promise<ApiResponse<GenerateCardResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateKnowledgeCard(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<GenerateCardResponse>
 }
 
-export async function getAgentUsageStats(articleId: string) {
+export async function getAgentUsageStats(articleId: string): Promise<ApiResponse<AgentUsageStats>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAgentUsageStats(articleId, authHeaders) as any as any
+  return safetyApi.getAgentUsageStats(articleId, authHeaders) as Promise<ApiResponse<AgentUsageStats>>
 }
 
-export async function batchGenerateKnowledgeCards(articleIds: string[]) {
+export async function batchGenerateKnowledgeCards(articleIds: string[]): Promise<ApiResponse<BatchGenerateCardsResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.batchGenerateKnowledgeCards(articleIds, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<BatchGenerateCardsResponse>
 }
 
 // ── AI PPT 生成 ──
 
-export async function generatePpt(articleId: string, data: GeneratePptRequest) {
+export async function generatePpt(articleId: string, data: GeneratePptRequest): Promise<ApiResponse<GeneratePptResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generatePpt(articleId, data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<GeneratePptResponse>
 }
 
-export async function getPptHistory(articleId: string) {
+export async function getPptHistory(articleId: string): Promise<ApiResponse<PptHistoryResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPptHistory(articleId, authHeaders) as any as any
+  return safetyApi.getPptHistory(articleId, authHeaders) as Promise<ApiResponse<PptHistoryResponse>>
 }
 
 // ── AI 摘要生成 ──
 
-export async function generateSummary(articleId: string) {
+export async function generateSummary(articleId: string): Promise<ApiResponse<GenerateSummaryResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateSummary(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<GenerateSummaryResponse>
 }
 
 // ── Bitable 同步 ──
 
-export async function syncKnowledgeArticles() {
+export async function syncKnowledgeArticles(): Promise<ApiResponse<SyncKnowledgeResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.syncKnowledgeArticles(authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as any
+  return response as ApiResponse<SyncKnowledgeResponse>
 }
 
 // ==================== 八大特殊作业报备 Actions ====================
