@@ -1,4 +1,5 @@
 'use server'
+import type { EquipmentImportRow } from '@/lib/api/server/equipment'
 
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
@@ -381,7 +382,7 @@ export async function deleteRole(id: string) {
   return result
 }
 
-export async function previewEquipmentImport(data: any) {
+export async function previewEquipmentImport(data: EquipmentImportRow[]) {
   console.log('[DEBUG] previewEquipmentImport called with:', {
     dataLength: data?.length,
     firstItem: data?.[0],
@@ -391,7 +392,7 @@ export async function previewEquipmentImport(data: any) {
   return result
 }
 
-export async function batchImportEquipment(data: any) {
+export async function batchImportEquipment(data: EquipmentImportRow[]) {
   const result = await batchImportEquipmentApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result

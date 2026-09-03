@@ -47,28 +47,29 @@ import type {
   RuleQueryParams,
   ProcessRecordInput,
   WorkshopQueryParams,
+  EnergyOverviewData,
 } from '@/types/energy'
 
 // 数据源配置 Server Actions
 
 export async function getEnergyDevices(params?: DeviceQueryParams) {
-  return fetchEnergyDevices(params as Record<string, unknown>) as any as any
+  return fetchEnergyDevices(params as Record<string, unknown>)
 }
 
 export async function getEnergyDeviceById(id: string) {
-  return fetchEnergyDeviceById(id) as any as any
+  return fetchEnergyDeviceById(id)
 }
 
 export async function createEnergyDevice(data: CreateDeviceInput) {
   const result = await apiCreateDevice(data)
   revalidatePath('/energy/devices')
-  return result as any
+  return result
 }
 
 export async function updateEnergyDevice(id: string, data: UpdateDeviceInput) {
   const result = await apiUpdateDevice(id, data)
   revalidatePath('/energy/devices')
-  return result as any
+  return result
 }
 
 export async function deleteEnergyDevice(id: string) {
@@ -79,46 +80,46 @@ export async function deleteEnergyDevice(id: string) {
 // 能耗数据 Server Actions
 
 export async function getEnergyData(params: DeviceQueryParams) {
-  return fetchEnergyData(params as Record<string, unknown>) as any as any
+  return fetchEnergyData(params as Record<string, unknown>)
 }
 
-export async function getEnergyOverview(params?: Record<string, unknown>): Promise<any> {
+export async function getEnergyOverview(params?: Record<string, unknown>): Promise<EnergyOverviewData> {
   // TODO: add type to OpenAPI schema - energy overview query params not yet typed
-  return fetchEnergyOverview(params || {}) as any as any
+  return fetchEnergyOverview(params || {})
 }
 
 export async function triggerCollect(platformCode?: string) {
   const result = await apiTriggerCollect(platformCode)
   revalidatePath('/energy/collect-logs')
-  return result as any
+  return result
 }
 
 // 采集日志 Server Actions
 
 export async function getCollectLogs(params?: { page?: number; page_size?: number }) {
-  return fetchCollectLogs(params) as any as any
+  return fetchCollectLogs(params)
 }
 
 // 预警规则 Server Actions
 
 export async function getAlertRules(params?: RuleQueryParams) {
-  return fetchAlertRules(params as Record<string, unknown>) as any as any
+  return fetchAlertRules(params as Record<string, unknown>)
 }
 
 export async function getAlertRuleById(id: string) {
-  return fetchAlertRuleById(id) as any as any as any
+  return fetchAlertRuleById(id)
 }
 
 export async function createAlertRule(data: CreateRuleInput) {
   const result = await apiCreateAlertRule(data)
   revalidatePath('/energy/alert-rules')
-  return result as any
+  return result
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
   const result = await apiUpdateAlertRule(id, data)
   revalidatePath('/energy/alert-rules')
-  return result as any
+  return result
 }
 
 export async function deleteAlertRule(id: string) {
@@ -129,35 +130,35 @@ export async function deleteAlertRule(id: string) {
 // 预警记录 Server Actions
 
 export async function getAlertRecords(params?: RuleQueryParams) {
-  return fetchAlertRecords(params as Record<string, unknown>) as any as any
+  return fetchAlertRecords(params as Record<string, unknown>)
 }
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
   const result = await apiProcessAlertRecord(id, data)
   revalidatePath('/energy/alert-records')
-  return result as any
+  return result
 }
 
 // 车间管理 Server Actions
 
 export async function getWorkshops(params?: WorkshopQueryParams) {
-  return fetchWorkshops(params !== null && params !== void 0 ? params as Record<string, unknown> : undefined) as any as any
+  return fetchWorkshops(params !== null && params !== void 0 ? params as Record<string, unknown> : undefined)
 }
 
 export async function getWorkshopById(id: string) {
-  return fetchWorkshopById(id) as any as any as any
+  return fetchWorkshopById(id)
 }
 
 export async function createWorkshopAction(data: CreateWorkshopInput) {
   const result = await apiCreateWorkshop(data)
   revalidatePath('/energy/workshops')
-  return result as any
+  return result
 }
 
 export async function updateWorkshopAction(id: string, data: UpdateWorkshopInput) {
   const result = await apiUpdateWorkshop(id, data)
   revalidatePath('/energy/workshops')
-  return result as any
+  return result
 }
 
 export async function deleteWorkshopAction(id: string) {
@@ -175,17 +176,17 @@ export async function getMonthlyRecords(params?: {
   page?: number
   page_size?: number
 }) {
-  return fetchMonthlyRecords(params as Record<string, unknown> | undefined) as any as any
+  return fetchMonthlyRecords(params as Record<string, unknown> | undefined)
 }
 
 export async function getMonthlyRecordById(id: string) {
-  return fetchMonthlyRecordById(id) as any as any
+  return fetchMonthlyRecordById(id)
 }
 
 export async function createMonthlyRecordAction(data: CreateMonthlyRecordInput) {
   const result = await apiCreateMonthlyRecord(data)
   revalidatePath('/energy/monthly')
-  return result as any
+  return result
 }
 
 export async function deleteMonthlyRecordAction(id: string) {
@@ -200,7 +201,7 @@ export async function importFromFeishuAction(data: FeishuImportRequest) {
   if (!data.dry_run) {
     revalidatePath('/energy/monthly')
   }
-  return result as any
+  return result
 }
 
 // ── 飞书多维表格交叉表导入 Server Action ──
@@ -208,7 +209,7 @@ export async function importFromFeishuAction(data: FeishuImportRequest) {
 export async function crossImportFromBitableAction(data: components['schemas']['BitableCrossImportRequest']) {
   const result = await apiCrossImportFromBitable(data as Record<string, unknown>)
   revalidatePath('/energy/monthly')
-  return result as any
+  return result
 }
 
 // ── 数据导入和预警检查 ──
@@ -216,13 +217,13 @@ export async function crossImportFromBitableAction(data: components['schemas']['
 export async function syncBitableDailyDataAction() {
   const result = await apiSyncBitableDailyData()
   revalidatePath('/energy/alerts')
-  return result as any
+  return result
 }
 
 export async function checkAlertsAction(checkDate: string) {
   const result = await apiCheckAlerts(checkDate)
   revalidatePath('/energy/alerts')
-  return result as any
+  return result
 }
 
 export async function fetchAlertDatesAction() {

@@ -147,7 +147,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const handleImport = async () => {
     setLoading(true)
     try {
-      const result = await batchImportEquipment(rawData)
+      const result = await batchImportEquipment(rawData || [])
       if (result.code === 200) {
         setImportResult(result.data)
         setCurrentStep(3)

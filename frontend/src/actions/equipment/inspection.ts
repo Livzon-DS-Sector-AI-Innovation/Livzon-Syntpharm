@@ -60,28 +60,28 @@ export async function createInspectionRoute(data: CreateInspectionRouteInput) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createInspectionRouteApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function updateInspectionRoute(id: string, data: UpdateInspectionRouteInput) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateInspectionRouteApiTyped(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function deleteInspectionRoute(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteInspectionRouteApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function setRouteLocations(routeId: string, locations: RouteLocationItem[]) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => setRouteLocationsApi(routeId, locations, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 // ==================== 巡检任务 ====================
@@ -89,28 +89,28 @@ export async function createInspectionTask(data: CreateInspectionTaskInput) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createInspectionTaskApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function startInspectionTask(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => startInspectionTaskApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function completeInspectionTask(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => completeInspectionTaskApi(id, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function closeInspectionTask(id: string, closureRemark?: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => closeInspectionTaskApi(id, closureRemark, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 // ==================== 巡检执行 ====================
@@ -118,7 +118,7 @@ export async function submitEquipmentCheck(taskId: string, equipmentId: string, 
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => submitEquipmentCheckApiTyped(taskId, equipmentId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 // ==================== 照片 ====================
@@ -140,7 +140,7 @@ export async function deleteInspectionPhoto(taskId: string, photoId: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteInspectionPhotoApi(taskId, photoId, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 // ==================== 线路巡检 ====================
@@ -148,7 +148,7 @@ export async function submitRouteCheck(taskId: string, data: RouteCheckSubmitInp
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => submitRouteCheckApiTyped(taskId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function uploadTaskPhoto(taskId: string, formData: FormData) {
@@ -173,7 +173,7 @@ export async function createSchedule(routeId: string, data: CreateInspectionSche
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createScheduleApiTyped(routeId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function updateSchedule(
@@ -182,12 +182,12 @@ export async function updateSchedule(
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateScheduleApiTyped(routeId, scheduleId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }
 
 export async function deleteSchedule(routeId: string, scheduleId: string) {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteScheduleApi(routeId, scheduleId, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
-  return result as any
+  return result
 }

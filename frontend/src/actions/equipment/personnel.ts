@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
-  CreateRoleInput, UpdateRoleInput, AddPersonnelInput,
+  CreateRoleInput, UpdateRoleInput,
   AssignRolesInput, AssignCategoriesInput,
 } from '@/types/equipment/generated-bridge'
 import {
@@ -24,37 +24,37 @@ export async function createRole(data: CreateRoleInput) {
   const authHeaders = await getAuthHeaders()
   const result = await createPersonnelRoleApiTyped(data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function updateRole(id: string, data: UpdateRoleInput) {
   const authHeaders = await getAuthHeaders()
   const result = await updatePersonnelRoleApiTyped(id, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function deleteRole(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await deletePersonnelRoleApi(id, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 // ── 人员 Actions ──
 
-export async function addPersonnel(data: AddPersonnelInput) {
+export async function addPersonnel(data: { user_ids: string[] }) {
   const authHeaders = await getAuthHeaders()
-  const result = await addPersonnelApiTyped(data as any, authHeaders)
+  const result = await addPersonnelApiTyped(data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function deletePersonnel(id: string) {
   const authHeaders = await getAuthHeaders()
   const result = await deletePersonnelApi(id, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function assignRoles(
@@ -63,7 +63,7 @@ export async function assignRoles(
   const authHeaders = await getAuthHeaders()
   const result = await assignRolesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function assignCategories(
@@ -72,12 +72,12 @@ export async function assignCategories(
   const authHeaders = await getAuthHeaders()
   const result = await assignCategoriesApiTyped(personnelId, data, authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }
 
 export async function refreshFeishu() {
   const authHeaders = await getAuthHeaders()
   const result = await refreshFeishuApi(authHeaders)
   revalidatePath('/equipment/personnel')
-  return result as any
+  return result
 }

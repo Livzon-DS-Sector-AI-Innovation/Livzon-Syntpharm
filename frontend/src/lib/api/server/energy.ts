@@ -1,4 +1,13 @@
 import type {
+  EnergyDeviceConfig,
+  EnergyData,
+  CollectLog,
+  AlertRule,
+  AlertRecord,
+  EnergyWorkshop,
+  EnergyMonthlyRecord,
+  EnergyOverviewData,
+  FeishuImportResult,
   CreateDeviceInput,
   UpdateDeviceInput,
   CreateRuleInput,
@@ -18,7 +27,7 @@ export async function fetchModuleInfo(): Promise<{ code: string; name: string; d
 
 // ── 设备配置 ──
 
-export async function fetchEnergyDevices(params?: Record<string, unknown>): Promise<{ items: unknown[]; total: number; page: number; page_size: number }> {
+export async function fetchEnergyDevices(params?: Record<string, unknown>): Promise<{ items: EnergyDeviceConfig[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -31,13 +40,13 @@ export async function fetchEnergyDevices(params?: Record<string, unknown>): Prom
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices${query ? `?${query}` : ''}`)
 }
 
-export async function fetchEnergyDeviceById(id: string): Promise<unknown> {
+export async function fetchEnergyDeviceById(id: string): Promise<EnergyDeviceConfig> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices/${id}`)
 }
 
 // ── 能耗数据 ──
 
-export async function fetchEnergyData(params: Record<string, unknown>): Promise<{ items: unknown[]; total: number; page: number; page_size: number }> {
+export async function fetchEnergyData(params: Record<string, unknown>): Promise<{ items: EnergyDeviceConfig[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -47,7 +56,7 @@ export async function fetchEnergyData(params: Record<string, unknown>): Promise<
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/data?${searchParams.toString()}`)
 }
 
-export async function fetchEnergyOverview(params: Record<string, unknown>): Promise<unknown> {
+export async function fetchEnergyOverview(params: Record<string, unknown>): Promise<EnergyOverviewData> {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -59,7 +68,7 @@ export async function fetchEnergyOverview(params: Record<string, unknown>): Prom
 
 // ── 采集管理 ──
 
-export async function fetchCollectLogs(params?: Record<string, unknown>): Promise<{ items: unknown[]; total: number; page: number; page_size: number }> {
+export async function fetchCollectLogs(params?: Record<string, unknown>): Promise<{ items: CollectLog[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -74,7 +83,7 @@ export async function fetchCollectLogs(params?: Record<string, unknown>): Promis
 
 // ── 预警规则 ──
 
-export async function fetchAlertRules(params?: Record<string, unknown>): Promise<{ items: unknown[]; total: number; page: number; page_size: number }> {
+export async function fetchAlertRules(params?: Record<string, unknown>): Promise<{ items: AlertRule[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -94,13 +103,13 @@ export async function fetchAlertRules(params?: Record<string, unknown>): Promise
   }
 }
 
-export async function fetchAlertRuleById(id: string): Promise<unknown> {
+export async function fetchAlertRuleById(id: string): Promise<AlertRule> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/rules/${id}`)
 }
 
 // ── 预警记录 ──
 
-export async function fetchAlertRecords(params?: Record<string, unknown>): Promise<{ items: unknown[]; total: number; page: number; page_size: number }> {
+export async function fetchAlertRecords(params?: Record<string, unknown>): Promise<{ items: EnergyDeviceConfig[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -184,7 +193,7 @@ export async function processAlertRecord(id: string, data: ProcessRecordInput) {
 
 // ─── Workshop ───
 
-export async function fetchWorkshops(params?: Record<string, unknown>): Promise<unknown> {
+export async function fetchWorkshops(params?: Record<string, unknown>): Promise<{ items: EnergyWorkshop[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
@@ -195,25 +204,25 @@ export async function fetchWorkshops(params?: Record<string, unknown>): Promise<
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
 }
 
-export async function fetchWorkshopById(id: string): Promise<unknown> {
+export async function fetchWorkshopById(id: string): Promise<EnergyWorkshop> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`)
 }
 
-export async function createWorkshop(data: Record<string, unknown>): Promise<unknown> {
+export async function createWorkshop(data: Record<string, unknown>): Promise<EnergyWorkshop> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateWorkshop(id: string, data: Record<string, unknown>): Promise<unknown> {
+export async function updateWorkshop(id: string, data: Record<string, unknown>): Promise<EnergyWorkshop> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
-export async function deleteWorkshop(id: string): Promise<unknown> {
+export async function deleteWorkshop(id: string): Promise<void> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops/${id}`, {
     method: 'DELETE',
   })
@@ -221,7 +230,7 @@ export async function deleteWorkshop(id: string): Promise<unknown> {
 
 // ─── Monthly Records ───
 
-export async function fetchMonthlyRecords(params?: Record<string, unknown>): Promise<unknown> {
+export async function fetchMonthlyRecords(params?: Record<string, unknown>): Promise<{ items: EnergyMonthlyRecord[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
@@ -232,18 +241,18 @@ export async function fetchMonthlyRecords(params?: Record<string, unknown>): Pro
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
 }
 
-export async function fetchMonthlyRecordById(id: string): Promise<unknown> {
+export async function fetchMonthlyRecordById(id: string): Promise<EnergyMonthlyRecord> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`)
 }
 
-export async function createMonthlyRecord(data: Record<string, unknown>): Promise<unknown> {
+export async function createMonthlyRecord(data: Record<string, unknown>): Promise<EnergyMonthlyRecord> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function deleteMonthlyRecord(id: string): Promise<unknown> {
+export async function deleteMonthlyRecord(id: string): Promise<void> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/${id}`, {
     method: 'DELETE',
   })
@@ -251,21 +260,21 @@ export async function deleteMonthlyRecord(id: string): Promise<unknown> {
 
 // ─── Feishu Import ───
 
-export async function importFromFeishu(data: Record<string, unknown>): Promise<unknown> {
+export async function importFromFeishu(data: Record<string, unknown>): Promise<FeishuImportResult> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/import/feishu`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function crossImportFromBitable(data: Record<string, unknown>): Promise<unknown> {
+export async function crossImportFromBitable(data: Record<string, unknown>): Promise<{ status: string; year?: number; months_imported?: number; total_created?: number; total_updated?: number; total_errors?: number }> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/cross-import`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function syncBitableDailyData(): Promise<unknown> {
+export async function syncBitableDailyData(): Promise<{ total_created: number; total_updated: number; auto_check_alerts: number }> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/daily-import`, {
     method: 'POST',
   })
@@ -273,14 +282,14 @@ export async function syncBitableDailyData(): Promise<unknown> {
 
 // ─── Alerts ───
 
-export async function checkAlerts(checkDate: string): Promise<unknown> {
+export async function checkAlerts(checkDate: string): Promise<{ alerts: AlertRecord[]; count: number }> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/check`, {
     method: 'POST',
     body: JSON.stringify({ check_date: checkDate }),
   })
 }
 
-export async function fetchAlertDates(): Promise<unknown> {
+export async function fetchAlertDates(): Promise<string[]> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/dates`)
 }
 
