@@ -1,6 +1,6 @@
 """Add sync_logs table for equipment audit trail
 
-Revision ID: 0046
+Revision ID: 0056
 Revises: d89b9d01b93a
 Create Date: 2026-09-02
 """
