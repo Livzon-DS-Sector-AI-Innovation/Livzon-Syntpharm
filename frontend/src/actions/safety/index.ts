@@ -7,12 +7,17 @@ import type { components } from '@/types/generated/schema'
 import type {
   AccidentFormData,
   AccidentQueryParams,
+  Accident,
   ConfirmCheckRequest,
   ContractorFormData,
   ContractorQueryParams,
   ContractorWorkRecordFormData,
+  Contractor,
+  ContractorWorkRecord,
   HazardReportFormData,
   HazardReportQueryParams,
+  HazardReport,
+  HazardStats,
   OperationRegulationFormData,
   OperationRegulationQueryParams,
   RegulationRevision,
@@ -27,6 +32,8 @@ import type {
   DuplicateCheckRequest,
   SafetyTrainingFormData,
   SafetyTrainingQueryParams,
+  SafetyTraining,
+  TrainingRecord,
   SpecialOperationPermitFormData,
   SpecialOperationPermitQueryParams,
   SpecialOperationPersonnelFormData,
@@ -100,102 +107,102 @@ export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
 
 // ============ HazardReport Actions ============
 
-export async function fetchHazardStats() {
+export async function fetchHazardStats(): Promise<ApiResponse<HazardStats>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.fetchHazardStats(authHeaders) as any as any
+  return safetyApi.fetchHazardStats(authHeaders) as Promise<ApiResponse<HazardStats>>
 }
 
-export async function getHazards(params: HazardReportQueryParams = {}) {
+export async function getHazards(params: HazardReportQueryParams = {}): Promise<ApiResponse<HazardReport[]>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazards(params as Record<string, unknown>, authHeaders) as any as any
+  return safetyApi.getHazards(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardReport[]>>
 }
 
-export async function getHazard(id: string) {
+export async function getHazard(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazard(id, authHeaders) as any as any
+  return safetyApi.getHazard(id, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
 /** 根据部门名称查询部门负责人 */
-export async function getDepartmentLeader(departmentName: string) {
+export async function getDepartmentLeader(departmentName: string): Promise<ApiResponse<{ leader_name: string; leader_id: string }>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as any as any
+  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as Promise<ApiResponse<{ leader_name: string; leader_id: string }>>
 }
 
 /** 根据部门名称查询分管安全员 */
-export async function getDepartmentSafetyOfficer(departmentName: string) {
+export async function getDepartmentSafetyOfficer(departmentName: string): Promise<ApiResponse<{ safety_officer_name: string }>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as any as any
+  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as Promise<ApiResponse<{ safety_officer_name: string }>>
 }
 
-export async function createHazard(data: HazardReportFormData) {
+export async function createHazard(data: HazardReportFormData): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazard(data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function updateHazard(id: string, data: Partial<HazardReportFormData>) {
+export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazard(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function startRectification(id: string) {
+export async function startRectification(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startRectification(id, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function confirmCheck(id: string, data: ConfirmCheckRequest) {
+export async function confirmCheck(id: string, data: ConfirmCheckRequest): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.confirmCheckApi(id, data, authHeaders)
   revalidatePath('/safety')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function replyRectification(id: string, data: RectificationReplyRequest) {
+export async function replyRectification(id: string, data: RectificationReplyRequest): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.replyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function verifyLevel(id: string, data: VerifyLevelRequest) {
+export async function verifyLevel(id: string, data: VerifyLevelRequest): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyLevel(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function notifyReviewer(id: string) {
+export async function notifyReviewer(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyReviewer(id, authHeaders) as any as any
+  return safetyApi.notifyReviewer(id, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function notifyRectification(id: string) {
+export async function notifyRectification(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyRectification(id, authHeaders) as any as any
+  return safetyApi.notifyRectification(id, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function triggerRectificationReview(id: string) {
+export async function triggerRectificationReview(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.triggerRectificationReview(id, authHeaders) as any as any
+  return safetyApi.triggerRectificationReview(id, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function reworkRectification(id: string, data: RectificationReplyRequest) {
+export async function reworkRectification(id: string, data: RectificationReplyRequest): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reworkRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<HazardReport>
 }
 
-export async function deleteHazard(id: string) {
+export async function deleteHazard(id: string): Promise<ApiResponse<null>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazard(id, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<null>
 }
 
 export async function deleteHazards(ids: string[]) {
@@ -209,21 +216,21 @@ export async function deleteHazards(ids: string[]) {
   return { succeeded, failed, total: ids.length }
 }
 
-export async function uploadHazardPhoto(id: string, file: File) {
+export async function uploadHazardPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-photo`, file, authHeaders) as any as any
+  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function uploadRectificationPhoto(id: string, file: File) {
+export async function uploadRectificationPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as any as any
+  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function runHazardAI(hazardId: string, scriptNumber: number) {
+export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<unknown>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardAI(hazardId, scriptNumber, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as any
+  return response as ApiResponse<unknown>
 }
 
 // ============ Accident Actions ============

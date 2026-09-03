@@ -284,9 +284,9 @@ export default function HazardLedgerPage() {
         let data = response.data || []
         // 客户端排序（多维表格即时排序体验）
         if (sortField && sortOrder) {
-          data = [...data].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-            const aVal = a[sortField] ?? ''
-            const bVal = b[sortField] ?? ''
+          data = [...data].sort((a: HazardReport, b: HazardReport) => {
+            const aVal = (a as unknown as Record<string, unknown>)[sortField] ?? ''
+            const bVal = (b as unknown as Record<string, unknown>)[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')
             return sortOrder === 'ascend' ? cmp : -cmp
           })
@@ -450,11 +450,11 @@ export default function HazardLedgerPage() {
         msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
         return
       }
-      updateHazardInStore(record.id, r1.data)
+      updateHazardInStore(record.id, r1.data as HazardReport)
       const r2 = await runHazardAI(record.id, 2)
       if (r2.code === 200) {
         msgApi.success('AI 已重新执行完成')
-        updateHazardInStore(record.id, r2.data)
+        updateHazardInStore(record.id, r2.data as HazardReport)
         refreshStats()
       } else {
         msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
