@@ -4,9 +4,11 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in research components
-- [ ] Interfaces defined where needed
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in research components)
+- [x] All `any` types replaced with proper types in research components
+- [x] Interfaces defined where needed
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in research components)
+
+**Result:** Fixed 112 `any` warnings across 26 files (25 originally listed + ModuleScaleUp.tsx). Applied proper type patterns including catch blocks, Ant Design table renders, JSON field casts with defined interfaces, function parameters, and state types.
