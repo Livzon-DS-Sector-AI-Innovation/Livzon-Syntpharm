@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { App, Button, Input, Select, Modal, Tooltip } from 'antd'
 import {
@@ -122,7 +121,9 @@ export default function KnowledgeBasePage() {
     }
   }, [queryParams.page, queryParams.page_size, statusFilter, categoryFilter, cardStatusFilter, smartSearch, searchText, selectedMenuKey, setItems, setLoading, setTotal])
 
-  // loadData is now handled by useQuery
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleSearch = () => {
     setQueryParams({ page: 1 })
@@ -255,7 +256,7 @@ export default function KnowledgeBasePage() {
         selectedKey={selectedMenuKey}
         onSelect={handleMenuSelect}
         counts={menuCounts}
-        loading={isLoading}
+        loading={loading}
       />
 
       {/* ── Right Content ── */}
@@ -462,7 +463,7 @@ export default function KnowledgeBasePage() {
         {/* ── Card Grid ── */}
         <DocumentCardGrid
           articles={items}
-          loading={isLoading}
+          loading={loading}
           selectedCardIds={selectedRowKeys}
           onSelectCard={handleSelectCard}
           onArticleClick={handleViewDetail}

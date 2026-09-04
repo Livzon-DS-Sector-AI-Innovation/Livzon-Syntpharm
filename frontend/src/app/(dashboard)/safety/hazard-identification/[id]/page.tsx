@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Card,
@@ -166,23 +165,9 @@ export default function HazardIdentificationDetailPage() {
     }
   }
 
-  const { data: recordData, isLoading, refetch } = useQuery({
-    queryKey: ['safety-hazard-identification', id],
-    queryFn: async () => {
-      if (id) {
-        const response = await getHazardIdentification(id)
-        return response.data || null
-      }
-      return null
-    },
-    enabled: !!id,
-  })
-
-  const record = recordData
-
-  const loadRecord = () => {
-    refetch()
-  }
+  useEffect(() => {
+    if (id) loadRecord()
+  }, [id])
 
   const getCurrentStepNum = (progress: string): number => {
     if (progress === 'completed') return 7

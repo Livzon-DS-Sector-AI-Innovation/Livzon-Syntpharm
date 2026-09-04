@@ -2,6 +2,7 @@
 
 import '../../../../styles/industrial-theme.css';
 import { useEffect, useCallback, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
@@ -104,26 +105,25 @@ export function EquipmentPage({
   }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
 
   // 获取列表数据
-  const fetchData = useCallback(async (p: number, ps: number) => {
-    setLoading(true)
-    try {
+  const { data: equipmentsData, isLoading, refetch: refetchEquipments } = useQuery({
+    queryKey: ['equipment-list', { selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword }],
+    queryFn: async () => {
       const equipmentsResponse = await fetchEquipmentsClient({
         category_id: selectedCategory,
         location_id: selectedLocation,
         department_id: departmentFilter,
         status: statusFilter || undefined,
         keyword: keyword || undefined,
-        page: p,
-        page_size: ps,
+        page: 1,
+        page_size: 20,
       })
-      setEquipments(equipmentsResponse.items)
-      setTotal(equipmentsResponse.total)
-    } catch (error) {
-      console.error('获取设备数据失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
+      return equipmentsResponse
+    },
+  })
+
+  const fetchData = useCallback((p: number, ps: number) => {
+    refetchEquipments()
+  }, [refetchEquipments])
 
   // 单独刷新统计（根据当前筛选条件）
   const refreshStatistics = useCallback(async () => {
@@ -139,10 +139,6 @@ export function EquipmentPage({
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, setStatistics])
 
   // 筛选条件变化时自动刷新统计
-  useEffect(() => {
-    refreshStatistics()
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, refreshStatistics])
-
   // 刷新分类和位置树
   const refreshCategoriesAndLocations = useCallback(async () => {
     try {
@@ -156,7 +152,6 @@ export function EquipmentPage({
 
   // 筛选变化时重置到第一页（含首次加载）
   useEffect(() => {
-    fetchData(1, 20)
     setResetKey(k => k + 1)
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword])
 

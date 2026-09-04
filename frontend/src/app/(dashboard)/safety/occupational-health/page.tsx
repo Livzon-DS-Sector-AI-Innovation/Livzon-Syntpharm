@@ -3,8 +3,7 @@
 "use client"
 
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Table,
   Button,
@@ -175,26 +174,29 @@ export default function OccupationalHealthPage() {
     }
   }, [monitorPagination.page, monitorPagination.page_size, monitorFilters])
 
-  // loadMonitors is now handled by useQuery
+  useEffect(() => { loadMonitors() }, [loadMonitors])
 
   /* ===================== Exam Data Loading ===================== */
-  const { data: examsData, isLoading: examLoading, refetch: refetchExams } = useQuery({
-    queryKey: ['safety-oh-exams', { exampagination, examFilters }],
-    queryFn: async () => {
+  const loadExams = useCallback(async () => {
+    setExamLoading(true)
+    try {
       const res = await getOhHealthExams({
         page: exampagination.page,
         page_size: exampagination.page_size,
         ...examFilters,
       })
-      return { data: res.data || [], total: res.meta?.total || 0 }
-    },
-  })
+      setExams(res.data || [])
+      if (res.meta) {
+        setExamPagination((p) => ({ ...p, total: res.meta!.total || 0 }))
+      }
+    } catch (error) {
+      console.error('Failed to load exams:', error)
+    } finally {
+      setExamLoading(false)
+    }
+  }, [exampagination.page, exampagination.page_size, examFilters])
 
-  const exams = examsData?.data || []
-
-  const loadExams = () => {
-    refetchExams()
-  }
+  useEffect(() => { loadExams() }, [loadExams])
 
   /* ===================== Monitor Modal ===================== */
   const openMonitorCreateModal = () => {

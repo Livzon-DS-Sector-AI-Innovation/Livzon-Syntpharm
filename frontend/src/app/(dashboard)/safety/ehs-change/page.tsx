@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -138,7 +137,9 @@ export default function EhsChangePage() {
     }
   }, [pagination.page, pagination.page_size, filters])
 
-  // loadChanges is now handled by useQuery
+  useEffect(() => {
+    loadChanges()
+  }, [loadChanges])
 
   // ── Create / Edit ──
 
@@ -521,7 +522,7 @@ export default function EhsChangePage() {
           columns={columns}
           dataSource={changes}
           rowKey="id"
-          loading={isLoading}
+          loading={loading}
           scroll={{ x: 1400 }}
           pagination={{
             current: pagination.page,

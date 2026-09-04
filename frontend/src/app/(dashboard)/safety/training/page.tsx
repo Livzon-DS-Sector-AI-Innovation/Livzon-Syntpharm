@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -106,27 +105,28 @@ export default function TrainingPage() {
     removeTraining,
   } = useSafetyStore()
 
-  const { data: trainingsData, isLoading, refetch } = useQuery({
-    queryKey: ['safety-trainings', { trainingQueryParams, statusFilter, typeFilter }],
-    queryFn: async () => {
+  const loadData = async () => {
+    setLoading(true)
+    try {
       const response = await getTrainings({
         ...trainingQueryParams,
         status: statusFilter,
         training_type: typeFilter,
       })
       if (response.code === 200) {
-        return { data: response.data, total: response.meta?.total || 0 }
+        setTrainings(response.data)
+        setTrainingTotal(response.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
-
-  const trainings = trainingsData?.data || []
-  const trainingTotal = trainingsData?.total || 0
-
-  const loadData = () => {
-    refetch()
+    } catch {
+      message.error('加载培训列表失败')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [trainingQueryParams.page, trainingQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
     setTrainingQueryParams({ page: 1 })
@@ -285,27 +285,11 @@ export default function TrainingPage() {
   }
 
   // Load certificates when tab switches or filters change
-  const { data: certificatesData, isLoading: certificatesLoading, refetch: refetchCertificates } = useQuery({
-    queryKey: ['safety-training-certificates', { activeTab, certPage, certPageSize, certStatusFilter }],
-    queryFn: async () => {
-      if (activeTab === 'certificate') {
-        const response = await getTrainingCertificates({
-          page: certPage,
-          page_size: certPageSize,
-          status: certStatusFilter,
-        })
-        return { data: response.data || [], total: response.meta?.total || 0 }
-      }
-      return { data: [], total: 0 }
-    },
-    enabled: activeTab === 'certificate',
-  })
-
-  const certificates = certificatesData?.data || []
-
-  const loadCertificates = () => {
-    refetchCertificates()
-  }
+  useEffect(() => {
+    if (activeTab === 'certificate') {
+      loadCertificates()
+    }
+  }, [activeTab, certPage, certPageSize, certStatusFilter])
 
   const handleManageRecords = (record: SafetyTraining) => {
     setCurrentTrainingId(record.id)
@@ -676,7 +660,7 @@ export default function TrainingPage() {
                 columns={columns}
                 dataSource={trainings}
                 rowKey="id"
-                loading={isLoading}
+                loading={loading}
                 scroll={{ x: 1400 }}
                 pagination={{
                   current: trainingQueryParams.page,

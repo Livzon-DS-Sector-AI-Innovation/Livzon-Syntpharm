@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -203,64 +202,17 @@ export default function RegulationPage() {
     }
   }
 
-  const { data: regulationsData, isLoading: regulationsLoading, refetch: refetchRegulations } = useQuery({
-    queryKey: ['safety-regulations', { regulationQueryParams, positionFilter, statusFilter, activeTab }],
-    queryFn: async () => {
-      if (activeTab === 'regulations') {
-        const response = await getRegulations({
-          ...regulationQueryParams,
-          position: positionFilter,
-          status: statusFilter,
-        })
-        return { data: response.data || [], total: response.meta?.total || 0 }
-      }
-      return { data: [], total: 0 }
-    },
-    enabled: activeTab === 'regulations',
-  })
+  useEffect(() => {
+    if (activeTab === 'regulations') loadRegulations()
+  }, [regulationQueryParams.page, regulationQueryParams.page_size, positionFilter, statusFilter, activeTab])
 
-  const regulations = regulationsData?.data || []
+  useEffect(() => {
+    if (activeTab === 'revisions') loadRevisions()
+  }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab])
 
-  const loadRegulations = () => {
-    refetchRegulations()
-  }
-
-  const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useQuery({
-    queryKey: ['safety-regulation-revisions', { revisionQueryParams, typeFilter, scopeFilter, opinionFilter, activeTab }],
-    queryFn: async () => {
-      if (activeTab === 'revisions') {
-        const response = await getRegulationRevisions({
-          ...revisionQueryParams,
-          type: typeFilter,
-          scope: scopeFilter,
-          opinion: opinionFilter,
-        })
-        return { data: response.data || [], total: response.meta?.total || 0 }
-      }
-      return { data: [], total: 0 }
-    },
-    enabled: activeTab === 'revisions',
-  })
-
-  const revisions = revisionsData?.data || []
-
-  const loadRevisions = () => {
-    refetchRevisions()
-  }
-
-  const { data: regulationsForSelectData } = useQuery({
-    queryKey: ['safety-regulations-for-select'],
-    queryFn: async () => {
-      const response = await getRegulations({ page: 1, page_size: 1000 })
-      return response.data || []
-    },
-  })
-
-  const regulationsForSelect = regulationsForSelectData || []
-
-  const loadRegulationsForSelect = () => {
-    // This is now handled by useQuery
-  }
+  useEffect(() => {
+    loadRegulationsForSelect()
+  }, [])
 
   // ---- Regulation CRUD ----
 
