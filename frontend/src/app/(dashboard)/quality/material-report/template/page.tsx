@@ -371,7 +371,7 @@ export default function TemplateListPage() {
                   </thead>
                   <tbody>
                     <tr>
-                      {(previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
+                      {((previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
                         <td
                           key={col.key as string}
                           style={{

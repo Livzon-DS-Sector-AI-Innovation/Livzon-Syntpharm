@@ -5,9 +5,10 @@ import type { Dayjs } from 'dayjs'
 
 import { useState, useEffect, useCallback } from 'react'
 import {Button, Space, App, Tabs, DatePicker, Select, Card, Modal, Form, Input} from 'antd'
+import type { FormInstance } from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
-import { AlertRule, AlertRecord } from '@/types/energy'
+import { AlertRule, AlertRecord, RecordQueryParams } from '@/types/energy'
 import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
 import { useEnergyStore } from '@/stores/energy'
@@ -25,8 +26,8 @@ const ProcessModal = ({
   setProcessModalOpen: (open: boolean) => void
   handleSubmitProcess: () => void
   processing: boolean
-  processForm: any
-  processingRecord: any
+  processForm: FormInstance
+  processingRecord: AlertRecord | null
 }) => (
   <Modal
     title="处理预警记录"
@@ -120,7 +121,7 @@ export default function AlertsPage() {
   const fetchRecords = useCallback(async (showSuccessMessage = false) => {
     setRecordsLoading(true)
     try {
-      const params: any = { page: recordsPage, page_size: recordsPageSize }
+      const params: RecordQueryParams = { page: recordsPage, page_size: recordsPageSize }
       if (filterDate) {
         params.start_time = filterDate.startOf('day').toISOString()
         params.end_time = filterDate.endOf('day').toISOString()
@@ -196,7 +197,7 @@ export default function AlertsPage() {
       message.success('处理成功')
       setProcessModalOpen(false)
       fetchRecords()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error?.errorFields) return // 表单验证错误
       message.error('处理失败：' + (error?.message || '未知错误'))
     } finally {

@@ -18,6 +18,7 @@ import {
   type AIAnalysisResult, 
   type UnitConsumptionTarget 
 } from '@/lib/api/client/energy'
+import type { EnergyWorkshop } from '@/types/energy'
 
 const { Title, Paragraph, Text } = Typography
 const { MonthPicker } = DatePicker
@@ -31,7 +32,7 @@ export default function AIAnalysisPage() {
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
   const [syncing, setSyncing] = useState(false)
 
-  const [workshops, setWorkshops] = useState<any[]>([])
+  const [workshops, setWorkshops] = useState<EnergyWorkshop[]>([])
   const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
   const [targetLoading, setTargetLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -40,7 +41,7 @@ export default function AIAnalysisPage() {
   useEffect(() => {
     fetchWorkshopsClient({ category: 'workshop' })
       .then(data => {
-        const workshops = data.map((w: any) => ({ value: w.id, label: w.name }))
+        const workshops = data.map((w: EnergyWorkshop) => ({ value: w.id, label: w.name }))
         setWorkshops(workshops)
       })
       .catch(err => {
@@ -123,8 +124,8 @@ const handleAnalyze = async () => {
         include_ai_suggestion: true,
       })
       setResult(data)
-    } catch (error: any) {
-      message.error(error.message || '分析请求失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '分析请求失败')
     } finally {
       setLoading(false)
     }
@@ -195,7 +196,7 @@ const handleAnalyze = async () => {
                   title: '产品名称', 
                   dataIndex: 'product_name', 
                   key: 'name', 
-                  render: (text: string, _: any, index: number) => (
+                  render: (text: string, _: unknown, index: number) => (
                     <Input value={text} onChange={e => handleItemChange(index, 'product_name', e.target.value)} placeholder="输入名称" size="small" />
                   )
                 },
@@ -204,7 +205,7 @@ const handleAnalyze = async () => {
                   dataIndex: 'quantity', 
                   key: 'qty', 
                   width: 100, 
-                  render: (val: number, _: any, index: number) => (
+                  render: (val: number, _: unknown, index: number) => (
                     <InputNumber value={val} onChange={v => handleItemChange(index, 'quantity', v || 0)} style={{ width: '100%' }} size="small" min={0} />
                   )
                 },
@@ -212,7 +213,7 @@ const handleAnalyze = async () => {
                   title: '操作', 
                   key: 'action', 
                   width: 60, 
-                  render: (_: any, __: any, index: number) => (
+                  render: (_: unknown, __: unknown, index: number) => (
                     <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemoveItem(index)} size="small" />
                   )
                 }

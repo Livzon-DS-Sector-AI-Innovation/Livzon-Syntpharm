@@ -54,7 +54,8 @@ export default function DeviationProgressPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const deviationId = searchParams.get('id')
-  const [data, setData] = useState<any>(null)
+  interface DeviationFlowDetail { id: string; status: string; status_label?: string; deviation_no: string; urgency_level: string; urgency_level_label?: string; theme?: string; deviation_type?: string; deviation_type_label?: string; occurred_date?: string; occurred_area?: string; discovered_date?: string; responsible_department?: string; discovery_department?: string; product_name?: string; production_batch?: string; batch_no?: string; equipment?: string; standard_based_on?: string; description?: string; deviation_description?: string; impact_scope?: string; emergency_measures?: string; temp_measures?: string; risk_assessment?: string; root_cause?: string; correction_measures?: string; related_capa?: string; related_deviation_no?: string; remarks?: string; reporter?: string; reporter_department?: string; report_time?: string; created_at?: string; updated_at?: string; qa_feishu_name?: string; dept_leader_feishu_name?: string }
+const [data, setData] = useState<DeviationFlowDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
 

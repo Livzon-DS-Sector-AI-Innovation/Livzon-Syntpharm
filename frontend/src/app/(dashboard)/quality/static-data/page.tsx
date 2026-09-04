@@ -520,7 +520,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="start_date" label="下次校准日期" hidden><Input /></Form.Item>
               <Form.Item name="end_date" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = ;(window as Record<string, unknown>).__listPanelForm__
+                const form = (window as Record<string, unknown>).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ start_date: dateStrings[0] || undefined, end_date: dateStrings[1] || undefined })
                 }
@@ -560,7 +560,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = ;(window as Record<string, unknown>).__listPanelForm__
+                const form = (window as Record<string, unknown>).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -583,7 +583,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = ;(window as Record<string, unknown>).__listPanelForm__
+                const form = (window as Record<string, unknown>).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -606,7 +606,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = ;(window as Record<string, unknown>).__listPanelForm__
+                const form = (window as Record<string, unknown>).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -671,7 +671,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 220 }} placeholder={['有效期起','有效期止']} onChange={(_, dateStrings) => {
-                const form = ;(window as Record<string, unknown>).__listPanelForm__
+                const form = (window as Record<string, unknown>).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }

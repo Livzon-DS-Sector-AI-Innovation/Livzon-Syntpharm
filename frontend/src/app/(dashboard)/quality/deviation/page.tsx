@@ -241,7 +241,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiGenerateDescription({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -271,7 +271,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiAnalyzeImpact({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -301,7 +301,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiGenerateEmergencyMeasures({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -332,7 +332,7 @@ const DeviationListTab: React.FC<{
         ...values,
         // 映射前端字段名到后端字段名
         abnormal_description: values.description,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
       }
       // 删除不需要的字段
       delete processedValues.description

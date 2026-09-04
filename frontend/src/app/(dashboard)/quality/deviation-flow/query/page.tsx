@@ -48,9 +48,10 @@ const DEVIATION_TYPES_OPTIONS = [
   { value: 'other', label: '其它' },
 ]
 
+interface DeviationFlowItem { id: string; deviation_no: string; theme?: string; deviation_type_label?: string; urgency_level_label?: string; status: string; status_label: string; responsible_department?: string; occurred_date?: string; reporter?: string; remaining_days?: number; completed_days?: number }
 export default function DeviationQueryPage() {
   const router = useRouter()
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<DeviationFlowItem[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -109,11 +110,11 @@ export default function DeviationQueryPage() {
     loadData()
   }
 
-  const handleView = (record: any) => {
+  const handleView = (record: DeviationFlowItem) => {
     router.push(`/quality/deviation-flow/progress?id=${record.id}`)
   }
 
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: DeviationFlowItem) => {
     if (record.status === 'completed') {
       message.warning('已完成状态不能编辑')
       return
@@ -121,7 +122,7 @@ export default function DeviationQueryPage() {
     router.push(`/quality/deviation-flow/create?edit=${record.id}`)
   }
 
-  const handleDelete = async (record: any) => {
+  const handleDelete = async (record: DeviationFlowItem) => {
     if (record.status !== 'draft') {
       message.warning('只有草稿状态可以删除')
       return
@@ -185,7 +186,7 @@ export default function DeviationQueryPage() {
       dataIndex: 'status_label',
       key: 'status',
       width: 100,
-      render: (label: string, record: any) => (
+      render: (label: string, record: DeviationFlowItem) => (
         <Tag color={STATUS_COLORS[record.status]}>{label}</Tag>
       ),
     },
@@ -211,7 +212,7 @@ export default function DeviationQueryPage() {
       title: '剩余天数',
       key: 'days_countdown',
       width: 100,
-      render: (_: any, record: any) => {
+      render: (_: unknown, record: DeviationFlowItem) => {
         if (record.status === 'completed') {
           return <Tag color="success">已完成({record.completed_days || 0}天)</Tag>
         }
@@ -227,7 +228,7 @@ export default function DeviationQueryPage() {
       key: 'action',
       width: 180,
       fixed: 'right' as const,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: DeviationFlowItem) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>
             查看
@@ -247,7 +248,7 @@ export default function DeviationQueryPage() {
     },
   ]
 
-  const renderCard = (item: any) => {
+  const renderCard = (item: DeviationFlowItem) => {
     const urgencyColor = URGENCY_COLORS[item.urgency_level_label] || 'default'
     const statusColor = STATUS_COLORS[item.status] || 'default'
     const remaining = item.remaining_days

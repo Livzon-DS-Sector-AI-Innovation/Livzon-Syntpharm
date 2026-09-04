@@ -75,6 +75,8 @@ function SectionCard({
   )
 }
 
+interface FeishuUser { open_id: string; name: string; is_active?: boolean; department?: string }
+interface Attachment { id: string; file_name: string; uploaded_at?: string; file_path?: string }
 export default function DeviationCreatePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -89,10 +91,10 @@ export default function DeviationCreatePage() {
     department: '',
     time: '-'
   })
-  const [qaUsers, setQaUsers] = useState<any[]>([])
-  const [deptLeaders, setDeptLeaders] = useState<any[]>([])
+  const [qaUsers, setQaUsers] = useState<FeishuUser[]>([])
+  const [deptLeaders, setDeptLeaders] = useState<FeishuUser[]>([])
   const [reporterOpenId, setReporterOpenId] = useState<string>('')
-  const [attachments, setAttachments] = useState<any[]>([])
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -118,10 +120,10 @@ export default function DeviationCreatePage() {
       const leaderResult = await leaderRes.json()
 
       if (qaResult.code === 200) {
-        setQaUsers(qaResult.data.filter((u: any) => u.is_active !== false))
+        setQaUsers(qaResult.data.filter((u: FeishuUser) => u.is_active !== false))
       }
       if (leaderResult.code === 200) {
-        setDeptLeaders(leaderResult.data.filter((u: any) => u.is_active !== false))
+        setDeptLeaders(leaderResult.data.filter((u: FeishuUser) => u.is_active !== false))
       }
     } catch (error) {
       console.error('加载提醒配置失败', error)
@@ -221,7 +223,7 @@ export default function DeviationCreatePage() {
     return false
   }
 
-  const handleDownload = (attachment: any) => {
+  const handleDownload = (attachment: Attachment) => {
     window.open(`${API_BASE}/quality/deviation-flow/attachments/${attachment.id}/download`, '_blank')
   }
 
@@ -293,8 +295,8 @@ export default function DeviationCreatePage() {
       }
 
       message.success('保存成功')
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : undefined) || '保存失败')
     } finally {
       setLoading(false)
     }
@@ -620,7 +622,7 @@ export default function DeviationCreatePage() {
 
               {attachments.length > 0 && (
                 <div className="deviation-attachment-list">
-                  {attachments.map((item: any) => (
+                  {attachments.map((item: Attachment) => (
                     <div key={item.id} className="deviation-attachment-item">
                       <div className="deviation-attachment-info">
                         <div className="deviation-attachment-icon">
@@ -659,7 +661,7 @@ export default function DeviationCreatePage() {
             {attachments.length > 0 && (
               <SectionCard icon={<PaperClipOutlined />} title="附件列表">
                 <div className="deviation-attachment-list">
-                  {attachments.map((item: any) => (
+                  {attachments.map((item: Attachment) => (
                     <div key={item.id} className="deviation-attachment-item">
                       <div className="deviation-attachment-info">
                         <div className="deviation-attachment-icon">
