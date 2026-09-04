@@ -40,6 +40,7 @@ import {
   FQCInspection,
   FQCInspectionListItem,
   FQCInspectionCreate,
+  FQCInspectionItem,
   FQCInspectionItemCreate,
   FQCInspectionFilter,
   FQCInspectionStatus,
@@ -169,7 +170,7 @@ export default function FQCPage() {
           expiry_date: response.data?.expiry_date ? dayjs(response.data.expiry_date) : null,
           inspection_date: response.data?.inspection_date ? dayjs(response.data.inspection_date) : null,
         })
-        setItems(response.data?.items?.map((item: any, index: number) => ({
+        setItems(response.data?.items?.map((item: FQCInspectionItem, index: number) => ({
           item_no: index + 1,
           inspection_category: item.inspection_category,
           inspection_item: item.inspection_item,

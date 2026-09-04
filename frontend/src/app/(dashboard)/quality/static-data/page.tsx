@@ -86,26 +86,26 @@ const { RangePicker } = DatePicker
 
 interface ListPageProps {
   tabKey: string
-  columns: ColumnsType<Record<string, unknown>>
+  columns: ColumnsType<any>
   rowKey: string
   // Write operations via Server Action
-  deleteFn?: (id: number) => Promise<unknown>
+  deleteFn?: (id: number) => Promise<any>
   // List query via client direct call (bypass Server Action network isolation)
-  clientListFn: (params: Record<string, unknown>) => Promise<unknown>
+  clientListFn: (params: any) => Promise<any>
   searchForm?: React.ReactNode
   // Import/Template download
   onTemplateDownload?: () => Promise<void>
-  onBatchImport?: (file: File) => Promise<unknown>
+  onBatchImport?: (file: File) => Promise<any>
   importModule?: string
 }
 
 function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule: _importModule }: ListPageProps) {
-  const [data, setData] = useState<Record<string, unknown>[]>([])
+  const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [total, setTotal] = useState(0)
-  const [searchValues, setSearchValues] = useState<Record<string, unknown>>({})
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({})
   const [form] = Form.useForm()
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importLoading, setImportLoading] = useState(false)
@@ -113,12 +113,12 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
   // Stable reference, no rebuild on tab switch
   const fetchDataRef = useRef<() => void>(() => {})
 
-  const fetchData = useCallback(async (overrides: Record<string, unknown> = {}) => {
+  const fetchData = useCallback(async (overrides: Record<string, any> = {}) => {
     setLoading(true)
     try {
       const params = { page, page_size: pageSize, ...searchValues, ...overrides }
-      const res = await clientListFn(params)
-      setData((res?.data ?? res ?? []) as Record<string, unknown>[])
+      const res: any = await clientListFn(params)
+      setData((res?.data ?? res ?? []) as any[])
       const totalVal = res?.meta?.total ?? (Array.isArray(res) ? res.length : 0)
       setTotal(totalVal)
     } catch (e: unknown) {
@@ -146,12 +146,12 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
 
   // 暴露表单和搜索值给 RangePicker 回调
   useEffect(() => {
-    ;(window as Record<string, unknown>).__listPanelForm__ = form
-    ;(window as Record<string, unknown>).__listPanelSearchValues__ = searchValues
-    ;(window as Record<string, unknown>).__currentListTab__ = tabKey
+    ;(window as any).__listPanelForm__ = form
+    ;(window as any).__listPanelSearchValues__ = searchValues
+    ;(window as any).__currentListTab__ = tabKey
   }, [form, searchValues, tabKey])
 
-  const handleSearch = (vals: Record<string, unknown>) => {
+  const handleSearch = (vals: any) => {
     setSearchValues(vals)
     setPage(1)
   }
@@ -173,13 +173,13 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
     }
   }
 
-  const cols: ColumnsType<Record<string, unknown>> = [
+  const cols: ColumnsType<any> = [
     ...columns,
     {
       title: '操作',
       key: 'actions',
       width: 120,
-      render: (_: unknown, record: Record<string, unknown>) => (
+      render: (_: unknown, record: any) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />}
             onClick={() => router.push(`/quality/static-data/${tabKey}/${record[rowKey]}`)}>
@@ -202,7 +202,7 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
       await onTemplateDownload()
       message.success('模板下载成功')
     } catch (e: unknown) {
-      message.error(e.message || '模板下载失败')
+      message.error((e as Error)?.message || "模板下载失败")
     }
   }
 
@@ -520,7 +520,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="start_date" label="下次校准日期" hidden><Input /></Form.Item>
               <Form.Item name="end_date" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = (window as Record<string, unknown>).__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ start_date: dateStrings[0] || undefined, end_date: dateStrings[1] || undefined })
                 }
@@ -560,7 +560,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = (window as Record<string, unknown>).__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -583,7 +583,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = (window as Record<string, unknown>).__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -606,7 +606,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = (window as Record<string, unknown>).__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -671,7 +671,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 220 }} placeholder={['有效期起','有效期止']} onChange={(_, dateStrings) => {
-                const form = (window as Record<string, unknown>).__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -693,7 +693,7 @@ export default function StaticDataPage() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          tabPlacement={"left" as const}
+          tabPlacement={"left" as any}
           style={{ minHeight: 500 }}
           tabBarStyle={{ width: 170, borderRight: '1px solid #f0f0f0', margin: 0 }}
           items={tabs.map(t => ({

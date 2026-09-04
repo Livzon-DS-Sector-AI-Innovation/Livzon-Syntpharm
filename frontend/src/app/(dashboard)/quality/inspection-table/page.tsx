@@ -54,8 +54,8 @@ export default function InspectionTableListPage() {
         page,
         page_size: pageSize,
       })
-      setData((result as any)?.items || [])
-      setTotal((result as any)?.total || 0)
+      setData(result.items || [])
+      setTotal(result.total || 0)
     } catch (_error) {
       message.error('获取数据失败')
     } finally {
@@ -84,8 +84,8 @@ export default function InspectionTableListPage() {
       form.resetFields()
       setColumns([])
       fetchData()
-    } catch (error: any) {
-      message.error(error.message || '创建失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '创建失败')
     } finally {
       setSaving(false)
     }
@@ -115,8 +115,8 @@ export default function InspectionTableListPage() {
       message.success('更新成功')
       setEditModalVisible(false)
       fetchData()
-    } catch (error: any) {
-      message.error(error.message || '更新失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '更新失败')
     } finally {
       setSaving(false)
     }
@@ -128,8 +128,8 @@ export default function InspectionTableListPage() {
       await deleteInspectionTable(id)
       message.success('删除成功')
       fetchData()
-    } catch (error: any) {
-      message.error(error.message || '删除失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '删除失败')
     }
   }
 
@@ -144,7 +144,7 @@ export default function InspectionTableListPage() {
   }
 
   // 更新列配置
-  const handleUpdateColumn = (index: number, field: string, value: any) => {
+  const handleUpdateColumn = (index: number, field: string, value: unknown) => {
     const newColumns = [...columns]
     newColumns[index] = { ...newColumns[index], [field]: value }
     setColumns(newColumns)

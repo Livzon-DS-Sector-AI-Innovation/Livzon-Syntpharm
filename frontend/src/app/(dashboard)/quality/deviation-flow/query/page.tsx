@@ -249,8 +249,8 @@ export default function DeviationQueryPage() {
   ]
 
   const renderCard = (item: DeviationFlowItem) => {
-    const urgencyColor = URGENCY_COLORS[item.urgency_level_label] || 'default'
-    const statusColor = STATUS_COLORS[item.status] || 'default'
+    const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
+    const statusColor = STATUS_COLORS[item.status || ''] || 'default'
     const remaining = item.remaining_days
     const isOverdue = remaining !== undefined && remaining !== null && remaining <= 3 && item.status !== 'completed'
 
@@ -483,8 +483,8 @@ export default function DeviationQueryPage() {
                 <tbody>
                   {data.length > 0 ? (
                     data.map((item) => {
-                      const urgencyColor = URGENCY_COLORS[item.urgency_level_label] || 'default'
-                      const statusColor = STATUS_COLORS[item.status] || 'default'
+                      const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
+                      const statusColor = STATUS_COLORS[item.status || ''] || 'default'
                       const remaining = item.remaining_days
                       return (
                         <tr key={item.id}>

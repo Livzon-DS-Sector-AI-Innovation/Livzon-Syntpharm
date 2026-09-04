@@ -439,7 +439,7 @@ export default function InstrumentDashboardPage() {
             <Spin spinning={loadingPreview}>
               {overdueRecords.length > 0 && (
                 <>
-                  <Divider orientation={'left' as any} style={{ margin: '12px 0' }}>
+                  <Divider titlePlacement='left' style={{ margin: '12px 0' }}>
                     <Tag color="red">⚠️ 已超期 {overdueRecords.length} 条</Tag>
                   </Divider>
                   {isMobile ? (
@@ -476,7 +476,7 @@ export default function InstrumentDashboardPage() {
 
               {upcomingRecords.length > 0 && (
                 <>
-                  <Divider orientation={'left' as any} style={{ margin: overdueRecords.length > 0 ? '12px 0' : 0 }}>
+                  <Divider titlePlacement='left' style={{ margin: overdueRecords.length > 0 ? '12px 0' : 0 }}>
                     <Tag color="orange">📅 即将到期 {upcomingRecords.length} 条</Tag>
                   </Divider>
                   {isMobile ? (

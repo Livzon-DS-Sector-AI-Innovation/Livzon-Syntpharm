@@ -82,7 +82,7 @@ interface DeviationDetailResponse {
 interface SearchFormValues {
   deviation_type?: string
   status?: string
-  date_range?: [unknown, unknown]
+  date_range?: [{ format: (fmt: string) => string }?, { format: (fmt: string) => string }?] | null
 }
 
 
@@ -208,8 +208,8 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.getDeviations({
         deviation_type: values?.deviation_type,
         status: values?.status,
-        start_date: values?.date_range?.[0]?.format('YYYY-MM-DD'),
-        end_date: values?.date_range?.[1]?.format('YYYY-MM-DD'),
+        start_date: (values?.date_range?.[0] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
+        end_date: (values?.date_range?.[1] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         page: pagination.current,
         page_size: pagination.pageSize,
       })
@@ -328,14 +328,12 @@ const DeviationListTab: React.FC<{
 
   const handleCreate = async (values: Record<string, unknown>) => {
     try {
+      const { description, occurrence_date, ...rest } = values as Record<string, unknown>
       const processedValues = {
-        ...values,
-        // 映射前端字段名到后端字段名
-        abnormal_description: values.description,
-        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
+        ...rest,
+        abnormal_description: description as string | undefined,
+        occurrence_date: (occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
       }
-      // 删除不需要的字段
-      delete processedValues.description
       await deviationActions.createDeviation(processedValues as unknown as DeviationCreate)
       message.success('创建成功')
       setCreateModalVisible(false)
@@ -1378,12 +1376,12 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
 
       // 二、偏差描述
       drawSectionTitle('二、偏差描述')
-      drawMultilineText(deviation.abnormal_description || deviation.description)
+      drawMultilineText(deviation.abnormal_description || deviation.description || '')
       currentY += 8
 
       // 三、应急措施
       drawSectionTitle('三、应急措施')
-      drawMultilineText(deviation.emergency_measures)
+      drawMultilineText(deviation.emergency_measures || '')
       currentY += 8
 
       // 四、调查信息
@@ -1397,7 +1395,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       drawSectionTitle('五、整改措施')
       drawLabelLine('整改措施（CA+PA）', '')
       drawMultilineText(correction?.correction_measures || '未填写')
-      drawLabelLine('责任部门', correction?.responsible_department)
+      drawLabelLine('责任部门', correction?.responsible_department || '')
       drawLabelLine('计划完成日期', correction?.plan_completion_date ? new Date(correction.plan_completion_date).toLocaleDateString() : '未填写')
       drawLabelLine('整改进度', `${correction?.progress || 0}%`)
       currentY += 8

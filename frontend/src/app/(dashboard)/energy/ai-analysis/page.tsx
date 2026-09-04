@@ -32,7 +32,7 @@ export default function AIAnalysisPage() {
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
   const [syncing, setSyncing] = useState(false)
 
-  const [workshops, setWorkshops] = useState<EnergyWorkshop[]>([])
+  const [workshops, setWorkshops] = useState<Array<{ value: string; label: string }>>([])
   const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
   const [targetLoading, setTargetLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)

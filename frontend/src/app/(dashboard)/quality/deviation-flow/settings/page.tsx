@@ -131,7 +131,7 @@ function UserCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function RuleCard({ item, onEdit, onToggle, onDelete }: {
-  item: SettingUser
+  item: SettingRule
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -168,7 +168,7 @@ function RuleCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function TriggerCard({ item, onEdit, onToggle, onDelete }: {
-  item: SettingUser
+  item: AutoTrigger
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -204,7 +204,7 @@ function TriggerCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function TemplateCard({ item, onEdit, onToggle, onDelete, onSetDefault }: {
-  item: SettingUser
+  item: MessageTemplate
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void

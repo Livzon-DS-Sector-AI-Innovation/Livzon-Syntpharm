@@ -240,7 +240,7 @@ export default function HplcReferencePage() {
       fetchStats()
       fetchRecalAlerts()
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '领用失败'))
     }
   }
@@ -254,7 +254,7 @@ export default function HplcReferencePage() {
       setUsageHistoryTotal(res?.meta?.total ?? 0)
       setUsageHistoryPage(p)
     } catch (e: unknown) {
-      message.error(e.message || '加载领用历史失败')
+      message.error((e as Error).message || '加载领用历史失败')
     } finally {
       setUsageHistoryLoading(false)
     }
@@ -319,7 +319,7 @@ export default function HplcReferencePage() {
         fetchStats()
       }
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }
@@ -378,7 +378,7 @@ export default function HplcReferencePage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
@@ -390,7 +390,7 @@ export default function HplcReferencePage() {
       await downloadHplcReferenceTemplate()
       message.success('模板下载成功')
     } catch (e: unknown) {
-      message.error(e.message || '模板下载失败')
+      message.error((e as Error).message || '模板下载失败')
     }
   }
 

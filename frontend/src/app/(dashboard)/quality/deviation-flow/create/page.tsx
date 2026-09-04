@@ -372,11 +372,11 @@ export default function DeviationCreatePage() {
       } else {
         message.error((result.message as string) || '提交失败')
       }
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         message.error('请填写必填项')
       } else {
-        message.error(error.message || '提交失败')
+        message.error((error instanceof Error ? error.message : undefined) || '提交失败')
       }
     } finally {
       setLoading(false)

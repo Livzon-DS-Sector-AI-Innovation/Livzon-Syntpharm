@@ -64,8 +64,8 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
       const response = await getCheckRecords(filter)
       setRecords(response.items)
       setTotal(response.total)
-    } catch (error: any) {
-      message.error(error.message || '加载失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '加载失败')
     } finally {
       setLoading(false)
     }
@@ -82,8 +82,8 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
       const detail = await getCheckRecordDetail(id)
       setCurrentDetail(detail)
       setDetailVisible(true)
-    } catch (error: any) {
-      message.error(error.message || '加载详情失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '加载详情失败')
     }
   }
 
@@ -92,13 +92,13 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     try {
       const result = await exportCheckReport(id, 'excel', true)
       message.success(`导出成功: ${result.download_url}`)
-    } catch (error: any) {
-      message.error(error.message || '导出失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '导出失败')
     }
   }
 
   // 筛选变化
-  const handleFilterChange = (key: keyof CheckRecordFilter, value: any) => {
+  const handleFilterChange = (key: keyof CheckRecordFilter, value: unknown) => {
     setFilter({ ...filter, [key]: value, page: 1 })
   }
 
@@ -164,7 +164,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     {
       title: '问题统计',
       key: 'problems',
-      render: (_: any, record: CheckMain) => (
+      render: (_: unknown, record: CheckMain) => (
         <Space>
           {record.risk_high > 0 && (
             <Tooltip title="高风险">
@@ -207,7 +207,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: CheckMain) => (
+      render: (_: unknown, record: CheckMain) => (
         <Space>
           <Tooltip title="查看详情">
             <Button

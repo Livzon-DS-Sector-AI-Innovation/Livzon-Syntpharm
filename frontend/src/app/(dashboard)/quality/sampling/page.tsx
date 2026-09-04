@@ -35,6 +35,7 @@ import {
   SamplingOrder,
   SamplingOrderListItem,
   SamplingOrderCreate,
+  SamplingOrderItem,
   SamplingOrderItemCreate,
   SamplingOrderFilter,
   SamplingSource,
@@ -153,7 +154,7 @@ export default function SamplingPage() {
           ...response.data,
           sampling_date: response.data.sampling_date ? dayjs(response.data.sampling_date) : null,
         })
-        setItems(response.data.items?.map((item: any, index: number) => ({
+        setItems(response.data.items?.map((item: SamplingOrderItem, index: number) => ({
           item_no: index + 1,
           sample_no: item.sample_no,
           sampling_count: item.sampling_count,

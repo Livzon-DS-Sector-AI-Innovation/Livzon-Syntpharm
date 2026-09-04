@@ -1,4 +1,9 @@
 'use client'
+import type { UploadFile } from 'antd'
+
+interface UploadFileWithPath extends UploadFile {
+  originFileObj?: UploadFile['originFileObj'] & { path?: string }
+}
 
 import React, { useState } from 'react'
 import {
@@ -37,15 +42,15 @@ export default function SopAiPreviewPage(_props: SopAiPreviewPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckTaskResponse | null>(null)
-  const [fileList, setFileList] = useState<any[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // 处理文件选择
-  const handleFileChange = (info: any) => {
+  const handleFileChange = (info: { fileList: UploadFile[] }) => {
     setFileList(info.fileList.slice(-1))
   }
 
   // 提交预审
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: Record<string, unknown>) => {
     if (!fileList.length) {
       message.error('请选择文件')
       return
@@ -56,15 +61,15 @@ export default function SopAiPreviewPage(_props: SopAiPreviewPageProps) {
 
     try {
       const response = await singleCheck({
-        file_path: fileList[0]?.originFileObj?.path || values.file_path,
-        file_name: fileList[0]?.name || values.file_name,
+        file_path: (fileList[0] as UploadFileWithPath)?.originFileObj?.path || (values.file_path as string),
+        file_name: fileList[0]?.name || (values.file_name as string),
         check_type: 'single',
-        operator: values.operator,
+        operator: values.operator as string,
       })
 
       setResult(response)
-    } catch (error: any) {
-      message.error(error.message || '预审失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '预审失败')
     } finally {
       setLoading(false)
     }

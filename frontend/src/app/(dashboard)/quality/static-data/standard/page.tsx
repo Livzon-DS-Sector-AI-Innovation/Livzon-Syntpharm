@@ -216,7 +216,7 @@ export default function StandardPage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
@@ -241,7 +241,7 @@ export default function StandardPage() {
         fetchStats()
       }
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }

@@ -8,7 +8,7 @@ import {Button, Space, App, Tabs, DatePicker, Select, Card, Modal, Form, Input} 
 import type { FormInstance } from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
-import { AlertRule, AlertRecord, RecordQueryParams } from '@/types/energy'
+import { AlertRule, AlertRecord, RecordQueryParams, EnergyType } from '@/types/energy'
 import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
 import { useEnergyStore } from '@/stores/energy'
@@ -127,7 +127,7 @@ export default function AlertsPage() {
         params.end_time = filterDate.endOf('day').toISOString()
       }
       if (filterEnergyType) {
-        params.energy_type = filterEnergyType
+        params.energy_type = filterEnergyType as EnergyType
       }
       const result = await fetchAlertRecordsAPI(params)
       setRecords(result.items)
@@ -198,8 +198,8 @@ export default function AlertsPage() {
       setProcessModalOpen(false)
       fetchRecords()
     } catch (error: unknown) {
-      if (error?.errorFields) return // 表单验证错误
-      message.error('处理失败：' + (error?.message || '未知错误'))
+      if (error && typeof error === 'object' && 'errorFields' in error) return // 表单验证错误
+      message.error('处理失败：' + (error instanceof Error ? error.message : '未知错误'))
     } finally {
       setProcessing(false)
     }

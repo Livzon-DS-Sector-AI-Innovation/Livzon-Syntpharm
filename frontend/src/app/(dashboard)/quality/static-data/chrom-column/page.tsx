@@ -205,7 +205,7 @@ export default function ChromColumnPage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      message.error(e.message || '操作失败')
+      message.error((e as Error).message || '操作失败')
     }
   }
 
@@ -253,7 +253,7 @@ export default function ChromColumnPage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      if (e.errorFields) return
+      if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
@@ -265,7 +265,7 @@ export default function ChromColumnPage() {
       await downloadChromColumnTemplate()
       message.success('模板下载成功')
     } catch (e: unknown) {
-      message.error(e.message || '模板下载失败')
+      message.error((e as Error).message || '模板下载失败')
     }
   }
 

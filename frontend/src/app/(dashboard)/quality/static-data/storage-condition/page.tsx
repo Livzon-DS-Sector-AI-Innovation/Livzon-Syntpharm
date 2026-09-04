@@ -174,8 +174,8 @@ export default function StorageConditionPage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      if (e?.errorFields) return // 表单校验错误
-      message.error(e.message || '操作失败')
+      if (e && typeof e === "object" && "errorFields" in e) return // 表单校验错误
+      message.error((e as Error)?.message || '操作失败')
     } finally {
       setDrawerLoading(false)
     }
@@ -200,7 +200,7 @@ export default function StorageConditionPage() {
       fetchData()
       fetchStats()
     } catch (e: unknown) {
-      message.error(e.message || '操作失败')
+      message.error((e as Error).message || '操作失败')
     }
   }
 

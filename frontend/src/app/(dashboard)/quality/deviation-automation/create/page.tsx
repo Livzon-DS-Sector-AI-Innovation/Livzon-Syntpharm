@@ -86,7 +86,7 @@ export default function CreateDeviationReportPage() {
         deviation_no: values.deviation_no,
         creator: values.creator,
         auditor: values.auditor,
-        report_date: values.report_date.format('YYYY-MM-DD'),
+        report_date: (values.report_date as { format: (f: string) => string }).format('YYYY-MM-DD'),
       })
 
       return (response.data as { task_id: number }).task_id

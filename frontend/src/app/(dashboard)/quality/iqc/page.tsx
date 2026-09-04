@@ -35,6 +35,7 @@ import {
   IQCInspection,
   IQCInspectionListItem,
   IQCInspectionCreate,
+  IQCInspectionItem,
   IQCInspectionItemCreate,
   IQCInspectionFilter,
   IQCSourceTypeLabels,
@@ -155,7 +156,7 @@ export default function IQCPage() {
           expiry_date: response.data?.expiry_date ? dayjs(response.data.expiry_date) : null,
           inspection_date: response.data?.inspection_date ? dayjs(response.data.inspection_date) : null,
         })
-        setEditItems(response.data?.items?.map((item: any, index: number) => ({
+        setEditItems(response.data?.items?.map((item: IQCInspectionItem, index: number) => ({
           item_no: index + 1,
           inspection_item: item.inspection_item,
           inspection_method: item.inspection_method,

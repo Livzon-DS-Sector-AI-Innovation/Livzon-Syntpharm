@@ -75,25 +75,6 @@ const API_BASE = '/api/v1'
 const PREFIX = '/quality/static-data'
 const API = `${API_BASE}${PREFIX}`
 
-interface DictItem {
-  label: string
-  value: string | number
-  [key: string]: unknown
-}
-
-interface ItemRecord {
-  key: number
-  id?: number
-  test_item_code?: string
-  test_item_name?: string
-  test_method?: string
-  limit_type?: string
-  limit_value?: string
-  [key: string]: unknown
-}
-
-
-
 // 附件上传支持的模块
 const UPLOAD_MODULES = ['equipment', 'chrom-column', 'medium', 'reagent', 'standard-material', 'material-standard', 'product-standard', 'hplc-reference']
 
@@ -112,11 +93,16 @@ const MODULE_LABELS: Record<string, string> = {
 }
 
 
+
 interface DictItem {
   label: string
   value: string | number
   cond_name?: string
   cond_code?: string
+  unit_name?: string
+  unit_code?: string
+  item_code?: string
+  item_name?: string
   [key: string]: unknown
 }
 
@@ -128,7 +114,6 @@ interface ItemRecord {
   test_method?: string
   limit_type?: string
   limit_value?: string
-  [key: string]: unknown
 }
 
 interface DetailPageProps {
@@ -216,8 +201,8 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       listTestItem({ page: 1, page_size: 200 } as Record<string, unknown>)
         .then((res: { data?: DictItem[] }) => {
           const opts = (res.data ?? []).map((t: DictItem) => ({
-            label: `${t.item_code} - ${t.item_name}`,
-            value: t.item_code,
+            label: `${t.item_code || ''} - ${t.item_name || ''}`,
+            value: t.item_code || '',
           }))
           setTestItemOptions(opts)
         })
@@ -235,7 +220,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (!id) return
     setLoading(true)
     try {
-      let res: Record<string, unknown> | null = null
+      let res: any = null
       switch (moduleType) {
         case 'storage-condition': res = await getStorageCondition(Number(id)); break
         case 'unit': res = await getUnit(Number(id)); break
@@ -249,22 +234,22 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         case 'hplc-reference': res = await getHplcReference(Number(id)); break
         default: return
       }
-      const data = res.data
-      setRecord(data)
+      const data = res?.data ?? {}
+      setRecord(data as Record<string, unknown>)
       // 加载 items 子表
-      if (isStdWithItems && data.items) {
-        setItems(((res?.data as Record<string, unknown>)?.items as Array<Record<string, unknown>> ?? []).map((it: Record<string, unknown>, idx: number) => ({ ...it, key: (it.id as number) ?? Date.now() + idx })))
+      if (isStdWithItems && (data as any).items) {
+        setItems((((data as any).items ?? []) as ItemRecord[]).map((it: ItemRecord, idx: number) => ({ ...it, key: it.id ?? Date.now() + idx })))
       }
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       const fmt: Record<string, unknown> = {}
       dateFields.forEach(f => {
-        if (data[f] && typeof data[f] === 'string') fmt[f] = dayjs(data[f])
+        if ((data as any)[f] && typeof (data as any)[f] === 'string') fmt[f] = dayjs((data as any)[f])
       })
-      form.setFieldsValue({ ...data, ...fmt })
+      form.setFieldsValue({ ...(data as any), ...fmt })
       // 初始化附件列表
-      if (supportsUpload && data.attach_file) {
-        const names = data.attach_file.split(',').filter(Boolean)
+      if (supportsUpload && (data as any).attach_file) {
+        const names = ((data as any).attach_file as string).split(',').filter(Boolean)
         setAttachFiles(names.map((name: string, idx: number) => ({
           uid: String(-idx - 1),
           name,
@@ -288,8 +273,8 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       dateFields.forEach(f => {
-        if (processed[f] && typeof processed[f] === 'object' && processed[f].format) {
-          processed[f] = processed[f].format('YYYY-MM-DD')
+        if (processed[f] && typeof processed[f] === 'object' && (processed[f] as any).format) {
+          processed[f] = (processed[f] as any).format('YYYY-MM-DD')
         }
       })
       processed.create_by = 1
@@ -361,10 +346,10 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (file.status === 'done') {
       const res = file.response as { code?: number; data?: { stored_name?: string }; message?: string }
       if (res && (res.code === 200 || res.code === 0)) {
-        const uploaded = res.data
+        const uploaded = (res as any)?.data
         // 将文件名追加到 attach_file 字段
         const currentVal = form.getFieldValue('attach_file') || ''
-        const newVal = currentVal ? `${currentVal},${uploaded.stored_name}` : uploaded.stored_name
+        const newVal = currentVal ? `${currentVal},${uploaded?.stored_name}` : uploaded?.stored_name
         form.setFieldValue('attach_file', newVal)
         message.success(`${file.name} 上传成功`)
       } else {
@@ -404,7 +389,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           onError?.(new Error(res.message || `上传失败(code: ${res.code})`))
         }
       } catch (e: unknown) {
-        onError?.(e)
+        onError?.(e as Error)
       } finally {
         setUploadLoading(false)
       }
@@ -477,7 +462,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
 
   // 产品标准 items 列定义（法定限度 + 内控限度）
   const prodItemColumns: ColumnsType<ItemRecord> = [
-    { title: '序号', width: 50, render: (_: any, __: any, idx: number) => idx + 1 },
+    { title: '序号', width: 50, render: (_: unknown, __: unknown, idx: number) => idx + 1 },
     {
       title: '检验项目*', dataIndex: 'item_code', width: 180,
       render: (v: string, record: ItemRecord) => (
@@ -604,7 +589,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
             <Col span={24}><Form.Item name="remark" label="备注"><TextArea rows={2} /></Form.Item></Col>
             {/* 设备管理员附件：SOP文件 / 校准证书 / 验证资料 */}
             <Col span={24}>
-              <Divider orientation={"left" as const} style={{ marginTop: 8 }}>设备文件</Divider>
+              <Divider titlePlacement="left" style={{ marginTop: 8 }}>设备文件</Divider>
             </Col>
             <Col span={8}><Form.Item name="sop_file" label="SOP文件" help="操作规程PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
             <Col span={8}><Form.Item name="cal_cert" label="校准证书" help="最近一次校准证书PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
@@ -812,7 +797,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 附件上传区域（仅支持的模块显示） */}
           {supportsUpload && (
             <>
-              <Divider orientation={"left" as const}>
+              <Divider titlePlacement="left">
                 <PaperClipOutlined /> 附件上传
               </Divider>
               <div style={{ marginBottom: 16 }}>
@@ -853,7 +838,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 质量标准检验项目明细子表 */}
           {isStdWithItems && (
             <>
-              <Divider orientation={"left" as const}>
+              <Divider titlePlacement="left">
                 检验项目明细
                 <Button type="link" size="small" icon={<PlusOutlined />} onClick={addItem} style={{ marginLeft: 8 }}>
                   新增项目
@@ -861,7 +846,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
               </Divider>
               <Table
                 columns={moduleType === 'material-standard' ? matItemColumns : prodItemColumns}
-                dataSource={items as ItemRecord[]}
+                dataSource={items as unknown as ItemRecord[]}
                 rowKey="key"
                 pagination={false}
                 size="small"

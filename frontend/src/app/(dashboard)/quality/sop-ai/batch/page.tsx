@@ -1,4 +1,5 @@
 'use client'
+import type { UploadFile } from 'antd'
 
 import React, { useState } from 'react'
 import {
@@ -37,15 +38,15 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<BatchResultType | null>(null)
-  const [fileList, setFileList] = useState<any[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // 处理文件选择
-  const handleFileChange = (info: any) => {
+  const handleFileChange = (info: { fileList: UploadFile[] }) => {
     setFileList(info.fileList)
   }
 
   // 提交批量巡检
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: Record<string, unknown>) => {
     if (!fileList.length) {
       message.error('请选择文件')
       return
@@ -56,18 +57,18 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
 
     try {
       const filePaths = fileList.map(
-        (f) => f.originFileObj?.path || f.response?.path || f.name
+        (f) => f.name
       )
 
       const response = await batchCheck({
         file_paths: filePaths,
         check_type: 'batch',
-        operator: values.operator,
+        operator: values.operator as string,
       })
 
       setResult(response)
-    } catch (error: any) {
-      message.error(error.message || '批量巡检失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : "操作失败") || '批量巡检失败')
     } finally {
       setLoading(false)
     }
@@ -99,11 +100,11 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
     {
       title: '问题数',
       key: 'problems',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: Record<string, unknown>) => (
         <Space>
-          <Tag color="red">{record.risk_high}</Tag>
-          <Tag color="orange">{record.risk_medium}</Tag>
-          <Tag color="green">{record.risk_low}</Tag>
+          <Tag color="red">{record.risk_high as string}</Tag>
+          <Tag color="orange">{record.risk_medium as string}</Tag>
+          <Tag color="green">{record.risk_low as string}</Tag>
         </Space>
       ),
     },

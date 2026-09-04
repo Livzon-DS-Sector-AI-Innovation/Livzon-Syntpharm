@@ -23,7 +23,7 @@ export async function getInspectionTables(params?: {
   keyword?: string
   page?: number
   page_size?: number
-}): Promise<TableListItem[]> {
+}): Promise<{ items: TableListItem[]; total: number }> {
   return fetchInspectionTables(params)
 }
 

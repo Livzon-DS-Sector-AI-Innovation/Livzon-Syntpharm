@@ -119,7 +119,7 @@ export default function AiLogPage() {
   }
 
   // 分页变化
-  const handleTableChange = (newPagination: any) => {
+  const handleTableChange = (newPagination: { current?: number; pageSize?: number }) => {
     fetchData({ page: newPagination.current, page_size: newPagination.pageSize })
   }
 
