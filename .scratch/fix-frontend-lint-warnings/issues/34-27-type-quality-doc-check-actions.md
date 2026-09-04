@@ -4,7 +4,7 @@
 
 **Blocked by:** Ticket 34 (parent)
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Files:** src/actions/doc-check.ts
 

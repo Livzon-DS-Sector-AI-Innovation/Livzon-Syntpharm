@@ -4,7 +4,7 @@
 
 **Blocked by:** Ticket 34 (parent)
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Files:** src/actions/product.ts, src/actions/product-output.ts, src/actions/product-sync.ts
 
