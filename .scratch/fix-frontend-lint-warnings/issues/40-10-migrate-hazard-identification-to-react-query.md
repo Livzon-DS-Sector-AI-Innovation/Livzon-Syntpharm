@@ -1,0 +1,17 @@
+# 40.10 — Migrate hazard identification module to React Query
+
+**What to build:** Hazard identification creation and detail pages use React Query with AI workflow integration. This involves two related pages with complex state management.
+
+**Blocked by:** None — can start immediately
+
+**Status:** ready-for-agent
+
+- [ ] Replace useEffect+useState data fetching with useQuery in `hazard-identification/new/page.tsx`
+- [ ] Replace useEffect+useState data fetching with useQuery in `hazard-identification/[id]/page.tsx`
+- [ ] Remove duplicate state from `hazardIdentificationStore.ts` (keep only UI state)
+- [ ] Handle regulation loading for the creation form
+- [ ] Ensure proper cache invalidation when AI workflow actions occur (run script, approve, reject)
+- [ ] Handle error cases and redirects when identification not found
+- [ ] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from hazard identification module
+- [ ] `tsc --noEmit` passes with no errors
+- [ ] Manual smoke test: creation form loads regulations, detail page loads, AI workflow works
