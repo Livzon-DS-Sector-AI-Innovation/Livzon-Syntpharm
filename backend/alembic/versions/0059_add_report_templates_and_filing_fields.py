@@ -1,7 +1,7 @@
 """add rd_report_templates table and filing_content fields
 
-Revision ID: 2026_08_19_report_templates
-Revises: a97e963a4ad3
+Revision ID: 0059_add_report_templates
+Revises: 0058_add_research_track_refs
 Create Date: 2026-08-19
 
 """
@@ -11,10 +11,10 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = '2026_08_19_report_templates'
-down_revision = 'a97e963a4ad3'
-branch_labels = None
-depends_on = None
+revision: str = '0059_add_report_templates'
+down_revision: str = '0058_add_research_track_refs'
+branch_labels: str | None = None
+depends_on: str | None = None
 
 
 def upgrade() -> None:

@@ -1,7 +1,7 @@
 """add research track references to process_optimizations
 
-Revision ID: 2026_08_13_track_refs
-Revises: previous_revision
+Revision ID: 0058_add_research_track_refs
+Revises: 0057_merge_migration_heads
 Create Date: 2026-08-13
 
 """
@@ -10,10 +10,10 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '2026_08_13_track_refs'
-down_revision = None  # 需要替换为实际的上一个revision ID
-branch_labels = None
-depends_on = None
+revision: str = '0058_add_research_track_refs'
+down_revision: str = '0057_merge_migration_heads'
+branch_labels: str | None = None
+depends_on: str | None = None
 
 
 def upgrade() -> None:
