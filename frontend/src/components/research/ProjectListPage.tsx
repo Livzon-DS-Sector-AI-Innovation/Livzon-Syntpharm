@@ -260,7 +260,7 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
             <Input.TextArea rows={2} />
           </Form.Item>
           <Form.Item name="project_type" label="项目类型">
-            <Select options={[{ value: 'generic', label: '仿制药' }, { value: 'improved', label: '改良型' }]} />
+            <Select options={[{ value: 'innovative', label: '创新药' }, { value: 'generic', label: '仿制药' }, { value: 'improved', label: '工艺改进' }, { value: 'veterinary', label: '兽用药' }, { value: 'intermediate', label: '中间体' }, { value: 'other', label: '其他' }]} />
           </Form.Item>
           <Form.Item name="priority" label="优先级" initialValue="normal">
             <Select options={[{ value: 'low', label: '低' }, { value: 'normal', label: '普通' }, { value: 'high', label: '高' }, { value: 'urgent', label: '紧急' }]} />

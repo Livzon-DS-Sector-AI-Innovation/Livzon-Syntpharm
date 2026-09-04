@@ -1,4 +1,5 @@
 'use client'
+import { AIFileParser } from './AIFileParser'
 
 import { useState, useMemo } from 'react'
 import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
@@ -419,6 +420,29 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
 
   return (
     <div>
+
+      {/* AI智能识别 */}
+      <AIFileParser
+        parseType="lab_confirmation"
+        onParseComplete={(data) => {
+          // 将AI解析的DOE数据填充到表单
+          if (data.factors) {
+            const newFactors: DOEFactor[] = Object.entries(data.factors).map(([name, value]) => ({
+              id: `factor-${Date.now()}-${name}`,
+              name,
+              symbol: name.substring(0, 1).toUpperCase(),
+              type: typeof value === 'number' ? 'numeric' : 'categorical',
+              levels: typeof value === 'number' ? { lower: value * 0.8, upper: value * 1.2 } : [String(value)],
+              low_level: typeof value === 'number' ? value * 0.8 : String(value),
+              high_level: typeof value === 'number' ? value * 1.2 : String(value),
+              unit: '',
+            }))
+            setFactors(prev => [...prev, ...newFactors])
+          }
+          message.success('DOE数据解析完成，已自动填充')
+        }}
+        hint="支持上传DOE实验设计文档、历史实验数据等，AI将自动识别因子和响应变量"
+      />
       {reactionSteps && reactionSteps.length > 0 && (
         <Card style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 12, fontWeight: 500 }}>反应步骤选择：</div>

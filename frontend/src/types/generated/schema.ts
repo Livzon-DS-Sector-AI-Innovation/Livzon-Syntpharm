@@ -2773,6 +2773,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/equipment/equipments/import/test-validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试验证错误
+         * @description Test endpoint to debug validation errors without authentication.
+         */
+        post: operations["test_validation_api_v1_equipment_equipments_import_test_validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/accidents": {
         parameters: {
             query?: never;
@@ -9967,8 +9987,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 使用 AI 生成报告 */
-        post: operations["generate_report_api_v1_research_generate_report_post"];
+        /**
+         * AI 生成研发报告
+         * @description 根据项目 ID 和模板 ID，生成一份严谨的研发报告。
+         *     流程：Fact提取 -> 派生结论计算 -> 槽位填充 -> AI补全Prose -> 数值校验
+         */
+        post: operations["generate_research_report_api_v1_research_generate_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18254,6 +18278,19 @@ export interface components {
              */
             save_prediction: boolean;
         };
+        /** Body_generate_research_report_api_v1_research_generate_report_post */
+        Body_generate_research_report_api_v1_research_generate_report_post: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+        };
         /** Body_handler_api_v1_quality_label_verifications_upload_video_post */
         Body_handler_api_v1_quality_label_verifications_upload_video_post: {
             /** File */
@@ -22805,6 +22842,54 @@ export interface components {
              * @description 报废时间
              */
             scrap_time?: string | null;
+        };
+        /**
+         * EquipmentImportRow
+         * @description 设备导入行数据
+         */
+        EquipmentImportRow: {
+            /**
+             * 资产编号
+             * @description 资产编号
+             */
+            "\u8D44\u4EA7\u7F16\u53F7"?: string | number | null;
+            /**
+             * 资产说明
+             * @description 资产说明
+             */
+            "\u8D44\u4EA7\u8BF4\u660E"?: string | null;
+            /**
+             * 设备名称
+             * @description 设备名称（别名）
+             */
+            "\u8BBE\u5907\u540D\u79F0"?: string | null;
+            /**
+             * 实物所在部门
+             * @description 实物所在部门
+             */
+            "\u5B9E\u7269\u6240\u5728\u90E8\u95E8"?: string | null;
+            /**
+             * 资产类别说明
+             * @description 资产类别说明
+             */
+            "\u8D44\u4EA7\u7C7B\u522B\u8BF4\u660E"?: string | null;
+            /**
+             * 当前成本
+             * @description 当前成本
+             */
+            "\u5F53\u524D\u6210\u672C"?: string | number | null;
+            /**
+             * 报废状态
+             * @description 报废状态
+             */
+            "\u62A5\u5E9F\u72B6\u6001"?: string | null;
+            /**
+             * 数量
+             * @description 数量
+             */
+            "\u6570\u91CF"?: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * EquipmentUpdate
@@ -29212,6 +29297,8 @@ export interface components {
             } | null;
             /** Notes */
             notes?: string | null;
+            /** Filing Content */
+            filing_content?: string | null;
         };
         /** RdInitiationUpdate */
         RdInitiationUpdate: {
@@ -43245,7 +43332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
         };
@@ -43261,9 +43348,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43273,7 +43358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43298,9 +43383,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43310,7 +43393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43345,7 +43428,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_validation_api_v1_equipment_equipments_import_test_validation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentImportRow"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -61215,7 +61333,7 @@ export interface operations {
             };
         };
     };
-    generate_report_api_v1_research_generate_report_post: {
+    generate_research_report_api_v1_research_generate_report_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61226,7 +61344,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RdReportGenerateRequest"];
+                "application/json": components["schemas"]["Body_generate_research_report_api_v1_research_generate_report_post"];
             };
         };
         responses: {
@@ -61236,7 +61354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

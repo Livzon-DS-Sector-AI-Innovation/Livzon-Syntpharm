@@ -720,6 +720,7 @@ class RdInitiationBase(BaseModel):
     approval_comments: str | None = None
     attachments: dict[str, Any] | None = None
     notes: str | None = None
+    filing_content: str | None = Field(None)
 
 
 class RdInitiationCreate(RdInitiationBase):
@@ -826,3 +827,27 @@ class RdReportGenerateResponse(BaseModel):
     content: str
     structure: dict[str, Any] | None = None
     data_sources: list[str] = []
+
+
+# ===== Report Templates =====
+
+
+class RdReportTemplateCreate(BaseModel):
+    name: str
+    description: str | None = None
+    content_md: str
+    category: str = "general"
+
+
+class RdReportTemplateResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str | None = None
+    content_md: str
+    meta_info: dict[str, Any] | None = None
+    category: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

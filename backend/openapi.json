@@ -14478,7 +14478,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           }
@@ -14517,8 +14519,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14530,7 +14531,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14579,8 +14582,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14592,7 +14594,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14649,7 +14653,57 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/test-validation": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6d4b\u8bd5\u9a8c\u8bc1\u9519\u8bef",
+        "description": "Test endpoint to debug validation errors without authentication.",
+        "operationId": "test_validation_api_v1_equipment_equipments_import_test_validation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/EquipmentImportRow"
+                },
+                "type": "array",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
+                }
               }
             }
           },
@@ -50225,8 +50279,9 @@
         "tags": [
           "\u7814\u53d1\u7ba1\u7406"
         ],
-        "summary": "\u4f7f\u7528 AI \u751f\u6210\u62a5\u544a",
-        "operationId": "generate_report_api_v1_research_generate_report_post",
+        "summary": "AI \u751f\u6210\u7814\u53d1\u62a5\u544a",
+        "description": "\u6839\u636e\u9879\u76ee ID \u548c\u6a21\u677f ID\uff0c\u751f\u6210\u4e00\u4efd\u4e25\u8c28\u7684\u7814\u53d1\u62a5\u544a\u3002\n\u6d41\u7a0b\uff1aFact\u63d0\u53d6 -> \u6d3e\u751f\u7ed3\u8bba\u8ba1\u7b97 -> \u69fd\u4f4d\u586b\u5145 -> AI\u8865\u5168Prose -> \u6570\u503c\u6821\u9a8c",
+        "operationId": "generate_research_report_api_v1_research_generate_report_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -50250,7 +50305,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RdReportGenerateRequest"
+                "$ref": "#/components/schemas/Body_generate_research_report_api_v1_research_generate_report_post"
               }
             }
           }
@@ -50260,9 +50315,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -84789,6 +84842,26 @@
         ],
         "title": "Body_edbo_optimize_api_v1_research_edbo_optimize_post"
       },
+      "Body_generate_research_report_api_v1_research_generate_report_post": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "template_id"
+        ],
+        "title": "Body_generate_research_report_api_v1_research_generate_report_post"
+      },
       "Body_handler_api_v1_quality_label_verifications_upload_video_post": {
         "properties": {
           "file": {
@@ -96513,6 +96586,119 @@
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
+      },
+      "EquipmentImportRow": {
+        "properties": {
+          "\u8d44\u4ea7\u7f16\u53f7": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7f16\u53f7",
+            "description": "\u8d44\u4ea7\u7f16\u53f7"
+          },
+          "\u8d44\u4ea7\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u8bf4\u660e"
+          },
+          "\u8bbe\u5907\u540d\u79f0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8bbe\u5907\u540d\u79f0",
+            "description": "\u8bbe\u5907\u540d\u79f0\uff08\u522b\u540d\uff09"
+          },
+          "\u5b9e\u7269\u6240\u5728\u90e8\u95e8": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8",
+            "description": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8"
+          },
+          "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
+          "\u5f53\u524d\u6210\u672c": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5f53\u524d\u6210\u672c",
+            "description": "\u5f53\u524d\u6210\u672c"
+          },
+          "\u62a5\u5e9f\u72b6\u6001": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u62a5\u5e9f\u72b6\u6001",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "\u6570\u91cf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u6570\u91cf",
+            "description": "\u6570\u91cf"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EquipmentImportRow",
+        "description": "\u8bbe\u5907\u5bfc\u5165\u884c\u6570\u636e"
       },
       "EquipmentUpdate": {
         "properties": {
@@ -112561,6 +112747,17 @@
               }
             ],
             "title": "Notes"
+          },
+          "filing_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Content"
           }
         },
         "type": "object",

@@ -1,9 +1,10 @@
 'use client'
+import { AIFileParser } from './AIFileParser'
 
 import { useState } from 'react'
 import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, BugOutlined, SafetyOutlined, RobotOutlined } from '@ant-design/icons'
-import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment } from '@/types/research'
+import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment, ProcessOptimization } from '@/types/research'
 import { identifyImpurities, generateIdentificationReport } from '@/components/research/utils/impurity-identifier'
 import { fetchRouteById } from '@/lib/api/client/research'
 
@@ -13,6 +14,7 @@ interface ModuleImpurityProps {
   doeExperiment?: DOEExperiment
   initialData?: ImpurityStudy
   onComplete: (study: ImpurityStudy) => void
+  optimization?: ProcessOptimization  // 完整的工艺优化对象（用于获取研究项引用）
 }
 
 const categoryMap: Record<ImpurityCategory, { color: string; label: string }> = {
@@ -37,7 +39,7 @@ const riskMap: Record<string, { color: string; label: string }> = {
   high: { color: 'red', label: '高' },
 }
 
-export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, initialData, onComplete }: ModuleImpurityProps) {
+export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, initialData, optimization, onComplete }: ModuleImpurityProps) {
   const { message, modal } = App.useApp()
   const [activeTab, setActiveTab] = useState('identification')
   const [impurities, setImpurities] = useState<Impurity[]>(initialData?.impurities || [
@@ -79,6 +81,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
   const [controlStrategySummary, setControlStrategySummary] = useState(initialData?.control_strategy_summary || '')
   const [studyConclusion, setStudyConclusion] = useState(initialData?.conclusion || '')
   const [showForm, setShowForm] = useState(false)
+  const [showNotice, setShowNotice] = useState(!localStorage.getItem(`hide-impurity-notice-${optimizationId}`))
   const [autoIdentifying, setAutoIdentifying] = useState(false)
   const [form] = Form.useForm()
 
@@ -285,6 +288,95 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
 
   return (
     <div>
+
+
+      {/* 研究项迁移提示 */}
+      <Alert
+        title="💡 新功能提示"
+        description={
+          <div>
+            <p style={{ marginBottom: 8 }}>
+              杂质研究功能已升级为项目级的<strong>"研究项"</strong>管理，支持跨阶段跟踪和版本控制。
+            </p>
+            <Space>
+              <Button 
+                size="small" 
+                type="primary"
+                onClick={() => {
+                  // 跳转到项目详情页的研究项Tab
+                  const projectId = optimizationId.split('-')[0] // 简化处理，实际应该从props获取
+                  window.location.href = `/research/projects/${projectId}?tab=research_tracks`
+                }}
+              >
+                前往研究项管理 →
+              </Button>
+              <Button 
+                size="small"
+                onClick={() => {
+                  // 标记为已读，不再显示
+                  localStorage.setItem(`hide-impurity-notice-${optimizationId}`, 'true')
+                  setShowNotice(false)
+                }}
+              >
+                暂时隐藏
+              </Button>
+            </Space>
+          </div>
+        }
+        type="info"
+        showIcon
+        closable
+        onClose={() => setShowNotice(false)}
+        style={{ marginBottom: 16 }}
+      />
+      {/* AI智能识别 */}
+      <AIFileParser
+        parseType="lab_confirmation"
+        onParseComplete={(data) => {
+          // 将AI解析的杂质数据填充到表单
+          if (data.impurities && Array.isArray(data.impurities)) {
+            const newImpurities = data.impurities.map((imp: any, index: number) => ({
+              id: `imp-${Date.now()}-${index}`,
+              name: imp.name || imp.impurity_name || `杂质${index + 1}`,
+              amount: imp.amount || imp.percentage || 0,
+              type: imp.type || imp.classification || 'unknown',
+              retention_time: imp.retention_time || '',
+              identification_method: imp.identification_method || '',
+            }))
+            setImpurities(prev => [...prev, ...newImpurities])
+          }
+          if (data.total_impurity) {
+            // setTotalImpurity(data.total_impurity) // TODO: Add state
+          }
+          message.success('杂质数据解析完成，已自动填充')
+        }}
+        hint="支持上传HPLC/GC分析报告、杂质研究文档等，AI将自动识别杂质信息"
+      />
+
+      {/* 关联的研究项 */}
+      {optimization?.impurity_track_id && (
+        <Alert
+          message="📌 已关联研究项"
+          description={
+            <Space>
+              <span>此工艺优化已关联到项目级的杂质研究项</span>
+              <Button 
+                size="small" 
+                type="link"
+                onClick={() => {
+                  // 跳转到项目详情页的研究项Tab
+                  window.open(`/research/projects/${optimization?.project_id}?tab=research_tracks`, '_blank')
+                }}
+              >
+                查看研究项 →
+              </Button>
+            </Space>
+          }
+          type="success"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
       <Card>
         <Tabs
           activeKey={activeTab}
@@ -397,10 +489,10 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
                       <Card size="small"><Statistic title="总杂质数" value={impurities.length} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="高风险" value={highRiskCount} valueStyle={{ color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="高风险" value={highRiskCount} styles={{ content: { color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="中风险" value={medRiskCount} valueStyle={{ color: medRiskCount > 0 ? '#faad14' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="中风险" value={medRiskCount} styles={{ content: { color: medRiskCount > 0 ? '#faad14' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
                       <Card size="small"><Statistic title="总杂质水平" value={totalImp} precision={2} suffix="%" /></Card>

@@ -168,14 +168,13 @@ export function ProcessOptimizationWorkflowPage({
     message.success('✓ 晶型研究已完成')
   }
 
-  // 并行研究全部完成 → 进入质量标准
+  // 进入质量标准（允许灵活跳转）
   const handleProceedToQuality = () => {
     if (!allParallelComplete) {
-      message.warning('请先完成所有并行研究模块（DOE、杂质、晶型）')
-      return
+      message.info('提示：并行研究尚未全部完成，但您可以继续。建议至少完成一项研究。')
     }
     setCurrentStep(1)
-    message.success('并行研究全部完成！进入质量标准建立')
+    message.success('进入质量标准建立')
   }
 
   // 质量标准完成 → 进入小试确认
@@ -290,7 +289,7 @@ export function ProcessOptimizationWorkflowPage({
               <Button
                 type="primary"
                 onClick={handleProceedToQuality}
-                disabled={!allParallelComplete}
+                disabled={false} // 允许灵活跳转
               >
                 进入质量标准 →
               </Button>
@@ -317,6 +316,25 @@ export function ProcessOptimizationWorkflowPage({
         />
       </Card>
 
+
+      {/* 步骤选择器 - 允许在步骤间自由跳转 */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <span style={{ fontWeight: 'bold' }}>快速导航：</span>
+          {stepConfig.map((step, index) => (
+            <Button 
+              key={index}
+              size="small" 
+              type={currentStep === index ? 'primary' : 'default'}
+              onClick={() => setCurrentStep(index)}
+              disabled={currentStep === index}
+            >
+              {step.title}
+            </Button>
+          ))}
+        </Space>
+      </Card>
+
       {/* Step 0: 并行研究 */}
       {currentStep === 0 && (
         <>
@@ -326,7 +344,7 @@ export function ProcessOptimizationWorkflowPage({
               showIcon
               style={{ marginBottom: 16 }}
               title="并行研究阶段"
-              description={`DOE实验设计、杂质研究、晶型研究可同时进行，完成全部三项后进入质量标准建立。已完成 ${Object.values(parallelComplete).filter(Boolean).length}/3`}
+              description={`DOE实验设计、杂质研究、晶型研究可同时进行。建议至少完成一项后进入下一阶段，也可根据项目需求灵活调整。`}
             />
           )}
           {allParallelComplete && (

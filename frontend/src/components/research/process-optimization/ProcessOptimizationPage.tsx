@@ -212,9 +212,9 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
               size="small"
               icon={<PlayCircleOutlined />}
               onClick={() => handleContinueWorkflow(record)}
-              disabled={record.status === 'completed'}
+              disabled={false} // 允许随时开始或继续
             >
-              {hasSaved ? '继续' : '开始'}
+              进入工作流
             </Button>
             <Popconfirm
               title="确认删除"

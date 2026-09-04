@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Switch, Upload } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined, InboxOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined, InboxOutlined, RobotOutlined } from '@ant-design/icons'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
+import { generateDeliverableReport } from '@/lib/api/server/research'
 import { RdDeliverableTemplate, STAGE_LABELS, DELIVERABLE_TYPES, RdProjectStage } from '@/types/research/rd-project'
 import { createDeliverableTemplate, updateDeliverableTemplate, deleteDeliverableTemplate } from '@/actions/research/rd-project'
 
@@ -56,6 +57,25 @@ export function DeliverableTemplatePage() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     msgApi.success('导出成功')
+  }
+
+  
+  const [reportModalOpen, setReportModalOpen] = useState(false)
+  const [generatedContent, setGeneratedContent] = useState('')
+  const [validationResult, setValidationResult] = useState<any>(null)
+
+  const handleAIGenerate = async (templateId: string) => {
+    // 这里暂时使用一个硬编码的项目 ID 进行测试，实际应从上下文获取
+    const testProjectId = '723537bc-f797-469e-9c93-d70301c74447' 
+    try {
+      msgApi.loading('AI 正在撰写报告...')
+      const result = await generateDeliverableReport(testProjectId, templateId)
+      setGeneratedContent(result.data.content || '')
+      setReportModalOpen(true)
+      msgApi.destroy()
+    } catch (e: any) {
+      msgApi.error(e.message || '生成失败')
+    }
   }
 
   const loadData = async () => {
@@ -175,6 +195,7 @@ export function DeliverableTemplatePage() {
       key: 'actions',
       render: (_: unknown, record: RdDeliverableTemplate) => (
         <Space>
+          <Button type="link" icon={<RobotOutlined />} onClick={() => handleAIGenerate(record.id)}>AI 生成</Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Button type="link" icon={<DownloadOutlined />} onClick={() => handleExportTemplate(record)} disabled={!record.template_content} />
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>

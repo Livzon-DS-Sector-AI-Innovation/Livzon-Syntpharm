@@ -455,7 +455,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
             <Statistic
               title="高风险问题"
               value={checkDetail.risk_high}
-              valueStyle={{ color: '#cf1322' }}
+              styles={{ content: { color: '#cf1322' } }}
               prefix={<ExclamationCircleOutlined />}
             />
           </Col>
@@ -463,7 +463,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
             <Statistic
               title="中风险问题"
               value={checkDetail.risk_medium}
-              valueStyle={{ color: '#fa8c16' }}
+              styles={{ content: { color: '#fa8c16' } }}
               prefix={<ExclamationCircleOutlined />}
             />
           </Col>
@@ -471,7 +471,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
             <Statistic
               title="低风险问题"
               value={checkDetail.risk_low}
-              valueStyle={{ color: '#3f8600' }}
+              styles={{ content: { color: '#3f8600' } }}
               prefix={<ExclamationCircleOutlined />}
             />
           </Col>

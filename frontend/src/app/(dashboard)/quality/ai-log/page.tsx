@@ -265,7 +265,7 @@ export default function AiLogPage() {
               title="今日调用"
               value={statistics.today}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -275,7 +275,7 @@ export default function AiLogPage() {
               title="领用事由"
               value={statistics.reason_count}
               prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -285,7 +285,7 @@ export default function AiLogPage() {
               title="报废原因"
               value={statistics.scrap_count}
               prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -295,7 +295,7 @@ export default function AiLogPage() {
               title="异常分析"
               value={statistics.analyse_count}
               prefix={<RobotOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>

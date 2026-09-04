@@ -2123,22 +2123,22 @@ export default function DeviationPage() {
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={6}>
             <Card size="small">
-              <Statistic title="待处理" value={byStatus.draft || 0} valueStyle={{ color: '#faad14' }} />
+              <Statistic title="待处理" value={byStatus.draft || 0} styles={{ content: { color: '#faad14' } }} />
             </Card>
           </Col>
           <Col span={6}>
             <Card size="small">
-              <Statistic title="调查中" value={investigatingCount} valueStyle={{ color: '#1890ff' }} />
+              <Statistic title="调查中" value={investigatingCount} styles={{ content: { color: '#1890ff' } }} />
             </Card>
           </Col>
           <Col span={6}>
             <Card size="small">
-              <Statistic title="整改中" value={correctionCount} valueStyle={{ color: '#722ed1' }} />
+              <Statistic title="整改中" value={correctionCount} styles={{ content: { color: '#722ed1' } }} />
             </Card>
           </Col>
           <Col span={6}>
             <Card size="small">
-              <Statistic title="已关闭" value={closedCount} valueStyle={{ color: '#52c41a' }} />
+              <Statistic title="已关闭" value={closedCount} styles={{ content: { color: '#52c41a' } }} />
             </Card>
           </Col>
         </Row>

@@ -1,4 +1,5 @@
 'use client'
+import { AIFileParser } from './AIFileParser'
 
 import { useState } from 'react'
 import { Card, Button, Space, Tag, Table, Form, Input, Select, App, Tabs, Alert, Row, Col, Statistic, Radio } from 'antd'
@@ -66,6 +67,7 @@ export function ModuleCrystalForm({ optimizationId, initialData, onComplete }: M
   const [saltScreeningResults, setSaltScreeningResults] = useState(initialData?.salt_screening_results || '')
   const [studyConclusion, setStudyConclusion] = useState(initialData?.conclusion || '')
   const [showForm, setShowForm] = useState(false)
+  const [showNotice, setShowNotice] = useState(!localStorage.getItem(`hide-crystal-notice-${optimizationId}`))
   const [form] = Form.useForm()
 
   const handleAddRecord = async () => {
@@ -156,6 +158,67 @@ export function ModuleCrystalForm({ optimizationId, initialData, onComplete }: M
 
   return (
     <div>
+
+      {/* 研究项迁移提示 */}
+      <Alert
+        title="💡 新功能提示"
+        description={
+          <div>
+            <p style={{ marginBottom: 8 }}>
+              晶型研究功能已升级为项目级的<strong>"研究项"</strong>管理，支持跨阶段跟踪和版本控制。
+            </p>
+            <Space>
+              <Button 
+                size="small" 
+                type="primary"
+                onClick={() => {
+                  const projectId = optimizationId.split('-')[0]
+                  window.location.href = `/research/projects/${projectId}?tab=research_tracks`
+                }}
+              >
+                前往研究项管理 →
+              </Button>
+              <Button 
+                size="small"
+                onClick={() => {
+                  localStorage.setItem(`hide-crystal-notice-${optimizationId}`, 'true')
+                  setShowNotice(false)
+                }}
+              >
+                暂时隐藏
+              </Button>
+            </Space>
+          </div>
+        }
+        type="info"
+        showIcon
+        closable
+        onClose={() => setShowNotice(false)}
+        style={{ marginBottom: 16 }}
+      />
+
+      {/* AI智能识别 */}
+      <AIFileParser
+        parseType="lab_confirmation"
+        onParseComplete={(data) => {
+          // 将AI解析的晶型数据填充到表单
+          if (data.crystal_forms && Array.isArray(data.crystal_forms)) {
+            const newRecords = data.crystal_forms.map((form: any, index: number) => ({
+              id: `crystal-${Date.now()}-${index}`,
+              form_name: form.name || form.form_name || `晶型${String.fromCharCode(65 + index)}`,
+              characterization_method: form.method || form.characterization_method || 'XRD',
+              stability: form.stability || 'unknown',
+              description: form.description || '',
+            }))
+            setRecords(prev => [...prev, ...newRecords])
+          }
+          if (data.stable_form) {
+            // setStableForm(data.stable_form) // TODO: Add state
+          }
+          message.success('晶型数据解析完成，已自动填充')
+        }}
+        hint="支持上传XRD图谱报告、晶型表征文档等，AI将自动识别晶型信息"
+      />
       <Card>
         <Tabs
           activeKey={activeTab}
