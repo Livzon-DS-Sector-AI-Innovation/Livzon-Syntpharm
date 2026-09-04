@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Replace useEffect+useState data fetching with useQuery in `contractor/page.tsx`
-- [ ] Remove duplicate state from `contractorStore.ts` (keep only UI state like filters, modal visibility)
-- [ ] Ensure proper cache invalidation when mutations occur (create, update, delete, blacklist, activate)
-- [ ] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from contractor module
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] Manual smoke test: contractor list loads, filters work, CRUD operations succeed
+- [x] Replace useEffect+useState data fetching with useQuery in `contractor/page.tsx`
+- [x] Remove duplicate state from `contractorStore.ts` (keep only UI state like filters, modal visibility)
+- [x] Ensure proper cache invalidation when mutations occur (create, update, delete, blacklist, activate)
+- [x] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from contractor module
+- [x] `tsc --noEmit` passes with no errors
+- [x] Manual smoke test: contractor list loads, filters work, CRUD operations succeed

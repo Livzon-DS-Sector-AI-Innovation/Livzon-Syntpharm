@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Replace useEffect+useState data fetching with useQuery in `ehs-change/page.tsx`
-- [ ] Remove duplicate state from `ehsChangeStore.ts` (keep only UI state like filters, modal visibility)
-- [ ] Ensure proper cache invalidation when mutations occur (create, update, submit, approve, reject, close)
-- [ ] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from EHS change module
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] Manual smoke test: EHS change list loads, filters work, workflow actions succeed
+- [x] Replace useEffect+useState data fetching with useQuery in `ehs-change/page.tsx`
+- [x] Remove duplicate state from `ehsChangeStore.ts` (keep only UI state like filters, modal visibility)
+- [x] Ensure proper cache invalidation when mutations occur (create, update, submit, approve, reject, close)
+- [x] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from EHS change module
+- [x] `tsc --noEmit` passes with no errors
+- [x] Manual smoke test: EHS change list loads, filters work, workflow actions succeed
