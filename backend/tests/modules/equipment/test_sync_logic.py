@@ -12,24 +12,25 @@ from app.modules.hr.models import HrDepartment
 
 # 模拟 Excel 内容
 def create_mock_excel(rows):
-    df = pd.DataFrame(
-        rows,
-        columns=[
-            "资产编号",
-            "设备名称",
-            "实物所在部门",
-            "实物所在地点",
-            "当前成本",
-            "帐面净值",
-            "型号",
-            "制造商",
-            "启用日期",
-        ],
-    )
+    cols = [
+        "资产编号",
+        "设备名称",
+        "实物所在部门",
+        "实物所在地点",
+        "当前成本",
+        "帐面净值",
+        "型号",
+        "制造商",
+        "启用日期",
+    ]
+    # 前 4 行写空数据以匹配 EXCEL_HEADER_ROW = 4
+    preamble = pd.DataFrame([[""] * len(cols) for _ in range(4)], columns=cols)
+    data = pd.DataFrame(rows, columns=cols)
+
     output = BytesIO()
-    # 简单模拟 header=4 的情况，实际测试可能需要更复杂的 openpyxl 构造
-    # 这里为了演示 TDD 流程，我们假设 Service 层能解析这个简单的流
-    df.to_excel(output, index=False, header=True)
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        preamble.to_excel(writer, index=False, header=False, startrow=0)
+        data.to_excel(writer, index=False, header=True, startrow=4)
     output.seek(0)
     return output.read()
 

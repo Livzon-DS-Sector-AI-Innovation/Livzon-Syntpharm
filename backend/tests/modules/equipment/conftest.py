@@ -95,10 +95,11 @@ def project_root() -> Path:
 @pytest.fixture
 async def seed_departments_and_locations(db_session: AsyncSession):
     """Seed basic departments and locations for equipment sync tests."""
+    uid = uuid.uuid4().hex[:6]
     depts = [
-        HrDepartment(name="201车间", code="DEPT-201", is_production=True),
-        HrDepartment(name="质量控制部", code="DEPT-QC", is_production=False),
-        HrDepartment(name="溶剂回收车间", code="DEPT-SOLVENT", is_production=True),
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
     ]
     for dept in depts:
         db_session.add(dept)
@@ -119,10 +120,11 @@ async def seed_departments_and_locations(db_session: AsyncSession):
 @pytest.fixture
 async def seed_basic_data(db_session: AsyncSession):
     """Seed basic data for equipment sync TDD tests (same as seed_departments_and_locations)."""
+    uid = uuid.uuid4().hex[:6]
     depts = [
-        HrDepartment(name="201车间", code="DEPT-201", is_production=True),
-        HrDepartment(name="质量控制部", code="DEPT-QC", is_production=False),
-        HrDepartment(name="溶剂回收车间", code="DEPT-SOLVENT", is_production=True),
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
     ]
     for dept in depts:
         db_session.add(dept)
