@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All unused imports removed from remaining dashboard pages
-- [ ] All unused variables removed from remaining dashboard pages
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (warning count decreases)
+- [x] All unused imports removed from remaining dashboard pages
+- [x] All unused variables removed from remaining dashboard pages
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (warning count decreases)
