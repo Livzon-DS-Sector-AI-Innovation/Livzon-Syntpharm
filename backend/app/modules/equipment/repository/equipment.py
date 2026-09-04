@@ -320,7 +320,10 @@ async def create_equipment(
     await db.flush()
 
     # eager re-fetch
-    return await _refetch_equipment(db, equipment.id)  # type: ignore[return-value]
+    refetched: Equipment | None = await _refetch_equipment(db, equipment.id)
+    if not refetched:
+        raise RuntimeError(f"Failed to refetch newly created equipment {equipment.id}")
+    return refetched
 
 
 async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equipment | None:
