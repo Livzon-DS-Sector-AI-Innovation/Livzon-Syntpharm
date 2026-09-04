@@ -331,7 +331,7 @@ async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equip
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(Equipment.id == equipment_id, not Equipment.is_deleted)  # noqa: E712
+        .where(Equipment.id == equipment_id, Equipment.is_deleted.is_(False))  # noqa: E712
     )
     return result.scalar_one_or_none()
 
@@ -349,7 +349,7 @@ async def get_equipment_by_id(
         )
         .where(
             Equipment.id == equipment_id,
-            not Equipment.is_deleted,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -363,7 +363,7 @@ async def get_equipment_by_asset_no(
     result = await db.execute(
         select(Equipment).where(
             Equipment.asset_no == asset_no,
-            not Equipment.is_deleted,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -518,7 +518,7 @@ async def count_equipments_by_category(
         .where(
             EquipmentCategoryLink.category_id == category_id,
             EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
-            not Equipment.is_deleted,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -534,7 +534,7 @@ async def count_equipments_by_location(
         .select_from(Equipment)
         .where(
             Equipment.location_id == location_id,
-            not Equipment.is_deleted,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -550,7 +550,7 @@ async def get_max_equipment_no_by_category(
         select(Equipment.equipment_tag)
         .where(
             Equipment.equipment_tag.like(pattern),
-            not Equipment.is_deleted,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
         .order_by(Equipment.equipment_tag.desc())
         .limit(1)
