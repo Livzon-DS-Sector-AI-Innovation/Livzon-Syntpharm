@@ -10,8 +10,8 @@
 
 ## Acceptance Criteria
 
-- [ ] All validation-audit action functions have explicit return types
-- [ ] All `as any` type assertions removed
-- [ ] Zero `@typescript-eslint/no-explicit-any` warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes on modified files
+- [x] All validation-audit action functions have explicit return types
+- [x] All `as any` type assertions removed
+- [x] Zero `@typescript-eslint/no-explicit-any` warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes on modified files
