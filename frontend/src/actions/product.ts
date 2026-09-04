@@ -15,38 +15,38 @@ import {
   syncProductToFeishu as syncProductToFeishuApi,
 } from '@/lib/api/server/product'
 
-export async function createProduct(data: ProductCreateInput) {
+export async function createProduct(data: ProductCreateInput): Promise<Record<string, unknown>> {
   const result = await createProductApi(data)
   revalidatePath('/production/products')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateProduct(id: string, data: ProductUpdateInput) {
+export async function updateProduct(id: string, data: ProductUpdateInput): Promise<Record<string, unknown>> {
   const result = await updateProductApi(id, data)
   revalidatePath('/production/products')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(id: string): Promise<Record<string, unknown>> {
   const result = await deleteProductApi(id)
   revalidatePath('/production/products')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function getProducts(): Promise<any> {
-  return getProductsApi()
+export async function getProducts(): Promise<Record<string, unknown>> {
+  return getProductsApi() as Promise<Record<string, unknown>>
 }
 
-export async function getProductsByWorkshop(workshop: string): Promise<any> {
-  return getProductsByWorkshopApi(workshop)
+export async function getProductsByWorkshop(workshop: string): Promise<Record<string, unknown>> {
+  return getProductsByWorkshopApi(workshop) as Promise<Record<string, unknown>>
 }
 
-export async function getProduct(productId: string): Promise<any> {
-  return getProductApi(productId)
+export async function getProduct(productId: string): Promise<Record<string, unknown>> {
+  return getProductApi(productId) as Promise<Record<string, unknown>>
 }
 
-export async function createWorkshopProduct(data: WorkshopProductCreate): Promise<any> {
-  return createWorkshopProductApi(data)
+export async function createWorkshopProduct(data: WorkshopProductCreate): Promise<Record<string, unknown>> {
+  return createWorkshopProductApi(data) as Promise<Record<string, unknown>>
 }
 
 export async function syncProductsFromFeishu(): Promise<{
@@ -56,7 +56,11 @@ export async function syncProductsFromFeishu(): Promise<{
 }> {
   const result = await syncProductsFromFeishuApi()
   revalidatePath('/product')
-  return result as any
+  return result as {
+    code: number
+    message: string
+    data: { created: number; updated: number; failed: number; total: number }
+  }
 }
 
 export async function syncProductToFeishu(id: string): Promise<{
@@ -66,5 +70,9 @@ export async function syncProductToFeishu(id: string): Promise<{
 }> {
   const result = await syncProductToFeishuApi(id)
   revalidatePath('/product')
-  return result as any
+  return result as {
+    code: number
+    message: string
+    data: { feishu_record_id: string }
+  }
 }

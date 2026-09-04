@@ -153,19 +153,21 @@ import {
   fetchExportAnnualReview as fetchExportAnnualReviewApi,
 } from '@/lib/api/server/product-output'
 
-export async function fetchAnnualReview(year: number) {
+export async function fetchAnnualReview(year: number): Promise<Record<string, unknown>> {
   const authHeaders = await getAuthHeaders()
-  return fetchAnnualReviewApi(year, authHeaders) as any
+  const result = await fetchAnnualReviewApi(year, authHeaders)
+  return result as Record<string, unknown>
 }
 
-export async function fetchExportAnnualReview(year: number) {
+export async function fetchExportAnnualReview(year: number): Promise<Response> {
   const authHeaders = await getAuthHeaders()
-  return fetchExportAnnualReviewApi(year, authHeaders) as any
+  return fetchExportAnnualReviewApi(year, authHeaders)
 }
 
-export async function fetchPreviewImport(formData: FormData) {
+export async function fetchPreviewImport(formData: FormData): Promise<Record<string, unknown>> {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewImportApi(formData, authHeaders) as any
+  const result = await fetchPreviewImportApi(formData, authHeaders)
+  return result as Record<string, unknown>
 }
 
 export async function fetchUndoImport(batchId: string) {

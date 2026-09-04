@@ -294,7 +294,7 @@ export default function DeviationSettingsPage() {
         loadData()
         return true
       } else {
-        message.error(result.message || '操作失败')
+        message.error((result.message as string) || '操作失败')
         return false
       }
     } catch {
@@ -310,7 +310,7 @@ export default function DeviationSettingsPage() {
         message.success(successMsg)
         loadData()
       } else {
-        message.error(result.message || '删除失败')
+        message.error((result.message as string) || '删除失败')
       }
     } catch {
       message.error('删除失败')

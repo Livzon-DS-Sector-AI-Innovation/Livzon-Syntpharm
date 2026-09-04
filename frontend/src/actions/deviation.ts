@@ -44,22 +44,22 @@ import {
 
 // ============ 偏差流程 ============
 
-export async function createDeviationFlow(data: Record<string, unknown>) {
+export async function createDeviationFlow(data: Record<string, unknown>): Promise<Record<string, unknown>> {
   const result = await createDeviationFlowApi(data)
   revalidatePath('/quality/deviation-flow')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateDeviationFlow(id: string, data: Record<string, unknown>) {
+export async function updateDeviationFlow(id: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
   const result = await updateDeviationFlowApi(id, data)
   revalidatePath('/quality/deviation-flow')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function submitDeviationFlow(id: string, targetStatus: string) {
+export async function submitDeviationFlow(id: string, targetStatus: string): Promise<Record<string, unknown>> {
   const result = await submitDeviationFlowApi(id, targetStatus)
   revalidatePath('/quality/deviation-flow')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 export async function uploadDeviationAttachment(deviationId: string, file: File) {
@@ -70,28 +70,28 @@ export async function uploadDeviationAttachment(deviationId: string, file: File)
 
 // ============ 偏差设置 ============
 
-export async function saveDeviationSetting(url: string, method: string, values: Record<string, unknown>) {
+export async function saveDeviationSetting(url: string, method: string, values: Record<string, unknown>): Promise<Record<string, unknown>> {
   const result = await saveDeviationSettingApi(url, method, values)
   revalidatePath('/quality/deviation-flow/settings')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function deleteDeviationSetting(url: string) {
+export async function deleteDeviationSetting(url: string): Promise<Record<string, unknown>> {
   const result = await deleteDeviationSettingApi(url)
   revalidatePath('/quality/deviation-flow/settings')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function toggleDeviationSetting(url: string) {
+export async function toggleDeviationSetting(url: string): Promise<Record<string, unknown>> {
   const result = await toggleDeviationSettingApi(url)
   revalidatePath('/quality/deviation-flow/settings')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function setDefaultDeviationTemplate(templateId: string) {
+export async function setDefaultDeviationTemplate(templateId: string): Promise<Record<string, unknown>> {
   const result = await setDefaultDeviationTemplateApi(templateId)
   revalidatePath('/quality/deviation-flow/settings')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 export async function getDeviations(params?: {
@@ -109,7 +109,7 @@ export async function getDeviationById(id: string) {
   return getDeviationByIdApi(id)
 }
 
-export async function createDeviation(data: DeviationCreate) {
+export async function createDeviation(data: DeviationCreate): Promise<Record<string, unknown>> {
   const processedData = {
     ...data,
     occurrence_date: data.occurrence_date && typeof data.occurrence_date === 'object' && 'format' in data.occurrence_date
@@ -118,10 +118,10 @@ export async function createDeviation(data: DeviationCreate) {
   }
   const result = await createDeviationApi(processedData)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateDeviation(id: string, data: DeviationUpdate) {
+export async function updateDeviation(id: string, data: DeviationUpdate): Promise<Record<string, unknown>> {
   const processedData = {
     ...data,
     occurrence_date: data.occurrence_date && typeof data.occurrence_date === 'object' && 'format' in data.occurrence_date
@@ -130,37 +130,37 @@ export async function updateDeviation(id: string, data: DeviationUpdate) {
   }
   const result = await updateDeviationApi(id, processedData)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function deleteDeviation(id: string) {
+export async function deleteDeviation(id: string): Promise<Record<string, unknown>> {
   const result = await deleteDeviationApi(id)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function submitDeviation(id: string) {
+export async function submitDeviation(id: string): Promise<Record<string, unknown>> {
   const result = await submitDeviationApi(id)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function approveDeviation(id: string, data: { approved: boolean; comment?: string }) {
+export async function approveDeviation(id: string, data: { approved: boolean; comment?: string }): Promise<Record<string, unknown>> {
   const result = await approveDeviationApi(id, data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function lockBatch(id: string, data: { reason: string }) {
+export async function lockBatch(id: string, data: { reason: string }): Promise<Record<string, unknown>> {
   const result = await lockBatchApi(id, data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function unlockBatch(id: string) {
+export async function unlockBatch(id: string): Promise<Record<string, unknown>> {
   const result = await unlockBatchApi(id)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 // ============ 偏差调查 ============
@@ -169,16 +169,16 @@ export async function getInvestigations(params?: { deviation_id?: string; page?:
   return getInvestigationsApi(params)
 }
 
-export async function createInvestigation(data: InvestigationCreate) {
+export async function createInvestigation(data: InvestigationCreate): Promise<Record<string, unknown>> {
   const result = await createInvestigationApi(data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateInvestigation(id: string, data: Partial<InvestigationCreate>) {
+export async function updateInvestigation(id: string, data: Partial<InvestigationCreate>): Promise<Record<string, unknown>> {
   const result = await updateInvestigationApi(id, data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 // ============ 偏差整改 ============
@@ -187,16 +187,16 @@ export async function getCorrections(params?: { deviation_id?: string; status?: 
   return getCorrectionsApi(params)
 }
 
-export async function createCorrection(data: CorrectionCreate) {
+export async function createCorrection(data: CorrectionCreate): Promise<Record<string, unknown>> {
   const result = await createCorrectionApi(data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateCorrection(id: string, data: Partial<CorrectionCreate>) {
+export async function updateCorrection(id: string, data: Partial<CorrectionCreate>): Promise<Record<string, unknown>> {
   const result = await updateCorrectionApi(id, data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 // ============ 偏差关闭 ============
@@ -205,16 +205,16 @@ export async function getClosings(params?: { deviation_id?: string; page?: numbe
   return getClosingsApi(params)
 }
 
-export async function createClosing(data: ClosingCreate) {
+export async function createClosing(data: ClosingCreate): Promise<Record<string, unknown>> {
   const result = await createClosingApi(data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
-export async function updateClosing(id: string, data: Partial<ClosingCreate>) {
+export async function updateClosing(id: string, data: Partial<ClosingCreate>): Promise<Record<string, unknown>> {
   const result = await updateClosingApi(id, data)
   revalidatePath('/quality/deviation')
-  return result as any
+  return result as Record<string, unknown>
 }
 
 // ============ 统计 ============

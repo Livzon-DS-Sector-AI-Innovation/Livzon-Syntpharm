@@ -55,10 +55,11 @@ export default function WorkshopProductsPage() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const response = await getProductsByWorkshop(workshop)
+      const response = await getProductsByWorkshop(workshop) as { code: number; data: unknown }
       if (response.code === 200) {
-        setProducts(response.data || [])
-        loadSummaries(response.data || [])
+        const products = (response.data || []) as WorkshopProduct[]
+        setProducts(products)
+        loadSummaries(products)
       }
     } catch {
       message.error('加载产品列表失败')
@@ -153,7 +154,7 @@ export default function WorkshopProductsPage() {
         form.resetFields()
         loadProducts()
       } else {
-        message.error(response.message || '创建失败')
+        message.error((response.message as string) || '创建失败')
       }
     } catch {
       message.error('创建失败')
@@ -168,12 +169,12 @@ export default function WorkshopProductsPage() {
       content: `确定要删除产品"${product.name}"吗？`,
       onOk: async () => {
         try {
-          const response = await deleteProduct(product.id)
+          const response = await deleteProduct(product.id) as { code: number; message: string }
           if (response.code === 200) {
             message.success('删除成功')
             loadProducts()
           } else {
-            message.error(response.message || '删除失败')
+            message.error((response.message as string) || '删除失败')
           }
         } catch {
           message.error('删除失败')

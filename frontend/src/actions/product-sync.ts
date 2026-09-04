@@ -7,17 +7,17 @@ import {
   fetchUndoLastSync as fetchUndoLastSyncApi,
 } from '@/lib/api/server/product-output'
 
-export async function fetchPreviewPush(productId: string) {
+export async function fetchPreviewPush(productId: string): Promise<Record<string, unknown>> {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewPushApi(productId, authHeaders) as any
+  return fetchPreviewPushApi(productId, authHeaders) as Promise<Record<string, unknown>>
 }
 
-export async function fetchPreviewPull(productId: string) {
+export async function fetchPreviewPull(productId: string): Promise<Record<string, unknown>> {
   const authHeaders = await getAuthHeaders()
-  return fetchPreviewPullApi(productId, authHeaders) as any
+  return fetchPreviewPullApi(productId, authHeaders) as Promise<Record<string, unknown>>
 }
 
-export async function fetchUndoLastSync(productId: string) {
+export async function fetchUndoLastSync(productId: string): Promise<Record<string, unknown>> {
   const authHeaders = await getAuthHeaders()
-  return fetchUndoLastSyncApi(productId, authHeaders) as any
+  return fetchUndoLastSyncApi(productId, authHeaders) as Promise<Record<string, unknown>>
 }

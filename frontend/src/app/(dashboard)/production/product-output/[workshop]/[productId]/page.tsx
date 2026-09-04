@@ -103,9 +103,9 @@ export default function ProductOutputRecordsPage() {
 
   const loadProduct = async () => {
     try {
-      const response = await getProduct(productId)
+      const response = await getProduct(productId) as { code: number; data: unknown }
       if (response.code === 200) {
-        setProduct(response.data)
+        setProduct(response.data as Product)
       }
     } catch {
       message.error('加载产品信息失败')
@@ -264,10 +264,11 @@ export default function ProductOutputRecordsPage() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const response = await fetchPreviewImport(formData)
+      const response = await fetchPreviewImport(formData) as { code: number; message: string; data: Record<string, unknown> }
       if (response.code === 200) {
-        setPreviewData(response.data)
-        message.info(`预览完成：共 ${response.data.total_rows} 行，可导入 ${response.data.new_records} 行`)
+        const respData = response.data
+        setPreviewData(respData)
+        message.info(`预览完成：共 ${respData.total_rows} 行，可导入 ${respData.new_records} 行`)
       } else {
         message.error(response.message || '预览失败')
       }
@@ -397,7 +398,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPush = async () => {
     try {
-      const data = await fetchPreviewPush(productId)
+      const data = await fetchPreviewPush(productId) as { code: number; message: string; data: { to_create: number; to_update: number; to_skip: number } }
       if (data.code === 200) {
         Modal.info({
           title: '推送预览',
@@ -420,7 +421,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPull = async () => {
     try {
-      const data = await fetchPreviewPull(productId)
+      const data = await fetchPreviewPull(productId) as { code: number; message: string; data: { to_create: number; to_update: number } }
       if (data.code === 200) {
         Modal.info({
           title: '拉取预览',
@@ -446,7 +447,7 @@ export default function ProductOutputRecordsPage() {
       content: '确定要撤销上次同步操作吗？此操作不可恢复。',
       onOk: async () => {
         try {
-          const data = await fetchUndoLastSync(productId)
+          const data = await fetchUndoLastSync(productId) as { code: number; message: string }
           if (data.code === 200) {
             message.success(data.message || '撤销成功')
             loadRecords()

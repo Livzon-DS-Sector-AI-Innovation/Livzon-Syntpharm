@@ -287,7 +287,7 @@ export default function DeviationCreatePage() {
       if (isEditMode && currentDeviationId) {
         await saveData('', 'PUT')
       } else {
-        const result = await saveData('', 'POST')
+        const result = await saveData('', 'POST') as { data: { id: string } }
         setCurrentDeviationId(result.data.id)
         setIsEditMode(true)
       }
@@ -346,7 +346,7 @@ export default function DeviationCreatePage() {
 
       let deviationId = currentDeviationId
       if (!deviationId) {
-        const saveResult = await saveData('', 'POST')
+        const saveResult = await saveData('', 'POST') as { data: { id: string } }
         deviationId = saveResult.data.id
         setCurrentDeviationId(deviationId)
         setIsEditMode(true)
@@ -357,18 +357,18 @@ export default function DeviationCreatePage() {
       const result = await submitDeviationFlow(deviationId!, targetStatus)
 
       if (result.code === 200) {
-        message.success(result.message)
+        message.success(result.message as string)
         setCurrentStatus(targetStatus)
 
         if (targetStatus === 'completed') {
           Modal.success({
             title: '偏差已完成',
-            content: '偏差流程已完成！',
+            content: '偏差流程已完成！' as string,
             onOk: () => router.push('/quality/deviation-flow/query'),
           })
         }
       } else {
-        message.error(result.message || '提交失败')
+        message.error((result.message as string) || '提交失败')
       }
     } catch (error: any) {
       if (error.errorFields) {

@@ -82,7 +82,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const fetchReportImages = async () => {
     try {
       const result = await getReportImages(resolvedParams.id)
-      setReportImages(result.data || [])
+      setReportImages((result.data as any[]) || [])
     } catch (error) {
       console.error('获取图片失败', error)
     }
@@ -98,7 +98,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         message.success('图片上传成功，AI识别完成')
 
         // 如果有识别结果，自动填入表格
-        const aiResult = result.data?.ai_result
+        const aiResult = (result.data as any)?.ai_result
         if (aiResult?.items?.length > 0) {
           const firstItem = aiResult.items[0]
           const fieldValue = firstItem.value || firstItem.name || ''
@@ -111,7 +111,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         // 刷新图片列表
         fetchReportImages()
       } else {
-        message.error(result.message || '上传失败')
+        message.error((result.message as string) || '上传失败')
       }
     } catch (error: any) {
       message.error(error.message || '上传失败')

@@ -28,10 +28,10 @@ export default function AnnualReviewTab({ year }: Props) {
     try {
       const res = await fetchAnnualReview(year)
       if (res.code !== 200) {
-        setError(res.message || '加载数据失败')
+        setError((res.message as string) || '加载数据失败')
         return
       }
-      setData(res.data)
+      setData(res.data as AnnualReviewData)
     } catch (err) {
       console.error('Failed to load annual review:', err)
       setError('加载年度回顾数据失败')
@@ -43,7 +43,7 @@ export default function AnnualReviewTab({ year }: Props) {
   const handleExport = async () => {
     try {
       const response = await fetchExportAnnualReview(year)
-      const blob = await response.blob()
+      const blob = await (response as unknown as Response).blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

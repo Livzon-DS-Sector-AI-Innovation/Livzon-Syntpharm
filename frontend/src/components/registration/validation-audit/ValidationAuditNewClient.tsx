@@ -76,19 +76,19 @@ export default function ValidationAuditNewClient() {
         return
       }
 
-      const taskId = createResult.data.id
+      const taskId = createResult.data.id as string as string as string
 
       const formData = new FormData()
       for (const file of fileList) {
         const originFile = file.originFileObj || file
         formData.append('files', originFile as File)
       }
-      const fileType = values.audit_mode === 'protocol_report' ? 'protocol' : values.audit_mode
+      const fileType = values.audit_mode === 'protocol_report' ? 'protocol' : (values.audit_mode as string)
       formData.append('file_type', fileType)
 
       const uploadResult = await uploadValidationAuditFiles(taskId, formData)
       if (!uploadResult.success) {
-        message.error(`文件上传失败: ${uploadResult.message}`)
+        message.error(`文件上传失败: ${uploadResult.message as string}`)
         setSubmitting(false)
         return
       }

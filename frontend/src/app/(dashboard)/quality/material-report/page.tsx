@@ -73,8 +73,8 @@ export default function MaterialReportPage() {
         getReportStatistics(),
         getTemplates({ page: 1, page_size: 100 }),
       ])
-      setData(result.data?.items || [])
-      setPagination((prev) => ({ ...prev, total: result.data?.total || 0 }))
+      setData((result.data as any)?.items || [])
+      setPagination((prev) => ({ ...prev, total: (result.data as any)?.total || 0 }))
       setStatistics(stats.data || {})
       setTemplates(templateResult.data?.items || [])
     } catch (_error) {

@@ -123,7 +123,7 @@ export default function CreateReportPage() {
         static_data: values.static_data,
       })
 
-      const newReportId = result.data?.id
+      const newReportId = (result.data as Record<string, unknown>)?.id as string
       setReportId(newReportId)
 
       // 保存明细数据
