@@ -1,3 +1,4 @@
+import uuid
 """Shared test fixtures for equipment module tests."""
 
 from pathlib import Path
@@ -102,10 +103,11 @@ async def seed_departments_and_locations(db_session: AsyncSession):
     for dept in depts:
         db_session.add(dept)
 
+    uid = uuid.uuid4().hex[:6]
     locations = [
-        Location(name="主厂房", code="LOC-MAIN"),
-        Location(name="仓库A", code="LOC-WH-A"),
-        Location(name="实验室", code="LOC-LAB"),
+        Location(name="主厂房", code=f"LOC-MAIN-{uid}"),
+        Location(name="仓库A", code=f"LOC-WH-A-{uid}"),
+        Location(name="实验室", code=f"LOC-LAB-{uid}"),
     ]
     for loc in locations:
         db_session.add(loc)
@@ -125,10 +127,11 @@ async def seed_basic_data(db_session: AsyncSession):
     for dept in depts:
         db_session.add(dept)
 
+    uid = uuid.uuid4().hex[:6]
     locations = [
-        Location(name="主厂房", code="LOC-MAIN"),
-        Location(name="仓库A", code="LOC-WH-A"),
-        Location(name="实验室", code="LOC-LAB"),
+        Location(name="主厂房", code=f"LOC-MAIN-{uid}"),
+        Location(name="仓库A", code=f"LOC-WH-A-{uid}"),
+        Location(name="实验室", code=f"LOC-LAB-{uid}"),
     ]
     for loc in locations:
         db_session.add(loc)
