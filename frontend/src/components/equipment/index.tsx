@@ -1,4 +1,4 @@
-'use client'
+
 export { StatsCards } from './StatsCards'
 export { StatsDashboard } from './StatsDashboard'
 export { EquipmentTable } from './EquipmentTable'
@@ -8,6 +8,7 @@ export { CategoryDrawer } from './CategoryDrawer'
 export { CategoryTree } from './CategoryTree'
 export { LocationTree } from './LocationTree'
 export { LocationDrawer } from './LocationDrawer'
+export { FilterSummary } from './FilterSummary'
 
 // maintenance components
 export { MaintenancePage } from './MaintenancePage'
@@ -65,3 +66,4 @@ export { PersonnelTable } from './PersonnelTable'
 export { PersonnelDrawer } from './PersonnelDrawer'
 export { RoleManagePanel } from './RoleManagePanel'
 export { PersonnelCategoryDrawer } from './PersonnelCategoryDrawer'
+export { ExcelSyncButton } from './ExcelSyncButton'

@@ -156,25 +156,22 @@ export async function deleteLocation(id: string): Promise<ActionResult> {
 export async function createEquipment(data: CreateEquipmentInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createEquipmentApiTyped(data, authHeaders))
-  if (result.success) revalidatePath('/equipment')
   return result
 }
 
 export async function updateEquipment(id: string, data: UpdateEquipmentInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateEquipmentApiTyped(id, data, authHeaders))
-  if (result.success) revalidatePath('/equipment')
   return result
 }
 
 export async function deleteEquipment(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => deleteEquipmentApi(id, authHeaders))
-  if (result.success) revalidatePath('/equipment')
   return result
 }
 
-// ==================== 故障代码 ====================
+// ==================== 故障代码 =============
 type FailureCodePath = 'symptoms' | 'causes' | 'actions'
 
 export async function createFailureCode(path: FailureCodePath, data: CreateFailureCodeInput): Promise<ActionResult> {
@@ -198,7 +195,7 @@ export async function deleteFailureCode(path: FailureCodePath, id: string): Prom
   return result
 }
 
-// ==================== 维修工单 ====================
+// ==================== 维修工单 =============
 export async function createWorkOrder(data: CreateWorkOrderInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createWorkOrderApiTyped(data, authHeaders))
@@ -248,7 +245,7 @@ export async function closeWorkOrder(id: string): Promise<ActionResult> {
   return result
 }
 
-// ==================== 校准计划 ====================
+// ==================== 校准计划 =============
 export async function createCalibrationPlan(data: CreateCalibrationPlanInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createCalibrationPlanApiTyped(data, authHeaders))
@@ -270,7 +267,7 @@ export async function deleteCalibrationPlan(id: string): Promise<ActionResult> {
   return result
 }
 
-// ==================== 校准记录 ====================
+// ==================== 校准记录 =============
 export async function createCalibrationRecord(data: CreateCalibrationRecordInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createCalibrationRecordApiTyped(data, authHeaders))
@@ -278,7 +275,7 @@ export async function createCalibrationRecord(data: CreateCalibrationRecordInput
   return result
 }
 
-// ==================== 备件管理 ====================
+// ==================== 备件管理 =============
 export async function createSparePart(data: CreateSparePartInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createSparePartApiTyped(data, authHeaders))
@@ -314,7 +311,7 @@ export async function stockAdjust(sparePartId: string, data: StockAdjustInput): 
   return result
 }
 
-// ==================== 维护计划 ====================
+// ==================== 维护计划 =============
 export async function createMaintenancePlan(data: CreateMaintenancePlanInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createMaintenancePlanApiTyped(data, authHeaders))
@@ -336,7 +333,7 @@ export async function deleteMaintenancePlan(id: string): Promise<ActionResult> {
   return result
 }
 
-// ==================== 巡检模板 ====================
+// ==================== 巡检模板 =============
 export async function createInspectionTemplate(data: CreateInspectionTemplateInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => createInspectionTemplateApiTyped(data, authHeaders))
@@ -386,7 +383,7 @@ export async function completeInspection(workOrderId: string, data: InspectionCo
   return result
 }
 
-// ==================== 工单物料领用 ====================
+// ==================== 工单物料领用 =============
 export async function consumeMaterials(workOrderId: string, data: MaterialConsumeInput): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => consumeMaterialsApiTyped(workOrderId, data, authHeaders))
@@ -394,7 +391,7 @@ export async function consumeMaterials(workOrderId: string, data: MaterialConsum
   return result
 }
 
-// ==================== 工单图片 ====================
+// ==================== 工单图片 =============
 export async function uploadWorkOrderImages(workOrderId: string, formData: FormData): Promise<ActionResult> {
   try {
     const token = await getServerToken()
@@ -416,7 +413,7 @@ export async function deleteWorkOrderImage(workOrderId: string, imageId: string)
   return result
 }
 
-// ==================== 抢单 ====================
+// ==================== 抢单 =============
 export async function claimWorkOrder(id: string): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => claimWorkOrderApi(id, authHeaders))
@@ -424,7 +421,7 @@ export async function claimWorkOrder(id: string): Promise<ActionResult> {
   return result
 }
 
-// ==================== 配置 ====================
+// ==================== 配置 =============
 export async function updateClaimTimeoutConfig(data: { emergency?: number; high?: number; medium?: number; low?: number }): Promise<ActionResult> {
   const authHeaders = await getAuthHeaders()
   const result = await wrapApiCall(() => updateClaimTimeoutConfigApiTyped(data, authHeaders))
@@ -432,7 +429,7 @@ export async function updateClaimTimeoutConfig(data: { emergency?: number; high?
   return result
 }
 
-// ==================== Excel 导入 ====================
+// ==================== Excel 导入 =============
 export interface ImportRowError {
   row: number
   message: string
@@ -464,5 +461,36 @@ export async function importEquipments(formData: FormData): Promise<ActionResult
     return { success: true, data: data as ImportResult }
   } catch (err) {
     return { success: false, error: (err as Error).message || '导入失败' }
+  }
+}
+// ==================== 批量删除设备 ====================
+export async function batchDeleteEquipments(ids: string[]): Promise<ActionResult> {
+  const authHeaders = await getAuthHeaders()
+  try {
+    // 将字符串 ID 数组转换为正确的格式
+    const response = await fetch('/api/v1/equipment/equipments/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ ids: ids }),
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      // 处理错误响应
+      return { success: false, error: result.message || result.detail || '批量删除失败' }
+    }
+    
+    if (result.code === 200) {
+      return { success: true, data: null }
+    } else {
+      return { success: false, error: result.message || '批量删除失败' }
+    }
+  } catch (error) {
+    console.error('批量删除设备失败:', error)
+    return { success: false, error: '网络错误，请稍后重试' }
   }
 }

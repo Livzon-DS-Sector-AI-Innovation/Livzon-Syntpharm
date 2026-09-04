@@ -21,6 +21,7 @@ from app.modules.equipment.schemas.equipment import (
     EquipmentResponse,
     EquipmentStatistics,
     EquipmentStatus,
+    EquipmentSyncResult,
     EquipmentUpdate,
     LocationCreate,
     LocationResponse,
@@ -147,6 +148,7 @@ __all__ = [
     "EquipmentResponse",
     "EquipmentStatistics",
     "BatchDeleteRequest",
+    "EquipmentSyncResult",
     # failure code
     "FailureCodeType",
     "FailureCodeCreate",

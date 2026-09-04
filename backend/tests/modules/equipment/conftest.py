@@ -1,11 +1,15 @@
 """Shared test fixtures for equipment module tests."""
 
+import uuid
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.equipment.models.equipment import Equipment, Location
 from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
@@ -81,3 +85,77 @@ async def test_assignee(db_session: AsyncSession) -> User:
     await db_session.flush()
     await db_session.refresh(user)
     return user
+
+
+@pytest.fixture
+def project_root() -> Path:
+    """Return the backend project root directory."""
+    return Path(__file__).parent.parent.parent.parent
+
+
+@pytest.fixture
+async def seed_departments_and_locations(db_session: AsyncSession):
+    """Seed basic departments and locations for equipment sync tests."""
+    # Clean up to prevent MultipleResultsFound from previous runs
+    dept_names = ["201车间", "质量控制部", "溶剂回收车间"]
+    await db_session.execute(
+        delete(Equipment).where(
+            Equipment.department_id.in_(select(HrDepartment.id).where(HrDepartment.name.in_(dept_names)))
+        )
+    )
+    await db_session.execute(delete(HrDepartment).where(HrDepartment.name.in_(dept_names)))
+
+    uid = uuid.uuid4().hex[:6]
+    depts = [
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
+    ]
+    for dept in depts:
+        db_session.add(dept)
+
+    uid = uuid.uuid4().hex[:6]
+    locations = [
+        Location(name="主厂房", code=f"LOC-MAIN-{uid}"),
+        Location(name="仓库A", code=f"LOC-WH-A-{uid}"),
+        Location(name="实验室", code=f"LOC-LAB-{uid}"),
+    ]
+    for loc in locations:
+        db_session.add(loc)
+
+    await db_session.flush()
+    yield
+
+
+@pytest.fixture
+async def seed_basic_data(db_session: AsyncSession):
+    """Seed basic data for equipment sync TDD tests (same as seed_departments_and_locations)."""
+    # Clean up to prevent MultipleResultsFound from previous runs
+    dept_names = ["201车间", "质量控制部", "溶剂回收车间"]
+    await db_session.execute(
+        delete(Equipment).where(
+            Equipment.department_id.in_(select(HrDepartment.id).where(HrDepartment.name.in_(dept_names)))
+        )
+    )
+    await db_session.execute(delete(HrDepartment).where(HrDepartment.name.in_(dept_names)))
+
+    uid = uuid.uuid4().hex[:6]
+    depts = [
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
+    ]
+    for dept in depts:
+        db_session.add(dept)
+
+    uid = uuid.uuid4().hex[:6]
+    locations = [
+        Location(name="主厂房", code=f"LOC-MAIN-{uid}"),
+        Location(name="仓库A", code=f"LOC-WH-A-{uid}"),
+        Location(name="实验室", code=f"LOC-LAB-{uid}"),
+    ]
+    for loc in locations:
+        db_session.add(loc)
+
+    await db_session.flush()
+    yield

@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.base_model import BaseModel
@@ -188,3 +190,20 @@ class Equipment(BaseModel):
         lazy="selectin",
     )
     location: Mapped["Location"] = relationship("Location")
+
+
+class EquipmentSyncLog(BaseModel):
+    """设备同步操作审计日志"""
+
+    __tablename__ = "sync_logs"
+    __table_args__ = {"schema": "equipment"}
+
+    operator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("identity.users.id"), comment="操作人ID")
+    file_name: Mapped[str] = mapped_column(String(255), comment="上传的文件名")
+    summary: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSON, comment="同步统计摘要 {updated, inserted, migrated, deleted}"
+    )
+    changes_detail: Mapped[list[dict[str, Any]]] = mapped_column(
+        postgresql.JSON, comment="详细变更列表 [{asset_no, field, old_val, new_val}]"
+    )
+    is_dry_run: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为预演模式")

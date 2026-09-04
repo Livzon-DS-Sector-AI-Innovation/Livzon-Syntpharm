@@ -1,9 +1,11 @@
 """Equipment database queries live here."""
 
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import func, select
+import sqlalchemy as sa
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -30,7 +32,7 @@ async def exists_category_by_code(
     """Check if category code exists."""
     query = select(EquipmentCategory.id).where(
         EquipmentCategory.code == code,
-        EquipmentCategory.is_deleted == False,  # noqa: E712
+        EquipmentCategory.is_deleted.is_(False),  # noqa: E712
     )
     if exclude_id:
         query = query.where(EquipmentCategory.id != exclude_id)
@@ -46,7 +48,7 @@ async def exists_location_by_code(
     """Check if location code exists."""
     query = select(Location.id).where(
         Location.code == code,
-        Location.is_deleted == False,  # noqa: E712
+        Location.is_deleted.is_(False),  # noqa: E712
     )
     if exclude_id:
         query = query.where(Location.id != exclude_id)
@@ -73,7 +75,7 @@ async def get_equipment_category_by_id(
     result = await db.execute(
         select(EquipmentCategory).where(
             EquipmentCategory.id == category_id,
-            EquipmentCategory.is_deleted == False,  # noqa: E712
+            EquipmentCategory.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -85,7 +87,7 @@ async def get_equipment_categories(
 ) -> list[EquipmentCategory]:
     """获取设备分类列表"""
     query = select(EquipmentCategory).where(
-        EquipmentCategory.is_deleted == False  # noqa: E712
+        EquipmentCategory.is_deleted.is_(False)  # noqa: E712
     )
     if parent_id is not None:
         query = query.where(EquipmentCategory.parent_id == parent_id)
@@ -100,7 +102,7 @@ async def get_equipment_category_tree(db: AsyncSession) -> list[EquipmentCategor
     """获取设备分类树形结构"""
     result = await db.execute(
         select(EquipmentCategory)
-        .where(EquipmentCategory.is_deleted == False)  # noqa: E712
+        .where(EquipmentCategory.is_deleted.is_(False))  # noqa: E712
         .options(selectinload(EquipmentCategory.children))
         .order_by(EquipmentCategory.code)
     )
@@ -171,7 +173,7 @@ async def get_location_by_id(
     result = await db.execute(
         select(Location).where(
             Location.id == location_id,
-            Location.is_deleted == False,  # noqa: E712
+            Location.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -182,7 +184,7 @@ async def get_locations(
     parent_id: uuid.UUID | None = None,
 ) -> list[Location]:
     """获取位置列表"""
-    query = select(Location).where(Location.is_deleted == False)  # noqa: E712
+    query = select(Location).where(Location.is_deleted.is_(False))  # noqa: E712
     if parent_id is not None:
         query = query.where(Location.parent_id == parent_id)
     else:
@@ -196,7 +198,7 @@ async def get_location_tree(db: AsyncSession) -> list[Location]:
     """获取位置树形结构"""
     result = await db.execute(
         select(Location)
-        .where(Location.is_deleted == False)  # noqa: E712
+        .where(Location.is_deleted.is_(False))  # noqa: E712
         .options(selectinload(Location.children))
         .order_by(Location.code)
     )
@@ -255,7 +257,7 @@ async def _get_category_child_ids(
     result = await db.execute(
         select(EquipmentCategory.id).where(
             EquipmentCategory.parent_id == parent_id,
-            EquipmentCategory.is_deleted == False,  # noqa: E712
+            EquipmentCategory.is_deleted.is_(False),  # noqa: E712
         )
     )
     child_ids = list(result.scalars().all())
@@ -273,7 +275,7 @@ async def _get_location_child_ids(
     result = await db.execute(
         select(Location.id).where(
             Location.parent_id == parent_id,
-            Location.is_deleted == False,  # noqa: E712
+            Location.is_deleted.is_(False),  # noqa: E712
         )
     )
     child_ids = list(result.scalars().all())
@@ -299,7 +301,7 @@ async def create_equipment(
         deleted_result = await db.execute(
             select(Equipment).where(
                 Equipment.asset_no == asset_no,
-                Equipment.is_deleted == True,  # noqa: E712
+                Equipment.is_deleted.is_(True),  # noqa: E712
             )
         )
         for old in deleted_result.scalars().all():
@@ -318,7 +320,10 @@ async def create_equipment(
     await db.flush()
 
     # eager re-fetch
-    return await _refetch_equipment(db, equipment.id)  # type: ignore[return-value]
+    refetched: Equipment | None = await _refetch_equipment(db, equipment.id)
+    if not refetched:
+        raise RuntimeError(f"Failed to refetch newly created equipment {equipment.id}")
+    return refetched
 
 
 async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equipment | None:
@@ -329,7 +334,7 @@ async def _refetch_equipment(db: AsyncSession, equipment_id: uuid.UUID) -> Equip
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(Equipment.id == equipment_id, Equipment.is_deleted == False)  # noqa: E712
+        .where(Equipment.id == equipment_id, Equipment.is_deleted.is_(False))  # noqa: E712
     )
     return result.scalar_one_or_none()
 
@@ -347,7 +352,7 @@ async def get_equipment_by_id(
         )
         .where(
             Equipment.id == equipment_id,
-            Equipment.is_deleted == False,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -361,7 +366,7 @@ async def get_equipment_by_asset_no(
     result = await db.execute(
         select(Equipment).where(
             Equipment.asset_no == asset_no,
-            Equipment.is_deleted == False,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar_one_or_none()
@@ -384,7 +389,7 @@ async def get_equipments(
             selectinload(Equipment.category_links).selectinload(EquipmentCategoryLink.category),
             selectinload(Equipment.location),
         )
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(Equipment.is_deleted.is_(False))  # noqa: E712
     )
 
     if category_id:
@@ -393,7 +398,7 @@ async def get_equipments(
             Equipment.id.in_(
                 select(EquipmentCategoryLink.equipment_id).where(
                     EquipmentCategoryLink.category_id.in_(category_ids),
-                    EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+                    EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
                 )
             )
         )
@@ -494,7 +499,7 @@ async def delete_equipment(
     links_result = await db.execute(
         select(EquipmentCategoryLink).where(
             EquipmentCategoryLink.equipment_id == equipment_id,
-            EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+            EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
         )
     )
     for link in links_result.scalars().all():
@@ -515,8 +520,8 @@ async def count_equipments_by_category(
         .join(Equipment, Equipment.id == EquipmentCategoryLink.equipment_id)
         .where(
             EquipmentCategoryLink.category_id == category_id,
-            EquipmentCategoryLink.is_deleted == False,  # noqa: E712
-            Equipment.is_deleted == False,  # noqa: E712
+            EquipmentCategoryLink.is_deleted.is_(False),  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -532,7 +537,7 @@ async def count_equipments_by_location(
         .select_from(Equipment)
         .where(
             Equipment.location_id == location_id,
-            Equipment.is_deleted == False,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
     )
     return result.scalar() or 0
@@ -548,7 +553,7 @@ async def get_max_equipment_no_by_category(
         select(Equipment.equipment_tag)
         .where(
             Equipment.equipment_tag.like(pattern),
-            Equipment.is_deleted == False,  # noqa: E712
+            Equipment.is_deleted.is_(False),  # noqa: E712
         )
         .order_by(Equipment.equipment_tag.desc())
         .limit(1)
@@ -564,39 +569,46 @@ async def get_equipment_statistics(
     status: str | None = None,
 ) -> dict[str, Any]:
     """获取设备统计（支持筛选）"""
-    # 构建基础查询条件
-    base_filter = Equipment.is_deleted == False  # noqa: E712
+    # 构建筛选条件列表
+    conditions: list[sa.ColumnElement[bool]] = [Equipment.is_deleted.is_(False)]
 
     # 添加筛选条件
     if category_id:
         category_ids = await _get_category_child_ids(db, category_id)
-        base_filter = base_filter & Equipment.id.in_(
-            select(EquipmentCategoryLink.equipment_id).where(
-                EquipmentCategoryLink.category_id.in_(category_ids),
-                EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+        conditions.append(
+            Equipment.id.in_(
+                select(EquipmentCategoryLink.equipment_id).where(
+                    EquipmentCategoryLink.category_id.in_(category_ids),
+                    EquipmentCategoryLink.is_deleted.is_(False),
+                )
             )
         )
     if location_id:
         location_ids = await _get_location_child_ids(db, location_id)
-        base_filter = base_filter & Equipment.location_id.in_(location_ids)
+        conditions.append(Equipment.location_id.in_(location_ids))
     if department_id:
-        base_filter = base_filter & (Equipment.department_id == department_id)
+        conditions.append(Equipment.department_id == department_id)
     if status:
-        base_filter = base_filter & (Equipment.status == status)
+        conditions.append(Equipment.status == status)
 
     # 总数
-    total_result = await db.execute(select(func.count()).where(base_filter))
+    stmt = select(func.count())
+    if len(conditions) > 1:
+        stmt = stmt.where(and_(*conditions))
+    elif conditions:
+        stmt = stmt.where(conditions[0])
+    total_result = await db.execute(stmt)
     total = total_result.scalar() or 0
 
     # 按状态统计
     status_result = await db.execute(
-        select(Equipment.status, func.count()).where(base_filter).group_by(Equipment.status)
+        select(Equipment.status, func.count()).where(and_(*conditions)).group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（A/B/C）
     class_result = await db.execute(
-        select(Equipment.equipment_class, func.count()).where(base_filter).group_by(Equipment.equipment_class)
+        select(Equipment.equipment_class, func.count()).where(and_(*conditions)).group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
 
@@ -604,7 +616,7 @@ async def get_equipment_statistics(
     location_result = await db.execute(
         select(Location.name, func.count())
         .join(Equipment, Equipment.location_id == Location.id)
-        .where(base_filter)
+        .where(and_(*conditions))
         .group_by(Location.name)
     )
     by_location = {row[0]: row[1] for row in location_result.all()}
@@ -656,3 +668,52 @@ async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | Non
     """根据 User.id 获取用户姓名"""
     result = await db.execute(select(User.name).where(User.id == user_id))
     return result.scalar_one_or_none()
+
+
+async def get_sync_context(
+    session: AsyncSession,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    Sequence[Equipment],
+    dict[tuple[str, Any, Any], Equipment],
+    dict[str, list[Equipment]],
+]:
+    """获取同步所需的部门和位置映射及活跃设备索引"""
+    # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
+    from sqlalchemy import text
+
+    dept_result = await session.execute(text("SELECT id, name FROM identity.departments WHERE is_deleted = false"))
+    dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
+
+    loc_result = await session.execute(select(Location.id, Location.name))
+    loc_map: dict[str, Any] = {n: i for i, n in loc_result.fetchall()}
+
+    equip_result = await session.execute(select(Equipment).where(Equipment.is_deleted.is_(False)))
+    all_active: Sequence[Equipment] = equip_result.scalars().all()
+
+    combo_index: dict[tuple[str, Any, Any], Equipment] = {
+        (e.asset_no, e.department_id, e.location_id): e for e in all_active
+    }
+    asset_index: dict[str, list[Equipment]] = {}
+    for e in all_active:
+        asset_index.setdefault(e.asset_no, []).append(e)
+
+    return dept_map, loc_map, all_active, combo_index, asset_index
+
+
+async def bulk_update_equipment(session: AsyncSession, ids_and_vals: list[tuple[Any, ...]]) -> None:
+    """批量更新设备"""
+    for equip_id, vals in ids_and_vals:
+        await session.execute(update(Equipment).where(Equipment.id == equip_id).values(**vals))
+
+
+async def bulk_insert_equipment(session: AsyncSession, equipments: list[Equipment]) -> None:
+    """批量新增设备"""
+    session.add_all(equipments)
+
+
+async def bulk_soft_delete(session: AsyncSession, ids: list[Any]) -> None:
+    """批量软删除"""
+    for eid in ids:
+        await session.execute(update(Equipment).where(Equipment.id == eid).values(is_deleted=True))

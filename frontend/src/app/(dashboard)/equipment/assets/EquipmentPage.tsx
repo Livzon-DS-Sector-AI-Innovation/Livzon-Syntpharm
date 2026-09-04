@@ -4,18 +4,14 @@ import '../../../../styles/industrial-theme.css';
 import { useEffect, useCallback, useState } from 'react'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
+import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
-import { StatsCards } from '@/components/equipment/StatsCards'
-import { EquipmentTable } from '@/components/equipment/EquipmentTable'
-import { CategoryTree } from '@/components/equipment/CategoryTree'
-import { LocationTree } from '@/components/equipment/LocationTree'
-import { EquipmentDrawer } from '@/components/equipment/EquipmentDrawer'
-import { LocationDrawer } from '@/components/equipment/LocationDrawer'
-import { RepairDrawer } from '@/components/equipment/RepairDrawer'
+import { message, Upload } from 'antd'
+import type { UploadProps } from 'antd'
+import { CategoryTree, EquipmentDrawer, EquipmentTable, ExcelSyncButton, FilterSummary, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
@@ -48,6 +44,7 @@ export function EquipmentPage({
     departmentFilter,
     departments,
     keyword,
+    total,
     loading,
     setSelectedCategory,
     setSelectedLocation,
@@ -62,15 +59,20 @@ export function EquipmentPage({
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  const [initialized, setInitialized] = useState(false)
 
-  // 初始化 store 数据（包含 SSR 数据）
+
+  // 初始化 store 数据（包含 SSR 数据）- 只在首次加载时执行
   useEffect(() => {
-    setCategories(initialCategories)
-    setLocations(initialLocations)
-    setEquipments(initialEquipments)
-    setTotal(initialTotal)
-    setStatistics(initialStatistics)
-  }, [initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
+    if (!initialized) {
+      setCategories(initialCategories)
+      setLocations(initialLocations)
+      setEquipments(initialEquipments)
+      setTotal(initialTotal)
+      setStatistics(initialStatistics)
+      setInitialized(true)
+    }
+  }, [initialized, initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
 
   // 初始化部门列表（服务端数据）
   useEffect(() => {
@@ -173,6 +175,7 @@ export function EquipmentPage({
     },
   ]
 
+  const syncButton = <ExcelSyncButton />
   const tabBarExtra = (selectedCategory || selectedLocation) ? (
     <Button
       type="text"
@@ -213,6 +216,18 @@ export function EquipmentPage({
         <div style={{ marginBottom: 16 }}>
           <StatsCards statistics={currentStats} />
         </div>
+
+        {/* 筛选摘要 */}
+        <FilterSummary
+          selectedLocation={selectedLocation}
+          selectedCategory={selectedCategory}
+          departmentFilter={departmentFilter}
+          statusFilter={statusFilter}
+          total={total}
+          locations={locations}
+          categories={categories}
+          departments={departments}
+        />
 
         <div className="flex gap-4" style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
           {/* 左侧：可折叠分类/位置树 */}

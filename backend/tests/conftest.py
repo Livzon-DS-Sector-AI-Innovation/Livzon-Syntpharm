@@ -13,6 +13,7 @@ Fixtures override ``get_db`` and ``get_current_user`` only.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 
 import pytest
@@ -112,7 +113,7 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
 
 @pytest.fixture
 async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
-    """Authenticated client with a named test user.
+    """Authenticated client with a unique test user per test.
 
     Overrides ``get_db`` to use the test session and ``get_current_user``
     to return the test user.  Phase 1 auth does not enforce permissions,
@@ -120,8 +121,8 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     test_user = _make_user(
         "Test User",
-        "TEST-001",
-        feishu_open_id="test_open_id",
+        f"TEST-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"test_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -134,15 +135,15 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 @pytest.fixture
 async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
-    """Authenticated client with an admin-named test user.
+    """Authenticated client with a unique admin test user per test.
 
     Identical to ``auth_client`` in Phase 1 — Phase 2 will add admin
     permission overrides when RBAC is implemented.
     """
     test_user = _make_user(
         "Admin User",
-        "ADMIN-001",
-        feishu_open_id="admin_open_id",
+        f"ADMIN-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"admin_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()

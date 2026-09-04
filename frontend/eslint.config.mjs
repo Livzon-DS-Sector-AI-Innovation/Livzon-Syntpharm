@@ -29,6 +29,14 @@ const config = [
       "react-hooks/purity": "warn",
     },
   },
+  // Ignore auto-generated type files
+  {
+    files: ["src/types/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
 ];
 
 export default config;
