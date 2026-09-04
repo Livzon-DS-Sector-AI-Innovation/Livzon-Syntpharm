@@ -1,7 +1,8 @@
 'use client'
 import { uploadTrainers } from '@/actions/hr'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Button, Card, Table, Input, Select, Space, Tag, Upload } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import { apiGet, fetchApi } from '@/lib/api/client'
@@ -18,32 +19,38 @@ interface Trainer {
 
 export default function TrainersPage() {
   const { message } = App.useApp()
-  const [data, setData] = useState<Trainer[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState('')
   const [dept, setDept] = useState<string | undefined>()
-  const [depts, setDepts] = useState<{value:string,label:string}[]>([])
 
-  useEffect(() => {
-    apiGet<string[]>('/api/v1/hr/sop-catalog/departments')
-      .then(data => setDepts((data||[]).map((d:string) => ({value:d,label:d}))))
-  }, [])
+  const { data: deptsData } = useQuery({
+    queryKey: ['hr-departments'],
+    queryFn: async () => {
+      const data = await apiGet<string[]>('/api/v1/hr/sop-catalog/departments')
+      return (data || []).map((d: string) => ({ value: d, label: d }))
+    },
+  })
 
-  const load = async (p = 1) => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ page: String(p), page_size: '50' })
+  const depts = deptsData || []
+
+  const { data: trainersData, isLoading, refetch } = useQuery({
+    queryKey: ['hr-trainers', { page, keyword, dept }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), page_size: '50' })
       if (keyword) params.set('keyword', keyword)
       if (dept) params.set('department', dept)
       const d = await fetchApi<{ data: Trainer[]; meta?: { total?: number; page?: number; page_size?: number } }>(`/api/v1/hr/trainers?${params.toString()}`)
-      setData(d.data || [])
-      setTotal(d.meta?.total || 0)
-    } finally { setLoading(false) }
-  }
+      return { data: d.data || [], total: d.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { load(page) }, [page, dept])
+  const data = trainersData?.data || []
+  const total = trainersData?.total || 0
+
+  const load = (p = 1) => {
+    setPage(p)
+    refetch()
+  }
 
   return (
     <div className="space-y-4">
@@ -66,7 +73,7 @@ export default function TrainersPage() {
           <Select placeholder="部门" allowClear value={dept} onChange={v => { setDept(v); setPage(1) }}
             options={depts} style={{ width: 200 }} />
         </Space>
-        <Table dataSource={data} rowKey="id" loading={loading}
+        <Table dataSource={data} rowKey="id" loading={isLoading}
           pagination={{ current: page, pageSize: 50, total, onChange: p => setPage(p) }}
           columns={[
             { title: '姓名', dataIndex: 'name', width: 100 },

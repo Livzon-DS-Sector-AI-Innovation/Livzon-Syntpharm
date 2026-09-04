@@ -1,36 +1,26 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Table, Tag, Input, Select, Space, Button } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
 import type { LoginLog } from '@/types/identity'
 
 export default function LoginLogsPage() {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<LoginLog[]>([])
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [status, setStatus] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['login-logs', { page, pageSize, status, keyword }],
+    queryFn: async () => {
       const result = await getLoginLogs({ page, page_size: pageSize, status, keyword: keyword || undefined })
-      setData(result.items)
-      setTotal(result.total)
-    } catch (error) {
-      console.error('获取登录记录失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, status, keyword])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+      return result
+    },
+  })
 
   const columns = [
     {
@@ -127,10 +117,10 @@ export default function LoginLogsPage() {
           style={{ width: 200 }}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          onPressEnter={() => { setPage(1); fetchData() }}
+          onPressEnter={() => { setPage(1) }}
           allowClear
         />
-        <Button icon={<ReloadOutlined />} onClick={fetchData}>
+        <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
           刷新
         </Button>
       </Space>
@@ -138,12 +128,12 @@ export default function LoginLogsPage() {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={data}
-        loading={loading}
+        dataSource={data?.items || []}
+        loading={isLoading}
         pagination={{
           current: page,
           pageSize,
-          total,
+          total: data?.total || 0,
           showSizeChanger: true,
           showTotal: (t) => `共 ${t} 条`,
           onChange: (p, ps) => { setPage(p); setPageSize(ps) },

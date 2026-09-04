@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -85,9 +86,9 @@ export default function AccidentPage() {
     removeAccident,
   } = useSafetyStore()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: accidentsData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-accidents', { accidentQueryParams, statusFilter, typeFilter, levelFilter, deptFilter, dateFromFilter, dateToFilter, searchText }],
+    queryFn: async () => {
       const response = await getAccidents({
         ...accidentQueryParams,
         status: statusFilter,
@@ -99,19 +100,18 @@ export default function AccidentPage() {
         keyword: searchText || undefined,
       })
       if (response.code === 200) {
-        setAccidents(response.data)
-        setAccidentTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载事故列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [accidentQueryParams.page, accidentQueryParams.page_size, statusFilter, typeFilter, levelFilter])
+  const accidents = accidentsData?.data || []
+  const accidentTotal = accidentsData?.total || 0
+
+  const loadData = () => {
+    refetch()
+  }
 
   const handleSearch = () => {
     setAccidentQueryParams({ page: 1 })
@@ -523,7 +523,7 @@ export default function AccidentPage() {
           columns={columns}
           dataSource={accidents}
           rowKey="id"
-          loading={loading}
+          loading={isLoading}
           scroll={{ x: 1500 }}
           pagination={{
             current: accidentQueryParams.page,

@@ -3,7 +3,8 @@
 "use client"
 
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Select, Button } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
@@ -21,30 +22,27 @@ export default function CollectLogsPage() {
     closeCollectLogDrawer,
   } = useEnergyStore()
 
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [triggerLoading, setTriggerLoading] = useState(false)
-  const [data, setData] = useState<PaginatedResponse<CollectLog>>({
+
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['collect-logs', logFilters],
+    queryFn: async () => {
+      const result = await getCollectLogs(logFilters)
+      return result
+    },
+  })
+
+  const data = queryData || {
     items: [],
     total: 0,
     page: 1,
     page_size: 10,
-  })
+  }
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await getCollectLogs(logFilters)
-      setData(result)
-    } catch (error) {
-      console.error('获取采集日志失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [logFilters])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const fetchData = () => {
+    refetch()
+  }
 
   const handleTriggerCollect = async () => {
     setTriggerLoading(true)
@@ -184,7 +182,7 @@ export default function CollectLogsPage() {
       {/* ════ 数据表格 ════ */}
       <CollectLogTable
         data={data.items}
-        loading={loading}
+        loading={isLoading}
         total={data.total}
         onRefresh={fetchData}
         onRetry={handleRetry}

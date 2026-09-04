@@ -3,7 +3,8 @@
 "use client"
 
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Input, Select, Button } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
@@ -14,29 +15,20 @@ import { EnergyDeviceConfig, PaginatedResponse } from '@/types/energy'
 export default function DevicesPage() {
   const { deviceFilters, setDeviceFilters, openDeviceDrawer } = useEnergyStore()
 
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<PaginatedResponse<EnergyDeviceConfig>>({
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['energy-devices', deviceFilters],
+    queryFn: async () => {
+      const result = await getEnergyDevices(deviceFilters)
+      return result
+    },
+  })
+
+  const data = queryData || {
     items: [],
     total: 0,
     page: 1,
     page_size: 10,
-  })
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await getEnergyDevices(deviceFilters)
-      setData(result)
-    } catch (error) {
-      console.error('获取数据源列表失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [deviceFilters])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  }
 
   // ── 共享的 filled-input 样式 ──
   const filledInputStyle = { background: '#f6f5f4', border: 'none', borderRadius: 8, height: 36 }
@@ -153,12 +145,12 @@ export default function DevicesPage() {
       {/* ════ 数据表格 ════ */}
       <DeviceTable
         data={data.items}
-        loading={loading}
+        loading={isLoading}
         total={data.total}
-        onRefresh={fetchData}
+        onRefresh={() => refetch()}
       />
 
-      <DeviceDrawer onRefresh={fetchData} />
+      <DeviceDrawer onRefresh={() => refetch()} />
     </div>
   )
 }

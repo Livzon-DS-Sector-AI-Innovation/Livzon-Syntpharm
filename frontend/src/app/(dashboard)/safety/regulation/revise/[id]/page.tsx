@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import { Spin, Result, Button, App } from 'antd'
 import SopContentEditor from '@/components/safety/SopContentEditor'
@@ -48,9 +49,20 @@ export default function RegulationRevisePage() {
     }
   }, [id])
 
-  useEffect(() => {
-    fetchRegulation()
-  }, [fetchRegulation])
+  const { data: regulationData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-regulation-revise', id],
+    queryFn: async () => {
+      const response = await getRegulationRevision(id)
+      return response.data || null
+    },
+    enabled: !!id,
+  })
+
+  const regulation = regulationData
+
+  const fetchRegulation = () => {
+    refetch()
+  }
 
   const handleBack = useCallback(() => {
     router.push('/safety/regulation')

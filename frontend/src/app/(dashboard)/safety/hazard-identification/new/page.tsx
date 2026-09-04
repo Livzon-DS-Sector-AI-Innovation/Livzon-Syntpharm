@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -57,7 +58,19 @@ export default function NewHazardIdentificationPage() {
     }
   }, [])
 
-  useEffect(() => { loadRegulations() }, [loadRegulations])
+  const { data: regulationsData, refetch } = useQuery({
+    queryKey: ['safety-regulations-for-hazard'],
+    queryFn: async () => {
+      const response = await getRegulations({ page: 1, page_size: 1000 })
+      return response.data || []
+    },
+  })
+
+  const regulations = regulationsData || []
+
+  const loadRegulations = () => {
+    refetch()
+  }
 
   const handleSubmit = async (saveOnly: boolean) => {
     try {

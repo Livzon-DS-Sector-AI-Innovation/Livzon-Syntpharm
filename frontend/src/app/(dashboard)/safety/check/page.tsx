@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -106,9 +107,7 @@ export default function SafetyCheckPage() {
     }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [checkQueryParams.page, checkQueryParams.page_size, statusFilter, typeFilter])
+  // loadData is now handled by useQuery
 
   const handleSearch = () => {
     setCheckQueryParams({ page: 1 })
@@ -467,7 +466,7 @@ export default function SafetyCheckPage() {
           columns={columns}
           dataSource={checks}
           rowKey="id"
-          loading={loading}
+          loading={isLoading}
           scroll={{ x: 1400 }}
           pagination={{
             current: checkQueryParams.page,

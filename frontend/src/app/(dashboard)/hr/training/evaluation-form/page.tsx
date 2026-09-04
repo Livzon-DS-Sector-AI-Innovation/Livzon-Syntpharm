@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, Form, Input, InputNumber, Select, Button, message, Alert } from 'antd'
 import { DownloadOutlined } from '@ant-design/icons'
 import EvaluationPreview from '@/components/hr/EvaluationPreview'
@@ -20,9 +21,9 @@ interface PendingEvaluation {
 }
 
 export default function EvaluationFormPage() {
+  const queryClient = useQueryClient()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [pendingList, setPendingList] = useState<PendingEvaluation[]>([])
 
   // 实时监听表单字段
   const watchedSubject = Form.useWatch('subject', form)
@@ -32,11 +33,15 @@ export default function EvaluationFormPage() {
   const watchedAssessment = Form.useWatch('assessment_method', form)
   const watchedExpected = Form.useWatch('expected_count', form)
 
-  useEffect(() => {
-    apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending').then(data => {
-      setPendingList(data || [])
-    })
-  }, [])
+  const { data: pendingListData } = useQuery({
+    queryKey: ['hr-pending-evaluations'],
+    queryFn: async () => {
+      const data = await apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending')
+      return data || []
+    },
+  })
+
+  const pendingList = pendingListData || []
 
   const handleSelect = (id: string) => {
     const item = pendingList.find(p => p.id === id)
@@ -84,9 +89,7 @@ export default function EvaluationFormPage() {
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')
       // 刷新待评估列表
-      apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending').then(data => {
-        setPendingList(data || [])
-      })
+      queryClient.invalidateQueries({ queryKey: ['hr-pending-evaluations'] })
     } catch (err: unknown) { message.error(err instanceof Error ? err.message : '生成失败') }
     finally { setLoading(false) }
   }

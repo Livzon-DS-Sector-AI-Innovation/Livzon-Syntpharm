@@ -6,7 +6,8 @@ type ProductionItem = {
   unit: string;
 }
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber, Table, Input, Space } from 'antd'
 import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
 import TargetModal from '@/components/energy/TargetModal'
@@ -32,42 +33,33 @@ export default function AIAnalysisPage() {
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
   const [syncing, setSyncing] = useState(false)
 
-  const [workshops, setWorkshops] = useState<Array<{ value: string; label: string }>>([])
-  const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
-  const [targetLoading, setTargetLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
   // 获取车间列表
-  useEffect(() => {
-    fetchWorkshopsClient({ category: 'workshop' })
-      .then(data => {
-        const workshops = data.map((w: EnergyWorkshop) => ({ value: w.id, label: w.name }))
-        setWorkshops(workshops)
-      })
-      .catch(err => {
-        console.error('Failed to fetch workshops:', err)
-      })
-  }, [])
+  const { data: workshopsData } = useQuery({
+    queryKey: ['workshops'],
+    queryFn: async () => {
+      const data = await fetchWorkshopsClient({ category: 'workshop' })
+      return data.map((w: EnergyWorkshop) => ({ value: w.id, label: w.name }))
+    },
+  })
+
+  const workshops = workshopsData || []
 
   // 当车间或月份变化时，查询目标
-  useEffect(() => {
-    if (workshopId && analysisMonth) {
-      setTargetLoading(true)
-      getTarget(workshopId, analysisMonth)
-        .then(target => {
-          setCurrentTarget(target)
-        })
-        .catch(err => {
-          console.error('查询目标失败:', err)
-          setCurrentTarget(null)
-        })
-        .finally(() => {
-          setTargetLoading(false)
-        })
-    } else {
-      setCurrentTarget(null)
-    }
-  }, [workshopId, analysisMonth])
+  const { data: targetData, isLoading: targetLoading } = useQuery({
+    queryKey: ['target', workshopId, analysisMonth],
+    queryFn: async () => {
+      if (workshopId && analysisMonth) {
+        const target = await getTarget(workshopId, analysisMonth)
+        return target
+      }
+      return null
+    },
+    enabled: !!workshopId && !!analysisMonth,
+  })
+
+  const currentTarget = targetData || null
 
   
   const handleAddItem = () => {
@@ -132,7 +124,6 @@ const handleAnalyze = async () => {
   }
 
   const handleTargetSuccess = (target: UnitConsumptionTarget) => {
-    setCurrentTarget(target)
     if (result && productionItems.length > 0) {
       handleAnalyze()
     }

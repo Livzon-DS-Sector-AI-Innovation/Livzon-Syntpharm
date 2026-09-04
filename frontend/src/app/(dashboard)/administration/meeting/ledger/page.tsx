@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Table, Button, Input, Tag, Space, Modal, Form, message, Popconfirm, Select } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { fetchGiftInventories } from '@/lib/api/client/administration/gift-inventory'
@@ -20,8 +21,6 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function ItemLedgerPage() {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -29,25 +28,23 @@ export default function ItemLedgerPage() {
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
-  const load = async (page = 1) => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['gift-inventories', { keyword, status: statusFilter, page: pagination.current, pageSize: pagination.pageSize }],
+    queryFn: async () => {
       const res = await fetchGiftInventories({
         keyword,
         status: statusFilter || undefined,
-        page,
+        page: pagination.current,
         page_size: pagination.pageSize,
       })
-      setData(res.data || [])
-      setPagination({ ...pagination, current: page, total: res.meta?.total || 0 })
-    } catch (err: any) {
-      message.error(err.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { load(1) }, [keyword, statusFilter])
+  const data = queryData?.data || []
+  const load = (page = 1) => {
+    setPagination({ ...pagination, current: page })
+  }
 
   const handleSave = async (values: any) => {
     try {
@@ -156,7 +153,7 @@ export default function ItemLedgerPage() {
         rowKey="id"
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={isLoading}
         pagination={{
           ...pagination,
           onChange: (page) => load(page),

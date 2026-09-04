@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Button,
@@ -513,9 +514,23 @@ export default function HazardLedgerDetailPage() {
     }
   }
 
-  useEffect(() => {
-    if (id) loadRecord()
-  }, [id])
+  const { data: recordData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-hazard', id],
+    queryFn: async () => {
+      if (id) {
+        const response = await getHazard(id)
+        return response.data || null
+      }
+      return null
+    },
+    enabled: !!id,
+  })
+
+  const record = recordData
+
+  const loadRecord = () => {
+    refetch()
+  }
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {

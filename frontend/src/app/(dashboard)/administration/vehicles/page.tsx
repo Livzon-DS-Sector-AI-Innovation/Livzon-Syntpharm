@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
 import { fetchVehicles } from '@/lib/api/client/administration/vehicle'
@@ -27,8 +28,6 @@ const fileToBase64 = (file: File): Promise<string> => {
 }
 
 export default function VehiclePage() {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<any>(null)
@@ -37,23 +36,18 @@ export default function VehiclePage() {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const load = async (page = 1) => {
-    setLoading(true)
-    try {
-      console.log('开始请求车辆列表...')
-      const res = await fetchVehicles({ keyword, page, page_size: pagination.pageSize })
-      console.log('请求结果:', res)
-      setData(res.data || [])
-      setPagination({ ...pagination, current: page, total: res.meta?.total || 0 })
-    } catch (err: any) {
-      console.error('请求失败:', err)
-      message.error(err.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['vehicles', { keyword, page: pagination.current, pageSize: pagination.pageSize }],
+    queryFn: async () => {
+      const res = await fetchVehicles({ keyword, page: pagination.current, page_size: pagination.pageSize })
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { load(1) }, [keyword])
+  const data = queryData?.data || []
+  const load = (page = 1) => {
+    setPagination({ ...pagination, current: page })
+  }
 
   const handleSave = async (values: any) => {
     try {
@@ -227,12 +221,12 @@ export default function VehiclePage() {
         />
       </div>
 
-      {data.length === 0 && !loading ? (
+      {data.length === 0 && !isLoading ? (
         <Empty description="暂无车辆数据" className="py-20" />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {data.map((record) => (
+            {data.map((record: any) => (
               <VehicleCard key={record.id} record={record} />
             ))}
           </div>

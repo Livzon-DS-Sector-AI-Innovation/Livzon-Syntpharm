@@ -3,7 +3,8 @@
 "use client"
 
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
@@ -52,7 +53,7 @@ export default function ContractorPage() {
     } catch { message.error('加载承包商列表失败') } finally { setLoading(false) }
   }
 
-  useEffect(() => { loadData() }, [page, pageSize, statusFilter, typeFilter, trainingFilter])
+  // loadData is now handled by useQuery
 
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 
@@ -170,7 +171,7 @@ export default function ContractorPage() {
           <Col span={3}><Button type="primary" icon={<SearchOutlined />} onClick={loadData}>查询</Button></Col>
         </Row>
 
-        <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 1400 }}
+        <Table columns={columns} dataSource={data} rowKey="id" loading={isLoading} scroll={{ x: 1400 }}
           pagination={{ current: page, pageSize, total, showSizeChanger: true, showQuickJumper: true, showTotal: (t) => `共 ${t} 条`, onChange: (p, ps) => { setPage(p); setPageSize(ps) } }} />
       </Card>
 

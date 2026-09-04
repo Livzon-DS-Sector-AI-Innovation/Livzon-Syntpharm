@@ -1,7 +1,8 @@
 'use client'
 import { uploadSopCatalog } from '@/actions/hr'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Table, Input, Select, Card, Space, Upload, Button, App } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import { fetchSopCatalog } from '@/lib/api/client/hr'
@@ -17,42 +18,50 @@ interface SopCatalogItem {
 
 export default function SopCatalogPage() {
   const { message } = App.useApp()
-  const [data, setData] = useState<SopCatalogItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState('')
   const [dept, setDept] = useState<string | undefined>()
-  const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>([])
   const [cat, setCat] = useState<string | undefined>()
 
-  useEffect(() => {
-    apiGet<string[]>('/api/v1/hr/sop-catalog/departments').then(data => {
-      setDepartments((data || []).map((d: string) => ({ value: d, label: d })))
-    })
-  }, [])
+  const { data: deptsData } = useQuery({
+    queryKey: ['hr-sop-departments'],
+    queryFn: async () => {
+      const data = await apiGet<string[]>('/api/v1/hr/sop-catalog/departments')
+      return (data || []).map((d: string) => ({ value: d, label: d }))
+    },
+  })
+
+  const departments = deptsData || []
 
   // 分类列表（按部门筛选，级联）
-  useEffect(() => {
-    const url = dept
-      ? `/api/v1/hr/sop-catalog/categories?department=${encodeURIComponent(dept)}`
-      : '/api/v1/hr/sop-catalog/categories'
-    apiGet<string[]>(url).then(data => {
-      setCategories((data || []).map((c: string) => ({ value: c, label: c })))
-    })
-  }, [dept])
+  const { data: catsData } = useQuery({
+    queryKey: ['hr-sop-categories', dept],
+    queryFn: async () => {
+      const url = dept
+        ? `/api/v1/hr/sop-catalog/categories?department=${encodeURIComponent(dept)}`
+        : '/api/v1/hr/sop-catalog/categories'
+      const data = await apiGet<string[]>(url)
+      return (data || []).map((c: string) => ({ value: c, label: c }))
+    },
+  })
 
-  const load = async (p = 1) => {
-    setLoading(true)
-    try {
-      const res = await fetchSopCatalog({ page: p, page_size: 50, keyword: keyword || undefined, department: dept, category: cat })
-      setData(res.data || [])
-      setTotal(res.meta?.total || 0)
-    } finally { setLoading(false) }
+  const categories = catsData || []
+
+  const { data: catalogData, isLoading, refetch } = useQuery({
+    queryKey: ['hr-sop-catalog', { page, keyword, dept, cat }],
+    queryFn: async () => {
+      const res = await fetchSopCatalog({ page, page_size: 50, keyword: keyword || undefined, department: dept, category: cat })
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
+
+  const data = catalogData?.data || []
+  const total = catalogData?.total || 0
+
+  const load = (p = 1) => {
+    setPage(p)
+    refetch()
   }
-
-  useEffect(() => { load(page) }, [page, dept, cat])
 
   const columns = [
     { title: '文件名称', dataIndex: 'file_name', width: 350, fixed: 'left' as const, ellipsis: true },
@@ -84,7 +93,7 @@ export default function SopCatalogPage() {
           <Select placeholder="筛选类别" allowClear value={cat} onChange={v => { setCat(v); setPage(1) }}
             options={categories} style={{ width: 240 }} />
         </Space>
-        <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 900 }}
+        <Table columns={columns} dataSource={data} rowKey="id" loading={isLoading} scroll={{ x: 900 }}
           pagination={{ current: page, pageSize: 50, total, onChange: (p) => setPage(p), showSizeChanger: false }} />
       </Card>
     </div>
