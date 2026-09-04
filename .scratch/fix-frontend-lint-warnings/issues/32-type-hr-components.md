@@ -4,9 +4,9 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in hr components
-- [ ] Interfaces defined where needed
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in hr components)
+- [x] All `any` types replaced with proper types in hr components
+- [x] Interfaces defined where needed
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-explicit-any warnings in hr components)
