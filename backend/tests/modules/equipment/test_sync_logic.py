@@ -85,9 +85,20 @@ async def test_sync_soft_deletes_missing_assets(db_session: AsyncSession, seed_d
     await db_session.commit()
 
     # Excel 包含 20 台保留设备（不含 TO_DELETE）
-    rows = [{"资产编号": f"KEEP{i}", "设备名称": f"保留设备{i}", "实物所在部门": "201车间",
-             "实物所在地点": "-", "当前成本": 0, "帐面净值": 0, "型号": "", "制造商": "", "启用日期": None}
-            for i in range(20)]
+    rows = [
+        {
+            "资产编号": f"KEEP{i}",
+            "设备名称": f"保留设备{i}",
+            "实物所在部门": "201车间",
+            "实物所在地点": "-",
+            "当前成本": 0,
+            "帐面净值": 0,
+            "型号": "",
+            "制造商": "",
+            "启用日期": None,
+        }
+        for i in range(20)
+    ]
     excel_data = create_mock_excel(rows)
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="empty.xlsx")
 
