@@ -28,7 +28,7 @@ import {
   RobotOutlined,
   FileWordOutlined,
 } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { UploadProps, UploadFile } from 'antd/es/upload'
 
 const API_BASE = '/api/v1'
@@ -104,8 +104,8 @@ export default function SopManagementPage() {
         pageSize,
         total: result.data.total,
       })
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setLoading(false)
     }
@@ -120,8 +120,8 @@ export default function SopManagementPage() {
     fetchData(1, pagination.pageSize)
   }
 
-  const handleTableChange = (newPagination: any) => {
-    fetchData(newPagination.current, newPagination.pageSize)
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 20)
   }
 
   const handleAdd = () => {
@@ -154,8 +154,8 @@ export default function SopManagementPage() {
       await deleteSopRule(id)
       message.success('删除成功')
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -164,8 +164,8 @@ export default function SopManagementPage() {
       await updateSopRuleStatus(id, newStatus)
       message.success(newStatus === 1 ? '已启用' : '已停用')
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -193,8 +193,8 @@ export default function SopManagementPage() {
       message.success(editingId ? '更新成功' : '创建成功')
       setModalVisible(false)
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -219,11 +219,11 @@ export default function SopManagementPage() {
             standard_limit: values.standard_limit || '',
             standard_sentence: values.standard_sentence || '',
           })
-        currentRuleId = (saveResult.data as any).id
+        currentRuleId = (saveResult.data as { id: number }).id
         setEditingId(currentRuleId) // 更新editingId
         message.success({ content: '规则已保存，正在上传文件...', key: 'upload' })
-      } catch (error: any) {
-        message.error({ content: error.message || '保存规则失败', key: 'upload' })
+      } catch (error: unknown) {
+        message.error({ content: (error instanceof Error ? error.message : undefined) || '保存规则失败', key: 'upload' })
         return false
       }
     }
@@ -244,8 +244,8 @@ export default function SopManagementPage() {
       setParseResult(null)
       fetchData(pagination.current, pagination.pageSize)
       return false
-    } catch (error: any) {
-      message.error({ content: error.message || '上传失败', key: 'upload' })
+    } catch (error: unknown) {
+      message.error({ content: (error instanceof Error ? error.message : undefined) || '上传失败', key: 'upload' })
       return false
     } finally {
       setUploading(false)
@@ -263,11 +263,11 @@ export default function SopManagementPage() {
     try {
       const response = await aiParseSopRule(editingId)
 
-      setParseResult((response.data as any).ai_result)
+      setParseResult((response.data as { ai_result: string }).ai_result)
 
       // 如果解析出了数据，更新表单
-      if ((response.data as any).parsed_data) {
-        const parsed = (response.data as any).parsed_data
+      if ((response.data as { parsed_data?: Record<string, string> }).parsed_data) {
+        const parsed = (response.data as { parsed_data: Record<string, string> }).parsed_data
         modalForm.setFieldsValue({
           sop_code: parsed.sop_code || modalForm.getFieldValue('sop_code'),
           sop_full_name: parsed.sop_full_name || modalForm.getFieldValue('sop_full_name'),
@@ -280,8 +280,8 @@ export default function SopManagementPage() {
 
       message.success('AI解析完成')
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message || 'AI解析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : undefined) || 'AI解析失败')
     } finally {
       setParsing(false)
     }
@@ -323,8 +323,8 @@ export default function SopManagementPage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       message.success('下载成功')
-    } catch (error: any) {
-      message.error(error.message || '下载失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : undefined) || '下载失败')
     }
   }
 
@@ -349,7 +349,7 @@ export default function SopManagementPage() {
           onSuccess?.({})
         }
       }).catch((err) => {
-        onError?.(err as any)
+        onError?.(err instanceof Error ? err : new Error(String(err)))
       })
       return false
     },

@@ -67,7 +67,7 @@ export default function StorageConditionPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, any> = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.cond_code = searchText
         params.cond_name = searchText
@@ -78,8 +78,8 @@ export default function StorageConditionPage() {
       const res = await listStorageCondition(params)
       setData((res?.data ?? []) as StorageCondition[])
       setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -173,7 +173,7 @@ export default function StorageConditionPage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e?.errorFields) return // 表单校验错误
       message.error(e.message || '操作失败')
     } finally {
@@ -187,8 +187,8 @@ export default function StorageConditionPage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -199,7 +199,7 @@ export default function StorageConditionPage() {
       message.success(newStatus === 0 ? '已启用' : '已停用')
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.message || '操作失败')
     }
   }
@@ -234,7 +234,7 @@ export default function StorageConditionPage() {
       title: '温度范围 (℃)',
       key: 'temp',
       width: 160,
-      render: (_: any, record: StorageCondition) => {
+      render: (_: unknown, record: StorageCondition) => {
         const hasTemp =
           (record.temp_min !== null && record.temp_min !== undefined) ||
           (record.temp_max !== null && record.temp_max !== undefined)
@@ -276,7 +276,7 @@ export default function StorageConditionPage() {
       key: 'actions',
       width: 180,
       fixed: 'right',
-      render: (_: any, record: StorageCondition) => (
+      render: (_: unknown, record: StorageCondition) => (
         <Space>
           <Tooltip title="编辑">
             <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(record)} />

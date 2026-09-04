@@ -53,8 +53,24 @@ import {
 
 interface TableRow {
   key: number
-  [key: string]: any
+  [key: string]: string | number
 }
+
+interface AIResultItem {
+  value?: string
+  name?: string
+}
+
+interface AIResult {
+  items?: AIResultItem[]
+}
+
+interface ReportImage {
+  id: string | number
+  image_url: string
+  ai_result?: Record<string, unknown>
+}
+
 
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -72,17 +88,17 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const [tableColumns, setTableColumns] = useState<TemplateColumnConfig[]>([])
   const [tableData, setTableData] = useState<TableRow[]>([])
   const [_hasChanges, setHasChanges] = useState(false)
-  const [reportImages, setReportImages] = useState<any[]>([])
+  const [reportImages, setReportImages] = useState<ReportImage[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
-  const [previewAIResult, setPreviewAIResult] = useState<any>(null)
-  const _uploadRef = useRef<any>(null)
+  const [previewAIResult, setPreviewAIResult] = useState<Record<string, unknown> | null>(null)
+  const _uploadRef = useRef<HTMLInputElement>(null)
 
   // 获取报告单图片
   const fetchReportImages = async () => {
     try {
       const result = await getReportImages(resolvedParams.id)
-      setReportImages((result.data as any[]) || [])
+      setReportImages((result.data as ReportImage[]) || [])
     } catch (error) {
       console.error('获取图片失败', error)
     }
@@ -98,8 +114,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         message.success('图片上传成功，AI识别完成')
 
         // 如果有识别结果，自动填入表格
-        const aiResult = (result.data as any)?.ai_result
-        if (aiResult?.items?.length > 0) {
+        const aiResult = (result.data as Record<string, unknown>)?.ai_result as AIResult | undefined
+        if (aiResult?.items && aiResult.items.length > 0) {
           const firstItem = aiResult.items[0]
           const fieldValue = firstItem.value || firstItem.name || ''
           if (fieldValue) {
@@ -113,8 +129,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       } else {
         message.error((result.message as string) || '上传失败')
       }
-    } catch (error: any) {
-      message.error(error.message || '上传失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '上传失败')
     } finally {
       setUploading(false)
     }
@@ -122,9 +138,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }
 
   // 图片预览
-  const handlePreview = (image: any) => {
-    setPreviewImage(`/uploads/${image.image_url}`)
-    setPreviewAIResult(image.ai_result)
+  const handlePreview = (image: ReportImage) => {
+    setPreviewImage(`/uploads/${image.image_url as string}`)
+    setPreviewAIResult(image.ai_result ?? null)
     setPreviewVisible(true)
   }
 
@@ -154,12 +170,12 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
         // 转换items为行数据
         const rowsMap: Record<number, TableRow> = {}
-        data.items.forEach((item: Record<string, any>) => {
-          const rowIdx = item.row_index
+        data.items.forEach((item: Record<string, unknown>) => {
+          const rowIdx = item.row_index as number
           if (!rowsMap[rowIdx]) {
             rowsMap[rowIdx] = { key: rowIdx }
           }
-          rowsMap[rowIdx][item.field_key] = item.field_value
+          rowsMap[rowIdx][item.field_key as string] = item.field_value as string | number
         })
         setTableData(Object.values(rowsMap))
       } else if (data.template?.table_fields?.columns) {
@@ -202,7 +218,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }
 
   // 单元格值变化
-  const handleCellChange = (key: number, fieldKey: string, value: any) => {
+  const handleCellChange = (key: number, fieldKey: string, value: string | number) => {
     setTableData(
       tableData.map((row) => (row.key === key ? { ...row, [fieldKey]: value } : row))
     )
@@ -228,7 +244,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           tableColumns.map((col) => ({
             row_index: rowIndex + 1,
             field_key: col.key,
-            field_value: row[col.key] || '',
+            field_value: String(row[col.key] || ''),
           }))
         )
         await saveReportItems(resolvedParams.id, { items })
@@ -237,8 +253,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       message.success('保存成功')
       setHasChanges(false)
       fetchData()
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -297,7 +313,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       dataIndex: col.key,
       key: col.key,
       width: col.width || 120,
-      render: (value: any, record: TableRow) => (
+      render: (value: string, record: TableRow) => (
         <Space.Compact style={{ width: '100%' }}>
           <Input
             value={value}
@@ -326,7 +342,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
             title: '操作',
             key: 'action',
             width: 80,
-            render: (_: any, record: TableRow) =>
+            render: (_: string, record: TableRow) =>
               tableData.length > 1 && (
                 <Button
                   type="link"
@@ -445,9 +461,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           {report.template && Object.keys(report.template.field_mapping || {}).length > 0 && (
             <Card title="静态字段" style={{ marginBottom: 16 }}>
               <Row gutter={24}>
-                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, any]) => (
+                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, Record<string, unknown>]) => (
                   <Col span={8} key={key}>
-                    <Form.Item name={['static_data', key]} label={config.label || key}>
+                    <Form.Item name={['static_data', key]} label={(config.label as string) || key}>
                       <Input disabled={!isEditMode} />
                     </Form.Item>
                   </Col>
@@ -484,7 +500,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           <Card title="已上传图片" size="small" style={{ marginTop: 16 }}>
             <Space wrap size="small">
               {reportImages.map((img) => (
-                <div key={img.id} style={{ position: 'relative' }}>
+                <div key={img.id as string} style={{ position: 'relative' }}>
                   <Image alt="报告图片"
                     src={`/uploads/${img.image_url}`}
                     width={80}

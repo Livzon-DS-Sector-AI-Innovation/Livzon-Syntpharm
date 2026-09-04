@@ -44,7 +44,7 @@ export default function TemplateListPage() {
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [previewModalVisible, setPreviewModalVisible] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateListItem | null>(null)
-  const [previewData, setPreviewData] = useState<any>(null)
+  const [previewData, setPreviewData] = useState<Record<string, unknown> | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
@@ -85,8 +85,8 @@ export default function TemplateListPage() {
       setUploadModalVisible(false)
       form.resetFields()
       fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '上传失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '上传失败')
     } finally {
       setUploading(false)
     }
@@ -114,8 +114,8 @@ export default function TemplateListPage() {
       message.success('模板更新成功')
       setEditModalVisible(false)
       fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '更新失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '更新失败')
     }
   }
 
@@ -140,8 +140,8 @@ export default function TemplateListPage() {
       await deleteTemplate(id)
       message.success('模板删除成功')
       fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '删除失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '删除失败')
     }
   }
 
@@ -339,9 +339,9 @@ export default function TemplateListPage() {
             <h4>静态字段</h4>
             {previewData.field_mapping && Object.keys(previewData.field_mapping).length > 0 ? (
               <div style={{ marginBottom: 16 }}>
-                {Object.entries(previewData.field_mapping).map(([key, config]: [string, any]) => (
+                {Object.entries(previewData.field_mapping).map(([key, config]: [string, Record<string, unknown>]) => (
                   <Tag key={key} style={{ margin: 4 }}>
-                    {config.label || key}
+                    {(config as Record<string, unknown>).label as string || key}
                   </Tag>
                 ))}
               </div>
@@ -350,30 +350,30 @@ export default function TemplateListPage() {
             )}
 
             <h4>表格字段</h4>
-            {previewData.table_fields && previewData.table_fields.columns?.length > 0 ? (
+            {previewData.table_fields && ((previewData.table_fields as Record<string, unknown>).columns as unknown[])?.length > 0 ? (
               <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 4 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      {previewData.table_fields.columns.map((col: any) => (
+                      {((previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
                         <th
-                          key={col.key}
+                          key={col.key as string}
                           style={{
                             border: '1px solid #d9d9d9',
                             padding: 8,
                             textAlign: 'left',
                           }}
                         >
-                          {col.label}
+                          {col.label as string}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      {previewData.table_fields.columns.map((col: any) => (
+                      {(previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
                         <td
-                          key={col.key}
+                          key={col.key as string}
                           style={{
                             border: '1px solid #d9d9d9',
                             padding: 8,

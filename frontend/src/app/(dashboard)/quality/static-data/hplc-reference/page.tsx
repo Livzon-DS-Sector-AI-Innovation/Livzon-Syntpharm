@@ -135,7 +135,7 @@ export default function HplcReferencePage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, any> = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.ref_name = searchText
         params.ref_code = searchText
@@ -150,8 +150,8 @@ export default function HplcReferencePage() {
       const res = await listHplcReference(params)
       setData((res?.data ?? []) as HplcReference[])
       setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -193,7 +193,7 @@ export default function HplcReferencePage() {
   // 复标提醒：拉取需要复标的对照品列表
   const fetchRecalAlerts = useCallback(async () => {
     try {
-      const res: any = await getHplcReferencesNeedRecal()
+      const res = await getHplcReferencesNeedRecal()
       const list = (res?.data ?? []) as HplcReference[]
       setRecalList(list)
       setRecalAlertCount(list.length)
@@ -239,9 +239,9 @@ export default function HplcReferencePage() {
       fetchData()
       fetchStats()
       fetchRecalAlerts()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '领用失败')
+      message.error((e instanceof Error ? e.message : '领用失败'))
     }
   }
 
@@ -249,11 +249,11 @@ export default function HplcReferencePage() {
   const fetchUsageHistory = useCallback(async (refId: number, p = 1) => {
     setUsageHistoryLoading(true)
     try {
-      const res: any = await getHplcReferenceUsageHistory(refId, p, 20)
+      const res = await getHplcReferenceUsageHistory(refId, p, 20)
       setUsageHistoryData((res?.data ?? []) as HplcReferenceUsage[])
       setUsageHistoryTotal(res?.meta?.total ?? 0)
       setUsageHistoryPage(p)
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.message || '加载领用历史失败')
     } finally {
       setUsageHistoryLoading(false)
@@ -296,8 +296,8 @@ export default function HplcReferencePage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -318,9 +318,9 @@ export default function HplcReferencePage() {
         fetchData()
         fetchStats()
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '调整失败')
+      message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }
 
@@ -377,9 +377,9 @@ export default function HplcReferencePage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '保存失败')
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
     }
@@ -389,7 +389,7 @@ export default function HplcReferencePage() {
     try {
       await downloadHplcReferenceTemplate()
       message.success('模板下载成功')
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.message || '模板下载失败')
     }
   }
@@ -400,8 +400,8 @@ export default function HplcReferencePage() {
       message.success(res.message || '导入成功')
       setImportModalOpen(false)
       fetchData()
-    } catch (e: any) {
-      message.error(e.message || '导入失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '导入失败'))
     }
     return false
   }

@@ -97,7 +97,7 @@ export default function ChromColumnPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, any> = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.col_code = searchText
         params.col_type = searchText
@@ -114,8 +114,8 @@ export default function ChromColumnPage() {
       const res = await listChromColumn(params)
       setData((res?.data ?? []) as ChromColumn[])
       setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -132,7 +132,7 @@ export default function ChromColumnPage() {
       let allData: ChromColumn[] = []
       let curPage = 1
       while (true) {
-        const params: Record<string, any> = { page: curPage, page_size: 200 }
+        const params: Record<string, unknown> = { page: curPage, page_size: 200 }
         if (categoryFilter !== 'all') {
           params.column_category = categoryFilter
         }
@@ -193,8 +193,8 @@ export default function ChromColumnPage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -204,7 +204,7 @@ export default function ChromColumnPage() {
       message.success('使用次数+1')
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.message || '操作失败')
     }
   }
@@ -252,9 +252,9 @@ export default function ChromColumnPage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '保存失败')
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
     }
@@ -264,7 +264,7 @@ export default function ChromColumnPage() {
     try {
       await downloadChromColumnTemplate()
       message.success('模板下载成功')
-    } catch (e: any) {
+    } catch (e: unknown) {
       message.error(e.message || '模板下载失败')
     }
   }
@@ -275,8 +275,8 @@ export default function ChromColumnPage() {
       message.success(res.message || '导入成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '导入失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '导入失败'))
     }
     return false
   }

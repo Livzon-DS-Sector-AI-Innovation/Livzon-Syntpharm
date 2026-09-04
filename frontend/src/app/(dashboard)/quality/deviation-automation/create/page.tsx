@@ -56,8 +56,8 @@ export default function CreateDeviationReportPage() {
       if (!response.ok) throw new Error('获取模板列表失败')
       const result = await response.json()
       setTemplates(result.data?.items || [])
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setTemplatesLoading(false)
     }
@@ -80,7 +80,7 @@ export default function CreateDeviationReportPage() {
   }
 
   // 创建任务
-  const handleCreateTask = async (values: any) => {
+  const handleCreateTask = async (values: Record<string, unknown>) => {
     try {
       const response = await createDeviationTask({
         deviation_no: values.deviation_no,
@@ -89,9 +89,9 @@ export default function CreateDeviationReportPage() {
         report_date: values.report_date.format('YYYY-MM-DD'),
       })
 
-      return (response.data as any).task_id
-    } catch (error: any) {
-      throw new Error(error.message)
+      return (response.data as { task_id: number }).task_id
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : '操作失败')
     }
   }
 
@@ -135,8 +135,8 @@ export default function CreateDeviationReportPage() {
 
       // 4. 跳转到预览页面
       router.push(`/quality/deviation-automation/preview/${newTaskId}`)
-    } catch (error: any) {
-      message.error(error.message || '处理失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '处理失败'))
     } finally {
       setProcessing(false)
       setUploading(false)

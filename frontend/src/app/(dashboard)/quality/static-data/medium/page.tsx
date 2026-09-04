@@ -86,7 +86,7 @@ export default function MediumPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, any> = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.medium_code = searchText
         params.medium_name = searchText
@@ -102,8 +102,8 @@ export default function MediumPage() {
       const res = await listMedium(params)
       setData((res?.data ?? []) as Medium[])
       setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -120,7 +120,7 @@ export default function MediumPage() {
       let allData: Medium[] = []
       let curPage = 1
       while (true) {
-        const params: Record<string, any> = { page: curPage, page_size: 200 }
+        const params: Record<string, unknown> = { page: curPage, page_size: 200 }
         if (typeFilter !== 'all') {
           params.medium_type = typeFilter
         }
@@ -182,8 +182,8 @@ export default function MediumPage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -228,9 +228,9 @@ export default function MediumPage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '保存失败')
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
     }
@@ -253,9 +253,9 @@ export default function MediumPage() {
         fetchData()
         fetchStats()
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '调整失败')
+      message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }
 

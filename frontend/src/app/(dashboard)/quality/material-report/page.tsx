@@ -73,8 +73,8 @@ export default function MaterialReportPage() {
         getReportStatistics(),
         getTemplates({ page: 1, page_size: 100 }),
       ])
-      setData((result.data as any)?.items || [])
-      setPagination((prev) => ({ ...prev, total: (result.data as any)?.total || 0 }))
+      setData(((result.data as Record<string, unknown>)?.items as ReportListItem[] | undefined) || [])
+      setPagination((prev) => ({ ...prev, total: ((result.data as Record<string, unknown>)?.total as number) || 0 }))
       setStatistics(stats.data || {})
       setTemplates(templateResult.data?.items || [])
     } catch (_error) {
@@ -108,14 +108,15 @@ export default function MaterialReportPage() {
     }
   }
 
-  const handleSearch = (values: any) => {
-    const [start_date, end_date] = values.dateRange || []
+  const handleSearch = (values: Record<string, unknown>) => {
+    const dateRange = values.dateRange as [dayjs.Dayjs, dayjs.Dayjs] | undefined
+    const [start_date, end_date] = dateRange || []
     setFilters({
-      status: values.status,
-      template_id: values.template_id,
+      status: values.status as string | undefined,
+      template_id: values.template_id as string | undefined,
       start_date: start_date?.format('YYYY-MM-DD'),
       end_date: end_date?.format('YYYY-MM-DD'),
-      keyword: values.keyword,
+      keyword: values.keyword as string | undefined,
     })
     setPagination((prev) => ({ ...prev, page: 1 }))
   }

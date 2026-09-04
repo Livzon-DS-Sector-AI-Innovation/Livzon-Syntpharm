@@ -34,7 +34,7 @@ import {
 
 interface TableRow {
   key: number
-  [key: string]: any
+  [key: string]: string | number
 }
 
 export default function CreateReportPage() {
@@ -68,7 +68,7 @@ export default function CreateReportPage() {
       setSelectedTemplate(template)
 
       // 设置静态字段
-      const staticData: Record<string, any> = {}
+      const staticData: Record<string, string> = {}
       const fieldMapping = template?.field_mapping || {}
       Object.keys(fieldMapping).forEach((key) => {
         staticData[key] = ''
@@ -103,7 +103,7 @@ export default function CreateReportPage() {
   }
 
   // 单元格值变化
-  const handleCellChange = (key: number, fieldKey: string, value: any) => {
+  const handleCellChange = (key: number, fieldKey: string, value: string | number) => {
     setTableData(
       tableData.map((row) => (row.key === key ? { ...row, [fieldKey]: value } : row))
     )
@@ -132,7 +132,7 @@ export default function CreateReportPage() {
           tableColumns.map((col) => ({
             row_index: rowIndex + 1,
             field_key: col.key,
-            field_value: row[col.key] || '',
+            field_value: String(row[col.key] || ''),
           }))
         )
 
@@ -141,11 +141,11 @@ export default function CreateReportPage() {
 
       message.success('保存成功')
       router.push(`/quality/material-report/${newReportId}`)
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         message.error('请填写必填字段')
       } else {
-        message.error(error.message || '保存失败')
+        message.error(error instanceof Error ? error.message : '保存失败')
       }
     } finally {
       setLoading(false)
@@ -165,7 +165,7 @@ export default function CreateReportPage() {
       dataIndex: col.key,
       key: col.key,
       width: col.width || 120,
-      render: (value: any, record: TableRow) => (
+      render: (value: string, record: TableRow) => (
         <Input
           value={value}
           onChange={(e) => handleCellChange(record.key, col.key, e.target.value)}
@@ -256,9 +256,9 @@ export default function CreateReportPage() {
         {selectedTemplate && Object.keys(selectedTemplate.field_mapping || {}).length > 0 && (
           <Card title="静态字段" style={{ marginTop: 16 }}>
             <Row gutter={24}>
-              {Object.entries(selectedTemplate.field_mapping || {}).map(([key, config]: [string, any]) => (
+              {Object.entries(selectedTemplate.field_mapping || {}).map(([key, config]: [string, Record<string, unknown>]) => (
                 <Col span={8} key={key}>
-                  <Form.Item name={['static_data', key]} label={config.label || key}>
+                  <Form.Item name={['static_data', key]} label={(config as Record<string, unknown>).label as string || key}>
                     <Input placeholder={`请输入${config.label || key}`} />
                   </Form.Item>
                 </Col>

@@ -162,8 +162,8 @@ export default function DeviationReportPage() {
       setOptimizedText(result.data.optimized_text)
       setOptimizeModalVisible(true)
       message.success('优化完成')
-    } catch (error: any) {
-      message.error(error.message || 'AI优化失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI优化失败'))
       console.error('Optimize error:', error)
     } finally {
       setOptimizing(false)
@@ -219,8 +219,8 @@ export default function DeviationReportPage() {
       } else {
         message.success('文档解析成功')
       }
-    } catch (error: any) {
-      message.error(error.message || '文档解析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '文档解析失败'))
       console.error('Upload error:', error)
     } finally {
       setLoading(false)
@@ -265,8 +265,8 @@ export default function DeviationReportPage() {
 
       message.success('文档保存成功')
       setHasChanges(false)
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '保存失败'))
       console.error('Save error:', error)
     } finally {
       setSaving(false)

@@ -9,10 +9,20 @@ import { apiGet } from '@/lib/api/client'
 const METHODS = [{v:'面授',l:'面授'},{v:'自学',l:'自学'},{v:'自学+面授',l:'自学+面授'}]
 const ASSESSMENT = [{v:'笔试',l:'笔试'},{v:'问答',l:'问答'}]
 
+interface PendingEvaluation {
+  id: string
+  content?: string
+  method?: string
+  audience?: string
+  remarks?: string
+  expected_count?: number
+  department?: string
+}
+
 export default function EvaluationFormPage() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [pendingList, setPendingList] = useState<any[]>([])
+  const [pendingList, setPendingList] = useState<PendingEvaluation[]>([])
 
   // 实时监听表单字段
   const watchedSubject = Form.useWatch('subject', form)
@@ -23,7 +33,7 @@ export default function EvaluationFormPage() {
   const watchedExpected = Form.useWatch('expected_count', form)
 
   useEffect(() => {
-    apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
+    apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending').then(data => {
       setPendingList(data || [])
     })
   }, [])
@@ -74,10 +84,10 @@ export default function EvaluationFormPage() {
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')
       // 刷新待评估列表
-      apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
+      apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending').then(data => {
         setPendingList(data || [])
       })
-    } catch (err: any) { message.error(err.message || '生成失败') }
+    } catch (err: unknown) { message.error(err instanceof Error ? err.message : '生成失败') }
     finally { setLoading(false) }
   }
 

@@ -7,9 +7,17 @@ import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import { fetchSopCatalog } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
 
+interface SopCatalogItem {
+  id: string
+  file_name: string
+  sop_number: string
+  category: string
+  department: string
+}
+
 export default function SopCatalogPage() {
   const { message } = App.useApp()
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<SopCatalogItem[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)

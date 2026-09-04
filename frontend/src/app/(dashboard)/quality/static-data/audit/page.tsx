@@ -72,9 +72,9 @@ export default function AuditLogPage() {
   useEffect(() => {
     getAuditModules().then(res => {
       if (res.code === 0) {
-        setModuleOptions(res.data.map((m: any) => ({
-          label: MODULE_LABELS[m.module_type] || m.module_type,
-          value: m.module_type,
+        setModuleOptions(res.data.map((m: { module_type: string }) => ({
+          label: MODULE_LABELS[m.module_type as string] || (m.module_type as string),
+          value: m.module_type as string,
         })))
       }
     }).catch(() => {})
@@ -103,8 +103,8 @@ export default function AuditLogPage() {
       } else {
         message.error(res.message || '加载失败')
       }
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -145,8 +145,8 @@ export default function AuditLogPage() {
       a.click()
       URL.revokeObjectURL(url)
       message.success('导出成功')
-    } catch (e: any) {
-      message.error(e.message || '导出失败，请稍后重试')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '导出失败，请稍后重试'))
     }
   }
 
@@ -257,7 +257,7 @@ export default function AuditLogPage() {
             <Col>
               <RangePicker
                 value={dateRange}
-                onChange={(dates) => { setDateRange(dates as any); setPage(1) }}
+                onChange={(dates) => { setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null); setPage(1) }}
                 format="YYYY-MM-DD"
                 placeholder={['开始日期', '结束日期']}
               />

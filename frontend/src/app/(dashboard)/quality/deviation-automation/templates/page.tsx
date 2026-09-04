@@ -24,7 +24,7 @@ import {
   UploadOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { UploadFile } from 'antd/es/upload/interface'
 
 const API_BASE = '/api/v1'
@@ -76,15 +76,15 @@ export default function TemplateManagementPage() {
         pageSize,
         total: result.data?.total || 0,
       })
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleTableChange = (newPagination: any) => {
-    fetchData(newPagination.current, newPagination.pageSize)
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 20)
   }
 
   const handleAdd = () => {
@@ -109,8 +109,8 @@ export default function TemplateManagementPage() {
       await deleteDeviationTemplate(id)
       message.success('删除成功')
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -119,8 +119,8 @@ export default function TemplateManagementPage() {
       await updateDeviationTemplateStatus(id, is_active)
       message.success(is_active ? '已启用' : '已停用')
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -154,8 +154,8 @@ export default function TemplateManagementPage() {
       }
 
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -180,8 +180,8 @@ export default function TemplateManagementPage() {
       setUploadModalVisible(false)
       setUploadFileList([])
       fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setUploading(false)
     }

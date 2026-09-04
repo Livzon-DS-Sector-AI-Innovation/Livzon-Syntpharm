@@ -84,7 +84,7 @@ export default function StandardPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, any> = { page, page_size: pageSize }
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.std_code = searchText
         params.std_name = searchText
@@ -98,8 +98,8 @@ export default function StandardPage() {
       const res = await listStandard(params)
       setData((res?.data ?? []) as Standard[])
       setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '加载失败'))
     } finally {
       setLoading(false)
     }
@@ -168,8 +168,8 @@ export default function StandardPage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -215,9 +215,9 @@ export default function StandardPage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '保存失败')
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
     }
@@ -240,9 +240,9 @@ export default function StandardPage() {
         fetchData()
         fetchStats()
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e.errorFields) return
-      message.error(e.message || '调整失败')
+      message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }
 

@@ -83,8 +83,8 @@ export default function PreviewPage({
       if (!response.ok) throw new Error('获取任务详情失败')
       const result = await response.json()
       setTask(result.data)
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setLoading(false)
     }
@@ -104,8 +104,8 @@ export default function PreviewPage({
       setPreviewData(result.data)
       setEditableContent(result.data.plain_content || '')
       setIsEdited(false)
-    } catch (error: any) {
-      message.error(error.message || '获取预览失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '获取预览失败'))
     } finally {
       setPreviewLoading(false)
     }
@@ -126,8 +126,8 @@ export default function PreviewPage({
       message.success('保存成功')
       setIsEdited(false)
       await fetchTaskDetail()
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '保存失败'))
     } finally {
       setSaving(false)
     }
@@ -146,8 +146,8 @@ export default function PreviewPage({
       }
       message.success('标准文件生成成功')
       await fetchTaskDetail()
-    } catch (error: any) {
-      message.error(error.message || '生成失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '生成失败'))
     } finally {
       setGenerating(false)
     }
