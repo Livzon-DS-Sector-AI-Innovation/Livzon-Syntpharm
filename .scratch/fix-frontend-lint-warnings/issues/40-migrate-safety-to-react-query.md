@@ -4,11 +4,13 @@
 
 **Blocked by:** Ticket 35 (global QueryClientProvider)
 
-**Status:** done
+**Status:** ready-for-agent
 
-- [x] All data fetching in safety pages uses useQuery/useMutation
-- [x] Loading/error state managed by React Query
-- [x] No useEffect + setState patterns for data fetching
-- [x] `tsc --noEmit` passes
-- [x] `pnpm lint` passes (no react-hooks/set-state-in-effect warnings in safety)
-- [x] Manual smoke test: safety pages load data correctly
+**Note:** Initial migration attempt was reverted due to duplicate variable declaration errors. The safety module has complex state management with Zustand store integration that requires careful refactoring. This ticket remains open for future completion.
+
+- [ ] All data fetching in safety pages uses useQuery/useMutation
+- [ ] Loading/error state managed by React Query
+- [ ] No useEffect + setState patterns for data fetching
+- [ ] `tsc --noEmit` passes
+- [ ] `pnpm lint` passes (no react-hooks/set-state-in-effect warnings in safety)
+- [ ] Manual smoke test: safety pages load data correctly
