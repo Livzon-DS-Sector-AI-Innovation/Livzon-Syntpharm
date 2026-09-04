@@ -7062,6 +7062,78 @@
         }
       }
     },
+    "/api/v1/equipment/equipments/sync-excel": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u667a\u80fd\u540c\u6b65 Excel \u8bbe\u5907\u6570\u636e",
+        "description": "\u4e0a\u4f20 Excel \u6587\u4ef6\u5e76\u6267\u884c\u667a\u80fd\u540c\u6b65",
+        "operationId": "sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post",
+        "parameters": [
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u4ec5\u9884\u89c8\u4e0d\u6267\u884c",
+              "default": false,
+              "title": "Dry Run"
+            },
+            "description": "\u662f\u5426\u4ec5\u9884\u89c8\u4e0d\u6267\u884c"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/equipment/spare-parts/": {
       "post": {
         "tags": [
@@ -14478,7 +14550,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           }
@@ -14517,8 +14591,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14530,7 +14603,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14579,8 +14654,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14592,7 +14666,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14649,7 +14725,57 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/test-validation": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6d4b\u8bd5\u9a8c\u8bc1\u9519\u8bef",
+        "description": "Test endpoint to debug validation errors without authentication.",
+        "operationId": "test_validation_api_v1_equipment_equipments_import_test_validation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/EquipmentImportRow"
+                },
+                "type": "array",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
+                }
               }
             }
           },
@@ -85864,6 +85990,20 @@
         ],
         "title": "Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
       },
+      "Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"
+      },
       "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post": {
         "properties": {
           "files": {
@@ -96513,6 +96653,119 @@
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
+      },
+      "EquipmentImportRow": {
+        "properties": {
+          "\u8d44\u4ea7\u7f16\u53f7": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7f16\u53f7",
+            "description": "\u8d44\u4ea7\u7f16\u53f7"
+          },
+          "\u8d44\u4ea7\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u8bf4\u660e"
+          },
+          "\u8bbe\u5907\u540d\u79f0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8bbe\u5907\u540d\u79f0",
+            "description": "\u8bbe\u5907\u540d\u79f0\uff08\u522b\u540d\uff09"
+          },
+          "\u5b9e\u7269\u6240\u5728\u90e8\u95e8": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8",
+            "description": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8"
+          },
+          "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
+          "\u5f53\u524d\u6210\u672c": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5f53\u524d\u6210\u672c",
+            "description": "\u5f53\u524d\u6210\u672c"
+          },
+          "\u62a5\u5e9f\u72b6\u6001": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u62a5\u5e9f\u72b6\u6001",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "\u6570\u91cf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u6570\u91cf",
+            "description": "\u6570\u91cf"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EquipmentImportRow",
+        "description": "\u8bbe\u5907\u5bfc\u5165\u884c\u6570\u636e"
       },
       "EquipmentUpdate": {
         "properties": {
