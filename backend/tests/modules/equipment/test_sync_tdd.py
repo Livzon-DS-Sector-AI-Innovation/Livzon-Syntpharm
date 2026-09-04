@@ -75,11 +75,18 @@ async def test_tb02_soft_delete_missing_assets(db_session, seed_basic_data):
     """TB-02: 验证 Excel 中消失的设备被软删除"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
+    # 先创建 20 台设备，避免触发熔断（1/21 < 5%）
+    for i in range(20):
+        db_session.add(Equipment(asset_no=f"KEEP{i}", name=f"保留设备{i}", department_id=d.id, is_deleted=False))
     equip = Equipment(asset_no="DEL001", name="ToBeDeleted", department_id=d.id, is_deleted=False)
     db_session.add(equip)
     await db_session.commit()
 
-    excel_data = _create_excel([])
+    # Excel 包含 20 台保留设备（不含 DEL001）
+    rows = [{"资产编号": f"KEEP{i}", "设备名称": f"保留设备{i}", "实物所在部门": "201车间",
+             "实物所在地点": "-", "当前成本": 0, "帐面净值": 0, "型号": "", "制造商": "", "启用日期": None}
+            for i in range(20)]
+    excel_data = _create_excel(rows)
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="empty.xlsx")
 
     assert result.deleted == 1
@@ -138,7 +145,9 @@ async def test_tb04_audit_log_created(db_session, seed_basic_data):
 
     await sync_equipments_with_audit(db_session, excel_data, operator_id=None, file_name="audit_test.xlsx")
 
-    logs = await db_session.execute(select(EquipmentSyncLog))
+    logs = await db_session.execute(
+        select(EquipmentSyncLog).where(EquipmentSyncLog.file_name == "audit_test.xlsx")
+    )
     log = logs.scalars().first()
     assert log is not None
     assert log.file_name == "audit_test.xlsx"
