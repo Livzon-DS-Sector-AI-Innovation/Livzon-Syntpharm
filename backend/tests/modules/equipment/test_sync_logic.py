@@ -10,8 +10,8 @@ from app.modules.equipment.service.equipment import sync_equipments_with_audit
 from app.modules.hr.models import HrDepartment
 
 
-# 模拟 Excel 内容
 def create_mock_excel(rows):
+    """创建符合 EXCEL_HEADER_ROW = 4 格式的 Excel 文件"""
     cols = [
         "资产编号",
         "设备名称",
@@ -23,8 +23,8 @@ def create_mock_excel(rows):
         "制造商",
         "启用日期",
     ]
-    # 前 4 行写空数据以匹配 EXCEL_HEADER_ROW = 4
-    preamble = pd.DataFrame([[""] * len(cols) for _ in range(4)], columns=cols)
+    # 前 4 行写占位数据（非空），确保 pandas 不会跳过
+    preamble = pd.DataFrame([["placeholder"] * len(cols) for _ in range(4)], columns=cols)
     data = pd.DataFrame(rows, columns=cols)
 
     output = BytesIO()
@@ -38,7 +38,6 @@ def create_mock_excel(rows):
 @pytest.mark.asyncio
 async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_departments_and_locations):
     """测试：同步功能是否正确更新了成本和净值"""
-    # Arrange: 准备一台已存在的设备
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
 
@@ -48,7 +47,6 @@ async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_depart
     db_session.add(equip)
     await db_session.commit()
 
-    # Act: 执行同步（Excel 中成本变为 200）
     excel_data = create_mock_excel(
         [
             {
@@ -67,7 +65,6 @@ async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_depart
 
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="test.xlsx")
 
-    # Assert
     assert result.updated == 1
     updated_equip = await db_session.get(Equipment, equip.id)
     assert updated_equip is not None
@@ -78,18 +75,15 @@ async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_depart
 @pytest.mark.asyncio
 async def test_sync_soft_deletes_missing_assets(db_session: AsyncSession, seed_departments_and_locations):
     """测试：Excel 中消失的设备是否被软删除"""
-    # Arrange
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
     equip = Equipment(asset_no="TO_DELETE", name="待删设备", department_id=d.id, is_deleted=False)
     db_session.add(equip)
     await db_session.commit()
 
-    # Act: 上传一个空的 Excel
     excel_data = create_mock_excel([])
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="empty.xlsx")
 
-    # Assert
     assert result.deleted == 1
     deleted_equip = await db_session.get(Equipment, equip.id)
     assert deleted_equip is not None
@@ -99,14 +93,12 @@ async def test_sync_soft_deletes_missing_assets(db_session: AsyncSession, seed_d
 @pytest.mark.asyncio
 async def test_sync_threshold_fuse(db_session: AsyncSession, seed_departments_and_locations):
     """测试：缺失比例超过 5% 时是否触发熔断"""
-    # Arrange: 插入 100 台设备
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
     for i in range(100):
         db_session.add(Equipment(asset_no=f"FUSE{i}", name=f"设备{i}", department_id=d.id, is_deleted=False))
     await db_session.commit()
 
-    # Act: 上传只包含 1 台设备的 Excel (缺失 99%)
     excel_data = create_mock_excel(
         [
             {
@@ -123,6 +115,5 @@ async def test_sync_threshold_fuse(db_session: AsyncSession, seed_departments_an
         ]
     )
 
-    # Assert
     with pytest.raises(ValueError, match="安全熔断"):
         await sync_equipments_with_audit(db_session, excel_data, file_name="fuse_test.xlsx")

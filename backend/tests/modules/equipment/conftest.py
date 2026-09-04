@@ -6,9 +6,10 @@ from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.equipment.models.equipment import Location
+from app.modules.equipment.models.equipment import Equipment, Location
 from app.modules.hr.models import HrDepartment
 from app.platform.identity.models import User
 
@@ -95,6 +96,15 @@ def project_root() -> Path:
 @pytest.fixture
 async def seed_departments_and_locations(db_session: AsyncSession):
     """Seed basic departments and locations for equipment sync tests."""
+    # Clean up to prevent MultipleResultsFound from previous runs
+    dept_names = ["201车间", "质量控制部", "溶剂回收车间"]
+    await db_session.execute(
+        delete(Equipment).where(
+            Equipment.department_id.in_(select(HrDepartment.id).where(HrDepartment.name.in_(dept_names)))
+        )
+    )
+    await db_session.execute(delete(HrDepartment).where(HrDepartment.name.in_(dept_names)))
+
     uid = uuid.uuid4().hex[:6]
     depts = [
         HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
@@ -120,6 +130,15 @@ async def seed_departments_and_locations(db_session: AsyncSession):
 @pytest.fixture
 async def seed_basic_data(db_session: AsyncSession):
     """Seed basic data for equipment sync TDD tests (same as seed_departments_and_locations)."""
+    # Clean up to prevent MultipleResultsFound from previous runs
+    dept_names = ["201车间", "质量控制部", "溶剂回收车间"]
+    await db_session.execute(
+        delete(Equipment).where(
+            Equipment.department_id.in_(select(HrDepartment.id).where(HrDepartment.name.in_(dept_names)))
+        )
+    )
+    await db_session.execute(delete(HrDepartment).where(HrDepartment.name.in_(dept_names)))
+
     uid = uuid.uuid4().hex[:6]
     depts = [
         HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),

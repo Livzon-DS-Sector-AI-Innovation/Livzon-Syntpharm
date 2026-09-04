@@ -10,11 +10,26 @@ from app.modules.hr.models import HrDepartment
 
 
 def _create_excel(rows) -> bytes:
-    """辅助函数：将字典列表转换为 Excel 二进制流"""
-    df = pd.DataFrame(rows)
+    """辅助函数：将字典列表转换为 Excel 二进制流 (匹配 EXCEL_HEADER_ROW = 4)"""
+    cols = [
+        "资产编号",
+        "设备名称",
+        "实物所在部门",
+        "实物所在地点",
+        "当前成本",
+        "帐面净值",
+        "型号",
+        "制造商",
+        "启用日期",
+    ]
+    # 前 4 行写占位数据（非空），确保 pandas 不会跳过
+    preamble = pd.DataFrame([["placeholder"] * len(cols) for _ in range(4)], columns=cols)
+    data = pd.DataFrame(rows, columns=cols)
+
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, header=True)
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        preamble.to_excel(writer, index=False, header=False, startrow=0)
+        data.to_excel(writer, index=False, header=True, startrow=4)
     output.seek(0)
     return output.read()
 
@@ -22,7 +37,6 @@ def _create_excel(rows) -> bytes:
 @pytest.mark.asyncio
 async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
     """TB-01: 验证完全匹配时，成本和净值被正确更新"""
-    # Arrange: 数据库中已有一台设备
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
     equip = Equipment(
@@ -31,7 +45,6 @@ async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
     db_session.add(equip)
     await db_session.commit()
 
-    # Act: 上传包含新成本的 Excel
     excel_data = _create_excel(
         [
             {
@@ -50,7 +63,6 @@ async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
 
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="test.xlsx")
 
-    # Assert
     assert result.updated == 1
     updated = await db_session.get(Equipment, equip.id)
     assert updated.current_cost == 200.0
@@ -61,18 +73,15 @@ async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
 @pytest.mark.asyncio
 async def test_tb02_soft_delete_missing_assets(db_session, seed_basic_data):
     """TB-02: 验证 Excel 中消失的设备被软删除"""
-    # Arrange
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
     equip = Equipment(asset_no="DEL001", name="ToBeDeleted", department_id=d.id, is_deleted=False)
     db_session.add(equip)
     await db_session.commit()
 
-    # Act: 上传空 Excel
     excel_data = _create_excel([])
     result = await sync_equipments_with_audit(db_session, excel_data, file_name="empty.xlsx")
 
-    # Assert
     assert result.deleted == 1
     deleted = await db_session.get(Equipment, equip.id)
     assert deleted.is_deleted
@@ -81,14 +90,12 @@ async def test_tb02_soft_delete_missing_assets(db_session, seed_basic_data):
 @pytest.mark.asyncio
 async def test_tb04_threshold_fuse(db_session, seed_basic_data):
     """TB-04: 验证缺失比例超过 5% 时触发熔断"""
-    # Arrange: 插入 20 台设备
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     d = dept.scalar_one()
     for i in range(20):
         db_session.add(Equipment(asset_no=f"F{i}", name=f"E{i}", department_id=d.id, is_deleted=False))
     await db_session.commit()
 
-    # Act: 上传只含 1 台设备的 Excel (缺失 95%)
     excel_data = _create_excel(
         [
             {
@@ -105,7 +112,6 @@ async def test_tb04_threshold_fuse(db_session, seed_basic_data):
         ]
     )
 
-    # Assert
     with pytest.raises(ValueError, match="安全熔断"):
         await sync_equipments_with_audit(db_session, excel_data, file_name="fuse.xlsx")
 
@@ -113,7 +119,6 @@ async def test_tb04_threshold_fuse(db_session, seed_basic_data):
 @pytest.mark.asyncio
 async def test_tb04_audit_log_created(db_session, seed_basic_data):
     """TB-04: 验证同步后生成了审计日志"""
-    # Arrange & Act
     await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
     excel_data = _create_excel(
         [
@@ -133,7 +138,6 @@ async def test_tb04_audit_log_created(db_session, seed_basic_data):
 
     await sync_equipments_with_audit(db_session, excel_data, operator_id=None, file_name="audit_test.xlsx")
 
-    # Assert
     logs = await db_session.execute(select(EquipmentSyncLog))
     log = logs.scalars().first()
     assert log is not None
