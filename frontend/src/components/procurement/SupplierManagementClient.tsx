@@ -142,7 +142,7 @@ export function SupplierManagementClient({
     setUploading(true)
     const formData = new FormData()
     formData.append('file', file)
-    void importSupplierTable(formData)
+    void (importSupplierTable(formData) as Promise<{ code: number; data?: { imported_count?: number; columns?: string[] }; message?: string }>)
       .then(async (response) => {
         if (response.code >= 200 && response.code < 300) {
           const importedCount = response.data?.imported_count ?? 0

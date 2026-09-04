@@ -57,13 +57,17 @@ export async function deleteProductDossier(id: string): Promise<void> {
 }
 
 // ====== Template Upload & Parsing ======
-export async function uploadTemplates(dossierId: string, files: any): Promise<UploadResponse> {
+export async function uploadTemplates(dossierId: string, files: FileList | File[]): Promise<UploadResponse> {
   const formData = new FormData()
-  files.forEach((file: any) => formData.append('files', file))
+  if (files instanceof FileList) {
+    Array.from(files).forEach((file: File) => formData.append('files', file))
+  } else {
+    files.forEach((file: File) => formData.append('files', file))
+  }
 
   const result = await uploadTemplatesApi(dossierId, formData)
   revalidatePath('/registration/dossier-writer')
-  return result as any
+  return result
 }
 
 export async function parseTemplates(dossierId: string): Promise<ParseResult> {
@@ -77,14 +81,18 @@ export async function parseTemplates(dossierId: string): Promise<ParseResult> {
 // ====== Chapter Asset ======
 export async function uploadChapterAsset(
   chapterId: string,
-  files: any
+  files: FileList | File[]
 ): Promise<{ assets: ChapterAsset[]; count: number }> {
   const formData = new FormData()
-  files.forEach((file: any) => formData.append('files', file))
+  if (files instanceof FileList) {
+    Array.from(files).forEach((file: File) => formData.append('files', file))
+  } else {
+    files.forEach((file: File) => formData.append('files', file))
+  }
 
   const result = await uploadChapterAssetApi(chapterId, formData)
   revalidatePath('/registration/dossier-writer')
-  return result as any
+  return result
 }
 
 export async function deleteChapterAsset(assetId: string): Promise<void> {
@@ -180,7 +188,7 @@ export async function updateAssetCategory(
 ): Promise<AssetCategoryUpdateData> {
   const result = await updateAssetCategoryApi(assetId, categoryId)
   revalidatePath('/registration/dossier-writer')
-  return result as any
+  return result
 }
 
 // ====== Asset Usage (素材使用管理) ======

@@ -34,19 +34,19 @@ export async function createUser(data: LocalUserCreate) {
   const token = await getAuthToken()
   const result = await createUserServer(data, token) as UserManagementItem
   revalidatePath('/settings')
-  return result as any
+  return result
 }
 
 export async function updateUser(id: string, data: UserManagementUpdate) {
   const token = await getAuthToken()
   const result = await updateUserServer(id, data, token) as UserManagementItem
   revalidatePath('/settings')
-  return result as any
+  return result
 }
 
 export async function resetUserPassword(id: string, data: PasswordResetRequest) {
   const token = await getAuthToken()
   const result = await resetUserPasswordServer(id, data, token) as { message: string }
   revalidatePath('/settings')
-  return result as any
+  return result
 }

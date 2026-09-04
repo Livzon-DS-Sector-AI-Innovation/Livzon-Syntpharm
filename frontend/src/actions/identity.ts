@@ -14,5 +14,5 @@ export async function getLoginLogs(params: {
   const token = cookieStore.get('auth_token')
 
   const result = await getLoginLogsApi(token?.value || '', params)
-  return result as any
+  return result
 }

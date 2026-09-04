@@ -94,7 +94,7 @@ export default function VehiclePage() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const res = await batchImportVehicles(file)
+      const res = (await batchImportVehicles(file)) as { data?: { created?: number; updated?: number; failed?: number; restored?: number; errors?: string[] } }
       const result = res.data || {}
       const parts = [
         `新增 ${result.created || 0} 条`,
