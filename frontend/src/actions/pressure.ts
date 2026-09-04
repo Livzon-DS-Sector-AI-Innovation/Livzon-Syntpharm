@@ -240,7 +240,7 @@ export async function createOcrTask(data: { image_url: string }) {
 
 export async function submitOcrTaskResult(
   taskId: string,
-  data: { records: any[] }
+  data: { records: Record<string, unknown>[] }
 ) {
   const headers = await getAuthHeaders()
   const response = await apiSubmitOcrTaskResult(headers, taskId, data)

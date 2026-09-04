@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** in-progress
+**Status:** done
 
 See spec: `.scratch/fix-frontend-lint-warnings/specs/type-actions-breakdown.md`
 
@@ -67,7 +67,7 @@ See spec: `.scratch/fix-frontend-lint-warnings/specs/type-actions-breakdown.md`
 
 ## Acceptance Criteria
 
-- [ ] All 39 child tickets completed
-- [ ] Zero `@typescript-eslint/no-explicit-any` warnings in `src/actions/`
+- [x] All 39 child tickets completed
+- [x] Zero `@typescript-eslint/no-explicit-any` warnings in `src/actions/`
 - [ ] `tsc --noEmit` passes
 - [ ] `pnpm lint` passes

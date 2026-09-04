@@ -83,7 +83,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
       setElapsedSeconds(0)
       
       try {
-        const response = await analyzeLiterature(literatureFile)
+        const response = await analyzeLiterature(literatureFile) as Response
         
         if (!response.body) {
           throw new Error('响应体为空')

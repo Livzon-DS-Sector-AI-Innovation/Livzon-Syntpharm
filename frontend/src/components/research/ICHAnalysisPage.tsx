@@ -177,7 +177,7 @@ export function ICHAnalysisPage() {
   const handleUpload = async (file: File) => {
     setLoading(true)
     try {
-      const data = await analyzeICHFile(file)
+      const data = await analyzeICHFile(file) as { data: { id: string; q3c_result: Q3CResult; q3d_result: Q3DResult } }
       setResult({ id: data.data.id, q3c: data.data.q3c_result, q3d: data.data.q3d_result })
       message.success('ICH Q3C/Q3D 杂质识别完成，已保存')
       loadHistory(historyPage)
@@ -212,7 +212,7 @@ export function ICHAnalysisPage() {
   // Delete a history record
   const deleteRecord = async (recordId: string) => {
     try {
-      const data = await deleteICHRecord(recordId)
+      const data = await deleteICHRecord(recordId) as { code: number }
       if (data.code === 200) {
         message.success('记录已删除')
         if (result?.id === recordId) setResult(null)
