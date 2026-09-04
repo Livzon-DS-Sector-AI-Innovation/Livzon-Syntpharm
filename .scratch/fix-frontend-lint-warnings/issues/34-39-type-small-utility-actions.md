@@ -4,14 +4,14 @@
 
 **Blocked by:** Ticket 34 (parent)
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Files:** src/actions/admin.ts, src/actions/environment.ts, src/actions/identity.ts, src/actions/pressure.ts, src/actions/ai-parse.ts, src/actions/instrument.ts, src/actions/procurement.ts, src/actions/users.ts
 
 ## Acceptance Criteria
 
-- [ ] All small utility action functions have explicit return types
-- [ ] All `as any` type assertions removed
-- [ ] Zero `@typescript-eslint/no-explicit-any` warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes on modified files
+- [x] All small utility action functions have explicit return types
+- [x] All `as any` type assertions removed
+- [x] Zero `@typescript-eslint/no-explicit-any` warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes on modified files

@@ -4,14 +4,14 @@
 
 **Blocked by:** Ticket 34 (parent)
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Files:** src/actions/equipment-personnel.ts
 
 ## Acceptance Criteria
 
-- [ ] All equipment-personnel action functions have explicit return types
-- [ ] All `as any` type assertions removed
-- [ ] Zero `@typescript-eslint/no-explicit-any` warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes on modified files
+- [x] All equipment-personnel action functions have explicit return types
+- [x] All `as any` type assertions removed
+- [x] Zero `@typescript-eslint/no-explicit-any` warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes on modified files
