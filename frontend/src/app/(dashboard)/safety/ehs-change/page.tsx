@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -95,8 +96,6 @@ const statusLabelMap: Record<string, string> = {
 }
 
 export default function EhsChangePage() {
-  const [changes, setChanges] = useState<EhsChange[]>([])
-  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingChange, setEditingChange] = useState<EhsChange | null>(null)
   const [saving, setSaving] = useState(false)
@@ -118,28 +117,24 @@ export default function EhsChangePage() {
   // Pagination
   const [pagination, setPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
-  const loadChanges = useCallback(async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: changesData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-ehs-changes', { pagination, filters }],
+    queryFn: async () => {
       const res = await getEhsChanges({
         page: pagination.page,
         page_size: pagination.page_size,
         ...filters,
       })
-      setChanges(res.data || [])
-      if (res.meta) {
-        setPagination((p) => ({ ...p, total: res.meta!.total || 0 }))
-      }
-    } catch (error) {
-      console.error('Failed to load EHS changes:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [pagination.page, pagination.page_size, filters])
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadChanges()
-  }, [loadChanges])
+  const changes = changesData?.data || []
+  const loading = isLoading
+
+
 
   // ── Create / Edit ──
 
@@ -182,7 +177,7 @@ export default function EhsChangePage() {
         message.success('变更创建成功')
       }
       setModalOpen(false)
-      loadChanges()
+      refetch()
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) return // form validation
       message.error('操作失败')
@@ -197,7 +192,7 @@ export default function EhsChangePage() {
     const res = await submitEhsChange(id)
     if (res.code === 0) {
       message.success('变更已提交')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -210,7 +205,7 @@ export default function EhsChangePage() {
     const res = await approveEhsChange(id, decision, comments)
     if (res.code === 0) {
       message.success(decision === 'approved' ? '变更已批准' : '变更已驳回')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -223,7 +218,7 @@ export default function EhsChangePage() {
     const res = await rejectEhsChange(id, '驳回')
     if (res.code === 0) {
       message.success('变更已驳回')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -236,7 +231,7 @@ export default function EhsChangePage() {
     const res = await startImplementationEhsChange(id)
     if (res.code === 0) {
       message.success('变更已开始实施')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -249,7 +244,7 @@ export default function EhsChangePage() {
     const res = await commissionEhsChange(id)
     if (res.code === 0) {
       message.success('变更已投用')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -262,7 +257,7 @@ export default function EhsChangePage() {
     const res = await closeEhsChange(id)
     if (res.code === 0) {
       message.success('变更已关闭')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -275,7 +270,7 @@ export default function EhsChangePage() {
     const res = await cancelEhsChange(id)
     if (res.code === 0) {
       message.success('变更已取消')
-      loadChanges()
+      refetch()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -288,7 +283,7 @@ export default function EhsChangePage() {
     const res = await deleteEhsChange(id)
     if (res.code === 0) {
       message.success('删除成功')
-      loadChanges()
+      refetch()
     } else {
       message.error(res.message || '删除失败')
     }
@@ -617,7 +612,7 @@ export default function EhsChangePage() {
           ) : null
         }
       >
-        {selectedChange && <EhsChangeDetail change={selectedChange} onRefresh={loadChanges} />}
+        {selectedChange && <EhsChangeDetail change={selectedChange} onRefresh={() => refetch()} />}
       </Drawer>
     </div>
   )

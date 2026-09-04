@@ -3,7 +3,8 @@
 "use client"
 
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
@@ -25,11 +26,8 @@ import {
 export default function ContractorPage() {
   const { message, modal } = App.useApp()
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<Contractor | null>(null)
-  const [data, setData] = useState<Contractor[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
@@ -38,21 +36,27 @@ export default function ContractorPage() {
   const [keyword, setKeyword] = useState('')
   const [_tab] = useState('list')
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: contractorsData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-contractors', { page, pageSize, statusFilter, typeFilter, trainingFilter, keyword }],
+    queryFn: async () => {
       const response = await getContractors({
         page, page_size: pageSize, status: statusFilter,
         qualification_type: typeFilter, training_status: trainingFilter, keyword: keyword || undefined,
       })
       if (response.code === 200) {
-        setData(response.data)
-        setTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch { message.error('加载承包商列表失败') } finally { setLoading(false) }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => { loadData() }, [page, pageSize, statusFilter, typeFilter, trainingFilter])
+  const data = contractorsData?.data || []
+  const total = contractorsData?.total || 0
+  const loading = isLoading
+
+
 
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 
@@ -73,11 +77,11 @@ export default function ContractorPage() {
       }
       if (editingRecord) {
         const response = await updateContractor(editingRecord.id, formattedValues)
-        if (response.code === 200) { message.success('更新成功'); setModalVisible(false); loadData() }
+        if (response.code === 200) { message.success('更新成功'); setModalVisible(false); refetch() }
         else message.error(response.message || '更新失败')
       } else {
         const response = await createContractor(formattedValues as ContractorFormData)
-        if (response.code === 200) { message.success('创建成功'); setModalVisible(false); form.resetFields(); loadData() }
+        if (response.code === 200) { message.success('创建成功'); setModalVisible(false); form.resetFields(); refetch() }
         else message.error(response.message || '创建失败')
       }
     } catch { /* validation error */ }
@@ -88,7 +92,7 @@ export default function ContractorPage() {
       title: '确认删除', content: '确定要删除这个承包商吗？',
       onOk: async () => {
         const response = await deleteContractor(id)
-        if (response.code === 200) { message.success('删除成功'); loadData() }
+        if (response.code === 200) { message.success('删除成功'); refetch() }
         else message.error(response.message || '删除失败')
       },
     })
@@ -96,19 +100,19 @@ export default function ContractorPage() {
 
   const handleBlacklist = async (id: string) => {
     const response = await blacklistContractor(id)
-    if (response.code === 200) { message.success('已加入黑名单'); loadData() }
+    if (response.code === 200) { message.success('已加入黑名单'); refetch() }
     else message.error(response.message || '操作失败')
   }
 
   const handleActivate = async (id: string) => {
     const response = await activateContractor(id)
-    if (response.code === 200) { message.success('已激活'); loadData() }
+    if (response.code === 200) { message.success('已激活'); refetch() }
     else message.error(response.message || '操作失败')
   }
 
   const handleTrainingUpdate = async (id: string, trainingStatus: string) => {
     const response = await updateContractorTraining(id, trainingStatus)
-    if (response.code === 200) { message.success('培训状态已更新'); loadData() }
+    if (response.code === 200) { message.success('培训状态已更新'); refetch() }
     else message.error(response.message || '操作失败')
   }
 
@@ -163,11 +167,11 @@ export default function ContractorPage() {
         extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新建承包商</Button>}
       >
         <Row gutter={16} className="mb-4">
-          <Col span={4}><Input placeholder="搜索" prefix={<SearchOutlined />} value={keyword} onChange={e => setKeyword(e.target.value)} onPressEnter={loadData} /></Col>
+          <Col span={4}><Input placeholder="搜索" prefix={<SearchOutlined />} value={keyword} onChange={e => setKeyword(e.target.value)} onPressEnter={() => refetch()} /></Col>
           <Col span={4}><Select placeholder="状态" allowClear value={statusFilter} onChange={v => { setStatusFilter(v); setPage(1) }} style={{ width: '100%' }} options={CONTRACTOR_STATUS_OPTIONS.map(o => ({ value: o.value, label: o.label }))} /></Col>
           <Col span={4}><Select placeholder="资质类型" allowClear value={typeFilter} onChange={v => { setTypeFilter(v); setPage(1) }} style={{ width: '100%' }} options={QUALIFICATION_TYPE_OPTIONS.map(o => ({ value: o.value, label: o.label }))} /></Col>
           <Col span={4}><Select placeholder="培训状态" allowClear value={trainingFilter} onChange={v => { setTrainingFilter(v); setPage(1) }} style={{ width: '100%' }} options={CONTRACTOR_TRAINING_STATUS_OPTIONS.map(o => ({ value: o.value, label: o.label }))} /></Col>
-          <Col span={3}><Button type="primary" icon={<SearchOutlined />} onClick={loadData}>查询</Button></Col>
+          <Col span={3}><Button type="primary" icon={<SearchOutlined />} onClick={() => refetch()}>查询</Button></Col>
         </Row>
 
         <Table columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 1400 }}
