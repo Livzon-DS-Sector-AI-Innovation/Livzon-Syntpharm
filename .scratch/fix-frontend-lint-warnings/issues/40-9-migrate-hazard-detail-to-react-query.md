@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** blocked
 
 - [ ] Replace useEffect+useState data fetching with useQuery in `hazard/[id]/page.tsx`
 - [ ] Remove duplicate state from `hazardStore.ts` (keep only UI state)

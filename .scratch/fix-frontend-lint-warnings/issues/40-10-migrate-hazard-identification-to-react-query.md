@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** blocked
 
 - [ ] Replace useEffect+useState data fetching with useQuery in `hazard-identification/new/page.tsx`
 - [ ] Replace useEffect+useState data fetching with useQuery in `hazard-identification/[id]/page.tsx`

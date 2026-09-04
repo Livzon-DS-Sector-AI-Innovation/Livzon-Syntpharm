@@ -4,13 +4,13 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Replace useEffect+useState data fetching with useQuery in `knowledge-base/page.tsx`
-- [ ] Remove duplicate state from `knowledgeStore.ts` (keep only UI state like selectedRowKeys, formOpen)
-- [ ] Handle complex queryKey with multiple filter dependencies (statusFilter, categoryFilter, smartSearch, searchText, selectedMenuKey)
-- [ ] Implement client-side filtering for menu-based views (pending_sync, sync_failed, no_card)
-- [ ] Ensure proper cache invalidation when mutations occur (sync, generate card, create new version)
-- [ ] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from knowledge base module
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] Manual smoke test: knowledge base list loads, menu navigation works, filters work
+- [x] Replace useEffect+useState data fetching with useQuery in `knowledge-base/page.tsx`
+- [x] Remove duplicate state from `knowledgeStore.ts` (keep only UI state like selectedRowKeys, formOpen)
+- [x] Handle complex queryKey with multiple filter dependencies (statusFilter, categoryFilter, smartSearch, searchText, selectedMenuKey)
+- [x] Implement client-side filtering for menu-based views (pending_sync, sync_failed, no_card)
+- [x] Ensure proper cache invalidation when mutations occur (sync, generate card, create new version)
+- [x] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from knowledge base module
+- [x] `tsc --noEmit` passes with no errors
+- [x] Manual smoke test: knowledge base list loads, menu navigation works, filters work

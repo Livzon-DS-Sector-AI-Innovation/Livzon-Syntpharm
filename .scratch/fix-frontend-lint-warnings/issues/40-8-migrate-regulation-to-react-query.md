@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** blocked
 
 - [ ] Replace useEffect+useState data fetching with useQuery in `regulation/page.tsx`
 - [ ] Replace useEffect+useState data fetching with useQuery in `regulation/generator/[id]/page.tsx`

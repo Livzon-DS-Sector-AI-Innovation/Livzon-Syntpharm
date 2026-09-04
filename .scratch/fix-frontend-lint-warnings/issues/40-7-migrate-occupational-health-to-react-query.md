@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Replace useEffect+useState data fetching with useQuery in `occupational-health/page.tsx`
-- [ ] Remove duplicate state from `ohHazardMonitorStore.ts` and `ohHealthExamStore.ts` (keep only UI state)
-- [ ] Implement separate useQuery hooks for monitors and exams with independent queryKeys
-- [ ] Ensure proper cache invalidation for both data sources when mutations occur
-- [ ] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from occupational health module
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] Manual smoke test: both monitors and exams tabs load, filters work, CRUD operations succeed
+- [x] Replace useEffect+useState data fetching with useQuery in `occupational-health/page.tsx`
+- [x] Remove duplicate state from `ohHazardMonitorStore.ts` and `ohHealthExamStore.ts` (keep only UI state)
+- [x] Implement separate useQuery hooks for monitors and exams with independent queryKeys
+- [x] Ensure proper cache invalidation for both data sources when mutations occur
+- [x] Remove all `@typescript-eslint/no-set-state-in-effect` warnings from occupational health module
+- [x] `tsc --noEmit` passes with no errors
+- [x] Manual smoke test: both monitors and exams tabs load, filters work, CRUD operations succeed
