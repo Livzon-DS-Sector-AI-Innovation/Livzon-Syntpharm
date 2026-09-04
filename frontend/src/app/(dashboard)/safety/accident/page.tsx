@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -28,7 +29,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useAccidentStore } from '@/stores/safety'
 import {
   getAccidents,
   createAccident,
@@ -57,7 +58,6 @@ import dayjs from 'dayjs'
 export default function AccidentPage() {
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [resolveModalVisible, setResolveModalVisible] = useState(false)
   const [capaModalVisible, setCapaModalVisible] = useState(false)
@@ -74,22 +74,17 @@ export default function AccidentPage() {
   const [dateToFilter] = useState<string | undefined>()
 
   const {
-    accidents,
-    accidentTotal,
-    accidentQueryParams,
-    setAccidents,
-    setAccidentTotal,
-    setAccidentQueryParams,
-    addAccident,
-    updateAccident: updateAccidentInStore,
-    removeAccident,
-  } = useSafetyStore()
+    queryParams,
+    setQueryParams,
+  } = useAccidentStore()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: accidentsData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-accidents', { queryParams, statusFilter, typeFilter, levelFilter, deptFilter, dateFromFilter, dateToFilter, searchText }],
+    queryFn: async () => {
       const response = await getAccidents({
-        ...accidentQueryParams,
+        ...queryParams,
         status: statusFilter,
         accident_type: typeFilter,
         accident_level: levelFilter,
@@ -99,23 +94,20 @@ export default function AccidentPage() {
         keyword: searchText || undefined,
       })
       if (response.code === 200) {
-        setAccidents(response.data)
-        setAccidentTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载事故列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [accidentQueryParams.page, accidentQueryParams.page_size, statusFilter, typeFilter, levelFilter])
+  const accidents = accidentsData?.data || []
+  const accidentTotal = accidentsData?.total || 0
+
+
 
   const handleSearch = () => {
-    setAccidentQueryParams({ page: 1 })
-    loadData()
+    setQueryParams({ page: 1 })
+    refetch()
   }
 
   const handleAdd = () => {
@@ -143,7 +135,7 @@ export default function AccidentPage() {
           const response = await deleteAccident(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeAccident(id)
+            queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -167,7 +159,7 @@ export default function AccidentPage() {
         const response = await updateAccident(editingRecord.id, formattedValues)
         if (response.code === 200) {
           message.success('更新成功')
-          updateAccidentInStore(editingRecord.id, response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
           setModalVisible(false)
         } else {
           message.error(response.message || '更新失败')
@@ -176,7 +168,7 @@ export default function AccidentPage() {
         const response = await createAccident(formattedValues as AccidentFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addAccident(response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
           setModalVisible(false)
           form.resetFields()
         } else {
@@ -193,7 +185,7 @@ export default function AccidentPage() {
       const response = await investigateAccident(id)
       if (response.code === 200) {
         message.success('已开始调查')
-        updateAccidentInStore(id, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -221,7 +213,7 @@ export default function AccidentPage() {
       )
       if (response.code === 200) {
         message.success('事故已处理')
-        updateAccidentInStore(currentAccidentId, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
         setResolveModalVisible(false)
       } else {
         message.error(response.message || '操作失败')
@@ -248,7 +240,7 @@ export default function AccidentPage() {
       )
       if (response.code === 200) {
         message.success('CAPA已启动')
-        updateAccidentInStore(currentAccidentId, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
         setCapaModalVisible(false)
       } else {
         message.error(response.message || '操作失败')
@@ -263,7 +255,7 @@ export default function AccidentPage() {
       const response = await verifyCapa(id)
       if (response.code === 200) {
         message.success('CAPA已验证，事故已关闭')
-        updateAccidentInStore(id, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -280,7 +272,7 @@ export default function AccidentPage() {
         const response = await closeAccident(id)
         if (response.code === 200) {
           message.success('事故已关闭')
-          updateAccidentInStore(id, response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-accidents'] })
         } else {
           message.error(response.message || '关闭失败')
         }
@@ -480,7 +472,7 @@ export default function AccidentPage() {
               value={typeFilter}
               onChange={(value) => {
                 setTypeFilter(value)
-                setAccidentQueryParams({ page: 1 })
+                setQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={ACCIDENT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -493,7 +485,7 @@ export default function AccidentPage() {
               value={levelFilter}
               onChange={(value) => {
                 setLevelFilter(value)
-                setAccidentQueryParams({ page: 1 })
+                setQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={ACCIDENT_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -506,7 +498,7 @@ export default function AccidentPage() {
               value={statusFilter}
               onChange={(value) => {
                 setStatusFilter(value)
-                setAccidentQueryParams({ page: 1 })
+                setQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={ACCIDENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -523,17 +515,17 @@ export default function AccidentPage() {
           columns={columns}
           dataSource={accidents}
           rowKey="id"
-          loading={loading}
+          loading={isLoading}
           scroll={{ x: 1500 }}
           pagination={{
-            current: accidentQueryParams.page,
-            pageSize: accidentQueryParams.page_size,
+            current: queryParams.page,
+            pageSize: queryParams.page_size,
             total: accidentTotal,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setAccidentQueryParams({ page, page_size: pageSize })
+              setQueryParams({ page, page_size: pageSize })
             },
           }}
         />
