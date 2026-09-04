@@ -1,6 +1,6 @@
-import uuid
 """Shared test fixtures for equipment module tests."""
 
+import uuid
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
