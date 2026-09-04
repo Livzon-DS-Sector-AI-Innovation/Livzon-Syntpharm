@@ -4,9 +4,22 @@
 
 **Blocked by:** Ticket 35 (global QueryClientProvider)
 
-**Status:** ready-for-agent
+**Status:** blocked
 
-**Note:** Initial migration attempt was reverted due to duplicate variable declaration errors. The safety module has complex state management with Zustand store integration that requires careful refactoring. This ticket remains open for future completion.
+**Note:** This ticket requires comprehensive refactoring of the safety module's state management. The safety module has complex interdependencies with Zustand store and requires careful coordination between local component state and global store state. Multiple migration attempts have been made but reverted due to:
+
+1. Duplicate variable declarations when both useState and useQuery are used
+2. Complex state synchronization between component state and Zustand store
+3. Multiple setRecord/setData calls throughout the component lifecycle
+4. Interdependencies between different data loading functions
+
+**Recommended approach:** 
+- First refactor the Zustand store to remove data that should be managed by React Query
+- Then migrate data fetching to useQuery
+- Ensure proper cache invalidation when mutations occur
+- Consider using React Query's optimistic updates for better UX
+
+This ticket should be tackled as a separate, larger refactoring effort rather than as part of the lint warning fixes.
 
 - [ ] All data fetching in safety pages uses useQuery/useMutation
 - [ ] Loading/error state managed by React Query
