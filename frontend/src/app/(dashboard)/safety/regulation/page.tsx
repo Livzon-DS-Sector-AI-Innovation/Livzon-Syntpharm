@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -37,7 +38,7 @@ import {
   FileProtectOutlined,
   HistoryOutlined,
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useRegulationStore, useRevisionStore } from '@/stores/safety'
 import {
   getRegulations,
   createRegulation,
@@ -92,7 +93,6 @@ export default function RegulationPage() {
   // ========== Regulation States ==========
   const [regForm] = Form.useForm()
   const [regEditForm] = Form.useForm()
-  const [regLoading, setRegLoading] = useState(false)
   const [regDrawerOpen, setRegDrawerOpen] = useState(false)
   const [editingRegulation, setEditingRegulation] = useState<OperationRegulation | null>(null)
   const [regSearchText, setRegSearchText] = useState('')
@@ -102,7 +102,6 @@ export default function RegulationPage() {
 
   // ========== Revision States ==========
   const [revForm] = Form.useForm()
-  const [revLoading, setRevLoading] = useState(false)
   const [revDrawerOpen, setRevDrawerOpen] = useState(false)
   const [revSearchText, setRevSearchText] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
@@ -125,35 +124,24 @@ export default function RegulationPage() {
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false)
 
   // Regulations cache for revision create form
-  const [regulationsForSelect, setRegulationsForSelect] = useState<OperationRegulation[]>([])
 
   // ========== Store ==========
   const {
-    regulations,
-    regulationTotal,
-    regulationQueryParams,
-    setRegulations,
-    setRegulationTotal,
-    setRegulationQueryParams,
-    addRegulation,
-    updateRegulation: updateRegulationInStore,
-    removeRegulation,
+    queryParams: regulationQueryParams,
+    setQueryParams: setRegulationQueryParams,
+  } = useRegulationStore()
 
-    revisions,
-    revisionTotal,
-    revisionQueryParams,
-    setRevisions,
-    setRevisionTotal,
-    setRevisionQueryParams,
-    addRevision,
-    removeRevision,
-  } = useSafetyStore()
+  const {
+    queryParams: revisionQueryParams,
+    setQueryParams: setRevisionQueryParams,
+  } = useRevisionStore()
 
-  // ========== Regulation Handlers ==========
+  const queryClient = useQueryClient()
 
-  const loadRegulations = async () => {
-    setRegLoading(true)
-    try {
+  // Regulations query
+  const { data: regulationsData, isLoading: regLoading, refetch: refetchRegulations } = useQuery({
+    queryKey: ['safety-regulations', { regulationQueryParams, regSearchText, positionFilter, statusFilter }],
+    queryFn: async () => {
       const response = await getRegulations({
         ...regulationQueryParams,
         keyword: regSearchText || undefined,
@@ -161,19 +149,19 @@ export default function RegulationPage() {
         status: statusFilter,
       })
       if (response.code === 200) {
-        setRegulations(response.data)
-        setRegulationTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载操规列表失败')
-    } finally {
-      setRegLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  const loadRevisions = async () => {
-    setRevLoading(true)
-    try {
+  const regulations = regulationsData?.data || []
+  const regulationTotal = regulationsData?.total || 0
+
+  // Revisions query
+  const { data: revisionsData, isLoading: revLoading, refetch: refetchRevisions } = useQuery({
+    queryKey: ['safety-revisions', { revisionQueryParams, typeFilter, scopeFilter, opinionFilter }],
+    queryFn: async () => {
       const response = await getRevisions({
         ...revisionQueryParams,
         revision_type: typeFilter,
@@ -181,38 +169,33 @@ export default function RegulationPage() {
         review_opinion: opinionFilter,
       })
       if (response.code === 200) {
-        setRevisions(response.data)
-        setRevisionTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载修订记录失败')
-    } finally {
-      setRevLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  const loadRegulationsForSelect = async () => {
-    try {
+  const revisions = revisionsData?.data || []
+  const revisionTotal = revisionsData?.total || 0
+
+  // Regulations for select query
+  const { data: regulationsForSelectData } = useQuery({
+    queryKey: ['safety-regulations-for-select'],
+    queryFn: async () => {
       const response = await getRegulations({ page: 1, page_size: 500 })
       if (response.code === 200) {
-        setRegulationsForSelect(response.data)
+        return response.data
       }
-    } catch {
-      // silent
-    }
-  }
+      return []
+    },
+  })
 
-  useEffect(() => {
-    if (activeTab === 'regulations') loadRegulations()
-  }, [regulationQueryParams.page, regulationQueryParams.page_size, positionFilter, statusFilter, activeTab])
+  const regulationsForSelect = regulationsForSelectData || []
 
-  useEffect(() => {
-    if (activeTab === 'revisions') loadRevisions()
-  }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab])
+  // ========== Regulation Handlers ==========
 
-  useEffect(() => {
-    loadRegulationsForSelect()
-  }, [])
+
+
 
   // ---- Regulation CRUD ----
 
@@ -240,7 +223,7 @@ export default function RegulationPage() {
           const response = await deleteRegulation(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeRegulation(id)
+            queryClient.invalidateQueries({ queryKey: ['safety-regulations'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -260,7 +243,7 @@ export default function RegulationPage() {
     content: string
   }) => {
     setGeneratorModalOpen(false)
-    loadRegulations()
+    refetchRegulations()
     router.push(`/safety/regulation/generator/${result.regulation_id}`)
   }
 
@@ -283,7 +266,7 @@ export default function RegulationPage() {
         const response = await updateRegulation(editingRegulation.id, values)
         if (response.code === 200) {
           message.success('更新成功')
-          updateRegulationInStore(editingRegulation.id, response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-regulations'] })
           setRegDrawerOpen(false)
         } else {
           message.error(response.message || '更新失败')
@@ -292,7 +275,7 @@ export default function RegulationPage() {
         const response = await createRegulation(values as OperationRegulationFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addRegulation(response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-regulations'] })
           setRegDrawerOpen(false)
           regForm.resetFields()
         } else {
@@ -349,7 +332,7 @@ export default function RegulationPage() {
       const response = await createRevision(values as RegulationRevisionFormData)
       if (response.code === 200) {
         message.success('创建修订记录成功')
-        addRevision(response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-revisions'] })
         setRevDrawerOpen(false)
         revForm.resetFields()
       } else {
@@ -374,7 +357,7 @@ export default function RegulationPage() {
           const response = await deleteRevision(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeRevision(id)
+            queryClient.invalidateQueries({ queryKey: ['safety-revisions'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -391,8 +374,8 @@ export default function RegulationPage() {
       const response = await manualRevisionComplete(revisionId, file)
       if (response.code === 200) {
         message.success('人工修订完成，已自动审核通过')
-        loadRevisions()
-        loadRegulations()
+        refetchRevisions()
+        refetchRegulations()
       } else {
         message.error(response.message || '修订失败')
       }
@@ -442,8 +425,8 @@ export default function RegulationPage() {
         setAiModalVisible(false)
         setAiContent('')
         setAiRevisionId(null)
-        loadRevisions()
-        loadRegulations()
+        refetchRevisions()
+        refetchRegulations()
       } else {
         message.error(response.message || '确认失败')
       }
@@ -461,7 +444,7 @@ export default function RegulationPage() {
       const response = await identifyRevisionScope(revisionId)
       if (response.code === 200) {
         message.success('修订范围识别完成')
-        loadRevisions()
+        refetchRevisions()
       } else {
         message.error(response.message || '识别失败')
       }
@@ -806,7 +789,7 @@ export default function RegulationPage() {
               style={{ width: 240 }}
               value={regSearchText}
               onChange={(e) => setRegSearchText(e.target.value)}
-              onPressEnter={loadRegulations}
+              onPressEnter={() => refetchRegulations()}
               allowClear
             />
             <div style={{ flex: 1 }} />
@@ -875,7 +858,7 @@ export default function RegulationPage() {
               value={typeFilter}
               onChange={(v) => {
                 setTypeFilter(v)
-                setRevisionQueryParams({ page: 1 })
+                setRegulationQueryParams({ page: 1 })
               }}
               options={REVISION_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
             />
@@ -886,7 +869,7 @@ export default function RegulationPage() {
               value={scopeFilter}
               onChange={(v) => {
                 setScopeFilter(v)
-                setRevisionQueryParams({ page: 1 })
+                setRegulationQueryParams({ page: 1 })
               }}
               options={REVISION_SCOPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
             />
@@ -897,7 +880,7 @@ export default function RegulationPage() {
               value={opinionFilter}
               onChange={(v) => {
                 setOpinionFilter(v)
-                setRevisionQueryParams({ page: 1 })
+                setRegulationQueryParams({ page: 1 })
               }}
               options={REVIEW_OPINION_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
             />
@@ -907,7 +890,7 @@ export default function RegulationPage() {
               style={{ width: 240 }}
               value={revSearchText}
               onChange={(e) => setRevSearchText(e.target.value)}
-              onPressEnter={loadRevisions}
+              onPressEnter={() => refetchRevisions()}
               allowClear
             />
             <div style={{ flex: 1 }} />

@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import { Spin, Result, Button } from 'antd'
 import SopContentEditor from '@/components/safety/SopContentEditor'
@@ -13,39 +14,26 @@ export default function SopDetailPage() {
   const router = useRouter()
   const id = params.id as string
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [regData, setRegData] = useState<{
-    regulationId: string
-    regulationName: string
-    content: string
-  } | null>(null)
 
-  const fetchRegulation = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
+
+
+  const { data: regData, isLoading: loading, error: queryError, refetch } = useQuery({
+    queryKey: ['safety-regulation', id],
+    queryFn: async () => {
       const response = await getRegulation(id)
       if (response.code === 200 && response.data) {
         const data = response.data as OperationRegulation
-        setRegData({
+        return {
           regulationId: data.id,
           regulationName: data.regulation_name || '标准化操规',
           content: data.content || '',
-        })
-      } else {
-        setError(response.message || '未找到该操规记录')
+        }
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [id])
+      return null
+    },
+  })
 
-  useEffect(() => {
-    fetchRegulation()
-  }, [fetchRegulation])
+  const error = queryError?.message || (!loading && !regData ? '未找到该操规记录' : null)
 
   const handleBack = useCallback(() => {
     router.push('/safety/regulation/generator')
@@ -74,7 +62,7 @@ export default function SopDetailPage() {
           subTitle={error || '未找到该操规记录'}
           extra={[
             <Button key="back" onClick={handleBack}>返回列表</Button>,
-            <Button key="retry" type="primary" onClick={fetchRegulation}>重新加载</Button>,
+            <Button key="retry" type="primary" onClick={() => refetch()}>重新加载</Button>,
           ]}
         />
       </div>
