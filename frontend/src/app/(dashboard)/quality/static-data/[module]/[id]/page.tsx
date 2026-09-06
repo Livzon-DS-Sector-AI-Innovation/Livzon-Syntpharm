@@ -286,7 +286,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         })
       }
 
-      let fn: ((...args: unknown[]) => Promise<unknown>) | null, updateFn: ((...args: unknown[]) => Promise<unknown>) | null
+      let fn: any, updateFn: any
       switch (moduleType) {
         case 'storage-condition': fn = createStorageCondition; updateFn = updateStorageCondition; break
         case 'unit': fn = createUnit; updateFn = updateUnit; break

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -28,7 +28,7 @@ import {
   CheckCircleOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
-import { useProductionStore } from '@/stores/production'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getBatches,
   createBatch,
@@ -89,9 +89,9 @@ const exportBatchesToCsv = (batches: Batch[]) => {
 
 export function BatchesPageClient() {
   const { message, modal } = App.useApp()
+  const queryClient = useQueryClient()
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null)
   const [searchText, setSearchText] = useState('')
@@ -99,45 +99,30 @@ export function BatchesPageClient() {
   const [productionLineFilter, setProductionLineFilter] = useState<string | undefined>()
   const [statusFilter, setStatusFilter] = useState<BatchStatus | undefined>()
   const [exportLoading, setExportLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
-  const {
-    batches,
-    batchTotal,
-    batchQueryParams,
-    setBatches,
-    setBatchTotal,
-    setBatchQueryParams,
-    addBatch,
-    updateBatch: updateBatchInStore,
-    removeBatch,
-  } = useProductionStore()
-
-  const loadBatches = async () => {
-    setLoading(true)
-    try {
+  const { data: batchesData, isLoading: loading } = useQuery({
+    queryKey: ['production-batches', { page, page_size: pageSize, status: statusFilter, batch_no: searchText || undefined }],
+    queryFn: async () => {
       const response = await getBatches({
-        ...batchQueryParams,
+        page,
+        page_size: pageSize,
         status: statusFilter,
         batch_no: searchText || undefined,
       })
       if (response.code === 200) {
-        setBatches(response.data)
-        setBatchTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch (_error) {
-      message.error('加载批次列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadBatches()
-  }, [batchQueryParams.page, batchQueryParams.page_size, statusFilter])
+  const batches = batchesData?.data || []
+  const batchTotal = batchesData?.total || 0
 
   const handleSearch = () => {
-    setBatchQueryParams({ page: 1 })
-    loadBatches()
+    setPage(1)
   }
 
   const handleAdd = () => {
@@ -161,7 +146,7 @@ export function BatchesPageClient() {
           const response = await deleteBatch(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeBatch(id)
+            queryClient.invalidateQueries({ queryKey: ['production-batches'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -177,7 +162,7 @@ export function BatchesPageClient() {
       const response = await updateBatchStatus(id, newStatus)
       if (response.code === 200) {
         message.success('状态更新成功')
-        updateBatchInStore(id, { status: newStatus })
+        queryClient.invalidateQueries({ queryKey: ['production-batches'] })
       } else {
         message.error(response.message || '状态更新失败')
       }
@@ -191,11 +176,11 @@ export function BatchesPageClient() {
       const values = editingBatch ? await editForm.validateFields() : await form.validateFields()
 
       if (editingBatch) {
-        const response = await updateBatch(editingBatch.id, values)
+        const response = await updateBatch(editingBatch.id, values as BatchFormData)
         if (response.code === 200) {
           message.success('更新成功')
-          updateBatchInStore(editingBatch.id, response.data)
           setModalVisible(false)
+          queryClient.invalidateQueries({ queryKey: ['production-batches'] })
         } else {
           message.error(response.message || '更新失败')
         }
@@ -203,9 +188,9 @@ export function BatchesPageClient() {
         const response = await createBatch(values as BatchFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addBatch(response.data)
           setModalVisible(false)
           form.resetFields()
+          queryClient.invalidateQueries({ queryKey: ['production-batches'] })
         } else {
           message.error(response.message || '创建失败')
         }
@@ -218,13 +203,10 @@ export function BatchesPageClient() {
   const handleExport = async () => {
     setExportLoading(true)
     try {
-      // 获取所有批次数据进行导出
       const response = await getBatches({ page: 1, page_size: 10000 })
-      if (response.code === 200 && response.data.length > 0) {
+      if (response.code === 200) {
         exportBatchesToCsv(response.data)
-        message.success(`已导出 ${response.data.length} 条批次数据`)
-      } else {
-        message.warning('没有可导出的批次数据')
+        message.success('导出成功')
       }
     } catch {
       message.error('导出失败')
@@ -239,6 +221,7 @@ export function BatchesPageClient() {
       dataIndex: 'batch_no',
       key: 'batch_no',
       width: 150,
+      fixed: 'left',
     },
     {
       title: '产品编码',
@@ -251,7 +234,6 @@ export function BatchesPageClient() {
       dataIndex: 'product_name',
       key: 'product_name',
       width: 150,
-      ellipsis: true,
     },
     {
       title: '规格',
@@ -264,18 +246,24 @@ export function BatchesPageClient() {
       dataIndex: 'planned_qty',
       key: 'planned_qty',
       width: 100,
+      align: 'right',
+      render: (qty: number) => qty?.toFixed(2) || '-',
     },
     {
       title: '实际产出',
       dataIndex: 'actual_qty',
       key: 'actual_qty',
       width: 100,
+      align: 'right',
+      render: (qty: number) => qty?.toFixed(2) || '-',
     },
     {
       title: '投入数量',
       dataIndex: 'input_qty',
       key: 'input_qty',
       width: 100,
+      align: 'right',
+      render: (qty: number) => qty?.toFixed(2) || '-',
     },
     {
       title: '状态',
@@ -290,7 +278,7 @@ export function BatchesPageClient() {
       title: '生产线',
       dataIndex: 'production_line',
       key: 'production_line',
-      width: 120,
+      width: 100,
     },
     {
       title: '开始时间',
@@ -314,40 +302,43 @@ export function BatchesPageClient() {
       render: (_, record) => (
         <Space size="small">
           {record.status === BatchStatusEnum.DRAFT && (
-            <Button
-              type="link"
-              size="small"
-              icon={<PlayCircleOutlined />}
-              onClick={() => handleStatusChange(record.id, BatchStatusEnum.RELEASED)}
-            >
-              下达
-            </Button>
+            <Tooltip title="下达">
+              <Button
+                type="link"
+                size="small"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleStatusChange(record.id, BatchStatusEnum.RELEASED)}
+              />
+            </Tooltip>
           )}
           {record.status === BatchStatusEnum.RELEASED && (
-            <Button
-              type="link"
-              size="small"
-              icon={<PlayCircleOutlined />}
-              onClick={() => handleStatusChange(record.id, BatchStatusEnum.IN_PROGRESS)}
-            >
-              开始
-            </Button>
+            <Tooltip title="开始执行">
+              <Button
+                type="link"
+                size="small"
+                icon={<PlayCircleOutlined />}
+                style={{ color: '#52c41a' }}
+                onClick={() => handleStatusChange(record.id, BatchStatusEnum.IN_PROGRESS)}
+              />
+            </Tooltip>
           )}
           {record.status === BatchStatusEnum.IN_PROGRESS && (
-            <Button
-              type="link"
-              size="small"
-              icon={<CheckCircleOutlined />}
-              onClick={() => handleStatusChange(record.id, BatchStatusEnum.COMPLETED)}
-            >
-              完成
-            </Button>
+            <Tooltip title="完成">
+              <Button
+                type="link"
+                size="small"
+                icon={<CheckCircleOutlined />}
+                style={{ color: '#52c41a' }}
+                onClick={() => handleStatusChange(record.id, BatchStatusEnum.COMPLETED)}
+              />
+            </Tooltip>
           )}
           <Button
             type="link"
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
+            disabled={record.status !== BatchStatusEnum.DRAFT}
           >
             编辑
           </Button>
@@ -357,6 +348,7 @@ export function BatchesPageClient() {
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
+            disabled={record.status !== BatchStatusEnum.DRAFT}
           >
             删除
           </Button>
@@ -371,11 +363,13 @@ export function BatchesPageClient() {
         title="批次管理"
         extra={
           <Space>
-            <Tooltip title="导出当前筛选结果的批次数据">
-              <Button icon={<DownloadOutlined />} onClick={handleExport} loading={exportLoading}>
-                导出
-              </Button>
-            </Tooltip>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+              loading={exportLoading}
+            >
+              导出
+            </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新建批次
             </Button>
@@ -383,9 +377,9 @@ export function BatchesPageClient() {
         }
       >
         <Row gutter={16} className="mb-4">
-          <Col span={5}>
+          <Col span={4}>
             <Input
-              placeholder="搜索批次号"
+              placeholder="批次号"
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -395,6 +389,7 @@ export function BatchesPageClient() {
           <Col span={4}>
             <Input
               placeholder="产品名称"
+              prefix={<SearchOutlined />}
               value={productNameSearch}
               onChange={(e) => setProductNameSearch(e.target.value)}
               onPressEnter={handleSearch}
@@ -407,7 +402,7 @@ export function BatchesPageClient() {
               value={productionLineFilter}
               onChange={(value) => {
                 setProductionLineFilter(value)
-                setBatchQueryParams({ page: 1 })
+                setPage(1)
               }}
               style={{ width: '100%' }}
               options={[
@@ -424,7 +419,7 @@ export function BatchesPageClient() {
               value={statusFilter}
               onChange={(value) => {
                 setStatusFilter(value)
-                setBatchQueryParams({ page: 1 })
+                setPage(1)
               }}
               style={{ width: '100%' }}
               options={[
@@ -450,14 +445,15 @@ export function BatchesPageClient() {
           loading={loading}
           scroll={{ x: 1600 }}
           pagination={{
-            current: batchQueryParams.page,
-            pageSize: batchQueryParams.page_size,
+            current: page,
+            pageSize: pageSize,
             total: batchTotal,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setBatchQueryParams({ page, page_size: pageSize })
+              setPage(page)
+              setPageSize(pageSize)
             },
           }}
         />
