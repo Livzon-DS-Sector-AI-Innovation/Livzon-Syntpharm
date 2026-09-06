@@ -228,14 +228,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     currentModule ? collectAncestorKeys(moduleChildren, pathname, query) : []
   )
 
-  useEffect(() => {
-    if (currentModule) {
-      const ancestorKeys = collectAncestorKeys(moduleChildren, pathname, query)
-      if (ancestorKeys.length > 0) {
-        setOpenKeys((current) => Array.from(new Set([...current, ...ancestorKeys])))
-      }
+  // Sync openKeys when navigation changes (adjusting state during render)
+  const [prevNavKey, setPrevNavKey] = useState<string>('')
+  const navKey = currentModule ? `${currentModule}-${pathname}-${query}` : ''
+  if (navKey !== prevNavKey && currentModule) {
+    setPrevNavKey(navKey)
+    const ancestorKeys = collectAncestorKeys(moduleChildren, pathname, query)
+    if (ancestorKeys.length > 0) {
+      setOpenKeys((current) => Array.from(new Set([...current, ...ancestorKeys])))
     }
-  }, [currentModule, moduleChildren, pathname, query])
+  }
 
   const handleOpenChange = (keys: string[]) => {
     setOpenKeys(keys)
