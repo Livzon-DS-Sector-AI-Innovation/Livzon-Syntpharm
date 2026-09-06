@@ -612,55 +612,12 @@ export default function ProductOutputRecordsPage() {
         const newSortInfo: { field: string; order: 'asc' | 'desc' } = { field, order: sorter.order === 'ascend' ? 'asc' : 'desc' }
         setSortInfo(newSortInfo)
         setPage(1)
-        // Directly call loadRecords with new sort info
-        setLoading(true)
-        const params: any = {
-          page: 1,
-          page_size: pageSize,
-          product_id: productId,
-          sort_by: newSortInfo.field,
-          sort_order: newSortInfo.order,
-        }
-        if (searchText) params.batch_no = searchText
-        if (dateRange?.[0]) params.start_date = dateRange[0].format('YYYY-MM-DD')
-        if (dateRange?.[1]) params.end_date = dateRange[1].format('YYYY-MM-DD')
-        console.log('Calling API with params:', params)
-        getProductOutputs(params).then((response) => {
-          console.log('API response:', response)
-          if (response.code === 200) {
-            setRecords(response.data || [])
-            setTotal(response.meta?.total || 0)
-          }
-          setLoading(false)
-        }).catch((error) => {
-          console.error('API error:', error)
-          message.error('加载数据失败')
-          setLoading(false)
-        })
+        // useQuery will automatically refetch with new sortInfo
       }
     } else {
       setSortInfo(null)
       setPage(1)
-      // Reload without sorting
-      setLoading(true)
-      const params: any = {
-        page: 1,
-        page_size: pageSize,
-        product_id: productId,
-      }
-      if (searchText) params.batch_no = searchText
-      if (dateRange?.[0]) params.start_date = dateRange[0].format('YYYY-MM-DD')
-      if (dateRange?.[1]) params.end_date = dateRange[1].format('YYYY-MM-DD')
-      getProductOutputs(params).then((response) => {
-        if (response.code === 200) {
-          setRecords(response.data || [])
-          setTotal(response.meta?.total || 0)
-        }
-        setLoading(false)
-      }).catch(() => {
-        message.error('加载数据失败')
-        setLoading(false)
-      })
+      // useQuery will automatically refetch without sorting
     }
   }
 

@@ -36,7 +36,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
   const [syncing, setSyncing] = useState(false)
   const [form] = Form.useForm()
 
-  const { data: config = null } = useQuery({
+  const { data: config = null } = useQuery<SyncConfig | null>({
     queryKey: ['sync-config', productId],
     queryFn: async () => {
       try {
