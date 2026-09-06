@@ -1,7 +1,7 @@
 'use client'
 
 import { fetchPreviewPush, fetchPreviewPull, fetchUndoLastSync } from '@/actions/product-sync'
-import {useEffect, useState} from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -54,6 +54,7 @@ import {
   pullFromFeishu,
 } from '@/actions/product-output'
 import { getProduct } from '@/actions/product'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ProductOutput, ProductOutputFormData } from '@/types/product-output'
 import ProductSyncConfig from '@/components/production/product/ProductSyncConfig'
 import type { Product } from '@/types/product'
@@ -68,12 +69,9 @@ export default function ProductOutputRecordsPage() {
   const productId = params.productId as string
   const { message } = App.useApp()
 
-  const [product, setProduct] = useState<Product | null>(null)
-  const [records, setRecords] = useState<ProductOutput[]>([])
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
 
@@ -95,26 +93,26 @@ export default function ProductOutputRecordsPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 
-  const [summary, setSummary] = useState<{
-    daily: number
-    monthly: number
-    yearly: number
-  }>({ daily: 0, monthly: 0, yearly: 0 })
 
-  const loadProduct = async () => {
-    try {
-      const response = await getProduct(productId) as { code: number; data: unknown }
-      if (response.code === 200) {
-        setProduct(response.data as Product)
+
+  const { data: product = null } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: async () => {
+      try {
+        const response = await getProduct(productId) as { code: number; data: unknown }
+        if (response.code === 200) {
+          return response.data as Product
+        }
+      } catch {
+        message.error('加载产品信息失败')
       }
-    } catch {
-      message.error('加载产品信息失败')
-    }
-  }
+      return null
+    },
+  })
 
-  const loadRecords = async () => {
-    setLoading(true)
-    try {
+  const { data: recordsData, isLoading: loading } = useQuery({
+    queryKey: ['product-outputs', { page, pageSize, productId, sortInfo, searchText, dateRange: dateRange ? [dateRange[0]?.toISOString(), dateRange[1]?.toISOString()] : null }],
+    queryFn: async () => {
       const params: any = {
         page,
         page_size: pageSize,
@@ -130,53 +128,45 @@ export default function ProductOutputRecordsPage() {
 
       const response = await getProductOutputs(params)
       if (response.code === 200) {
-        setRecords(response.data || [])
-        setTotal(response.meta?.total || 0)
+        return { records: response.data || [], total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { records: [], total: 0 }
+    },
+  })
 
-  const loadSummary = async () => {
-    try {
-      const today = dayjs().format('YYYY-MM-DD')
-      const month = dayjs().format('YYYY-MM')
-      const year = dayjs().year()
+  const records = recordsData?.records || []
+  const total = recordsData?.total || 0
 
-      const [dailyRes, monthlyRes, yearlyRes] = await Promise.all([
-        getSummary({ target_date: today, product_id: productId }),
-        getSummary({ month, product_id: productId }),
-        getSummary({ year, product_id: productId }),
-      ])
+  const { data: summary = { daily: 0, monthly: 0, yearly: 0 } } = useQuery({
+    queryKey: ['product-output-summary', productId],
+    queryFn: async () => {
+      try {
+        const today = dayjs().format('YYYY-MM-DD')
+        const month = dayjs().format('YYYY-MM')
+        const year = dayjs().year()
 
-      setSummary({
-        daily: dailyRes.data?.grand_total || 0,
-        monthly: monthlyRes.data?.grand_total || 0,
-        yearly: yearlyRes.data?.grand_total || 0,
-      })
-    } catch {
-      // ignore
-    }
-  }
+        const [dailyRes, monthlyRes, yearlyRes] = await Promise.all([
+          getSummary({ target_date: today, product_id: productId }),
+          getSummary({ month, product_id: productId }),
+          getSummary({ year, product_id: productId }),
+        ])
 
-  useEffect(() => {
-    loadProduct()
-  }, [productId])
+        return {
+          daily: dailyRes.data?.grand_total || 0,
+          monthly: monthlyRes.data?.grand_total || 0,
+          yearly: yearlyRes.data?.grand_total || 0,
+        }
+      } catch {
+        return { daily: 0, monthly: 0, yearly: 0 }
+      }
+    },
+  })
 
-  useEffect(() => {
-    loadRecords()
-  }, [page, pageSize, productId, sortInfo])
 
-  useEffect(() => {
-    loadSummary()
-  }, [productId])
 
   const handleSearch = () => {
     setPage(1)
-    loadRecords()
+    queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
   }
 
   const handleAdd = () => {
@@ -209,8 +199,8 @@ export default function ProductOutputRecordsPage() {
           const response = await deleteProductOutput(id)
           if (response.code === 200) {
             message.success('删除成功')
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -247,8 +237,8 @@ export default function ProductOutputRecordsPage() {
       if (response.code === 200) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setModalVisible(false)
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -291,8 +281,8 @@ export default function ProductOutputRecordsPage() {
         setImportModalVisible(false)
         setPreviewData(null)
         setImportFile(null)
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '导入失败')
       }
@@ -320,8 +310,8 @@ export default function ProductOutputRecordsPage() {
           if (response.code === 200) {
             message.success(response.message || '撤销成功')
             setLastBatchId(null)
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '撤销失败')
           }
@@ -349,8 +339,8 @@ export default function ProductOutputRecordsPage() {
           if (response.code === 200) {
             message.success(response.message || '批量删除成功')
             setSelectedRowKeys([])
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '批量删除失败')
           }
@@ -367,7 +357,7 @@ export default function ProductOutputRecordsPage() {
       const res = await pushToFeishu(productId)
       if (res.code === 200) {
         message.success(res.data?.message || '推送成功')
-        loadRecords()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
       } else {
         message.error(res.message || '推送失败')
       }
@@ -384,7 +374,7 @@ export default function ProductOutputRecordsPage() {
       const res = await pullFromFeishu(productId)
       if (res.code === 200) {
         message.success(res.data?.message || '拉取成功')
-        loadRecords()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
       } else {
         message.error(res.message || '拉取失败')
       }
@@ -450,7 +440,7 @@ export default function ProductOutputRecordsPage() {
           const data = await fetchUndoLastSync(productId) as { code: number; message: string }
           if (data.code === 200) {
             message.success(data.message || '撤销成功')
-            loadRecords()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
           } else {
             message.error(data.message || '撤销失败')
           }
@@ -513,8 +503,8 @@ export default function ProductOutputRecordsPage() {
         message.success(response.message || '从飞书导入成功')
         setBitableModalVisible(false)
         setBitableUrl('')
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '从飞书导入失败')
       }
@@ -791,7 +781,7 @@ export default function ProductOutputRecordsPage() {
               >
                 撤销导入
               </Button>
-              <ProductSyncConfig productId={productId} onSynced={loadRecords} />
+              <ProductSyncConfig productId={productId} onSynced={() => queryClient.invalidateQueries({ queryKey: ['product-outputs'] })} />
               {selectedRowKeys.length > 0 && (
                 <Button danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>
                   批量删除 ({selectedRowKeys.length})

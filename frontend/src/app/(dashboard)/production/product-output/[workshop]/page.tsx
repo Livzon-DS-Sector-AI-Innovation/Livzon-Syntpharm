@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Row, Col, Typography, Spin, Empty, Button, Modal, Form, Input, App, Breadcrumb, Select, DatePicker } from 'antd'
 const { RangePicker } = DatePicker
 import { PlusOutlined, AppstoreOutlined, HomeOutlined } from '@ant-design/icons'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getProductsByWorkshop, createWorkshopProduct, deleteProduct } from '@/actions/product'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSummary, getBatchCount } from '@/actions/product-output'
 import type { WorkshopProduct } from '@/types/workshop-product'
 import dayjs from 'dayjs'
@@ -40,9 +41,8 @@ export default function WorkshopProductsPage() {
   const workshop = decodeURIComponent(params.workshop as string)
   const { message, modal } = App.useApp()
 
-  const [products, setProducts] = useState<WorkshopProduct[]>([])
+  const queryClient = useQueryClient()
   const [summaries, setSummaries] = useState<Record<string, ProductSummary>>({})
-  const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1)
@@ -52,21 +52,16 @@ export default function WorkshopProductsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [form] = Form.useForm()
 
-  const loadProducts = async () => {
-    setLoading(true)
-    try {
+  const { data: products = [], isLoading: loading } = useQuery({
+    queryKey: ['workshop-products', workshop],
+    queryFn: async () => {
       const response = await getProductsByWorkshop(workshop) as { code: number; data: unknown }
       if (response.code === 200) {
-        const products = (response.data || []) as WorkshopProduct[]
-        setProducts(products)
-        loadSummaries(products)
+        return (response.data || []) as WorkshopProduct[]
       }
-    } catch {
-      message.error('加载产品列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return []
+    },
+  })
 
   const loadSummaries = async (productList: WorkshopProduct[]) => {
     const newSummaries: Record<string, ProductSummary> = {}
@@ -129,15 +124,12 @@ export default function WorkshopProductsPage() {
     setSummaries(newSummaries)
   }
 
-  useEffect(() => {
-    loadProducts()
-  }, [workshop])
-
+  // Load summaries when products or view parameters change
   useEffect(() => {
     if (products.length > 0) {
       loadSummaries(products)
     }
-  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange, loadSummaries, products])
+  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange, products])
 
   const handleAddProduct = async () => {
     try {
@@ -152,7 +144,7 @@ export default function WorkshopProductsPage() {
         message.success('产品创建成功')
         setModalVisible(false)
         form.resetFields()
-        loadProducts()
+        queryClient.invalidateQueries({ queryKey: ['workshop-products'] })
       } else {
         message.error((response.message as string) || '创建失败')
       }
@@ -172,7 +164,7 @@ export default function WorkshopProductsPage() {
           const response = await deleteProduct(product.id) as { code: number; message: string }
           if (response.code === 200) {
             message.success('删除成功')
-            loadProducts()
+            queryClient.invalidateQueries({ queryKey: ['workshop-products'] })
           } else {
             message.error((response.message as string) || '删除失败')
           }

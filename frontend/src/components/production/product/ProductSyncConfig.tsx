@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Modal, Form, Input, Switch, Select, App, Card, Tag, Button, Space } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
 import {
@@ -10,6 +10,7 @@ import {
   deleteSyncConfig,
   pullFromFeishu,
 } from '@/actions/product-output'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface ProductSyncConfigProps {
   productId: string
@@ -29,26 +30,26 @@ interface SyncConfig {
 
 export default function ProductSyncConfig({ productId, onSynced }: ProductSyncConfigProps) {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [configModalVisible, setConfigModalVisible] = useState(false)
-  const [config, setConfig] = useState<SyncConfig | null>(null)
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [form] = Form.useForm()
 
-  const loadConfig = async () => {
-    try {
-      const res = await getSyncConfig(productId)
-      if (res.code === 200 && res.data) {
-        setConfig(res.data)
+  const { data: config = null } = useQuery({
+    queryKey: ['sync-config', productId],
+    queryFn: async () => {
+      try {
+        const res = await getSyncConfig(productId)
+        if (res.code === 200 && res.data) {
+          return res.data
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
-  }
-
-  useEffect(() => {
-    loadConfig()
-  }, [productId])
+      return null
+    },
+  })
 
   const handleOpenConfig = () => {
     if (config) {
@@ -76,7 +77,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
         const res = await updateSyncConfig(config.id, values)
         if (res.code === 200) {
           message.success('配置已更新')
-          await loadConfig()
+          queryClient.invalidateQueries({ queryKey: ['sync-config'] })
         } else {
           message.error(res.message || '更新失败')
         }
@@ -87,7 +88,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
         })
         if (res.code === 200) {
           message.success('配置已创建')
-          await loadConfig()
+          queryClient.invalidateQueries({ queryKey: ['sync-config'] })
         } else {
           message.error(res.message || '创建失败')
         }
@@ -107,7 +108,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
       const res = await deleteSyncConfig(config.id)
       if (res.code === 200) {
         message.success('配置已删除')
-        setConfig(null)
+        queryClient.invalidateQueries({ queryKey: ['sync-config'] })
       } else {
         message.error(res.message || '删除失败')
       }
@@ -136,7 +137,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
                 if (res.code === 200) {
                   message.success(res.data?.message || '拉取成功')
                   onSynced?.()
-                  await loadConfig()
+                  queryClient.invalidateQueries({ queryKey: ['sync-config'] })
                 } else {
                   message.error(res.message || '拉取失败')
                 }

@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import {Table, Input, Select, DatePicker, Button, Space, Tag, Card, Statistic, Row, Col, Modal, App, Form, InputNumber, Checkbox, Upload, Alert, Descriptions} from 'antd'
 import {SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, BarChartOutlined, PlusOutlined, UploadOutlined, LoadingOutlined, RobotOutlined} from '@ant-design/icons'
-import { LabelVerification, LabelVerificationCreateInput, LabelVerificationStatistics } from '@/types/label-verification'
+import { LabelVerification, LabelVerificationCreateInput } from '@/types/label-verification'
 import { fetchLabelVerifications, fetchLabelVerificationStatistics } from '@/lib/api/client/label-verification'
 import type { AutoCompareResult } from '@/types/label-verification'
 import { createLabelVerification, autoCompareVideo } from '@/actions/label-verification'
 import dayjs from 'dayjs'
 import { uploadLabelVerificationVideo } from '@/actions/production'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const { RangePicker } = DatePicker
 const { Option } = Select
@@ -109,16 +110,13 @@ export default function LabelVerificationClient({
 }: LabelVerificationClientProps) {
   const { message } = App.useApp()
 
-  const [verifications, setVerifications] = useState<LabelVerification[]>(initialVerifications)
-  const [total, setTotal] = useState(initialTotal)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [batchNumber, setBatchNumber] = useState('')
   const [productName, setProductName] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
-  const [statistics, setStatistics] = useState<LabelVerificationStatistics | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createForm] = Form.useForm()
@@ -130,9 +128,9 @@ export default function LabelVerificationClient({
   const [autoCompareResult, setAutoCompareResult] = useState<AutoCompareResult | null>(null)
   const [autoCompareProgress, setAutoCompareProgress] = useState('')
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: verificationsData, isLoading: loading } = useQuery({
+    queryKey: ['label-verifications', { batchNumber, productName, filterStatus, dateRange: dateRange ? [dateRange[0]?.toISOString(), dateRange[1]?.toISOString()] : null, page, pageSize }],
+    queryFn: async () => {
       const res = await fetchLabelVerifications({
         batch_number: batchNumber || undefined,
         product_name: productName || undefined,
@@ -142,28 +140,20 @@ export default function LabelVerificationClient({
         page,
         page_size: pageSize,
       })
-      setVerifications(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [batchNumber, productName, filterStatus, dateRange, page, pageSize])
+      return { data: res.data, total: res.meta?.total || 0 }
+    },
+  })
 
-  const loadStatistics = useCallback(async () => {
-    try {
+  const verifications = verificationsData?.data || initialVerifications
+  const total = verificationsData?.total || initialTotal
+
+  const { data: statistics = null } = useQuery({
+    queryKey: ['label-verification-statistics'],
+    queryFn: async () => {
       const res = await fetchLabelVerificationStatistics()
-      setStatistics(res.data)
-    } catch (err: unknown) {
-      console.error('加载统计数据失败', err)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadData()
-    loadStatistics()
-  }, [loadData, loadStatistics])
+      return res.data
+    },
+  })
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -285,8 +275,8 @@ export default function LabelVerificationClient({
       setCreateModalOpen(false)
       createForm.resetFields()
       setAutoCompareResult(null)
-      loadData()
-      loadStatistics()
+      queryClient.invalidateQueries({ queryKey: ['label-verifications'] })
+      queryClient.invalidateQueries({ queryKey: ['label-verification-statistics'] })
     } catch (err: unknown) {
       message.error((err instanceof Error ? err.message : null) || '创建失败')
     }
