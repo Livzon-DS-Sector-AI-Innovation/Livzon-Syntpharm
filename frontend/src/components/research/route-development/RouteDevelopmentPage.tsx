@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Input, Table, Tag, Card, Upload, App, Alert, Progress, Tooltip, Space, Popconfirm } from 'antd'
 import {PlayCircleOutlined, UploadOutlined, FilePdfOutlined, DeleteOutlined} from '@ant-design/icons'
@@ -37,12 +37,8 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
   const [literatureFile, setLiteratureFile] = useState<File | null>(null)
   const [literatureInput, setLiteratureInput] = useState('')
   const [creating, setCreating] = useState(false)
-  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(new Map())
-
-  const invalidateRoutes = () => queryClient.invalidateQueries({ queryKey: ['routes'] })
-
-  // 加载已保存的工作流状态
-  useEffect(() => {
+  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(() => {
+    if (typeof window === 'undefined') return new Map()
     const saved = new Map<string, { updatedAt: string; step: number }>()
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -57,8 +53,12 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
         } catch {}
       }
     }
-    setSavedWorkflows(saved)
-  }, [])
+    return saved
+  })
+
+  const invalidateRoutes = () => queryClient.invalidateQueries({ queryKey: ['routes'] })
+
+
 
   // 创建工作流
   const handleCreateWorkflow = async () => {

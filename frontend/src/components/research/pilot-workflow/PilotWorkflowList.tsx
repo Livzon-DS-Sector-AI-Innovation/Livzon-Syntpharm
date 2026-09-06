@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { Table, Button, Tag, Space, Input, Select, App, Popconfirm } from 'antd'
@@ -39,7 +39,6 @@ export function PilotWorkflowList({ initialData }: Props) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState('')
 
@@ -58,9 +57,6 @@ export function PilotWorkflowList({ initialData }: Props) {
   const data = queryData?.items || initialData.items
   const total = queryData?.total ?? initialData.total
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
@@ -116,7 +112,7 @@ export function PilotWorkflowList({ initialData }: Props) {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (v: string) => mounted ? new Date(v).toLocaleString('zh-CN') : v,
+      render: (v: string) => new Date(v).toLocaleString("zh-CN"),
     },
     {
       title: '操作',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {Button, Input, Table, Tag, Card, App, Space, Popconfirm} from 'antd'
 import {PlayCircleOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icons'
@@ -50,17 +50,8 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
   const total = queryData?.total ?? initialTotal
   const [workflowOptimization, setWorkflowOptimization] = useState<ProcessOptimization | null>(null)
   const [creating, setCreating] = useState(false)
-  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(new Map())
-
-  // 创建表单状态
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newDescription, setNewDescription] = useState('')
-
-  const invalidateOptimizations = () => queryClient.invalidateQueries({ queryKey: ['optimizations'] })
-
-  // 加载已保存的工作流状态
-  useEffect(() => {
+  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(() => {
+    if (typeof window === 'undefined') return new Map()
     const saved = new Map<string, { updatedAt: string; step: number }>()
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -75,8 +66,17 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
         } catch {}
       }
     }
-    setSavedWorkflows(saved)
-  }, [])
+    return saved
+  })
+
+  // 创建表单状态
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+
+  const invalidateOptimizations = () => queryClient.invalidateQueries({ queryKey: ['optimizations'] })
+
+
 
   // 创建优化任务
   const handleCreateOptimization = async () => {
