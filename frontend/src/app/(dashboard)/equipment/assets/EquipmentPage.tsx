@@ -1,7 +1,7 @@
 'use client'
 
 import '../../../../styles/industrial-theme.css';
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
@@ -62,7 +62,10 @@ export function EquipmentPage({
   } = useEquipmentStore()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [resetKey, setResetKey] = useState(0)
+  const resetKey = useMemo(() => 
+    [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword].join('|'),
+    [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword]
+  )
 
   // 初始化 store 数据（包含 SSR 数据）
   useEffect(() => {
@@ -150,10 +153,7 @@ export function EquipmentPage({
     }
   }, [setCategories, setLocations])
 
-  // 筛选变化时重置到第一页（含首次加载）
-  useEffect(() => {
-    setResetKey(k => k + 1)
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword])
+
 
   const tabItems = [
     {

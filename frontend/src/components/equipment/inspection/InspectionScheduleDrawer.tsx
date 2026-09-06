@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Drawer, Select, Checkbox, Button, Switch, Popconfirm, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
@@ -79,9 +80,7 @@ export function InspectionScheduleDrawer() {
     scheduleDrawerOpen, scheduleRouteId, scheduleRouteName, closeScheduleDrawer,
   } = useInspectionStore()
 
-  const [schedules, setSchedules] = useState<InspectionRouteSchedule[]>([])
-  const [loading, setLoading] = useState(false)
-  const [personnel, setPersonnel] = useState<Personnel[]>([])
+  const queryClient = useQueryClient()
 
   // add form
   const [freqType, setFreqType] = useState<FrequencyType>('daily')
@@ -90,24 +89,23 @@ export function InspectionScheduleDrawer() {
   const [monthDays, setMonthDays] = useState<number[]>([1])
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined)
 
-  const load = useCallback(async () => {
-    if (!scheduleRouteId) return
-    setLoading(true)
-    try {
-      setSchedules(await fetchRouteSchedules(scheduleRouteId))
-    } catch {
-      message.error('加载定时任务失败')
-    } finally { setLoading(false) }
-  }, [scheduleRouteId, message])
+  const { data: schedules = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['inspection-route-schedules', scheduleRouteId],
+    queryFn: async () => {
+      if (!scheduleRouteId) return []
+      return await fetchRouteSchedules(scheduleRouteId)
+    },
+    enabled: scheduleDrawerOpen && !!scheduleRouteId,
+  })
 
-  useEffect(() => {
-    if (scheduleDrawerOpen) {
-      load()
-      if (personnel.length === 0) {
-        fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: Personnel) => p.is_active && p.user_id))).catch(() => {})
-      }
-    }
-  }, [scheduleDrawerOpen, load, personnel.length])
+  const { data: personnel = [] } = useQuery({
+    queryKey: ['inspection-personnel'],
+    queryFn: async () => {
+      const r = await fetchPersonnelList({})
+      return r.items.filter((p: Personnel) => p.is_active && p.user_id)
+    },
+    enabled: scheduleDrawerOpen,
+  })
 
   const handleAdd = async () => {
     if (!scheduleRouteId) return
@@ -120,7 +118,7 @@ export function InspectionScheduleDrawer() {
       }
       message.success(`已添加 ${times.length} 个定时任务`)
       setTimes(['09:00']); setWeekDays([1]); setMonthDays([1]); setAssigneeId(undefined)
-      load()
+      queryClient.invalidateQueries({ queryKey: ['inspection-route-schedules'] })
     } catch (e: unknown) { message.error((e as Error).message || '添加失败') }
   }
 
@@ -128,7 +126,7 @@ export function InspectionScheduleDrawer() {
     if (!scheduleRouteId) return
     try {
       await updateSchedule(scheduleRouteId, s.id, { is_active: !s.is_active })
-      load()
+      queryClient.invalidateQueries({ queryKey: ['inspection-route-schedules'] })
     } catch (e: unknown) { message.error((e as Error).message || '操作失败') }
   }
 
@@ -137,7 +135,7 @@ export function InspectionScheduleDrawer() {
     try {
       await deleteSchedule(scheduleRouteId, s.id)
       message.success('已删除')
-      load()
+      queryClient.invalidateQueries({ queryKey: ['inspection-route-schedules'] })
     } catch (e: unknown) { message.error((e as Error).message || '删除失败') }
   }
 

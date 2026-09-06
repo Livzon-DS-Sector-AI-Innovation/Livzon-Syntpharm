@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Button, Space, Upload } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
@@ -23,10 +24,15 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [maintainers, setMaintainers] = useState<Maintainer[]>([])
   const { repairDrawerOpen, repairEquipmentId, closeRepairDrawer } = useEquipmentStore()
 
   const selectedEquipment = equipments.find(e => e.id === repairEquipmentId)
+
+  const { data: maintainers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: fetchAllUsersClient,
+    enabled: repairDrawerOpen,
+  })
 
   useEffect(() => {
     if (repairDrawerOpen) {
@@ -38,13 +44,12 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         priority: defaultPriority,
       })
       setFileList([])
-      fetchAllUsersClient().then((users) => setMaintainers(users)).catch(() => {})
       // 默认填入设备责任人
       if (selectedEquipment?.responsible_person_id) {
         form.setFieldsValue({ responsible_person_id: selectedEquipment.responsible_person_id })
       }
     }
-  }, [repairDrawerOpen, repairEquipmentId, form])
+  }, [repairDrawerOpen, repairEquipmentId, form, selectedEquipment?.responsible_person_id])
 
   const handleSubmit = async () => {
     try {

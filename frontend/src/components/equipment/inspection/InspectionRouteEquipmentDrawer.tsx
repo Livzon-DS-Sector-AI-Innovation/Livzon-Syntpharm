@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Select, InputNumber } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, EnvironmentOutlined,
@@ -60,18 +61,24 @@ const C = {
 export function InspectionRouteEquipmentDrawer({ equipments, locations, templates }: Props) {
   const { message } = App.useApp()
   const { routeEquipmentDrawerOpen, editingRouteId, closeRouteEquipmentDrawer, triggerRoutesRefresh } = useInspectionStore()
-  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
-  const [_loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   /* ── data ── */
-  const loadData = useCallback(async () => {
-    if (!editingRouteId) return
-    setLoading(true)
-    try {
-      const detail = await fetchInspectionRouteById(editingRouteId)
-      setLocationRows((detail.locations || []).map(loc => ({
+  const { data: routeDetail } = useQuery({
+    queryKey: ['inspection-route', editingRouteId],
+    queryFn: async () => {
+      if (!editingRouteId) return null
+      return await fetchInspectionRouteById(editingRouteId)
+    },
+    enabled: routeEquipmentDrawerOpen && !!editingRouteId,
+  })
+
+  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
+  
+  useEffect(() => {
+    if (routeEquipmentDrawerOpen && routeDetail) {
+      setLocationRows((routeDetail.locations || []).map(loc => ({
         key: loc.id, location_id: loc.location_id,
         location_name: loc.location_name || undefined,
         sort_order: loc.sort_order, collapsed: false,
@@ -83,12 +90,8 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
           template_ids: (eq.templates || []).map(t => t.template_id),
         })),
       })))
-    } catch { message.error('加载路线配置失败') }
-    finally { setLoading(false) }
-  }, [editingRouteId, message])
-
-  useEffect(() => { if (routeEquipmentDrawerOpen && editingRouteId) loadData() },
-    [routeEquipmentDrawerOpen, editingRouteId, loadData])
+    }
+  }, [routeEquipmentDrawerOpen, routeDetail])
 
   /* ── mutations ── */
   const toggle = (k: string) => setLocationRows(prev =>

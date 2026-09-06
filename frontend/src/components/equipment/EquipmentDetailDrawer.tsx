@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import {App, Drawer, Descriptions, Table, Tabs, Tag, Empty, Spin} from 'antd'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Drawer, Descriptions, Table, Tabs, Tag, Empty, Spin } from 'antd'
 import { ToolOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment/generated-bridge'
@@ -55,68 +56,41 @@ const EQUIP_STATUS_MAP: Record<EquipmentStatus, React.CSSProperties> = {
 
 
 export function EquipmentDetailDrawer({ open, equipment, categoryName, locationName, onClose }: EquipmentDetailDrawerProps) {
-  const { message } = App.useApp()
+
   const [activeTab, setActiveTab] = useState<'plans' | 'history' | 'orders'>('plans')
 
   // 维护保养计划
-  const [plans, setPlans] = useState<MaintenancePlan[]>([])
-  const [plansLoading, setPlansLoading] = useState(false)
+  const { data: plans = [], isLoading: plansLoading } = useQuery({
+    queryKey: ['equipment-maintenance-plans', equipment?.id],
+    queryFn: async () => {
+      if (!equipment) return []
+      const result = await fetchMaintenancePlansClient({ equipment_id: equipment.id, page: 1, page_size: 50 })
+      return result.items
+    },
+    enabled: open && !!equipment,
+  })
 
   // 巡检记录
-  const [history, setHistory] = useState<InspectionTask[]>([])
-  const [historyLoading, setHistoryLoading] = useState(false)
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ['equipment-inspection-history', equipment?.id],
+    queryFn: async () => {
+      if (!equipment) return []
+      const result = await fetchInspectionHistory({ equipment_id: equipment.id, page: 1, page_size: 50 })
+      return result.items
+    },
+    enabled: open && !!equipment,
+  })
 
   // 维修工单
-  const [orders, setOrders] = useState<WorkOrder[]>([])
-  const [ordersLoading, setOrdersLoading] = useState(false)
-
-  const loadPlans = useCallback(async () => {
-    if (!equipment) return
-    setPlansLoading(true)
-    try {
-      const result = await fetchMaintenancePlansClient({ equipment_id: equipment.id, page: 1, page_size: 50 })
-      setPlans(result.items)
-    } catch {
-      message.error('加载维护保养计划失败')
-    } finally {
-      setPlansLoading(false)
-    }
-  }, [equipment, message])
-
-  const loadHistory = useCallback(async () => {
-    if (!equipment) return
-    setHistoryLoading(true)
-    try {
-      const result = await fetchInspectionHistory({ equipment_id: equipment.id, page: 1, page_size: 50 })
-      setHistory(result.items)
-    } catch {
-      message.error('加载巡检记录失败')
-    } finally {
-      setHistoryLoading(false)
-    }
-  }, [equipment, message])
-
-  const loadOrders = useCallback(async () => {
-    if (!equipment) return
-    setOrdersLoading(true)
-    try {
+  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['equipment-work-orders', equipment?.id],
+    queryFn: async () => {
+      if (!equipment) return []
       const result = await fetchWorkOrdersClient({ equipment_id: equipment.id, page: 1, page_size: 50 })
-      setOrders(result.items)
-    } catch {
-      message.error('加载维修工单失败')
-    } finally {
-      setOrdersLoading(false)
-    }
-  }, [equipment, message])
-
-  useEffect(() => {
-    if (open && equipment) {
-      loadPlans()
-      loadHistory()
-      loadOrders()
-      setActiveTab('plans')
-    }
-  }, [open, equipment, loadPlans, loadHistory, loadOrders])
+      return result.items
+    },
+    enabled: open && !!equipment,
+  })
 
   // ── 维护保养计划列 ──
   const planColumns: ColumnsType<MaintenancePlan> = [

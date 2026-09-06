@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Modal, Checkbox, Button } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
 
@@ -41,27 +41,20 @@ interface ColumnConfigModalProps {
 }
 
 export function ColumnConfigModal({ open, onClose, onSave }: ColumnConfigModalProps) {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
-
-  // 从 localStorage 加载配置
-  useEffect(() => {
-    if (open) {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (Array.isArray(parsed)) {
-            setSelectedKeys(parsed)
-            return
-          }
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          return parsed
         }
-      } catch (e) {
-        console.warn('Failed to load column config from localStorage:', e)
       }
-      // 如果没有存储的配置，使用默认值
-      setSelectedKeys(ALL_COLUMNS.filter(col => col.defaultVisible).map(col => col.key))
+    } catch (e) {
+      console.warn('Failed to load column config from localStorage:', e)
     }
-  }, [open])
+    return ALL_COLUMNS.filter(col => col.defaultVisible).map(col => col.key)
+  })
 
   const handleSave = () => {
     try {

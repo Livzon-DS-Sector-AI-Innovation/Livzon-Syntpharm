@@ -40,15 +40,16 @@ export function PersonnelCategoryDrawer({
   const queryClient = useQueryClient()
   const [items, setItems] = useState<CategoryAssignItem[]>([])
   const [submitting, setSubmitting] = useState(false)
-
   useEffect(() => {
-    if (open && existingCategories.length > 0) {
-      setItems(existingCategories.map(c => ({
-        role_id: c.role_id,
-        category_id: c.category_id,
-      })))
-    } else if (open) {
-      setItems([])
+    if (open) {
+      if (existingCategories.length > 0) {
+        setItems(existingCategories.map(c => ({
+          role_id: c.role_id,
+          category_id: c.category_id,
+        })))
+      } else {
+        setItems([])
+      }
     }
   }, [open, existingCategories])
 
