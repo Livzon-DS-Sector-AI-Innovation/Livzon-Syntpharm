@@ -82,13 +82,13 @@ export default function EmployeeProfileClient({
   const employees = data?.employees || initialEmployees
   const total = data?.total || initialTotal
 
-  // When initialDepartment is provided, select that department tab
-  useEffect(() => {
-    if (initialDepartment && departments.length > 0) {
-      const dept = departments.find((d) => d.name === initialDepartment)
-      if (dept) setActiveTab(dept.id)
-    }
-  }, [initialDepartment, departments])
+  // When initialDepartment is provided, select that department tab (adjusting state during render)
+  const [prevInitialDept, setPrevInitialDept] = useState<string | undefined>(undefined)
+  if (initialDepartment !== prevInitialDept && initialDepartment && departments.length > 0) {
+    setPrevInitialDept(initialDepartment)
+    const dept = departments.find((d) => d.name === initialDepartment)
+    if (dept) setActiveTab(dept.id)
+  }
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)

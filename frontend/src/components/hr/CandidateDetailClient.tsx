@@ -50,19 +50,7 @@ export default function CandidateDetailClient({
   })
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem('candidate_list_context')
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw)
-        if (parsed.ids && parsed.ids.includes(candidate.id)) {
-          setNavContext(parsed)
-        }
-      } catch {
-        // ignore invalid sessionStorage data
-      }
-    }
-  }, [candidate.id])
+
 
   const handlePrev = () => {
     if (!navContext) return

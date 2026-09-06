@@ -66,7 +66,12 @@ export default function TrainingSessionDetailModal({
   const [saving, setSaving] = useState(false)
   const [_employees, setEmployees] = useState<{ value: string; label: string }[]>([])
   const [nameToNumberMap, setNameToNumberMap] = useState<Record<string, string>>({})
-  const [factory, setFactory] = useState<'old' | 'new'>('old')
+  const [factory, setFactory] = useState<'old' | 'new'>(() => {
+    if (record) {
+      return (record.factory as 'old' | 'new') || 'old'
+    }
+    return 'old'
+  })
 
   // Load departments when factory changes
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
@@ -83,10 +88,8 @@ export default function TrainingSessionDetailModal({
     if (!open) return
     if (record) {
       // View/Edit existing record
-      const f = (record.factory as 'old' | 'new') || 'old'
-      setFactory(f)
       form.setFieldsValue({
-        factory: f,
+        factory: record.factory || 'old',
         department: record.department,
         training_date: record.training_date ? dayjs(record.training_date) : undefined,
         subject: record.subject,

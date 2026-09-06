@@ -84,7 +84,10 @@ export default function TrainingNotificationClient() {
   const [_submittingEval, setSubmittingEval] = useState(false)
   const [addingToLedger, setAddingToLedger] = useState(false)
   const [sendingNotify, setSendingNotify] = useState(false)
-  const [trainerDept, setTrainerDept] = useState<string | undefined>(undefined)
+  const [trainerDept, setTrainerDept] = useState<string | undefined>(() => {
+    const dept = searchParams.get('dept')
+    return dept ? decodeURIComponent(dept) : undefined
+  })
 
   const searchParams = useSearchParams()
 
@@ -113,19 +116,14 @@ export default function TrainingNotificationClient() {
   useEffect(() => {
     const subject = searchParams.get('subject')
     const method = searchParams.get('method')
-    const dept = searchParams.get('dept')
     if (subject) {
       form.setFieldsValue({
         subject: decodeURIComponent(subject),
         training_method: method ? decodeURIComponent(method) : undefined,
         assessment_method: searchParams.get('assessment') ? decodeURIComponent(searchParams.get('assessment')!) : undefined,
       })
-      if (dept) {
-        const deptName = decodeURIComponent(dept)
-        setTrainerDept(deptName)
-      }
     }
-  }, [searchParams])
+  }, [searchParams, form])
 
   const loadEmployees = async (depts: string[]) => {
     if (!depts || depts.length === 0) {
