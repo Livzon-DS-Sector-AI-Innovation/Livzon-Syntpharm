@@ -86,14 +86,15 @@ export default function FeishuSettingsClient() {
   const configuredSecret = !!config?.app_secret_configured
 
   // Sync config to form and parse diagnostic
-  const diagnostic = useMemo<FeishuDiagnosticResult | null>(() => {
-    if (!config?.last_diagnostic_result) return null
-    try {
-      return JSON.parse(config.last_diagnostic_result) as FeishuDiagnosticResult
-    } catch {
-      return null
-    }
-  }, [config?.last_diagnostic_result])
+  const diagnostic: FeishuDiagnosticResult | null = config?.last_diagnostic_result
+    ? (() => {
+        try {
+          return JSON.parse(config.last_diagnostic_result) as FeishuDiagnosticResult
+        } catch {
+          return null
+        }
+      })()
+    : null
 
   useEffect(() => {
     if (config) {
