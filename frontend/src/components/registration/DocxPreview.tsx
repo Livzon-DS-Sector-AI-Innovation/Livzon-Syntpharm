@@ -87,6 +87,10 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
   }, [renderDocx, refreshKey])
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  const handleRefresh = () => {
+    renderDocx()
+  }
+
   if (!chapterId) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-50">

@@ -1,7 +1,7 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {Descriptions, Drawer, Table, Tag, Typography} from 'antd'
-import { useEffect, useState } from 'react'
 import type { ScheduledTaskLog } from '@/types/safety'
 import { getScheduledTaskLogs } from '@/actions/safety'
 
@@ -26,28 +26,18 @@ export default function ScheduledTaskLogDrawer({
   taskName,
   onClose,
 }: ScheduledTaskLogDrawerProps) {
-  const [logs, setLogs] = useState<ScheduledTaskLog[]>([])
-  const [loading, setLoading] = useState(false)
-
-
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (open && taskId) {
-      setLoading(true)
-      getScheduledTaskLogs(taskId)
-        .then((res: { code: number; data: ScheduledTaskLog[] }) => {
-          if (res.code === 200 && res.data) {
-            setLogs(res.data)
-          }
-        })
-        .catch(() => {
-          // ignore
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [open, taskId])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const { data: logs = [], isLoading: loading } = useQuery<ScheduledTaskLog[]>({
+    queryKey: ['scheduled-task-logs', taskId],
+    queryFn: async () => {
+      if (!open || !taskId) return []
+      const res = await getScheduledTaskLogs(taskId)
+      if (res.code === 200 && res.data) {
+        return res.data
+      }
+      return []
+    },
+    enabled: open && !!taskId,
+  })
 
   const columns = [
     {

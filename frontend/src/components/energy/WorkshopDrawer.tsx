@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Drawer, Form, Input, Select, InputNumber, Switch, Button, Space, Spin, App } from 'antd'
 import {
   createWorkshopAction,
@@ -25,39 +26,38 @@ const DEFAULT_VALUES = {
 export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: WorkshopDrawerProps) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const isEdit = !!workshopId
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // 使用 useQuery 获取车间数据
+  const { data: workshopData, isLoading: loading } = useQuery({
+    queryKey: ['workshop', workshopId],
+    queryFn: async () => {
+      if (!workshopId) return null
+      const data = await getWorkshopById(workshopId)
+      return data
+    },
+    enabled: open && !!workshopId,
+  })
+
+  // 当数据加载完成后设置表单值
   useEffect(() => {
-    if (open && workshopId) {
-      setLoading(true)
-      getWorkshopById(workshopId)
-        .then((data) => {
-          form.setFieldsValue({
-            code: data.code,
-            name: data.name,
-            category: data.category,
-            sort_order: data.sort_order,
-            is_active: data.is_active,
-          })
-        })
-        .catch(() => {
-          message.error('加载车间详情失败')
-        })
-        .finally(() => setLoading(false))
+    if (open && workshopData) {
+      form.setFieldsValue({
+        code: workshopData.code,
+        name: workshopData.name,
+        category: workshopData.category,
+        sort_order: workshopData.sort_order,
+        is_active: workshopData.is_active,
+      })
     } else if (open && !workshopId) {
       form.resetFields()
       form.setFieldsValue(DEFAULT_VALUES)
     }
-  }, [open, workshopId, form, message])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [open, workshopId, workshopData, form])
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      setSubmitting(true)
       if (isEdit && workshopId) {
         await updateWorkshopAction(workshopId, values)
         message.success('更新成功')
@@ -69,8 +69,6 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
     } catch (error: unknown) {
       if (error && typeof error === "object" && "errorFields" in error) return // form validation error
       message.error(isEdit ? '更新失败' : '创建失败')
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -83,7 +81,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
       extra={
         <Space>
           <Button onClick={onClose}>取消</Button>
-          <Button type="primary" onClick={handleSubmit} loading={submitting}>
+          <Button type="primary" onClick={handleSubmit}>
             {isEdit ? '保存' : '创建'}
           </Button>
         </Space>

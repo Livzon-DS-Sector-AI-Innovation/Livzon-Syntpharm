@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Spin, Empty, Statistic, Row, Col, Card, Typography } from 'antd'
 import {
   BarChartOutlined,
@@ -24,24 +24,18 @@ interface Props {
 }
 
 export default function AgentUsageStats({ articleId }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [stats, setStats] = useState<AgentUsageStatsType | null>(null)
-
-
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (!articleId) return
-    setLoading(true)
-    getAgentUsageStats(articleId)
-      .then((res) => {
-        if (res.code === 200 && res.data) {
-          setStats(res.data)
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [articleId])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const { data: stats, isLoading: loading } = useQuery<AgentUsageStatsType | null>({
+    queryKey: ['agent-usage-stats', articleId],
+    queryFn: async () => {
+      if (!articleId) return null
+      const res = await getAgentUsageStats(articleId)
+      if (res.code === 200 && res.data) {
+        return res.data
+      }
+      return null
+    },
+    enabled: !!articleId,
+  })
 
   if (loading) {
     return (
