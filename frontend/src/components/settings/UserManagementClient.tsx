@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   App,
   Button,
@@ -46,8 +47,7 @@ const statusOptions = [
 
 export default function UserManagementClient() {
   const { message } = App.useApp()
-  const [users, setUsers] = useState<UserManagementItem[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserManagementItem | null>(null)
   const [saving, setSaving] = useState(false)
@@ -56,22 +56,15 @@ export default function UserManagementClient() {
   const [form] = Form.useForm()
   const [passwordForm] = Form.useForm()
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: users = [], isLoading: loading, refetch: refetchUsers } = useQuery({
+    queryKey: ['users', keyword],
+    queryFn: async () => {
       const result = await getUsers({ keyword: keyword || undefined })
-      setUsers(result.items || [])
-    } catch (error) {
-      console.error(error)
-      message.error('加载用户失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [keyword, message])
+      return result.items || []
+    },
+  })
 
-  useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+  const loadUsers = () => { refetchUsers() }
 
   const handleCreate = () => {
     setEditingUser(null)
@@ -118,7 +111,7 @@ export default function UserManagementClient() {
         message.success('用户已创建')
       }
       setModalOpen(false)
-      loadUsers()
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     } catch (error) {
       if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     } finally {
@@ -131,7 +124,7 @@ export default function UserManagementClient() {
     try {
       await updateUser(record.id, { status: nextStatus })
       message.success(nextStatus === 'active' ? '用户已启用' : '用户已禁用')
-      loadUsers()
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     } catch (error) {
       if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
     }

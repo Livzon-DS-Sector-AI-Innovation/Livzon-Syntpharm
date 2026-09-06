@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -52,30 +53,20 @@ interface LLMConfigClientProps {
 export default function LLMConfigClient({ embedded = false }: LLMConfigClientProps) {
   const { message } = App.useApp()
   const router = useRouter()
-  const [configs, setConfigs] = useState<LLMConfig[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingConfig, setEditingConfig] = useState<LLMConfig | null>(null)
   const [saving, setSaving] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [form] = Form.useForm()
 
-  const loadConfigs = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: configs = [], isLoading: loading } = useQuery({
+    queryKey: ['llm-configs'],
+    queryFn: async () => {
       const res = await getLLMConfigs()
-      setConfigs(res.data || [])
-    } catch (error) {
-      console.error('Failed to load configs:', error)
-      message.error('加载配置失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [message])
-
-  useEffect(() => {
-    loadConfigs()
-  }, [loadConfigs])
+      return res.data || []
+    },
+  })
 
   const handleCreate = () => {
     setEditingConfig(null)
@@ -109,7 +100,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
     try {
       await deleteLLMConfig(id)
       message.success('删除成功')
-      loadConfigs()
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     } catch {
       message.error('删除失败')
     }
@@ -131,7 +122,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
         message.success('创建成功')
       }
       setModalOpen(false)
-      loadConfigs()
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     } catch (error) {
       console.error('Save failed:', error)
     } finally {
@@ -144,7 +135,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
     try {
       await updateLLMConfig(id, { is_active: true })
       message.success('已激活，所有 AI 调用将使用此配置')
-      loadConfigs()
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     } catch {
       message.error('激活失败')
     } finally {

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -37,29 +38,19 @@ export default function ModuleSettingsClient({
   moduleDescription,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
-  const [settings, setSettings] = useState<ModuleSetting[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [editingSetting, setEditingSetting] = useState<ModuleSetting | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
 
-  const loadSettings = async () => {
-    setLoading(true)
-    try {
+  const { data: settings = [], isLoading: loading } = useQuery({
+    queryKey: ['module-settings', moduleCode],
+    queryFn: async () => {
       const res = await getModuleSettings(moduleCode)
-      setSettings(res.data || [])
-    } catch (error) {
-      console.error('Failed to load settings:', error)
-      message.error('加载配置失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadSettings()
-  }, [moduleCode])
+      return res.data || []
+    },
+  })
 
   const handleEdit = (setting: ModuleSetting) => {
     setEditingSetting(setting)
@@ -82,7 +73,7 @@ export default function ModuleSettingsClient({
 
       message.success('配置已更新')
       setModalOpen(false)
-      loadSettings()
+      queryClient.invalidateQueries({ queryKey: ['module-settings', moduleCode] })
     } catch (error) {
       console.error('Failed to save setting:', error)
       message.error('保存失败')

@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   App,
@@ -69,48 +70,45 @@ function normalizePayload(values: FeishuConfigUpsert): FeishuConfigUpsert {
 export default function FeishuSettingsClient() {
   const { message } = App.useApp()
   const [form] = Form.useForm<FeishuConfigUpsert>()
-  const [config, setConfig] = useState<FeishuConfig | null>(null)
-  const [diagnostic, setDiagnostic] = useState<FeishuDiagnosticResult | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data: config = null, isLoading: loading } = useQuery({
+    queryKey: ['livzon-feishu-config'],
+    queryFn: async () => {
+      const data = await getLivzonFeishuConfig()
+      return data
+    },
+  })
+
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
   const configuredSecret = !!config?.app_secret_configured
 
-  const loadConfig = useCallback(async () => {
-    setLoading(true)
+  // Sync config to form and parse diagnostic
+  const diagnostic = useMemo<FeishuDiagnosticResult | null>(() => {
+    if (!config?.last_diagnostic_result) return null
     try {
-      const data = await getLivzonFeishuConfig()
-      setConfig(data)
+      return JSON.parse(config.last_diagnostic_result) as FeishuDiagnosticResult
+    } catch {
+      return null
+    }
+  }, [config?.last_diagnostic_result])
+
+  useEffect(() => {
+    if (config) {
       form.setFieldsValue({
-        config_name: data.config_name || DEFAULT_VALUES.config_name,
-        app_id: data.app_id || '',
+        config_name: config.config_name || DEFAULT_VALUES.config_name,
+        app_id: config.app_id || '',
         app_secret: '',
         card_callback_verification_token: '',
         card_callback_encrypt_key: '',
-        sync_root_department_id: data.sync_root_department_id || '0',
-        sync_member_department_id: data.sync_member_department_id || '0',
-        is_active: data.is_active ?? true,
+        sync_root_department_id: config.sync_root_department_id || '0',
+        sync_member_department_id: config.sync_member_department_id || '0',
+        is_active: config.is_active ?? true,
       })
-      if (data.last_diagnostic_result) {
-        try {
-          setDiagnostic(JSON.parse(data.last_diagnostic_result) as FeishuDiagnosticResult)
-        } catch {
-          setDiagnostic(null)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load Livzon Feishu config:', error)
-      message.error('加载 Livzon 助手飞书设置失败')
-    } finally {
-      setLoading(false)
     }
-  }, [form, message])
-
-  useEffect(() => {
-    loadConfig()
-  }, [loadConfig])
+  }, [config, form])
 
   const lastSyncText = useMemo(() => {
     if (!config?.last_synced_at) return '尚未同步'
@@ -121,8 +119,8 @@ export default function FeishuSettingsClient() {
     try {
       const values = normalizePayload(await form.validateFields())
       setSaving(true)
-      const data = await saveLivzonFeishuConfig(values)
-      setConfig(data)
+      await saveLivzonFeishuConfig(values)
+      queryClient.invalidateQueries({ queryKey: ['livzon-feishu-config'] })
       form.setFieldValue('app_secret', '')
       form.setFieldValue('card_callback_verification_token', '')
       form.setFieldValue('card_callback_encrypt_key', '')
@@ -140,7 +138,6 @@ export default function FeishuSettingsClient() {
       const values = normalizePayload(await form.validateFields())
       setTesting(true)
       const result = await testLivzonFeishuConfig(values)
-      setDiagnostic(result)
       if (result.status === 'ok') {
         message.success('Livzon 助手飞书权限诊断通过')
       } else if (result.status === 'warning') {
@@ -148,7 +145,7 @@ export default function FeishuSettingsClient() {
       } else {
         message.error('诊断失败，请检查应用凭证和权限')
       }
-      loadConfig()
+      queryClient.invalidateQueries({ queryKey: ['livzon-feishu-config'] })
     } catch (error) {
       console.error('Test Livzon Feishu config failed:', error)
       message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '诊断失败')
@@ -167,7 +164,7 @@ export default function FeishuSettingsClient() {
       } else {
         message.success(syncMessage)
       }
-      loadConfig()
+      queryClient.invalidateQueries({ queryKey: ['livzon-feishu-config'] })
     } catch (error) {
       console.error('Sync Livzon Feishu contacts failed:', error)
       message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '同步失败')
