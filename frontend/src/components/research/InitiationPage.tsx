@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, InputNumber, DatePicker } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchInitiations } from '@/lib/api/client/research/rd-project'
@@ -51,25 +52,19 @@ const approvalColorMap: Record<string, string> = {
 
 export function InitiationPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [items, setItems] = useState<RdInitiation[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdInitiation | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: ['initiations', projectId],
+    queryFn: async () => {
       const data = await fetchInitiations(projectId)
-      setItems(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -160,7 +155,7 @@ export function InitiationPage({ projectId }: Props) {
         msgApi.success('创建成功')
       }
       setDrawerOpen(false)
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['initiations', projectId] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       msgApi.error(e instanceof Error ? e.message : '保存失败')
@@ -171,7 +166,7 @@ export function InitiationPage({ projectId }: Props) {
     try {
       await deleteInitiation(id)
       msgApi.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['initiations', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }

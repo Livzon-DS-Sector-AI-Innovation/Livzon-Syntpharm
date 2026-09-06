@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, HistoryOutlined, ExperimentOutlined, FileTextOutlined, DownloadOutlined } from '@ant-design/icons'
 import {fetchTracks, fetchTrackDetail} from '@/lib/api/client/research/rd-project'
@@ -95,12 +96,10 @@ const typeColorMap: Record<string, string> = {
 
 export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   const { message: msgApi, modal: _modal } = App.useApp()
-  const [tracks, setTracks] = useState<RdResearchTrack[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   
   // Track detail
-  const [selectedTrack, setSelectedTrack] = useState<RdResearchTrack | null>(null)
-  const [_detailLoading, setDetailLoading] = useState(false)
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   
   // Create/Edit track drawer
   const [trackDrawerOpen, setTrackDrawerOpen] = useState(false)
@@ -116,37 +115,31 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   const [conclusionModalOpen, setConclusionModalOpen] = useState(false)
   const [conclusionForm] = Form.useForm()
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: tracks = [], isLoading: loading } = useQuery({
+    queryKey: ['research-tracks', projectId, trackTypeFilter],
+    queryFn: async () => {
       const data = await fetchTracks(projectId)
-      // Filter by type if specified
       const filtered = trackTypeFilter ? data.filter(t => t.type === trackTypeFilter) : data
-      setTracks(filtered)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId, trackTypeFilter])
+      return filtered || []
+    },
+    enabled: !!projectId,
+  })
 
+  const { data: selectedTrack = null } = useQuery({
+    queryKey: ['track-detail', selectedTrackId],
+    queryFn: async () => {
+      if (!selectedTrackId) return null
+      return await fetchTrackDetail(selectedTrackId)
+    },
+    enabled: !!selectedTrackId,
+  })
 
   const handleExport = () => {
     window.open(`/api/v1/research/export/tracks?project_id=${projectId}`, '_blank')
   }
 
-  useEffect(() => { loadData() }, [loadData])
-
-  const loadTrackDetail = async (trackId: string) => {
-    setDetailLoading(true)
-    try {
-      const detail = await fetchTrackDetail(trackId)
-      setSelectedTrack(detail)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载详情失败')
-    } finally {
-      setDetailLoading(false)
-    }
+  const loadTrackDetail = (trackId: string) => {
+    setSelectedTrackId(trackId)
   }
 
   const openCreateTrack = () => {
@@ -179,7 +172,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         msgApi.success('创建成功')
       }
       setTrackDrawerOpen(false)
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
       if (selectedTrack && editingTrack?.id === selectedTrack.id) {
         loadTrackDetail(selectedTrack.id)
       }
@@ -193,8 +186,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
     try {
       await deleteTrack(id)
       msgApi.success('删除成功')
-      if (selectedTrack?.id === id) setSelectedTrack(null)
-      loadData()
+      if (selectedTrack?.id === id) setSelectedTrackId(null)
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
@@ -325,8 +318,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       })
       msgApi.success('结论版本发布成功')
       setConclusionModalOpen(false)
-      loadTrackDetail(selectedTrack.id)
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['track-detail', selectedTrack.id] })
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       msgApi.error(e instanceof Error ? e.message : '发布失败')
@@ -468,7 +461,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         <Space>
           <Button icon={<HistoryOutlined />} onClick={openConclusionModal}>发布结论</Button>
           <Button icon={<EditOutlined />} onClick={() => openEditTrack(selectedTrack)}>编辑</Button>
-          <Button onClick={() => setSelectedTrack(null)}>返回列表</Button>
+          <Button onClick={() => setSelectedTrackId(null)}>返回列表</Button>
         </Space>
       }
     >

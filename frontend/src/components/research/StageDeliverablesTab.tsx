@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Tag, Button, Modal, Form, Input, Select, Collapse, Space, Popconfirm, Progress, Empty, Upload } from 'antd'
 import {EditOutlined, DeleteOutlined, FileTextOutlined, CheckCircleOutlined, UploadOutlined, DownloadOutlined, HistoryOutlined, RobotOutlined} from '@ant-design/icons'
 import {
@@ -12,7 +13,6 @@ import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDelivera
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
 import { generateReport } from '@/actions/research/rd-project'
-import { RdDeliverableTemplate } from '@/types/research/rd-project'
 
 interface Props {
 
@@ -52,8 +52,16 @@ const formatFileSize = (bytes: number | null) => {
 
 export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   const { message: msgApi } = App.useApp()
-  const [deliverables, setDeliverables] = useState<RdStageDeliverable[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
+
+  const { data: deliverables = [], isLoading: loading } = useQuery({
+    queryKey: ['deliverables', projectId],
+    queryFn: async () => {
+      const data = await fetchDeliverables(projectId)
+      return data || []
+    },
+    enabled: !!projectId,
+  })
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<RdStageDeliverable | null>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
@@ -63,7 +71,21 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiGenerateTarget, setAiGenerateTarget] = useState<{stage: string; type: string; title: string} | null>(null)
   const [aiResult, setAiResult] = useState<string>('')
-  const [templates, setTemplates] = useState<RdDeliverableTemplate[]>([])
+  const [templateFilter, setTemplateFilter] = useState<{stage: string; type: string} | null>(null)
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['deliverable-templates', templateFilter?.stage, templateFilter?.type],
+    queryFn: async () => {
+      if (!templateFilter) return []
+      const allTemplates = await fetchDeliverableTemplates({ 
+        stage: templateFilter.stage, 
+        deliverable_type: templateFilter.type, 
+        is_active: true 
+      })
+      return allTemplates || []
+    },
+    enabled: !!templateFilter,
+  })
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [additionalContext, setAdditionalContext] = useState('')
   const [form] = Form.useForm()
@@ -83,19 +105,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     msgApi.success('导出成功')
   }
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await fetchDeliverables(projectId)
-      setDeliverables(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载交付物列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
-
-  useEffect(() => { loadData() }, [loadData])
+  const invalidateDeliverables = () => queryClient.invalidateQueries({ queryKey: ['deliverables', projectId] })
 
   const handleCreate = (stage: RdProjectStage, deliverableType: string, title: string) => {
     setEditingItem(null)
@@ -159,7 +169,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       }
       setEditModalOpen(false)
       form.resetFields()
-      loadData()
+      invalidateDeliverables()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
@@ -169,7 +179,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     try {
       await deleteDeliverable(id)
       msgApi.success('已删除')
-      loadData()
+      invalidateDeliverables()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
@@ -182,7 +192,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       formData.append('file', file)
       await uploadDeliverableFile(deliverableId, formData)
       msgApi.success('上传成功')
-      loadData()
+      invalidateDeliverables()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '上传失败')
     } finally {
@@ -199,12 +209,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     setAiGenerateModalOpen(true)
     
     // 加载可用模板
-    try {
-      const allTemplates = await fetchDeliverableTemplates({ stage, deliverable_type: type, is_active: true })
-      setTemplates(allTemplates)
-    } catch (e) {
-      console.error('加载模板失败', e)
-    }
+    setTemplateFilter({ stage, type })
   }
 
 
@@ -236,7 +241,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       })
       msgApi.success('已保存为交付物')
       setAiGenerateModalOpen(false)
-      loadData()
+      invalidateDeliverables()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
@@ -497,7 +502,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
           deliverableType={versionDrawerData.type}
           title={versionDrawerData.title}
           versions={versionDrawerData.versions}
-          onRefresh={loadData}
+          onRefresh={invalidateDeliverables}
         />
       )}
 

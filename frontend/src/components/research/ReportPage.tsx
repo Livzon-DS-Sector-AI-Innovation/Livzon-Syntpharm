@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchReports } from '@/lib/api/client/research/rd-project'
@@ -36,25 +37,19 @@ const typeColorMap: Record<string, string> = {
 
 export function ReportPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [reports, setReports] = useState<RdReport[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdReport | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: reports = [], isLoading: loading } = useQuery({
+    queryKey: ['reports', projectId],
+    queryFn: async () => {
       const data = await fetchReports(projectId)
-      setReports(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -115,7 +110,7 @@ export function ReportPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
@@ -125,7 +120,7 @@ export function ReportPage({ projectId }: Props) {
     try {
       await deleteReport(id)
       msgApi.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }

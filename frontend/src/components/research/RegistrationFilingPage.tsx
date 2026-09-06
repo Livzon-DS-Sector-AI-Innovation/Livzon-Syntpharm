@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchFilings } from '@/lib/api/client/research/rd-project'
@@ -32,25 +33,19 @@ const statusLabelMap: Record<string, string> = {
 
 export function RegistrationFilingPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [filings, setFilings] = useState<RdRegistrationFiling[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdRegistrationFiling | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: filings = [], isLoading: loading } = useQuery({
+    queryKey: ['registration-filings', projectId],
+    queryFn: async () => {
       const data = await fetchFilings(projectId)
-      setFilings(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -129,7 +124,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['registration-filings', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
@@ -140,7 +135,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
       const { deleteFiling } = await import('@/actions/research/modules')
       await deleteFiling(id)
       msgApi.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['registration-filings', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }

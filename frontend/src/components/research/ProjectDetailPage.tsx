@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker} from 'antd'
 import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
 import {
-  RdProject, RdMilestone, RdStageRecord, RdProjectStage,
+  RdProject, RdProjectStage,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-project'
@@ -35,28 +36,26 @@ const statusColorMap: Record<string, { color: string; bg: string }> = {
 
 export function ProjectDetailPage({ project }: Props) {
   const { modal, message: msgApi } = App.useApp()
+  const queryClient = useQueryClient()
   const [tab, setTab] = useState('overview')
-  const [milestones, setMilestones] = useState<RdMilestone[]>([])
-  const [stages, setStages] = useState<RdStageRecord[]>([])
-  const [loading, setLoading] = useState(false)
 
-  const loadAll = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [m, s] = await Promise.all([
-        fetchMilestones(project.id),
-        fetchStages(project.id),
-      ])
-      setMilestones(m)
-      setStages(s)
-    } catch (_e) {
-      msgApi.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [project.id])
+  const { data: milestones = [], isLoading: milestonesLoading } = useQuery({
+    queryKey: ['milestones', project.id],
+    queryFn: async () => {
+      const data = await fetchMilestones(project.id)
+      return data || []
+    },
+  })
 
-  useEffect(() => { loadAll() }, [loadAll])
+  const { data: stages = [], isLoading: stagesLoading } = useQuery({
+    queryKey: ['stages', project.id],
+    queryFn: async () => {
+      const data = await fetchStages(project.id)
+      return data || []
+    },
+  })
+
+  const loading = milestonesLoading || stagesLoading
 
   const stageCfg = stageColorMap[project.current_stage || 'initiation'] || { color: '#787671', bg: '#f0eeec' }
   const statusCfg = statusColorMap[project.status] || { color: '#787671', bg: '#f0eeec' }
@@ -71,7 +70,8 @@ export function ProjectDetailPage({ project }: Props) {
           const result = await doTransition(project.id, targetStage)
           if (result.success) {
             msgApi.success('阶段流转成功')
-            loadAll()
+            queryClient.invalidateQueries({ queryKey: ['milestones', project.id] })
+            queryClient.invalidateQueries({ queryKey: ['stages', project.id] })
           } else {
             msgApi.error('阶段流转失败')
           }
@@ -97,7 +97,7 @@ export function ProjectDetailPage({ project }: Props) {
       await createMilestone(project.id, { ...values, planned_date: values.planned_date?.format('YYYY-MM-DD') })
       msgApi.success('里程碑创建成功')
       setMilestoneModalOpen(false)
-      loadAll()
+      queryClient.invalidateQueries({ queryKey: ['milestones', project.id] })
     } catch (e: unknown) { msgApi.error(e instanceof Error ? e.message : "保存失败") }
   }
 

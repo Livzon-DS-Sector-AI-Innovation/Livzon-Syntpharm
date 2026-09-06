@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchValidations } from '@/lib/api/client/research/rd-project'
@@ -29,25 +30,19 @@ const statusLabelMap: Record<string, string> = {
 
 export function ProcessValidationPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [validations, setValidations] = useState<RdProcessValidation[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdProcessValidation | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: validations = [], isLoading: loading } = useQuery({
+    queryKey: ['process-validations', projectId],
+    queryFn: async () => {
       const data = await fetchValidations(projectId)
-      setValidations(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -126,7 +121,7 @@ export function ProcessValidationPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['process-validations', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
@@ -137,7 +132,7 @@ export function ProcessValidationPage({ projectId }: Props) {
       const { deleteValidation } = await import('@/actions/research/modules')
       await deleteValidation(id)
       msgApi.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['process-validations', projectId] })
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
