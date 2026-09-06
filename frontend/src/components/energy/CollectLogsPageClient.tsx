@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Select, Button } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
@@ -39,10 +39,6 @@ export function CollectLogsPageClient() {
       setLoading(false)
     }
   }, [logFilters])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
 
   const handleTriggerCollect = async () => {
     setTriggerLoading(true)

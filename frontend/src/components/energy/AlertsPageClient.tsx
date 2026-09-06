@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Button, Space, App } from 'antd'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { AlertRuleTable } from './AlertRuleTable'
@@ -30,10 +30,6 @@ export function AlertsPageClient() {
       setLoading(false)
     }
   }, [page, pageSize])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
 
   const handlePageChange = (p: number, ps: number) => {
     setPage(p)

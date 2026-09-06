@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Input, Select, Button } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
@@ -31,10 +31,6 @@ export function DevicesPageClient() {
       setLoading(false)
     }
   }, [deviceFilters])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
 
   const filledInputStyle = { background: '#f6f5f4', border: 'none', borderRadius: 8, height: 36 }
 

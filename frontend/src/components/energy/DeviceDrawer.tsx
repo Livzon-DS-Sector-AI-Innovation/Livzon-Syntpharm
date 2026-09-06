@@ -108,6 +108,7 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
     }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Drawer initialization requires form manipulation
   useEffect(() => {
     if (deviceDrawerOpen) {
       loadPlatforms()

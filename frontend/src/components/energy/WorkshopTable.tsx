@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { App, Table, Button, Space, Select } from 'antd'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
@@ -106,10 +106,6 @@ export function WorkshopTable() {
       setLoading(false)
     }
   }, [categoryFilter, page, pageSize, message])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
 
   const handleDelete = (record: EnergyWorkshop) => {
     modal.confirm({

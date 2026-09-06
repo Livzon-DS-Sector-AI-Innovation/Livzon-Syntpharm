@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { App, Table, Button, Space, Select, DatePicker } from 'antd'
 import {DeleteOutlined, ImportOutlined} from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
@@ -143,18 +143,6 @@ export function MonthlyRecordTable() {
       // ignore
     }
   }, [])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  useEffect(() => {
-    loadWorkshops()
-  }, [loadWorkshops])
-
-  useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
 
   const handleDelete = (record: EnergyMonthlyRecord) => {
     modal.confirm({

@@ -29,6 +29,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   const [submitting, setSubmitting] = useState(false)
   const isEdit = !!workshopId
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Drawer initialization requires form manipulation
   useEffect(() => {
     if (open && workshopId) {
       setLoading(true)
