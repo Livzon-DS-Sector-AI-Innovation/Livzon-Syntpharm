@@ -29,7 +29,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   const [submitting, setSubmitting] = useState(false)
   const isEdit = !!workshopId
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- Drawer initialization requires form manipulation
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open && workshopId) {
       setLoading(true)
@@ -52,6 +52,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
       form.setFieldsValue(DEFAULT_VALUES)
     }
   }, [open, workshopId, form, message])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = async () => {
     try {

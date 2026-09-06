@@ -81,14 +81,11 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
     }
   }, [chapterId])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- Rendering side effect
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     renderDocx()
   }, [renderDocx, refreshKey])
-
-  const handleRefresh = () => {
-    renderDocx()
-  }
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!chapterId) {
     return (
