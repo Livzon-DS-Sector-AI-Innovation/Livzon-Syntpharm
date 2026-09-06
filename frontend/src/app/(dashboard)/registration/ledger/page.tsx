@@ -50,11 +50,12 @@ function LedgerContent() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
 
-  useEffect(() => {
-    if (urlType && LEDGER_TYPES.some(t => t.value === urlType)) {
-      setType(urlType)
-    }
-  }, [urlType])
+  // Sync type from URL param (adjusting state during render)
+  const [prevUrlType, setPrevUrlType] = useState<string | null>(null)
+  if (urlType !== prevUrlType && urlType && LEDGER_TYPES.some(t => t.value === urlType)) {
+    setPrevUrlType(urlType)
+    setType(urlType)
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -75,8 +76,6 @@ function LedgerContent() {
       setLoading(false)
     }
   }, [type])
-
-  useEffect(() => { loadData() }, [loadData])
 
   const handleImport = async (file: File) => {
     console.log('🚀 Starting import, file:', file.name, 'type:', type)

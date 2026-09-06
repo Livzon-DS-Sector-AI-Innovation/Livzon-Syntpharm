@@ -1,7 +1,7 @@
 import type { UploadFile } from "antd";
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload} from 'antd'
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AuthorizationLetterListItem, ProductInfo } from '@/types/registration'
@@ -55,10 +55,6 @@ export default function AuthorizationLetterClient({
       setLoading(false)
     }
   }, [productName, preparationUnit, page, pageSize])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Spin, Button, Tag, App } from 'antd'
 import {
@@ -74,8 +74,6 @@ export default function RegulatoryDocumentDetailPage() {
       setLoading(false)
     }
   }
-
-  useEffect(() => { loadDetail() }, [docId])
 
   if (loading) {
     return (

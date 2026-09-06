@@ -113,6 +113,7 @@ export function DossierWriterDetailPageClient() {
     }
     const updated = findChapter(chapterTree)
     if (updated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing chapter state
       setSelectedChapter(prev => {
         if (!prev) return prev
         // Only update if something changed (working_file, has_content, etc.)

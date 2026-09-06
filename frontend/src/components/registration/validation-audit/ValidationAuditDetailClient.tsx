@@ -2,7 +2,7 @@ import type { UploadFile } from "antd";
 'use client'
 
 
-import { useState, useCallback, useEffect, type JSX } from 'react'
+import { useState, useCallback, type JSX } from 'react'
 import {
   Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
 } from 'antd'
@@ -86,11 +86,6 @@ export default function ValidationAuditDetailClient({
       setLoading(false)
     }
   }, [task.id])
-
-  // Fetch fresh data on mount to fix stale initial data from Server Component
-  useEffect(() => {
-    refreshData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusCfg = STATUS_LABELS[task.status as keyof typeof STATUS_LABELS]
   const conclusionCfg = task.conclusion

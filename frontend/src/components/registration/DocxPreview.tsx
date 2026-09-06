@@ -81,6 +81,7 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
     }
   }, [chapterId])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Rendering side effect
   useEffect(() => {
     renderDocx()
   }, [renderDocx, refreshKey])

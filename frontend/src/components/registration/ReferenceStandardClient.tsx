@@ -1,7 +1,7 @@
 import type { UploadFile } from "antd";
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
 import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
@@ -49,10 +49,6 @@ export default function ReferenceStandardClient({
       setLoading(false)
     }
   }, [drugName, page, pageSize])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
