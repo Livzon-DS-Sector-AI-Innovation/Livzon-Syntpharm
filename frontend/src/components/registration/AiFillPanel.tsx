@@ -1,6 +1,7 @@
 'use client'
 
 import {useState, useEffect} from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   App, Button, Tag, Select, Input, Space, Alert,
   Badge, Empty, Spin, Card, Modal, Typography,
@@ -30,7 +31,6 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const { message } = App.useApp()
 
   // Categories (for display labels)
-  const [categories, setCategories] = useState<AssetCategory[]>([])
   const [_categoriesLoading, setCategoriesLoading] = useState(false)
 
   // AI preview
@@ -56,24 +56,25 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const [fillResults, setFillResults] = useState<Array<{field_name: string; status: string; message: string}>>([])
 
   // LLM availability
-  const [llmAvailable, setLlmAvailable] = useState<boolean | null>(null)
 
-  useEffect(() => {
-    testLLMConnection()
-      .then(res => {
+  const { data: llmTestResult } = useQuery({
+    queryKey: ['llm-connection-test'],
+    queryFn: async () => {
+      try {
+        const res = await testLLMConnection()
         const ok = res && typeof res === 'object' && 'data' in res
           ? (res.data as { status: string }).status === 'ok'
           : false
-        setLlmAvailable(ok)
-      })
-      .catch(() => {
-        setLlmAvailable(false)
-      })
-  }, [])
+        return ok
+      } catch {
+        return false
+      }
+    },
+  })
+  const llmAvailable = llmTestResult ?? null
 
 
   // Selected assets (loaded from API)
-  const [selectedAssets, setSelectedAssets] = useState<ChapterAsset[]>([])
   const [_selectedAssetsLoading, setSelectedAssetsLoading] = useState(false)
   // Reset fill state when chapter changes
   useEffect(() => {
@@ -84,16 +85,38 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }, [chapterId])
 
   // Load selected assets (including inherited)
-  useEffect(() => {
-    loadSelectedAssets()
-  }, [chapterId, refreshKey])
+  const { data: selectedAssets = [], isLoading: _selectedAssetsLoading, refetch: refetchSelectedAssets } = useQuery({
+    queryKey: ['selected-assets', chapterId, refreshKey],
+    queryFn: async () => {
+      setSelectedAssetsLoading(true)
+      try {
+        const res = await fetchSelectedAssets(chapterId)
+        return res || []
+      } catch {
+        return []
+      } finally {
+        setSelectedAssetsLoading(false)
+      }
+    },
+  })
 
   // Load categories for label display
-  useEffect(() => {
-    if (chapterCode) {
-      loadCategories()
-    }
-  }, [chapterCode])
+  const { data: categories = [], isLoading: _categoriesLoading } = useQuery({
+    queryKey: ['asset-categories', chapterCode],
+    queryFn: async () => {
+      if (!chapterCode) return []
+      setCategoriesLoading(true)
+      try {
+        const res = await fetchAssetCategories()
+        return res || []
+      } catch {
+        return []
+      } finally {
+        setCategoriesLoading(false)
+      }
+    },
+    enabled: !!chapterCode,
+  })
 
   const loadSelectedAssets = async () => {
     setSelectedAssetsLoading(true)
