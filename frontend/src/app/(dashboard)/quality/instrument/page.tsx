@@ -133,11 +133,8 @@ export default function InstrumentDashboardPage() {
 
   const reminderConfigs = reminderConfigsData || []
 
-  useEffect(() => {
-    if (reminderConfigs.length > 0 && !selectedConfigId) {
-      setSelectedConfigId(reminderConfigs[0].id)
-    }
-  }, [reminderConfigs, selectedConfigId])
+  // Compute effective config ID: use selected or default to first available
+  const effectiveConfigId = selectedConfigId || reminderConfigs[0]?.id || null
 
   // 到期记录预览
   const { data: reminderPreviewData, isLoading: loadingPreview } = useQuery({
@@ -518,9 +515,9 @@ export default function InstrumentDashboardPage() {
                   type="primary"
                   icon={<SendOutlined />}
                   loading={remindLoading}
-                  disabled={(upcomingRecords.length === 0 && overdueRecords.length === 0) || !selectedConfigId}
+                  disabled={(upcomingRecords.length === 0 && overdueRecords.length === 0) || !effectiveConfigId}
                   onClick={async () => {
-                    const config = reminderConfigs.find((c) => c.id === selectedConfigId)
+                    const config = reminderConfigs.find((c) => c.id === effectiveConfigId)
                     if (!config) {
                       message.error('请选择提醒配置')
                       return

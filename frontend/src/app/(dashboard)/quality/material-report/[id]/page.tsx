@@ -199,14 +199,15 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }, [report])
 
   // Sync derived data to state for mutable operations (add row, cell change)
-  useEffect(() => {
-    if (derivedTableData.columns.length > 0) {
-      setTableColumns(derivedTableData.columns)
-      if (derivedTableData.rows.length > 0) {
-        setTableData(derivedTableData.rows)
-      }
+  // Uses React's "adjusting state during render" pattern to avoid extra render cycle
+  const [prevReportId, setPrevReportId] = useState<string | number | null>(null)
+  if (report && report.id !== prevReportId && derivedTableData.columns.length > 0) {
+    setPrevReportId(report.id)
+    setTableColumns(derivedTableData.columns)
+    if (derivedTableData.rows.length > 0) {
+      setTableData(derivedTableData.rows)
     }
-  }, [derivedTableData])
+  }
 
   // 添加行
   const handleAddRow = () => {
