@@ -62,7 +62,7 @@ interface ExpiringReagent {
 
 export default function QualityDashboardPage() {
   // 加载仪器统计
-  const { data: instrumentData, isLoading: instrumentLoading } = useQuery({
+  const { data: instrumentData, isLoading: instrumentLoading, refetch: refetchInstruments } = useQuery({
     queryKey: ['quality-dashboard-instruments'],
     queryFn: async () => {
       const response = await fetch(`${API_BASE_URL}/quality/instrument?page=1&page_size=100`)
@@ -106,7 +106,7 @@ export default function QualityDashboardPage() {
     }))
 
   // 加载试剂统计
-  const { data: reagentData, isLoading: reagentLoading } = useQuery({
+  const { data: reagentData, isLoading: reagentLoading, refetch: refetchReagents } = useQuery({
     queryKey: ['quality-dashboard-reagents'],
     queryFn: async () => {
       const response = await fetch(`${API_BASE_URL}/quality/reagent/list?page=1&page_size=100`)
@@ -149,6 +149,7 @@ export default function QualityDashboardPage() {
     }))
 
   const loading = instrumentLoading || reagentLoading
+  const loadAllStats = () => { refetchInstruments(); refetchReagents(); }
 
   const getDaysColor = (days: number) => {
     if (days <= 0) return '#ef4444'

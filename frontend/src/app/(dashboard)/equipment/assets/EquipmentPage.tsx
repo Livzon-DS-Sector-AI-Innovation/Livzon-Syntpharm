@@ -62,10 +62,7 @@ export function EquipmentPage({
   } = useEquipmentStore()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const resetKey = useMemo(() => 
-    [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword].join('|'),
-    [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword]
-  )
+  const [resetKey, setResetKey] = useState(0)
 
   // 初始化 store 数据（包含 SSR 数据）
   useEffect(() => {
@@ -257,7 +254,7 @@ export function EquipmentPage({
               <EquipmentTable 
                 loading={loading} 
                 resetKey={resetKey} 
-                onPageChange={fetchData} 
+                onPageChange={(page: number, pageSize: number) => fetchData(page, pageSize)} 
                 onRefresh={() => fetchData(1, 20)} 
                 onRefreshStatistics={refreshStatistics} 
               />
@@ -266,7 +263,7 @@ export function EquipmentPage({
         </div>
 
         {/* 抽屉组件 */}
-        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1); refreshStatistics(); }} />
+        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey((k: number) => k + 1); refreshStatistics(); }} />
         <LocationDrawer onRefresh={() => { refreshCategoriesAndLocations(); refreshStatistics(); }} />
         <RepairDrawer
           equipments={equipments.map(e => ({

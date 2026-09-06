@@ -99,7 +99,7 @@ export default function MediumPage() {
     return params
   }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm])
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
     queryKey: ['medium-list', page, pageSize, searchText, typeFilter, statusFilter],
     queryFn: async () => {
       const params = queryParams()
@@ -111,7 +111,7 @@ export default function MediumPage() {
   const data = queryResult?.items || []
   const total = queryResult?.total || 0
 
-  const { data: statsData = { all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 } } = useQuery({
+  const { data: statsData = { all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 }, refetch: fetchStats } = useQuery({
     queryKey: ['medium-stats', typeFilter],
     queryFn: async () => {
       let allData: Medium[] = []

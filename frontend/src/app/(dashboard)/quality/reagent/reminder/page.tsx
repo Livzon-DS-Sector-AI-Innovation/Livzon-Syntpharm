@@ -142,7 +142,7 @@ export default function ReagentReminderPage() {
       const data = await setReagentItemReminder(reagentName, isEnabled)
       if (data.code === 200) {
         message.success(isEnabled ? '已开启提醒' : '已关闭提醒')
-        setLowStockList(prev => prev.map(item => item.reagent_name === reagentName ? { ...item, is_enabled: isEnabled } : item))
+        queryClient.invalidateQueries({ queryKey: ['low-stock-reagents'] })
       } else {
         message.error(data.message || '设置失败')
       }
@@ -265,7 +265,7 @@ export default function ReagentReminderPage() {
                   {lowStockList.length > 0 && <Tag color="orange">{lowStockList.length}</Tag>}
                 </div>
               }
-              extra={<Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={loadLowStock}>刷新</Button>}
+              extra={<Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={() => refetchLowStock()}>刷新</Button>}
             >
               <Table
                 columns={columns}

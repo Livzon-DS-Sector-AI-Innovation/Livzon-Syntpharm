@@ -141,7 +141,7 @@ export default function HplcReferencePage() {
     return params
   }, [page, pageSize, searchText, statusFilter, advancedForm])
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
     queryKey: ['hplc-reference-list', page, pageSize, searchText, statusFilter],
     queryFn: async () => {
       const params = queryParams()
@@ -636,7 +636,7 @@ export default function HplcReferencePage() {
             </div>
           }
           closable
-          onClose={() => setRecalAlertVisible(false)}
+          onClose={() => {}}
         />
       )}
 
@@ -1397,7 +1397,7 @@ export default function HplcReferencePage() {
                 total: usageHistoryTotal,
                 showSizeChanger: false,
                 showTotal: t => `共 ${t} 条领用记录`,
-                onChange: (p) => fetchUsageHistory(usageHistoryRecord.id, p),
+                onChange: (p) => refetchUsageHistory(),
               }}
               columns={[
                 {

@@ -43,20 +43,7 @@ export default function InstrumentDashboardPage() {
   const [remindLoading, setRemindLoading] = useState(false)
   const [remindDays, setRemindDays] = useState(30)
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null)
-  const _upcomingRecords_unused = useState<Array<{
-    id: string
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number | null
-  }>>([])
-  const _overdueRecords_unused = useState<Array<{
-    id: string
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number | null
-  }>>([])
+
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -67,7 +54,7 @@ export default function InstrumentDashboardPage() {
   }, [])
 
   // 加载仪器数据
-  const { data: instrumentsData, isLoading: loading } = useQuery({
+  const { data: instrumentsData, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: ['instruments-dashboard'],
     queryFn: async () => {
       const response = await getInstruments({ page: 1, page_size: 100 })
@@ -171,7 +158,7 @@ export default function InstrumentDashboardPage() {
           </p>
         </div>
         <Space wrap size={8}>
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading} size={isMobile ? 'small' : 'middle'}>
+          <Button icon={<ReloadOutlined />} onClick={() => loadData()} loading={loading} size={isMobile ? 'small' : 'middle'}>
             刷新
           </Button>
           <Button
@@ -365,8 +352,6 @@ export default function InstrumentDashboardPage() {
         open={remindModalVisible}
         onCancel={() => {
           setRemindModalVisible(false)
-          setUpcomingRecords([])
-          setOverdueRecords([])
         }}
         footer={null}
         width={isMobile ? '100%' : 600}
@@ -402,18 +387,8 @@ export default function InstrumentDashboardPage() {
                 <span>提前提醒天数：</span>
                 <Select
                   value={remindDays}
-                  onChange={async (value) => {
+                  onChange={(value) => {
                     setRemindDays(value)
-                    setLoadingPreview(true)
-                    try {
-                      const data = await getRecordsForReminder(value)
-                      setOverdueRecords(data.overdue || [])
-                      setUpcomingRecords(data.upcoming || [])
-                    } catch {
-                      message.error('获取到期记录失败')
-                    } finally {
-                      setLoadingPreview(false)
-                    }
                   }}
                   style={{ width: isMobile ? '100%' : 120 }}
                 >

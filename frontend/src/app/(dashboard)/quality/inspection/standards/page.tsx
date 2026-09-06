@@ -89,7 +89,6 @@ const exportStandardsToCsv = (standards: InspectionStandard[]) => {
 export default function InspectionStandardsPage() {
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingStandard, setEditingStandard] = useState<InspectionStandard | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)

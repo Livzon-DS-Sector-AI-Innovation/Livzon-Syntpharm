@@ -92,7 +92,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
   const [handleForm] = Form.useForm()
 
   // 加载详情
-  const { data: checkDetail, isLoading: loading } = useQuery({
+  const { data: checkDetail, isLoading: loading, refetch: loadDetail } = useQuery({
     queryKey: ['doc-check-detail', resolvedParams.id],
     queryFn: async () => {
       const response = await fetch(
@@ -472,7 +472,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         title="问题列表"
         extra={
           <Space>
-            <Button icon={<ReloadIcon />} onClick={loadDetail}>
+            <Button icon={<ReloadIcon />} onClick={() => loadDetail()}>
               刷新
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportReport}>

@@ -31,7 +31,6 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const { message } = App.useApp()
 
   // Categories (for display labels)
-  const [_categoriesLoading, setCategoriesLoading] = useState(false)
 
   // AI preview
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -75,7 +74,6 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
 
 
   // Selected assets (loaded from API)
-  const [_selectedAssetsLoading, setSelectedAssetsLoading] = useState(false)
   // Reset fill state when chapter changes
   useEffect(() => {
     setFillDone(false)
@@ -85,63 +83,26 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }, [chapterId])
 
   // Load selected assets (including inherited)
-  const { data: selectedAssets = [], isLoading: _selectedAssetsLoading, refetch: refetchSelectedAssets } = useQuery({
+  const { data: selectedAssets = [], refetch: refetchSelectedAssets } = useQuery({
     queryKey: ['selected-assets', chapterId, refreshKey],
     queryFn: async () => {
-      setSelectedAssetsLoading(true)
-      try {
-        const res = await fetchSelectedAssets(chapterId)
-        return res || []
-      } catch {
-        return []
-      } finally {
-        setSelectedAssetsLoading(false)
-      }
+      const res = await fetchSelectedAssets(chapterId)
+      return res || []
     },
   })
 
   // Load categories for label display
-  const { data: categories = [], isLoading: _categoriesLoading } = useQuery({
+  const { data: categories = [] } = useQuery({
     queryKey: ['asset-categories', chapterCode],
     queryFn: async () => {
       if (!chapterCode) return []
-      setCategoriesLoading(true)
-      try {
-        const res = await fetchAssetCategories()
-        return res || []
-      } catch {
-        return []
-      } finally {
-        setCategoriesLoading(false)
-      }
+      const res = await fetchAssetCategories(chapterCode)
+      return res || []
     },
     enabled: !!chapterCode,
   })
 
-  const loadSelectedAssets = async () => {
-    setSelectedAssetsLoading(true)
-    try {
-      const data = await fetchSelectedAssets(chapterId)
-      setSelectedAssets(Array.isArray(data) ? data : [])
-    } catch {
-      setSelectedAssets([])
-    } finally {
-      setSelectedAssetsLoading(false)
-    }
-  }
-
-  const loadCategories = async () => {
-    if (!chapterCode) return
-    setCategoriesLoading(true)
-    try {
-      const data = await fetchAssetCategories(chapterCode)
-      setCategories(data)
-    } catch {
-      // silently fail
-    } finally {
-      setCategoriesLoading(false)
-    }
-  }
+  // loadSelectedAssets and loadCategories are now handled by useQuery
 
   // Build category name map from assets
   const _getCategoryName = (asset: ChapterAsset): string | undefined => {

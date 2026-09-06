@@ -103,7 +103,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
   const [createForm] = Form.useForm()
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  const { data: calibrationData, isLoading: loading } = useQuery({
+  const { data: calibrationData, isLoading: loading, refetch: loadCalibrationData } = useQuery({
     queryKey: ['calibration-data', record.instrument.id],
     queryFn: async () => {
       const instrumentId = record.instrument.id
@@ -174,7 +174,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
       await createCalibrationRecord(submitData)
       message.success('创建成功')
       setCreateModalVisible(false)
-      loadCalibrationData(record.instrument.id)
+      loadCalibrationData()
       onRefresh?.()
     } catch (_error) {
       message.error('创建失败')
@@ -301,7 +301,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               {ruleRecords.length > 0 ? (
                 isMobile ? (
                   <div className="calibration-record-list">
-                    {ruleRecords.map((r) => (
+                    {ruleRecords.map((r: any) => (
                       <div key={r.id || r.calibration_no} className="calibration-record-item">
                         <div className="calibration-record-header">
                           <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -333,7 +333,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                   <Table
                     size="small"
                     pagination={false}
-                    dataSource={ruleRecords.map((r, i) => ({ ...r, key: r.id || i }))}
+                    dataSource={ruleRecords.map((r: any, i: number) => ({ ...r, key: r.id || i }))}
                     columns={recordColumns}
                     style={{ marginTop: 8 }}
                   />
@@ -354,7 +354,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
             </div>
             {isMobile ? (
               <div className="calibration-record-list">
-                {recordsMap.get('ungrouped')?.map((r) => (
+                {recordsMap.get('ungrouped')?.map((r: any) => (
                   <div key={r.id || r.calibration_no} className="calibration-record-item">
                     <div className="calibration-record-header">
                       <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -386,7 +386,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               <Table
                 size="small"
                 pagination={false}
-                dataSource={recordsMap.get('ungrouped')?.map((r, i) => ({ ...r, key: r.id || i }))}
+                dataSource={recordsMap.get('ungrouped')?.map((r: any, i: number) => ({ ...r, key: r.id || i }))}
                 columns={recordColumns}
               />
             )}
@@ -528,7 +528,7 @@ export default function InstrumentListPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: ['instruments-list', page, pageSize, filters],
     queryFn: async () => {
       setError(null)
@@ -905,7 +905,7 @@ export default function InstrumentListPage() {
           )}
           <Button
             icon={<ReloadOutlined />}
-            onClick={loadData}
+            onClick={() => loadData()}
             loading={loading}
             size={isMobile ? 'small' : 'middle'}
           >
@@ -978,7 +978,7 @@ export default function InstrumentListPage() {
             <p style={{ color: '#475569', marginBottom: 8, fontSize: 15, fontWeight: 600 }}>数据加载失败</p>
             <p style={{ color: '#94a3b8', fontSize: 12 }}>{error}</p>
           </div>
-          <Button type="primary" icon={<ReloadOutlined />} onClick={loadData}>
+          <Button type="primary" icon={<ReloadOutlined />} onClick={() => loadData()}>
             重新加载
           </Button>
         </div>

@@ -203,7 +203,7 @@ const DeviationListTab: React.FC<{
   const [searchValues, setSearchValues] = useState<SearchFormValues | undefined>(undefined)
   const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
     queryKey: ['deviations', pagination.current, pagination.pageSize, searchValues],
     queryFn: async () => {
       const result = await deviationActions.getDeviations({
@@ -648,7 +648,7 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
   const [aiTargetField, setAiTargetField] = useState('')
   const [form] = Form.useForm()
 
-  const { data: invQueryResult, isLoading: loading } = useQuery({
+  const { data: invQueryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
     queryKey: ['deviations-investigation'],
     queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })
@@ -1139,7 +1139,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const [completeCorrectionModalVisible, setCompleteCorrectionModalVisible] = useState(false)
   const [completeForm] = Form.useForm()
 
-  const { data: capaQueryResult, isLoading: loading } = useQuery({
+  const { data: capaQueryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
     queryKey: ['deviations-capa'],
     queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })

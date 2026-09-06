@@ -87,7 +87,7 @@ export default function DeviationQueryPage() {
 
   const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: ['deviation-flow', queryParams],
     queryFn: async () => {
       const response = await fetch(`${API_BASE}/quality/deviation-flow?${queryParams}`)
@@ -422,7 +422,7 @@ export default function DeviationQueryPage() {
               </Button>
               <Button
                 icon={<ReloadOutlined />}
-                onClick={loadData}
+                onClick={() => loadData()}
                 size={isMobile ? 'small' : 'middle'}
               >
                 刷新
@@ -476,7 +476,7 @@ export default function DeviationQueryPage() {
                 </thead>
                 <tbody>
                   {data.length > 0 ? (
-                    data.map((item) => {
+                    data.map((item: any) => {
                       const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
                       const statusColor = STATUS_COLORS[item.status || ''] || 'default'
                       const remaining = item.remaining_days

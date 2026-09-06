@@ -48,7 +48,7 @@ export function InspectionPage({ initialTemplates, initialEquipments, initialCat
     }
   }, [initialTemplates, templates.length, setTemplates])
 
-  const { isLoading: templateLoading } = useQuery({
+  const { isLoading: templateLoading, refetch: fetchTemplateData } = useQuery({
     queryKey: ['inspection-templates', { keyword: inspectionTemplateKeyword, page: inspectionTemplatePage, pageSize: inspectionTemplatePageSize }],
     queryFn: async () => {
       const res = await fetchInspectionTemplatesClient({
