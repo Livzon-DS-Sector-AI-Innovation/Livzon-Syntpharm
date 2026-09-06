@@ -94,8 +94,6 @@ export default function SpecialOpsReportPanel() {
     }
   }, [page, pageSize, statusFilter, opType, keyword])
 
-  useEffect(() => { fetchData() }, [fetchData])
-
   // ── Open report drawer ──
   const handleCreateReport = () => {
     setEditingReport(null)

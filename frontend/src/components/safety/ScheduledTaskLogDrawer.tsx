@@ -29,6 +29,10 @@ export default function ScheduledTaskLogDrawer({
   const [logs, setLogs] = useState<ScheduledTaskLog[]>([])
   const [loading, setLoading] = useState(false)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching with loading state
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching with loading state
+
   useEffect(() => {
     if (open && taskId) {
       setLoading(true)

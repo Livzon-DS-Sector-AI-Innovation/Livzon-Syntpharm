@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import {App, Table, Button, Typography, Empty, Spin} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -77,10 +77,6 @@ export default function SopGeneratorPanel({
       setLoadingList(false)
     }
   }, [])
-
-  useEffect(() => {
-    loadGeneratedSops()
-  }, [loadGeneratedSops])
 
   /* ── file handling ── */
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -111,10 +111,6 @@ export function AccidentPageClient() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [accidentQueryParams.page, accidentQueryParams.page_size, statusFilter, typeFilter, levelFilter])
 
   const handleSearch = () => {
     setAccidentQueryParams({ page: 1 })

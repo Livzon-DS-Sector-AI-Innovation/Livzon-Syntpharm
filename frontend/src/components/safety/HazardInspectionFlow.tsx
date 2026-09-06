@@ -1,7 +1,7 @@
 'use client'
 import { uploadHazardPhoto } from '@/actions/safety'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Steps,
@@ -194,10 +194,6 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setDraftsLoading(false)
     }
   }, [])
-
-  useEffect(() => {
-    loadDrafts()
-  }, [loadDrafts])
 
   // ── 提交隐患 → 创建/更新记录 + 上传图片 + 触发AI ──
   const handleSubmit = async (values: InspectionFormValues, files: File[]) => {

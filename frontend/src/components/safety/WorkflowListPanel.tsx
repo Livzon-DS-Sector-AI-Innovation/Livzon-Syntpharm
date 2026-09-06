@@ -227,19 +227,12 @@ export default function WorkflowListPanel() {
     } catch { /* 静默失败 */ }
   }
 
-  useEffect(() => { loadStats() }, [])
-
   useEffect(() => {
     setSelectedRowKeys([])
     loadData()
   }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter])
 
   // 排序变化时重新加载
-  useEffect(() => {
-    if (sortField) {
-      loadData()
-    }
-  }, [sortField, sortOrder])
 
   const handleSearch = () => {
     searchKeywordRef.current = keyword

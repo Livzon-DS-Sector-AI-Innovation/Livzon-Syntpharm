@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Button,
   Select,
@@ -69,10 +69,6 @@ export default function PptGeneratorPanel({
       setLoadingHistory(false)
     }
   }, [articleId])
-
-  useEffect(() => {
-    loadHistory()
-  }, [loadHistory])
 
   const handleGenerate = async () => {
     if (!hasContent) {

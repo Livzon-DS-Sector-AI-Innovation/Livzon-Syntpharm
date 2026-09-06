@@ -212,10 +212,6 @@ export function SafetyRegulationPageClient() {
     if (activeTab === 'revisions') loadRevisions()
   }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab])
 
-  useEffect(() => {
-    loadRegulationsForSelect()
-  }, [])
-
   // ---- Regulation CRUD ----
 
   const handleAddRegulation = () => {

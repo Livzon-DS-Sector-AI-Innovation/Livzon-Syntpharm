@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -105,10 +105,6 @@ export function CheckPageClient() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [checkQueryParams.page, checkQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
     setCheckQueryParams({ page: 1 })

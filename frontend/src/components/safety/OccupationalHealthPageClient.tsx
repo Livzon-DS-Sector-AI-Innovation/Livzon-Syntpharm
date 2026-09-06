@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Table,
   Button,
@@ -171,8 +171,6 @@ export function OccupationalHealthPageClient() {
     }
   }, [monitorPagination.page, monitorPagination.page_size, monitorFilters])
 
-  useEffect(() => { loadMonitors() }, [loadMonitors])
-
   /* ===================== Exam Data Loading ===================== */
   const loadExams = useCallback(async () => {
     setExamLoading(true)
@@ -192,8 +190,6 @@ export function OccupationalHealthPageClient() {
       setExamLoading(false)
     }
   }, [exampagination.page, exampagination.page_size, examFilters])
-
-  useEffect(() => { loadExams() }, [loadExams])
 
   /* ===================== Monitor Modal ===================== */
   const openMonitorCreateModal = () => {

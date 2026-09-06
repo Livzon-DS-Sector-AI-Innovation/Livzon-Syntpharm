@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -126,10 +126,6 @@ export function SafetyTrainingPageClient() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [trainingQueryParams.page, trainingQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
     setTrainingQueryParams({ page: 1 })
@@ -288,11 +284,6 @@ export function SafetyTrainingPageClient() {
   }
 
   // Load certificates when tab switches or filters change
-  useEffect(() => {
-    if (activeTab === 'certificate') {
-      loadCertificates()
-    }
-  }, [activeTab, certPage, certPageSize, certStatusFilter])
 
   const handleManageRecords = (record: SafetyTraining) => {
     setCurrentTrainingId(record.id)

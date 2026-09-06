@@ -62,12 +62,6 @@ export default function KnowledgeBasePicker({ open, onClose, onSelect, excludeId
     }
   }, [keyword, category, excludeIds])
 
-  useEffect(() => {
-    if (open) {
-      fetchArticles()
-    }
-  }, [open, fetchArticles])
-
   // 重置状态
   useEffect(() => {
     if (!open) {

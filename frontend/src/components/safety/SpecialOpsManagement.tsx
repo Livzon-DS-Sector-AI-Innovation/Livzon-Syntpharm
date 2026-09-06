@@ -138,8 +138,6 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
     }
   }, [page, pageSize, statusFilter, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical])
 
-  useEffect(() => { fetchData() }, [fetchData])
-
   // ── AI Export ──
 
   const handleAIExport = async () => {

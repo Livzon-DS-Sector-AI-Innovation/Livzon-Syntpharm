@@ -27,6 +27,10 @@ export default function AgentUsageStats({ articleId }: Props) {
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState<AgentUsageStatsType | null>(null)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching with loading state
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching with loading state
+
   useEffect(() => {
     if (!articleId) return
     setLoading(true)

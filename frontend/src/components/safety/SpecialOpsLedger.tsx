@@ -104,8 +104,6 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
     }
   }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical])
 
-  useEffect(() => { fetchData() }, [fetchData])
-
   // ── AI Export ──
 
   const handleAIExport = async () => {

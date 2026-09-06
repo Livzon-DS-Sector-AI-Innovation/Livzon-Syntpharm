@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
@@ -48,8 +48,6 @@ export function ContractorPageClient() {
       }
     } catch { message.error('加载承包商列表失败') } finally { setLoading(false) }
   }
-
-  useEffect(() => { loadData() }, [page, pageSize, statusFilter, typeFilter, trainingFilter])
 
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 

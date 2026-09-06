@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Spin, Result, Button } from 'antd'
 import SopContentEditor from '../SopContentEditor'
@@ -41,10 +41,6 @@ export function RegulationGeneratorDetailPageClient() {
       setLoading(false)
     }
   }, [id])
-
-  useEffect(() => {
-    fetchRegulation()
-  }, [fetchRegulation])
 
   const handleBack = useCallback(() => {
     router.push('/safety/regulation/generator')

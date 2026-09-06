@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { App,
   Table,
   Button,
@@ -93,10 +93,6 @@ export default function DailyRiskReportPanel() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [dailyRiskReportQueryParams.page, dailyRiskReportQueryParams.page_size, statusFilter, deptFilter])
 
   const handleSearch = () => {
     setDailyRiskReportQueryParams({ page: 1 })

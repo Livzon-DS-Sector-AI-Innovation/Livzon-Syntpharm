@@ -310,19 +310,12 @@ export default function HazardLedgerPage() {
   }
   const refreshStats = () => { loadStats() }
 
-  useEffect(() => { loadStats() }, [])
-
   useEffect(() => {
     setSelectedRowKeys([])
     loadData()
   }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
 
   // 排序变化时重新加载
-  useEffect(() => {
-    if (sortField) {
-      loadData()
-    }
-  }, [sortField, sortOrder])
 
   const handleSearch = () => {
     searchKeywordRef.current = searchText

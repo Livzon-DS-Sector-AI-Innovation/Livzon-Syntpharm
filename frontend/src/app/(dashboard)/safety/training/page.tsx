@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
@@ -278,11 +278,6 @@ export default function TrainingPage() {
   }
 
   // Load certificates when tab switches or filters change
-  useEffect(() => {
-    if (activeTab === 'certificate') {
-      loadCertificates()
-    }
-  }, [activeTab, certPage, certPageSize, certStatusFilter])
 
   const handleManageRecords = (record: SafetyTraining) => {
     setCurrentTrainingId(record.id)

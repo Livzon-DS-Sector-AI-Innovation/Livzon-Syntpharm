@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -137,10 +137,6 @@ export function EhsChangePageClient() {
       setLoading(false)
     }
   }, [pagination.page, pagination.page_size, filters])
-
-  useEffect(() => {
-    loadChanges()
-  }, [loadChanges])
 
   // ── Create / Edit ──
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -93,10 +93,6 @@ export function KnowledgeBasePageClient() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [articleQueryParams.page, articleQueryParams.page_size, statusFilter, categoryFilter])
 
   const handleSearch = () => {
     setArticleQueryParams({ page: 1 })
