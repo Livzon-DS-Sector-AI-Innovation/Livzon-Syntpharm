@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Card,
@@ -85,20 +86,6 @@ const statusPill = (color: string, bg: string): React.CSSProperties => ({
   background: bg,
 })
 
-const _actionLink = (color: string): React.CSSProperties => ({
-  color,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 4,
-  background: 'transparent',
-  border: 'none',
-  padding: 0,
-  lineHeight: '22px',
-})
-
 // ── 状态颜色配置 ──
 const STATUS_COLOR_CONFIG: Record<string, { color: string; bg: string }> = {
   draft:        { color: '#5d5b54', bg: '#f0eeec' },
@@ -136,38 +123,27 @@ export default function HazardIdentificationDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const queryClient = useQueryClient()
+  const { message } = App.useApp()
 
-  const [record, setRecord] = useState<HazardIdentification | null>(null)
-  const [loading, setLoading] = useState(true)
   const [runningScript, setRunningScript] = useState<number | null>(null)
   const [selectedStep, setSelectedStep] = useState(1)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingScript, setEditingScript] = useState<number>(0)
   const [editForm, setEditForm] = useState<Record<string, unknown>>({})
-  const { message } = App.useApp()
 
-  const loadRecord = async () => {
-    try {
+  // React Query for hazard identification record
+  const { data: record, isLoading: loading } = useQuery({
+    queryKey: ['safety-hazard-identification', id],
+    queryFn: async () => {
       const response = await getHazardIdentification(id)
       if (response.code === 200) {
-        setRecord(response.data as HazardIdentification)
-        const data = response.data as HazardIdentification
-        const cur = getCurrentStepNum(data.ai_node_progress)
-        setSelectedStep(cur)
-      } else {
-        message.error('加载失败')
-        router.push('/safety/hazard-identification')
+        return response.data as HazardIdentification
       }
-    } catch {
-      message.error('加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (id) loadRecord()
-  }, [id])
+      return null
+    },
+    enabled: !!id,
+  })
 
   const getCurrentStepNum = (progress: string): number => {
     if (progress === 'completed') return 7
@@ -177,6 +153,12 @@ export default function HazardIdentificationDetailPage() {
 
   const getScriptReviewStatus = (scriptNum: number): string => {
     return ((record as unknown as Record<string, unknown>)?.[`script${scriptNum}_review_status`] as string) || 'pending'
+  }
+
+  // Auto-select current step when record loads
+  if (record && selectedStep === 1) {
+    const cur = getCurrentStepNum(record.ai_node_progress)
+    if (cur !== 1) setSelectedStep(cur)
   }
 
   // ── 每个步骤的状态 ──
@@ -193,6 +175,7 @@ export default function HazardIdentificationDetailPage() {
     return 'wait'
   }
 
+
   const handleRunScript = async (scriptNum: number) => {
     setRunningScript(scriptNum)
     try {
@@ -204,7 +187,8 @@ export default function HazardIdentificationDetailPage() {
         } else {
           message.success(`步骤${scriptNum}「${WORKFLOW_STEPS[scriptNum - 1].title}」执行完成`)
         }
-        setRecord(data)
+        // Update cache directly with the returned data
+        queryClient.setQueryData(['safety-hazard-identification', id], data)
         const nextStep = getCurrentStepNum(data.ai_node_progress)
         setSelectedStep(nextStep)
       } else {
@@ -222,7 +206,8 @@ export default function HazardIdentificationDetailPage() {
       const response = await reviewHazardScript(id, scriptNum, action)
       if (response.code === 200) {
         message.success(action === 'approved' ? '审核通过，已推进至下一步' : '已驳回，请重新执行AI')
-        setRecord(response.data as HazardIdentification)
+        // Update cache directly with the returned data
+        queryClient.setQueryData(['safety-hazard-identification', id], response.data as HazardIdentification)
       } else {
         message.error(response.message || '审核操作失败')
       }
@@ -236,7 +221,8 @@ export default function HazardIdentificationDetailPage() {
       const response = await updateHazardIdentification(id, editForm as Record<string, unknown>)
       if (response.code === 200) {
         message.success('更新成功')
-        setRecord(response.data as HazardIdentification)
+        // Update cache directly with the returned data
+        queryClient.setQueryData(['safety-hazard-identification', id], response.data as HazardIdentification)
         setEditModalVisible(false)
       } else {
         message.error(response.message || '更新失败')
@@ -250,6 +236,13 @@ export default function HazardIdentificationDetailPage() {
     setEditingScript(scriptNum)
     setEditForm(fields)
     setEditModalVisible(true)
+  }
+
+  // Handle error case and redirect
+  if (!loading && !record && id) {
+    message.error('加载失败')
+    router.push('/safety/hazard-identification')
+    return null
   }
 
   // ── 加载态 ──
