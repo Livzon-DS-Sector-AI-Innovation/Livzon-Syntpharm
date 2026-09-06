@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -107,17 +108,16 @@ export default function InspectionStandardsPage() {
   const [versionFilter, setVersionFilter] = useState('')
 
   // 分页
-  const [standards, setStandards] = useState<InspectionStandard[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
+  const queryClient = useQueryClient()
 
   // 子表编辑相关
   const [editingItems, setEditingItems] = useState<InspectionStandardItem[]>([])
 
-  const loadStandards = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['inspection-standards', page, pageSize, statusFilter, materialCategoryFilter, pharmacopeiaFilter, searchMaterialName, versionFilter],
+    queryFn: async () => {
       const response = await getStandards({
         page,
         page_size: pageSize,
@@ -128,23 +128,17 @@ export default function InspectionStandardsPage() {
         version: versionFilter || undefined,
       })
       if (response.code === 200) {
-        setStandards(response.data)
-        setTotal(response.meta?.total || 0)
+        return { items: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载检验标准列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { items: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadStandards()
-  }, [page, pageSize, statusFilter, materialCategoryFilter, pharmacopeiaFilter])
+  const standards = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   const handleSearch = () => {
     setPage(1)
-    loadStandards()
   }
 
   const handleAdd = () => {
@@ -183,7 +177,7 @@ export default function InspectionStandardsPage() {
           const response = await deleteStandard(id)
           if (response.code === 200) {
             message.success('删除成功')
-            loadStandards()
+            queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -199,7 +193,7 @@ export default function InspectionStandardsPage() {
       const response = await submitStandardForApproval(id)
       if (response.code === 200) {
         message.success('已提交审批')
-        loadStandards()
+        queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
       } else {
         message.error(response.message || '提交失败')
       }
@@ -222,7 +216,7 @@ export default function InspectionStandardsPage() {
         message.success('版本复制成功')
         setCopyModalVisible(false)
         setNewVersion('')
-        loadStandards()
+        queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
       } else {
         message.error(response.message || '复制失败')
       }
@@ -242,7 +236,7 @@ export default function InspectionStandardsPage() {
         message.success('已提交作废申请')
         setObsoleteModalVisible(false)
         setObsoleteReason('')
-        loadStandards()
+        queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
       } else {
         message.error(response.message || '作废失败')
       }
@@ -277,7 +271,7 @@ export default function InspectionStandardsPage() {
         if (response.code === 200) {
           message.success('更新成功')
           setModalVisible(false)
-          loadStandards()
+          queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
         } else {
           message.error(response.message || '更新失败')
         }
@@ -286,7 +280,7 @@ export default function InspectionStandardsPage() {
         if (response.code === 200) {
           message.success('创建成功')
           setModalVisible(false)
-          loadStandards()
+          queryClient.invalidateQueries({ queryKey: ['inspection-standards'] })
         } else {
           message.error(response.message || '创建失败')
         }

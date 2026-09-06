@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Space, Input, Select, Tag, Modal, message, Empty, Spin } from 'antd'
 import {
   SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, PlusOutlined,
@@ -51,9 +52,6 @@ const DEVIATION_TYPES_OPTIONS = [
 interface DeviationFlowItem { id: string; deviation_no: string; theme?: string; deviation_type_label?: string; urgency_level_label?: string; status: string; status_label: string; responsible_department?: string; occurred_date?: string; reporter?: string; remaining_days?: number; completed_days?: number }
 export default function DeviationQueryPage() {
   const router = useRouter()
-  const [data, setData] = useState<DeviationFlowItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, _setPageSize] = useState(20)
   const [isMobile, setIsMobile] = useState(false)
@@ -75,39 +73,35 @@ export default function DeviationQueryPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      })
-      if (keyword) params.append('keyword', keyword)
-      if (status) params.append('status', status)
-      if (deviationType) params.append('deviation_type', deviationType)
-      if (urgencyLevel) params.append('urgency_level', urgencyLevel)
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    })
+    if (keyword) params.append('keyword', keyword)
+    if (status) params.append('status', status)
+    if (deviationType) params.append('deviation_type', deviationType)
+    if (urgencyLevel) params.append('urgency_level', urgencyLevel)
+    return params.toString()
+  }, [page, pageSize, keyword, status, deviationType, urgencyLevel])
 
-      const response = await fetch(`${API_BASE}/quality/deviation-flow?${params}`)
+  const queryClient = useQueryClient()
+
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['deviation-flow', queryParams],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/quality/deviation-flow?${queryParams}`)
       const result = await response.json()
+      if (result.code === 200) return result.data
+      return null
+    },
+  })
 
-      if (result.code === 200) {
-        setData(result.data.items || [])
-        setTotal(result.data.total || 0)
-      }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, status, deviationType, urgencyLevel, keyword])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
   const handleView = (record: DeviationFlowItem) => {
@@ -140,7 +134,7 @@ export default function DeviationQueryPage() {
 
           if (result.code === 200) {
             message.success('删除成功')
-            loadData()
+            queryClient.invalidateQueries({ queryKey: ['deviation-flow'] })
           } else {
             message.error(result.message || '删除失败')
           }

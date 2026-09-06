@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -62,11 +63,8 @@ const STD_STATUS_META: Record<number, { label: string; color: string }> = {
 }
 
 export default function StandardPage() {
-  const [data, setData] = useState<Standard[]>([])
-  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [total, setTotal] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [searchText, setSearchText] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | 'all'>('all')
@@ -80,10 +78,11 @@ export default function StandardPage() {
   const [stockDrawerOpen, setStockDrawerOpen] = useState(false)
   const [stockAdjustRecord, setStockAdjustRecord] = useState<Standard | null>(null)
   const [stockForm] = Form.useForm()
+  const queryClient = useQueryClient()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['standard-list', page, pageSize, searchText, typeFilter, statusFilter],
+    queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: pageSize }
       if (searchText) {
         params.std_code = searchText
@@ -96,23 +95,16 @@ export default function StandardPage() {
         params.std_status = statusFilter
       }
       const res = await listStandard(params)
-      setData((res?.data ?? []) as Standard[])
-      setTotal(res?.meta?.total ?? 0)
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '加载失败'))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, searchText, typeFilter, statusFilter])
+      return { items: (res?.data ?? []) as Standard[], total: res?.meta?.total ?? 0 }
+    },
+  })
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
-  const [statsData, setStatsData] = useState({ all: 0, active: 0, expired: 0, lowStock: 0, national: 0 })
-
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: statsData = { all: 0, active: 0, expired: 0, lowStock: 0, national: 0 } } = useQuery({
+    queryKey: ['standard-stats'],
+    queryFn: async () => {
       let allData: Standard[] = []
       let curPage = 1
       while (true) {
@@ -130,15 +122,9 @@ export default function StandardPage() {
         if (item.quantity <= item.min_stock) lowStock++
         if (item.std_type === 'national') national++
       })
-      setStatsData({ all: allData.length, active, expired, lowStock, national })
-    } catch (e) {
-      console.error('stats fetch error:', e)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+      return { all: allData.length, active, expired, lowStock, national }
+    },
+  })
 
   const handleQuickSearch = (val: string) => {
     setSearchText(val)
@@ -166,8 +152,8 @@ export default function StandardPage() {
     try {
       await deleteStandard(id)
       message.success('删除成功')
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['standard-list'] })
+      queryClient.invalidateQueries({ queryKey: ['standard-stats'] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '删除失败'))
     }
@@ -213,8 +199,8 @@ export default function StandardPage() {
         message.success('更新成功')
       }
       setDrawerOpen(false)
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['standard-list'] })
+      queryClient.invalidateQueries({ queryKey: ['standard-stats'] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
@@ -237,8 +223,8 @@ export default function StandardPage() {
         await adjustStandardQuantity(stockAdjustRecord.id, values.quantity)
         message.success('数量调整成功')
         setStockDrawerOpen(false)
-        fetchData()
-        fetchStats()
+        queryClient.invalidateQueries({ queryKey: ['standard-list'] })
+        queryClient.invalidateQueries({ queryKey: ['standard-stats'] })
       }
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
@@ -417,7 +403,7 @@ export default function StandardPage() {
         <div className="std-toolbar-right">
           <Button icon={<FilterOutlined />} onClick={() => setShowAdvanced(!showAdvanced)} className={showAdvanced ? 'std-filter-active' : ''}>
             高级筛选
-          </Button>          <Button icon={<ReloadOutlined />} onClick={() => { fetchData(); fetchStats() }}>
+          </Button>          <Button icon={<ReloadOutlined />} onClick={() => { refetch(); queryClient.invalidateQueries({ queryKey: ['standard-stats'] }) }}>
             刷新
           </Button>
           <Segmented

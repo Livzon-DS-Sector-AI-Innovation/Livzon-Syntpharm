@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -31,9 +32,6 @@ import {
 import type { TableListItem, ColumnConfig } from '@/types/inspection-table'
 
 export default function InspectionTableListPage() {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<TableListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [keyword, setKeyword] = useState('')
@@ -45,27 +43,22 @@ export default function InspectionTableListPage() {
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
+  const queryClient = useQueryClient()
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: ['inspection-tables', keyword, page, pageSize],
+    queryFn: async () => {
       const result = await getInspectionTables({
         keyword: keyword || undefined,
         page,
         page_size: pageSize,
       })
-      setData(result.items || [])
-      setTotal(result.total || 0)
-    } catch (_error) {
-      message.error('获取数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return result
+    },
+  })
 
-  useEffect(() => {
-    fetchData()
-  }, [page, pageSize, keyword])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 创建数据表
   const handleCreate = async () => {
@@ -83,7 +76,7 @@ export default function InspectionTableListPage() {
       setCreateModalVisible(false)
       form.resetFields()
       setColumns([])
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '创建失败')
     } finally {
@@ -114,7 +107,7 @@ export default function InspectionTableListPage() {
 
       message.success('更新成功')
       setEditModalVisible(false)
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '更新失败')
     } finally {
@@ -127,7 +120,7 @@ export default function InspectionTableListPage() {
     try {
       await deleteInspectionTable(id)
       message.success('删除成功')
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '删除失败')
     }

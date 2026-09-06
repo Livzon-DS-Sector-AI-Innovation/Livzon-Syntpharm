@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Tabs,
@@ -100,49 +101,36 @@ interface ListPageProps {
 }
 
 function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule: _importModule }: ListPageProps) {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [total, setTotal] = useState(0)
   const [searchValues, setSearchValues] = useState<Record<string, any>>({})
   const [form] = Form.useForm()
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importLoading, setImportLoading] = useState(false)
   const router = useRouter()
-  // Stable reference, no rebuild on tab switch
-  const fetchDataRef = useRef<() => void>(() => {})
+  const queryClient = useQueryClient()
 
-  const fetchData = useCallback(async (overrides: Record<string, any> = {}) => {
-    setLoading(true)
-    try {
-      const params = { page, page_size: pageSize, ...searchValues, ...overrides }
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['static-data-list', tabKey, page, pageSize, searchValues],
+    queryFn: async () => {
+      const params = { page, page_size: pageSize, ...searchValues }
       const res: any = await clientListFn(params)
-      setData((res?.data ?? res ?? []) as any[])
+      const items = (res?.data ?? res ?? []) as any[]
       const totalVal = res?.meta?.total ?? (Array.isArray(res) ? res.length : 0)
-      setTotal(totalVal)
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '加载失败'))
-      console.error('[ListPanel] fetchData error:', e)
-    } finally {
-      setLoading(false)
+      return { items, total: totalVal }
+    },
+  })
+
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
+
+  // Stable reference for external calls
+  const fetchDataRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    fetchDataRef.current = () => {
+      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
     }
-  }, [page, pageSize, searchValues, clientListFn])
-
-  // 更新 ref，让 RangePicker 等可以直接调用
-  useEffect(() => {
-    fetchDataRef.current = fetchData
-  }, [fetchData])
-
-  // 仅在 page / pageSize / searchValues / tabKey 变化时重新加载
-  useEffect(() => {
-    setPage(1)
-    fetchData()
-  }, [searchValues]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    fetchData()
-  }, [page, pageSize]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [queryClient, tabKey])
 
   // 暴露表单和搜索值给 RangePicker 回调
   useEffect(() => {
@@ -167,7 +155,7 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
     try {
       await deleteFn(id)
       message.success('删除成功')
-      fetchDataRef.current()
+      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '删除失败'))
     }
@@ -213,7 +201,7 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
       const res = await onBatchImport(file)
       message.success(res.message || '导入成功')
       setImportModalOpen(false)
-      fetchDataRef.current()
+      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '导入失败'))
     } finally {

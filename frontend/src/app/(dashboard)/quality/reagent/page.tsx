@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -177,9 +178,6 @@ const initialFilters = {
 }
 
 export default function QualityReagentPage() {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<Reagent[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState(initialFilters)
@@ -201,6 +199,7 @@ export default function QualityReagentPage() {
 
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const queryClient = useQueryClient()
 
   // 检测移动端
   useEffect(() => {
@@ -215,9 +214,9 @@ export default function QualityReagentPage() {
   }, [])
 
   // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['reagent-list', filters, page, pageSize],
+    queryFn: async () => {
       const response = await getReagentList({
         keyword: filters.keyword || undefined,
         category: filters.category,
@@ -226,21 +225,14 @@ export default function QualityReagentPage() {
         page_size: pageSize,
       })
       if (response.code === 200) {
-        setData(response.data.items || [])
-        setTotal(response.data.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
+        return { items: response.data.items || [], total: response.data.total || 0 }
       }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
+      return { items: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 统计数据
   const stats = {
@@ -252,13 +244,11 @@ export default function QualityReagentPage() {
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
   const _handleReset = () => {
     setFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   const handleExport = async () => {
@@ -344,7 +334,7 @@ export default function QualityReagentPage() {
       const response = await deleteReagent(id)
       if (response.code === 200) {
         message.success('删除成功')
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '删除失败')
       }
@@ -432,7 +422,7 @@ export default function QualityReagentPage() {
       if (response.code === 200) {
         message.success('创建成功')
         setCreateDrawerVisible(false)
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '创建失败')
       }
@@ -468,7 +458,7 @@ export default function QualityReagentPage() {
       if (response.code === 200) {
         message.success('更新成功')
         setEditDrawerVisible(false)
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '更新失败')
       }
@@ -728,7 +718,7 @@ export default function QualityReagentPage() {
               ]}
             />
           )}
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={loading}>刷新</Button>
           <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新建试剂</Button>
         </div>

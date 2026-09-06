@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -47,9 +48,6 @@ type SopAiRecordsPageProps = Record<string, never>
  * 记录台账页面
  */
 export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
-  const [loading, setLoading] = useState(false)
-  const [records, setRecords] = useState<CheckMain[]>([])
-  const [total, setTotal] = useState(0)
   const [filter, setFilter] = useState<CheckRecordFilter>({
     page: 1,
     page_size: 20,
@@ -58,23 +56,16 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
   const [currentDetail, setCurrentDetail] = useState<CheckMainDetail | null>(null)
 
   // 加载记录
-  const loadRecords = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['sop-ai-records', filter],
+    queryFn: async () => {
       const response = await getCheckRecords(filter)
-      setRecords(response.items)
-      setTotal(response.total)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return response
+    },
+  })
 
-  // 初始加载
-  useEffect(() => {
-    loadRecords()
-  }, [filter.page, filter.page_size])
+  const records = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 查看详情
   const handleViewDetail = async (id: string) => {
@@ -266,7 +257,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
           />
           <Button
             icon={<ReloadOutlined />}
-            onClick={() => loadRecords()}
+            onClick={() => refetch()}
           >
             刷新
           </Button>

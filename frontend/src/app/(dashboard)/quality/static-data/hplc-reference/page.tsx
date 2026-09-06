@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -97,11 +98,8 @@ const getExpiryBadge = (days: number | null, status: number) => {
 }
 
 export default function HplcReferencePage() {
-  const [data, setData] = useState<HplcReference[]>([])
-  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [total, setTotal] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
@@ -123,48 +121,41 @@ export default function HplcReferencePage() {
   // 领用历史相关状态
   const [usageHistoryOpen, setUsageHistoryOpen] = useState(false)
   const [usageHistoryRecord, setUsageHistoryRecord] = useState<HplcReference | null>(null)
-  const [usageHistoryData, setUsageHistoryData] = useState<HplcReferenceUsage[]>([])
-  const [usageHistoryLoading, setUsageHistoryLoading] = useState(false)
-  const [usageHistoryTotal, setUsageHistoryTotal] = useState(0)
   const [usageHistoryPage, setUsageHistoryPage] = useState(1)
   // 复标提醒
-  const [recalAlertCount, setRecalAlertCount] = useState(0)
-  const [recalAlertVisible, setRecalAlertVisible] = useState(false)
-  const [recalList, setRecalList] = useState<HplcReference[]>([])
+  const queryClient = useQueryClient()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, unknown> = { page, page_size: pageSize }
-      if (searchText) {
-        params.ref_name = searchText
-        params.ref_code = searchText
-      }
-      if (statusFilter !== 'all') {
-        params.ref_status = statusFilter
-      }
-      const adv = advancedForm.getFieldsValue()
-      if (adv.cas_no) params.cas_no = adv.cas_no
-      if (adv.expire_start) params.expire_start = adv.expire_start
-      if (adv.expire_end) params.expire_end = adv.expire_end
-      const res = await listHplcReference(params)
-      setData((res?.data ?? []) as HplcReference[])
-      setTotal(res?.meta?.total ?? 0)
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '加载失败'))
-    } finally {
-      setLoading(false)
+  const queryParams = useCallback((): Record<string, unknown> => {
+    const params: Record<string, unknown> = { page, page_size: pageSize }
+    if (searchText) {
+      params.ref_name = searchText
+      params.ref_code = searchText
     }
+    if (statusFilter !== 'all') {
+      params.ref_status = statusFilter
+    }
+    const adv = advancedForm.getFieldsValue()
+    if (adv.cas_no) params.cas_no = adv.cas_no
+    if (adv.expire_start) params.expire_start = adv.expire_start
+    if (adv.expire_end) params.expire_end = adv.expire_end
+    return params
   }, [page, pageSize, searchText, statusFilter, advancedForm])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['hplc-reference-list', page, pageSize, searchText, statusFilter],
+    queryFn: async () => {
+      const params = queryParams()
+      const res = await listHplcReference(params)
+      return { items: (res?.data ?? []) as HplcReference[], total: res?.meta?.total ?? 0 }
+    },
+  })
 
-  const [statsData, setStatsData] = useState({ all: 0, active: 0, usedUp: 0, expired: 0 })
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: statsData = { all: 0, active: 0, usedUp: 0, expired: 0 } } = useQuery({
+    queryKey: ['hplc-reference-stats'],
+    queryFn: async () => {
       let allData: HplcReference[] = []
       let curPage = 1
       while (true) {
@@ -180,32 +171,21 @@ export default function HplcReferencePage() {
         if (item.ref_status === 1) usedUp++
         if (item.ref_status === 2) expired++
       })
-      setStatsData({ all: allData.length, active, usedUp, expired })
-    } catch (e) {
-      console.error('stats fetch error:', e)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+      return { all: allData.length, active, usedUp, expired }
+    },
+  })
 
   // 复标提醒：拉取需要复标的对照品列表
-  const fetchRecalAlerts = useCallback(async () => {
-    try {
+  const { data: recalList = [], refetch: refetchRecal } = useQuery({
+    queryKey: ['hplc-reference-recal-alert'],
+    queryFn: async () => {
       const res = await getHplcReferencesNeedRecal()
-      const list = (res?.data ?? []) as HplcReference[]
-      setRecalList(list)
-      setRecalAlertCount(list.length)
-      setRecalAlertVisible(list.length > 0)
-    } catch (e) {
-      console.error('fetch recal alerts error:', e)
-    }
-  }, [])
+      return (res?.data ?? []) as HplcReference[]
+    },
+  })
 
-  useEffect(() => {
-    fetchRecalAlerts()
-  }, [fetchRecalAlerts])
+  const recalAlertCount = recalList.length
+  const recalAlertVisible = recalAlertCount > 0
 
   // 打开领用 Drawer
   const openUsage = (record: HplcReference) => {
@@ -236,9 +216,9 @@ export default function HplcReferencePage() {
       })
       message.success('领用成功')
       setUsageDrawerOpen(false)
-      fetchData()
-      fetchStats()
-      fetchRecalAlerts()
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-list'] })
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-recal-alert'] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '领用失败'))
@@ -246,26 +226,23 @@ export default function HplcReferencePage() {
   }
 
   // 拉取领用历史
-  const fetchUsageHistory = useCallback(async (refId: number, p = 1) => {
-    setUsageHistoryLoading(true)
-    try {
-      const res = await getHplcReferenceUsageHistory(refId, p, 20)
-      setUsageHistoryData((res?.data ?? []) as HplcReferenceUsage[])
-      setUsageHistoryTotal(res?.meta?.total ?? 0)
-      setUsageHistoryPage(p)
-    } catch (e: unknown) {
-      message.error((e as Error).message || '加载领用历史失败')
-    } finally {
-      setUsageHistoryLoading(false)
-    }
-  }, [])
+  const { data: usageHistoryData = [], isLoading: usageHistoryLoading, refetch: refetchUsageHistory } = useQuery({
+    queryKey: ['hplc-reference-usage-history', usageHistoryRecord?.id, usageHistoryPage],
+    queryFn: async () => {
+      if (!usageHistoryRecord) return []
+      const res = await getHplcReferenceUsageHistory(usageHistoryRecord.id, usageHistoryPage, 20)
+      return (res?.data ?? []) as HplcReferenceUsage[]
+    },
+    enabled: !!usageHistoryRecord && usageHistoryOpen,
+  })
+
+  const usageHistoryTotal = usageHistoryData.length
 
   // 打开领用历史 Drawer
   const openUsageHistory = (record: HplcReference) => {
     setUsageHistoryRecord(record)
     setUsageHistoryPage(1)
     setUsageHistoryOpen(true)
-    fetchUsageHistory(record.id, 1)
   }
 
   const handleQuickSearch = (val: string) => {
@@ -280,7 +257,6 @@ export default function HplcReferencePage() {
 
   const handleAdvancedSearch = () => {
     setPage(1)
-    fetchData()
   }
 
   const handleReset = () => {
@@ -294,8 +270,8 @@ export default function HplcReferencePage() {
     try {
       await deleteHplcReference(id)
       message.success('删除成功')
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-list'] })
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-stats'] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '删除失败'))
     }
@@ -315,8 +291,8 @@ export default function HplcReferencePage() {
         await adjustHplcReferenceQuantity(stockAdjustRecord.id, values.quantity_change)
         message.success('数量调整成功')
         setStockDrawerOpen(false)
-        fetchData()
-        fetchStats()
+        queryClient.invalidateQueries({ queryKey: ['hplc-reference-list'] })
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-stats'] })
       }
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
@@ -375,8 +351,8 @@ export default function HplcReferencePage() {
         message.success('更新成功')
       }
       setDrawerOpen(false)
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-list'] })
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-stats'] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
@@ -399,7 +375,7 @@ export default function HplcReferencePage() {
       const res = await batchImportHplcReference(file)
       message.success(res.message || '导入成功')
       setImportModalOpen(false)
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['hplc-reference-list'] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '导入失败'))
     }

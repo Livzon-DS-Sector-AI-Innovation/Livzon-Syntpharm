@@ -2,7 +2,8 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
@@ -60,115 +61,94 @@ interface ExpiringReagent {
 }
 
 export default function QualityDashboardPage() {
-  const [loading, setLoading] = useState(true)
-  const [instrumentStats, setInstrumentStats] = useState({ total: 0, active: 0, warning: 0, overdue: 0 })
-  const [reagentStats, setReagentStats] = useState({ total: 0, available: 0, expiring_soon: 0, expired: 0 })
-  const [upcomingInstruments, setUpcomingInstruments] = useState<UpcomingInstrument[]>([])
-  const [expiringReagents, setExpiringReagents] = useState<ExpiringReagent[]>([])
-
-  const loadInstrumentStats = async () => {
-    try {
+  // 加载仪器统计
+  const { data: instrumentData, isLoading: instrumentLoading } = useQuery({
+    queryKey: ['quality-dashboard-instruments'],
+    queryFn: async () => {
       const response = await fetch(`${API_BASE_URL}/quality/instrument?page=1&page_size=100`)
       const data = await response.json()
-      const items: InstrumentItem[] = data.data?.items || []
-      const now = dayjs()
+      return (data.data?.items || []) as InstrumentItem[]
+    },
+  })
 
-      const total = items.length
-      const active = items.filter(i => i.is_active).length
-      const overdue = items.filter(i => i.valid_until && dayjs(i.valid_until).isBefore(now)).length
-      const warning = items.filter(i => {
-        if (!i.valid_until) return false
-        const isOverdue = dayjs(i.valid_until).isBefore(now)
-        if (isOverdue) return false
-        const daysUntil = dayjs(i.valid_until).diff(now, 'day')
-        return daysUntil >= 0 && daysUntil <= 30
-      }).length
+  const items = instrumentData || []
+  const now = dayjs()
 
-      setInstrumentStats({ total, active, warning, overdue })
-
-      const upcoming = items
-        .filter(i => {
-          if (!i.valid_until) return false
-          const isOverdue = dayjs(i.valid_until).isBefore(now)
-          if (isOverdue) return false
-          const daysUntil = dayjs(i.valid_until).diff(now, 'day')
-          return daysUntil >= 0 && daysUntil <= 30
-        })
-        .sort((a, b) => dayjs(a.valid_until).unix() - dayjs(b.valid_until).unix())
-        .slice(0, 5)
-        .map(i => ({
-          id: i.id,
-          instrument_no: i.instrument_no,
-          instrument_name: i.instrument_name,
-          valid_until: i.valid_until,
-          days_remaining: dayjs(i.valid_until).diff(now, 'day')
-        }))
-
-      setUpcomingInstruments(upcoming)
-    } catch (err) {
-      console.error('加载仪器统计失败:', err)
-    }
+  const instrumentStats = {
+    total: items.length,
+    active: items.filter(i => i.is_active).length,
+    overdue: items.filter(i => i.valid_until && dayjs(i.valid_until).isBefore(now)).length,
+    warning: items.filter(i => {
+      if (!i.valid_until) return false
+      const isOverdue = dayjs(i.valid_until).isBefore(now)
+      if (isOverdue) return false
+      const daysUntil = dayjs(i.valid_until).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    }).length,
   }
 
-  const loadReagentStats = async () => {
-    try {
+  const upcomingInstruments = items
+    .filter(i => {
+      if (!i.valid_until) return false
+      const isOverdue = dayjs(i.valid_until).isBefore(now)
+      if (isOverdue) return false
+      const daysUntil = dayjs(i.valid_until).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    })
+    .sort((a, b) => dayjs(a.valid_until).unix() - dayjs(b.valid_until).unix())
+    .slice(0, 5)
+    .map(i => ({
+      id: i.id,
+      instrument_no: i.instrument_no,
+      instrument_name: i.instrument_name,
+      valid_until: i.valid_until,
+      days_remaining: dayjs(i.valid_until).diff(now, 'day')
+    }))
+
+  // 加载试剂统计
+  const { data: reagentData, isLoading: reagentLoading } = useQuery({
+    queryKey: ['quality-dashboard-reagents'],
+    queryFn: async () => {
       const response = await fetch(`${API_BASE_URL}/quality/reagent/list?page=1&page_size=100`)
       const data = await response.json()
-      const items: ReagentItem[] = data.data?.items || []
-      const now = dayjs()
+      return (data.data?.items || []) as ReagentItem[]
+    },
+  })
 
-      const total = items.length
-      const available = items.filter(i => i.status === 'available').length
-      const expired = items.filter(i => i.expiration_date && dayjs(i.expiration_date).isBefore(now)).length
-      const expiring_soon = items.filter(i => {
-        if (!i.expiration_date) return false
-        const isExpired = dayjs(i.expiration_date).isBefore(now)
-        if (isExpired) return false
-        const daysUntil = dayjs(i.expiration_date).diff(now, 'day')
-        return daysUntil >= 0 && daysUntil <= 30
-      }).length
+  const reagentItems = reagentData || []
 
-      setReagentStats({ total, available, expiring_soon, expired })
-
-      const expiring = items
-        .filter(i => {
-          if (!i.expiration_date) return false
-          const isExpired = dayjs(i.expiration_date).isBefore(now)
-          if (isExpired) return false
-          const daysUntil = dayjs(i.expiration_date).diff(now, 'day')
-          return daysUntil >= 0 && daysUntil <= 30
-        })
-        .sort((a, b) => dayjs(a.expiration_date).unix() - dayjs(b.expiration_date).unix())
-        .slice(0, 5)
-        .map(i => ({
-          id: i.id,
-          reagent_name: i.reagent_name,
-          lot_no: i.lot_no,
-          expiration_date: i.expiration_date,
-          days_remaining: dayjs(i.expiration_date).diff(now, 'day')
-        }))
-
-      setExpiringReagents(expiring)
-    } catch (err) {
-      console.error('加载试剂统计失败:', err)
-    }
+  const reagentStats = {
+    total: reagentItems.length,
+    available: reagentItems.filter(i => i.status === 'available').length,
+    expired: reagentItems.filter(i => i.expiration_date && dayjs(i.expiration_date).isBefore(now)).length,
+    expiring_soon: reagentItems.filter(i => {
+      if (!i.expiration_date) return false
+      const isExpired = dayjs(i.expiration_date).isBefore(now)
+      if (isExpired) return false
+      const daysUntil = dayjs(i.expiration_date).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    }).length,
   }
 
-  const loadAllStats = useCallback(async () => {
-    setLoading(true)
-    try {
-      await Promise.all([
-        loadInstrumentStats(),
-        loadReagentStats(),
-      ])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const expiringReagents = reagentItems
+    .filter(i => {
+      if (!i.expiration_date) return false
+      const isExpired = dayjs(i.expiration_date).isBefore(now)
+      if (isExpired) return false
+      const daysUntil = dayjs(i.expiration_date).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    })
+    .sort((a, b) => dayjs(a.expiration_date).unix() - dayjs(b.expiration_date).unix())
+    .slice(0, 5)
+    .map(i => ({
+      id: i.id,
+      reagent_name: i.reagent_name,
+      lot_no: i.lot_no,
+      expiration_date: i.expiration_date,
+      days_remaining: dayjs(i.expiration_date).diff(now, 'day')
+    }))
 
-  useEffect(() => {
-    loadAllStats()
-  }, [loadAllStats])
+  const loading = instrumentLoading || reagentLoading
 
   const getDaysColor = (days: number) => {
     if (days <= 0) return '#ef4444'

@@ -1,7 +1,8 @@
 'use client'
 import {saveAIConfig, resetAIConfig} from '@/actions/quality'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Form,
@@ -62,31 +63,26 @@ export default function AiConfigPage() {
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
   const [testLoading, setTestLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   // 加载配置
-  const loadConfig = useCallback(async () => {
-    setInitialLoading(true)
-    try {
+  const { data: configData, isLoading: initialLoading } = useQuery({
+    queryKey: ['ai-config'],
+    queryFn: async () => {
       const response = await fetch(`${API_BASE_URL}/ai/config`)
       const data = await response.json()
-
-      if (data.code === 200 && data.data) {
-        form.setFieldsValue(data.data)
-      } else {
-        form.setFieldsValue(defaultConfig)
-      }
-    } catch (_error) {
-      console.log('从后端加载配置失败，使用默认配置')
-      form.setFieldsValue(defaultConfig)
-    } finally {
-      setInitialLoading(false)
-    }
-  }, [form])
+      if (data.code === 200 && data.data) return data.data as AIConfig
+      return null
+    },
+  })
 
   useEffect(() => {
-    loadConfig()
-  }, [loadConfig])
+    if (configData) {
+      form.setFieldsValue(configData)
+    } else if (!initialLoading) {
+      form.setFieldsValue(defaultConfig)
+    }
+  }, [configData, initialLoading, form])
 
   // 保存配置到后端
   const handleSave = async () => {
@@ -97,6 +93,7 @@ export default function AiConfigPage() {
       const data = await saveAIConfig(values)
 
       if (data.code === 200) {
+        queryClient.invalidateQueries({ queryKey: ['ai-config'] })
         message.success('AI配置保存成功')
       } else {
         message.error(data.message || '保存失败')
@@ -117,6 +114,7 @@ export default function AiConfigPage() {
     } catch (_error) {
       console.log('重置后端配置失败')
     }
+    queryClient.invalidateQueries({ queryKey: ['ai-config'] })
     message.success('已重置为默认配置')
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Tabs,
   Table,
@@ -190,8 +191,6 @@ const DeviationListTab: React.FC<{
   onView: (deviation: Deviation) => void
   onRefresh: () => void
 }> = ({ onView, onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const [searchForm] = Form.useForm()
   const [createModalVisible, setCreateModalVisible] = useState(false)
@@ -201,31 +200,27 @@ const DeviationListTab: React.FC<{
   const [aiModalTitle, setAiModalTitle] = useState('')
   const [aiResult, setAiResult] = useState('')
   const [aiTargetField, setAiTargetField] = useState('')
+  const [searchValues, setSearchValues] = useState<SearchFormValues | undefined>(undefined)
+  const queryClient = useQueryClient()
 
-  const fetchDeviations = async (values?: SearchFormValues) => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['deviations', pagination.current, pagination.pageSize, searchValues],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({
-        deviation_type: values?.deviation_type,
-        status: values?.status,
-        start_date: (values?.date_range?.[0] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
-        end_date: (values?.date_range?.[1] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
+        deviation_type: searchValues?.deviation_type,
+        status: searchValues?.status,
+        start_date: (searchValues?.date_range?.[0] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
+        end_date: (searchValues?.date_range?.[1] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         page: pagination.current,
         page_size: pagination.pageSize,
       })
       const data = result.data || result
-      setDeviations(data.items || [])
-      setPagination(prev => ({ ...prev, total: data.total || 0 }))
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '获取偏差列表失败'))
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { items: data.items || [], total: data.total || 0 }
+    },
+  })
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [pagination.current, pagination.pageSize])
+  const deviations = queryResult?.items || []
+  const paginationWithTotal = { ...pagination, total: queryResult?.total || 0 }
 
   // AI生成偏差描述（基于完整表单数据）
   const handleAIGenerateDescription = async () => {
@@ -450,7 +445,7 @@ const DeviationListTab: React.FC<{
       <Card size="small" style={{ marginBottom: 16 }}>
         <Form form={searchForm} layout="inline" onFinish={() => {
           setPagination(prev => ({ ...prev, current: 1 }))
-          fetchDeviations(searchForm.getFieldsValue())
+          setSearchValues(searchForm.getFieldsValue())
         }}>
           <Form.Item name="deviation_type" label="偏差类型">
             <Select allowClear style={{ width: 120 }}>
@@ -472,7 +467,7 @@ const DeviationListTab: React.FC<{
           <Form.Item>
             <Space>
               <Button type="primary" icon={<SearchOutlined />} htmlType="submit">查询</Button>
-              <Button onClick={() => { searchForm.resetFields(); fetchDeviations() }}>重置</Button>
+              <Button onClick={() => { searchForm.resetFields(); setSearchValues(undefined); setPagination(prev => ({ ...prev, current: 1 })) }}>重置</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -492,10 +487,10 @@ const DeviationListTab: React.FC<{
           loading={loading}
           scroll={{ x: 1200 }}
           pagination={{
-            ...pagination,
+            ...paginationWithTotal,
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
-            onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: pagination.total }),
+            onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: paginationWithTotal.total }),
           }}
         />
       </Card>
@@ -646,8 +641,6 @@ const DeviationListTab: React.FC<{
 
 // ============ 偏差调查标签页 ============
 const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiModalVisible, setAiModalVisible] = useState(false)
   const [aiModalTitle, setAiModalTitle] = useState('')
@@ -655,25 +648,18 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
   const [aiTargetField, setAiTargetField] = useState('')
   const [form] = Form.useForm()
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [])
-
-  const fetchDeviations = async () => {
-    setLoading(true)
-    try {
+  const { data: invQueryResult, isLoading: loading } = useQuery({
+    queryKey: ['deviations-investigation'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })
       const data = result.data || result
-      const list = (data.items || []).filter((d: Deviation) =>
-        d.status === 'submitted' || d.status === 'investigating'
-      )
-      setDeviations(list)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '获取偏差列表失败'))
-    } finally {
-      setLoading(false)
-    }
-  }
+      return (data.items || []) as Deviation[]
+    },
+  })
+
+  const deviations = (invQueryResult || []).filter((d: Deviation) =>
+    d.status === 'submitted' || d.status === 'investigating'
+  )
 
   // AI直接原因分析
   const handleAIDirectCauseAnalysis = async () => {
@@ -1140,9 +1126,6 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
 
 // ============ CAPA整改标签页 ============
 const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
-  const [completedDeviations, setCompletedDeviations] = useState<Deviation[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiModalVisible, setAiModalVisible] = useState(false)
   const [aiModalTitle, setAiModalTitle] = useState('')
@@ -1156,31 +1139,21 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const [completeCorrectionModalVisible, setCompleteCorrectionModalVisible] = useState(false)
   const [completeForm] = Form.useForm()
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [])
-
-  const fetchDeviations = async () => {
-    setLoading(true)
-    try {
+  const { data: capaQueryResult, isLoading: loading } = useQuery({
+    queryKey: ['deviations-capa'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })
       const data = result.data || result
-      // 待整改列表
-      const pendingList = (data.items || []).filter((d: Deviation) =>
-        d.status === 'investigation_completed' || d.status === 'correction_pending' || d.status === 'correction_in_progress'
-      )
-      // 已完成整改列表
-      const completedList = (data.items || []).filter((d: Deviation) =>
-        d.status === 'correction_completed' || d.status === 'closed'
-      )
-      setDeviations(pendingList)
-      setCompletedDeviations(completedList)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '获取偏差列表失败'))
-    } finally {
-      setLoading(false)
-    }
-  }
+      return (data.items || []) as Deviation[]
+    },
+  })
+
+  const deviations = (capaQueryResult || []).filter((d: Deviation) =>
+    d.status === 'investigation_completed' || d.status === 'correction_pending' || d.status === 'correction_in_progress'
+  )
+  const completedDeviations = (capaQueryResult || []).filter((d: Deviation) =>
+    d.status === 'correction_completed' || d.status === 'closed'
+  )
 
   // 查看已完成整改偏差详情
   const handleViewCompleted = async (record: Deviation) => {
@@ -2072,24 +2045,26 @@ const DeviationDetailModal: React.FC<{
 // ============ 主页面组件 ============
 export default function DeviationPage() {
   const [activeTab, setActiveTab] = useState('list')
-  const [statistics, setStatistics] = useState<DeviationStatistics | null>(null)
   const [selectedDeviation, setSelectedDeviation] = useState<Deviation | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
 
-  const refreshData = async () => {
-    try {
+  const queryClient = useQueryClient()
+  
+  const { data: statisticsData } = useQuery({
+    queryKey: ['deviation-statistics'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviationStatistics()
       if (result.code === 200 || result.code === 0) {
-        setStatistics(result.data as DeviationStatistics)
+        return result.data as DeviationStatistics
       }
-    } catch (error) {
-      console.error('Failed to refresh statistics:', error)
-    }
-  }
+      return null
+    },
+  })
 
-  useEffect(() => {
-    refreshData()
-  }, [])
+  const statistics = statisticsData
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['deviation-statistics'] })
+  }
 
   const handleViewDeviation = async (deviation: Deviation) => {
     try {

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Button,
@@ -44,11 +45,10 @@ const REMINDER_TIMINGS: Array<{
 ]
 
 export default function ReminderSettingsPage() {
-  const [loading, setLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
-  const [configs, setConfigs] = useState<ReminderConfig[]>([])
   const [form] = Form.useForm()
   const [isMobile, setIsMobile] = useState(false)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -58,37 +58,31 @@ export default function ReminderSettingsPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const loadConfigs = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: configs = [], isLoading: loading } = useQuery({
+    queryKey: ['reminder-configs'],
+    queryFn: async () => {
       const response = await getReminderConfigs()
-      const items = response.items || []
-      setConfigs(items)
-      if (items.length > 0) {
-        const first = items[0]
-        form.setFieldsValue({
-          name: first.name,
-          feishu_app_id: first.feishu_app_id,
-          feishu_app_secret: undefined,
-          chat_id: first.chat_id,
-          receive_id_type: first.receive_id_type || 'open_id',
-          remind_30_days: first.remind_30_days,
-          remind_14_days: first.remind_14_days,
-          remind_7_days: first.remind_7_days,
-          remind_overdue: first.remind_overdue,
-          is_active: first.is_active,
-        })
-      }
-    } catch (_error) {
-      message.error('加载配置失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [form])
+      return response.items || []
+    },
+  })
 
   useEffect(() => {
-    loadConfigs()
-  }, [loadConfigs])
+    if (configs.length > 0) {
+      const first = configs[0]
+      form.setFieldsValue({
+        name: first.name,
+        feishu_app_id: first.feishu_app_id,
+        feishu_app_secret: undefined,
+        chat_id: first.chat_id,
+        receive_id_type: first.receive_id_type || 'open_id',
+        remind_30_days: first.remind_30_days,
+        remind_14_days: first.remind_14_days,
+        remind_7_days: first.remind_7_days,
+        remind_overdue: first.remind_overdue,
+        is_active: first.is_active,
+      })
+    }
+  }, [configs, form])
 
   const handleSave = async () => {
     try {
@@ -110,7 +104,7 @@ export default function ReminderSettingsPage() {
         await createReminderConfig(saveData as Parameters<typeof createReminderConfig>[0])
         message.success('配置已保存')
       }
-      loadConfigs()
+      queryClient.invalidateQueries({ queryKey: ['reminder-configs'] })
     } catch (_error) {
       message.error('保存失败')
     } finally {

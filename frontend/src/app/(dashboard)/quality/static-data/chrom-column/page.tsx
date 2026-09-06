@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -77,11 +78,8 @@ const getUsageLevel = (used: number, max: number): 'low' | 'mid' | 'high' | 'cri
 }
 
 export default function ChromColumnPage() {
-  const [data, setData] = useState<ChromColumn[]>([])
-  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [total, setTotal] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
@@ -93,42 +91,41 @@ export default function ChromColumnPage() {
   const [isNew, setIsNew] = useState(false)
   const [form] = Form.useForm()
   const [advancedForm] = Form.useForm()
+  const queryClient = useQueryClient()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, unknown> = { page, page_size: pageSize }
-      if (searchText) {
-        params.col_code = searchText
-        params.col_type = searchText
-      }
-      if (statusFilter !== 'all') {
-        params.col_status = statusFilter
-      }
-      if (categoryFilter !== 'all') {
-        params.column_category = categoryFilter
-      }
-      const adv = advancedForm.getFieldsValue()
-      if (adv.manufacturer) params.manufacturer = adv.manufacturer
-      if (adv.spec) params.spec = adv.spec
-      const res = await listChromColumn(params)
-      setData((res?.data ?? []) as ChromColumn[])
-      setTotal(res?.meta?.total ?? 0)
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '加载失败'))
-    } finally {
-      setLoading(false)
+  const queryParams = useCallback((): Record<string, unknown> => {
+    const params: Record<string, unknown> = { page, page_size: pageSize }
+    if (searchText) {
+      params.col_code = searchText
+      params.col_type = searchText
     }
+    if (statusFilter !== 'all') {
+      params.col_status = statusFilter
+    }
+    if (categoryFilter !== 'all') {
+      params.column_category = categoryFilter
+    }
+    const adv = advancedForm.getFieldsValue()
+    if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    if (adv.spec) params.spec = adv.spec
+    return params
   }, [page, pageSize, searchText, statusFilter, categoryFilter, advancedForm])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['chrom-column-list', page, pageSize, searchText, statusFilter, categoryFilter],
+    queryFn: async () => {
+      const params = queryParams()
+      const res = await listChromColumn(params)
+      return { items: (res?.data ?? []) as ChromColumn[], total: res?.meta?.total ?? 0 }
+    },
+  })
 
-  const [statsData, setStatsData] = useState({ all: 0, active: 0, cleaning: 0, sealed: 0, scrapped: 0 })
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: statsData = { all: 0, active: 0, cleaning: 0, sealed: 0, scrapped: 0 } } = useQuery({
+    queryKey: ['chrom-column-stats', categoryFilter],
+    queryFn: async () => {
       let allData: ChromColumn[] = []
       let curPage = 1
       while (true) {
@@ -149,15 +146,9 @@ export default function ChromColumnPage() {
         if (item.col_status === 2) sealed++
         if (item.col_status === 3) scrapped++
       })
-      setStatsData({ all: allData.length, active, cleaning, sealed, scrapped })
-    } catch (e) {
-      console.error('stats fetch error:', e)
-    }
-  }, [categoryFilter])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+      return { all: allData.length, active, cleaning, sealed, scrapped }
+    },
+  })
 
   const handleQuickSearch = (val: string) => {
     setSearchText(val)
@@ -176,7 +167,6 @@ export default function ChromColumnPage() {
 
   const handleAdvancedSearch = () => {
     setPage(1)
-    fetchData()
   }
 
   const handleReset = () => {
@@ -191,8 +181,8 @@ export default function ChromColumnPage() {
     try {
       await deleteChromColumn(id)
       message.success('删除成功')
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-list'] })
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-stats'] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '删除失败'))
     }
@@ -202,8 +192,8 @@ export default function ChromColumnPage() {
     try {
       await incrementChromColumnUsage(id)
       message.success('使用次数+1')
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-list'] })
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-stats'] })
     } catch (e: unknown) {
       message.error((e as Error).message || '操作失败')
     }
@@ -250,8 +240,8 @@ export default function ChromColumnPage() {
         message.success('更新成功')
       }
       setDrawerOpen(false)
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-list'] })
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-stats'] })
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       message.error((e instanceof Error ? e.message : '保存失败'))
@@ -273,8 +263,8 @@ export default function ChromColumnPage() {
     try {
       const res = await batchImportChromColumn(file)
       message.success(res.message || '导入成功')
-      fetchData()
-      fetchStats()
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-list'] })
+      queryClient.invalidateQueries({ queryKey: ['chrom-column-stats'] })
     } catch (e: unknown) {
       message.error((e instanceof Error ? e.message : '导入失败'))
     }
@@ -491,7 +481,7 @@ export default function ChromColumnPage() {
           >
             高级筛选
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={() => { fetchData(); fetchStats() }}>
+          <Button icon={<ReloadOutlined />} onClick={() => { refetch(); queryClient.invalidateQueries({ queryKey: ['chrom-column-stats'] }) }}>
             刷新
           </Button>
           <Segmented

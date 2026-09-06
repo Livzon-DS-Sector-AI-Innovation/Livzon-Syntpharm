@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use, useRef } from 'react'
+import { useState, useEffect, use, useRef, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Card,
@@ -79,30 +80,26 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const isEditMode = searchParams.get('edit') === 'true'
   const _isGenerateMode = searchParams.get('generate') === 'true'
 
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [_uploading, setUploading] = useState(false)
-  const [report, setReport] = useState<ReportDetailResponse | null>(null)
-  const [templates, setTemplates] = useState<TemplateListItem[]>([])
   const [form] = Form.useForm()
   const [tableColumns, setTableColumns] = useState<TemplateColumnConfig[]>([])
   const [tableData, setTableData] = useState<TableRow[]>([])
   const [_hasChanges, setHasChanges] = useState(false)
-  const [reportImages, setReportImages] = useState<ReportImage[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
   const [previewAIResult, setPreviewAIResult] = useState<Record<string, unknown> | null>(null)
   const _uploadRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
 
   // 获取报告单图片
-  const fetchReportImages = async () => {
-    try {
+  const { data: reportImages = [], refetch: refetchImages } = useQuery({
+    queryKey: ['report-images', resolvedParams.id],
+    queryFn: async () => {
       const result = await getReportImages(resolvedParams.id)
-      setReportImages((result.data as ReportImage[]) || [])
-    } catch (error) {
-      console.error('获取图片失败', error)
-    }
-  }
+      return (result.data as ReportImage[]) || []
+    },
+  })
 
   // 上传图片并AI识别
   const handleImageUpload = async (file: File, rowKey: number, fieldKey: string) => {
@@ -125,7 +122,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         }
 
         // 刷新图片列表
-        fetchReportImages()
+        refetchImages()
       } else {
         message.error((result.message as string) || '上传失败')
       }
@@ -144,62 +141,72 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     setPreviewVisible(true)
   }
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: ['report-detail', resolvedParams.id],
+    queryFn: async () => {
       const [result, templateResult] = await Promise.all([
         getReportById(resolvedParams.id),
         getTemplates({ is_active: true, page: 1, page_size: 100 }),
       ])
-      const data = result.data as ReportDetailResponse
-      setReport(data)
-      setTemplates(templateResult.data?.items || [])
-
-      // 设置表单值
-      form.setFieldsValue({
-        template_id: data.template_id,
-        report_title: data.report_title,
-        report_date: dayjs(data.report_date),
-        static_data: data.static_data || {},
-      })
-
-      // 解析表格数据
-      if (data.items && data.items.length > 0 && data.template?.table_fields?.columns) {
-        const columns = data.template.table_fields.columns
-        setTableColumns(columns)
-
-        // 转换items为行数据
-        const rowsMap: Record<number, TableRow> = {}
-        data.items.forEach((item: Record<string, unknown>) => {
-          const rowIdx = item.row_index as number
-          if (!rowsMap[rowIdx]) {
-            rowsMap[rowIdx] = { key: rowIdx }
-          }
-          rowsMap[rowIdx][item.field_key as string] = item.field_value as string | number
-        })
-        setTableData(Object.values(rowsMap))
-      } else if (data.template?.table_fields?.columns) {
-        setTableColumns(data.template.table_fields.columns)
-        setTableData([
-          {
-            key: 1,
-            ...Object.fromEntries(
-              data.template.table_fields.columns.map((c) => [c.key, ''])
-            ),
-          },
-        ])
+      return {
+        report: result.data as ReportDetailResponse,
+        templates: templateResult.data?.items || [],
       }
-    } catch (_error) {
-      message.error('获取报告单详情失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+  })
 
+  const report = queryResult?.report || null
+  const templates = queryResult?.templates || []
+
+  // 设置表单值
   useEffect(() => {
-    fetchData()
-    fetchReportImages()
-  }, [resolvedParams.id, fetchData, fetchReportImages])
+    if (report) {
+      form.setFieldsValue({
+        template_id: report.template_id,
+        report_title: report.report_title,
+        report_date: dayjs(report.report_date),
+        static_data: report.static_data || {},
+      })
+    }
+  }, [report, form])
+
+  // 派生表格数据
+  const derivedTableData = useMemo(() => {
+    if (!report) return { columns: [] as TemplateColumnConfig[], rows: [] as TableRow[] }
+    
+    if (report.items && report.items.length > 0 && report.template?.table_fields?.columns) {
+      const columns = report.template.table_fields.columns
+      const rowsMap: Record<number, TableRow> = {}
+      report.items.forEach((item: Record<string, unknown>) => {
+        const rowIdx = item.row_index as number
+        if (!rowsMap[rowIdx]) {
+          rowsMap[rowIdx] = { key: rowIdx }
+        }
+        rowsMap[rowIdx][item.field_key as string] = item.field_value as string | number
+      })
+      return { columns, rows: Object.values(rowsMap) }
+    } else if (report.template?.table_fields?.columns) {
+      const columns = report.template.table_fields.columns
+      return {
+        columns,
+        rows: [{
+          key: 1,
+          ...Object.fromEntries(columns.map((c) => [c.key, ''])),
+        }],
+      }
+    }
+    return { columns: [] as TemplateColumnConfig[], rows: [] as TableRow[] }
+  }, [report])
+
+  // Sync derived data to state for mutable operations (add row, cell change)
+  useEffect(() => {
+    if (derivedTableData.columns.length > 0) {
+      setTableColumns(derivedTableData.columns)
+      if (derivedTableData.rows.length > 0) {
+        setTableData(derivedTableData.rows)
+      }
+    }
+  }, [derivedTableData])
 
   // 添加行
   const handleAddRow = () => {
@@ -252,7 +259,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
       message.success('保存成功')
       setHasChanges(false)
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['report-detail'] })
     } catch (error: unknown) {
       message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
